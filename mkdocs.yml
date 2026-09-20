@@ -1,6 +1,8 @@
 site_name: SchemaRouter
 site_description: Schema-aware planning and execution for LLM tool ecosystems
+site_author: Yong-eun Cho
 site_url: https://jdeun.github.io/SchemaRouter/
+copyright: © 2026 Yong-eun Cho · MIT License
 repo_url: https://github.com/JDeun/SchemaRouter
 repo_name: JDeun/SchemaRouter
 edit_uri: edit/main/docs/
