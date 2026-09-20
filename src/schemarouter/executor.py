@@ -35,17 +35,40 @@ class RegistryExecutor:
             raise SchemaDriftError(
                 f"schema changed for {call.tool}.{call.endpoint}; replan before execution"
             )
-        if call.missing_required_arguments:
+
+        declared_parameters = {parameter.name: parameter for parameter in endpoint.parameters}
+        unknown_arguments = sorted(set(call.arguments) - set(declared_parameters))
+        if unknown_arguments:
             raise PlanValidationError(
-                f"missing required arguments for {call.tool}.{call.endpoint}: "
-                + ", ".join(call.missing_required_arguments)
+                f"undeclared arguments for {call.tool}.{call.endpoint}: "
+                + ", ".join(unknown_arguments)
             )
 
-        declared = {parameter.name for parameter in endpoint.parameters}
-        unknown = sorted(set(call.arguments) - declared)
-        if unknown:
+        actual_missing = sorted(
+            parameter.name
+            for parameter in endpoint.parameters
+            if parameter.required and parameter.name not in call.arguments
+        )
+        if actual_missing:
             raise PlanValidationError(
-                f"undeclared arguments for {call.tool}.{call.endpoint}: {', '.join(unknown)}"
+                f"missing required arguments for {call.tool}.{call.endpoint}: "
+                + ", ".join(actual_missing)
+            )
+
+        declared_fields = {field.name for field in endpoint.output_fields}
+        unknown_fields = sorted(set(call.fields) - declared_fields)
+        if unknown_fields:
+            raise PlanValidationError(
+                f"undeclared output fields for {call.tool}.{call.endpoint}: "
+                + ", ".join(unknown_fields)
+            )
+        if len(call.fields) != len(set(call.fields)):
+            raise PlanValidationError(
+                f"duplicate output fields for {call.tool}.{call.endpoint}"
+            )
+        if endpoint.output_fields and not call.fields:
+            raise PlanValidationError(
+                f"explicit output projection required for {call.tool}.{call.endpoint}"
             )
 
     async def execute(self, plan: ExecutionPlan) -> list[ToolResult]:
