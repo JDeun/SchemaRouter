@@ -4,8 +4,8 @@ import pytest
 
 from schemarouter import (
     EndpointSpec,
-    ExecutionPolicy,
     ExecutionError,
+    ExecutionPolicy,
     FieldSpec,
     ParameterSpec,
     PlanRequest,
