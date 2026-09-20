@@ -55,3 +55,43 @@ def test_schema_router_accepts_structural_registry_implementation() -> None:
 
     assert router.registry is registry
     assert registry.keys() == ("custom",)
+
+
+def test_registry_snapshots_input_on_registration() -> None:
+    reg = InMemoryRegistry()
+    original = ToolSpec(
+        name="demo",
+        endpoints=[EndpointSpec(name="run")],
+    )
+    reg.register(original)
+    version = reg.version
+
+    original.name = "mutated"
+    original.endpoints[0].name = "changed"
+
+    assert reg.version == version
+    assert reg.keys() == ("demo",)
+    assert reg.get("demo").name == "demo"
+    assert reg.endpoint("demo", "run").name == "run"
+
+
+def test_registry_reads_are_detached_snapshots() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="demo",
+            endpoints=[EndpointSpec(name="run")],
+        )
+    )
+    version = reg.version
+
+    snapshot = reg.get("demo")
+    snapshot.name = "mutated"
+    snapshot.endpoints[0].name = "changed"
+    snapshot.metadata["unexpected"] = True
+
+    assert reg.version == version
+    assert reg.keys() == ("demo",)
+    assert reg.get("demo").name == "demo"
+    assert reg.endpoint("demo", "run").name == "run"
+    assert "unexpected" not in reg.get("demo").metadata
