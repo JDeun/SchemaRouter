@@ -10,6 +10,7 @@ import httpx
 from pydantic import TypeAdapter
 
 from .adapters.openapi import OpenAPIRemoteInvoker
+from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
 from .errors import ProposalApprovalError, RegistrationError
 from .executor import RegistryExecutor
 from .ingestion import SourceKind, URLSchemaLoader
@@ -132,6 +133,39 @@ class SchemaRouter:
 
     def add_tool(self, tool: ToolSpec, *, replace: bool = False) -> str:
         return self.registry.register(tool, replace=replace)
+
+    def add_callable(
+        self,
+        function: Callable[..., Any],
+        *,
+        name: str | None = None,
+        namespace: str | None = None,
+        description: str | None = None,
+        read_only: bool | None = None,
+        destructive: bool | None = None,
+        replace: bool = False,
+    ) -> str:
+        decorated = callable_options(function)
+        tool = tool_from_callable(
+            function,
+            name=name if name is not None else decorated.get("name"),
+            namespace=(
+                namespace if namespace is not None else decorated.get("namespace")
+            ),
+            description=(
+                description if description is not None else decorated.get("description")
+            ),
+            read_only=(
+                read_only if read_only is not None else decorated.get("read_only")
+            ),
+            destructive=(
+                destructive if destructive is not None else decorated.get("destructive")
+            ),
+        )
+        invoker = PythonCallableInvoker(function)
+        key = self.registry.register(tool, replace=replace)
+        self.executor.bind(key, invoker)
+        return key
 
     async def inspect_url(
         self,
