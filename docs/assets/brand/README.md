@@ -26,6 +26,7 @@ SchemaRouter uses the **brace + routing hub** mark.
 - `schemarouter-mark-dark.svg` — mark for dark backgrounds.
 - `schemarouter-lockup-light.svg` — horizontal mark + wordmark for light backgrounds.
 - `schemarouter-lockup-dark.svg` — horizontal mark + wordmark for dark backgrounds.
+- `schemarouter-social-preview.svg` — 1280×640 source artwork for link previews.
 
 Use the mark for favicons, avatars, and compact navigation. Use the lockup in README, documentation landing pages, and social graphics.
 
