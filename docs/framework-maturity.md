@@ -23,14 +23,14 @@ This document tracks framework-level maturity rather than research metrics.
 | Runtime policy | Implemented | Add per-call approval / budgets / quotas |
 | Runtime JSON Schema validation | Implemented | Add richer nested projection |
 | LangChain integration | Implemented optional adapter | Add LangGraph-native nodes |
-| Framework callbacks / exporters | Event stream only | Add callback manager / OpenTelemetry |
+| Framework callbacks / exporters | Typed redacted event stream | Add callback manager / OpenTelemetry exporters |
 | Middleware interception | Policy-specific only | Add trusted before/after hooks |
 | Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
 | Persistence / checkpoints | Out of scope for core | Delegate to orchestration layer |
 | HTTP serving layer | Not implemented | Consider optional server package |
-| Distributed registry | Not implemented | Post-v0.1 |
-| Release / compatibility policy | Partial | Add semantic-versioning and deprecation policy |
-| Integration certification suite | Partial | Add live OpenAPI/MCP compatibility fixtures |
+| Pluggable registry boundary | Implemented via `ToolRegistry` protocol | Add persistent implementations |
+| Release / compatibility policy | Implemented | Enforce during RC reviews |
+| Package artifact CI | Implemented | Keep wheel/sdist metadata checks blocking |\n| Integration certification suite | Partial | Add live OpenAPI/MCP compatibility fixtures |
 
 ## What SchemaRouter should copy from mature frameworks
 
@@ -100,7 +100,7 @@ compiler/runtime boundary for tool schemas.
 
 ### Gate C — production operations
 
-- persistent registry implementation;
+- persistent registry implementations behind the `ToolRegistry` protocol;
 - quotas/cost budgets;
 - per-call human approval;
 - replayable execution traces;
