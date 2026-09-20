@@ -128,22 +128,23 @@ class URLSchemaLoader:
                     }
                 )
 
-                key = self.registry.register(tool, replace=replace)
                 selected_base_url = base_url or suggested_base_url
                 auto_bind_allowed = base_url is not None or same_origin(
                     suggested_base_url,
                     resolved_schema_url,
                 )
+                invoker = None
                 if auto_bind_allowed:
-                    self.executor.bind(
-                        key,
-                        OpenAPIRemoteInvoker(
-                            tool,
-                            selected_base_url,
-                            trusted_headers=trusted_headers,
-                            timeout=timeout,
-                        ),
+                    invoker = OpenAPIRemoteInvoker(
+                        tool,
+                        selected_base_url,
+                        trusted_headers=trusted_headers,
+                        timeout=timeout,
                     )
+
+                key = self.registry.register(tool, replace=replace)
+                if invoker is not None:
+                    self.executor.bind(key, invoker)
                     tool.metadata.update(
                         {
                             "execution_bound": True,
