@@ -3,7 +3,7 @@ import json
 import httpx
 import pytest
 
-from schemarouter import PlanRequest, SchemaRouter
+from schemarouter import PlanRequest, SchemaRouter, SchemaSourceError
 
 
 def base_info() -> dict:
@@ -262,7 +262,7 @@ async def test_optimade_index_metadatabase_is_not_silently_executable() -> None:
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         router = SchemaRouter(http_client=client)
-        with pytest.raises(Exception, match="index meta-databases"):
+        with pytest.raises(SchemaSourceError, match="index meta-databases"):
             await router.add_url(
                 "https://index.example",
                 kind="optimade",
