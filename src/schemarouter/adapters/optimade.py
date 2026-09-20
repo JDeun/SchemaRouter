@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from copy import deepcopy
 from typing import Any
-from urllib.parse import quote, urlparse
+from urllib.parse import quote, urljoin, urlparse
 
 import httpx
 
@@ -55,42 +55,76 @@ async def _bounded_get(
     headers: dict[str, str] | None,
     params: dict[str, Any] | None = None,
     max_bytes: int,
+    max_redirects: int = 5,
 ) -> httpx.Response:
-    async with client.stream(
-        "GET",
-        url,
-        headers=headers,
-        params=params,
-        follow_redirects=False,
-    ) as response:
-        response.raise_for_status()
-        content_length = response.headers.get("content-length")
-        if content_length is not None:
-            try:
-                declared_size = int(content_length)
-            except ValueError:
-                declared_size = None
-            if declared_size is not None and declared_size > max_bytes:
-                raise SchemaSourceError(
-                    f"OPTIMADE response exceeds {max_bytes} byte safety limit"
-                )
+    current = _safe_base_url(url)
+    initial = urlparse(current)
+    query_params = params
 
-        chunks: list[bytes] = []
-        total = 0
-        async for chunk in response.aiter_bytes():
-            total += len(chunk)
-            if total > max_bytes:
-                raise SchemaSourceError(
-                    f"OPTIMADE response exceeds {max_bytes} byte safety limit"
-                )
-            chunks.append(chunk)
+    for _ in range(max_redirects + 1):
+        async with client.stream(
+            "GET",
+            current,
+            headers=headers,
+            params=query_params,
+            follow_redirects=False,
+        ) as response:
+            if response.is_redirect:
+                location = response.headers.get("location")
+                if not location:
+                    raise SchemaSourceError("OPTIMADE redirect is missing Location")
+                target = urljoin(current, location)
+                parsed = urlparse(target)
+                if (
+                    parsed.scheme not in {"http", "https"}
+                    or not parsed.netloc
+                    or parsed.username
+                    or parsed.password
+                ):
+                    raise SchemaSourceError("OPTIMADE redirect target is not a safe http(s) URL")
+                if (
+                    parsed.scheme.casefold() != initial.scheme.casefold()
+                    or parsed.hostname != initial.hostname
+                    or (parsed.port or (443 if parsed.scheme == "https" else 80))
+                    != (initial.port or (443 if initial.scheme == "https" else 80))
+                ):
+                    raise SchemaSourceError(
+                        "cross-origin OPTIMADE redirects are not allowed"
+                    )
+                current = target
+                query_params = None
+                continue
 
-        return httpx.Response(
-            status_code=response.status_code,
-            headers=response.headers,
-            content=b"".join(chunks),
-            request=response.request,
-        )
+            response.raise_for_status()
+            content_length = response.headers.get("content-length")
+            if content_length is not None:
+                try:
+                    declared_size = int(content_length)
+                except ValueError:
+                    declared_size = None
+                if declared_size is not None and declared_size > max_bytes:
+                    raise SchemaSourceError(
+                        f"OPTIMADE response exceeds {max_bytes} byte safety limit"
+                    )
+
+            chunks: list[bytes] = []
+            total = 0
+            async for chunk in response.aiter_bytes():
+                total += len(chunk)
+                if total > max_bytes:
+                    raise SchemaSourceError(
+                        f"OPTIMADE response exceeds {max_bytes} byte safety limit"
+                    )
+                chunks.append(chunk)
+
+            return httpx.Response(
+                status_code=response.status_code,
+                headers=response.headers,
+                content=b"".join(chunks),
+                request=response.request,
+            )
+
+    raise SchemaSourceError("OPTIMADE URL exceeded the redirect limit")
 
 
 def _base_info_attributes(document: Any) -> dict[str, Any] | None:
