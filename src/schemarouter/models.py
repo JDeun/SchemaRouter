@@ -98,6 +98,7 @@ class EvidenceRequirements(StrictModel):
 class QueryIntent(StrictModel):
     concepts: list[str] = Field(default_factory=list)
     preferred_tools: list[str] = Field(default_factory=list)
+    preferred_endpoints: list[str] = Field(default_factory=list)
     arguments: dict[str, Any] = Field(default_factory=dict)
     evidence: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
 
