@@ -270,6 +270,8 @@ async def inspect_documentation_url(
                 output_fields=fields,
                 method=endpoint.method,
                 path=endpoint.path,
+                read_only=endpoint.method in {"GET", "HEAD", "OPTIONS"},
+                destructive=endpoint.method == "DELETE",
                 metadata={
                     "inferred_from_documentation": True,
                     "model_confidence": endpoint.confidence,
