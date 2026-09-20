@@ -8,7 +8,11 @@ from .models import EndpointSpec, ToolSpec
 
 
 class ToolRegistry(Protocol):
-    """Structural contract for pluggable tool registries."""
+    """Structural contract for pluggable tool registries.
+
+    Read methods must return detached snapshots (or immutable equivalents) so callers cannot
+    mutate registry state without going through a versioned write operation.
+    """
 
     @property
     def version(self) -> int: ...
@@ -25,7 +29,7 @@ class ToolRegistry(Protocol):
 
 
 class InMemoryRegistry:
-    """Versioned, collision-safe in-memory tool catalog."""
+    """Versioned, collision-safe in-memory tool catalog with snapshot reads."""
 
     def __init__(self) -> None:
         self._tools: dict[str, ToolSpec] = {}
@@ -35,11 +39,15 @@ class InMemoryRegistry:
     def version(self) -> int:
         return self._version
 
+    @staticmethod
+    def _snapshot(tool: ToolSpec) -> ToolSpec:
+        return tool.model_copy(deep=True)
+
     def register(self, tool: ToolSpec, *, replace: bool = False) -> str:
         key = tool.key
         if key in self._tools and not replace:
             raise RegistrationError(f"tool {key!r} is already registered")
-        self._tools[key] = tool
+        self._tools[key] = self._snapshot(tool)
         self._version += 1
         return key
 
@@ -50,10 +58,10 @@ class InMemoryRegistry:
         self._version += 1
 
     def get(self, key: str) -> ToolSpec:
-        return self._tools[key]
+        return self._snapshot(self._tools[key])
 
     def tools(self) -> tuple[ToolSpec, ...]:
-        return tuple(self._tools.values())
+        return tuple(self._snapshot(tool) for tool in self._tools.values())
 
     def keys(self) -> tuple[str, ...]:
         return tuple(self._tools)
@@ -71,6 +79,6 @@ class InMemoryRegistry:
             if collisions:
                 raise RegistrationError(f"tools already registered: {', '.join(collisions)}")
         for tool in staged:
-            self._tools[tool.key] = tool
+            self._tools[tool.key] = self._snapshot(tool)
         if staged:
             self._version += 1
