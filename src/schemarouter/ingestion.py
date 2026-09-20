@@ -309,7 +309,11 @@ class URLSchemaLoader:
 
             try:
                 result = await adapter.load(context)
-            except SchemaSourceError:
+            except SchemaSourceError as exc:
+                if normalized_kind == "openapi":
+                    raise UnsupportedSchemaSourceError(
+                        f"URL did not yield a supported OpenAPI source: {exc}"
+                    ) from exc
                 raise
             except Exception as exc:  # noqa: BLE001
                 raise SchemaSourceError(
