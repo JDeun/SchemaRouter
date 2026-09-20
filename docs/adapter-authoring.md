@@ -52,8 +52,10 @@ registry: ToolRegistry = MyPersistentRegistry(...)
 router = SchemaRouter(registry=registry)
 ```
 
-The registry must provide a monotonic version and current tool/endpoint lookup semantics. Persistent
-implementations are responsible for concurrency control and atomic replacement.
+The registry must provide a monotonic version and current tool/endpoint lookup semantics. Read
+methods must return detached snapshots or immutable equivalents; callers must not be able to mutate
+stored schemas without a versioned write. Persistent implementations are responsible for
+concurrency control and atomic replacement.
 
 ## Conformance expectations
 
