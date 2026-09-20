@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from ..errors import ModelAnalysisError
 from ..models import EvidenceRequirements, PlanRequest, QueryIntent
-from ..registry import InMemoryRegistry
+from ..registry import ToolRegistry
 
 ModelCallable = Callable[[dict[str, Any]], dict[str, Any] | Awaitable[dict[str, Any]]]
 
@@ -37,7 +37,7 @@ class ModelQueryAnalyzer:
     async def analyze(
         self,
         request: PlanRequest,
-        registry: InMemoryRegistry,
+        registry: ToolRegistry,
     ) -> QueryIntent:
         payload = {
             "task": "Map the user request onto the provided tool schema.",
@@ -66,7 +66,7 @@ class ModelQueryAnalyzer:
         return self._sanitize(parsed, request, registry)
 
     @staticmethod
-    def _catalog(registry: InMemoryRegistry) -> list[dict[str, Any]]:
+    def _catalog(registry: ToolRegistry) -> list[dict[str, Any]]:
         return [
             {
                 "tool_key": tool.key,
@@ -108,7 +108,7 @@ class ModelQueryAnalyzer:
     def _sanitize(
         parsed: ModelIntent,
         request: PlanRequest,
-        registry: InMemoryRegistry,
+        registry: ToolRegistry,
     ) -> QueryIntent:
         tools_by_key = {tool.key: tool for tool in registry.tools()}
         tools_by_name: dict[str, list[str]] = {}
