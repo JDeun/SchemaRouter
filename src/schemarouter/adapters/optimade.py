@@ -165,11 +165,59 @@ def _entry_info_payload(document: Any, entry_type: str) -> dict[str, Any] | None
     return payload
 
 
+_OPTIMADE_TO_JSON_TYPE = {
+    "string": "string",
+    "integer": "integer",
+    "float": "number",
+    "boolean": "boolean",
+    "timestamp": "string",
+    "list": "array",
+    "dictionary": "object",
+    "number": "number",
+    "array": "array",
+    "object": "object",
+    "null": "null",
+}
+
+
+def _normalize_optimade_schema(value: Any) -> Any:
+    if isinstance(value, list):
+        return [_normalize_optimade_schema(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+
+    normalized = {
+        key: _normalize_optimade_schema(item)
+        for key, item in value.items()
+        if key not in {"title", "description"}
+    }
+    raw_type = normalized.get("type")
+    if isinstance(raw_type, str):
+        mapped = _OPTIMADE_TO_JSON_TYPE.get(raw_type)
+        if mapped is None:
+            normalized.pop("type", None)
+        else:
+            normalized["type"] = mapped
+            if raw_type == "timestamp":
+                normalized.setdefault("format", "date-time")
+    elif isinstance(raw_type, list):
+        mapped_types = [
+            _OPTIMADE_TO_JSON_TYPE[item]
+            for item in raw_type
+            if isinstance(item, str) and item in _OPTIMADE_TO_JSON_TYPE
+        ]
+        if mapped_types:
+            normalized["type"] = list(dict.fromkeys(mapped_types))
+            if "timestamp" in raw_type:
+                normalized.setdefault("format", "date-time")
+        else:
+            normalized.pop("type", None)
+
+    return normalized
+
+
 def _property_schema(spec: dict[str, Any]) -> dict[str, Any]:
-    schema = deepcopy(spec)
-    schema.pop("title", None)
-    schema.pop("description", None)
-    return schema
+    return _normalize_optimade_schema(deepcopy(spec))
 
 
 def _field_from_property(name: str, spec: dict[str, Any]) -> FieldSpec:
