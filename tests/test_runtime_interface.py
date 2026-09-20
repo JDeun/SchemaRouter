@@ -5,8 +5,10 @@ import pytest
 from schemarouter import (
     EndpointSpec,
     ExecutionPolicy,
+    ExecutionError,
     FieldSpec,
     ParameterSpec,
+    PlanRequest,
     RetryPolicy,
     RunConfig,
     SchemaRouter,
@@ -48,11 +50,11 @@ def make_router(*, read_only: bool | None = True) -> SchemaRouter:
     return router
 
 
-def request(city: str = "Seoul") -> dict:
-    return {
-        "query": "temperature",
-        "arguments": {"city": city},
-    }
+def request(city: str = "Seoul") -> PlanRequest:
+    return PlanRequest(
+        query="temperature",
+        arguments={"city": city},
+    )
 
 
 def test_invoke_exposes_sync_framework_surface() -> None:
@@ -238,7 +240,7 @@ async def test_non_read_only_is_not_retried_by_default() -> None:
         raise RuntimeError("write failed")
 
     router.executor.bind("weather", failing)
-    with pytest.raises(Exception, match="after 1 attempt"):
+    with pytest.raises(ExecutionError, match="after 1 attempt"):
         await router.ainvoke(
             request(),
             config=RunConfig(
