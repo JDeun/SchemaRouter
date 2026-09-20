@@ -22,6 +22,8 @@ from .registry import ToolRegistry
 
 SourceKind = Literal["auto", "openapi", "mcp"]
 
+_MAX_SCHEMA_BYTES = 5 * 1024 * 1024
+
 
 def _slug(value: str) -> str:
     slug = re.sub(r"[^A-Za-z0-9._-]+", "_", value.strip()).strip("_.-").lower()
@@ -236,6 +238,10 @@ class URLSchemaLoader:
                     headers=headers,
                 )
         response.raise_for_status()
+        if len(response.content) > _MAX_SCHEMA_BYTES:
+            raise SchemaSourceError(
+                f"OpenAPI document exceeds {_MAX_SCHEMA_BYTES} byte safety limit"
+            )
         return _parse_openapi_text(response.text), str(response.url)
 
     @staticmethod
