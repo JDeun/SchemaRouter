@@ -11,6 +11,7 @@ from schemarouter import (
     RegistryExecutor,
     SchemaDriftError,
     SchemaPlanner,
+    SchemaValidationError,
     ToolCall,
     ToolSpec,
 )
@@ -133,3 +134,166 @@ def test_executor_requires_projection_for_typed_outputs() -> None:
 
     with pytest.raises(PlanValidationError, match="explicit output projection"):
         RegistryExecutor(reg).validate_call(plan.calls[0])
+
+
+def test_executor_rejects_argument_type_violation() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="search",
+            endpoints=[
+                EndpointSpec(
+                    name="find",
+                    parameters=[
+                        ParameterSpec(
+                            name="limit",
+                            required=True,
+                            json_schema={
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 100,
+                            },
+                        )
+                    ],
+                    output_fields=[FieldSpec(name="count", json_schema={"type": "integer"})],
+                )
+            ],
+        )
+    )
+    endpoint = reg.endpoint("search", "find")
+    call = ToolCall(
+        tool="search",
+        endpoint="find",
+        arguments={"limit": "10"},
+        fields=["count"],
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    with pytest.raises(SchemaValidationError, match="arguments for search.find"):
+        RegistryExecutor(reg).validate_call(call)
+
+
+def test_executor_rejects_argument_enum_violation() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="weather",
+            endpoints=[
+                EndpointSpec(
+                    name="forecast",
+                    parameters=[
+                        ParameterSpec(
+                            name="units",
+                            required=True,
+                            json_schema={"type": "string", "enum": ["metric", "imperial"]},
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    endpoint = reg.endpoint("weather", "forecast")
+    call = ToolCall(
+        tool="weather",
+        endpoint="forecast",
+        arguments={"units": "kelvin"},
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    with pytest.raises(SchemaValidationError, match="metric"):
+        RegistryExecutor(reg).validate_call(call)
+
+
+@pytest.mark.asyncio
+async def test_executor_rejects_invalid_tool_output_before_projection() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="users",
+            endpoints=[
+                EndpointSpec(
+                    name="get",
+                    parameters=[ParameterSpec(name="user_id", required=True)],
+                    output_fields=[
+                        FieldSpec(name="user_id", json_schema={"type": "string"}),
+                        FieldSpec(name="age", json_schema={"type": "integer"}),
+                    ],
+                    output_schema={
+                        "type": "object",
+                        "properties": {
+                            "user_id": {"type": "string"},
+                            "age": {"type": "integer", "minimum": 0},
+                        },
+                        "required": ["user_id", "age"],
+                    },
+                )
+            ],
+        )
+    )
+    endpoint = reg.endpoint("users", "get")
+    call = ToolCall(
+        tool="users",
+        endpoint="get",
+        arguments={"user_id": "42"},
+        fields=["user_id", "age"],
+        schema_fingerprint=endpoint.fingerprint,
+    )
+    plan = ExecutionPlan(query="user", registry_version=reg.version, calls=[call])
+    executor = RegistryExecutor(reg)
+    executor.bind(
+        "users",
+        lambda endpoint, arguments: {"user_id": "42", "age": "not-an-integer"},
+    )
+
+    with pytest.raises(SchemaValidationError, match="output from users.get"):
+        await executor.execute(plan)
+
+
+@pytest.mark.asyncio
+async def test_executor_validates_output_before_field_projection() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="users",
+            endpoints=[
+                EndpointSpec(
+                    name="get",
+                    parameters=[ParameterSpec(name="user_id", required=True)],
+                    output_fields=[
+                        FieldSpec(name="user_id"),
+                        FieldSpec(name="name"),
+                    ],
+                    output_schema={
+                        "type": "object",
+                        "properties": {
+                            "user_id": {"type": "string"},
+                            "name": {"type": "string"},
+                            "internal_count": {"type": "integer"},
+                        },
+                        "required": ["user_id", "name", "internal_count"],
+                    },
+                )
+            ],
+        )
+    )
+    endpoint = reg.endpoint("users", "get")
+    call = ToolCall(
+        tool="users",
+        endpoint="get",
+        arguments={"user_id": "42"},
+        fields=["name"],
+        schema_fingerprint=endpoint.fingerprint,
+    )
+    plan = ExecutionPlan(query="name", registry_version=reg.version, calls=[call])
+    executor = RegistryExecutor(reg)
+    executor.bind(
+        "users",
+        lambda endpoint, arguments: {
+            "user_id": "42",
+            "name": "Ada",
+            "internal_count": "invalid",
+        },
+    )
+
+    with pytest.raises(SchemaValidationError, match="internal_count"):
+        await executor.execute(plan)
