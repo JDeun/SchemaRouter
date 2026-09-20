@@ -147,15 +147,21 @@ def _entry_info_payload(document: Any, entry_type: str) -> dict[str, Any] | None
     if not isinstance(document, dict):
         return None
     data = document.get("data")
-    if not isinstance(data, dict) or data.get("type") != "info":
+    if not isinstance(data, dict):
         return None
-    if data.get("id") not in {None, entry_type}:
+
+    declared_type = data.get("type")
+    declared_id = data.get("id")
+    if declared_type is not None and declared_type != "info":
+        return None
+    if declared_id is not None and declared_id != entry_type:
         return None
 
     payload = dict(data)
     attributes = data.get("attributes")
     if isinstance(attributes, dict):
         payload.update(attributes)
+    payload["_identity_inferred"] = declared_type is None or declared_id is None
     return payload
 
 
@@ -262,7 +268,10 @@ def _tool_from_discovery(
     skipped: list[str],
 ) -> ToolSpec:
     endpoints: list[EndpointSpec] = []
+    inferred_identity: list[str] = []
     for entry_type, info in entries.items():
+        if bool(info.get("_identity_inferred")):
+            inferred_identity.append(entry_type)
         properties = info.get("properties")
         if not isinstance(properties, dict):
             continue
@@ -373,6 +382,7 @@ def _tool_from_discovery(
             "versioned_base_url": versioned_base_url,
             "is_index": bool(base_info.get("is_index", False)),
             "skipped_entry_types": skipped,
+            "inferred_entry_info_identity": inferred_identity,
         },
     )
 
