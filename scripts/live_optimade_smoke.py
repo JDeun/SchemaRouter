@@ -3,58 +3,14 @@ from __future__ import annotations
 import asyncio
 import os
 
-import httpx
-
 from schemarouter import PlanRequest, SchemaRouter
 
 DEFAULT_URL = "https://www.crystallography.net/cod/optimade"
 
 
-async def _print_entry_info_shape(url: str) -> None:
-    base = url.rstrip("/")
-    if not base.endswith("/v1"):
-        base = base + "/v1"
-    async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
-        for entry_type in ("structures", "references"):
-            response = await client.get(f"{base}/info/{entry_type}")
-            try:
-                document = response.json()
-            except Exception:
-                print(
-                    {
-                        "entry_type": entry_type,
-                        "status": response.status_code,
-                        "content_type": response.headers.get("content-type"),
-                        "body_prefix": response.text[:500],
-                    }
-                )
-                continue
-            data = document.get("data") if isinstance(document, dict) else None
-            print(
-                {
-                    "entry_type": entry_type,
-                    "status": response.status_code,
-                    "data_type": type(data).__name__,
-                    "data_keys": sorted(data) if isinstance(data, dict) else None,
-                    "id": data.get("id") if isinstance(data, dict) else None,
-                    "type": data.get("type") if isinstance(data, dict) else None,
-                    "attribute_keys": (
-                        sorted(data.get("attributes", {}))
-                        if isinstance(data, dict)
-                        and isinstance(data.get("attributes"), dict)
-                        else None
-                    ),
-                }
-            )
-
-
 async def main() -> None:
     url = os.environ.get("SCHEMAROUTER_LIVE_OPTIMADE_URL", DEFAULT_URL)
-    try:
-        router = await SchemaRouter.from_url(url, kind="optimade")
-    except Exception:
-        await _print_entry_info_shape(url)
-        raise
+    router = await SchemaRouter.from_url(url, kind="optimade")
 
     keys = router.registry.keys()
     assert len(keys) == 1
