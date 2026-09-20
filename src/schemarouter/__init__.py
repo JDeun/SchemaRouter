@@ -1,3 +1,4 @@
+from .adapters.python import PythonCallableInvoker, schema_tool, tool_from_callable
 from .analyzers import ModelCallable, ModelIntent, ModelQueryAnalyzer
 from .errors import (
     BindingDriftError,
@@ -60,6 +61,7 @@ __all__ = [
     "ModelQueryAnalyzer",
     "ParameterSpec",
     "ProposalApprovalError",
+    "PythonCallableInvoker",
     "ProposalEndpoint",
     "ProposalField",
     "ProposalParameter",
@@ -82,9 +84,11 @@ __all__ = [
     "SchemaRouterError",
     "SchemaSourceError",
     "SchemaValidationError",
+    "schema_tool",
     "ToolCall",
     "ToolResult",
     "ToolSpec",
+    "tool_from_callable",
     "UnsupportedSchemaSourceError",
     "inspect_documentation_url",
 ]
