@@ -84,22 +84,6 @@ async def test_executor_rejects_schema_drift() -> None:
         await executor.execute(plan)
 
 
-def direct_call(
-    *,
-    arguments: dict,
-    fields: list[str],
-) -> ToolCall:
-    reg = make_registry()
-    endpoint = reg.endpoint("weather", "current")
-    return ToolCall(
-        tool="weather",
-        endpoint="current",
-        arguments=arguments,
-        fields=fields,
-        schema_fingerprint=endpoint.fingerprint,
-    )
-
-
 def test_executor_recomputes_required_arguments() -> None:
     reg = make_registry()
     endpoint = reg.endpoint("weather", "current")
