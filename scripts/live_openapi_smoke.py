@@ -5,7 +5,7 @@ import os
 
 from schemarouter import PlanRequest, SchemaRouter
 
-DEFAULT_OPENAPI_URL = "https://www.cjav.dev/openapi.json"
+DEFAULT_OPENAPI_URL = "https://cjav.dev/openapi.json"
 
 
 async def main() -> None:
