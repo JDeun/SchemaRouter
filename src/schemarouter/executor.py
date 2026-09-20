@@ -14,7 +14,7 @@ from .errors import (
 )
 from .models import ExecutionPlan, ToolCall, ToolResult
 from .policy import ExecutionPolicy
-from .registry import InMemoryRegistry
+from .registry import ToolRegistry
 from .runs import RetryPolicy
 from .validation import (
     effective_input_schema,
@@ -32,7 +32,7 @@ class RegistryExecutor:
 
     def __init__(
         self,
-        registry: InMemoryRegistry,
+        registry: ToolRegistry,
         *,
         policy: ExecutionPolicy | None = None,
     ) -> None:
