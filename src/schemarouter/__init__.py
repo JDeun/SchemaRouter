@@ -5,6 +5,7 @@ from .errors import (
     ModelAnalysisError,
     PlanningError,
     PlanValidationError,
+    PolicyViolationError,
     ProposalApprovalError,
     RegistrationError,
     SchemaDriftError,
@@ -27,6 +28,7 @@ from .models import (
     ToolSpec,
 )
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
+from .policy import ExecutionPolicy
 from .proposals import (
     DocumentationModelCallable,
     ProposalEndpoint,
@@ -46,6 +48,7 @@ __all__ = [
     "EvidenceRequirements",
     "ExecutionError",
     "ExecutionPlan",
+    "ExecutionPolicy",
     "FieldSpec",
     "InMemoryRegistry",
     "KeywordAnalyzer",
@@ -60,6 +63,7 @@ __all__ = [
     "ProposalParameter",
     "PlanRequest",
     "PlanValidationError",
+    "PolicyViolationError",
     "PlanningError",
     "QueryAnalyzer",
     "QueryIntent",
