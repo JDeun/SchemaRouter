@@ -391,3 +391,19 @@ async def test_optimade_native_property_types_are_normalized_to_json_schema() ->
     assert schema["labels"]["type"] == ["array", "null"]
     assert schema["metadata"]["type"] == ["object", "null"]
     assert schema["metadata"]["properties"]["score"]["type"] == "number"
+
+
+def test_optimade_attribute_names_ending_in_id_are_not_forced_identifiers() -> None:
+    from schemarouter.adapters.optimade import _field_from_property
+
+    immutable = _field_from_property(
+        "immutable_id",
+        {"type": ["string", "null"]},
+    )
+    provider_specific = _field_from_property(
+        "_demo_material_id",
+        {"type": ["string", "null"]},
+    )
+
+    assert immutable.identifier is False
+    assert provider_specific.identifier is False
