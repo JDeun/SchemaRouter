@@ -4,6 +4,9 @@ import schemarouter
 def test_public_framework_exports_are_intentional_and_stable() -> None:
     expected = {
         "__version__",
+        "AdapterContext",
+        "AdapterLoadResult",
+        "AdapterRegistry",
         "BindingDriftError",
         "ConfiguredSchemaRouter",
         "EndpointSpec",
@@ -37,6 +40,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "SchemaRouterError",
         "SchemaSourceError",
         "SchemaValidationError",
+        "SourceAdapter",
+        "OPTIMADESourceAdapter",
         "ToolCall",
         "ToolRegistry",
         "ToolResult",
