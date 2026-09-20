@@ -96,9 +96,11 @@ nav:
       - Planning and field projection: concepts/planning.md
       - Registry and schema identity: concepts/registry.md
       - Execution and trust boundaries: concepts/execution.md
+      - Adapter ecosystem: concepts/adapters.md
   - Guides:
       - Python tools: guides/python-tools.md
       - OpenAPI: guides/openapi.md
+      - OPTIMADE: guides/optimade.md
       - MCP: guides/mcp.md
       - Human-readable documentation: guides/html-documentation.md
       - Model-assisted analysis: guides/model-analyzer.md
