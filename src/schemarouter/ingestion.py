@@ -116,10 +116,18 @@ class URLSchemaLoader:
                     str((document.get("info") or {}).get("title") or _name_from_url(url))
                 )
                 tool = tool_from_openapi(inferred_name, document, namespace=namespace)
-                suggested_base_url = resolve_openapi_base_url(
-                    document,
-                    resolved_schema_url,
-                )
+                try:
+                    suggested_base_url = resolve_openapi_base_url(
+                        document,
+                        resolved_schema_url,
+                    )
+                except ValueError as exc:
+                    if base_url is None:
+                        raise SchemaSourceError(
+                            "OpenAPI document declared an unsafe or unsupported server URL"
+                        ) from exc
+                    suggested_base_url = None
+
                 tool.metadata.update(
                     {
                         "source_url": url,
@@ -129,18 +137,25 @@ class URLSchemaLoader:
                 )
 
                 selected_base_url = base_url or suggested_base_url
-                auto_bind_allowed = base_url is not None or same_origin(
-                    suggested_base_url,
-                    resolved_schema_url,
+                auto_bind_allowed = base_url is not None or (
+                    suggested_base_url is not None
+                    and same_origin(suggested_base_url, resolved_schema_url)
                 )
                 invoker = None
                 if auto_bind_allowed:
-                    invoker = OpenAPIRemoteInvoker(
-                        tool,
-                        selected_base_url,
-                        trusted_headers=trusted_headers,
-                        timeout=timeout,
-                    )
+                    if selected_base_url is None:
+                        raise SchemaSourceError("no approved OpenAPI base URL is available")
+                    try:
+                        invoker = OpenAPIRemoteInvoker(
+                            tool,
+                            selected_base_url,
+                            trusted_headers=trusted_headers,
+                            timeout=timeout,
+                        )
+                    except ValueError as exc:
+                        raise SchemaSourceError(
+                            "OpenAPI execution base URL or trusted headers are invalid"
+                        ) from exc
 
                 key = self.registry.register(tool, replace=replace)
                 if invoker is not None:
