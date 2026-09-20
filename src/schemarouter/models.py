@@ -43,7 +43,7 @@ class EndpointSpec(StrictModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def validate_unique_names(self) -> "EndpointSpec":
+    def validate_unique_names(self) -> EndpointSpec:
         pnames = [p.name for p in self.parameters]
         fnames = [f.name for f in self.output_fields]
         if len(pnames) != len(set(pnames)):
@@ -69,7 +69,7 @@ class ToolSpec(StrictModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def validate_endpoints(self) -> "ToolSpec":
+    def validate_endpoints(self) -> ToolSpec:
         names = [e.name for e in self.endpoints]
         if not names:
             raise ValueError("tool must define at least one endpoint")
