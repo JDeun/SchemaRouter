@@ -24,7 +24,6 @@ from .models import (
     ToolSpec,
 )
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
-from .registry import InMemoryRegistry
 from .proposals import (
     DocumentationModelCallable,
     ProposalEndpoint,
@@ -34,6 +33,7 @@ from .proposals import (
     SchemaProposalDraft,
     inspect_documentation_url,
 )
+from .registry import InMemoryRegistry
 from .runtime import SchemaRouter
 
 __all__ = [
