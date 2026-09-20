@@ -138,7 +138,8 @@ class RegistryExecutor:
         for attempt in range(1, max_attempts + 1):
             try:
                 invoke_call = getattr(invoker, "invoke_call", None)
-                if callable(invoke_call):
+                call_aware = callable(invoke_call)
+                if call_aware:
                     value = invoke_call(call)
                 else:
                     value = invoker(call.endpoint, dict(call.arguments))
@@ -150,7 +151,10 @@ class RegistryExecutor:
                     effective_output_schema(endpoint),
                     context=f"output from {call.tool}.{call.endpoint}",
                 )
-                projected = self._project(value, call.fields)
+                adapter_projected = call_aware and bool(
+                    getattr(invoker, "projects_fields", False)
+                )
+                projected = value if adapter_projected else self._project(value, call.fields)
                 return ToolResult(
                     tool=call.tool,
                     endpoint=call.endpoint,
