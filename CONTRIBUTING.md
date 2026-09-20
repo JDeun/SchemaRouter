@@ -49,6 +49,16 @@ lazy imports. The core package must remain importable without integration extras
 An integration should expose SchemaRouter contracts to another ecosystem; it should not duplicate
 SchemaRouter planning, policy, schema validation, or transport authorization.
 
+## Brand changes
+
+Production brand assets live under `docs/assets/brand/`. Treat the SVG files as the source of truth.
+
+Brand changes should preserve the brace + routing-hub concept, graphite/teal palette, light/dark
+contrast, and compact-mark legibility. Do not replace production SVGs with raster-only generated
+artwork.
+
+See the [brand guide](docs/project/brand.md).
+
 ## Pull requests
 
 A change is not complete until:
