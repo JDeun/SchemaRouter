@@ -1,6 +1,15 @@
 import pytest
 
-from schemarouter import EndpointSpec, ParameterSpec, ToolSpec
+from schemarouter import (
+    EndpointSpec,
+    ExecutionPlan,
+    InMemoryRegistry,
+    ParameterSpec,
+    RegistryExecutor,
+    SchemaValidationError,
+    ToolCall,
+    ToolSpec,
+)
 from schemarouter.adapters import OpenAPIRemoteInvoker, tool_from_mcp, tool_from_openapi
 
 
@@ -192,3 +201,81 @@ async def test_invoker_rejects_manual_origin_escape_before_network() -> None:
 
     with pytest.raises(RuntimeError, match="unsafe endpoint path"):
         await invoker("escape", {})
+
+
+@pytest.mark.asyncio
+async def test_openapi_nested_local_refs_remain_runtime_resolvable() -> None:
+    document = {
+        "openapi": "3.0.4",
+        "info": {"title": "Pets"},
+        "paths": {
+            "/pets": {
+                "get": {
+                    "operationId": "list_pets",
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "array",
+                                        "items": {"$ref": "#/components/schemas/Pet"},
+                                    }
+                                }
+                            }
+                        }
+                    },
+                }
+            }
+        },
+        "components": {
+            "schemas": {
+                "Pet": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "integer"},
+                        "category": {"$ref": "#/components/schemas/Category"},
+                    },
+                    "required": ["id", "category"],
+                },
+                "Category": {
+                    "type": "object",
+                    "properties": {"name": {"type": "string"}},
+                    "required": ["name"],
+                },
+            }
+        },
+    }
+
+    tool = tool_from_openapi("pets", document)
+    endpoint = tool.endpoints[0]
+    assert endpoint.output_schema["items"]["$ref"] == "#/components/schemas/Pet"
+    assert "components" in endpoint.output_schema
+
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool="pets",
+        endpoint="list_pets",
+        fields=[],
+        schema_fingerprint=endpoint.fingerprint,
+    )
+    plan = ExecutionPlan(query="pets", registry_version=registry.version, calls=[call])
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "pets",
+        lambda endpoint_name, arguments: [
+            {"id": 1, "category": {"name": "Dogs"}}
+        ],
+    )
+
+    result = await executor.execute(plan)
+    assert result[0].data[0]["category"]["name"] == "Dogs"
+
+    executor.bind(
+        "pets",
+        lambda endpoint_name, arguments: [
+            {"id": 1, "category": {"name": 123}}
+        ],
+    )
+    with pytest.raises(SchemaValidationError, match="not of type 'string'"):
+        await executor.execute(plan)
