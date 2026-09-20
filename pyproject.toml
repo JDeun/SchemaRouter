@@ -40,6 +40,7 @@ packages = ["src/schemarouter"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 asyncio_mode = "auto"
+filterwarnings = ["error"]
 
 [tool.ruff]
 target-version = "py310"
