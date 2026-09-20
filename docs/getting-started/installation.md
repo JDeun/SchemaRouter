@@ -47,12 +47,12 @@ Install only the integrations you use.
 python -c "import schemarouter; print(schemarouter.__version__)"
 ```
 
-The current development version is `0.1.0a1`.
+The current pre-release version is `0.2.0a1`.
 
 ## Package release
 
 The package metadata, wheel build, source distribution, and clean-wheel installation are verified in
-CI. Once the first package release is published, the standard installation path will be:
+CI. After `0.2.0a1` is published to the package index, the standard installation path will be:
 
 ```bash
 pip install schemarouter
