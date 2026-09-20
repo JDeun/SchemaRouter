@@ -1,0 +1,111 @@
+site_name: SchemaRouter
+site_description: Schema-aware planning and execution for LLM tool ecosystems
+site_url: https://jdeun.github.io/SchemaRouter/
+repo_url: https://github.com/JDeun/SchemaRouter
+repo_name: JDeun/SchemaRouter
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            heading_level: 2
+            members_order: source
+            merge_init_into_class: true
+            show_root_heading: true
+            show_source: false
+            show_signature_annotations: true
+            separate_signature: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: .
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
+      - Choose an ingestion path: getting-started/ingestion-paths.md
+  - Concepts:
+      - What SchemaRouter is: concepts/schema-router.md
+      - Tool and endpoint contracts: concepts/tool-endpoint.md
+      - Planning and field projection: concepts/planning.md
+      - Registry and schema identity: concepts/registry.md
+      - Execution and trust boundaries: concepts/execution.md
+  - Guides:
+      - Python tools: guides/python-tools.md
+      - OpenAPI: guides/openapi.md
+      - MCP: guides/mcp.md
+      - Human-readable documentation: guides/html-documentation.md
+      - Model-assisted analysis: guides/model-analyzer.md
+      - Batch, streaming, and events: guides/runtime.md
+      - Retry policy: guides/retry.md
+      - Execution policy: guides/execution-policy.md
+  - Integrations:
+      - LangChain: integrations/langchain.md
+  - Recipes:
+      - OpenAPI agent boundary: recipes/openapi-agent.md
+      - MCP agent boundary: recipes/mcp-agent.md
+      - Many-tool catalogs: recipes/many-tools.md
+  - API reference:
+      - Public API: reference/api.md
+      - Runtime: reference/runtime.md
+      - Models: reference/models.md
+      - Registry and planner: reference/planning.md
+  - Architecture:
+      - Architecture: architecture.md
+      - Framework maturity: framework-maturity.md
+      - Compatibility testing: compatibility.md
+      - Adapter authoring: adapter-authoring.md
+  - Security:
+      - Threat model: security/threat-model.md
+  - Project:
+      - Versioning: versioning.md
+      - Release checklist: release-checklist.md
+      - Contributing: contributing.md
+      - Changelog: changelog.md
+      - License: license.md
