@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "schemarouter"
-version = "0.1.0a1"
+version = "0.2.0a1"
 description = "Schema-aware planning and execution layer for LLM tool ecosystems"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Yong-eun Cho" }]
 license = "MIT"
-keywords = ["llm", "agents", "mcp", "openapi", "tool-routing", "schema"]
+keywords = ["llm", "agents", "mcp", "openapi", "optimade", "tool-routing", "schema"]
 dependencies = [
   "httpx>=0.27,<1",
   "jsonschema>=4.23,<5",
