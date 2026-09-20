@@ -279,3 +279,70 @@ async def test_openapi_nested_local_refs_remain_runtime_resolvable() -> None:
     )
     with pytest.raises(SchemaValidationError, match="not of type 'string'"):
         await executor.execute(plan)
+
+
+def test_openapi_parameter_name_collisions_are_disambiguated() -> None:
+    document = {
+        "openapi": "3.0.4",
+        "info": {"title": "Collision API"},
+        "paths": {
+            "/items/{id}": {
+                "post": {
+                    "operationId": "update_item",
+                    "parameters": [
+                        {
+                            "name": "id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "id",
+                            "in": "query",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "id",
+                            "in": "header",
+                            "required": False,
+                            "schema": {"type": "string"},
+                        },
+                    ],
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "id": {"type": "string"},
+                                    },
+                                }
+                            }
+                        }
+                    },
+                    "responses": {"204": {"description": "updated"}},
+                }
+            }
+        },
+    }
+
+    endpoint = tool_from_openapi("collision", document).endpoints[0]
+    assert [parameter.name for parameter in endpoint.parameters] == [
+        "path__id",
+        "query__id",
+        "header__id",
+        "body__id",
+    ]
+    assert [parameter.wire_name for parameter in endpoint.parameters] == [
+        "id",
+        "id",
+        "id",
+        "id",
+    ]
+    assert set(endpoint.input_schema["properties"]) == {
+        "path__id",
+        "query__id",
+        "header__id",
+        "body__id",
+    }
