@@ -1,7 +1,47 @@
 # Adapter authoring
 
-Adapters connect an external capability source to SchemaRouter without changing the core planner or
-trust model.
+Adapters connect structured capability sources to SchemaRouter without changing the core planner,
+registry, policy, or executor.
+
+## SourceAdapter contract
+
+A source adapter has a stable `kind`, a discovery `priority`, and one async load method:
+
+```python
+from schemarouter import (
+    AdapterContext,
+    AdapterLoadResult,
+    SourceAdapter,
+)
+
+
+class MyAdapter:
+    kind = "my_protocol"
+    priority = 50
+
+    async def load(
+        self,
+        context: AdapterContext,
+    ) -> AdapterLoadResult | None:
+        ...
+```
+
+Return `None` when the source is not recognized during auto discovery. Return
+`AdapterLoadResult(tool=..., invoker=...)` when the source is supported.
+
+## Registering adapters
+
+```python
+router = SchemaRouter()
+router.register_adapter(MyAdapter())
+
+tool = await router.add_url(
+    "https://example.com/capability",
+    kind="my_protocol",
+)
+```
+
+Applications can also construct an `AdapterRegistry` and inject it into `SchemaRouter`.
 
 ## Adapter responsibilities
 
@@ -14,11 +54,21 @@ A schema adapter should return:
 - input/output JSON Schema where the source provides it;
 - descriptive metadata marked as untrusted when it originates remotely.
 
-A transport adapter should provide an invoker compatible with:
+A normal transport adapter can provide an invoker compatible with:
 
 ```python
 invoker(endpoint_name: str, arguments: dict[str, Any]) -> Any | Awaitable[Any]
 ```
+
+Protocols whose transport needs the planner-selected fields may instead implement:
+
+```python
+invoke_call(call: ToolCall) -> Any | Awaitable[Any]
+```
+
+The OPTIMADE adapter uses this call-aware path to translate `ToolCall.fields` into
+`response_fields`. Future GraphQL/OData adapters can use the same mechanism for selection sets or
+`$select` without putting protocol logic into the core executor.
 
 The invoker is bound through `RegistryExecutor.bind()`, so tool fingerprint drift remains
 enforceable.
@@ -33,6 +83,9 @@ Adapters must not:
 - coerce invalid model values into schema-valid values behind the executor;
 - skip SchemaRouter input/output validation;
 - call a remote service directly from planning.
+
+Remote adapters should set `tool.metadata["remote"] = True` so unclassified side effects remain
+policy-gated.
 
 ## Schema fidelity
 
@@ -61,6 +114,7 @@ concurrency control and atomic replacement.
 
 New adapters should test:
 
+- explicit-kind and auto-discovery behavior;
 - registration collisions and namespaces;
 - schema fingerprint changes;
 - required and undeclared parameters;
@@ -69,4 +123,5 @@ New adapters should test:
 - stale invoker bindings;
 - credential separation;
 - mutation/destructive policy;
+- selected-field propagation when the protocol supports server-side projection;
 - transport-specific origin/redirect behavior where relevant.

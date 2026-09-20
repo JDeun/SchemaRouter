@@ -9,6 +9,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- pluggable structured-source `AdapterRegistry` with explicit and priority-based auto discovery;
+- OPTIMADE v1 discovery through base and entry-type info endpoints;
+- OPTIMADE field-aware execution that maps planned fields to `response_fields`;
+- call-aware invoker support for protocol adapters that need the full `ToolCall`;
 - typed tool, endpoint, parameter, response-field, plan, and result contracts;
 - namespaced versioned registry;
 - schema-aware planning with recall-preserving field projection;

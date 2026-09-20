@@ -17,7 +17,9 @@ This document tracks framework-level maturity rather than research metrics.
 | Input / output / config schema introspection | Implemented | Keep machine-readable |
 | Retry policy | Implemented | Add provider-specific transient error classifiers |
 | Python callable tools | Implemented | Improve docstring parameter descriptions |
+| Structured-source adapter registry | Implemented in v0.2 | Add third-party plugin packaging conventions |
 | OpenAPI ingestion | Implemented common subset | Add external refs / composition |
+| OPTIMADE ingestion and execution | Implemented in v0.2 | Add provider federation / index meta-database traversal |
 | MCP ingestion and execution | Implemented | Add authenticated custom transports |
 | Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
 | Runtime policy | Implemented | Add per-call approval / budgets / quotas |
@@ -57,7 +59,8 @@ They are intended for serving layers, UI generation, testing, and framework inte
 ### 3. Tool authoring must be cheap
 
 Python callables can be registered directly through `add_callable()` and optionally annotated with
-`@schema_tool`. OpenAPI and MCP remain automatic ingestion paths.
+`@schema_tool`. OpenAPI, OPTIMADE, and MCP are built-in structured ingestion paths, while
+`AdapterRegistry` keeps additional protocols out of the core planner.
 
 ### 4. Integrations should be optional
 

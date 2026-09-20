@@ -39,7 +39,11 @@ class ExecutionPolicy:
                 )
             return
 
-        is_remote = tool.metadata.get("adapter") in {"mcp", "openapi", "html_proposal"}
+        is_remote = bool(tool.metadata.get("remote")) or tool.metadata.get("adapter") in {
+            "mcp",
+            "openapi",
+            "html_proposal",
+        }
         if endpoint.read_only is None and is_remote and not self.allow_unclassified_remote:
             raise PolicyViolationError(
                 f"remote operation {operation} has unclassified side effects; "

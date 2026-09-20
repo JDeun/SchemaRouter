@@ -4,7 +4,7 @@
 
 SchemaRouter is a **schema-aware planning and execution layer** for LLM tool ecosystems. It is not a general-purpose agent framework, model router, or MCP replacement.
 
-The v0.1 core is designed around one principle:
+The core is designed around one principle:
 
 > model output and remote schemas may describe capabilities, but only trusted local code grants execution authority.
 
@@ -36,8 +36,8 @@ schemarouter.validation    JSON Schema runtime validation
 schemarouter.policy        trusted local side-effect authority
 schemarouter.runs          run configuration, retry policy, typed lifecycle events
 schemarouter.executor      plan, binding, schema and policy enforcement
-schemarouter.adapters      MCP/OpenAPI/Python schema + transport adapters
-schemarouter.ingestion     URL detection, safe schema fetch, registry binding
+schemarouter.adapters      adapter contracts + OpenAPI/MCP/OPTIMADE/Python implementations
+schemarouter.ingestion     AdapterRegistry dispatch, safe source loading, registry binding
 schemarouter.proposals     evidence-grounded HTML documentation proposals
 schemarouter.integrations  optional ecosystem bridges such as LangChain
 schemarouter.runtime       high-level invoke/batch/stream facade
@@ -133,7 +133,15 @@ before model analysis.
 `approve_proposal()` is a separate authority transition with grounding thresholds, explicit API
 base URL, and mutation opt-in. Runtime execution policy remains an independent second gate.
 
-## v0.1 invariants
+### 12. Protocol diversity must not leak into the planner
+
+v0.2 introduces `AdapterRegistry`. OpenAPI, OPTIMADE, MCP, and future structured protocols compile
+into the same `ToolSpec` / `EndpointSpec` model. The planner does not branch on protocol type.
+
+Call-aware invokers may receive the validated `ToolCall` when a protocol needs selected fields at
+transport time. The executor still owns schema, policy, retry, and binding-drift enforcement.
+
+## Core invariants
 
 1. A plan cannot call an unregistered tool or endpoint.
 2. A plan cannot pass undeclared parameters.

@@ -27,6 +27,10 @@ class EndpointInvoker(Protocol):
     def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any | Awaitable[Any]: ...
 
 
+class CallAwareEndpointInvoker(Protocol):
+    def invoke_call(self, call: ToolCall) -> Any | Awaitable[Any]: ...
+
+
 class RegistryExecutor:
     """Executes validated plans using caller-supplied trusted invokers."""
 
@@ -133,7 +137,12 @@ class RegistryExecutor:
         last_error: Exception | None = None
         for attempt in range(1, max_attempts + 1):
             try:
-                value = invoker(call.endpoint, dict(call.arguments))
+                invoke_call = getattr(invoker, "invoke_call", None)
+                call_aware = callable(invoke_call)
+                if call_aware:
+                    value = invoke_call(call)
+                else:
+                    value = invoker(call.endpoint, dict(call.arguments))
                 if inspect.isawaitable(value):
                     value = await value
 
@@ -142,7 +151,10 @@ class RegistryExecutor:
                     effective_output_schema(endpoint),
                     context=f"output from {call.tool}.{call.endpoint}",
                 )
-                projected = self._project(value, call.fields)
+                adapter_projected = call_aware and bool(
+                    getattr(invoker, "projects_fields", False)
+                )
+                projected = value if adapter_projected else self._project(value, call.fields)
                 return ToolResult(
                     tool=call.tool,
                     endpoint=call.endpoint,

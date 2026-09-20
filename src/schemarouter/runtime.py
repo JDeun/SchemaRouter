@@ -9,6 +9,7 @@ from uuid import uuid4
 import httpx
 from pydantic import TypeAdapter
 
+from .adapters.base import AdapterRegistry, SourceAdapter
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
 from .errors import ProposalApprovalError, RegistrationError
@@ -77,6 +78,7 @@ class SchemaRouter:
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
         registry: ToolRegistry | None = None,
+        adapter_registry: AdapterRegistry | None = None,
     ) -> None:
         self.registry = registry if registry is not None else InMemoryRegistry()
         self.planner = SchemaPlanner(self.registry, analyzer=analyzer)
@@ -85,6 +87,7 @@ class SchemaRouter:
             self.registry,
             self.executor,
             http_client=http_client,
+            adapters=adapter_registry,
         )
 
     @property
@@ -117,6 +120,7 @@ class SchemaRouter:
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
         registry: ToolRegistry | None = None,
+        adapter_registry: AdapterRegistry | None = None,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
@@ -126,6 +130,7 @@ class SchemaRouter:
             http_client=http_client,
             policy=policy,
             registry=registry,
+            adapter_registry=adapter_registry,
         )
         await router.add_url(
             url,
@@ -140,6 +145,18 @@ class SchemaRouter:
 
     def add_tool(self, tool: ToolSpec, *, replace: bool = False) -> str:
         return self.registry.register(tool, replace=replace)
+
+    def register_adapter(
+        self,
+        adapter: SourceAdapter,
+        *,
+        replace: bool = False,
+    ) -> None:
+        self.loader.register_adapter(adapter, replace=replace)
+
+    @property
+    def adapter_registry(self) -> AdapterRegistry:
+        return self.loader.adapters
 
     def add_callable(
         self,
