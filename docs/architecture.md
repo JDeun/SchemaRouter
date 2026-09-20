@@ -34,11 +34,13 @@ schemarouter.planner       deterministic candidate scoring + recall-first projec
 schemarouter.analyzers     optional model-assisted intent extraction
 schemarouter.validation    JSON Schema runtime validation
 schemarouter.policy        trusted local side-effect authority
+schemarouter.runs          run configuration, retry policy, typed lifecycle events
 schemarouter.executor      plan, binding, schema and policy enforcement
-schemarouter.adapters      MCP/OpenAPI schema + transport adapters
+schemarouter.adapters      MCP/OpenAPI/Python schema + transport adapters
 schemarouter.ingestion     URL detection, safe schema fetch, registry binding
 schemarouter.proposals     evidence-grounded HTML documentation proposals
-schemarouter.runtime       high-level SchemaRouter facade
+schemarouter.integrations  optional ecosystem bridges such as LangChain
+schemarouter.runtime       high-level invoke/batch/stream facade
 ```
 
 ## Adversarial findings and responses
@@ -148,6 +150,9 @@ base URL, and mutation opt-in. Runtime execution policy remains an independent s
 13. Cross-origin OpenAPI server declarations require explicit local binding.
 14. Runtime API secrets are not model-visible tool parameters.
 15. Ambiguous output selection favors recall over aggressive pruning.
+16. Automatic retries apply only to endpoints trusted as read-only unless local code opts in.
+17. Run-event arguments and result payloads are redacted unless payload tracing is explicitly enabled.
+18. Optional framework integrations call back through the same executor boundary rather than bypassing policy or validation.
 
 ## Intentionally deferred after v0.1 core
 
@@ -156,10 +161,10 @@ base URL, and mutation opt-in. Runtime execution policy remains an independent s
 - OpenAPI external refs and richer `oneOf` / `allOf` / recursive-schema handling;
 - non-object request-body ergonomics and richer nested field projection;
 - per-call human approval, quotas, cost budgets, license/provenance policy extensions;
-- retries, compensation, transactions, and distributed execution;
+- compensation, transactions, and distributed execution;
 - persistent/distributed registries;
 - multi-page and client-rendered documentation crawling;
-- observability, replay, benchmark tooling;
-- LangChain/LangGraph integration adapters.
+- callback exporters, OpenTelemetry integration, replay, and benchmark tooling;
+- LangGraph-native integration adapters.
 
 These are extension layers. They should not weaken the core fail-closed contracts above.
