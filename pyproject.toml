@@ -25,6 +25,8 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Typing :: Typed",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 [project.optional-dependencies]
@@ -53,6 +55,7 @@ Repository = "https://github.com/JDeun/SchemaRouter"
 Documentation = "https://jdeun.github.io/SchemaRouter/"
 Issues = "https://github.com/JDeun/SchemaRouter/issues"
 Research = "https://github.com/JDeun/paper_SchemaRouter"
+Brand = "https://jdeun.github.io/SchemaRouter/project/brand/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/schemarouter"]
