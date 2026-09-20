@@ -6,6 +6,10 @@ class RegistrationError(SchemaRouterError):
     """Raised when a tool cannot be registered safely."""
 
 
+class ProposalApprovalError(RegistrationError):
+    """Raised when an inferred schema proposal is not safe to approve."""
+
+
 class PlanningError(SchemaRouterError):
     """Raised when a plan cannot be produced."""
 
