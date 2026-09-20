@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/schemarouter-lockup-dark.svg">
+    <img alt="SchemaRouter" src="docs/assets/brand/schemarouter-lockup-light.svg" width="760">
+  </picture>
+</p>
+
 # SchemaRouter
 
 **Schema-aware planning and execution for LLM tool ecosystems.**
