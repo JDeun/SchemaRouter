@@ -79,3 +79,16 @@ and rejects an async analyzer with an explicit error instead of creating an impl
 
 Remote descriptions are included only as untrusted data. They cannot expand permissions, register
 new executable schemas, or bypass executor validation.
+
+
+## Unstructured documentation trust boundary
+
+Human-readable documentation is never auto-promoted to an executable contract.
+
+`inspect_url()` produces a `SchemaProposal`. Each proposed endpoint, parameter, and field must
+carry an exact quote that can be found in the fetched document after normalization. Items without
+grounded evidence are dropped. Script/style content is excluded before the model sees the page.
+
+`approve_proposal()` is the explicit authority transition. It requires a caller-supplied API base
+URL, a minimum grounding score, and a separate opt-in for mutating HTTP methods. Credentials are
+kept outside both the proposal and URL. Only after these checks is a runtime invoker bound.
