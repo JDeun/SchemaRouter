@@ -214,3 +214,63 @@ async def test_html_is_not_silently_inferred_as_openapi() -> None:
                 "https://docs.example.com/api",
                 kind="openapi",
             )
+
+
+@pytest.mark.asyncio
+async def test_schema_redirects_must_stay_on_original_origin() -> None:
+    seen: list[httpx.URL] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url)
+        if request.url == httpx.URL("https://docs.example.com/openapi.json"):
+            return httpx.Response(
+                302,
+                headers={"location": "https://evil.example.com/openapi.json"},
+            )
+        raise AssertionError("cross-origin redirect target must never be requested")
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        follow_redirects=True,
+    ) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(UnsupportedSchemaSourceError, match="cross-origin"):
+            await router.add_url(
+                "https://docs.example.com/openapi.json",
+                kind="openapi",
+                schema_headers={"X-Doc-Token": "schema-secret"},
+            )
+
+    assert seen == [httpx.URL("https://docs.example.com/openapi.json")]
+
+
+@pytest.mark.asyncio
+async def test_same_origin_schema_redirect_preserves_schema_headers() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["x-doc-token"] == "schema-secret"
+        if request.url == httpx.URL("https://docs.example.com/openapi.json"):
+            return httpx.Response(302, headers={"location": "/spec/openapi.json"})
+        assert request.url == httpx.URL("https://docs.example.com/spec/openapi.json")
+        document = openapi_document()
+        document["servers"] = [{"url": "https://docs.example.com/api/"}]
+        return httpx.Response(
+            200,
+            content=json.dumps(document),
+            headers={"content-type": "application/json"},
+        )
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        follow_redirects=True,
+    ) as client:
+        router = await SchemaRouter.from_url(
+            "https://docs.example.com/openapi.json",
+            schema_headers={"X-Doc-Token": "schema-secret"},
+            http_client=client,
+        )
+
+    tool = router.registry.get("users_api")
+    assert tool.metadata["resolved_schema_url"] == (
+        "https://docs.example.com/spec/openapi.json"
+    )
+    assert tool.metadata["execution_bound"] is True
