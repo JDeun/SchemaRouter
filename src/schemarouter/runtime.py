@@ -10,6 +10,7 @@ from .executor import RegistryExecutor
 from .ingestion import SourceKind, URLSchemaLoader
 from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
 from .planner import QueryAnalyzer, SchemaPlanner
+from .policy import ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
 from .registry import InMemoryRegistry
 
@@ -22,10 +23,11 @@ class SchemaRouter:
         *,
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
+        policy: ExecutionPolicy | None = None,
     ) -> None:
         self.registry = InMemoryRegistry()
         self.planner = SchemaPlanner(self.registry, analyzer=analyzer)
-        self.executor = RegistryExecutor(self.registry)
+        self.executor = RegistryExecutor(self.registry, policy=policy)
         self.loader = URLSchemaLoader(
             self.registry,
             self.executor,
@@ -42,11 +44,12 @@ class SchemaRouter:
         namespace: str | None = None,
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
+        policy: ExecutionPolicy | None = None,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
     ) -> SchemaRouter:
-        router = cls(analyzer=analyzer, http_client=http_client)
+        router = cls(analyzer=analyzer, http_client=http_client, policy=policy)
         await router.add_url(
             url,
             kind=kind,
