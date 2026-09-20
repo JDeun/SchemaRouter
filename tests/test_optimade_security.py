@@ -149,3 +149,70 @@ async def test_optimade_runtime_headers_are_not_model_parameters() -> None:
     assert discovery_done
     assert runtime_headers
     assert runtime_headers[0]["authorization"] == "Bearer runtime-secret"
+
+
+@pytest.mark.asyncio
+async def test_optimade_same_origin_redirects_are_followed() -> None:
+    seen: list[httpx.URL] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url)
+        if request.url == httpx.URL("https://materials.example/v1/info"):
+            return httpx.Response(
+                302,
+                headers={"location": "/v1/info/"},
+            )
+        if request.url == httpx.URL("https://materials.example/v1/info/"):
+            return httpx.Response(200, json=_base_info(["structures"]))
+        if request.url == httpx.URL("https://materials.example/v1/info/structures"):
+            return httpx.Response(
+                302,
+                headers={"location": "/v1/info/structures/"},
+            )
+        if request.url == httpx.URL("https://materials.example/v1/info/structures/"):
+            return httpx.Response(
+                200,
+                json={
+                    "data": {
+                        "type": "info",
+                        "id": "structures",
+                        "description": "structures",
+                        "formats": ["json"],
+                        "properties": {
+                            "nelements": {"type": ["integer", "null"]}
+                        },
+                        "output_fields_by_format": {"json": ["nelements"]},
+                    }
+                },
+            )
+        raise AssertionError(f"unexpected request: {request.url}")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://materials.example",
+            kind="optimade",
+            http_client=client,
+        )
+
+    assert router.registry.endpoint("materials.example", "search_structures")
+    assert httpx.URL("https://materials.example/v1/info/") in seen
+    assert httpx.URL("https://materials.example/v1/info/structures/") in seen
+
+
+@pytest.mark.asyncio
+async def test_optimade_cross_origin_redirect_is_rejected() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url == httpx.URL("https://materials.example/v1/info"):
+            return httpx.Response(
+                302,
+                headers={"location": "https://evil.example/v1/info"},
+            )
+        raise AssertionError("cross-origin redirect target must never be requested")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(SchemaSourceError, match="cross-origin"):
+            await router.add_url(
+                "https://materials.example/v1",
+                kind="optimade",
+            )
