@@ -4,7 +4,7 @@
 
 SchemaRouter compiles a natural-language request plus a registered tool catalog into a small, typed, auditable execution plan. It is designed for environments where an agent may have many OpenAPI or MCP capabilities and should not expose or fetch everything by default.
 
-> Status: **v0.1 pre-alpha**. URL-driven OpenAPI ingestion and live MCP discovery are now part of the core development branch. Model-assisted query understanding and production observability are still intentionally deferred.
+> Status: **v0.1 pre-alpha**. URL-driven OpenAPI ingestion, live MCP discovery, and provider-neutral model-assisted query analysis are implemented on the core development branch. Production observability is still deferred.
 
 ## URL-first usage
 
@@ -59,6 +59,53 @@ MCP URL
    -> Registry
    -> MCP executor
 ```
+
+## Model-assisted natural-language planning
+
+The default `KeywordAnalyzer` is deterministic and offline. For natural-language parameter and
+field extraction, inject a provider-neutral callable:
+
+```python
+from schemarouter import ModelQueryAnalyzer, SchemaRouter
+
+async def my_model(payload: dict) -> dict:
+    # Bridge this payload to any structured-output LLM provider.
+    # Return JSON matching payload["response_schema"].
+    return {
+        "preferred_tools": ["users_api"],
+        "preferred_endpoints": ["users_api.get_user"],
+        "arguments": {"user_id": "42"},
+        "fields": ["name", "email"],
+        "concepts": [],
+        "evidence": {},
+    }
+
+router = await SchemaRouter.from_url(
+    "https://api.example.com/openapi.json",
+    analyzer=ModelQueryAnalyzer(my_model),
+)
+
+plan = await router.aplan("42번 사용자의 이름과 이메일을 알려줘")
+result = await router.arun("42번 사용자의 이름과 이메일을 알려줘")
+```
+
+Model output is never used as an executable contract directly. SchemaRouter projects it back onto
+the current registry:
+
+```text
+LLM output
+  -> validate JSON shape
+  -> drop unknown tools
+  -> drop unknown endpoints
+  -> drop undeclared parameters
+  -> drop unknown response fields
+  -> merge explicit caller arguments with higher priority
+  -> deterministic planner
+  -> execution validation
+```
+
+Descriptions from remote OpenAPI/MCP sources are treated as untrusted data. The model is explicitly
+instructed not to follow instructions embedded in descriptions.
 
 ## Why
 
@@ -188,13 +235,12 @@ pip install -e ".[dev,mcp]"
 
 ## Roadmap
 
-1. provider-neutral model-assisted `QueryAnalyzer`
-2. authenticated/custom-transport MCP URL loading
-3. richer OpenAPI composition/external-reference support
-4. policy engine for provenance, license, permissions, cost, and destructive operations
-5. HTML documentation assistant that proposes schemas for explicit user review rather than silently trusting inference
-6. tracing, replay, schema-drift diagnostics, and benchmark suite
-7. LangGraph/LangChain integration adapters
+1. authenticated/custom-transport MCP URL loading
+2. richer OpenAPI composition/external-reference support
+3. policy engine for provenance, license, permissions, cost, and destructive operations
+4. HTML documentation assistant that proposes schemas for explicit user review rather than silently trusting inference
+5. tracing, replay, schema-drift diagnostics, and benchmark suite
+6. LangGraph/LangChain integration adapters
 
 ## Research
 
