@@ -26,6 +26,10 @@ class SchemaDriftError(PlanValidationError):
     """Raised when a plan was compiled against an older endpoint schema."""
 
 
+class SchemaValidationError(PlanValidationError):
+    """Raised when arguments or tool output violate a declared JSON Schema."""
+
+
 class ExecutionError(SchemaRouterError):
     """Raised when tool invocation fails."""
 
