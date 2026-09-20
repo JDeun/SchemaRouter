@@ -94,6 +94,10 @@ class SchemaRouter:
         parsed = urlparse(base_url)
         if parsed.scheme not in {"http", "https"} or not parsed.netloc:
             raise ProposalApprovalError("base_url must be an absolute http(s) URL")
+        if parsed.username or parsed.password:
+            raise ProposalApprovalError(
+                "credentials must not be embedded in base_url; use trusted runtime auth"
+            )
 
         mutating = [
             endpoint.name
