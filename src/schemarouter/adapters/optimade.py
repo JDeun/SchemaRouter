@@ -401,6 +401,8 @@ class OPTIMADESourceAdapter:
                         max_bytes=_MAX_DISCOVERY_BYTES,
                     )
                     document = response.json()
+                except SchemaSourceError:
+                    raise
                 except Exception:  # noqa: BLE001
                     continue
                 attributes = _base_info_attributes(document)
@@ -441,6 +443,10 @@ class OPTIMADESourceAdapter:
             for entry_type in entry_types:
                 try:
                     safe_entry_type = _validate_entry_type(entry_type)
+                except SchemaSourceError as exc:
+                    skipped.append(f"{entry_type}:{type(exc).__name__}")
+                    continue
+                try:
                     response = await _bounded_get(
                         client,
                         f"{versioned_base_url}/info/{safe_entry_type}",
@@ -448,6 +454,8 @@ class OPTIMADESourceAdapter:
                         max_bytes=_MAX_DISCOVERY_BYTES,
                     )
                     payload = _entry_info_payload(response.json(), entry_type)
+                except SchemaSourceError:
+                    raise
                 except Exception as exc:  # noqa: BLE001
                     skipped.append(f"{entry_type}:{type(exc).__name__}")
                     continue
