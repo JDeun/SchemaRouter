@@ -18,7 +18,7 @@ from .adapters.openapi import (
 from .errors import SchemaSourceError, UnsupportedSchemaSourceError
 from .executor import RegistryExecutor
 from .models import ToolSpec
-from .registry import InMemoryRegistry
+from .registry import ToolRegistry
 
 SourceKind = Literal["auto", "openapi", "mcp"]
 
@@ -69,7 +69,7 @@ class URLSchemaLoader:
 
     def __init__(
         self,
-        registry: InMemoryRegistry,
+        registry: ToolRegistry,
         executor: RegistryExecutor,
         *,
         http_client: httpx.AsyncClient | None = None,
