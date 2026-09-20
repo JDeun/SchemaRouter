@@ -22,6 +22,7 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 ## Compatibility gates
 
 - [ ] A recent public OpenAPI live smoke is green.
+- [ ] A recent public OPTIMADE live smoke is green.
 - [ ] The real MCP Streamable HTTP integration job is green when the MCP extra is released.
 - [ ] Cross-origin OpenAPI behavior is tested with explicit local approval.
 - [ ] Schema drift and stale binding tests pass.
@@ -37,7 +38,8 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Run the full test suite against the built artifact.
 - [ ] Create an annotated Git tag.
 - [ ] Publish the tag/release notes.
-- [ ] Publish to the package index only after the license gate is resolved.
+- [ ] Configure the PyPI Trusted Publisher for the `pypi` GitHub environment before the first tag.
+- [ ] Publish to the package index only after all blocking gates are green.
 - [ ] Verify install/import in a clean environment.
 
 ## Post-release
