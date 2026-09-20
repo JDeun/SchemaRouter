@@ -4,7 +4,108 @@
 
 SchemaRouter compiles a natural-language request plus a registered tool catalog into a small, typed, auditable execution plan. It is designed for environments where an agent may have many OpenAPI or MCP capabilities and should not expose or fetch everything by default.
 
-> Status: **v0.1 pre-alpha**. The core development branch now includes URL-driven OpenAPI ingestion, live MCP discovery, model-assisted query analysis, evidence-grounded HTML schema proposals, JSON Schema runtime validation, and fail-closed execution policy.
+> Status: **v0.1 pre-alpha**. The core development branch includes URL-driven OpenAPI ingestion, live MCP discovery, model-assisted query analysis, grounded HTML schema proposals, runtime JSON Schema validation, fail-closed execution policy, Runnable-style execution APIs, typed Python tools, and optional LangChain integration.
+
+## Framework interface
+
+SchemaRouter uses one execution vocabulary across local Python tools, OpenAPI, MCP, and approved
+documentation-derived tools:
+
+```python
+result = router.invoke(request)
+result = await router.ainvoke(request)
+
+results = router.batch(requests)
+results = await router.abatch(requests)
+
+for result in router.stream(request):
+    ...
+
+async for result in router.astream(request):
+    ...
+
+async for event in router.astream_events(request):
+    ...
+```
+
+Per-run configuration is typed and reusable:
+
+```python
+from schemarouter import RetryPolicy, RunConfig
+
+configured = router.with_config(
+    RunConfig(
+        tags=["production"],
+        metadata={"service": "research-agent"},
+        max_concurrency=8,
+        retry=RetryPolicy(max_attempts=3),
+    )
+)
+
+result = await configured.ainvoke(request)
+```
+
+Retries are read-only by default. Mutating operations are not retried unless trusted local code
+explicitly opts in. Event arguments and result payloads are also redacted by default; use
+`RunConfig(include_payloads=True)` only when the trace sink is trusted.
+
+The framework exposes machine-readable `input_schema`, `output_schema`, and `config_schema`
+properties for serving layers, generated UIs, tests, and integrations.
+
+## Python tools
+
+Normal typed Python functions can become SchemaRouter tools without manually constructing a
+`ToolSpec`:
+
+```python
+from pydantic import BaseModel
+
+from schemarouter import SchemaRouter, schema_tool
+
+class Weather(BaseModel):
+    city: str
+    temperature: float
+
+@schema_tool(read_only=True)
+def current_weather(city: str) -> Weather:
+    return Weather(city=city, temperature=20.5)
+
+router = SchemaRouter()
+router.add_callable(current_weather)
+
+result = router.invoke(
+    PlanRequest(
+        query="city temperature",
+        arguments={"city": "Seoul"},
+    )
+)
+```
+
+Type hints are converted to JSON Schema and remain runtime validation contracts. Ambiguous
+`*args` / `**kwargs` and positional-only functions require an explicit contract instead of being
+silently guessed.
+
+## LangChain integration
+
+LangChain is an optional integration, not a core dependency:
+
+```bash
+pip install "schemarouter[langchain]"
+```
+
+Registered SchemaRouter endpoints can be exposed as LangChain `StructuredTool` objects:
+
+```python
+from schemarouter.integrations import to_langchain_tools
+
+tools = to_langchain_tools(router)
+```
+
+LangChain remains the surrounding orchestration surface while SchemaRouter stays authoritative for
+schema fingerprints, execution policy, input/output validation, and bound invokers.
+
+See [framework maturity](docs/framework-maturity.md) for the explicit comparison with mature agent
+frameworks.
 
 ## URL-first usage
 
@@ -382,10 +483,14 @@ pip install -e ".[dev,mcp]"
 
 1. authenticated/custom-transport MCP URL loading with trusted local side-effect classification
 2. richer OpenAPI composition, nested schemas, and external-reference support
-3. policy extensions for provenance, license, cost, quotas, and per-call approval
-4. multi-page and client-rendered documentation discovery
-5. tracing, replay, schema-drift diagnostics, and benchmark suite
-6. LangGraph/LangChain integration adapters
+3. callback/exporter and OpenTelemetry-compatible tracing
+4. policy extensions for provenance, license, cost, quotas, and per-call approval
+5. multi-page and client-rendered documentation discovery
+6. replay, compatibility benchmarks, and LangGraph-native integration
+
+Release expectations and compatibility rules live in
+[`docs/versioning.md`](docs/versioning.md) and
+[`docs/release-checklist.md`](docs/release-checklist.md).
 
 ## Research
 
