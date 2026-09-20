@@ -10,6 +10,10 @@ class PlanningError(SchemaRouterError):
     """Raised when a plan cannot be produced."""
 
 
+class ModelAnalysisError(PlanningError):
+    """Raised when model-assisted query analysis fails validation."""
+
+
 class PlanValidationError(SchemaRouterError):
     """Raised when an execution plan violates the current schema."""
 
