@@ -25,9 +25,19 @@ from .models import (
 )
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .registry import InMemoryRegistry
+from .proposals import (
+    DocumentationModelCallable,
+    ProposalEndpoint,
+    ProposalField,
+    ProposalParameter,
+    SchemaProposal,
+    SchemaProposalDraft,
+    inspect_documentation_url,
+)
 from .runtime import SchemaRouter
 
 __all__ = [
+    "DocumentationModelCallable",
     "EndpointSpec",
     "EvidenceRequirements",
     "ExecutionError",
@@ -40,6 +50,9 @@ __all__ = [
     "ModelIntent",
     "ModelQueryAnalyzer",
     "ParameterSpec",
+    "ProposalEndpoint",
+    "ProposalField",
+    "ProposalParameter",
     "PlanRequest",
     "PlanValidationError",
     "PlanningError",
@@ -49,6 +62,8 @@ __all__ = [
     "RegistryExecutor",
     "SchemaDriftError",
     "SchemaPlanner",
+    "SchemaProposal",
+    "SchemaProposalDraft",
     "SchemaRouter",
     "SchemaRouterError",
     "SchemaSourceError",
@@ -56,4 +71,5 @@ __all__ = [
     "ToolResult",
     "ToolSpec",
     "UnsupportedSchemaSourceError",
+    "inspect_documentation_url",
 ]
