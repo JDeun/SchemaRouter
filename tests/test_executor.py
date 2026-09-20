@@ -10,6 +10,7 @@ from schemarouter import (
     PlanRequest,
     PlanValidationError,
     RegistryExecutor,
+    RetryPolicy,
     SchemaDriftError,
     SchemaPlanner,
     SchemaValidationError,
@@ -334,3 +335,51 @@ async def test_executor_rejects_stale_invoker_after_tool_replacement() -> None:
 
     with pytest.raises(BindingDriftError, match="rebind"):
         await executor.execute(plan)
+
+
+@pytest.mark.asyncio
+async def test_output_schema_violation_is_never_retried() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="users",
+            endpoints=[
+                EndpointSpec(
+                    name="get",
+                    parameters=[ParameterSpec(name="user_id", required=True)],
+                    output_fields=[FieldSpec(name="age", json_schema={"type": "integer"})],
+                    output_schema={
+                        "type": "object",
+                        "properties": {"age": {"type": "integer"}},
+                        "required": ["age"],
+                    },
+                    read_only=True,
+                )
+            ],
+        )
+    )
+    endpoint = reg.endpoint("users", "get")
+    call = ToolCall(
+        tool="users",
+        endpoint="get",
+        arguments={"user_id": "42"},
+        fields=["age"],
+        schema_fingerprint=endpoint.fingerprint,
+    )
+    executor = RegistryExecutor(reg)
+    attempts = 0
+
+    async def invalid_output(endpoint_name: str, arguments: dict) -> dict:
+        nonlocal attempts
+        attempts += 1
+        return {"age": "invalid"}
+
+    executor.bind("users", invalid_output)
+
+    with pytest.raises(SchemaValidationError, match="output from users.get"):
+        await executor.execute_call(
+            call,
+            retry=RetryPolicy(max_attempts=3),
+        )
+
+    assert attempts == 1
