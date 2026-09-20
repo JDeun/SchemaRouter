@@ -1,0 +1,28 @@
+.brand-lockup {
+  margin: 0 auto 1.5rem;
+  max-width: 760px;
+}
+
+.brand-lockup img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.brand-lockup--dark {
+  display: none !important;
+}
+
+[data-md-color-scheme="slate"] .brand-lockup--light {
+  display: none !important;
+}
+
+[data-md-color-scheme="slate"] .brand-lockup--dark {
+  display: block !important;
+}
+
+.md-header__button.md-logo img,
+.md-header__button.md-logo svg {
+  height: 2rem;
+  width: 2rem;
+}
