@@ -5,6 +5,15 @@ repo_url: https://github.com/JDeun/SchemaRouter
 repo_name: JDeun/SchemaRouter
 edit_uri: edit/main/docs/
 
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/JDeun/SchemaRouter
+      name: SchemaRouter on GitHub
+    - icon: fontawesome/solid/book
+      link: https://github.com/JDeun/paper_SchemaRouter
+      name: SchemaRouter research
+
 theme:
   name: material
   language: en
