@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/schemarouter-lockup-dark.svg">
-    <img alt="SchemaRouter" src="docs/assets/brand/schemarouter-lockup-light.svg" width="760">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/JDeun/SchemaRouter/main/docs/assets/brand/schemarouter-lockup-dark.svg">
+    <img alt="SchemaRouter" src="https://raw.githubusercontent.com/JDeun/SchemaRouter/main/docs/assets/brand/schemarouter-lockup-light.svg" width="760">
   </picture>
 </p>
 
@@ -11,7 +11,7 @@
 
 [![CI](https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml/badge.svg)](https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml)
 [![Docs](https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg)](https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/JDeun/SchemaRouter/blob/main/LICENSE)
 
 SchemaRouter compiles a natural-language request plus a registered capability catalog into a small,
 typed, auditable execution plan.
@@ -185,7 +185,8 @@ Full documentation is organized as a framework manual rather than embedded in th
 - [LangChain integration](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
 - [Architecture](https://jdeun.github.io/SchemaRouter/architecture/)
-- [Security](SECURITY.md)
+- [Security](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md)
+- [Brand assets](https://jdeun.github.io/SchemaRouter/project/brand/)
 
 Build the docs locally with:
 
