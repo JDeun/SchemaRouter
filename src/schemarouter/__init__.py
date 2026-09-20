@@ -1,3 +1,4 @@
+from ._version import __version__
 from .adapters.python import PythonCallableInvoker, schema_tool, tool_from_callable
 from .analyzers import ModelCallable, ModelIntent, ModelQueryAnalyzer
 from .errors import (
@@ -44,6 +45,7 @@ from .runs import RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
 
 __all__ = [
+    "__version__",
     "BindingDriftError",
     "ConfiguredSchemaRouter",
     "DocumentationModelCallable",
