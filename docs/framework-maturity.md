@@ -30,7 +30,9 @@ This document tracks framework-level maturity rather than research metrics.
 | HTTP serving layer | Not implemented | Consider optional server package |
 | Pluggable registry boundary | Implemented via `ToolRegistry` protocol | Add persistent implementations |
 | Release / compatibility policy | Implemented | Enforce during RC reviews |
-| Package artifact CI | Implemented | Keep wheel/sdist metadata checks blocking |\n| Integration certification suite | Partial | Add live OpenAPI/MCP compatibility fixtures |
+| Package artifact CI | Implemented | Keep wheel/sdist metadata checks blocking |
+| Documentation site | Implemented with MkDocs Material | Keep strict docs build blocking |
+| Integration certification suite | Implemented baseline | Extend the live compatibility matrix |
 
 ## What SchemaRouter should copy from mature frameworks
 
@@ -88,7 +90,7 @@ compiler/runtime boundary for tool schemas.
 - live MCP compatibility tests;
 - API versioning/deprecation policy;
 - release checklist;
-- license decision.
+- MIT license metadata and release artifact verification.
 
 ### Gate B — ecosystem-ready
 
