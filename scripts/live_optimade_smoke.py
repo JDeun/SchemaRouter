@@ -5,7 +5,6 @@ import os
 
 from schemarouter import PlanRequest, SchemaRouter
 
-
 DEFAULT_URL = "https://www.crystallography.net/cod/optimade"
 
 
