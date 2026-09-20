@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
-from collections.abc import Awaitable
+from collections.abc import AsyncIterator, Awaitable
 from typing import Any, Protocol
 
 from .errors import BindingDriftError, ExecutionError, PlanValidationError, SchemaDriftError
 from .models import ExecutionPlan, ToolCall, ToolResult
 from .policy import ExecutionPolicy
 from .registry import InMemoryRegistry
+from .runs import RetryPolicy
 from .validation import (
     effective_input_schema,
     effective_output_schema,
@@ -98,43 +100,83 @@ class RegistryExecutor:
                 f"explicit output projection required for {call.tool}.{call.endpoint}"
             )
 
-    async def execute(self, plan: ExecutionPlan) -> list[ToolResult]:
-        results: list[ToolResult] = []
-        for call in plan.calls:
-            self.validate_call(call)
-            endpoint = self.registry.endpoint(call.tool, call.endpoint)
-            invoker = self._invokers.get(call.tool)
-            if invoker is None:
-                raise ExecutionError(f"no invoker bound for tool {call.tool!r}")
+    async def execute_call(
+        self,
+        call: ToolCall,
+        *,
+        retry: RetryPolicy | None = None,
+    ) -> ToolResult:
+        self.validate_call(call)
+        endpoint = self.registry.endpoint(call.tool, call.endpoint)
+        invoker = self._invokers.get(call.tool)
+        if invoker is None:
+            raise ExecutionError(f"no invoker bound for tool {call.tool!r}")
 
-            current_tool = self.registry.get(call.tool)
-            bound_fingerprint = self._binding_fingerprints.get(call.tool)
-            if bound_fingerprint != current_tool.fingerprint:
-                raise BindingDriftError(
-                    f"invoker binding is stale for tool {call.tool!r}; rebind before execution"
-                )
+        current_tool = self.registry.get(call.tool)
+        bound_fingerprint = self._binding_fingerprints.get(call.tool)
+        if bound_fingerprint != current_tool.fingerprint:
+            raise BindingDriftError(
+                f"invoker binding is stale for tool {call.tool!r}; rebind before execution"
+            )
+
+        retry = retry or RetryPolicy()
+        can_retry = endpoint.read_only is True or retry.retry_non_read_only
+        max_attempts = retry.max_attempts if can_retry else 1
+        delay = retry.initial_backoff_seconds
+
+        last_error: Exception | None = None
+        for attempt in range(1, max_attempts + 1):
             try:
                 value = invoker(call.endpoint, dict(call.arguments))
                 if inspect.isawaitable(value):
                     value = await value
-            except Exception as exc:  # noqa: BLE001
-                raise ExecutionError(f"invocation failed for {call.tool}.{call.endpoint}") from exc
 
-            validate_json_schema_value(
-                value,
-                effective_output_schema(endpoint),
-                context=f"output from {call.tool}.{call.endpoint}",
-            )
-            projected = self._project(value, call.fields)
-            results.append(
-                ToolResult(
+                validate_json_schema_value(
+                    value,
+                    effective_output_schema(endpoint),
+                    context=f"output from {call.tool}.{call.endpoint}",
+                )
+                projected = self._project(value, call.fields)
+                return ToolResult(
                     tool=call.tool,
                     endpoint=call.endpoint,
                     data=projected,
                     projected_fields=call.fields,
                 )
-            )
-        return results
+            except Exception as exc:  # noqa: BLE001
+                last_error = exc
+                if attempt >= max_attempts:
+                    break
+                if delay > 0:
+                    await asyncio.sleep(delay)
+                delay = min(
+                    retry.max_backoff_seconds,
+                    max(delay, 1e-9) * retry.backoff_multiplier,
+                )
+
+        raise ExecutionError(
+            f"invocation failed for {call.tool}.{call.endpoint} after {max_attempts} attempt(s)"
+        ) from last_error
+
+    async def execute(
+        self,
+        plan: ExecutionPlan,
+        *,
+        retry: RetryPolicy | None = None,
+    ) -> list[ToolResult]:
+        return [
+            result
+            async for result in self.execute_iter(plan, retry=retry)
+        ]
+
+    async def execute_iter(
+        self,
+        plan: ExecutionPlan,
+        *,
+        retry: RetryPolicy | None = None,
+    ) -> AsyncIterator[ToolResult]:
+        for call in plan.calls:
+            yield await self.execute_call(call, retry=retry)
 
     @staticmethod
     def _project(value: Any, fields: list[str]) -> Any:
