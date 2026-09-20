@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 from typing import Literal
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import httpx
 import yaml
@@ -218,12 +218,52 @@ class URLSchemaLoader:
         timeout: float,
     ) -> tuple[dict | None, str]:
         if self.http_client is not None:
-            response = await self.http_client.get(url, headers=headers)
+            response = await self._fetch_with_safe_redirects(
+                self.http_client,
+                url,
+                headers=headers,
+            )
         else:
             async with httpx.AsyncClient(
                 timeout=timeout,
-                follow_redirects=True,
+                follow_redirects=False,
             ) as client:
-                response = await client.get(url, headers=headers)
+                response = await self._fetch_with_safe_redirects(
+                    client,
+                    url,
+                    headers=headers,
+                )
         response.raise_for_status()
         return _parse_openapi_text(response.text), str(response.url)
+
+    @staticmethod
+    async def _fetch_with_safe_redirects(
+        client: httpx.AsyncClient,
+        url: str,
+        *,
+        headers: dict[str, str] | None,
+        max_redirects: int = 5,
+    ) -> httpx.Response:
+        current = url
+        initial = url
+        for _ in range(max_redirects + 1):
+            response = await client.get(
+                current,
+                headers=headers,
+                follow_redirects=False,
+            )
+            if not response.is_redirect:
+                return response
+
+            location = response.headers.get("location")
+            if not location:
+                raise SchemaSourceError("schema redirect response is missing Location")
+            target = urljoin(current, location)
+            _validate_url(target)
+            if not same_origin(initial, target):
+                raise SchemaSourceError(
+                    "cross-origin schema redirects are not allowed"
+                )
+            current = target
+
+        raise SchemaSourceError("schema URL exceeded the redirect limit")
