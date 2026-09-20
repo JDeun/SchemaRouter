@@ -30,10 +30,11 @@ Query
 ```
 
 SchemaRouter is intentionally narrower than LangChain or LangGraph. It is designed to sit at the
-**tool-schema boundary** between an agent and OpenAPI, MCP, or Python capabilities.
+**tool-schema boundary** between an agent and structured capability sources such as OpenAPI, MCP,
+OPTIMADE, Python callables, and third-party adapter protocols.
 
-> Status: **v0.1 pre-alpha**. The framework core, package build, LangChain integration, and real MCP
-> Streamable HTTP integration are covered by CI.
+> Status: **v0.2 alpha development**. The v0.1 core is frozen on main; v0.2 adds a pluggable
+> adapter ecosystem without weakening the existing planner/executor trust boundary.
 
 ## Why
 
@@ -105,6 +106,18 @@ router = await SchemaRouter.from_url(
 )
 ```
 
+### OPTIMADE
+
+```python
+router = await SchemaRouter.from_url(
+    "https://www.crystallography.net/cod/optimade",
+    kind="optimade",
+)
+```
+
+OPTIMADE entry schemas are discovered from `/info/<entry_type>`. Planned fields are translated
+into the protocol's `response_fields` query parameter before execution.
+
 ### MCP
 
 ```bash
@@ -155,6 +168,8 @@ evidence-grounded proposal and then requires explicit approval.
 - **Read-only retries by default** — contract violations are never retried.
 - **Redacted runtime events by default** — payload tracing is opt-in.
 - **Pluggable registry** — custom registries can implement the public `ToolRegistry` protocol.
+- **Pluggable source adapters** — `AdapterRegistry` lets structured protocols compile into the same
+  `ToolSpec` / `EndpointSpec` execution model.
 
 ## With LangChain
 
@@ -181,6 +196,7 @@ Full documentation is organized as a framework manual rather than embedded in th
 - [Getting started](https://jdeun.github.io/SchemaRouter/getting-started/installation/)
 - [Core concepts](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
 - [OpenAPI guide](https://jdeun.github.io/SchemaRouter/guides/openapi/)
+- [OPTIMADE guide](https://jdeun.github.io/SchemaRouter/guides/optimade/)
 - [MCP guide](https://jdeun.github.io/SchemaRouter/guides/mcp/)
 - [LangChain integration](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
