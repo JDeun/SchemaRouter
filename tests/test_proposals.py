@@ -1,7 +1,13 @@
 import httpx
 import pytest
 
-from schemarouter import SchemaRouter
+from schemarouter import (
+    EndpointSpec,
+    ProposalApprovalError,
+    SchemaProposal,
+    SchemaRouter,
+    ToolSpec,
+)
 
 
 @pytest.mark.asyncio
@@ -140,3 +146,89 @@ async def test_html_proposal_fails_closed_when_no_endpoint_is_grounded() -> None
     assert proposal.rejected_items == [
         "endpoint:invented:missing_grounded_evidence"
     ]
+
+
+def test_proposal_approval_enforces_grounding_threshold() -> None:
+    proposal = SchemaProposal(
+        source_url="https://docs.example.com/users",
+        status="grounded",
+        tool=ToolSpec(
+            name="users",
+            endpoints=[
+                EndpointSpec(
+                    name="get_user",
+                    method="GET",
+                    path="/users/{user_id}",
+                )
+            ],
+        ),
+        grounding_score=0.6,
+    )
+    router = SchemaRouter()
+
+    with pytest.raises(ProposalApprovalError, match="grounding score"):
+        router.approve_proposal(
+            proposal,
+            base_url="https://api.example.com",
+        )
+
+    key = router.approve_proposal(
+        proposal,
+        base_url="https://api.example.com",
+        min_grounding_score=0.5,
+    )
+    assert key == "users"
+    assert router.registry.get("users").metadata["approved_from_proposal"] is True
+    assert router.registry.get("users").metadata["executable"] is True
+
+
+def test_proposal_approval_requires_mutation_opt_in() -> None:
+    proposal = SchemaProposal(
+        source_url="https://docs.example.com/jobs",
+        status="grounded",
+        tool=ToolSpec(
+            name="jobs",
+            endpoints=[
+                EndpointSpec(
+                    name="create_job",
+                    method="POST",
+                    path="/jobs",
+                    read_only=False,
+                    destructive=False,
+                )
+            ],
+        ),
+        grounding_score=1.0,
+    )
+    router = SchemaRouter()
+
+    with pytest.raises(ProposalApprovalError, match="mutating endpoints"):
+        router.approve_proposal(
+            proposal,
+            base_url="https://api.example.com",
+        )
+
+    key = router.approve_proposal(
+        proposal,
+        base_url="https://api.example.com",
+        allow_mutations=True,
+    )
+    assert key == "jobs"
+
+
+def test_proposal_approval_rejects_credentials_in_base_url() -> None:
+    proposal = SchemaProposal(
+        source_url="https://docs.example.com/users",
+        status="grounded",
+        tool=ToolSpec(
+            name="users",
+            endpoints=[EndpointSpec(name="list_users", method="GET", path="/users")],
+        ),
+        grounding_score=1.0,
+    )
+
+    with pytest.raises(ProposalApprovalError, match="credentials"):
+        SchemaRouter().approve_proposal(
+            proposal,
+            base_url="https://user:secret@api.example.com",
+        )
