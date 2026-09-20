@@ -117,4 +117,5 @@ nav:
       - Release checklist: release-checklist.md
       - Contributing: contributing.md
       - Changelog: changelog.md
+      - Brand: project/brand.md
       - License: license.md
