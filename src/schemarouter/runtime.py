@@ -90,15 +90,16 @@ class SchemaRouter:
             raise RegistrationError(
                 f"tool {tool_key!r} was not imported from OpenAPI"
             )
-        self.executor.bind(
-            tool_key,
-            OpenAPIRemoteInvoker(
+        try:
+            invoker = OpenAPIRemoteInvoker(
                 tool,
                 base_url,
                 trusted_headers=trusted_headers,
                 timeout=timeout,
-            ),
-        )
+            )
+        except ValueError as exc:
+            raise RegistrationError("invalid OpenAPI execution binding") from exc
+        self.executor.bind(tool_key, invoker)
         tool.metadata.update(
             {
                 "execution_bound": True,
@@ -153,12 +154,15 @@ class SchemaRouter:
                 "approved_base_url": base_url,
             }
         )
-        invoker = OpenAPIRemoteInvoker(
-            tool,
-            base_url,
-            trusted_headers=trusted_headers,
-            timeout=timeout,
-        )
+        try:
+            invoker = OpenAPIRemoteInvoker(
+                tool,
+                base_url,
+                trusted_headers=trusted_headers,
+                timeout=timeout,
+            )
+        except ValueError as exc:
+            raise ProposalApprovalError("invalid proposal execution binding") from exc
         key = self.registry.register(tool, replace=replace)
         self.executor.bind(key, invoker)
         return key
