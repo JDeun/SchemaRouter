@@ -1,5 +1,7 @@
+from .analyzers import ModelCallable, ModelIntent, ModelQueryAnalyzer
 from .errors import (
     ExecutionError,
+    ModelAnalysisError,
     PlanningError,
     PlanValidationError,
     RegistrationError,
@@ -33,6 +35,10 @@ __all__ = [
     "FieldSpec",
     "InMemoryRegistry",
     "KeywordAnalyzer",
+    "ModelAnalysisError",
+    "ModelCallable",
+    "ModelIntent",
+    "ModelQueryAnalyzer",
     "ParameterSpec",
     "PlanRequest",
     "PlanValidationError",
