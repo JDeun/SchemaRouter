@@ -7,6 +7,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+No unreleased changes yet.
+
+## 0.2.0a1 - 2026-09-20
+
 ### Added
 
 - pluggable structured-source `AdapterRegistry` with explicit and priority-based auto discovery;
