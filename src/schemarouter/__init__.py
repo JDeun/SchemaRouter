@@ -1,6 +1,6 @@
 from ._version import __version__
-from .adapters.python import PythonCallableInvoker, schema_tool, tool_from_callable
-from .analyzers import ModelCallable, ModelIntent, ModelQueryAnalyzer
+from .adapters.python import schema_tool, tool_from_callable
+from .analyzers import ModelCallable, ModelQueryAnalyzer
 from .errors import (
     BindingDriftError,
     ExecutionError,
@@ -31,15 +31,7 @@ from .models import (
 )
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import ExecutionPolicy
-from .proposals import (
-    DocumentationModelCallable,
-    ProposalEndpoint,
-    ProposalField,
-    ProposalParameter,
-    SchemaProposal,
-    SchemaProposalDraft,
-    inspect_documentation_url,
-)
+from .proposals import SchemaProposal
 from .registry import InMemoryRegistry, ToolRegistry
 from .runs import RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
@@ -48,7 +40,6 @@ __all__ = [
     "__version__",
     "BindingDriftError",
     "ConfiguredSchemaRouter",
-    "DocumentationModelCallable",
     "EndpointSpec",
     "EvidenceRequirements",
     "ExecutionError",
@@ -59,39 +50,32 @@ __all__ = [
     "KeywordAnalyzer",
     "ModelAnalysisError",
     "ModelCallable",
-    "ModelIntent",
     "ModelQueryAnalyzer",
     "ParameterSpec",
-    "ProposalApprovalError",
-    "PythonCallableInvoker",
-    "ProposalEndpoint",
-    "ProposalField",
-    "ProposalParameter",
     "PlanRequest",
     "PlanValidationError",
-    "PolicyViolationError",
     "PlanningError",
+    "PolicyViolationError",
+    "ProposalApprovalError",
     "QueryAnalyzer",
     "QueryIntent",
     "RegistrationError",
-    "RetryPolicy",
     "RegistryExecutor",
+    "RetryPolicy",
     "RunConfig",
     "RunEvent",
     "SchemaDriftError",
     "SchemaPlanner",
     "SchemaProposal",
-    "SchemaProposalDraft",
     "SchemaRouter",
     "SchemaRouterError",
     "SchemaSourceError",
     "SchemaValidationError",
-    "schema_tool",
     "ToolCall",
     "ToolRegistry",
     "ToolResult",
     "ToolSpec",
-    "tool_from_callable",
     "UnsupportedSchemaSourceError",
-    "inspect_documentation_url",
+    "schema_tool",
+    "tool_from_callable",
 ]
