@@ -33,8 +33,8 @@ SchemaRouter is intentionally narrower than LangChain or LangGraph. It is design
 **tool-schema boundary** between an agent and structured capability sources such as OpenAPI, MCP,
 OPTIMADE, Python callables, and third-party adapter protocols.
 
-> Status: **v0.2 alpha development**. The v0.1 core is frozen on main; v0.2 adds a pluggable
-> adapter ecosystem without weakening the existing planner/executor trust boundary.
+> Status: **0.2.0a1 pre-release candidate**. The adapter ecosystem, OPTIMADE support, package
+> artifact, and public OpenAPI/OPTIMADE compatibility smokes are release-gated in CI.
 
 ## Why
 
