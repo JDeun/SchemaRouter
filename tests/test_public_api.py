@@ -1,28 +1,66 @@
 import schemarouter
 
 
-def test_documented_framework_exports_remain_public() -> None:
+def test_public_framework_exports_are_intentional_and_stable() -> None:
     expected = {
-        "SchemaRouter",
+        "__version__",
+        "BindingDriftError",
         "ConfiguredSchemaRouter",
-        "ToolRegistry",
-        "InMemoryRegistry",
-        "ToolSpec",
         "EndpointSpec",
-        "ParameterSpec",
-        "FieldSpec",
-        "PlanRequest",
+        "EvidenceRequirements",
+        "ExecutionError",
         "ExecutionPlan",
-        "ToolResult",
         "ExecutionPolicy",
-        "RunConfig",
+        "FieldSpec",
+        "InMemoryRegistry",
+        "KeywordAnalyzer",
+        "ModelAnalysisError",
+        "ModelCallable",
+        "ModelQueryAnalyzer",
+        "ParameterSpec",
+        "PlanRequest",
+        "PlanValidationError",
+        "PlanningError",
+        "PolicyViolationError",
+        "ProposalApprovalError",
+        "QueryAnalyzer",
+        "QueryIntent",
+        "RegistrationError",
+        "RegistryExecutor",
         "RetryPolicy",
+        "RunConfig",
         "RunEvent",
+        "SchemaDriftError",
+        "SchemaPlanner",
+        "SchemaProposal",
+        "SchemaRouter",
+        "SchemaRouterError",
+        "SchemaSourceError",
+        "SchemaValidationError",
+        "ToolCall",
+        "ToolRegistry",
+        "ToolResult",
+        "ToolSpec",
+        "UnsupportedSchemaSourceError",
         "schema_tool",
         "tool_from_callable",
-        "__version__",
     }
 
-    assert expected <= set(schemarouter.__all__)
+    assert set(schemarouter.__all__) == expected
     for name in expected:
         assert hasattr(schemarouter, name)
+
+
+def test_internal_implementation_types_are_not_top_level_exports() -> None:
+    internal = {
+        "DocumentationModelCallable",
+        "ModelIntent",
+        "ProposalEndpoint",
+        "ProposalField",
+        "ProposalParameter",
+        "PythonCallableInvoker",
+        "SchemaProposalDraft",
+        "inspect_documentation_url",
+    }
+
+    assert internal.isdisjoint(schemarouter.__all__)
