@@ -5,10 +5,13 @@ from schemarouter import (
     FieldSpec,
     InMemoryRegistry,
     ParameterSpec,
+    ExecutionPlan,
     PlanRequest,
+    PlanValidationError,
     RegistryExecutor,
     SchemaDriftError,
     SchemaPlanner,
+    ToolCall,
     ToolSpec,
 )
 
@@ -79,3 +82,70 @@ async def test_executor_rejects_schema_drift() -> None:
 
     with pytest.raises(SchemaDriftError):
         await executor.execute(plan)
+
+
+def direct_call(
+    *,
+    arguments: dict,
+    fields: list[str],
+) -> ToolCall:
+    reg = make_registry()
+    endpoint = reg.endpoint("weather", "current")
+    return ToolCall(
+        tool="weather",
+        endpoint="current",
+        arguments=arguments,
+        fields=fields,
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+
+def test_executor_recomputes_required_arguments() -> None:
+    reg = make_registry()
+    endpoint = reg.endpoint("weather", "current")
+    call = ToolCall(
+        tool="weather",
+        endpoint="current",
+        arguments={},
+        fields=["city", "temperature"],
+        schema_fingerprint=endpoint.fingerprint,
+        missing_required_arguments=[],
+    )
+
+    with pytest.raises(PlanValidationError, match="missing required arguments"):
+        RegistryExecutor(reg).validate_call(call)
+
+
+def test_executor_rejects_undeclared_output_fields() -> None:
+    reg = make_registry()
+    endpoint = reg.endpoint("weather", "current")
+    call = ToolCall(
+        tool="weather",
+        endpoint="current",
+        arguments={"city": "Seoul"},
+        fields=["city", "secret_internal_field"],
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    with pytest.raises(PlanValidationError, match="undeclared output fields"):
+        RegistryExecutor(reg).validate_call(call)
+
+
+def test_executor_requires_projection_for_typed_outputs() -> None:
+    reg = make_registry()
+    endpoint = reg.endpoint("weather", "current")
+    call = ToolCall(
+        tool="weather",
+        endpoint="current",
+        arguments={"city": "Seoul"},
+        fields=[],
+        schema_fingerprint=endpoint.fingerprint,
+    )
+    plan = ExecutionPlan(
+        query="manual",
+        registry_version=reg.version,
+        calls=[call],
+    )
+
+    with pytest.raises(PlanValidationError, match="explicit output projection"):
+        RegistryExecutor(reg).validate_call(plan.calls[0])
