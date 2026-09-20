@@ -232,3 +232,25 @@ def test_proposal_approval_rejects_credentials_in_base_url() -> None:
             proposal,
             base_url="https://user:secret@api.example.com",
         )
+
+
+
+def test_failed_proposal_binding_does_not_pollute_registry() -> None:
+    proposal = SchemaProposal(
+        source_url="https://docs.example.com/users",
+        status="grounded",
+        tool=ToolSpec(
+            name="users",
+            endpoints=[EndpointSpec(name="list_users", method="GET", path="/users")],
+        ),
+        grounding_score=1.0,
+    )
+    router = SchemaRouter()
+
+    with pytest.raises(ProposalApprovalError, match="invalid proposal execution binding"):
+        router.approve_proposal(
+            proposal,
+            base_url="https://api.example.com/?token=unsafe",
+        )
+
+    assert router.registry.keys() == ()
