@@ -254,3 +254,46 @@ def test_failed_proposal_binding_does_not_pollute_registry() -> None:
         )
 
     assert router.registry.keys() == ()
+
+
+@pytest.mark.asyncio
+async def test_documentation_redirects_must_stay_on_origin() -> None:
+    seen: list[httpx.URL] = []
+
+    async def model(payload: dict) -> dict:
+        raise AssertionError("model must not run after unsafe redirect")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url)
+        if request.url == httpx.URL("https://docs.example.com/api"):
+            return httpx.Response(
+                302,
+                headers={"location": "https://private.example.net/internal"},
+            )
+        raise AssertionError("cross-origin redirect target must never be requested")
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        follow_redirects=True,
+    ) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(Exception, match="cross-origin documentation redirects"):
+            await router.inspect_url(
+                "https://docs.example.com/api",
+                model=model,
+            )
+
+    assert seen == [httpx.URL("https://docs.example.com/api")]
+
+
+@pytest.mark.asyncio
+async def test_documentation_url_rejects_embedded_credentials() -> None:
+    async def model(payload: dict) -> dict:
+        raise AssertionError("model must not run for credential-bearing URL")
+
+    router = SchemaRouter()
+    with pytest.raises(Exception, match="must not contain credentials"):
+        await router.inspect_url(
+            "https://user:secret@docs.example.com/api",
+            model=model,
+        )
