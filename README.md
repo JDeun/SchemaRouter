@@ -4,7 +4,7 @@
 
 SchemaRouter compiles a natural-language request plus a registered tool catalog into a small, typed, auditable execution plan. It is designed for environments where an agent may have many OpenAPI or MCP capabilities and should not expose or fetch everything by default.
 
-> Status: **v0.1 pre-alpha**. URL-driven OpenAPI ingestion, live MCP discovery, provider-neutral model-assisted query analysis, and evidence-grounded HTML schema proposals are implemented on the core development branch.
+> Status: **v0.1 pre-alpha**. The core development branch now includes URL-driven OpenAPI ingestion, live MCP discovery, model-assisted query analysis, evidence-grounded HTML schema proposals, JSON Schema runtime validation, and fail-closed execution policy.
 
 ## URL-first usage
 
@@ -169,6 +169,79 @@ HTML docs
 Current limitation: client-rendered documentation whose API details are absent from the initial
 HTML response may need a future browser/rendering adapter.
 
+## Execution policy and trust boundaries
+
+Schema discovery and execution authority are intentionally separate.
+
+For OpenAPI documents, a same-origin API server can be bound automatically. If the document points
+to a different origin, SchemaRouter imports the schema but **does not bind an executor** until the
+caller explicitly approves the runtime base URL:
+
+```python
+router = await SchemaRouter.from_url(
+    "https://docs.example.com/openapi.json"
+)
+
+router.bind_openapi(
+    "users_api",
+    base_url="https://api.example.com",
+    trusted_headers={"Authorization": "Bearer ..."},
+)
+```
+
+Documentation credentials and API runtime credentials are also separate:
+
+```python
+router = await SchemaRouter.from_url(
+    "https://docs.example.com/openapi.json",
+    schema_headers={"X-Docs-Token": "..."},
+    trusted_headers={"Authorization": "Bearer ..."},
+    base_url="https://api.example.com",
+)
+```
+
+- `schema_headers` are sent only while fetching the schema document.
+- schema redirects are limited to the original origin.
+- `trusted_headers` are never exposed as model-selected parameters.
+- sensitive headers such as `Authorization`, `Cookie`, and `Host` cannot be supplied through
+  tool arguments.
+- runtime HTTP redirects are disabled.
+- path parameters are encoded and cannot escape the approved API origin/base path.
+
+Execution has a second local policy gate:
+
+```python
+from schemarouter import ExecutionPolicy, SchemaRouter
+
+router = SchemaRouter(
+    policy=ExecutionPolicy(
+        allow_mutations=True,
+        allow_destructive=False,
+        allow_unclassified_remote=False,
+    )
+)
+```
+
+The default policy allows normal manual/local contracts, but blocks:
+
+- known OpenAPI mutations such as POST/PUT/PATCH;
+- destructive operations such as DELETE;
+- remote MCP operations whose side effects cannot be trusted from remote annotations alone.
+
+These permissions can only be raised by trusted local application code. A model or remote schema
+cannot grant itself execution authority.
+
+### JSON Schema validation
+
+Arguments are validated immediately before invocation and raw tool output is validated immediately
+after invocation, before response-field projection. Type, enum, range, pattern, required-property,
+and other supported JSON Schema constraints therefore remain runtime contracts rather than prompt
+instructions.
+
+MCP `inputSchema` and `outputSchema` are preserved as endpoint contracts. OpenAPI parameter and
+response schemas are also retained. Schema changes alter the endpoint/tool fingerprint, invalidating
+stale plans and stale invoker bindings.
+
 ## Why
 
 Most tool routers stop at **which tool?** SchemaRouter keeps the schema boundary explicit:
@@ -249,8 +322,10 @@ The current OpenAPI path supports:
 - JSON request-body object properties
 - JSON response object fields
 - local `#/...` references
-- automatic HTTP execution
-- trusted headers kept outside the model-visible schema
+- same-origin automatic HTTP binding
+- explicit `bind_openapi()` / `base_url` approval for cross-origin servers
+- separate schema-fetch and runtime authentication headers
+- JSON Schema argument and output validation
 
 Unsupported or ambiguous constructs remain explicit instead of being guessed.
 
@@ -266,14 +341,22 @@ The live MCP path uses the official Python SDK when `schemarouter[mcp]` is insta
 - `call_tool()` execution
 - `structured_content` preferred for projection
 
-Remote annotations remain untrusted metadata and do not grant authorization.
+Remote annotations remain untrusted metadata and do not grant authorization. Because MCP
+annotations are not treated as trusted side-effect policy, remote MCP execution is blocked by
+default unless the caller opts into `allow_unclassified_remote=True` or supplies a future trusted
+local classification layer.
 
 ## Safety and correctness invariants
 
 - **Fail closed on schema drift:** a plan fingerprint must match the current endpoint schema before execution.
+- **Fail closed on binding drift:** replacing a tool schema invalidates an older bound invoker.
+- **Runtime JSON Schema validation:** arguments and raw outputs are validated around invocation.
 - **No argument hallucination:** only declared parameters survive planning and execution validation.
+- **Local authority only:** remote metadata and model output cannot grant mutation/destructive permissions.
+- **Credential separation:** schema-fetch secrets and runtime API secrets use different channels.
+- **Origin confinement:** cross-origin schema redirects and unapproved API origins are blocked.
 - **Namespaced tools:** registry keys are `<namespace>.<tool>` when a namespace is supplied.
-- **Recall-preserving projection:** identifiers plus matched fields are retained; if no output concept is confidently matched, the planner does not aggressively prune fields.
+- **Recall-preserving projection:** ambiguous/no-match output selection favors recall over aggressive pruning.
 - **Structured-source first:** URL auto-ingestion accepts OpenAPI/MCP contracts, not arbitrary HTML inference.
 - **No hidden network behavior in planning:** core planning itself remains deterministic and offline.
 
@@ -297,9 +380,9 @@ pip install -e ".[dev,mcp]"
 
 ## Roadmap
 
-1. authenticated/custom-transport MCP URL loading
-2. richer OpenAPI composition/external-reference support
-3. policy engine for provenance, license, permissions, cost, and destructive operations
+1. authenticated/custom-transport MCP URL loading with trusted local side-effect classification
+2. richer OpenAPI composition, nested schemas, and external-reference support
+3. policy extensions for provenance, license, cost, quotas, and per-call approval
 4. multi-page and client-rendered documentation discovery
 5. tracing, replay, schema-drift diagnostics, and benchmark suite
 6. LangGraph/LangChain integration adapters
