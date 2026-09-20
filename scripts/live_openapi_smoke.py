@@ -16,36 +16,34 @@ async def main() -> None:
     tool = next(
         candidate
         for candidate in tools
-        if any(endpoint.name == "findPetsByStatus" for endpoint in candidate.endpoints)
+        if any(endpoint.name == "getInventory" for endpoint in candidate.endpoints)
     )
-    endpoint = tool.endpoint("findPetsByStatus")
+    endpoint = tool.endpoint("getInventory")
 
     assert endpoint.read_only is True
-    assert endpoint.output_schema.get("type") == "array"
-    assert "components" in endpoint.output_schema
+    assert endpoint.output_schema.get("type") == "object"
 
     plan = router.plan(
         PlanRequest(
-            query="find pets by status available",
+            query="store inventory pet status counts",
             preferred_tools=[tool.key],
-            arguments={"status": "available"},
             max_calls=32,
         )
     )
-    call = next(candidate for candidate in plan.calls if candidate.endpoint == "findPetsByStatus")
+    call = next(candidate for candidate in plan.calls if candidate.endpoint == "getInventory")
     assert call.executable
     selected_plan = plan.model_copy(update={"calls": [call]}, deep=True)
 
     results = await router.execute(selected_plan)
     assert len(results) == 1
-    assert isinstance(results[0].data, list)
+    assert isinstance(results[0].data, dict)
 
     print(
         {
             "source": url,
             "tool": tool.key,
             "endpoint": call.endpoint,
-            "result_count": len(results[0].data),
+            "keys": sorted(results[0].data)[:10],
         }
     )
 
