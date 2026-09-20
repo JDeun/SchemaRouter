@@ -10,7 +10,9 @@ readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Yong-eun Cho" }]
 dependencies = [
+  "httpx>=0.27,<1",
   "pydantic>=2.8,<3",
+  "pyyaml>=6.0,<7",
 ]
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
@@ -22,6 +24,9 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+mcp = [
+  "mcp>=2,<3",
+]
 dev = [
   "pytest>=8.2",
   "pytest-asyncio>=0.23",
