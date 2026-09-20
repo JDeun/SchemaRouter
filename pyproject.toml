@@ -28,6 +28,9 @@ classifiers = [
 mcp = [
   "mcp>=2,<3",
 ]
+langchain = [
+  "langchain-core>=1.6,<2",
+]
 dev = [
   "pytest>=8.2",
   "pytest-asyncio>=0.23",
