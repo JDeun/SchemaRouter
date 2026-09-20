@@ -14,6 +14,8 @@ from .adapters.openapi import same_origin
 from .errors import ModelAnalysisError, SchemaSourceError
 from .models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 
+_MAX_DOCUMENT_BYTES = 2 * 1024 * 1024
+
 DocumentationModelCallable = Callable[
     [dict[str, Any]],
     dict[str, Any] | Awaitable[dict[str, Any]],
@@ -203,6 +205,10 @@ async def inspect_documentation_url(
             async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
                 response = await _fetch_document_with_safe_redirects(client, url)
         response.raise_for_status()
+        if len(response.content) > _MAX_DOCUMENT_BYTES:
+            raise SchemaSourceError(
+                f"documentation response exceeds {_MAX_DOCUMENT_BYTES} byte safety limit"
+            )
     except SchemaSourceError:
         raise
     except Exception as exc:  # noqa: BLE001
