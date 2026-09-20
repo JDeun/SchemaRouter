@@ -4,7 +4,7 @@
 
 SchemaRouter compiles a natural-language request plus a registered tool catalog into a small, typed, auditable execution plan. It is designed for environments where an agent may have many OpenAPI or MCP capabilities and should not expose or fetch everything by default.
 
-> Status: **v0.1 pre-alpha**. URL-driven OpenAPI ingestion, live MCP discovery, and provider-neutral model-assisted query analysis are implemented on the core development branch. Production observability is still deferred.
+> Status: **v0.1 pre-alpha**. URL-driven OpenAPI ingestion, live MCP discovery, provider-neutral model-assisted query analysis, and evidence-grounded HTML schema proposals are implemented on the core development branch.
 
 ## URL-first usage
 
@@ -106,6 +106,68 @@ LLM output
 
 Descriptions from remote OpenAPI/MCP sources are treated as untrusted data. The model is explicitly
 instructed not to follow instructions embedded in descriptions.
+
+## Human-readable API documentation
+
+A normal HTML documentation page is not silently trusted as an executable schema. Use
+`inspect_url()` to create an evidence-grounded proposal first:
+
+```python
+from schemarouter import SchemaRouter
+
+async def documentation_model(payload: dict) -> dict:
+    # Bridge to a structured-output LLM provider.
+    # Every endpoint, parameter, and field must include exact evidence quotes.
+    ...
+
+router = SchemaRouter()
+
+proposal = await router.inspect_url(
+    "https://docs.example.com/api",
+    model=documentation_model,
+)
+
+print(proposal.status)
+print(proposal.grounding_score)
+print(proposal.rejected_items)
+```
+
+SchemaRouter strips scripts/styles, treats page text as untrusted data, and verifies each model
+quote against the fetched document. Hallucinated endpoints, parameters, or fields without a
+matching quote are rejected.
+
+A proposal remains non-executable until explicit approval:
+
+```python
+router.approve_proposal(
+    proposal,
+    base_url="https://api.example.com",
+    min_grounding_score=0.8,
+)
+```
+
+Approval has additional runtime gates:
+
+- proposals below the grounding threshold are rejected;
+- POST/PUT/PATCH/DELETE require `allow_mutations=True`;
+- the API base URL must be supplied explicitly rather than inferred from the docs URL;
+- credentials cannot be embedded in the URL and must stay in trusted runtime auth;
+- only after approval is the HTTP invoker bound to the registry.
+
+This makes the unstructured path:
+
+```text
+HTML docs
+  -> text extraction
+  -> structured model proposal
+  -> exact-quote grounding
+  -> non-executable SchemaProposal
+  -> explicit human/application approval
+  -> registry + HTTP executor
+```
+
+Current limitation: client-rendered documentation whose API details are absent from the initial
+HTML response may need a future browser/rendering adapter.
 
 ## Why
 
@@ -238,7 +300,7 @@ pip install -e ".[dev,mcp]"
 1. authenticated/custom-transport MCP URL loading
 2. richer OpenAPI composition/external-reference support
 3. policy engine for provenance, license, permissions, cost, and destructive operations
-4. HTML documentation assistant that proposes schemas for explicit user review rather than silently trusting inference
+4. multi-page and client-rendered documentation discovery
 5. tracing, replay, schema-drift diagnostics, and benchmark suite
 6. LangGraph/LangChain integration adapters
 
