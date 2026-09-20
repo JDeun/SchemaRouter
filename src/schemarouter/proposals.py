@@ -156,25 +156,61 @@ async def _fetch_document_with_safe_redirects(
     current = url
     initial = url
     for _ in range(max_redirects + 1):
-        response = await client.get(current, follow_redirects=False)
-        if not response.is_redirect:
-            return response
+        async with client.stream(
+            "GET",
+            current,
+            follow_redirects=False,
+        ) as response:
+            if response.is_redirect:
+                location = response.headers.get("location")
+                if not location:
+                    raise SchemaSourceError("documentation redirect is missing Location")
+                target = urljoin(current, location)
+                parsed = urlparse(target)
+                if (
+                    parsed.scheme not in {"http", "https"}
+                    or not parsed.netloc
+                    or parsed.username
+                    or parsed.password
+                ):
+                    raise SchemaSourceError(
+                        "documentation redirect target is not a safe http(s) URL"
+                    )
+                if not same_origin(initial, target):
+                    raise SchemaSourceError(
+                        "cross-origin documentation redirects are not allowed"
+                    )
+                current = target
+                continue
 
-        location = response.headers.get("location")
-        if not location:
-            raise SchemaSourceError("documentation redirect is missing Location")
-        target = urljoin(current, location)
-        parsed = urlparse(target)
-        if (
-            parsed.scheme not in {"http", "https"}
-            or not parsed.netloc
-            or parsed.username
-            or parsed.password
-        ):
-            raise SchemaSourceError("documentation redirect target is not a safe http(s) URL")
-        if not same_origin(initial, target):
-            raise SchemaSourceError("cross-origin documentation redirects are not allowed")
-        current = target
+            response.raise_for_status()
+            content_length = response.headers.get("content-length")
+            if content_length is not None:
+                try:
+                    declared_size = int(content_length)
+                except ValueError:
+                    declared_size = None
+                if declared_size is not None and declared_size > _MAX_DOCUMENT_BYTES:
+                    raise SchemaSourceError(
+                        f"documentation response exceeds {_MAX_DOCUMENT_BYTES} byte safety limit"
+                    )
+
+            chunks: list[bytes] = []
+            total = 0
+            async for chunk in response.aiter_bytes():
+                total += len(chunk)
+                if total > _MAX_DOCUMENT_BYTES:
+                    raise SchemaSourceError(
+                        f"documentation response exceeds {_MAX_DOCUMENT_BYTES} byte safety limit"
+                    )
+                chunks.append(chunk)
+
+            return httpx.Response(
+                status_code=response.status_code,
+                headers=response.headers,
+                content=b"".join(chunks),
+                request=response.request,
+            )
 
     raise SchemaSourceError("documentation URL exceeded the redirect limit")
 
@@ -205,10 +241,6 @@ async def inspect_documentation_url(
             async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
                 response = await _fetch_document_with_safe_redirects(client, url)
         response.raise_for_status()
-        if len(response.content) > _MAX_DOCUMENT_BYTES:
-            raise SchemaSourceError(
-                f"documentation response exceeds {_MAX_DOCUMENT_BYTES} byte safety limit"
-            )
     except SchemaSourceError:
         raise
     except Exception as exc:  # noqa: BLE001
