@@ -50,6 +50,7 @@ dev = [
 [project.urls]
 Homepage = "https://github.com/JDeun/SchemaRouter"
 Repository = "https://github.com/JDeun/SchemaRouter"
+Documentation = "https://jdeun.github.io/SchemaRouter/"
 Issues = "https://github.com/JDeun/SchemaRouter/issues"
 Research = "https://github.com/JDeun/paper_SchemaRouter"
 
