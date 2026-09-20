@@ -15,10 +15,7 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Security invariants have regression tests.
 - [ ] SECURITY.md still matches URL, credential, retry, and observability behavior.
 - [ ] No credentials, tokens, fixtures containing secrets, or generated local state are committed.
-- [ ] License is explicitly selected and a LICENSE file exists.
-
-The license decision is intentionally unresolved in v0.1 development. Do not publish the package
-until the project owner selects the license.
+- [ ] MIT license metadata and the root LICENSE file are present in the release artifact.
 
 ## Compatibility gates
 
