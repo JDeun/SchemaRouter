@@ -9,6 +9,7 @@ from .errors import (
     SchemaDriftError,
     SchemaRouterError,
     SchemaSourceError,
+    SchemaValidationError,
     UnsupportedSchemaSourceError,
 )
 from .executor import RegistryExecutor
@@ -69,6 +70,7 @@ __all__ = [
     "SchemaRouter",
     "SchemaRouterError",
     "SchemaSourceError",
+    "SchemaValidationError",
     "ToolCall",
     "ToolResult",
     "ToolSpec",
