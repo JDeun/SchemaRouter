@@ -78,7 +78,7 @@ class SchemaRouter:
         policy: ExecutionPolicy | None = None,
         registry: ToolRegistry | None = None,
     ) -> None:
-        self.registry = registry or InMemoryRegistry()
+        self.registry = registry if registry is not None else InMemoryRegistry()
         self.planner = SchemaPlanner(self.registry, analyzer=analyzer)
         self.executor = RegistryExecutor(self.registry, policy=policy)
         self.loader = URLSchemaLoader(
