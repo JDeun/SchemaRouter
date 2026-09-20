@@ -157,9 +157,7 @@ class URLSchemaLoader:
                             "OpenAPI execution base URL or trusted headers are invalid"
                         ) from exc
 
-                key = self.registry.register(tool, replace=replace)
                 if invoker is not None:
-                    self.executor.bind(key, invoker)
                     tool.metadata.update(
                         {
                             "execution_bound": True,
@@ -173,7 +171,11 @@ class URLSchemaLoader:
                             "requires_explicit_base_url": True,
                         }
                     )
-                return tool
+
+                key = self.registry.register(tool, replace=replace)
+                if invoker is not None:
+                    self.executor.bind(key, invoker)
+                return self.registry.get(key)
 
             if kind == "openapi":
                 detail = "; ".join(diagnostics) or "document is not OpenAPI 3.x"
@@ -196,7 +198,7 @@ class URLSchemaLoader:
                     )
                     key = self.registry.register(tool, replace=replace)
                     self.executor.bind(key, MCPRemoteInvoker(url))
-                    return tool
+                    return self.registry.get(key)
                 except Exception as exc:  # noqa: BLE001
                     diagnostics.append(f"MCP: {exc}")
 
