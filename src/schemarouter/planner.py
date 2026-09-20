@@ -17,7 +17,7 @@ from .models import (
     ToolCall,
     ToolSpec,
 )
-from .registry import InMemoryRegistry
+from .registry import ToolRegistry
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[가-힣]+")
 
@@ -34,14 +34,14 @@ class QueryAnalyzer(Protocol):
     def analyze(
         self,
         request: PlanRequest,
-        registry: InMemoryRegistry,
+        registry: ToolRegistry,
     ) -> QueryIntent | Awaitable[QueryIntent]: ...
 
 
 class KeywordAnalyzer:
     """Offline default analyzer. It never invents values or tool names."""
 
-    def analyze(self, request: PlanRequest, registry: InMemoryRegistry) -> QueryIntent:
+    def analyze(self, request: PlanRequest, registry: ToolRegistry) -> QueryIntent:
         concepts = list(dict.fromkeys([*request.concepts, *_tokens(request.query)]))
         return QueryIntent(
             concepts=concepts,
@@ -62,7 +62,7 @@ class _Candidate:
 class SchemaPlanner:
     """Schema-aware planner with sync and async query-analysis paths."""
 
-    def __init__(self, registry: InMemoryRegistry, analyzer: QueryAnalyzer | None = None) -> None:
+    def __init__(self, registry: ToolRegistry, analyzer: QueryAnalyzer | None = None) -> None:
         self.registry = registry
         self.analyzer = analyzer or KeywordAnalyzer()
 
