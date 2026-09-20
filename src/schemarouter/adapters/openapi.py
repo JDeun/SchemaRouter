@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from copy import deepcopy
 from typing import Any
+from urllib.parse import urljoin
+
+import httpx
 
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 
@@ -61,12 +64,8 @@ def tool_from_openapi(
         for method, operation in path_item.items():
             if method.lower() not in _HTTP_METHODS or not isinstance(operation, dict):
                 continue
-            fallback_name = (
-                path.strip("/").replace("/", "_") or "root"
-            )
-            operation_id = operation.get("operationId") or (
-                f"{method.lower()}_{fallback_name}"
-            )
+            fallback_name = path.strip("/").replace("/", "_") or "root"
+            operation_id = operation.get("operationId") or f"{method.lower()}_{fallback_name}"
             parameters: list[ParameterSpec] = []
             merged_parameters = [*path_parameters, *operation.get("parameters", [])]
             seen: set[tuple[str, str]] = set()
@@ -133,9 +132,7 @@ def tool_from_openapi(
                     identifier=field_name in {"id", "uuid", "key"} or field_name.endswith("_id"),
                     aliases=[field_name.replace("_", " ")],
                 )
-                for field_name, field_schema in _schema_properties(
-                    document, response_schema
-                ).items()
+                for field_name, field_schema in _schema_properties(document, response_schema).items()
             ]
 
             endpoints.append(
@@ -165,3 +162,65 @@ def tool_from_openapi(
             "title": (document.get("info") or {}).get("title"),
         },
     )
+
+
+def resolve_openapi_base_url(document: dict[str, Any], source_url: str) -> str:
+    servers = document.get("servers") or []
+    if servers and isinstance(servers[0], dict) and servers[0].get("url"):
+        return urljoin(source_url, str(servers[0]["url"]))
+    return urljoin(source_url, "/")
+
+
+class OpenAPIRemoteInvoker:
+    """Minimal trusted HTTP executor for a parsed OpenAPI tool."""
+
+    def __init__(
+        self,
+        tool: ToolSpec,
+        base_url: str,
+        *,
+        trusted_headers: dict[str, str] | None = None,
+        timeout: float = 20.0,
+    ) -> None:
+        self.tool = tool
+        self.base_url = base_url
+        self.trusted_headers = dict(trusted_headers or {})
+        self.timeout = timeout
+
+    async def __call__(self, endpoint_name: str, arguments: dict[str, Any]) -> Any:
+        endpoint = self.tool.endpoint(endpoint_name)
+        if not endpoint.method or not endpoint.path:
+            raise RuntimeError(f"endpoint {endpoint_name!r} is missing HTTP method/path")
+
+        path = endpoint.path
+        query: dict[str, Any] = {}
+        body: dict[str, Any] = {}
+        headers = dict(self.trusted_headers)
+
+        for parameter in endpoint.parameters:
+            if parameter.name not in arguments:
+                continue
+            value = arguments[parameter.name]
+            if parameter.location == "path":
+                path = path.replace("{" + parameter.name + "}", str(value))
+            elif parameter.location == "query":
+                query[parameter.name] = value
+            elif parameter.location == "header":
+                headers[parameter.name] = str(value)
+            elif parameter.location == "body":
+                body[parameter.name] = value
+
+        url = urljoin(self.base_url.rstrip("/") + "/", path.lstrip("/"))
+        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+            response = await client.request(
+                endpoint.method,
+                url,
+                params=query or None,
+                json=body or None,
+                headers=headers or None,
+            )
+            response.raise_for_status()
+            content_type = response.headers.get("content-type", "").lower()
+            if "json" in content_type:
+                return response.json()
+            return {"text": response.text}
