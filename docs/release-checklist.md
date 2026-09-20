@@ -16,6 +16,8 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] SECURITY.md still matches URL, credential, retry, and observability behavior.
 - [ ] No credentials, tokens, fixtures containing secrets, or generated local state are committed.
 - [ ] MIT license metadata and the root LICENSE file are present in the release artifact.
+- [ ] README, documentation header, favicon, and brand guide use the approved SchemaRouter mark.
+- [ ] The GitHub repository social preview is exported from the approved 1280×640 brand source and set in repository settings.
 
 ## Compatibility gates
 
