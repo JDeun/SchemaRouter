@@ -22,6 +22,10 @@ class PlanValidationError(SchemaRouterError):
     """Raised when an execution plan violates the current schema."""
 
 
+class PolicyViolationError(PlanValidationError):
+    """Raised when local execution policy denies a tool call."""
+
+
 class SchemaDriftError(PlanValidationError):
     """Raised when a plan was compiled against an older endpoint schema."""
 
