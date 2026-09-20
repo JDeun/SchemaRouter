@@ -4,7 +4,7 @@ import inspect
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from ..errors import ModelAnalysisError
 from ..models import EvidenceRequirements, PlanRequest, QueryIntent
@@ -14,6 +14,8 @@ ModelCallable = Callable[[dict[str, Any]], dict[str, Any] | Awaitable[dict[str, 
 
 
 class ModelIntent(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     preferred_tools: list[str] = Field(default_factory=list)
     preferred_endpoints: list[str] = Field(default_factory=list)
     arguments: dict[str, Any] = Field(default_factory=dict)
