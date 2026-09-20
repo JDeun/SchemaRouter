@@ -5,6 +5,8 @@ from .errors import (
     RegistrationError,
     SchemaDriftError,
     SchemaRouterError,
+    SchemaSourceError,
+    UnsupportedSchemaSourceError,
 )
 from .executor import RegistryExecutor
 from .models import (
@@ -21,6 +23,7 @@ from .models import (
 )
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .registry import InMemoryRegistry
+from .runtime import SchemaRouter
 
 __all__ = [
     "EndpointSpec",
@@ -40,8 +43,11 @@ __all__ = [
     "RegistryExecutor",
     "SchemaDriftError",
     "SchemaPlanner",
+    "SchemaRouter",
     "SchemaRouterError",
+    "SchemaSourceError",
     "ToolCall",
     "ToolResult",
     "ToolSpec",
+    "UnsupportedSchemaSourceError",
 ]
