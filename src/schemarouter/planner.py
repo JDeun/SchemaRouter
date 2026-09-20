@@ -70,6 +70,8 @@ class SchemaPlanner:
         request = self._prepare_request(request)
         intent = self.analyzer.analyze(request, self.registry)
         if inspect.isawaitable(intent):
+            if inspect.iscoroutine(intent):
+                intent.close()
             raise PlanningError(
                 "the configured analyzer is asynchronous; use await planner.aplan(...)"
             )
