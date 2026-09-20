@@ -83,6 +83,12 @@ class ToolSpec(StrictModel):
     def key(self) -> str:
         return f"{self.namespace}.{self.name}" if self.namespace else self.name
 
+    @property
+    def fingerprint(self) -> str:
+        payload = self.model_dump(mode="json", exclude={"metadata"})
+        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
     def endpoint(self, name: str) -> EndpointSpec:
         for endpoint in self.endpoints:
             if endpoint.name == name:
