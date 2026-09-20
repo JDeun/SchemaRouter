@@ -132,7 +132,9 @@ def tool_from_openapi(
                     identifier=field_name in {"id", "uuid", "key"} or field_name.endswith("_id"),
                     aliases=[field_name.replace("_", " ")],
                 )
-                for field_name, field_schema in _schema_properties(\n                    document, response_schema\n                ).items()
+                for field_name, field_schema in _schema_properties(
+                    document, response_schema
+                ).items()
             ]
 
             endpoints.append(
