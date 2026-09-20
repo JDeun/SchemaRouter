@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from urllib.parse import urlparse
+
 import httpx
 
+from .adapters.openapi import OpenAPIRemoteInvoker
+from .errors import ProposalApprovalError
 from .executor import RegistryExecutor
 from .ingestion import SourceKind, URLSchemaLoader
 from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
@@ -68,6 +72,60 @@ class SchemaRouter:
             timeout=timeout,
             max_document_chars=max_document_chars,
         )
+
+    def approve_proposal(
+        self,
+        proposal: SchemaProposal,
+        *,
+        base_url: str,
+        min_grounding_score: float = 0.8,
+        allow_mutations: bool = False,
+        replace: bool = False,
+        trusted_headers: dict[str, str] | None = None,
+        timeout: float = 20.0,
+    ) -> str:
+        if proposal.status != "grounded" or proposal.tool is None:
+            raise ProposalApprovalError("proposal has no grounded tool to approve")
+        if proposal.grounding_score < min_grounding_score:
+            raise ProposalApprovalError(
+                "proposal grounding score is below the required threshold"
+            )
+
+        parsed = urlparse(base_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            raise ProposalApprovalError("base_url must be an absolute http(s) URL")
+
+        mutating = [
+            endpoint.name
+            for endpoint in proposal.tool.endpoints
+            if endpoint.method not in {"GET", "HEAD", "OPTIONS"}
+        ]
+        if mutating and not allow_mutations:
+            raise ProposalApprovalError(
+                "proposal contains mutating endpoints; set allow_mutations=True "
+                "after explicit review"
+            )
+
+        tool = proposal.tool.model_copy(deep=True)
+        tool.metadata.update(
+            {
+                "approved_from_proposal": True,
+                "executable": True,
+                "grounding_score": proposal.grounding_score,
+                "approved_base_url": base_url,
+            }
+        )
+        key = self.registry.register(tool, replace=replace)
+        self.executor.bind(
+            key,
+            OpenAPIRemoteInvoker(
+                tool,
+                base_url,
+                trusted_headers=trusted_headers,
+                timeout=timeout,
+            ),
+        )
+        return key
 
     async def add_url(
         self,
