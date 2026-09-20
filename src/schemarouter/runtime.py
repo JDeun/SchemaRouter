@@ -76,9 +76,16 @@ class SchemaRouter:
     def plan(self, request: PlanRequest | str) -> ExecutionPlan:
         return self.planner.plan(request)
 
+    async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
+        return await self.planner.aplan(request)
+
     async def execute(self, plan: ExecutionPlan) -> list[ToolResult]:
         return await self.executor.execute(plan)
 
     async def run(self, request: PlanRequest | str) -> list[ToolResult]:
         plan = self.plan(request)
+        return await self.execute(plan)
+
+    async def arun(self, request: PlanRequest | str) -> list[ToolResult]:
+        plan = await self.aplan(request)
         return await self.execute(plan)
