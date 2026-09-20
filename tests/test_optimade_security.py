@@ -132,7 +132,11 @@ async def test_optimade_runtime_headers_are_not_model_parameters() -> None:
             http_client=client,
         )
         endpoint = router.registry.endpoint("materials.example", "search_structures")
-        assert "authorization" not in {parameter.name.casefold() for parameter in endpoint.parameters}
+        parameter_names = {
+            parameter.name.casefold()
+            for parameter in endpoint.parameters
+        }
+        assert "authorization" not in parameter_names
 
         plan = router.plan(
             PlanRequest(
