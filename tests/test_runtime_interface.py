@@ -52,7 +52,7 @@ def make_router(*, read_only: bool | None = True) -> SchemaRouter:
 
 def request(city: str = "Seoul") -> PlanRequest:
     return PlanRequest(
-        query="temperature",
+        query="city temperature",
         arguments={"city": city},
     )
 
