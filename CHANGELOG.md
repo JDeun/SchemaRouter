@@ -25,7 +25,8 @@ The project is pre-1.0 and follows the compatibility rules in
 - optional LangChain `StructuredTool` integration;
 - framework maturity, architecture, release, and versioning documentation;
 - MIT licensing and package metadata;
-- MkDocs Material documentation site with guides, recipes, and generated API reference.
+- MkDocs Material documentation site with guides, recipes, and generated API reference;
+- SchemaRouter brace-and-routing-hub brand system with light/dark marks, lockups, favicon, and social preview source artwork.
 
 ### Security
 
