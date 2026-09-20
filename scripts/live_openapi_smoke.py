@@ -5,12 +5,18 @@ import os
 
 from schemarouter import PlanRequest, SchemaRouter
 
-DEFAULT_OPENAPI_URL = "https://coral.ax/openapi.json"
+DEFAULT_OPENAPI_URL = "https://hopinjobs.com/openapi.json"
+DEFAULT_BASE_URL = "https://api.hopinjobs.com"
 
 
 async def main() -> None:
     url = os.environ.get("SCHEMAROUTER_LIVE_OPENAPI_URL", DEFAULT_OPENAPI_URL)
-    router = await SchemaRouter.from_url(url, kind="openapi")
+    base_url = os.environ.get("SCHEMAROUTER_LIVE_OPENAPI_BASE_URL", DEFAULT_BASE_URL)
+    router = await SchemaRouter.from_url(
+        url,
+        kind="openapi",
+        base_url=base_url,
+    )
 
     endpoint_name = "getHealth"
     tools = router.registry.tools()
@@ -22,10 +28,12 @@ async def main() -> None:
     endpoint = tool.endpoint(endpoint_name)
 
     assert endpoint.read_only is True
+    assert tool.metadata["execution_bound"] is True
+    assert tool.metadata["approved_base_url"] == base_url
 
     plan = router.plan(
         PlanRequest(
-            query="service health",
+            query="api service health",
             preferred_tools=[tool.key],
             max_calls=32,
         )
@@ -37,13 +45,15 @@ async def main() -> None:
     results = await router.execute(selected_plan)
     assert len(results) == 1
     assert isinstance(results[0].data, dict)
+    assert results[0].data.get("status") == "ok"
 
     print(
         {
             "source": url,
+            "base_url": base_url,
             "tool": tool.key,
             "endpoint": call.endpoint,
-            "keys": sorted(results[0].data)[:10],
+            "status": results[0].data.get("status"),
         }
     )
 
