@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 import httpx
 
 from .adapters.openapi import OpenAPIRemoteInvoker
-from .errors import ProposalApprovalError
+from .errors import ProposalApprovalError, RegistrationError
 from .executor import RegistryExecutor
 from .ingestion import SourceKind, URLSchemaLoader
 from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
@@ -42,6 +42,8 @@ class SchemaRouter:
         namespace: str | None = None,
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
+        base_url: str | None = None,
+        schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
     ) -> SchemaRouter:
         router = cls(analyzer=analyzer, http_client=http_client)
@@ -50,6 +52,8 @@ class SchemaRouter:
             kind=kind,
             name=name,
             namespace=namespace,
+            base_url=base_url,
+            schema_headers=schema_headers,
             trusted_headers=trusted_headers,
         )
         return router
@@ -71,6 +75,36 @@ class SchemaRouter:
             http_client=self.loader.http_client,
             timeout=timeout,
             max_document_chars=max_document_chars,
+        )
+
+    def bind_openapi(
+        self,
+        tool_key: str,
+        *,
+        base_url: str,
+        trusted_headers: dict[str, str] | None = None,
+        timeout: float = 20.0,
+    ) -> None:
+        tool = self.registry.get(tool_key)
+        if tool.metadata.get("adapter") != "openapi":
+            raise RegistrationError(
+                f"tool {tool_key!r} was not imported from OpenAPI"
+            )
+        self.executor.bind(
+            tool_key,
+            OpenAPIRemoteInvoker(
+                tool,
+                base_url,
+                trusted_headers=trusted_headers,
+                timeout=timeout,
+            ),
+        )
+        tool.metadata.update(
+            {
+                "execution_bound": True,
+                "approved_base_url": base_url,
+                "requires_explicit_base_url": False,
+            }
         )
 
     def approve_proposal(
@@ -139,6 +173,8 @@ class SchemaRouter:
         name: str | None = None,
         namespace: str | None = None,
         replace: bool = False,
+        base_url: str | None = None,
+        schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         timeout: float = 20.0,
     ) -> ToolSpec:
@@ -148,6 +184,8 @@ class SchemaRouter:
             name=name,
             namespace=namespace,
             replace=replace,
+            base_url=base_url,
+            schema_headers=schema_headers,
             trusted_headers=trusted_headers,
             timeout=timeout,
         )
