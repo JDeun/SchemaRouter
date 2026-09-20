@@ -298,3 +298,24 @@ async def test_documentation_url_rejects_embedded_credentials() -> None:
             "https://user:secret@docs.example.com/api",
             model=model,
         )
+
+
+@pytest.mark.asyncio
+async def test_documentation_response_size_is_bounded() -> None:
+    async def model(payload: dict) -> dict:
+        raise AssertionError("model must not run for oversized documentation")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            content=b"x" * (2 * 1024 * 1024 + 1),
+            headers={"content-type": "text/html"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(SchemaSourceError, match="safety limit"):
+            await router.inspect_url(
+                "https://docs.example.com/api",
+                model=model,
+            )
