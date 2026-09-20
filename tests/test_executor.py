@@ -1,6 +1,7 @@
 import pytest
 
 from schemarouter import (
+    BindingDriftError,
     EndpointSpec,
     ExecutionPlan,
     FieldSpec,
@@ -296,4 +297,40 @@ async def test_executor_validates_output_before_field_projection() -> None:
     )
 
     with pytest.raises(SchemaValidationError, match="internal_count"):
+        await executor.execute(plan)
+
+
+@pytest.mark.asyncio
+async def test_executor_rejects_stale_invoker_after_tool_replacement() -> None:
+    reg = make_registry()
+    executor = RegistryExecutor(reg)
+    executor.bind(
+        "weather",
+        lambda endpoint, arguments: {
+            "city": arguments["city"],
+            "temperature": 20,
+            "debug_blob": "old",
+        },
+    )
+
+    replacement = ToolSpec(
+        name="weather",
+        endpoints=[
+            EndpointSpec(
+                name="current",
+                parameters=[ParameterSpec(name="city", required=True)],
+                output_fields=[
+                    FieldSpec(name="city", identifier=True),
+                    FieldSpec(name="temperature", aliases=["temperature"]),
+                    FieldSpec(name="humidity"),
+                ],
+            )
+        ],
+    )
+    reg.register(replacement, replace=True)
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(query="temperature", arguments={"city": "Seoul"})
+    )
+
+    with pytest.raises(BindingDriftError, match="rebind"):
         await executor.execute(plan)
