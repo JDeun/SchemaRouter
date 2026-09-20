@@ -39,10 +39,12 @@ from .proposals import (
     inspect_documentation_url,
 )
 from .registry import InMemoryRegistry
-from .runtime import SchemaRouter
+from .runs import RetryPolicy, RunConfig, RunEvent
+from .runtime import ConfiguredSchemaRouter, SchemaRouter
 
 __all__ = [
     "BindingDriftError",
+    "ConfiguredSchemaRouter",
     "DocumentationModelCallable",
     "EndpointSpec",
     "EvidenceRequirements",
@@ -68,7 +70,10 @@ __all__ = [
     "QueryAnalyzer",
     "QueryIntent",
     "RegistrationError",
+    "RetryPolicy",
     "RegistryExecutor",
+    "RunConfig",
+    "RunEvent",
     "SchemaDriftError",
     "SchemaPlanner",
     "SchemaProposal",
