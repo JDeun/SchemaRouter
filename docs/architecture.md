@@ -2,93 +2,164 @@
 
 ## Decision
 
-The framework direction passes with constraints. The viable product is a **schema-aware planning and execution layer**, not a general-purpose agent framework.
+SchemaRouter is a **schema-aware planning and execution layer** for LLM tool ecosystems. It is not a general-purpose agent framework, model router, or MCP replacement.
 
-## Adversarial findings
+The v0.1 core is designed around one principle:
 
-### 1. "Tool routing" alone is already commoditized
+> model output and remote schemas may describe capabilities, but only trusted local code grants execution authority.
 
-A framework that only retrieves a relevant tool by semantic similarity has weak differentiation. SchemaRouter therefore treats the following as first-class contracts: tool, endpoint/operation, parameter, output field, evidence requirement, schema fingerprint, and execution result.
-
-### 2. The paper harness flattened endpoint identity
-
-The research artifact conventionally used `<tool>.search`. Real OpenAPI and MCP ecosystems have many operations per provider/server. v0.1 removes the 1:1 assumption: `ToolSpec` owns multiple `EndpointSpec` objects.
-
-### 3. Aggressive field minimization can hurt downstream recall
-
-The research results show that field-count parsimony is the wrong objective when it drops answer-critical fields. v0.1 therefore uses recall-preserving projection: identifiers are retained, explicit concept matches are projected, and ambiguous/no-match cases default to the endpoint's output schema instead of silently pruning it. Future planners may optimize token cost, but only under an explicit recall policy.
-
-### 4. Remote schemas drift
-
-MCP/OpenAPI providers can change independently from an agent workflow. Replaying a stale plan against a changed schema is unsafe and difficult to debug. Every endpoint has a stable canonical fingerprint. Plans store that fingerprint and the executor rejects stale plans (`SchemaDriftError`) unless a caller explicitly replans.
-
-### 5. MCP names are not globally unique
-
-MCP tool names are unique only within a server. The registry therefore supports namespaces and does not rely on a remote server display name as a globally unique identifier. Callers should use stable local server IDs as namespaces.
-
-### 6. Tool annotations and remote metadata are untrusted input
-
-Adapters parse schemas, but do not convert remote annotations into trusted authorization policy. Credentials, approvals, and privileged runtime arguments must be injected by trusted caller/runtime code, not selected by the model.
-
-### 7. Framework scope can explode
-
-The core does not own chat history, memory, vector stores, prompting, or agent graphs. Integrations should adapt SchemaRouter to those systems rather than absorb their responsibilities.
-
-## v0.1 module boundaries
+## Core flow
 
 ```text
-schemarouter.models       typed schema and plan contracts
-schemarouter.registry     versioned in-memory catalog and collision checks
-schemarouter.planner      deterministic candidate scoring + field projection
-schemarouter.executor     stale-plan validation + pluggable invocation
-schemarouter.adapters     schema ingestion (MCP/OpenAPI)
+request
+  -> QueryAnalyzer
+  -> schema-constrained intent
+  -> candidate tool / endpoint
+  -> parameter + field plan
+  -> schema fingerprint
+  -> execution policy
+  -> JSON Schema input validation
+  -> trusted invoker
+  -> JSON Schema output validation
+  -> field projection
+  -> ToolResult
 ```
 
-## Invariants
+## Module boundaries
+
+```text
+schemarouter.models        typed tool / endpoint / plan contracts
+schemarouter.registry      versioned namespaced catalog
+schemarouter.planner       deterministic candidate scoring + recall-first projection
+schemarouter.analyzers     optional model-assisted intent extraction
+schemarouter.validation    JSON Schema runtime validation
+schemarouter.policy        trusted local side-effect authority
+schemarouter.executor      plan, binding, schema and policy enforcement
+schemarouter.adapters      MCP/OpenAPI schema + transport adapters
+schemarouter.ingestion     URL detection, safe schema fetch, registry binding
+schemarouter.proposals     evidence-grounded HTML documentation proposals
+schemarouter.runtime       high-level SchemaRouter facade
+```
+
+## Adversarial findings and responses
+
+### 1. Tool routing alone is commoditized
+
+A semantic `query -> tool` router is not enough differentiation. SchemaRouter makes tool,
+endpoint, parameter, output field, evidence requirements, schema identity, execution authority,
+and result projection explicit contracts.
+
+### 2. The research harness flattened endpoint identity
+
+The research artifact conventionally used one search endpoint per tool. Production OpenAPI and MCP
+servers expose many operations. `ToolSpec` therefore owns multiple first-class `EndpointSpec`
+objects.
+
+### 3. Aggressive field minimization harms recall
+
+The research results showed that minimizing field count can remove answer-critical information.
+The v0.1 planner keeps identifiers, keeps confidently matched fields, and falls back to the full
+declared top-level field set when output intent is ambiguous.
+
+### 4. Remote schemas drift independently
+
+Every endpoint and tool has a canonical schema fingerprint. A plan compiled against an older
+endpoint is rejected. A bound invoker tied to an older tool contract is also rejected after the
+registry changes.
+
+### 5. Model analysis is untrusted
+
+`ModelQueryAnalyzer` returns a structured proposal, not an executable command. Unknown tools,
+endpoints, parameters, fields, and extra JSON keys are rejected or removed. Explicit caller
+arguments override model-produced values.
+
+Descriptions from remote schemas are passed to models only as untrusted data and cannot extend the
+registry or execution authority.
+
+### 6. Remote authorization metadata is untrusted
+
+MCP annotations and OpenAPI descriptions never grant permissions. Sensitive runtime credentials
+stay outside model-visible schemas.
+
+For OpenAPI, `Authorization`, `Cookie`, `Host`, proxy authorization, connection framing, and
+other sensitive runtime headers cannot be supplied through tool arguments.
+
+### 7. Schema fetch credentials and API credentials are different trust domains
+
+`schema_headers` are used only to fetch an OpenAPI document. `trusted_headers` are injected only
+by the runtime invoker. OpenAPI document redirects are followed manually and only within the
+original origin, preventing schema-fetch credentials from crossing origins.
+
+### 8. OpenAPI documents can point at another host
+
+A cross-origin `servers` entry is treated as descriptive, not executable authority. SchemaRouter
+imports the schema but leaves it unbound until trusted local code supplies `base_url` or calls
+`bind_openapi()`.
+
+Runtime HTTP redirects are disabled and endpoint paths are constrained to the approved origin/base
+path.
+
+### 9. Declared parameter names are not enough
+
+The executor validates the actual argument object against JSON Schema immediately before
+invocation. Type, enum, range, required-property, pattern, and other supported constraints therefore
+cannot be bypassed by manually constructing a `ToolCall`.
+
+Raw structured tool output is validated before projection, so field projection cannot hide an
+invalid response.
+
+### 10. Side effects require local authority
+
+The default `ExecutionPolicy` blocks known remote mutations and destructive operations. It also
+blocks MCP operations whose side effects are not trusted locally because MCP annotations remain
+untrusted.
+
+Local application code may explicitly opt into:
+
+- `allow_mutations=True`
+- `allow_destructive=True`
+- `allow_unclassified_remote=True`
+
+A model or remote schema cannot set these flags.
+
+### 11. Human-readable documentation is not an executable contract
+
+`inspect_url()` creates a non-executable `SchemaProposal`. Every accepted endpoint, parameter,
+and field must cite an exact quote found in the fetched document. Script/style content is removed
+before model analysis.
+
+`approve_proposal()` is a separate authority transition with grounding thresholds, explicit API
+base URL, and mutation opt-in. Runtime execution policy remains an independent second gate.
+
+## v0.1 invariants
 
 1. A plan cannot call an unregistered tool or endpoint.
 2. A plan cannot pass undeclared parameters.
-3. A plan with missing required parameters is not executable.
-4. A stale endpoint fingerprint is not executable.
-5. Unknown/ambiguous output needs favor recall over aggressive pruning.
-6. Adapter parsing never grants permissions.
+3. Required parameters are recomputed at execution; a forged plan cannot suppress them.
+4. Arguments must satisfy the current endpoint input JSON Schema.
+5. Requested projection fields must be declared by the current endpoint.
+6. Raw tool output must satisfy the current endpoint output JSON Schema before projection.
+7. A stale endpoint fingerprint cannot execute.
+8. A stale invoker binding cannot execute after tool replacement.
+9. Remote metadata cannot grant authorization.
+10. Known remote mutations/destructive operations require local policy opt-in.
+11. Unclassified remote MCP operations require local policy opt-in.
+12. Schema-fetch credentials cannot cross an origin redirect.
+13. Cross-origin OpenAPI server declarations require explicit local binding.
+14. Runtime API secrets are not model-visible tool parameters.
+15. Ambiguous output selection favors recall over aggressive pruning.
 
-## Deferred deliberately
+## Intentionally deferred after v0.1 core
 
-- model/provider integrations
-- embeddings/vector retrieval
-- HTTP/MCP transports
-- retries and compensation semantics
-- distributed schema registry
-- policy DSL
-- telemetry backends
+- authenticated/custom-transport MCP clients;
+- trusted local classification for individual MCP tool side effects;
+- OpenAPI external refs and richer `oneOf` / `allOf` / recursive-schema handling;
+- non-object request-body ergonomics and richer nested field projection;
+- per-call human approval, quotas, cost budgets, license/provenance policy extensions;
+- retries, compensation, transactions, and distributed execution;
+- persistent/distributed registries;
+- multi-page and client-rendered documentation crawling;
+- observability, replay, benchmark tooling;
+- LangChain/LangGraph integration adapters.
 
-These are extension points after the core contracts survive real integration tests.
-
-
-## Model-assisted query analysis
-
-Model-assisted understanding is an optional analysis stage, not an authority boundary.
-
-The model receives a structured registry catalog plus a response JSON schema. Its output is
-validated, then projected onto the registry before planning. Unknown tools, endpoints, parameters,
-and fields are discarded. Explicit caller arguments override model-generated values.
-
-Async analyzers use `aplan()` / `arun()`; the existing synchronous `plan()` remains deterministic
-and rejects an async analyzer with an explicit error instead of creating an implicit event loop.
-
-Remote descriptions are included only as untrusted data. They cannot expand permissions, register
-new executable schemas, or bypass executor validation.
-
-
-## Unstructured documentation trust boundary
-
-Human-readable documentation is never auto-promoted to an executable contract.
-
-`inspect_url()` produces a `SchemaProposal`. Each proposed endpoint, parameter, and field must
-carry an exact quote that can be found in the fetched document after normalization. Items without
-grounded evidence are dropped. Script/style content is excluded before the model sees the page.
-
-`approve_proposal()` is the explicit authority transition. It requires a caller-supplied API base
-URL, a minimum grounding score, and a separate opt-in for mutating HTTP methods. Credentials are
-kept outside both the proposal and URL. Only after these checks is a runtime invoker bound.
+These are extension layers. They should not weaken the core fail-closed contracts above.
