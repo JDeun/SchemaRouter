@@ -3,7 +3,7 @@ import json
 import httpx
 import pytest
 
-from schemarouter import SchemaRouter, SchemaSourceError
+from schemarouter import PlanRequest, SchemaRouter, SchemaSourceError
 
 
 def _base_info(entry_types: list[str]) -> dict:
@@ -135,7 +135,10 @@ async def test_optimade_runtime_headers_are_not_model_parameters() -> None:
         assert "authorization" not in {parameter.name.casefold() for parameter in endpoint.parameters}
 
         plan = router.plan(
-            "nelements"
+            PlanRequest(
+                query="search nelements",
+                arguments={"page_limit": 1},
+            )
         )
         await router.execute(plan)
 
