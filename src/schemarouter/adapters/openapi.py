@@ -46,7 +46,21 @@ def _schema_properties(document: dict[str, Any], schema: Any) -> dict[str, dict[
     return {name: _resolve_local_ref(document, spec) for name, spec in props.items()}
 
 
-def _parameters_schema(parameters: list[ParameterSpec]) -> dict[str, Any]:
+def _with_components(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> dict[str, Any]:
+    resolved = deepcopy(schema)
+    components = document.get("components")
+    if isinstance(components, dict) and components:
+        resolved["components"] = deepcopy(components)
+    return resolved
+
+
+def _parameters_schema(
+    document: dict[str, Any],
+    parameters: list[ParameterSpec],
+) -> dict[str, Any]:
     properties = {
         parameter.name: parameter.json_schema or {}
         for parameter in parameters
@@ -63,7 +77,7 @@ def _parameters_schema(parameters: list[ParameterSpec]) -> dict[str, Any]:
     }
     if required:
         schema["required"] = required
-    return schema
+    return _with_components(document, schema)
 
 
 def _response_schema(document: dict[str, Any], responses: dict[str, Any]) -> dict[str, Any]:
@@ -73,7 +87,10 @@ def _response_schema(document: dict[str, Any], responses: dict[str, Any]) -> dic
             content = response.get("content", {}) if isinstance(response, dict) else {}
             for media in ("application/json", "application/problem+json"):
                 if media in content and isinstance(content[media], dict):
-                    return _resolve_local_ref(document, content[media].get("schema", {}))
+                    schema = _resolve_local_ref(document, content[media].get("schema", {}))
+                    if isinstance(schema, dict):
+                        return _with_components(document, schema)
+                    return {}
     return {}
 
 
@@ -215,7 +232,7 @@ def tool_from_openapi(
                     description=operation.get("summary") or operation.get("description", ""),
                     parameters=parameters,
                     output_fields=fields,
-                    input_schema=_parameters_schema(parameters),
+                    input_schema=_parameters_schema(document, parameters),
                     output_schema=response_schema if isinstance(response_schema, dict) else {},
                     method=method.upper(),
                     path=path,
