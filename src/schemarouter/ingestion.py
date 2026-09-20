@@ -237,11 +237,6 @@ class URLSchemaLoader:
                     url,
                     headers=headers,
                 )
-        response.raise_for_status()
-        if len(response.content) > _MAX_SCHEMA_BYTES:
-            raise SchemaSourceError(
-                f"OpenAPI document exceeds {_MAX_SCHEMA_BYTES} byte safety limit"
-            )
         return _parse_openapi_text(response.text), str(response.url)
 
     @staticmethod
@@ -255,23 +250,52 @@ class URLSchemaLoader:
         current = url
         initial = url
         for _ in range(max_redirects + 1):
-            response = await client.get(
+            async with client.stream(
+                "GET",
                 current,
                 headers=headers,
                 follow_redirects=False,
-            )
-            if not response.is_redirect:
-                return response
+            ) as response:
+                if response.is_redirect:
+                    location = response.headers.get("location")
+                    if not location:
+                        raise SchemaSourceError("schema redirect response is missing Location")
+                    target = urljoin(current, location)
+                    _validate_url(target)
+                    if not same_origin(initial, target):
+                        raise SchemaSourceError(
+                            "cross-origin schema redirects are not allowed"
+                        )
+                    current = target
+                    continue
 
-            location = response.headers.get("location")
-            if not location:
-                raise SchemaSourceError("schema redirect response is missing Location")
-            target = urljoin(current, location)
-            _validate_url(target)
-            if not same_origin(initial, target):
-                raise SchemaSourceError(
-                    "cross-origin schema redirects are not allowed"
+                response.raise_for_status()
+                content_length = response.headers.get("content-length")
+                if content_length is not None:
+                    try:
+                        declared_size = int(content_length)
+                    except ValueError:
+                        declared_size = None
+                    if declared_size is not None and declared_size > _MAX_SCHEMA_BYTES:
+                        raise SchemaSourceError(
+                            f"OpenAPI document exceeds {_MAX_SCHEMA_BYTES} byte safety limit"
+                        )
+
+                chunks: list[bytes] = []
+                total = 0
+                async for chunk in response.aiter_bytes():
+                    total += len(chunk)
+                    if total > _MAX_SCHEMA_BYTES:
+                        raise SchemaSourceError(
+                            f"OpenAPI document exceeds {_MAX_SCHEMA_BYTES} byte safety limit"
+                        )
+                    chunks.append(chunk)
+
+                return httpx.Response(
+                    status_code=response.status_code,
+                    headers=response.headers,
+                    content=b"".join(chunks),
+                    request=response.request,
                 )
-            current = target
 
         raise SchemaSourceError("schema URL exceeded the redirect limit")
