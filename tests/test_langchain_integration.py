@@ -1,5 +1,7 @@
 import pytest
 
+pytest.importorskip("langchain_core")
+
 from schemarouter import SchemaRouter, SchemaValidationError, schema_tool
 from schemarouter.integrations import to_langchain_tool, to_langchain_tools
 
