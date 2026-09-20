@@ -57,6 +57,42 @@ def _with_components(
     return resolved
 
 
+def _disambiguate_parameter_names(
+    parameters: list[ParameterSpec],
+) -> list[ParameterSpec]:
+    counts: dict[str, int] = {}
+    for parameter in parameters:
+        counts[parameter.name] = counts.get(parameter.name, 0) + 1
+
+    used: set[str] = set()
+    result: list[ParameterSpec] = []
+    for parameter in parameters:
+        raw_name = parameter.name
+        logical_name = raw_name
+        if counts[raw_name] > 1 or logical_name in used:
+            base = f"{parameter.location}__{raw_name}"
+            logical_name = base
+            suffix = 2
+            while logical_name in used:
+                logical_name = f"{base}__{suffix}"
+                suffix += 1
+
+        used.add(logical_name)
+        if logical_name == raw_name:
+            result.append(parameter)
+        else:
+            result.append(
+                parameter.model_copy(
+                    update={
+                        "name": logical_name,
+                        "wire_name": parameter.wire_name or raw_name,
+                    },
+                    deep=True,
+                )
+            )
+    return result
+
+
 def _parameters_schema(
     document: dict[str, Any],
     parameters: list[ParameterSpec],
@@ -208,6 +244,8 @@ def tool_from_openapi(
                         )
                     )
 
+            parameters = _disambiguate_parameter_names(parameters)
+
             response_schema = _response_schema(document, operation.get("responses", {}))
             fields = [
                 FieldSpec(
@@ -332,26 +370,27 @@ class OpenAPIRemoteInvoker:
             if parameter.name not in arguments:
                 continue
             value = arguments[parameter.name]
+            wire_name = parameter.wire_name or parameter.name
             if parameter.location == "path":
                 encoded = quote(str(value), safe="").replace(".", "%2E")
-                path = path.replace("{" + parameter.name + "}", encoded)
+                path = path.replace("{" + wire_name + "}", encoded)
             elif parameter.location == "query":
-                query[parameter.name] = value
+                query[wire_name] = value
             elif parameter.location == "header":
-                normalized_name = parameter.name.casefold()
-                if not _HEADER_NAME_RE.fullmatch(parameter.name):
-                    raise RuntimeError(f"invalid header parameter name: {parameter.name!r}")
+                normalized_name = wire_name.casefold()
+                if not _HEADER_NAME_RE.fullmatch(wire_name):
+                    raise RuntimeError(f"invalid header parameter name: {wire_name!r}")
                 if normalized_name in self.trusted_header_names:
                     raise RuntimeError(
-                        f"tool argument cannot override trusted header {parameter.name!r}"
+                        f"tool argument cannot override trusted header {wire_name!r}"
                     )
                 if normalized_name in _SENSITIVE_RUNTIME_HEADERS:
                     raise RuntimeError(
-                        f"sensitive header {parameter.name!r} must come from trusted runtime auth"
+                        f"sensitive header {wire_name!r} must come from trusted runtime auth"
                     )
-                headers[parameter.name] = str(value)
+                headers[wire_name] = str(value)
             elif parameter.location == "body":
-                body[parameter.name] = value
+                body[wire_name] = value
 
         if re.search(r"{[^{}]+}", path):
             raise RuntimeError(f"unresolved path parameter in endpoint {endpoint_name!r}")
