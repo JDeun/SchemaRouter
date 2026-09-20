@@ -33,6 +33,11 @@ jobs:
       - run: pip install build twine
       - run: python -m build
       - run: twine check dist/*
+      - run: python -m venv /tmp/schemarouter-wheel
+      - run: /tmp/schemarouter-wheel/bin/python -m pip install --upgrade pip
+      - run: /tmp/schemarouter-wheel/bin/pip install dist/*.whl
+      - run: /tmp/schemarouter-wheel/bin/python -c "import schemarouter; assert schemarouter.__version__ == '0.1.0a1'"
+      - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
 
   langchain-integration:
     runs-on: ubuntu-latest
