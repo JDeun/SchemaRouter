@@ -5,7 +5,13 @@ import inspect
 from collections.abc import AsyncIterator, Awaitable
 from typing import Any, Protocol
 
-from .errors import BindingDriftError, ExecutionError, PlanValidationError, SchemaDriftError
+from .errors import (
+    BindingDriftError,
+    ExecutionError,
+    PlanValidationError,
+    SchemaDriftError,
+    SchemaValidationError,
+)
 from .models import ExecutionPlan, ToolCall, ToolResult
 from .policy import ExecutionPolicy
 from .registry import InMemoryRegistry
@@ -143,16 +149,26 @@ class RegistryExecutor:
                     data=projected,
                     projected_fields=call.fields,
                 )
+            except SchemaValidationError as exc:
+                last_error = exc
+                if attempt >= max_attempts:
+                    raise
+                if delay > 0:
+                    await asyncio.sleep(delay)
+                    delay = min(
+                        retry.max_backoff_seconds,
+                        delay * retry.backoff_multiplier,
+                    )
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
                 if attempt >= max_attempts:
                     break
                 if delay > 0:
                     await asyncio.sleep(delay)
-                delay = min(
-                    retry.max_backoff_seconds,
-                    max(delay, 1e-9) * retry.backoff_multiplier,
-                )
+                    delay = min(
+                        retry.max_backoff_seconds,
+                        delay * retry.backoff_multiplier,
+                    )
 
         raise ExecutionError(
             f"invocation failed for {call.tool}.{call.endpoint} after {max_attempts} attempt(s)"
