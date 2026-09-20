@@ -1,4 +1,6 @@
 from ._version import __version__
+from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .adapters.optimade import OPTIMADESourceAdapter
 from .adapters.python import schema_tool, tool_from_callable
 from .analyzers import ModelCallable, ModelQueryAnalyzer
 from .errors import (
@@ -38,6 +40,9 @@ from .runtime import ConfiguredSchemaRouter, SchemaRouter
 
 __all__ = [
     "__version__",
+    "AdapterContext",
+    "AdapterLoadResult",
+    "AdapterRegistry",
     "BindingDriftError",
     "ConfiguredSchemaRouter",
     "EndpointSpec",
@@ -71,6 +76,8 @@ __all__ = [
     "SchemaRouterError",
     "SchemaSourceError",
     "SchemaValidationError",
+    "SourceAdapter",
+    "OPTIMADESourceAdapter",
     "ToolCall",
     "ToolRegistry",
     "ToolResult",
