@@ -20,3 +20,11 @@ class SchemaDriftError(PlanValidationError):
 
 class ExecutionError(SchemaRouterError):
     """Raised when tool invocation fails."""
+
+
+class SchemaSourceError(SchemaRouterError):
+    """Raised when a remote schema source cannot be loaded safely."""
+
+
+class UnsupportedSchemaSourceError(SchemaSourceError):
+    """Raised when a URL is neither a supported OpenAPI document nor an MCP server."""
