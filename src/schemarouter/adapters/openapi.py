@@ -127,6 +127,11 @@ def tool_from_openapi(
                 seen.add(key)
                 if location not in {"path", "query", "header"}:
                     continue
+                if (
+                    location == "header"
+                    and str(parameter["name"]).casefold() in _SENSITIVE_RUNTIME_HEADERS
+                ):
+                    continue
                 parameters.append(
                     ParameterSpec(
                         name=parameter["name"],
