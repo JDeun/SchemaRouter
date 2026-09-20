@@ -122,20 +122,18 @@ class ModelQueryAnalyzer:
             if len(matches) == 1:
                 preferred_tools.append(matches[0])
 
-        valid_endpoint_keys = {
-            f"{tool.key}.{endpoint.name}"
+        endpoint_map = {
+            f"{tool.key}.{endpoint.name}": endpoint
             for tool in registry.tools()
             for endpoint in tool.endpoints
         }
         preferred_endpoints = [
-            value for value in parsed.preferred_endpoints if value in valid_endpoint_keys
+            value for value in parsed.preferred_endpoints if value in endpoint_map
         ]
 
         selected_endpoints = []
         if preferred_endpoints:
-            for key in preferred_endpoints:
-                tool_key, endpoint_name = key.rsplit(".", 1)
-                selected_endpoints.append(registry.endpoint(tool_key, endpoint_name))
+            selected_endpoints.extend(endpoint_map[key] for key in preferred_endpoints)
         elif preferred_tools:
             for tool_key in preferred_tools:
                 selected_endpoints.extend(registry.get(tool_key).endpoints)
