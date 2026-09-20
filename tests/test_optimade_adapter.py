@@ -267,3 +267,61 @@ async def test_optimade_index_metadatabase_is_not_silently_executable() -> None:
                 "https://index.example",
                 kind="optimade",
             )
+
+
+@pytest.mark.asyncio
+async def test_optimade_accepts_legacy_entry_info_without_type_or_id() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url == httpx.URL("https://materials.example/v1/info"):
+            return httpx.Response(200, json=base_info())
+        if request.url == httpx.URL("https://materials.example/v1/info/structures"):
+            document = structures_info()
+            data = document["data"]
+            data.pop("type")
+            data.pop("id")
+            return httpx.Response(200, json=document)
+        if request.url == httpx.URL("https://materials.example/v1/info/references"):
+            document = references_info()
+            data = document["data"]
+            data.pop("type")
+            data.pop("id")
+            return httpx.Response(200, json=document)
+        raise AssertionError(f"unexpected request: {request.url}")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://materials.example",
+            kind="optimade",
+            http_client=client,
+        )
+
+    tool = router.registry.get("materials.example")
+    assert set(tool.metadata["inferred_entry_info_identity"]) == {
+        "structures",
+        "references",
+    }
+    assert router.registry.endpoint("materials.example", "search_structures")
+
+
+@pytest.mark.asyncio
+async def test_optimade_rejects_conflicting_entry_info_identity() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url == httpx.URL("https://materials.example/v1/info"):
+            return httpx.Response(200, json=base_info())
+        if request.url == httpx.URL("https://materials.example/v1/info/structures"):
+            document = structures_info()
+            document["data"]["id"] = "references"
+            return httpx.Response(200, json=document)
+        if request.url == httpx.URL("https://materials.example/v1/info/references"):
+            document = references_info()
+            document["data"]["type"] = "structures"
+            return httpx.Response(200, json=document)
+        raise AssertionError(f"unexpected request: {request.url}")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(SchemaSourceError, match="no usable entry schemas"):
+            await router.add_url(
+                "https://materials.example",
+                kind="optimade",
+            )
