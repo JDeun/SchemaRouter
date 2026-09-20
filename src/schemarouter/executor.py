@@ -6,6 +6,7 @@ from typing import Any, Protocol
 
 from .errors import BindingDriftError, ExecutionError, PlanValidationError, SchemaDriftError
 from .models import ExecutionPlan, ToolCall, ToolResult
+from .policy import ExecutionPolicy
 from .registry import InMemoryRegistry
 from .validation import (
     effective_input_schema,
@@ -21,8 +22,14 @@ class EndpointInvoker(Protocol):
 class RegistryExecutor:
     """Executes validated plans using caller-supplied trusted invokers."""
 
-    def __init__(self, registry: InMemoryRegistry) -> None:
+    def __init__(
+        self,
+        registry: InMemoryRegistry,
+        *,
+        policy: ExecutionPolicy | None = None,
+    ) -> None:
         self.registry = registry
+        self.policy = policy or ExecutionPolicy()
         self._invokers: dict[str, EndpointInvoker] = {}
         self._binding_fingerprints: dict[str, str] = {}
 
@@ -71,6 +78,9 @@ class RegistryExecutor:
             effective_input_schema(endpoint),
             context=f"arguments for {call.tool}.{call.endpoint}",
         )
+
+        tool = self.registry.get(call.tool)
+        self.policy.validate(tool, endpoint, call)
 
         declared_fields = {field.name for field in endpoint.output_fields}
         unknown_fields = sorted(set(call.fields) - declared_fields)
