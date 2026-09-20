@@ -149,16 +149,10 @@ class RegistryExecutor:
                     data=projected,
                     projected_fields=call.fields,
                 )
-            except SchemaValidationError as exc:
-                last_error = exc
-                if attempt >= max_attempts:
-                    raise
-                if delay > 0:
-                    await asyncio.sleep(delay)
-                    delay = min(
-                        retry.max_backoff_seconds,
-                        delay * retry.backoff_multiplier,
-                    )
+            except SchemaValidationError:
+                # Contract violations are deterministic from SchemaRouter's perspective.
+                # Retrying would only repeat invalid data and can hide a broken provider.
+                raise
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
                 if attempt >= max_attempts:
