@@ -60,7 +60,7 @@ Normal typed Python functions can become SchemaRouter tools without manually con
 ```python
 from pydantic import BaseModel
 
-from schemarouter import SchemaRouter, schema_tool
+from schemarouter import PlanRequest, SchemaRouter, schema_tool
 
 class Weather(BaseModel):
     city: str
