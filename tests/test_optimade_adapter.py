@@ -325,3 +325,69 @@ async def test_optimade_rejects_conflicting_entry_info_identity() -> None:
                 "https://materials.example",
                 kind="optimade",
             )
+
+
+@pytest.mark.asyncio
+async def test_optimade_native_property_types_are_normalized_to_json_schema() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url == httpx.URL("https://materials.example/v1/info"):
+            document = base_info()
+            document["data"]["attributes"]["entry_types_by_format"] = {
+                "json": ["structures"]
+            }
+            document["data"]["attributes"]["available_endpoints"] = [
+                "structures",
+                "info",
+                "links",
+            ]
+            return httpx.Response(200, json=document)
+        if request.url == httpx.URL("https://materials.example/v1/info/structures"):
+            return httpx.Response(
+                200,
+                json={
+                    "data": {
+                        "description": "legacy structures",
+                        "properties": {
+                            "energy": {
+                                "type": ["float", "null"],
+                                "x-optimade-type": "float",
+                            },
+                            "created": {
+                                "type": ["timestamp", "null"],
+                                "x-optimade-type": "timestamp",
+                            },
+                            "labels": {
+                                "type": ["list", "null"],
+                                "items": {"type": "string"},
+                            },
+                            "metadata": {
+                                "type": ["dictionary", "null"],
+                                "properties": {
+                                    "score": {"type": "float"}
+                                },
+                            },
+                        },
+                        "formats": ["json"],
+                        "output_fields_by_format": {
+                            "json": ["energy", "created", "labels", "metadata"]
+                        },
+                    }
+                },
+            )
+        raise AssertionError(f"unexpected request: {request.url}")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://materials.example",
+            kind="optimade",
+            http_client=client,
+        )
+
+    endpoint = router.registry.endpoint("materials.example", "search_structures")
+    schema = endpoint.output_schema["items"]["properties"]
+    assert schema["energy"]["type"] == ["number", "null"]
+    assert schema["created"]["type"] == ["string", "null"]
+    assert schema["created"]["format"] == "date-time"
+    assert schema["labels"]["type"] == ["array", "null"]
+    assert schema["metadata"]["type"] == ["object", "null"]
+    assert schema["metadata"]["properties"]["score"]["type"] == "number"
