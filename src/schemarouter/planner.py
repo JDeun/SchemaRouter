@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import re
 from dataclasses import dataclass
 from typing import Protocol
@@ -29,7 +30,11 @@ def _tokens(text: str) -> set[str]:
 
 
 class QueryAnalyzer(Protocol):
-    def analyze(self, request: PlanRequest, registry: InMemoryRegistry) -> QueryIntent: ...
+    def analyze(
+        self,
+        request: PlanRequest,
+        registry: InMemoryRegistry,
+    ) -> QueryIntent: ...
 
 
 class KeywordAnalyzer:
@@ -54,19 +59,36 @@ class _Candidate:
 
 
 class SchemaPlanner:
-    """Deterministic schema-aware planner with recall-preserving field projection."""
+    """Schema-aware planner with sync and async query-analysis paths."""
 
     def __init__(self, registry: InMemoryRegistry, analyzer: QueryAnalyzer | None = None) -> None:
         self.registry = registry
         self.analyzer = analyzer or KeywordAnalyzer()
 
     def plan(self, request: PlanRequest | str) -> ExecutionPlan:
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            raise PlanningError(
+                "the configured analyzer is asynchronous; use await planner.aplan(...)"
+            )
+        return self._build_plan(request, intent)
+
+    async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            intent = await intent
+        return self._build_plan(request, intent)
+
+    def _prepare_request(self, request: PlanRequest | str) -> PlanRequest:
         if isinstance(request, str):
             request = PlanRequest(query=request)
         if not self.registry.tools():
             raise PlanningError("cannot plan with an empty registry")
+        return request
 
-        intent = self.analyzer.analyze(request, self.registry)
+    def _build_plan(self, request: PlanRequest, intent: QueryIntent) -> ExecutionPlan:
         candidates = [
             self._score_endpoint(tool, endpoint, request.query, intent)
             for tool in self.registry.tools()
@@ -75,7 +97,9 @@ class SchemaPlanner:
         candidates = [candidate for candidate in candidates if candidate.score > 0]
         candidates.sort(
             key=lambda candidate: (
-                -candidate.score, candidate.tool.key, candidate.endpoint.name
+                -candidate.score,
+                candidate.tool.key,
+                candidate.endpoint.name,
             )
         )
 
@@ -130,15 +154,24 @@ class SchemaPlanner:
         )
 
     def _score_endpoint(
-        self, tool: ToolSpec, endpoint: EndpointSpec, query: str, intent: QueryIntent
+        self,
+        tool: ToolSpec,
+        endpoint: EndpointSpec,
+        query: str,
+        intent: QueryIntent,
     ) -> _Candidate:
         query_tokens = _tokens(query)
         concept_norms = {_normalize(concept) for concept in intent.concepts if concept}
-        preferred = set(intent.preferred_tools)
+        preferred_tools = set(intent.preferred_tools)
+        preferred_endpoints = set(intent.preferred_endpoints)
 
         score = 0.0
-        if tool.key in preferred or tool.name in preferred:
+        if tool.key in preferred_tools or tool.name in preferred_tools:
             score += 100.0
+
+        endpoint_key = f"{tool.key}.{endpoint.name}"
+        if endpoint_key in preferred_endpoints:
+            score += 250.0
 
         tool_text = " ".join([tool.name, tool.description, endpoint.name, endpoint.description])
         score += 1.5 * len(query_tokens & _tokens(tool_text))
@@ -168,11 +201,18 @@ class SchemaPlanner:
             if parameter.name in intent.arguments:
                 score += 2.0
 
-        return _Candidate(tool, endpoint, score, tuple(dict.fromkeys(matched_fields)))
+        return _Candidate(
+            tool,
+            endpoint,
+            score,
+            tuple(dict.fromkeys(matched_fields)),
+        )
 
     @staticmethod
     def _project_fields(
-        endpoint: EndpointSpec, intent: QueryIntent, matched_fields: tuple[str, ...]
+        endpoint: EndpointSpec,
+        intent: QueryIntent,
+        matched_fields: tuple[str, ...],
     ) -> list[str]:
         if not endpoint.output_fields:
             return []
@@ -189,7 +229,9 @@ class SchemaPlanner:
 
     @staticmethod
     def _evidence(
-        tool: ToolSpec, selected_fields: list[str], requested: EvidenceRequirements
+        tool: ToolSpec,
+        selected_fields: list[str],
+        requested: EvidenceRequirements,
     ) -> EvidenceRequirements:
         field_map: dict[str, FieldSpec] = {
             field.name: field
