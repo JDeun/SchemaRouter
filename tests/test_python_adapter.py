@@ -1,10 +1,11 @@
-from pydantic import BaseModel
 import pytest
+from pydantic import BaseModel
 
 from schemarouter import (
     PlanRequest,
     RegistrationError,
     SchemaRouter,
+    SchemaValidationError,
     schema_tool,
     tool_from_callable,
 )
@@ -47,7 +48,7 @@ def test_add_callable_uses_decorator_metadata_and_executes() -> None:
 
     result = router.invoke(
         PlanRequest(
-            query="current weather temperature",
+            query="current weather",
             arguments={"city": "Seoul"},
         )
     )
@@ -80,7 +81,7 @@ def test_callable_argument_types_are_runtime_validated() -> None:
     router = SchemaRouter()
     router.add_callable(current_weather)
 
-    with pytest.raises(Exception, match="arguments for current_weather.call"):
+    with pytest.raises(SchemaValidationError, match="arguments for current_weather.call"):
         router.invoke(
             PlanRequest(
                 query="current weather",
