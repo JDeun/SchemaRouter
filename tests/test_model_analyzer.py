@@ -6,8 +6,8 @@ from schemarouter import (
     ModelAnalysisError,
     ModelQueryAnalyzer,
     ParameterSpec,
-    PlanRequest,
     PlanningError,
+    PlanRequest,
     SchemaRouter,
     ToolSpec,
 )
