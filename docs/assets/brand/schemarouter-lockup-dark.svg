@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">SchemaRouter</title>
+  <desc id="desc">SchemaRouter logo: curly braces surround a routing hub with connected nodes.</desc>
+  <g transform="translate(58 35) scale(.55)">
+    <g fill="none" stroke="#E5E7EB" stroke-width="34" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M176 74h-26c-41 0-62 21-62 62v61c0 37-18 56-54 59 36 3 54 22 54 59v61c0 41 21 62 62 62h26"/>
+      <path d="M336 74h26c41 0 62 21 62 62v61c0 37 18 56 54 59-36 3-54 22-54 59v61c0 41-21 62-62 62h-26"/>
+    </g>
+    <g fill="none" stroke="#E5E7EB" stroke-width="22" stroke-linecap="round">
+      <path d="M256 198v-46"/>
+      <path d="M219 281l-46 50"/>
+      <path d="M293 281l46 50"/>
+    </g>
+    <circle cx="256" cy="256" r="54" fill="#2DD4BF"/>
+    <circle cx="256" cy="132" r="34" fill="#111827" stroke="#E5E7EB" stroke-width="20"/>
+    <circle cx="155" cy="350" r="34" fill="#111827" stroke="#E5E7EB" stroke-width="20"/>
+    <circle cx="357" cy="350" r="34" fill="#111827" stroke="#E5E7EB" stroke-width="20"/>
+  </g>
+  <text x="380" y="215" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="105" font-weight="700" letter-spacing="-4">
+    <tspan fill="#F8FAFC">Schema</tspan><tspan fill="#2DD4BF">Router</tspan>
+  </text>
+</svg>

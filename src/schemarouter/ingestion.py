@@ -1,0 +1,301 @@
+from __future__ import annotations
+
+import json
+import re
+from typing import Literal
+from urllib.parse import urljoin, urlparse
+
+import httpx
+import yaml
+
+from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
+from .adapters.openapi import (
+    OpenAPIRemoteInvoker,
+    resolve_openapi_base_url,
+    same_origin,
+    tool_from_openapi,
+)
+from .errors import SchemaSourceError, UnsupportedSchemaSourceError
+from .executor import RegistryExecutor
+from .models import ToolSpec
+from .registry import ToolRegistry
+
+SourceKind = Literal["auto", "openapi", "mcp"]
+
+_MAX_SCHEMA_BYTES = 5 * 1024 * 1024
+
+
+def _slug(value: str) -> str:
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "_", value.strip()).strip("_.-").lower()
+    return slug or "remote_tool"
+
+
+def _name_from_url(url: str) -> str:
+    parsed = urlparse(url)
+    leaf = parsed.path.rstrip("/").rsplit("/", 1)[-1]
+    if leaf and "." in leaf:
+        leaf = leaf.rsplit(".", 1)[0]
+    return _slug(leaf or parsed.hostname or "remote_tool")
+
+
+def _validate_url(url: str) -> None:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise SchemaSourceError("schema URL must be an absolute http(s) URL")
+    if parsed.username or parsed.password:
+        raise SchemaSourceError("schema URL must not contain credentials")
+
+
+def _parse_openapi_text(text: str) -> dict | None:
+    value: object
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        try:
+            value = yaml.safe_load(text)
+        except yaml.YAMLError:
+            return None
+
+    if not isinstance(value, dict):
+        return None
+    version = value.get("openapi")
+    if not isinstance(version, str) or not version.startswith("3."):
+        return None
+    if not isinstance(value.get("paths"), dict):
+        return None
+    return value
+
+
+class URLSchemaLoader:
+    """Turn a structured URL source into a registered and, when possible, bound tool."""
+
+    def __init__(
+        self,
+        registry: ToolRegistry,
+        executor: RegistryExecutor,
+        *,
+        http_client: httpx.AsyncClient | None = None,
+    ) -> None:
+        self.registry = registry
+        self.executor = executor
+        self.http_client = http_client
+
+    async def load(
+        self,
+        url: str,
+        *,
+        kind: SourceKind = "auto",
+        name: str | None = None,
+        namespace: str | None = None,
+        replace: bool = False,
+        base_url: str | None = None,
+        schema_headers: dict[str, str] | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        timeout: float = 20.0,
+    ) -> ToolSpec:
+        _validate_url(url)
+        if kind not in {"auto", "openapi", "mcp"}:
+            raise SchemaSourceError(f"unsupported source kind: {kind!r}")
+        if kind == "mcp" and base_url is not None:
+            raise SchemaSourceError("base_url is only valid for OpenAPI sources")
+
+        diagnostics: list[str] = []
+
+        if kind in {"auto", "openapi"}:
+            try:
+                document, resolved_schema_url = await self._fetch_openapi(
+                    url,
+                    headers=schema_headers,
+                    timeout=timeout,
+                )
+            except Exception as exc:  # noqa: BLE001
+                diagnostics.append(f"OpenAPI: {exc}")
+                document = None
+                resolved_schema_url = url
+
+            if document is not None:
+                inferred_name = name or _slug(
+                    str((document.get("info") or {}).get("title") or _name_from_url(url))
+                )
+                tool = tool_from_openapi(inferred_name, document, namespace=namespace)
+                try:
+                    suggested_base_url = resolve_openapi_base_url(
+                        document,
+                        resolved_schema_url,
+                    )
+                except ValueError as exc:
+                    if base_url is None:
+                        raise SchemaSourceError(
+                            "OpenAPI document declared an unsafe or unsupported server URL"
+                        ) from exc
+                    suggested_base_url = None
+
+                tool.metadata.update(
+                    {
+                        "source_url": url,
+                        "resolved_schema_url": resolved_schema_url,
+                        "suggested_base_url": suggested_base_url,
+                    }
+                )
+
+                selected_base_url = base_url or suggested_base_url
+                auto_bind_allowed = base_url is not None or (
+                    suggested_base_url is not None
+                    and same_origin(suggested_base_url, resolved_schema_url)
+                )
+                invoker = None
+                if auto_bind_allowed:
+                    if selected_base_url is None:
+                        raise SchemaSourceError("no approved OpenAPI base URL is available")
+                    try:
+                        invoker = OpenAPIRemoteInvoker(
+                            tool,
+                            selected_base_url,
+                            trusted_headers=trusted_headers,
+                            timeout=timeout,
+                        )
+                    except ValueError as exc:
+                        raise SchemaSourceError(
+                            "OpenAPI execution base URL or trusted headers are invalid"
+                        ) from exc
+
+                if invoker is not None:
+                    tool.metadata.update(
+                        {
+                            "execution_bound": True,
+                            "approved_base_url": selected_base_url,
+                        }
+                    )
+                else:
+                    tool.metadata.update(
+                        {
+                            "execution_bound": False,
+                            "requires_explicit_base_url": True,
+                        }
+                    )
+
+                key = self.registry.register(tool, replace=replace)
+                if invoker is not None:
+                    self.executor.bind(key, invoker)
+                return self.registry.get(key)
+
+            if kind == "openapi":
+                detail = "; ".join(diagnostics) or "document is not OpenAPI 3.x"
+                raise UnsupportedSchemaSourceError(
+                    f"URL did not yield a supported OpenAPI document: {detail}"
+                )
+
+        if kind in {"auto", "mcp"}:
+            if trusted_headers:
+                diagnostics.append(
+                    "MCP: custom trusted headers are not wired in v0.1; use an unauthenticated "
+                    "endpoint or explicit transport integration"
+                )
+            else:
+                try:
+                    tool = await inspect_mcp_url(
+                        url,
+                        server_name=name,
+                        namespace=namespace,
+                    )
+                    key = self.registry.register(tool, replace=replace)
+                    self.executor.bind(key, MCPRemoteInvoker(url))
+                    return self.registry.get(key)
+                except Exception as exc:  # noqa: BLE001
+                    diagnostics.append(f"MCP: {exc}")
+
+            if kind == "mcp":
+                raise SchemaSourceError("; ".join(diagnostics))
+
+        detail = "; ".join(diagnostics) or "no supported structured schema detected"
+        raise UnsupportedSchemaSourceError(
+            "URL is neither a supported OpenAPI 3.x document nor a reachable MCP server. "
+            "General HTML documentation is intentionally not inferred in the safe path. "
+            + detail
+        )
+
+    async def _fetch_openapi(
+        self,
+        url: str,
+        *,
+        headers: dict[str, str] | None,
+        timeout: float,
+    ) -> tuple[dict | None, str]:
+        if self.http_client is not None:
+            response = await self._fetch_with_safe_redirects(
+                self.http_client,
+                url,
+                headers=headers,
+            )
+        else:
+            async with httpx.AsyncClient(
+                timeout=timeout,
+                follow_redirects=False,
+            ) as client:
+                response = await self._fetch_with_safe_redirects(
+                    client,
+                    url,
+                    headers=headers,
+                )
+        return _parse_openapi_text(response.text), str(response.url)
+
+    @staticmethod
+    async def _fetch_with_safe_redirects(
+        client: httpx.AsyncClient,
+        url: str,
+        *,
+        headers: dict[str, str] | None,
+        max_redirects: int = 5,
+    ) -> httpx.Response:
+        current = url
+        initial = url
+        for _ in range(max_redirects + 1):
+            async with client.stream(
+                "GET",
+                current,
+                headers=headers,
+                follow_redirects=False,
+            ) as response:
+                if response.is_redirect:
+                    location = response.headers.get("location")
+                    if not location:
+                        raise SchemaSourceError("schema redirect response is missing Location")
+                    target = urljoin(current, location)
+                    _validate_url(target)
+                    if not same_origin(initial, target):
+                        raise SchemaSourceError(
+                            "cross-origin schema redirects are not allowed"
+                        )
+                    current = target
+                    continue
+
+                response.raise_for_status()
+                content_length = response.headers.get("content-length")
+                if content_length is not None:
+                    try:
+                        declared_size = int(content_length)
+                    except ValueError:
+                        declared_size = None
+                    if declared_size is not None and declared_size > _MAX_SCHEMA_BYTES:
+                        raise SchemaSourceError(
+                            f"OpenAPI document exceeds {_MAX_SCHEMA_BYTES} byte safety limit"
+                        )
+
+                chunks: list[bytes] = []
+                total = 0
+                async for chunk in response.aiter_bytes():
+                    total += len(chunk)
+                    if total > _MAX_SCHEMA_BYTES:
+                        raise SchemaSourceError(
+                            f"OpenAPI document exceeds {_MAX_SCHEMA_BYTES} byte safety limit"
+                        )
+                    chunks.append(chunk)
+
+                return httpx.Response(
+                    status_code=response.status_code,
+                    headers=response.headers,
+                    content=b"".join(chunks),
+                    request=response.request,
+                )
+
+        raise SchemaSourceError("schema URL exceeded the redirect limit")
