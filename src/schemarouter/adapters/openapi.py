@@ -46,6 +46,26 @@ def _schema_properties(document: dict[str, Any], schema: Any) -> dict[str, dict[
     return {name: _resolve_local_ref(document, spec) for name, spec in props.items()}
 
 
+def _parameters_schema(parameters: list[ParameterSpec]) -> dict[str, Any]:
+    properties = {
+        parameter.name: parameter.json_schema or {}
+        for parameter in parameters
+    }
+    required = [
+        parameter.name
+        for parameter in parameters
+        if parameter.required
+    ]
+    schema: dict[str, Any] = {
+        "type": "object",
+        "properties": properties,
+        "additionalProperties": False,
+    }
+    if required:
+        schema["required"] = required
+    return schema
+
+
 def _response_schema(document: dict[str, Any], responses: dict[str, Any]) -> dict[str, Any]:
     for code in sorted(responses, key=str):
         if str(code).startswith("2"):
@@ -195,6 +215,8 @@ def tool_from_openapi(
                     description=operation.get("summary") or operation.get("description", ""),
                     parameters=parameters,
                     output_fields=fields,
+                    input_schema=_parameters_schema(parameters),
+                    output_schema=response_schema if isinstance(response_schema, dict) else {},
                     method=method.upper(),
                     path=path,
                     read_only=method.lower() in {"get", "head", "options"},
