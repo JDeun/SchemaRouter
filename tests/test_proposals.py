@@ -6,6 +6,7 @@ from schemarouter import (
     ProposalApprovalError,
     SchemaProposal,
     SchemaRouter,
+    SchemaSourceError,
     ToolSpec,
 )
 
@@ -277,7 +278,7 @@ async def test_documentation_redirects_must_stay_on_origin() -> None:
         follow_redirects=True,
     ) as client:
         router = SchemaRouter(http_client=client)
-        with pytest.raises(Exception, match="cross-origin documentation redirects"):
+        with pytest.raises(SchemaSourceError, match="cross-origin documentation redirects"):
             await router.inspect_url(
                 "https://docs.example.com/api",
                 model=model,
@@ -292,7 +293,7 @@ async def test_documentation_url_rejects_embedded_credentials() -> None:
         raise AssertionError("model must not run for credential-bearing URL")
 
     router = SchemaRouter()
-    with pytest.raises(Exception, match="must not contain credentials"):
+    with pytest.raises(SchemaSourceError, match="must not contain credentials"):
         await router.inspect_url(
             "https://user:secret@docs.example.com/api",
             model=model,
