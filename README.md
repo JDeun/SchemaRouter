@@ -105,7 +105,8 @@ LangChain remains the surrounding orchestration surface while SchemaRouter stays
 schema fingerprints, execution policy, input/output validation, and bound invokers.
 
 See [framework maturity](docs/framework-maturity.md) for the explicit comparison with mature agent
-frameworks.
+frameworks. Release and trust-boundary details are documented in
+[compatibility testing](docs/compatibility.md) and [SECURITY.md](SECURITY.md).
 
 ## URL-first usage
 
