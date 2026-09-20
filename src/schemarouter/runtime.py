@@ -153,16 +153,14 @@ class SchemaRouter:
                 "approved_base_url": base_url,
             }
         )
-        key = self.registry.register(tool, replace=replace)
-        self.executor.bind(
-            key,
-            OpenAPIRemoteInvoker(
-                tool,
-                base_url,
-                trusted_headers=trusted_headers,
-                timeout=timeout,
-            ),
+        invoker = OpenAPIRemoteInvoker(
+            tool,
+            base_url,
+            trusted_headers=trusted_headers,
+            timeout=timeout,
         )
+        key = self.registry.register(tool, replace=replace)
+        self.executor.bind(key, invoker)
         return key
 
     async def add_url(
