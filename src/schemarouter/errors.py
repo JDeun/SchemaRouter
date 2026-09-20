@@ -47,4 +47,4 @@ class SchemaSourceError(SchemaRouterError):
 
 
 class UnsupportedSchemaSourceError(SchemaSourceError):
-    """Raised when a URL is neither a supported OpenAPI document nor an MCP server."""
+    """Raised when no registered structured-source adapter accepts a URL."""
