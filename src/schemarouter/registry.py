@@ -1,13 +1,31 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from typing import Protocol
 
 from .errors import RegistrationError
 from .models import EndpointSpec, ToolSpec
 
 
+class ToolRegistry(Protocol):
+    """Structural contract for pluggable tool registries."""
+
+    @property
+    def version(self) -> int: ...
+
+    def register(self, tool: ToolSpec, *, replace: bool = False) -> str: ...
+
+    def get(self, key: str) -> ToolSpec: ...
+
+    def tools(self) -> tuple[ToolSpec, ...]: ...
+
+    def keys(self) -> tuple[str, ...]: ...
+
+    def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec: ...
+
+
 class InMemoryRegistry:
-    """Versioned, collision-safe tool catalog."""
+    """Versioned, collision-safe in-memory tool catalog."""
 
     def __init__(self) -> None:
         self._tools: dict[str, ToolSpec] = {}
