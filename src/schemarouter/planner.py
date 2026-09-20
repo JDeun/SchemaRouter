@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import inspect
 import re
-from dataclasses import dataclass
 from collections.abc import Awaitable
+from dataclasses import dataclass
 from typing import Protocol
 
 from .errors import PlanningError
