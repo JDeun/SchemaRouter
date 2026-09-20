@@ -1,14 +1,26 @@
 from __future__ import annotations
 
+import re
 from copy import deepcopy
 from typing import Any
-from urllib.parse import quote, urljoin, urlparse
+from urllib.parse import quote, unquote, urljoin, urlparse
 
 import httpx
 
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 
 _HTTP_METHODS = {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
+_SENSITIVE_RUNTIME_HEADERS = {
+    "authorization",
+    "connection",
+    "content-length",
+    "cookie",
+    "host",
+    "proxy-authorization",
+    "transfer-encoding",
+    "upgrade",
+}
+_HEADER_NAME_RE = re.compile(r"^[!#$%&'*+.^_\x60|~0-9A-Za-z-]+$")
 
 
 def _resolve_local_ref(document: dict[str, Any], value: Any) -> Any:
@@ -45,6 +57,36 @@ def _response_schema(document: dict[str, Any], responses: dict[str, Any]) -> dic
     return {}
 
 
+def _origin(url: str) -> tuple[str, str, int]:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise ValueError("URL must be an absolute http(s) URL")
+    default_port = 443 if parsed.scheme == "https" else 80
+    return parsed.scheme.lower(), parsed.hostname.lower(), parsed.port or default_port
+
+
+def same_origin(left: str, right: str) -> bool:
+    try:
+        return _origin(left) == _origin(right)
+    except ValueError:
+        return False
+
+
+def _validate_endpoint_path(path: str) -> None:
+    parsed = urlparse(path)
+    if (
+        not path.startswith("/")
+        or parsed.scheme
+        or parsed.netloc
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("endpoint path must be a relative absolute-path without query/fragment")
+    for segment in parsed.path.split("/"):
+        if unquote(segment).casefold() in {".", ".."}:
+            raise ValueError("endpoint path must not contain dot segments")
+
+
 def tool_from_openapi(
     name: str,
     document: dict[str, Any],
@@ -60,15 +102,11 @@ def tool_from_openapi(
     for path, path_item in document.get("paths", {}).items():
         if not isinstance(path, str) or not isinstance(path_item, dict):
             continue
-        parsed_path = urlparse(path)
-        if (
-            not path.startswith("/")
-            or parsed_path.scheme
-            or parsed_path.netloc
-            or parsed_path.query
-            or parsed_path.fragment
-        ):
+        try:
+            _validate_endpoint_path(path)
+        except ValueError:
             continue
+
         path_parameters = path_item.get("parameters", [])
         for method, operation in path_item.items():
             if method.lower() not in _HTTP_METHODS or not isinstance(operation, dict):
@@ -180,8 +218,21 @@ def tool_from_openapi(
 def resolve_openapi_base_url(document: dict[str, Any], source_url: str) -> str:
     servers = document.get("servers") or []
     if servers and isinstance(servers[0], dict) and servers[0].get("url"):
-        return urljoin(source_url, str(servers[0]["url"]))
-    return urljoin(source_url, "/")
+        resolved = urljoin(source_url, str(servers[0]["url"]))
+    else:
+        resolved = urljoin(source_url, "/")
+
+    parsed = urlparse(resolved)
+    if (
+        parsed.scheme not in {"http", "https"}
+        or not parsed.netloc
+        or parsed.username
+        or parsed.password
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("OpenAPI server URL is not a safe absolute http(s) base URL")
+    return resolved
 
 
 class OpenAPIRemoteInvoker:
@@ -200,16 +251,33 @@ class OpenAPIRemoteInvoker:
             raise ValueError("base_url must be an absolute http(s) URL")
         if parsed_base.username or parsed_base.password:
             raise ValueError("base_url must not contain credentials")
+        if parsed_base.query or parsed_base.fragment:
+            raise ValueError("base_url must not contain query or fragment")
+
+        trusted = dict(trusted_headers or {})
+        trusted_names = [name.casefold() for name in trusted]
+        if len(trusted_names) != len(set(trusted_names)):
+            raise ValueError("trusted_headers contains case-insensitive duplicate names")
+        for name in trusted:
+            if not _HEADER_NAME_RE.fullmatch(name):
+                raise ValueError(f"invalid trusted header name: {name!r}")
 
         self.tool = tool
-        self.base_url = base_url
-        self.trusted_headers = dict(trusted_headers or {})
+        self.base_url = base_url.rstrip("/")
+        self.approved_origin = _origin(base_url)
+        self.trusted_headers = trusted
+        self.trusted_header_names = set(trusted_names)
         self.timeout = timeout
 
     async def __call__(self, endpoint_name: str, arguments: dict[str, Any]) -> Any:
         endpoint = self.tool.endpoint(endpoint_name)
         if not endpoint.method or not endpoint.path:
             raise RuntimeError(f"endpoint {endpoint_name!r} is missing HTTP method/path")
+
+        try:
+            _validate_endpoint_path(endpoint.path)
+        except ValueError as exc:
+            raise RuntimeError(f"unsafe endpoint path for {endpoint_name!r}") from exc
 
         path = endpoint.path
         query: dict[str, Any] = {}
@@ -221,24 +289,35 @@ class OpenAPIRemoteInvoker:
                 continue
             value = arguments[parameter.name]
             if parameter.location == "path":
-                encoded = quote(str(value), safe="")
+                encoded = quote(str(value), safe="").replace(".", "%2E")
                 path = path.replace("{" + parameter.name + "}", encoded)
             elif parameter.location == "query":
                 query[parameter.name] = value
             elif parameter.location == "header":
+                normalized_name = parameter.name.casefold()
+                if not _HEADER_NAME_RE.fullmatch(parameter.name):
+                    raise RuntimeError(f"invalid header parameter name: {parameter.name!r}")
+                if normalized_name in self.trusted_header_names:
+                    raise RuntimeError(
+                        f"tool argument cannot override trusted header {parameter.name!r}"
+                    )
+                if normalized_name in _SENSITIVE_RUNTIME_HEADERS:
+                    raise RuntimeError(
+                        f"sensitive header {parameter.name!r} must come from trusted runtime auth"
+                    )
                 headers[parameter.name] = str(value)
             elif parameter.location == "body":
                 body[parameter.name] = value
 
+        if re.search(r"{[^{}]+}", path):
+            raise RuntimeError(f"unresolved path parameter in endpoint {endpoint_name!r}")
+
         headers.update(self.trusted_headers)
 
-        url = urljoin(self.base_url.rstrip("/") + "/", path.lstrip("/"))
-        parsed_base = urlparse(self.base_url)
-        parsed_target = urlparse(url)
-        if (
-            parsed_target.scheme != parsed_base.scheme
-            or parsed_target.netloc != parsed_base.netloc
-        ):
+        # Concatenation is intentional: urljoin would normalize dot-segments or allow an
+        # absolute path to replace the approved server path prefix.
+        url = self.base_url + "/" + path.lstrip("/")
+        if _origin(url) != self.approved_origin:
             raise RuntimeError("endpoint path escaped the approved API origin")
 
         async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=False) as client:
