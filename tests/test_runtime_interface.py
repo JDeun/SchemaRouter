@@ -270,3 +270,39 @@ def test_with_config_binds_default_runtime_configuration() -> None:
 
     result = configured.invoke(request())
     assert result[0].data["city"] == "Seoul"
+
+
+@pytest.mark.asyncio
+async def test_abatch_as_completed_yields_completion_order_with_input_indexes() -> None:
+    router = make_router()
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        if arguments["city"] == "slow":
+            await asyncio.sleep(0.02)
+        return {
+            "city": arguments["city"],
+            "temperature": 20,
+        }
+
+    router.executor.bind("weather", invoker)
+    completed = [
+        item
+        async for item in router.abatch_as_completed(
+            [request("slow"), request("fast")],
+            config=RunConfig(max_concurrency=2),
+        )
+    ]
+
+    assert [index for index, _ in completed] == [1, 0]
+    assert completed[0][1][0].data["city"] == "fast"
+
+
+def test_batch_as_completed_has_sync_surface() -> None:
+    router = make_router()
+    completed = list(
+        router.batch_as_completed(
+            [request("Seoul"), request("Busan")],
+        )
+    )
+
+    assert sorted(index for index, _ in completed) == [0, 1]
