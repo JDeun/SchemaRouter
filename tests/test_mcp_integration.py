@@ -89,3 +89,7 @@ async def test_real_streamable_http_mcp_discovery_and_execution() -> None:
         except subprocess.TimeoutExpired:
             process.kill()
             process.wait(timeout=5)
+        if process.stdout is not None:
+            process.stdout.close()
+        if process.stderr is not None:
+            process.stderr.close()
