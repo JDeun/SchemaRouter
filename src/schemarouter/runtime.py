@@ -365,6 +365,57 @@ class SchemaRouter:
             )
         )
 
+    async def abatch_as_completed(
+        self,
+        requests: Sequence[PlanRequest | str],
+        *,
+        config: RunConfig | dict[str, Any] | None = None,
+        return_exceptions: bool = False,
+    ) -> AsyncIterator[tuple[int, list[ToolResult] | Exception]]:
+        run_config = _coerce_config(config)
+        semaphore = asyncio.Semaphore(run_config.max_concurrency)
+
+        async def invoke_indexed(
+            index: int,
+            request: PlanRequest | str,
+        ) -> tuple[int, list[ToolResult] | Exception]:
+            try:
+                async with semaphore:
+                    result = await self.ainvoke(request, config=run_config)
+                return index, result
+            except Exception as exc:
+                if return_exceptions:
+                    return index, exc
+                raise
+
+        tasks = [
+            asyncio.create_task(invoke_indexed(index, request))
+            for index, request in enumerate(requests)
+        ]
+        try:
+            for completed in asyncio.as_completed(tasks):
+                yield await completed
+        finally:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    def batch_as_completed(
+        self,
+        requests: Sequence[PlanRequest | str],
+        *,
+        config: RunConfig | dict[str, Any] | None = None,
+        return_exceptions: bool = False,
+    ) -> Iterator[tuple[int, list[ToolResult] | Exception]]:
+        return _stream_sync(
+            lambda: self.abatch_as_completed(
+                requests,
+                config=config,
+                return_exceptions=return_exceptions,
+            )
+        )
+
     async def astream(
         self,
         request: PlanRequest | str,
@@ -570,6 +621,30 @@ class ConfiguredSchemaRouter:
         return_exceptions: bool = False,
     ) -> list[list[ToolResult] | Exception]:
         return await self.router.abatch(
+            requests,
+            config=self.config,
+            return_exceptions=return_exceptions,
+        )
+
+    def batch_as_completed(
+        self,
+        requests: Sequence[PlanRequest | str],
+        *,
+        return_exceptions: bool = False,
+    ) -> Iterator[tuple[int, list[ToolResult] | Exception]]:
+        return self.router.batch_as_completed(
+            requests,
+            config=self.config,
+            return_exceptions=return_exceptions,
+        )
+
+    def abatch_as_completed(
+        self,
+        requests: Sequence[PlanRequest | str],
+        *,
+        return_exceptions: bool = False,
+    ) -> AsyncIterator[tuple[int, list[ToolResult] | Exception]]:
+        return self.router.abatch_as_completed(
             requests,
             config=self.config,
             return_exceptions=return_exceptions,
