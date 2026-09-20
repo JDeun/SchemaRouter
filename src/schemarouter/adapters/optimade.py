@@ -355,7 +355,10 @@ def _tool_from_discovery(
         )
 
     if not endpoints:
-        raise SchemaSourceError("OPTIMADE source exposed no usable entry schemas")
+        detail = ", ".join(skipped) if skipped else "no entry types were discovered"
+        raise SchemaSourceError(
+            "OPTIMADE source exposed no usable entry schemas: " + detail
+        )
 
     return ToolSpec(
         name=name,
