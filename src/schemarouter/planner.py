@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import re
 from dataclasses import dataclass
+from collections.abc import Awaitable
 from typing import Protocol
 
 from .errors import PlanningError
@@ -34,7 +35,7 @@ class QueryAnalyzer(Protocol):
         self,
         request: PlanRequest,
         registry: InMemoryRegistry,
-    ) -> QueryIntent: ...
+    ) -> QueryIntent | Awaitable[QueryIntent]: ...
 
 
 class KeywordAnalyzer:
