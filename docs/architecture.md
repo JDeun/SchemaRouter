@@ -64,3 +64,18 @@ schemarouter.adapters     schema ingestion (MCP/OpenAPI)
 - telemetry backends
 
 These are extension points after the core contracts survive real integration tests.
+
+
+## Model-assisted query analysis
+
+Model-assisted understanding is an optional analysis stage, not an authority boundary.
+
+The model receives a structured registry catalog plus a response JSON schema. Its output is
+validated, then projected onto the registry before planning. Unknown tools, endpoints, parameters,
+and fields are discarded. Explicit caller arguments override model-generated values.
+
+Async analyzers use `aplan()` / `arun()`; the existing synchronous `plan()` remains deterministic
+and rejects an async analyzer with an explicit error instead of creating an implicit event loop.
+
+Remote descriptions are included only as untrusted data. They cannot expand permissions, register
+new executable schemas, or bypass executor validation.
