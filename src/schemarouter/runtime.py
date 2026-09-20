@@ -18,7 +18,7 @@ from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
-from .registry import InMemoryRegistry
+from .registry import InMemoryRegistry, ToolRegistry
 from .runs import RunConfig, RunEvent
 
 _T = TypeVar("_T")
@@ -76,8 +76,9 @@ class SchemaRouter:
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
+        registry: ToolRegistry | None = None,
     ) -> None:
-        self.registry = InMemoryRegistry()
+        self.registry = registry or InMemoryRegistry()
         self.planner = SchemaPlanner(self.registry, analyzer=analyzer)
         self.executor = RegistryExecutor(self.registry, policy=policy)
         self.loader = URLSchemaLoader(
@@ -115,11 +116,17 @@ class SchemaRouter:
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
+        registry: ToolRegistry | None = None,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
     ) -> SchemaRouter:
-        router = cls(analyzer=analyzer, http_client=http_client, policy=policy)
+        router = cls(
+            analyzer=analyzer,
+            http_client=http_client,
+            policy=policy,
+            registry=registry,
+        )
         await router.add_url(
             url,
             kind=kind,
