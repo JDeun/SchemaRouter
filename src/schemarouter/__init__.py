@@ -40,7 +40,7 @@ from .proposals import (
     SchemaProposalDraft,
     inspect_documentation_url,
 )
-from .registry import InMemoryRegistry
+from .registry import InMemoryRegistry, ToolRegistry
 from .runs import RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
 
@@ -88,6 +88,7 @@ __all__ = [
     "SchemaValidationError",
     "schema_tool",
     "ToolCall",
+    "ToolRegistry",
     "ToolResult",
     "ToolSpec",
     "tool_from_callable",
