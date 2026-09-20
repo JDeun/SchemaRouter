@@ -97,7 +97,10 @@ async def test_cross_origin_openapi_is_ingested_but_not_auto_bound() -> None:
         "users_api",
         base_url="https://service.example.com/api/",
     )
-    assert tool.metadata["execution_bound"] is True
+    assert tool.metadata["execution_bound"] is False
+    rebound = router.registry.get("users_api")
+    assert rebound.metadata["execution_bound"] is True
+    assert rebound.metadata["approved_base_url"] == "https://service.example.com/api/"
 
 
 @pytest.mark.asyncio
