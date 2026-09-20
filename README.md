@@ -4,7 +4,61 @@
 
 SchemaRouter compiles a natural-language request plus a registered tool catalog into a small, typed, auditable execution plan. It is designed for environments where an agent may have many OpenAPI or MCP capabilities and should not expose or fetch everything by default.
 
-> Status: **v0.1 pre-alpha**. The current branch establishes the core contracts and deterministic planner. Network transports, model-assisted query understanding, and production observability are intentionally not hidden behind unstable APIs yet.
+> Status: **v0.1 pre-alpha**. URL-driven OpenAPI ingestion and live MCP discovery are now part of the core development branch. Model-assisted query understanding and production observability are still intentionally deferred.
+
+## URL-first usage
+
+For structured sources, the intended developer experience is now:
+
+```python
+from schemarouter import SchemaRouter
+
+router = await SchemaRouter.from_url(
+    "https://api.example.com/openapi.json"
+)
+
+plan = router.plan("Get user 42")
+result = await router.execute(plan)
+```
+
+or for MCP:
+
+```python
+from schemarouter import SchemaRouter
+
+router = await SchemaRouter.from_url(
+    "http://localhost:8000/mcp",
+    kind="mcp",
+)
+```
+
+For MCP install the optional runtime:
+
+```bash
+pip install "schemarouter[mcp]"
+```
+
+`kind="auto"` first checks whether the URL is an OpenAPI 3.x JSON/YAML document and otherwise attempts MCP discovery. A normal HTML documentation page is **not** silently converted into guessed tool contracts.
+
+This is deliberate:
+
+```text
+OpenAPI URL
+   -> fetch document
+   -> parse paths / operations / parameters / responses
+   -> ToolSpec / EndpointSpec / FieldSpec
+   -> Registry
+   -> Planner
+   -> HTTP executor
+
+MCP URL
+   -> connect
+   -> list_tools() with pagination
+   -> inputSchema / outputSchema
+   -> ToolSpec / EndpointSpec / FieldSpec
+   -> Registry
+   -> MCP executor
+```
 
 ## Why
 
@@ -26,21 +80,22 @@ The design comes from the [SchemaRouter research artifact](https://github.com/JD
 
 SchemaRouter is **not** another LangChain clone, a model router, or a replacement for MCP. It is a planning/execution layer that can sit between an agent framework and MCP/OpenAPI/Python tools.
 
-## v0.1 quick start
+## Manual registration
+
+Manual contracts remain available when no machine-readable schema exists:
 
 ```python
 from schemarouter import (
     EndpointSpec,
     FieldSpec,
-    InMemoryRegistry,
     ParameterSpec,
     PlanRequest,
-    SchemaPlanner,
+    SchemaRouter,
     ToolSpec,
 )
 
-registry = InMemoryRegistry()
-registry.register(
+router = SchemaRouter()
+router.add_tool(
     ToolSpec(
         name="materials",
         description="Materials property database",
@@ -63,45 +118,46 @@ registry.register(
     )
 )
 
-planner = SchemaPlanner(registry)
-plan = planner.plan(
+plan = router.plan(
     PlanRequest(
         query="LiFePO4 band gap and formation energy",
         arguments={"formula": "LiFePO4"},
     )
 )
-
-print(plan.model_dump())
 ```
 
 The planner never invents undeclared arguments. Missing required arguments are surfaced as plan requirements instead of being silently hallucinated. Each call also carries a schema fingerprint; execution rejects a stale plan if the registered schema changed.
 
-## Ingestion adapters
-
-### MCP
-
-```python
-from schemarouter.adapters.mcp import tool_from_mcp
-
-tool = tool_from_mcp(
-    server_name="docs",
-    tools_list_result={"tools": [...]},
-)
-registry.register(tool)
-```
-
-MCP `inputSchema` becomes endpoint parameters and `outputSchema` becomes projectable response fields. Endpoint names are scoped by the server tool registry, avoiding cross-server name collisions.
+## Ingestion behavior
 
 ### OpenAPI
 
-```python
-from schemarouter.adapters.openapi import tool_from_openapi
+The current OpenAPI path supports:
 
-tool = tool_from_openapi("billing", openapi_document)
-registry.register(tool)
-```
+- OpenAPI 3.x JSON or YAML URLs
+- operations under `paths`
+- path/query/header parameters
+- JSON request-body object properties
+- JSON response object fields
+- local `#/...` references
+- automatic HTTP execution
+- trusted headers kept outside the model-visible schema
 
-The v0.1 adapter supports operations, path/query/header parameters, JSON request-body properties, local `#/...` references, and JSON response schemas. Unsupported constructs remain in metadata rather than being guessed.
+Unsupported or ambiguous constructs remain explicit instead of being guessed.
+
+### MCP
+
+The live MCP path uses the official Python SDK when `schemarouter[mcp]` is installed:
+
+- URL connection
+- protocol negotiation / compatibility handling by the SDK
+- paginated `list_tools()`
+- `inputSchema` -> endpoint parameters
+- `outputSchema` -> response fields
+- `call_tool()` execution
+- `structured_content` preferred for projection
+
+Remote annotations remain untrusted metadata and do not grant authorization.
 
 ## Safety and correctness invariants
 
@@ -109,7 +165,8 @@ The v0.1 adapter supports operations, path/query/header parameters, JSON request
 - **No argument hallucination:** only declared parameters survive planning and execution validation.
 - **Namespaced tools:** registry keys are `<namespace>.<tool>` when a namespace is supplied.
 - **Recall-preserving projection:** identifiers plus matched fields are retained; if no output concept is confidently matched, the planner does not aggressively prune fields.
-- **No hidden network behavior:** core planning is deterministic and offline.
+- **Structured-source first:** URL auto-ingestion accepts OpenAPI/MCP contracts, not arbitrary HTML inference.
+- **No hidden network behavior in planning:** core planning itself remains deterministic and offline.
 
 See [`docs/architecture.md`](docs/architecture.md) for the adversarial design review and v0.1 boundaries.
 
@@ -123,14 +180,21 @@ pytest -q
 ruff check .
 ```
 
+For live MCP development:
+
+```bash
+pip install -e ".[dev,mcp]"
+```
+
 ## Roadmap
 
-1. model-assisted `QueryAnalyzer` with provider-neutral structured output
-2. live MCP client adapter for the 2026-07-28 protocol plus backward compatibility
-3. OpenAPI HTTP executor with auth injection outside model-visible schemas
+1. provider-neutral model-assisted `QueryAnalyzer`
+2. authenticated/custom-transport MCP URL loading
+3. richer OpenAPI composition/external-reference support
 4. policy engine for provenance, license, permissions, cost, and destructive operations
-5. tracing, replay, schema-drift diagnostics, and benchmark suite
-6. LangGraph/LangChain integration adapters
+5. HTML documentation assistant that proposes schemas for explicit user review rather than silently trusting inference
+6. tracing, replay, schema-drift diagnostics, and benchmark suite
+7. LangGraph/LangChain integration adapters
 
 ## Research
 
