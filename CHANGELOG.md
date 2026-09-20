@@ -23,7 +23,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - run configuration, concurrency control, and safe retry policy;
 - typed Python callable registration with `@schema_tool`;
 - optional LangChain `StructuredTool` integration;
-- framework maturity, architecture, release, and versioning documentation.
+- framework maturity, architecture, release, and versioning documentation;
+- MIT licensing and package metadata;
+- MkDocs Material documentation site with guides, recipes, and generated API reference.
 
 ### Security
 
