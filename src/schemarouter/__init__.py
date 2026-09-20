@@ -1,5 +1,6 @@
 from .analyzers import ModelCallable, ModelIntent, ModelQueryAnalyzer
 from .errors import (
+    BindingDriftError,
     ExecutionError,
     ModelAnalysisError,
     PlanningError,
@@ -39,6 +40,7 @@ from .registry import InMemoryRegistry
 from .runtime import SchemaRouter
 
 __all__ = [
+    "BindingDriftError",
     "DocumentationModelCallable",
     "EndpointSpec",
     "EvidenceRequirements",
