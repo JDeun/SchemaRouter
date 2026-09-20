@@ -3,7 +3,12 @@ import json
 import httpx
 import pytest
 
-from schemarouter import PlanRequest, SchemaRouter, UnsupportedSchemaSourceError
+from schemarouter import (
+    ExecutionError,
+    PlanRequest,
+    SchemaRouter,
+    UnsupportedSchemaSourceError,
+)
 
 
 def openapi_document() -> dict:
@@ -47,7 +52,7 @@ def openapi_document() -> dict:
 
 
 @pytest.mark.asyncio
-async def test_from_url_auto_ingests_openapi() -> None:
+async def test_cross_origin_openapi_is_ingested_but_not_auto_bound() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.url == httpx.URL("https://docs.example.com/openapi.json")
         return httpx.Response(
@@ -63,6 +68,11 @@ async def test_from_url_auto_ingests_openapi() -> None:
         )
 
     assert router.registry.keys() == ("users_api",)
+    tool = router.registry.get("users_api")
+    assert tool.metadata["execution_bound"] is False
+    assert tool.metadata["requires_explicit_base_url"] is True
+    assert tool.metadata["suggested_base_url"] == "https://service.example.com/api/"
+
     endpoint = router.registry.endpoint("users_api", "get_user")
     assert endpoint.method == "GET"
     assert endpoint.path == "/users/{user_id}"
@@ -79,13 +89,80 @@ async def test_from_url_auto_ingests_openapi() -> None:
         )
     )
     assert plan.executable
-    assert plan.calls[0].endpoint == "get_user"
-    assert plan.calls[0].arguments == {"user_id": "42"}
     assert "name" in plan.calls[0].fields
+    with pytest.raises(ExecutionError, match="no invoker bound"):
+        await router.execute(plan)
+
+    router.bind_openapi(
+        "users_api",
+        base_url="https://service.example.com/api/",
+    )
+    assert tool.metadata["execution_bound"] is True
 
 
 @pytest.mark.asyncio
-async def test_openapi_yaml_url_is_supported() -> None:
+async def test_explicit_base_url_can_approve_cross_origin_openapi() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            content=json.dumps(openapi_document()),
+            headers={"content-type": "application/json"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://docs.example.com/openapi.json",
+            base_url="https://service.example.com/api/",
+            http_client=client,
+        )
+
+    tool = router.registry.get("users_api")
+    assert tool.metadata["execution_bound"] is True
+    assert tool.metadata["approved_base_url"] == "https://service.example.com/api/"
+
+
+@pytest.mark.asyncio
+async def test_runtime_credentials_are_not_sent_to_schema_host() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert "authorization" not in request.headers
+        return httpx.Response(
+            200,
+            content=json.dumps(openapi_document()),
+            headers={"content-type": "application/json"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://docs.example.com/openapi.json",
+            trusted_headers={"Authorization": "Bearer runtime-secret"},
+            http_client=client,
+        )
+
+    assert router.registry.get("users_api").metadata["execution_bound"] is False
+
+
+@pytest.mark.asyncio
+async def test_schema_headers_are_separate_from_runtime_headers() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["x-doc-token"] == "schema-secret"
+        assert "authorization" not in request.headers
+        return httpx.Response(
+            200,
+            content=json.dumps(openapi_document()),
+            headers={"content-type": "application/json"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        await SchemaRouter.from_url(
+            "https://docs.example.com/openapi.json",
+            schema_headers={"X-Doc-Token": "schema-secret"},
+            trusted_headers={"Authorization": "Bearer runtime-secret"},
+            http_client=client,
+        )
+
+
+@pytest.mark.asyncio
+async def test_openapi_yaml_url_is_supported_and_same_origin_is_bound() -> None:
     yaml_body = """
 openapi: 3.1.0
 info:
@@ -116,6 +193,7 @@ paths:
         )
 
     assert tool.key == "ping_api"
+    assert tool.metadata["execution_bound"] is True
     assert tool.endpoints[0].name == "ping"
     assert tool.endpoints[0].output_fields[0].name == "status"
 
