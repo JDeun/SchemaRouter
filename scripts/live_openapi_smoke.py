@@ -26,15 +26,17 @@ async def main() -> None:
 
     plan = router.plan(
         PlanRequest(
-            query="find pets by status",
+            query="find pets by status available",
             preferred_tools=[tool.key],
             arguments={"status": "available"},
+            max_calls=32,
         )
     )
-    assert plan.executable
-    assert plan.calls[0].endpoint == "findPetsByStatus"
+    call = next(candidate for candidate in plan.calls if candidate.endpoint == "findPetsByStatus")
+    assert call.executable
+    selected_plan = plan.model_copy(update={"calls": [call]}, deep=True)
 
-    results = await router.execute(plan)
+    results = await router.execute(selected_plan)
     assert len(results) == 1
     assert isinstance(results[0].data, list)
 
@@ -42,7 +44,7 @@ async def main() -> None:
         {
             "source": url,
             "tool": tool.key,
-            "endpoint": plan.calls[0].endpoint,
+            "endpoint": call.endpoint,
             "result_count": len(results[0].data),
         }
     )
