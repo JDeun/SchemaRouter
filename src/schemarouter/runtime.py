@@ -6,6 +6,7 @@ from .executor import RegistryExecutor
 from .ingestion import SourceKind, URLSchemaLoader
 from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
 from .planner import QueryAnalyzer, SchemaPlanner
+from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
 from .registry import InMemoryRegistry
 
 
@@ -51,6 +52,22 @@ class SchemaRouter:
 
     def add_tool(self, tool: ToolSpec, *, replace: bool = False) -> str:
         return self.registry.register(tool, replace=replace)
+
+    async def inspect_url(
+        self,
+        url: str,
+        *,
+        model: DocumentationModelCallable,
+        timeout: float = 20.0,
+        max_document_chars: int = 60_000,
+    ) -> SchemaProposal:
+        return await inspect_documentation_url(
+            url,
+            model=model,
+            http_client=self.loader.http_client,
+            timeout=timeout,
+            max_document_chars=max_document_chars,
+        )
 
     async def add_url(
         self,
