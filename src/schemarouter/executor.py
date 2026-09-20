@@ -7,6 +7,11 @@ from typing import Any, Protocol
 from .errors import ExecutionError, PlanValidationError, SchemaDriftError
 from .models import ExecutionPlan, ToolCall, ToolResult
 from .registry import InMemoryRegistry
+from .validation import (
+    effective_input_schema,
+    effective_output_schema,
+    validate_json_schema_value,
+)
 
 
 class EndpointInvoker(Protocol):
@@ -55,6 +60,12 @@ class RegistryExecutor:
                 + ", ".join(actual_missing)
             )
 
+        validate_json_schema_value(
+            call.arguments,
+            effective_input_schema(endpoint),
+            context=f"arguments for {call.tool}.{call.endpoint}",
+        )
+
         declared_fields = {field.name for field in endpoint.output_fields}
         unknown_fields = sorted(set(call.fields) - declared_fields)
         if unknown_fields:
@@ -75,6 +86,7 @@ class RegistryExecutor:
         results: list[ToolResult] = []
         for call in plan.calls:
             self.validate_call(call)
+            endpoint = self.registry.endpoint(call.tool, call.endpoint)
             invoker = self._invokers.get(call.tool)
             if invoker is None:
                 raise ExecutionError(f"no invoker bound for tool {call.tool!r}")
@@ -85,6 +97,11 @@ class RegistryExecutor:
             except Exception as exc:  # noqa: BLE001
                 raise ExecutionError(f"invocation failed for {call.tool}.{call.endpoint}") from exc
 
+            validate_json_schema_value(
+                value,
+                effective_output_schema(endpoint),
+                context=f"output from {call.tool}.{call.endpoint}",
+            )
             projected = self._project(value, call.fields)
             results.append(
                 ToolResult(
