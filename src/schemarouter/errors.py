@@ -34,6 +34,10 @@ class ExecutionError(SchemaRouterError):
     """Raised when tool invocation fails."""
 
 
+class BindingDriftError(ExecutionError):
+    """Raised when an invoker is bound to an older tool schema."""
+
+
 class SchemaSourceError(SchemaRouterError):
     """Raised when a remote schema source cannot be loaded safely."""
 
