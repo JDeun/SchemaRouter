@@ -13,6 +13,7 @@ class StrictModel(BaseModel):
 
 class ParameterSpec(StrictModel):
     name: str
+    wire_name: str | None = None
     description: str = ""
     required: bool = False
     location: Literal["path", "query", "header", "body", "argument"] = "argument"
