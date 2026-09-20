@@ -5,20 +5,14 @@ import os
 
 from schemarouter import PlanRequest, SchemaRouter
 
-DEFAULT_OPENAPI_URL = "https://hopinjobs.com/openapi.json"
-DEFAULT_BASE_URL = "https://api.hopinjobs.com"
+DEFAULT_OPENAPI_URL = "https://api.apis.guru/v2/openapi.yaml"
 
 
 async def main() -> None:
     url = os.environ.get("SCHEMAROUTER_LIVE_OPENAPI_URL", DEFAULT_OPENAPI_URL)
-    base_url = os.environ.get("SCHEMAROUTER_LIVE_OPENAPI_BASE_URL", DEFAULT_BASE_URL)
-    router = await SchemaRouter.from_url(
-        url,
-        kind="openapi",
-        base_url=base_url,
-    )
+    router = await SchemaRouter.from_url(url, kind="openapi")
 
-    endpoint_name = "getHealth"
+    endpoint_name = "getMetrics"
     tools = router.registry.tools()
     tool = next(
         candidate
@@ -29,11 +23,10 @@ async def main() -> None:
 
     assert endpoint.read_only is True
     assert tool.metadata["execution_bound"] is True
-    assert tool.metadata["approved_base_url"] == base_url
 
     plan = router.plan(
         PlanRequest(
-            query="api service health",
+            query="api directory metrics",
             preferred_tools=[tool.key],
             max_calls=32,
         )
@@ -45,15 +38,15 @@ async def main() -> None:
     results = await router.execute(selected_plan)
     assert len(results) == 1
     assert isinstance(results[0].data, dict)
-    assert results[0].data.get("status") == "ok"
+    assert isinstance(results[0].data.get("numAPIs"), int)
+    assert results[0].data["numAPIs"] > 0
 
     print(
         {
             "source": url,
-            "base_url": base_url,
             "tool": tool.key,
             "endpoint": call.endpoint,
-            "status": results[0].data.get("status"),
+            "numAPIs": results[0].data["numAPIs"],
         }
     )
 
