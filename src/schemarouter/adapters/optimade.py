@@ -229,7 +229,7 @@ def _field_from_property(name: str, spec: dict[str, Any]) -> FieldSpec:
         json_schema=_property_schema(spec),
         aliases=[name.replace("_", " ")],
         unit=str(unit) if unit not in {None, "inapplicable"} else None,
-        identifier=name in {"id", "immutable_id"} or name.endswith("_id"),
+        identifier=False,
         source_type="optimade",
     )
 
