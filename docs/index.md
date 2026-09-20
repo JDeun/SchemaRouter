@@ -1,3 +1,8 @@
+<div class="brand-lockup">
+  <img class="brand-lockup--light" src="assets/brand/schemarouter-lockup-light.svg" alt="SchemaRouter">
+  <img class="brand-lockup--dark" src="assets/brand/schemarouter-lockup-dark.svg" alt="SchemaRouter">
+</div>
+
 # SchemaRouter
 
 **Schema-aware planning and execution for LLM tool ecosystems.**
