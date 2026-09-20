@@ -1,6 +1,6 @@
 import pytest
 
-from schemarouter import SchemaRouter, schema_tool
+from schemarouter import SchemaRouter, SchemaValidationError, schema_tool
 from schemarouter.integrations import to_langchain_tool, to_langchain_tools
 
 
@@ -39,8 +39,8 @@ def test_langchain_tool_still_enforces_schemarouter_validation() -> None:
     router = make_router()
     tool = to_langchain_tool(router, "add", "call")
 
-    with pytest.raises(Exception):
-        tool.invoke({"a": "2", "b": 3})
+    with pytest.raises(SchemaValidationError):
+        tool.invoke({"a": "not-an-int", "b": 3})
 
 
 def test_langchain_tool_collection_exports_registered_endpoints() -> None:
