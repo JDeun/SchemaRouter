@@ -203,6 +203,8 @@ async def inspect_documentation_url(
             async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
                 response = await _fetch_document_with_safe_redirects(client, url)
         response.raise_for_status()
+    except SchemaSourceError:
+        raise
     except Exception as exc:  # noqa: BLE001
         raise SchemaSourceError(f"failed to fetch documentation URL {url!r}") from exc
 
