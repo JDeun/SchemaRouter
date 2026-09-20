@@ -5,11 +5,12 @@ import re
 from collections.abc import Awaitable, Callable
 from html.parser import HTMLParser
 from typing import Any, Literal
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from .adapters.openapi import same_origin
 from .errors import ModelAnalysisError, SchemaSourceError
 from .models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 
@@ -144,6 +145,38 @@ def _document_text(body: str, content_type: str, max_chars: int) -> str:
     return text[:max_chars]
 
 
+async def _fetch_document_with_safe_redirects(
+    client: httpx.AsyncClient,
+    url: str,
+    *,
+    max_redirects: int = 5,
+) -> httpx.Response:
+    current = url
+    initial = url
+    for _ in range(max_redirects + 1):
+        response = await client.get(current, follow_redirects=False)
+        if not response.is_redirect:
+            return response
+
+        location = response.headers.get("location")
+        if not location:
+            raise SchemaSourceError("documentation redirect is missing Location")
+        target = urljoin(current, location)
+        parsed = urlparse(target)
+        if (
+            parsed.scheme not in {"http", "https"}
+            or not parsed.netloc
+            or parsed.username
+            or parsed.password
+        ):
+            raise SchemaSourceError("documentation redirect target is not a safe http(s) URL")
+        if not same_origin(initial, target):
+            raise SchemaSourceError("cross-origin documentation redirects are not allowed")
+        current = target
+
+    raise SchemaSourceError("documentation URL exceeded the redirect limit")
+
+
 async def inspect_documentation_url(
     url: str,
     *,
@@ -160,13 +193,15 @@ async def inspect_documentation_url(
     parsed_url = urlparse(url)
     if parsed_url.scheme not in {"http", "https"} or not parsed_url.netloc:
         raise SchemaSourceError("documentation URL must be an absolute http(s) URL")
+    if parsed_url.username or parsed_url.password:
+        raise SchemaSourceError("documentation URL must not contain credentials")
 
     try:
         if http_client is not None:
-            response = await http_client.get(url)
+            response = await _fetch_document_with_safe_redirects(http_client, url)
         else:
-            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-                response = await client.get(url)
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
+                response = await _fetch_document_with_safe_redirects(client, url)
         response.raise_for_status()
     except Exception as exc:  # noqa: BLE001
         raise SchemaSourceError(f"failed to fetch documentation URL {url!r}") from exc
