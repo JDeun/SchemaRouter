@@ -84,6 +84,8 @@ def tool_from_mcp(
                 description=item.get("description", ""),
                 parameters=parameters,
                 output_fields=fields,
+                input_schema=input_schema if isinstance(input_schema, dict) else {},
+                output_schema=output_schema if isinstance(output_schema, dict) else {},
                 metadata=metadata,
             )
         )
