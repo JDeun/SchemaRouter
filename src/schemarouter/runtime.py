@@ -212,14 +212,16 @@ class SchemaRouter:
             )
         except ValueError as exc:
             raise RegistrationError("invalid OpenAPI execution binding") from exc
-        self.executor.bind(tool_key, invoker)
-        tool.metadata.update(
+        updated = tool.model_copy(deep=True)
+        updated.metadata.update(
             {
                 "execution_bound": True,
                 "approved_base_url": base_url,
                 "requires_explicit_base_url": False,
             }
         )
+        self.registry.register(updated, replace=True)
+        self.executor.bind(tool_key, invoker)
 
     def approve_proposal(
         self,
