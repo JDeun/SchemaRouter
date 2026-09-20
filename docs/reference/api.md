@@ -6,6 +6,22 @@ The top-level `schemarouter` package exposes the stable public surface intended 
 
 ::: schemarouter.SchemaRouter
 
+## AdapterRegistry
+
+::: schemarouter.AdapterRegistry
+
+## AdapterContext
+
+::: schemarouter.AdapterContext
+
+## AdapterLoadResult
+
+::: schemarouter.AdapterLoadResult
+
+## OPTIMADESourceAdapter
+
+::: schemarouter.OPTIMADESourceAdapter
+
 ## ConfiguredSchemaRouter
 
 ::: schemarouter.ConfiguredSchemaRouter
