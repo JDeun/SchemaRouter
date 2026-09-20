@@ -4,7 +4,7 @@ import inspect
 from collections.abc import Awaitable
 from typing import Any, Protocol
 
-from .errors import ExecutionError, PlanValidationError, SchemaDriftError
+from .errors import BindingDriftError, ExecutionError, PlanValidationError, SchemaDriftError
 from .models import ExecutionPlan, ToolCall, ToolResult
 from .registry import InMemoryRegistry
 from .validation import (
@@ -24,10 +24,16 @@ class RegistryExecutor:
     def __init__(self, registry: InMemoryRegistry) -> None:
         self.registry = registry
         self._invokers: dict[str, EndpointInvoker] = {}
+        self._binding_fingerprints: dict[str, str] = {}
 
     def bind(self, tool_key: str, invoker: EndpointInvoker) -> None:
-        self.registry.get(tool_key)  # fail early for unknown tool
+        tool = self.registry.get(tool_key)  # fail early for unknown tool
         self._invokers[tool_key] = invoker
+        self._binding_fingerprints[tool_key] = tool.fingerprint
+
+    def unbind(self, tool_key: str) -> None:
+        self._invokers.pop(tool_key, None)
+        self._binding_fingerprints.pop(tool_key, None)
 
     def validate_call(self, call: ToolCall) -> None:
         try:
@@ -90,6 +96,13 @@ class RegistryExecutor:
             invoker = self._invokers.get(call.tool)
             if invoker is None:
                 raise ExecutionError(f"no invoker bound for tool {call.tool!r}")
+
+            current_tool = self.registry.get(call.tool)
+            bound_fingerprint = self._binding_fingerprints.get(call.tool)
+            if bound_fingerprint != current_tool.fingerprint:
+                raise BindingDriftError(
+                    f"invoker binding is stale for tool {call.tool!r}; rebind before execution"
+                )
             try:
                 value = invoker(call.endpoint, dict(call.arguments))
                 if inspect.isawaitable(value):
