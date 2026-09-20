@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin, urlparse
 
 import httpx
 
@@ -58,7 +58,16 @@ def tool_from_openapi(
     """
     endpoints: list[EndpointSpec] = []
     for path, path_item in document.get("paths", {}).items():
-        if not isinstance(path_item, dict):
+        if not isinstance(path, str) or not isinstance(path_item, dict):
+            continue
+        parsed_path = urlparse(path)
+        if (
+            not path.startswith("/")
+            or parsed_path.scheme
+            or parsed_path.netloc
+            or parsed_path.query
+            or parsed_path.fragment
+        ):
             continue
         path_parameters = path_item.get("parameters", [])
         for method, operation in path_item.items():
@@ -145,6 +154,8 @@ def tool_from_openapi(
                     output_fields=fields,
                     method=method.upper(),
                     path=path,
+                    read_only=method.lower() in {"get", "head", "options"},
+                    destructive=method.lower() == "delete",
                     metadata={
                         "tags": operation.get("tags", []),
                         "security": operation.get("security"),
@@ -184,6 +195,12 @@ class OpenAPIRemoteInvoker:
         trusted_headers: dict[str, str] | None = None,
         timeout: float = 20.0,
     ) -> None:
+        parsed_base = urlparse(base_url)
+        if parsed_base.scheme not in {"http", "https"} or not parsed_base.netloc:
+            raise ValueError("base_url must be an absolute http(s) URL")
+        if parsed_base.username or parsed_base.password:
+            raise ValueError("base_url must not contain credentials")
+
         self.tool = tool
         self.base_url = base_url
         self.trusted_headers = dict(trusted_headers or {})
@@ -197,14 +214,15 @@ class OpenAPIRemoteInvoker:
         path = endpoint.path
         query: dict[str, Any] = {}
         body: dict[str, Any] = {}
-        headers = dict(self.trusted_headers)
+        headers: dict[str, str] = {}
 
         for parameter in endpoint.parameters:
             if parameter.name not in arguments:
                 continue
             value = arguments[parameter.name]
             if parameter.location == "path":
-                path = path.replace("{" + parameter.name + "}", str(value))
+                encoded = quote(str(value), safe="")
+                path = path.replace("{" + parameter.name + "}", encoded)
             elif parameter.location == "query":
                 query[parameter.name] = value
             elif parameter.location == "header":
@@ -212,8 +230,18 @@ class OpenAPIRemoteInvoker:
             elif parameter.location == "body":
                 body[parameter.name] = value
 
+        headers.update(self.trusted_headers)
+
         url = urljoin(self.base_url.rstrip("/") + "/", path.lstrip("/"))
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+        parsed_base = urlparse(self.base_url)
+        parsed_target = urlparse(url)
+        if (
+            parsed_target.scheme != parsed_base.scheme
+            or parsed_target.netloc != parsed_base.netloc
+        ):
+            raise RuntimeError("endpoint path escaped the approved API origin")
+
+        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=False) as client:
             response = await client.request(
                 endpoint.method,
                 url,
