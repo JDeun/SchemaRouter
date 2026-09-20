@@ -36,6 +36,8 @@ class EndpointSpec(StrictModel):
     description: str = ""
     parameters: list[ParameterSpec] = Field(default_factory=list)
     output_fields: list[FieldSpec] = Field(default_factory=list)
+    input_schema: dict[str, Any] = Field(default_factory=dict)
+    output_schema: dict[str, Any] = Field(default_factory=dict)
     method: str | None = None
     path: str | None = None
     read_only: bool | None = None
