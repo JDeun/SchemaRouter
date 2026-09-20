@@ -277,3 +277,21 @@ async def test_same_origin_schema_redirect_preserves_schema_headers() -> None:
         "https://docs.example.com/spec/openapi.json"
     )
     assert tool.metadata["execution_bound"] is True
+
+
+@pytest.mark.asyncio
+async def test_openapi_document_size_is_bounded() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            content=b"x" * (5 * 1024 * 1024 + 1),
+            headers={"content-type": "application/json"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(UnsupportedSchemaSourceError, match="safety limit"):
+            await router.add_url(
+                "https://docs.example.com/openapi.json",
+                kind="openapi",
+            )
