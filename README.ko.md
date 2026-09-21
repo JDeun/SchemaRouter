@@ -36,9 +36,10 @@ OpenAPI, MCP, OPTIMADE, Python callable 및 제3자 어댑터와 에이전트 �
 **tool-schema boundary**를 담당하도록 설계되었습니다.
 
 > 현재 상태는 **0.2.0a1 공개 알파**입니다. PyPI에서
-> `pip install --pre schemarouter`로 설치할 수 있습니다. 현재 main에는 다음 릴리스를
-> 위한 opt-in bounded decision backend, LangChain/LlamaIndex 통합, 선택형 Jev / TypeSafe
-> System One decision provider도 포함되어 있습니다.
+> `pip install --pre schemarouter`로 설치할 수 있습니다. 현재 `main`은
+> **0.3.0.dev0**으로 식별되며 다음 릴리스를 위한 opt-in bounded decision backend,
+> LangChain/LlamaIndex 통합, 선택형 Jev / TypeSafe System One decision provider도
+> 포함되어 있습니다.
 
 ## 왜 필요한가
 
@@ -299,6 +300,10 @@ ruff check .
 pytest -q -m "not mcp_integration"
 python examples/quickstart.py
 python scripts/benchmark_decision_routing.py
+
+# 선택형 통합을 포함한 전체 패키지 surface 타입 검사
+pip install -e ".[dev,mcp,langchain,llamaindex,jev]"
+pyright
 ```
 
 선택형 통합은 코어 의존성과 분리되어 있습니다.

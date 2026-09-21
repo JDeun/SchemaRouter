@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import inspect
 from collections.abc import Callable
-from typing import Any, get_type_hints
+from typing import Any, cast, get_type_hints
 
 from pydantic import BaseModel, TypeAdapter
 
@@ -171,7 +171,8 @@ def schema_tool(
     """Attach SchemaRouter registration metadata without wrapping the function."""
 
     def decorator(function: Callable[..., Any]) -> Callable[..., Any]:
-        function.__schemarouter_options__ = {
+        dynamic_function = cast(Any, function)
+        dynamic_function.__schemarouter_options__ = {
             "name": name,
             "namespace": namespace,
             "description": description,

@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import inspect
 import math
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from typesafe_sdk import Choice
 
 from ..decisions import (
     DecisionRequest,
@@ -59,7 +62,7 @@ class JevDecisionBackend:
         return state
 
     @staticmethod
-    def _questions(request: DecisionRequest) -> dict[str, dict[str, Any]]:
+    def _question_payload(request: DecisionRequest) -> dict[str, dict[str, Any]]:
         return {
             "selection": {
                 "type": "choice",
@@ -76,6 +79,23 @@ class JevDecisionBackend:
                     for option in request.options
                 },
             }
+        }
+
+    @classmethod
+    def _typed_questions(cls, request: DecisionRequest) -> dict[str, Choice]:
+        try:
+            from typesafe_sdk import Choice as TypeSafeChoice
+        except ImportError as exc:
+            raise ImportError(
+                'Jev integration requires: pip install "schemarouter[jev]"'
+            ) from exc
+
+        payload = cls._question_payload(request)["selection"]
+        return {
+            "selection": TypeSafeChoice(
+                instructions=payload["instructions"],
+                criteria=payload["criteria"],
+            )
         }
 
     def _client_kwargs(self) -> dict[str, Any]:
@@ -153,7 +173,7 @@ class JevDecisionBackend:
         if self.client is not None:
             response = self.client.system_one(
                 state=self._state(request),
-                questions=self._questions(request),
+                questions=self._question_payload(request),
                 **self._call_kwargs(),
             )
             if inspect.isawaitable(response):
@@ -175,8 +195,8 @@ class JevDecisionBackend:
         with TypeSafeClient(**self._client_kwargs()) as client:
             response = client.system_one(
                 state=self._state(request),
-                questions=self._questions(request),
-                **self._call_kwargs(),
+                questions=self._typed_questions(request),
+                model=self.model,
             )
         return self._parse_response(request, response)
 
@@ -184,7 +204,7 @@ class JevDecisionBackend:
         if self.client is not None:
             response = self.client.system_one(
                 state=self._state(request),
-                questions=self._questions(request),
+                questions=self._question_payload(request),
                 **self._call_kwargs(),
             )
             if inspect.isawaitable(response):
@@ -201,7 +221,7 @@ class JevDecisionBackend:
         async with AsyncTypeSafeClient(**self._client_kwargs()) as client:
             response = await client.system_one(
                 state=self._state(request),
-                questions=self._questions(request),
-                **self._call_kwargs(),
+                questions=self._typed_questions(request),
+                model=self.model,
             )
         return self._parse_response(request, response)

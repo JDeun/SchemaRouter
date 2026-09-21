@@ -171,6 +171,16 @@ def test_credentials_are_client_configuration_not_model_state(
 ) -> None:
     captured: dict[str, Any] = {}
 
+    class SDKChoice:
+        def __init__(
+            self,
+            *,
+            instructions: Any = None,
+            criteria: Any = None,
+        ) -> None:
+            self.instructions = instructions
+            self.criteria = criteria
+
     class SDKClient:
         def __init__(self, **kwargs: Any) -> None:
             captured["client_kwargs"] = kwargs
@@ -186,6 +196,7 @@ def test_credentials_are_client_configuration_not_model_state(
             return FakeResponse("candidate:0", 0.9)
 
     module = ModuleType("typesafe_sdk")
+    module.Choice = SDKChoice  # type: ignore[attr-defined]
     module.TypeSafeClient = SDKClient  # type: ignore[attr-defined]
     monkeypatch.setitem(sys.modules, "typesafe_sdk", module)
 

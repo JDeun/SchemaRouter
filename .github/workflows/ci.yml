@@ -12,8 +12,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -24,6 +25,17 @@ jobs:
       - run: ruff check .
       - run: pytest -q -m "not mcp_integration"
       - run: python examples/quickstart.py
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,mcp,langchain,llamaindex,jev]"
+      - run: pyright
 
   package:
     runs-on: ubuntu-latest
@@ -49,7 +61,7 @@ jobs:
       - run: python -m venv /tmp/schemarouter-wheel
       - run: /tmp/schemarouter-wheel/bin/python -m pip install --upgrade pip
       - run: /tmp/schemarouter-wheel/bin/pip install dist/*.whl
-      - run: /tmp/schemarouter-wheel/bin/python -c "import schemarouter; assert schemarouter.__version__ == '0.2.0a1'"
+      - run: /tmp/schemarouter-wheel/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
       - run: /tmp/schemarouter-wheel/bin/python scripts/benchmark_decision_routing.py
 

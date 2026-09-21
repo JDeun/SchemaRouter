@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Sequence
 from typing import Any, TypeVar
 from urllib.parse import urlparse
@@ -37,7 +38,10 @@ def _run_sync(factory: Callable[[], Awaitable[_T]]) -> _T:
     try:
         asyncio.get_running_loop()
     except RuntimeError:
-        return asyncio.run(factory())
+        async def await_factory() -> _T:
+            return await factory()
+
+        return asyncio.run(await_factory())
     raise RuntimeError(
         "synchronous SchemaRouter API cannot run inside an active event loop; "
         "use the async API instead"
@@ -64,7 +68,16 @@ def _stream_sync(factory: Callable[[], AsyncIterator[_T]]) -> Iterator[_T]:
             except StopAsyncIteration:
                 break
     finally:
-        loop.run_until_complete(iterator.aclose())
+        aclose = getattr(iterator, "aclose", None)
+
+        async def close_iterator() -> None:
+            if not callable(aclose):
+                return
+            close_result = aclose()
+            if inspect.isawaitable(close_result):
+                await close_result
+
+        loop.run_until_complete(close_iterator())
         loop.close()
 
 
@@ -363,7 +376,7 @@ class SchemaRouter:
         *,
         config: RunConfig | dict[str, Any] | None = None,
         return_exceptions: bool = False,
-    ) -> list[list[ToolResult] | Exception]:
+    ) -> list[list[ToolResult] | BaseException]:
         run_config = _coerce_config(config)
         semaphore = asyncio.Semaphore(run_config.max_concurrency)
 
@@ -382,7 +395,7 @@ class SchemaRouter:
         *,
         config: RunConfig | dict[str, Any] | None = None,
         return_exceptions: bool = False,
-    ) -> list[list[ToolResult] | Exception]:
+    ) -> list[list[ToolResult] | BaseException]:
         return _run_sync(
             lambda: self.abatch(
                 requests,
@@ -633,7 +646,7 @@ class ConfiguredSchemaRouter:
         requests: Sequence[PlanRequest | str],
         *,
         return_exceptions: bool = False,
-    ) -> list[list[ToolResult] | Exception]:
+    ) -> list[list[ToolResult] | BaseException]:
         return self.router.batch(
             requests,
             config=self.config,
@@ -645,7 +658,7 @@ class ConfiguredSchemaRouter:
         requests: Sequence[PlanRequest | str],
         *,
         return_exceptions: bool = False,
-    ) -> list[list[ToolResult] | Exception]:
+    ) -> list[list[ToolResult] | BaseException]:
         return await self.router.abatch(
             requests,
             config=self.config,

@@ -11,25 +11,35 @@ def _version() -> str:
     return match.group(1)
 
 
-def test_release_version_is_consistent_across_artifacts() -> None:
+def test_repository_version_has_valid_development_or_release_state() -> None:
     version = _version()
 
+    if ".dev" in version:
+        assert version.endswith(".dev0")
+        return
+
+    release_notes = ROOT / "docs" / "releases" / f"{version}.md"
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-    installation = (
-        ROOT / "docs" / "getting-started" / "installation.md"
-    ).read_text(encoding="utf-8")
-    release_notes = (
-        ROOT / "docs" / "releases" / f"{version}.md"
-    ).read_text(encoding="utf-8")
+    assert release_notes.is_file()
+    assert f"## {version} -" in changelog
+
+
+def test_release_workflow_derives_metadata_from_pyproject() -> None:
     workflow = (
         ROOT / ".github" / "workflows" / "release.yml"
     ).read_text(encoding="utf-8")
 
-    assert f"## {version} -" in changelog
-    assert f"`{version}`" in installation
-    assert f"# SchemaRouter {version}" in release_notes
-    assert f"SchemaRouter {version}" in workflow
-    assert f"schemarouter.__version__ == '{version}'" in workflow
+    assert 'tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]' in workflow
+    assert 'expected = f"v{version}"' in workflow
+    assert 'Path("docs") / "releases" / f"{version}.md"' in workflow
+    assert "development versions cannot be published" in workflow
+    assert 'RELEASE_VERSION: ${{ needs.build.outputs.version }}' in workflow
+    assert '--title "SchemaRouter $RELEASE_VERSION"' in workflow
+    assert '--notes-file "$RELEASE_NOTES"' in workflow
+
+    # A future release must not require editing old version literals in the workflow.
+    assert "0.2.0a1" not in workflow
+    assert "0.3.0.dev0" not in workflow
 
 
 def test_release_workflow_uses_tag_gate_and_trusted_publishing() -> None:
@@ -44,4 +54,8 @@ def test_release_workflow_uses_tag_gate_and_trusted_publishing() -> None:
     assert "name: pypi" in workflow
     assert "pypa/gh-action-pypi-publish@release/v1" in workflow
     assert 'gh release create "$GITHUB_REF_NAME"' in workflow
-    assert "--prerelease" in workflow
+    assert "prerelease_args" in workflow
+    assert "verify:" in workflow
+    assert "needs: verify" in workflow
+    assert "pyright" in workflow
+    assert "pytest -q" in workflow

@@ -73,8 +73,9 @@ form (`schemarouter[llamaindex]` and `schemarouter[jev]`).
 python -c "import schemarouter; print(schemarouter.__version__)"
 ```
 
-The repository currently retains the `0.2.0a1` package version until the next release is cut.
-Use the changelog and branch state to distinguish unreleased main from the published artifact.
+The repository `main` branch identifies itself as `0.3.0.dev0`, while the published alpha
+remains `0.2.0a1`. This keeps source checkouts distinguishable from released artifacts through
+normal package metadata.
 
 ## Release verification
 

@@ -6,6 +6,7 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 
 - [ ] Core CI passes on every supported Python version.
 - [ ] Warnings are treated as failures.
+- [ ] Static type checking passes for the typed package surface.
 - [ ] Optional integration CI passes.
 - [ ] Quickstart examples execute successfully.
 - [ ] Package wheel and sdist build successfully.
@@ -34,7 +35,8 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 
 ## Release mechanics
 
-- [ ] Update the version in `pyproject.toml`.
+- [ ] Replace the development version in `pyproject.toml` with the intended release version.
+- [ ] Add `docs/releases/<version>.md`; release metadata is derived from this version automatically.
 - [ ] Build from a clean checkout.
 - [ ] Run the full test suite against the built artifact.
 - [ ] Create an annotated Git tag.

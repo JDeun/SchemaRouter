@@ -5,6 +5,16 @@ SchemaRouter follows Semantic Versioning for released Python packages.
 The project is currently pre-1.0. During the 0.x series, the public API is still being shaped, but
 compatibility changes must remain deliberate and documented.
 
+## Development branch versions
+
+The default branch uses a PEP 440 development version for unreleased work. For example, after
+`0.2.0a1` is published, `main` may identify as `0.3.0.dev0` until the next release is cut.
+
+Release tags must match the version declared in `pyproject.toml`. The release workflow rejects
+`.dev` versions, derives release titles and notes from package metadata, and requires a matching
+`docs/releases/<version>.md` file. This prevents a development checkout from being mistaken for a
+published artifact and avoids release-workflow edits that depend on a hard-coded version.
+
 ## Public API
 
 The following are treated as public when they are documented and exported from the top-level
