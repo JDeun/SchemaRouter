@@ -7,10 +7,10 @@ from schemarouter import (
     FieldSpec,
     InMemoryRegistry,
     ParameterSpec,
+    PlanningError,
     PlanRequest,
     SchemaPlanner,
     ToolSpec,
-    PlanningError,
 )
 
 
