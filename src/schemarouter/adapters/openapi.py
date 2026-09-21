@@ -364,22 +364,23 @@ class OpenAPIRemoteInvoker:
         self.max_response_bytes = max_response_bytes
         self.http_client = http_client
 
-    async def __call__(self, endpoint_name: str, arguments: dict[str, Any]) -> Any:
-        endpoint = self.tool.endpoint(endpoint_name)
-        if not endpoint.method or not endpoint.path:
+    async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
+        endpoint_name = endpoint
+        endpoint_spec = self.tool.endpoint(endpoint_name)
+        if not endpoint_spec.method or not endpoint_spec.path:
             raise RuntimeError(f"endpoint {endpoint_name!r} is missing HTTP method/path")
 
         try:
-            _validate_endpoint_path(endpoint.path)
+            _validate_endpoint_path(endpoint_spec.path)
         except ValueError as exc:
             raise RuntimeError(f"unsafe endpoint path for {endpoint_name!r}") from exc
 
-        path = endpoint.path
+        path = endpoint_spec.path
         query: dict[str, Any] = {}
         body: dict[str, Any] = {}
         headers: dict[str, str] = {}
 
-        for parameter in endpoint.parameters:
+        for parameter in endpoint_spec.parameters:
             if parameter.name not in arguments:
                 continue
             value = arguments[parameter.name]
@@ -423,7 +424,7 @@ class OpenAPIRemoteInvoker:
         )
         try:
             async with client.stream(
-                endpoint.method,
+                endpoint_spec.method,
                 url,
                 params=query or None,
                 json=body or None,
