@@ -64,6 +64,17 @@ jobs:
       - run: pytest -q tests/test_langchain_integration.py
 
 
+  llamaindex-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,llamaindex]"
+      - run: pytest -q tests/test_llamaindex_integration.py
+
   mcp-integration:
     runs-on: ubuntu-latest
     steps:
