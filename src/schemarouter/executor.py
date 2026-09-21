@@ -36,7 +36,7 @@ class CallAwareEndpointInvoker(Protocol):
 
 
 @dataclass
-class _BudgetTracker:
+class ExecutionBudgetTracker:
     budget: ExecutionBudget
     started: float = field(default_factory=time.monotonic)
     tool_calls: int = 0
@@ -47,10 +47,22 @@ class _BudgetTracker:
 
     def _check_elapsed(self) -> None:
         limit = self.budget.max_elapsed_seconds
-        if limit is not None and time.monotonic() - self.started > limit:
+        if limit is not None and time.monotonic() - self.started >= limit:
             raise ExecutionBudgetExceededError(
                 f"execution exceeded max_elapsed_seconds={limit}"
             )
+
+    def remaining_seconds(self) -> float | None:
+        limit = self.budget.max_elapsed_seconds
+        if limit is None:
+            return None
+        remaining = limit - (time.monotonic() - self.started)
+        if remaining <= 0:
+            self._check_elapsed()
+        return max(remaining, 0.0)
+
+    def after_attempt(self) -> None:
+        self._check_elapsed()
 
     def before_call(self, call: ToolCall) -> None:
         self._check_elapsed()
@@ -225,7 +237,7 @@ class RegistryExecutor:
         *,
         retry: RetryPolicy | None = None,
         budget: ExecutionBudget | None = None,
-        _tracker: _BudgetTracker | None = None,
+        _tracker: ExecutionBudgetTracker | None = None,
     ) -> ToolResult:
         self.validate_call(call)
         endpoint = self.registry.endpoint(call.tool, call.endpoint)
@@ -242,7 +254,7 @@ class RegistryExecutor:
 
         await self._approve(tool, endpoint, call)
 
-        tracker = _tracker or _BudgetTracker(budget or ExecutionBudget())
+        tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
         tracker.before_call(call)
 
         retry = retry or RetryPolicy()
@@ -261,7 +273,18 @@ class RegistryExecutor:
                 else:
                     value = invoker(call.endpoint, dict(call.arguments))
                 if inspect.isawaitable(value):
-                    value = await value
+                    remaining = tracker.remaining_seconds()
+                    try:
+                        value = (
+                            await asyncio.wait_for(value, timeout=remaining)
+                            if remaining is not None
+                            else await value
+                        )
+                    except TimeoutError as exc:
+                        raise ExecutionBudgetExceededError(
+                            "execution exceeded max_elapsed_seconds during invocation"
+                        ) from exc
+                tracker.after_attempt()
 
                 validate_json_schema_value(
                     value,
@@ -314,7 +337,7 @@ class RegistryExecutor:
         retry: RetryPolicy | None = None,
         budget: ExecutionBudget | None = None,
     ) -> AsyncIterator[ToolResult]:
-        tracker = _BudgetTracker(budget or ExecutionBudget())
+        tracker = ExecutionBudgetTracker(budget or ExecutionBudget())
         for call in plan.calls:
             yield await self.execute_call(
                 call,
