@@ -104,7 +104,14 @@ async def test_otel_exporter_creates_parented_run_and_tool_spans_without_payload
 
     rendered = repr(
         [
-            (span.name, dict(span.attributes), [(event.name, dict(event.attributes)) for event in span.events])
+            (
+                span.name,
+                dict(span.attributes),
+                [
+                    (event.name, dict(event.attributes))
+                    for event in span.events
+                ],
+            )
             for span in spans
         ]
     )
