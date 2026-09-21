@@ -1,3 +1,5 @@
+import gzip
+
 import httpx
 import pytest
 
@@ -467,4 +469,32 @@ def test_openapi_invoker_rejects_invalid_response_limit(max_response_bytes: obje
             "https://api.example.com",
             max_response_bytes=max_response_bytes,  # type: ignore[arg-type]
         )
+
+@pytest.mark.asyncio
+async def test_openapi_invoker_handles_compressed_json_without_double_decoding() -> None:
+    tool = ToolSpec(
+        name="manual",
+        endpoints=[EndpointSpec(name="read", method="GET", path="/read")],
+    )
+    compressed = gzip.compress(b'{"ok": true}')
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={
+                "content-type": "application/json",
+                "content-encoding": "gzip",
+            },
+            content=compressed,
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        invoker = OpenAPIRemoteInvoker(
+            tool,
+            "https://api.example.com",
+            max_response_bytes=1024,
+            http_client=client,
+        )
+        assert await invoker("read", {}) == {"ok": True}
 
