@@ -3,12 +3,37 @@
 All notable changes to SchemaRouter are documented here.
 
 The project is pre-1.0 and follows the compatibility rules in
-[`docs/versioning.md`](versioning.md).
+[`versioning.md`](versioning.md).
 
 ## Unreleased
 
 ### Added
 
+- provider-neutral bounded `DecisionBackend` contracts with deterministic fallback;
+- optional `JevDecisionBackend` backed by TypeSafe System One through `schemarouter[jev]`;
+- optional LlamaIndex `FunctionTool` integration;
+- runnable LangChain and LlamaIndex integration examples enforced in CI;
+- provider-neutral decision-routing benchmark harness covering accuracy, abstention, latency,
+  token usage, and optional cost estimation;
+- explicit ecosystem compatibility matrix and integration maintenance policy;
+- Korean project overview in `README.ko.md`.
+
+### Security
+
+- Jev option IDs are validated before confidence-based abstention, so unknown IDs always fail
+  closed;
+- Jev credentials remain SDK client configuration and are never placed in model state;
+- `DecisionOption.metadata` is not forwarded to Jev;
+- provider failures can deterministically fall back without weakening execution policy.
+
+## 0.2.0a1 - 2026-09-20
+
+### Added
+
+- pluggable structured-source `AdapterRegistry` with explicit and priority-based auto discovery;
+- OPTIMADE v1 discovery through base and entry-type info endpoints;
+- OPTIMADE field-aware execution that maps planned fields to `response_fields`;
+- call-aware invoker support for protocol adapters that need the full `ToolCall`;
 - typed tool, endpoint, parameter, response-field, plan, and result contracts;
 - namespaced versioned registry;
 - schema-aware planning with recall-preserving field projection;
@@ -25,7 +50,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - optional LangChain `StructuredTool` integration;
 - framework maturity, architecture, release, and versioning documentation;
 - MIT licensing and package metadata;
-- MkDocs Material documentation site with guides, recipes, and generated API reference.
+- MkDocs Material documentation site with guides, recipes, and generated API reference;
+- SchemaRouter brace-and-routing-hub brand system with light/dark marks, lockups, favicon, and
+  social preview source artwork.
 
 ### Security
 

@@ -105,12 +105,14 @@ nav:
       - MCP: guides/mcp.md
       - Human-readable documentation: guides/html-documentation.md
       - Model-assisted analysis: guides/model-analyzer.md
+      - Decision routing benchmark: guides/decision-benchmark.md
       - Batch, streaming, and events: guides/runtime.md
       - Retry policy: guides/retry.md
       - Execution policy: guides/execution-policy.md
   - Integrations:
       - LangChain: integrations/langchain.md
       - LlamaIndex: integrations/llamaindex.md
+      - Jev / TypeSafe: integrations/jev.md
   - Recipes:
       - OpenAPI agent boundary: recipes/openapi-agent.md
       - MCP agent boundary: recipes/mcp-agent.md

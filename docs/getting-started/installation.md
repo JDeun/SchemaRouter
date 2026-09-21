@@ -2,9 +2,20 @@
 
 SchemaRouter requires Python 3.10 or newer.
 
-## Current pre-release
+## Published alpha
 
-The project is currently developed from source. Clone the repository and install it in editable mode:
+The published pre-release is `0.2.0a1`:
+
+```bash
+pip install --pre schemarouter
+```
+
+The published alpha contains the v0.2 core, OpenAPI/OPTIMADE/MCP support, and the LangChain bridge.
+
+## Current main
+
+Current `main` contains unreleased next-release work, including bounded decision backends,
+LlamaIndex integration, and the Jev / TypeSafe provider. Install those features from source:
 
 ```bash
 git clone https://github.com/JDeun/SchemaRouter.git
@@ -25,13 +36,25 @@ Install only the integrations you use.
 === "MCP"
 
     ```bash
-    pip install -e ".[mcp]"
+    pip install "schemarouter[mcp]"
     ```
 
 === "LangChain"
 
     ```bash
-    pip install -e ".[langchain]"
+    pip install "schemarouter[langchain]"
+    ```
+
+=== "LlamaIndex (current main)"
+
+    ```bash
+    pip install -e ".[llamaindex]"
+    ```
+
+=== "Jev / TypeSafe (current main)"
+
+    ```bash
+    pip install -e ".[jev]"
     ```
 
 === "Documentation"
@@ -41,21 +64,20 @@ Install only the integrations you use.
     mkdocs serve
     ```
 
+After the next package release, the LlamaIndex and Jev extras will use the same normal package-extra
+form (`schemarouter[llamaindex]` and `schemarouter[jev]`).
+
 ## Verify the installation
 
 ```bash
 python -c "import schemarouter; print(schemarouter.__version__)"
 ```
 
-The current pre-release version is `0.2.0a1`.
+The repository currently retains the `0.2.0a1` package version until the next release is cut.
+Use the changelog and branch state to distinguish unreleased main from the published artifact.
 
-## Package release
+## Release verification
 
-The package metadata, wheel build, source distribution, and clean-wheel installation are verified in
-CI. After `0.2.0a1` is published to the package index, the standard installation path will be:
-
-```bash
-pip install schemarouter
-```
-
-Do not rely on that command until a release is visible on the package index.
+Package metadata, wheel/sdist build, clean-wheel installation, integration contracts, and strict
+documentation builds are verified in CI. External-service smokes are kept separate from deterministic
+pull-request gates.

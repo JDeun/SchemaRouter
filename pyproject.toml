@@ -39,6 +39,9 @@ langchain = [
 llamaindex = [
   "llama-index-core>=0.14,<1",
 ]
+jev = [
+  "typesafe-sdk>=0.7,<1",
+]
 docs = [
   "mkdocs-material>=9.7,<10",
   "mkdocstrings>=1,<2",
