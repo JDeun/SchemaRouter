@@ -9,7 +9,7 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Static type checking passes for the typed package surface.
 - [ ] The 82% branch-coverage floor passes.
 - [ ] Minimum declared runtime dependencies pass the core suite.
-- [ ] Optional integration CI passes.
+- [ ] Optional integration CI passes, including LangChain, LlamaIndex, Jev, MCP, and OpenTelemetry.
 - [ ] Linux core CI passes on Python 3.10 through 3.14.
 - [ ] The Windows + Python 3.14 smoke job passes.
 - [ ] The Python 3.15 preview is reviewed for forward-compatibility signals.
