@@ -10,7 +10,7 @@ claim that every historical version inside the range is exhaustively tested.
 
 | Surface | Declared support | Pull-request gate | Notes |
 | --- | --- | --- | --- |
-| Python | 3.10, 3.11, 3.12 | Full core suite on all three versions | Package metadata requires Python >=3.10 |
+| Python | 3.10, 3.11, 3.12, 3.13, 3.14 | Full core suite on all five versions | Package metadata requires Python >=3.10; Python 3.15 RC is exercised as a non-blocking preview |
 | LangChain | `langchain-core>=1.6,<2` | Dedicated contract tests + runnable example on Python 3.12 | Optional `schemarouter[langchain]` extra |
 | LlamaIndex | `llama-index-core>=0.14,<1` | Dedicated contract tests + runnable example on Python 3.12 | Optional `schemarouter[llamaindex]` extra |
 | Jev / TypeSafe | `typesafe-sdk>=0.7,<1` | Dedicated adversarial contract tests on Python 3.12 | Optional `schemarouter[jev]` extra; no live API call in required CI |
@@ -25,17 +25,25 @@ tests must pass against that target and the change must be documented in release
 
 Every pull request runs:
 
-- Python 3.10 / 3.11 / 3.12 core tests;
+- Python 3.10 / 3.11 / 3.12 / 3.13 / 3.14 core tests;
+- a non-blocking Python 3.15 release-candidate preview job;
+- a Windows + Python 3.14 core smoke test;
 - warnings-as-errors;
+- Pyright static type checking across the packaged surface;
+- full-suite branch coverage measurement with a retained XML artifact;
+- a minimum-runtime-dependency job that exercises the declared lower bounds;
 - executable core quickstart;
 - wheel and sdist build + metadata checks;
+- clean-environment installation and quickstart smoke tests from both wheel and sdist;
 - LangChain integration contract tests and `examples/langchain_quickstart.py`;
 - LlamaIndex integration contract tests and `examples/llamaindex_quickstart.py`;
 - Jev adapter adversarial tests with the official SDK installed but no external API dependency;
 - real MCP Streamable HTTP integration using the official SDK and a local HTTP server;
 - strict MkDocs build.
 
-These tests are deterministic and are release blockers.
+All jobs above are deterministic release blockers except the explicitly non-blocking Python 3.15
+preview. The preview exists to surface upcoming interpreter incompatibilities before Python 3.15
+becomes a supported stable release.
 
 ## Integration maintenance policy
 
