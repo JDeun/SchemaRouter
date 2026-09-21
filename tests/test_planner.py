@@ -185,3 +185,34 @@ def test_reserved_decision_surfaces_fail_closed(surface: str) -> None:
             decision_backend=backend,
             decision_policy=DecisionPolicy(enabled=True, **{surface: True}),
         )
+
+def test_decision_abstention_falls_back_to_deterministic() -> None:
+    reg = registry()
+    backend = CallableDecisionBackend(
+        lambda _: {"abstained": True},
+    )
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=backend,
+        decision_policy=DecisionPolicy(enabled=True, endpoint_selection=True),
+    ).plan(PlanRequest(query="band gap", arguments={"formula": "Si"}))
+
+    assert plan.calls[0].tool == "materials"
+    assert any("decision backend abstained" in warning for warning in plan.warnings)
+
+
+def test_decision_provider_error_falls_back_to_deterministic() -> None:
+    reg = registry()
+
+    def failing_backend(_: object) -> dict[str, object]:
+        raise RuntimeError("provider unavailable")
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(failing_backend),
+        decision_policy=DecisionPolicy(enabled=True, endpoint_selection=True),
+    ).plan(PlanRequest(query="band gap", arguments={"formula": "Si"}))
+
+    assert plan.calls[0].tool == "materials"
+    assert any("decision backend fallback: RuntimeError" in warning for warning in plan.warnings)
+
