@@ -93,3 +93,19 @@ def test_router_exposes_explicit_plugin_loader(monkeypatch) -> None:
     assert router.load_adapter_plugins(allowlist={"demo"}) == ("demo",)
     assert "demo" in router.adapter_registry.kinds()
     assert loaded == ["demo"]
+
+
+def test_duplicate_plugin_names_fail_before_import(monkeypatch) -> None:
+    loaded = []
+    entries = FakeEntryPoints(
+        [
+            FakeEntryPoint("demo", "package_a:Adapter", loaded),
+            FakeEntryPoint("demo", "package_b:Adapter", loaded),
+        ]
+    )
+    monkeypatch.setattr(plugins.metadata, "entry_points", lambda: entries)
+
+    with pytest.raises(RuntimeError, match="ambiguous adapter plugin"):
+        plugins.load_adapter_plugins(AdapterRegistry(), allowlist={"demo"})
+
+    assert loaded == []
