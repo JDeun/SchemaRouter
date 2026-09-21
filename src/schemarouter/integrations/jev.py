@@ -103,6 +103,10 @@ class JevDecisionBackend:
         except (AttributeError, KeyError, TypeError, ValueError) as exc:
             raise PlanningError("Jev returned an invalid choice response") from exc
 
+        allowed = {option.id for option in request.options}
+        if option_id not in allowed:
+            raise PlanningError(f"Jev returned unknown option ID: {option_id}")
+
         if not math.isfinite(confidence) or not 0.0 <= confidence <= 1.0:
             raise PlanningError("Jev returned an invalid confidence value")
 
