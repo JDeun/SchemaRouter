@@ -9,28 +9,11 @@ permissions:
   contents: read
 
 jobs:
-  verify:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[dev,mcp,langchain,llamaindex,jev,docs]"
-      - run: ruff check .
-      - run: pyright
-      - run: pytest -q
-      - run: python examples/quickstart.py
-      - run: python examples/langchain_quickstart.py
-      - run: python examples/llamaindex_quickstart.py
-      - run: python scripts/benchmark_decision_routing.py
-      - run: mkdocs build --strict
-        env:
-          NO_MKDOCS_2_WARNING: "1"
+  quality:
+    uses: ./.github/workflows/ci.yml
 
   build:
-    needs: verify
+    needs: quality
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.metadata.outputs.version }}
@@ -87,24 +70,34 @@ jobs:
           from pathlib import Path
 
           wheel = glob.glob("dist/*.whl")[0]
-          names = zipfile.ZipFile(wheel).namelist()
-          assert any(name.endswith("/licenses/LICENSE") for name in names), names
+          sdist = glob.glob("dist/*.tar.gz")[0]
 
-          with tempfile.TemporaryDirectory() as root:
-              env = Path(root) / "venv"
-              venv.EnvBuilder(with_pip=True).create(env)
-              python = env / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
-              subprocess.check_call([str(python), "-m", "pip", "install", wheel])
-              subprocess.check_call([
-                  str(python),
-                  "-c",
-                  (
-                      "from importlib.metadata import version; "
-                      "import schemarouter; "
-                      f"assert schemarouter.__version__ == {os.environ['RELEASE_VERSION']!r}; "
-                      f"assert version('schemarouter') == {os.environ['RELEASE_VERSION']!r}"
-                  ),
-              ])
+          wheel_names = zipfile.ZipFile(wheel).namelist()
+          assert any(name.endswith("/licenses/LICENSE") for name in wheel_names), wheel_names
+
+          import tarfile
+
+          with tarfile.open(sdist, "r:gz") as archive:
+              sdist_names = archive.getnames()
+          assert any(name.endswith("/LICENSE") for name in sdist_names), sdist_names
+
+          for artifact in (wheel, sdist):
+              with tempfile.TemporaryDirectory() as root:
+                  env = Path(root) / "venv"
+                  venv.EnvBuilder(with_pip=True).create(env)
+                  python = env / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+                  subprocess.check_call([str(python), "-m", "pip", "install", artifact])
+                  subprocess.check_call([
+                      str(python),
+                      "-c",
+                      (
+                          "from importlib.metadata import version; "
+                          "import schemarouter; "
+                          f"assert schemarouter.__version__ == {os.environ['RELEASE_VERSION']!r}; "
+                          f"assert version('schemarouter') == {os.environ['RELEASE_VERSION']!r}"
+                      ),
+                  ])
+                  subprocess.check_call([str(python), "examples/quickstart.py"])
           PY
       - uses: actions/upload-artifact@v4
         with:
