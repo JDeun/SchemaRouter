@@ -7,9 +7,15 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Core CI passes on every supported Python version.
 - [ ] Warnings are treated as failures.
 - [ ] Static type checking passes for the typed package surface.
+- [ ] The configured branch-coverage floor passes.
+- [ ] Minimum declared runtime dependencies pass the core suite.
 - [ ] Optional integration CI passes.
+- [ ] Linux core CI passes on Python 3.10 through 3.14.
+- [ ] The Windows + Python 3.14 smoke job passes.
+- [ ] The Python 3.15 preview is reviewed for forward-compatibility signals.
 - [ ] Quickstart examples execute successfully.
 - [ ] Package wheel and sdist build successfully.
+- [ ] Wheel and sdist both install and run the quickstart in clean environments.
 - [ ] Package metadata can be inspected without errors.
 - [ ] Public API changes are reflected in README and architecture docs.
 - [ ] CHANGELOG contains the release entry and migration notes for breaking changes.
