@@ -171,13 +171,17 @@ def schema_tool(
     """Attach SchemaRouter registration metadata without wrapping the function."""
 
     def decorator(function: Callable[..., Any]) -> Callable[..., Any]:
-        function.__schemarouter_options__ = {
-            "name": name,
-            "namespace": namespace,
-            "description": description,
-            "read_only": read_only,
-            "destructive": destructive,
-        }
+        setattr(
+            function,
+            "__schemarouter_options__",
+            {
+                "name": name,
+                "namespace": namespace,
+                "description": description,
+                "read_only": read_only,
+                "destructive": destructive,
+            },
+        )
         return function
 
     return decorator
