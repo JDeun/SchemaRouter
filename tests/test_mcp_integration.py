@@ -61,10 +61,13 @@ async def test_real_streamable_http_mcp_discovery_and_execution() -> None:
         tool = await router.add_url(
             f"http://127.0.0.1:{port}/mcp",
             kind="mcp",
+            trusted_headers={"X-SchemaRouter-Test": "integration"},
         )
 
         assert tool.metadata["adapter"] == "mcp"
         assert tool.metadata["protocol_version"]
+        assert tool.metadata["authenticated_transport"] is True
+        assert "integration" not in repr(tool.model_dump(mode="json"))
         assert [endpoint.name for endpoint in tool.endpoints] == ["add"]
 
         endpoint = tool.endpoints[0]
