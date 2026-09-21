@@ -4,7 +4,7 @@ import asyncio
 import re
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Literal
+from typing import Any, cast, Literal
 
 from pydantic import BaseModel, ConfigDict, create_model
 
