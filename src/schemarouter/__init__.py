@@ -29,8 +29,8 @@ from .errors import (
     ExecutionBudgetExceededError,
     ExecutionError,
     ModelAnalysisError,
-    PlanningError,
     PlanValidationError,
+    PlanningError,
     PolicyViolationError,
     ProposalApprovalError,
     RegistrationError,
@@ -41,11 +41,6 @@ from .errors import (
     UnsupportedSchemaSourceError,
 )
 from .executor import RegistryExecutor
-from .openapi_compatibility import (
-    OpenAPICompatibilityIssue,
-    OpenAPICompatibilityReport,
-    analyze_openapi_compatibility,
-)
 from .models import (
     EndpointSpec,
     EvidenceRequirements,
@@ -57,6 +52,11 @@ from .models import (
     ToolCall,
     ToolResult,
     ToolSpec,
+)
+from .openapi_compatibility import (
+    OpenAPICompatibilityIssue,
+    OpenAPICompatibilityReport,
+    analyze_openapi_compatibility,
 )
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
