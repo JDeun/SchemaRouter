@@ -39,7 +39,7 @@ schemarouter.executor      plan, binding, schema and policy enforcement
 schemarouter.adapters      adapter contracts + OpenAPI/MCP/OPTIMADE/Python implementations
 schemarouter.ingestion     AdapterRegistry dispatch, safe source loading, registry binding
 schemarouter.proposals     evidence-grounded HTML documentation proposals
-schemarouter.integrations  optional ecosystem bridges such as LangChain
+schemarouter.integrations  optional LangChain/LlamaIndex bridges + Jev decision provider
 schemarouter.runtime       high-level invoke/batch/stream facade
 ```
 
@@ -141,6 +141,23 @@ into the same `ToolSpec` / `EndpointSpec` model. The planner does not branch on 
 Call-aware invokers may receive the validated `ToolCall` when a protocol needs selected fields at
 transport time. The executor still owns schema, policy, retry, and binding-drift enforcement.
 
+### 13. Decision models must remain bounded and non-authoritative
+
+`DecisionBackend` receives a finite set of locally generated option IDs. Unknown IDs, duplicate
+selections, out-of-range/non-finite scores, and malformed results fail closed. Jev / TypeSafe System
+One is an optional provider adapter; low-confidence valid choices may abstain and deterministic
+fallback remains locally controlled.
+
+Decision providers never construct `ToolCall` objects and never receive execution credentials or
+authority. Jev additionally does not receive `DecisionOption.metadata`.
+
+### 14. Remote runtime responses need memory bounds
+
+Schema and documentation fetches were already bounded, and OPTIMADE runtime execution used a bounded
+reader. OpenAPI runtime execution now uses the same posture: responses are streamed and capped at
+16 MiB by default, checking both declared `Content-Length` and bytes actually received before
+JSON/text decoding.
+
 ## Core invariants
 
 1. A plan cannot call an unregistered tool or endpoint.
@@ -161,8 +178,10 @@ transport time. The executor still owns schema, policy, retry, and binding-drift
 16. Automatic retries apply only to endpoints trusted as read-only unless local code opts in.
 17. Run-event arguments and result payloads are redacted unless payload tracing is explicitly enabled.
 18. Optional framework integrations call back through the same executor boundary rather than bypassing policy or validation.
+19. Optional decision providers can select only locally offered option IDs and cannot grant execution authority.
+20. OpenAPI runtime responses are bounded before decoding, including when Content-Length is absent or misleading.
 
-## Intentionally deferred after v0.1 core
+## Current extension backlog
 
 - authenticated/custom-transport MCP clients;
 - trusted local classification for individual MCP tool side effects;
@@ -172,7 +191,8 @@ transport time. The executor still owns schema, policy, retry, and binding-drift
 - compensation, transactions, and distributed execution;
 - persistent/distributed registries;
 - multi-page and client-rendered documentation crawling;
-- callback exporters, OpenTelemetry integration, replay, and benchmark tooling;
+- callback exporters, OpenTelemetry integration, and replay;
+- larger reproducible decision-routing benchmark datasets and live provider evidence;
 - LangGraph-native integration adapters.
 
 These are extension layers. They should not weaken the core fail-closed contracts above.
