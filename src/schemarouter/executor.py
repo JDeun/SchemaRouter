@@ -217,7 +217,11 @@ class RegistryExecutor:
                 f"operation {call.tool}.{call.endpoint} requires trusted local approval"
             )
         try:
-            decision = self.approval_callback(tool, endpoint, call)
+            decision = self.approval_callback(
+                tool.model_copy(deep=True),
+                endpoint.model_copy(deep=True),
+                call.model_copy(deep=True),
+            )
             if inspect.isawaitable(decision):
                 decision = await decision
         except ApprovalDeniedError:
@@ -253,6 +257,17 @@ class RegistryExecutor:
             )
 
         await self._approve(tool, endpoint, call)
+
+        # Approval may await external trusted code. Revalidate against the current registry and
+        # binding before execution so schema/binding drift during approval fails closed.
+        self.validate_call(call)
+        endpoint = self.registry.endpoint(call.tool, call.endpoint)
+        tool = self.registry.get(call.tool)
+        bound_fingerprint = self._binding_fingerprints.get(call.tool)
+        if bound_fingerprint != tool.fingerprint:
+            raise BindingDriftError(
+                f"invoker binding is stale for tool {call.tool!r}; rebind before execution"
+            )
 
         tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
         tracker.before_call(call)
