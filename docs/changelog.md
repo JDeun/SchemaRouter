@@ -30,7 +30,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - current `main` now identifies as `0.3.0.dev0`, separating unreleased development builds from
   the published `0.2.0a1` alpha;
 - release automation now derives version, release title, release-note path, prerelease state, and
-  artifact verification from `pyproject.toml` instead of hard-coded release literals.
+  artifact verification from `pyproject.toml` instead of hard-coded release literals;
+- tag releases reuse the same full CI quality workflow as pull requests and verify both wheel and
+  sdist artifacts in clean environments before publication.
 
 ### Security
 
