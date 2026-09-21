@@ -1,6 +1,12 @@
 from ._version import __version__
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
 from .adapters.mcp import DefaultMCPClientFactory, MCPClientFactory
+from .adapters.plugins import (
+    ADAPTER_ENTRY_POINT_GROUP,
+    AdapterPluginInfo,
+    discover_adapter_plugins,
+    load_adapter_plugins,
+)
 from .adapters.optimade import OPTIMADESourceAdapter
 from .adapters.python import schema_tool, tool_from_callable
 from .analyzers import ModelCallable, ModelQueryAnalyzer
@@ -61,8 +67,10 @@ from .runtime import ConfiguredSchemaRouter, SchemaRouter
 
 __all__ = [
     "__version__",
+    "ADAPTER_ENTRY_POINT_GROUP",
     "AdapterContext",
     "AdapterLoadResult",
+    "AdapterPluginInfo",
     "AdapterRegistry",
     "ApprovalCallback",
     "ApprovalDeniedError",
@@ -127,4 +135,6 @@ __all__ = [
     "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
+    "discover_adapter_plugins",
+    "load_adapter_plugins",
 ]
