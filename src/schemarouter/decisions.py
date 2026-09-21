@@ -142,8 +142,9 @@ def choose_sync(
 ) -> DecisionResult:
     result = backend.decide(request)
     if inspect.isawaitable(result):
-        if inspect.iscoroutine(result):
-            result.close()
+        close = getattr(result, "close", None)
+        if callable(close):
+            close()
         raise PlanningError("the configured decision backend is asynchronous; use an async path")
     return validate_decision(request, result)
 
