@@ -95,14 +95,24 @@ def load_adapter_plugins(
     if not requested:
         raise ValueError("adapter plugin loading requires a non-empty explicit allowlist")
 
-    available = {str(entry_point.name): entry_point for entry_point in _adapter_entry_points()}
+    available: dict[str, list[Any]] = {}
+    for entry_point in _adapter_entry_points():
+        available.setdefault(str(entry_point.name), []).append(entry_point)
+
     missing = sorted(requested - set(available))
     if missing:
         raise KeyError("unknown adapter plugin(s): " + ", ".join(missing))
 
+    ambiguous = sorted(name for name in requested if len(available[name]) != 1)
+    if ambiguous:
+        raise RuntimeError(
+            "ambiguous adapter plugin name(s) registered by multiple distributions: "
+            + ", ".join(ambiguous)
+        )
+
     registered: list[str] = []
     for name in sorted(requested):
-        entry_point = available[name]
+        entry_point = available[name][0]
         adapter = _coerce_adapter(entry_point.load())
         registry.register(adapter, replace=replace)
         registered.append(str(adapter.kind).strip().lower())
