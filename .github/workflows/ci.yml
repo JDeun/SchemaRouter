@@ -67,7 +67,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[dev,mcp,langchain,llamaindex,jev]"
+      - run: pip install -e ".[dev,mcp,langchain,llamaindex,jev,otel]"
       - run: pyright
 
   coverage:
@@ -168,6 +168,17 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev,jev]"
       - run: pytest -q tests/test_jev_integration.py
+
+  otel-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev,otel]"
+      - run: pytest -q tests/test_opentelemetry_integration.py
 
   mcp-integration:
     runs-on: ubuntu-latest
