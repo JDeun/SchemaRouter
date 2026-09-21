@@ -51,6 +51,7 @@ jobs:
       - run: /tmp/schemarouter-wheel/bin/pip install dist/*.whl
       - run: /tmp/schemarouter-wheel/bin/python -c "import schemarouter; assert schemarouter.__version__ == '0.2.0a1'"
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
+      - run: /tmp/schemarouter-wheel/bin/python scripts/benchmark_decision_routing.py
 
   langchain-integration:
     runs-on: ubuntu-latest
