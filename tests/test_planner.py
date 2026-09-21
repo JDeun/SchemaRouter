@@ -171,3 +171,17 @@ def test_invalid_decision_can_fail_closed_without_fallback() -> None:
     )
     with pytest.raises(PlanningError, match="unknown option"):
         planner.plan("band gap")
+
+
+@pytest.mark.parametrize("surface", ["field_selection", "evidence_sufficiency"])
+def test_reserved_decision_surfaces_fail_closed(surface: str) -> None:
+    reg = registry()
+    backend = CallableDecisionBackend(
+        lambda _: {"selections": [{"option_id": "candidate:0"}]}
+    )
+    with pytest.raises(PlanningError, match="reserved"):
+        SchemaPlanner(
+            reg,
+            decision_backend=backend,
+            decision_policy=DecisionPolicy(enabled=True, **{surface: True}),
+        )
