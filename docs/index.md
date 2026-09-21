@@ -8,8 +8,8 @@
 **Schema-aware planning and execution for LLM tool ecosystems.**
 
 SchemaRouter turns a natural-language request plus a tool catalog into a typed, auditable execution
-plan. It is designed for agents that have access to many OpenAPI, MCP, or Python capabilities and
-need stronger guarantees than "pick a tool and call it."
+plan. It is designed for agents that have access to many OpenAPI, OPTIMADE, MCP, or Python
+capabilities and need stronger guarantees than "pick a tool and call it."
 
 ```text
 Traditional tool routing
@@ -51,7 +51,8 @@ SchemaRouter complements existing standards and frameworks rather than replacing
 | --- | --- |
 | OpenAPI | Describes HTTP APIs |
 | MCP | Exposes tools through a standard protocol |
-| LangChain / LangGraph | Provides broader orchestration and agent composition |
+| LangChain / LangGraph / LlamaIndex | Provides broader orchestration and agent composition |
+| Jev / bounded decision providers | Optionally refine finite schema-derived choices |
 | **SchemaRouter** | Compiles requests into schema-constrained tool calls and enforces them |
 
 A surrounding agent framework can remain responsible for conversation, graph orchestration, model
@@ -63,7 +64,8 @@ A typed Python function can become a validated tool with no manual schema constr
 
 --8<-- "examples/quickstart.py"
 
-The same execution surface is used for OpenAPI, MCP, and approved documentation-derived tools:
+The same execution surface is used for OpenAPI, OPTIMADE, MCP, and approved documentation-derived
+tools:
 
 ```python
 result = router.invoke(request)
@@ -122,7 +124,7 @@ Choose the strongest available source of truth.
 
 ## Core guarantees
 
-SchemaRouter's v0.1 core is built around fail-closed behavior:
+SchemaRouter's current core is built around fail-closed behavior:
 
 - unknown tools, endpoints, arguments, and fields do not become executable;
 - required arguments are recomputed at execution time;
@@ -131,7 +133,9 @@ SchemaRouter's v0.1 core is built around fail-closed behavior:
 - remote metadata and model output cannot grant side-effect permissions;
 - schema-fetch credentials and runtime credentials use separate channels;
 - event payloads are redacted unless explicitly enabled;
-- automatic retries are read-only by default.
+- automatic retries are read-only by default;
+- optional decision providers may select only from finite locally authorized choices;
+- OpenAPI and OPTIMADE remote responses are bounded before decoding.
 
 ## Next steps
 
@@ -161,12 +165,20 @@ SchemaRouter's v0.1 core is built around fail-closed behavior:
 
     [OpenAPI guide →](guides/openapi.md)
 
--   **Use it with LangChain**
+-   **Use it with agent frameworks**
 
     ---
 
-    Expose validated SchemaRouter endpoints as LangChain StructuredTools.
+    Expose validated endpoints to LangChain or LlamaIndex without bypassing SchemaRouter.
 
     [LangChain integration →](integrations/langchain.md)
+
+-   **Use bounded decisions**
+
+    ---
+
+    Add an opt-in finite-choice provider such as Jev while retaining deterministic fallback.
+
+    [Decision backends →](concepts/decision-backends.md)
 
 </div>
