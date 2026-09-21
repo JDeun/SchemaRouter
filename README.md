@@ -299,6 +299,7 @@ python scripts/benchmark_decision_routing.py
 # Type-check the complete packaged surface, including optional integrations.
 pip install -e ".[dev,mcp,langchain,llamaindex,jev]"
 pyright
+pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing
 ```
 
 Optional integration suites are isolated from the core package:

@@ -17,15 +17,24 @@ The project is pre-1.0 and follows the compatibility rules in
   token usage, and optional cost estimation;
 - explicit ecosystem compatibility matrix and integration maintenance policy;
 - Korean project overview in `README.ko.md`;
-- Python 3.13 core CI coverage;
-- a Pyright static-type gate for the typed package surface.
+- Python 3.13 and 3.14 core CI coverage;
+- a non-blocking Python 3.15 release-candidate preview;
+- a Windows + Python 3.14 smoke surface;
+- a Pyright static-type gate for the typed package surface;
+- full-suite branch-coverage reporting with an 82% blocking floor;
+- declared lower-bound runtime dependency testing;
+- clean wheel and sdist installation smoke tests.
 
 ### Changed
 
 - current `main` now identifies as `0.3.0.dev0`, separating unreleased development builds from
   the published `0.2.0a1` alpha;
 - release automation now derives version, release title, release-note path, prerelease state, and
-  artifact verification from `pyproject.toml` instead of hard-coded release literals.
+  artifact verification from `pyproject.toml` instead of hard-coded release literals;
+- tag releases reuse the same full CI quality workflow as pull requests and verify both wheel and
+  sdist artifacts in clean environments before publication;
+- superseded pull-request CI runs are cancelled automatically to avoid stale validation consuming
+  runner capacity.
 
 ### Security
 
