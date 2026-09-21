@@ -168,12 +168,19 @@ evidence-grounded proposal and then requires explicit approval.
 - **Local execution authority** — remote metadata and model output cannot grant mutation or
   destructive permissions.
 - **Credential separation** — schema-fetch credentials and runtime credentials stay in different
-  channels.
+  channels; authenticated MCP keeps secrets in the trusted transport boundary.
 - **Read-only retries by default** — contract violations are never retried.
+- **Per-call approval and execution budgets** — trusted local callbacks and deterministic call,
+  attempt, remote, time, quota, and cost-unit limits fail closed.
+- **OpenAPI compatibility reporting** — partial/unsupported constructs are machine-readable instead
+  of silently reinterpreted.
 - **Redacted runtime events by default** — payload tracing is opt-in.
 - **Pluggable registry** — custom registries can implement the public `ToolRegistry` protocol.
 - **Pluggable source adapters** — `AdapterRegistry` lets structured protocols compile into the same
-  `ToolSpec` / `EndpointSpec` execution model.
+  `ToolSpec` / `EndpointSpec` execution model; installed entry-point plugins require an explicit
+  allowlist before import.
+- **Optional OpenTelemetry export** — redacted runtime events can become parented run/tool spans
+  without exporting payload values.
 
 ## With LangChain
 
@@ -255,9 +262,17 @@ Compare Jev when credentials are available:
 TYPESAFE_API_KEY="..." python scripts/benchmark_decision_routing.py --jev
 ```
 
-The harness reports routing accuracy, abstentions, latency, token usage, errors, and optional cost
-estimates. A provider-neutral `ModelQueryAnalyzer` callable can also be supplied with
-`--model-callable module:function`.
+The harness includes a checked-in 144-case multilingual/adversarial corpus and reports routing
+accuracy, invalid-plan rate, abstentions/fallbacks, category accuracy, p50/p95 latency, token usage,
+errors, and optional cost estimates. A provider-neutral `ModelQueryAnalyzer` callable can also be
+supplied with `--model-callable module:function`.
+
+```bash
+python scripts/benchmark_decision_routing.py \
+  --corpus benchmarks/decision-routing-v1.json \
+  --json-out artifacts/decision-benchmark.json \
+  --csv-out artifacts/decision-benchmark.csv
+```
 
 ## Documentation
 
@@ -266,11 +281,14 @@ Full documentation is organized as a framework manual rather than embedded in th
 - [Getting started](https://jdeun.github.io/SchemaRouter/getting-started/installation/)
 - [Core concepts](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
 - [OpenAPI guide](https://jdeun.github.io/SchemaRouter/guides/openapi/)
+- [OpenAPI compatibility](https://jdeun.github.io/SchemaRouter/guides/openapi-compatibility/)
 - [OPTIMADE guide](https://jdeun.github.io/SchemaRouter/guides/optimade/)
 - [MCP guide](https://jdeun.github.io/SchemaRouter/guides/mcp/)
 - [LangChain integration](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
 - [LlamaIndex integration](https://jdeun.github.io/SchemaRouter/integrations/llamaindex/)
 - [Jev / TypeSafe integration](https://jdeun.github.io/SchemaRouter/integrations/jev/)
+- [OpenTelemetry integration](https://jdeun.github.io/SchemaRouter/integrations/opentelemetry/)
+- [Third-party adapter plugins](https://jdeun.github.io/SchemaRouter/guides/adapter-plugins/)
 - [Decision backends](https://jdeun.github.io/SchemaRouter/concepts/decision-backends/)
 - [Decision benchmark](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
@@ -297,7 +315,7 @@ python examples/quickstart.py
 python scripts/benchmark_decision_routing.py
 
 # Type-check the complete packaged surface, including optional integrations.
-pip install -e ".[dev,mcp,langchain,llamaindex,jev]"
+pip install -e ".[dev,mcp,langchain,llamaindex,jev,otel]"
 pyright
 pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing
 ```
@@ -316,6 +334,9 @@ pytest -q tests/test_llamaindex_integration.py
 
 pip install -e ".[dev,jev]"
 pytest -q tests/test_jev_integration.py
+
+pip install -e ".[dev,otel]"
+pytest -q tests/test_opentelemetry_integration.py
 ```
 
 ## Project scope
