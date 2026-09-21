@@ -22,7 +22,8 @@ The following are treated as public when they are documented and exported from t
 
 - typed contracts such as `ToolSpec`, `EndpointSpec`, `PlanRequest`, and `ExecutionPlan`;
 - `SchemaRouter` public methods and execution verbs;
-- `RunConfig`, `RetryPolicy`, `RunEvent`, and `ExecutionPolicy`;
+- `RunConfig`, `RetryPolicy`, `ExecutionBudget`, `RunEvent`, and `ExecutionPolicy`;
+- documented approval, MCP transport-factory, compatibility-report, and adapter-plugin contracts;
 - documented adapters and optional integration entry points.
 
 Underscore-prefixed objects and undocumented internal helpers are not compatibility contracts.
@@ -52,8 +53,8 @@ create an authorization, credential, schema-integrity, or side-effect risk.
 
 Optional integrations are versioned separately from the core trust model.
 
-- The core package must import and operate without LangChain, LlamaIndex, Jev/TypeSafe, or MCP
-  extras installed.
+- The core package must import and operate without LangChain, LlamaIndex, Jev/TypeSafe, MCP, or
+  OpenTelemetry extras installed.
 - Integration dependencies use bounded major-version ranges.
 - The declared lower bounds of core runtime dependencies are exercised in required CI.
 - Integration CI must exercise the supported dependency range before a release.
