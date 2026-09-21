@@ -1,9 +1,87 @@
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Mapping
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from typing import Any, Protocol
 
 from ..errors import SchemaSourceError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
+
+_PROTECTED_MCP_HEADERS = {
+    "accept",
+    "connection",
+    "content-length",
+    "content-type",
+    "host",
+    "transfer-encoding",
+}
+
+
+class MCPClientFactory(Protocol):
+    """Trusted factory for an authenticated MCP client lifecycle."""
+
+    def __call__(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        timeout: float = 20.0,
+    ) -> AbstractAsyncContextManager[Any]: ...
+
+
+def _validated_trusted_headers(
+    headers: Mapping[str, str] | None,
+) -> dict[str, str] | None:
+    if headers is None:
+        return None
+    result: dict[str, str] = {}
+    for name, value in headers.items():
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("MCP trusted header names must be non-empty strings")
+        if not isinstance(value, str):
+            raise ValueError("MCP trusted header values must be strings")
+        if "\r" in name or "\n" in name or "\r" in value or "\n" in value:
+            raise ValueError("MCP trusted headers must not contain newlines")
+        normalized = name.strip().casefold()
+        if normalized in _PROTECTED_MCP_HEADERS or normalized.startswith("mcp-"):
+            raise ValueError(
+                f"MCP protocol header {name!r} is controlled by the SDK and cannot be overridden"
+            )
+        result[name.strip()] = value
+    return result
+
+
+class DefaultMCPClientFactory:
+    """Build the official Streamable HTTP transport with caller-owned HTTP auth."""
+
+    @asynccontextmanager
+    async def __call__(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None = None,
+        timeout: float = 20.0,
+    ):
+        try:
+            import httpx2
+            from mcp import Client
+            from mcp.client.streamable_http import streamable_http_client
+        except ImportError as exc:
+            raise SchemaSourceError(
+                'MCP support requires the optional dependency: pip install "schemarouter[mcp]"'
+            ) from exc
+
+        trusted_headers = _validated_trusted_headers(headers)
+        async with httpx2.AsyncClient(
+            headers=trusted_headers,
+            timeout=httpx2.Timeout(timeout, read=timeout),
+        ) as http_client:
+            transport = streamable_http_client(url, http_client=http_client)
+            async with Client(transport) as client:
+                yield client
+
+
+_DEFAULT_CLIENT_FACTORY = DefaultMCPClientFactory()
 
 
 def _properties(schema: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
@@ -104,18 +182,17 @@ async def inspect_mcp_url(
     *,
     server_name: str | None = None,
     namespace: str | None = None,
+    trusted_headers: Mapping[str, str] | None = None,
+    timeout: float = 20.0,
+    client_factory: MCPClientFactory | None = None,
 ) -> ToolSpec:
     """Connect to a Streamable HTTP MCP URL and import all advertised tools."""
-    try:
-        from mcp import Client
-    except ImportError as exc:
-        raise SchemaSourceError(
-            'MCP support requires the optional dependency: pip install "schemarouter[mcp]"'
-        ) from exc
+    factory = client_factory or _DEFAULT_CLIENT_FACTORY
+    headers = _validated_trusted_headers(trusted_headers)
 
     raw_tools: list[dict[str, Any]] = []
     try:
-        async with Client(url) as client:
+        async with factory(url, headers=headers, timeout=timeout) as client:
             cursor: str | None = None
             while True:
                 page = await client.list_tools(cursor=cursor)
@@ -127,6 +204,8 @@ async def inspect_mcp_url(
             info = getattr(client, "server_info", None)
             discovered_name = getattr(info, "name", None)
             protocol_version = getattr(client, "protocol_version", None)
+    except SchemaSourceError:
+        raise
     except Exception as exc:  # noqa: BLE001
         raise SchemaSourceError(f"failed to inspect MCP server at {url!r}") from exc
 
@@ -136,6 +215,7 @@ async def inspect_mcp_url(
         {
             "source_url": url,
             "protocol_version": protocol_version,
+            "authenticated_transport": bool(headers),
         }
     )
     return tool
@@ -144,22 +224,29 @@ async def inspect_mcp_url(
 class MCPRemoteInvoker:
     """Trusted runtime adapter for a remote MCP server.
 
-    A fresh client lifecycle is used per invocation in v0.1. Connection pooling belongs in a
-    later transport layer so the core executor remains stateless and easy to reason about.
+    Authentication material is kept only in this local transport object. It is never copied into
+    ToolSpec metadata, planner state, or model-visible arguments.
     """
 
-    def __init__(self, url: str) -> None:
+    def __init__(
+        self,
+        url: str,
+        *,
+        trusted_headers: Mapping[str, str] | None = None,
+        timeout: float = 20.0,
+        client_factory: MCPClientFactory | None = None,
+    ) -> None:
         self.url = url
+        self._trusted_headers = _validated_trusted_headers(trusted_headers)
+        self.timeout = timeout
+        self.client_factory = client_factory or _DEFAULT_CLIENT_FACTORY
 
     async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
-        try:
-            from mcp import Client
-        except ImportError as exc:
-            raise SchemaSourceError(
-                'MCP execution requires: pip install "schemarouter[mcp]"'
-            ) from exc
-
-        async with Client(self.url) as client:
+        async with self.client_factory(
+            self.url,
+            headers=self._trusted_headers,
+            timeout=self.timeout,
+        ) as client:
             result = await client.call_tool(endpoint, arguments)
             if getattr(result, "is_error", False):
                 raise RuntimeError(f"MCP tool {endpoint!r} returned an error")
