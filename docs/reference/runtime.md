@@ -4,6 +4,10 @@
 
 ::: schemarouter.RunConfig
 
+## ExecutionBudget
+
+::: schemarouter.ExecutionBudget
+
 ## RetryPolicy
 
 ::: schemarouter.RetryPolicy
