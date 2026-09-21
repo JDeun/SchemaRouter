@@ -5,8 +5,16 @@ LangChain runtime.
 
 ## Install
 
+For consumers:
+
 ```bash
-pip install -e ".[langchain]"
+pip install "schemarouter[langchain]"
+```
+
+For repository development:
+
+```bash
+pip install -e ".[dev,langchain]"
 ```
 
 The core package does not depend on LangChain.
@@ -32,6 +40,17 @@ tool = to_langchain_tool(
     "current",
 )
 ```
+
+## Runnable example
+
+The repository includes a minimal executable integration example:
+
+```bash
+python examples/langchain_quickstart.py
+```
+
+CI runs this example in addition to the dedicated integration tests, so the documented bridge is
+kept executable.
 
 ## Execution still flows through SchemaRouter
 
@@ -64,3 +83,11 @@ A useful composition is:
 | Checkpointing / memory | Surrounding framework |
 
 SchemaRouter should not duplicate the graph runtime merely to integrate with it.
+
+## Packaging
+
+The bridge currently stays in the main distribution behind the `langchain` extra. A separate
+`langchain-schemarouter` package is intentionally deferred until an independent release cadence,
+material dependency pressure, or an upstream ecosystem requirement justifies the split.
+
+See [Compatibility testing](../compatibility.md) for the supported range and maintenance policy.

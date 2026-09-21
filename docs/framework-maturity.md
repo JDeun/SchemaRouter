@@ -6,7 +6,7 @@ to embed in larger ecosystems.
 
 This document tracks framework-level maturity rather than research metrics.
 
-| Capability | SchemaRouter v0.1 | Direction |
+| Capability | Current main | Direction |
 | --- | --- | --- |
 | Typed tool / endpoint / parameter / field contracts | Implemented | Core invariant |
 | Natural-language planning | Implemented | Improve candidate indexing at scale |
@@ -24,7 +24,8 @@ This document tracks framework-level maturity rather than research metrics.
 | Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
 | Runtime policy | Implemented | Add per-call approval / budgets / quotas |
 | Runtime JSON Schema validation | Implemented | Add richer nested projection |
-| LangChain integration | Implemented optional adapter | Add LangGraph-native nodes |
+| LangChain / LlamaIndex integrations | Implemented optional adapters | Add LangGraph-native nodes and ecosystem listings |
+| Bounded decision backends | Implemented, opt-in and experimental | Add provider adapters behind the finite-option contract |
 | Framework callbacks / exporters | Typed redacted event stream | Add callback manager / OpenTelemetry exporters |
 | Middleware interception | Policy-specific only | Add trusted before/after hooks |
 | Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
@@ -64,8 +65,8 @@ Python callables can be registered directly through `add_callable()` and optiona
 
 ### 4. Integrations should be optional
 
-The core package should not become a dependency aggregator. Ecosystem bridges such as LangChain
-belong behind optional extras and lazy imports.
+The core package should not become a dependency aggregator. Ecosystem bridges such as LangChain and
+LlamaIndex belong behind optional extras and lazy imports.
 
 ### 5. Observability must not weaken privacy
 
@@ -86,7 +87,7 @@ compiler/runtime boundary for tool schemas.
 
 ## Next maturity gates
 
-### Gate A — v0.1 release candidate
+### Gate A — published alpha baseline
 
 - public API examples;
 - live OpenAPI compatibility tests;
@@ -97,6 +98,9 @@ compiler/runtime boundary for tool schemas.
 
 ### Gate B — ecosystem-ready
 
+- runnable LangChain and LlamaIndex examples;
+- published ecosystem compatibility and maintenance policy;
+- upstream ecosystem listing/discussion requests;
 - callback/exporter API;
 - OpenTelemetry-compatible trace exporter;
 - LangGraph-native integration;

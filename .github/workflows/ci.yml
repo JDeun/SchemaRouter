@@ -62,7 +62,7 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev,langchain]"
       - run: pytest -q tests/test_langchain_integration.py
-
+      - run: python examples/langchain_quickstart.py
 
   llamaindex-integration:
     runs-on: ubuntu-latest
@@ -74,6 +74,7 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev,llamaindex]"
       - run: pytest -q tests/test_llamaindex_integration.py
+      - run: python examples/llamaindex_quickstart.py
 
   mcp-integration:
     runs-on: ubuntu-latest
@@ -85,7 +86,6 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev,mcp]"
       - run: pytest -q tests/test_mcp_integration.py
-
 
   docs:
     runs-on: ubuntu-latest
