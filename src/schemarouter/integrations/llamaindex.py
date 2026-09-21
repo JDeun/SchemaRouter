@@ -4,7 +4,7 @@ import asyncio
 import re
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, create_model
 
@@ -67,7 +67,9 @@ def _llamaindex_schema_model(
         field_name: (Any, ... if field_name in required else None)
         for field_name in property_names
     }
-    extra_mode = "forbid" if exported.get("additionalProperties") is False else "allow"
+    extra_mode: Literal["forbid", "allow"] = (
+        "forbid" if exported.get("additionalProperties") is False else "allow"
+    )
 
     class SchemaCarrier(BaseModel):
         model_config = ConfigDict(extra=extra_mode)
