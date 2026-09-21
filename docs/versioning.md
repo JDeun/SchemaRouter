@@ -52,8 +52,10 @@ create an authorization, credential, schema-integrity, or side-effect risk.
 
 Optional integrations are versioned separately from the core trust model.
 
-- The core package must import and operate without LangChain or MCP extras installed.
+- The core package must import and operate without LangChain, LlamaIndex, Jev/TypeSafe, or MCP
+  extras installed.
 - Integration dependencies use bounded major-version ranges.
+- The declared lower bounds of core runtime dependencies are exercised in required CI.
 - Integration CI must exercise the supported dependency range before a release.
 - An integration must route execution through SchemaRouter policy and validation rather than calling
   the underlying transport directly.
