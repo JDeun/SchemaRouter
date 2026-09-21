@@ -99,6 +99,35 @@ def validate_decision(request: DecisionRequest, result: DecisionResult) -> Decis
     return result
 
 
+class _ValidatedAwaitable:
+    """Awaitable wrapper that can explicitly release an unconsumed coroutine."""
+
+    def __init__(
+        self,
+        raw: Awaitable[DecisionResult | dict[str, Any]],
+        request: DecisionRequest,
+    ) -> None:
+        self._raw = raw
+        self._request = request
+
+    def __await__(self):  # type: ignore[no-untyped-def]
+        async def resolve() -> DecisionResult:
+            value = await self._raw
+            result = (
+                value
+                if isinstance(value, DecisionResult)
+                else DecisionResult.model_validate(value)
+            )
+            return validate_decision(self._request, result)
+
+        return resolve().__await__()
+
+    def close(self) -> None:
+        close = getattr(self._raw, "close", None)
+        if callable(close):
+            close()
+
+
 class CallableDecisionBackend:
     """Provider-neutral adapter for hosted or local bounded-decision models."""
 
@@ -111,17 +140,7 @@ class CallableDecisionBackend:
     ) -> DecisionResult | Awaitable[DecisionResult]:
         raw = self.model(request)
         if inspect.isawaitable(raw):
-
-            async def resolve() -> DecisionResult:
-                value = await raw
-                result = (
-                    value
-                    if isinstance(value, DecisionResult)
-                    else DecisionResult.model_validate(value)
-                )
-                return validate_decision(request, result)
-
-            return resolve()
+            return _ValidatedAwaitable(raw, request)
 
         result = raw if isinstance(raw, DecisionResult) else DecisionResult.model_validate(raw)
         return validate_decision(request, result)
