@@ -43,6 +43,26 @@ tool = await router.add_url(
 
 Applications can also construct an `AdapterRegistry` and inject it into `SchemaRouter`.
 
+## Publishing a third-party adapter
+
+Installed packages can expose adapters through the `schemarouter.adapters` entry-point group:
+
+```toml
+[project.entry-points."schemarouter.adapters"]
+my_protocol = "my_package.adapter:MyAdapter"
+```
+
+SchemaRouter never auto-imports discovered plugins. Applications must explicitly allowlist plugin
+entry-point names:
+
+```python
+router.load_adapter_plugins(allowlist={"my_protocol"})
+```
+
+Use `discover_adapter_plugins()` to inspect metadata without importing plugin code. Unknown
+allowlisted names fail before any plugin is loaded. See
+[Third-party adapter plugins](guides/adapter-plugins.md) for the complete trust model.
+
 ## Adapter responsibilities
 
 A schema adapter should return:
