@@ -18,7 +18,9 @@ from .decisions import (
     choose_sync,
 )
 from .errors import (
+    ApprovalDeniedError,
     BindingDriftError,
+    ExecutionBudgetExceededError,
     ExecutionError,
     ModelAnalysisError,
     PlanningError,
@@ -51,10 +53,10 @@ from .models import (
     ToolSpec,
 )
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
-from .policy import ExecutionPolicy
+from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import SchemaProposal
 from .registry import InMemoryRegistry, ToolRegistry
-from .runs import RetryPolicy, RunConfig, RunEvent
+from .runs import ExecutionBudget, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
 
 __all__ = [
@@ -62,6 +64,8 @@ __all__ = [
     "AdapterContext",
     "AdapterLoadResult",
     "AdapterRegistry",
+    "ApprovalCallback",
+    "ApprovalDeniedError",
     "BindingDriftError",
     "ConfiguredSchemaRouter",
     "CallableDecisionBackend",
@@ -76,6 +80,8 @@ __all__ = [
     "DefaultMCPClientFactory",
     "EndpointSpec",
     "EvidenceRequirements",
+    "ExecutionBudget",
+    "ExecutionBudgetExceededError",
     "ExecutionError",
     "ExecutionPlan",
     "ExecutionPolicy",
