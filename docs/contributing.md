@@ -10,16 +10,17 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 ruff check .
-pytest -q
+pytest -q -m "not mcp_integration"
 python examples/quickstart.py
+
+# Check the complete typed surface and optional integrations.
+pip install -e ".[dev,mcp,langchain,llamaindex,jev]"
+pyright
+pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing
 ```
 
-Optional integrations have separate extras and tests. For example:
-
-```bash
-pip install -e ".[dev,langchain]"
-pytest -q tests/test_langchain_integration.py
-```
+Optional integrations have separate extras and focused tests. The required CI exercises
+LangChain, LlamaIndex, Jev/TypeSafe, and MCP independently in addition to the full coverage run.
 
 ## Design rules
 
@@ -55,7 +56,10 @@ A change is not complete until:
 
 - tests cover its public behavior and adversarial failure cases;
 - warnings remain clean;
-- supported Python versions pass;
+- supported Python versions pass, including the Windows smoke surface;
+- Pyright and the configured coverage floor pass;
+- minimum declared runtime dependencies remain usable;
+- wheel and sdist clean-install smokes pass;
 - public behavior is documented;
 - new optional dependencies are isolated behind extras;
 - breaking API changes include a changelog and migration note.
