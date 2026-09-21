@@ -7,7 +7,24 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
-No unreleased changes yet.
+### Added
+
+- provider-neutral bounded `DecisionBackend` contracts with deterministic fallback;
+- optional `JevDecisionBackend` backed by TypeSafe System One through `schemarouter[jev]`;
+- optional LlamaIndex `FunctionTool` integration;
+- runnable LangChain and LlamaIndex integration examples enforced in CI;
+- provider-neutral decision-routing benchmark harness covering accuracy, abstention, latency,
+  token usage, and optional cost estimation;
+- explicit ecosystem compatibility matrix and integration maintenance policy;
+- Korean project overview in `README.ko.md`.
+
+### Security
+
+- Jev option IDs are validated before confidence-based abstention, so unknown IDs always fail
+  closed;
+- Jev credentials remain SDK client configuration and are never placed in model state;
+- `DecisionOption.metadata` is not forwarded to Jev;
+- provider failures can deterministically fall back without weakening execution policy.
 
 ## 0.2.0a1 - 2026-09-20
 
@@ -34,7 +51,8 @@ No unreleased changes yet.
 - framework maturity, architecture, release, and versioning documentation;
 - MIT licensing and package metadata;
 - MkDocs Material documentation site with guides, recipes, and generated API reference;
-- SchemaRouter brace-and-routing-hub brand system with light/dark marks, lockups, favicon, and social preview source artwork.
+- SchemaRouter brace-and-routing-hub brand system with light/dark marks, lockups, favicon, and
+  social preview source artwork.
 
 ### Security
 
