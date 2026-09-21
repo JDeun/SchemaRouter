@@ -26,6 +26,14 @@ class PolicyViolationError(PlanValidationError):
     """Raised when local execution policy denies a tool call."""
 
 
+class ApprovalDeniedError(PolicyViolationError):
+    """Raised when a call requiring trusted local approval is not approved."""
+
+
+class ExecutionBudgetExceededError(PolicyViolationError):
+    """Raised before execution would exceed a trusted local run budget."""
+
+
 class SchemaDriftError(PlanValidationError):
     """Raised when a plan was compiled against an older endpoint schema."""
 
