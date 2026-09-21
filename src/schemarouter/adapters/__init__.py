@@ -1,3 +1,8 @@
+from ..openapi_compatibility import (
+    OpenAPICompatibilityIssue,
+    OpenAPICompatibilityReport,
+    analyze_openapi_compatibility,
+)
 from .base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
 from .mcp import (
     DefaultMCPClientFactory,
@@ -7,11 +12,6 @@ from .mcp import (
     tool_from_mcp,
 )
 from .openapi import OpenAPIRemoteInvoker, resolve_openapi_base_url, tool_from_openapi
-from ..openapi_compatibility import (
-    OpenAPICompatibilityIssue,
-    OpenAPICompatibilityReport,
-    analyze_openapi_compatibility,
-)
 from .optimade import OPTIMADERemoteInvoker, OPTIMADESourceAdapter
 from .plugins import (
     ADAPTER_ENTRY_POINT_GROUP,
