@@ -93,3 +93,21 @@ await configured.ainvoke(request)
 ```
 
 This creates a lightweight configured facade without mutating the underlying router.
+
+
+## OpenTelemetry
+
+The optional OpenTelemetry integration consumes this same typed event stream:
+
+```python
+from schemarouter.integrations import OpenTelemetryRunExporter, trace_run_events
+
+async for event in trace_run_events(
+    router.astream_events(request),
+    exporter=OpenTelemetryRunExporter(),
+):
+    ...
+```
+
+The exporter intentionally omits payload values, RunConfig metadata, tags, and exception messages
+even when `include_payloads=True`. See [OpenTelemetry](../integrations/opentelemetry.md).
