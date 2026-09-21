@@ -193,9 +193,13 @@ LangChain 도구로 노출해도 실행은 SchemaRouter의 policy, fingerprint, 
 
 ## LlamaIndex와 사용
 
+LlamaIndex bridge는 현재 아직 릴리스되지 않은 `main`에 포함되어 있습니다.
+
 ```bash
-pip install "schemarouter[llamaindex]"
+pip install -e ".[llamaindex]"
 ```
+
+다음 패키지 릴리스부터는 `schemarouter[llamaindex]` extra로 설치할 수 있습니다.
 
 ```python
 from schemarouter.integrations import to_llamaindex_tools
@@ -226,12 +230,14 @@ planner = SchemaPlanner(
 )
 ```
 
-Jev / TypeSafe System One은 선택형 의존성입니다.
+Jev / TypeSafe System One은 선택형 기능이며 현재 아직 릴리스되지 않은 `main`에 있습니다.
 
 ```bash
-pip install "schemarouter[jev]"
+pip install -e ".[jev]"
 export TYPESAFE_API_KEY="..."
 ```
+
+다음 패키지 릴리스부터는 `schemarouter[jev]` extra로 설치할 수 있습니다.
 
 Jev는 SchemaRouter가 미리 허용한 유한한 option 중 하나만 선택합니다. 존재하지 않는 option
 ID는 confidence와 무관하게 fail closed 처리되고, 유효하지만 confidence가 낮은 선택은
