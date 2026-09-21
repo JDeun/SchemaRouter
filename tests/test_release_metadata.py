@@ -11,11 +11,17 @@ def _version() -> str:
     return match.group(1)
 
 
-def test_main_uses_an_unreleased_development_version() -> None:
+def test_repository_version_has_valid_development_or_release_state() -> None:
     version = _version()
 
-    assert version.endswith(".dev0")
-    assert "0.2.0a1" != version
+    if ".dev" in version:
+        assert version.endswith(".dev0")
+        return
+
+    release_notes = ROOT / "docs" / "releases" / f"{version}.md"
+    changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+    assert release_notes.is_file()
+    assert f"## {version} -" in changelog
 
 
 def test_release_workflow_derives_metadata_from_pyproject() -> None:
