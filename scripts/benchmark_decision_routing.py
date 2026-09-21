@@ -59,7 +59,11 @@ class BenchmarkRow:
 SMOKE_CASES = [
     BenchmarkCase("smoke-weather", "current temperature in Seoul", "weather.current"),
     BenchmarkCase("smoke-material", "find the band gap for silicon", "materials.search"),
-    BenchmarkCase("smoke-paper", "search papers about retrieval augmented generation", "papers.search"),
+    BenchmarkCase(
+        "smoke-paper",
+        "search papers about retrieval augmented generation",
+        "papers.search",
+    ),
 ]
 
 
@@ -83,7 +87,12 @@ def reference_registry() -> InMemoryRegistry:
             name="weather",
             description="Weather observations and forecasts for cities",
             endpoints=[
-                _endpoint("current", "Get current city temperature and conditions", "city", "temperature"),
+                _endpoint(
+                    "current",
+                    "Get current city temperature and conditions",
+                    "city",
+                    "temperature",
+                ),
                 _endpoint("forecast", "Get future weather forecast for a city", "city", "forecast"),
             ],
         )
@@ -93,8 +102,18 @@ def reference_registry() -> InMemoryRegistry:
             name="materials",
             description="Materials property and crystal structure database",
             endpoints=[
-                _endpoint("search", "Search materials by properties such as band gap", "material_id", "band_gap"),
-                _endpoint("structure", "Retrieve crystal structure and lattice information", "material_id", "structure"),
+                _endpoint(
+                    "search",
+                    "Search materials by properties such as band gap",
+                    "material_id",
+                    "band_gap",
+                ),
+                _endpoint(
+                    "structure",
+                    "Retrieve crystal structure and lattice information",
+                    "material_id",
+                    "structure",
+                ),
             ],
         )
     )
@@ -104,7 +123,12 @@ def reference_registry() -> InMemoryRegistry:
             description="Scientific literature and citation database",
             endpoints=[
                 _endpoint("search", "Search research papers and article metadata", "doi", "title"),
-                _endpoint("citations", "Find papers that cite a DOI or article", "doi", "citations"),
+                _endpoint(
+                    "citations",
+                    "Find papers that cite a DOI or article",
+                    "doi",
+                    "citations",
+                ),
             ],
         )
     )
@@ -114,7 +138,12 @@ def reference_registry() -> InMemoryRegistry:
             description="Market quotes and historical price data",
             endpoints=[
                 _endpoint("quote", "Get the latest market quote for a ticker", "symbol", "price"),
-                _endpoint("history", "Get historical prices for a ticker and date range", "symbol", "history"),
+                _endpoint(
+                    "history",
+                    "Get historical prices for a ticker and date range",
+                    "symbol",
+                    "history",
+                ),
             ],
         )
     )
@@ -134,7 +163,13 @@ def reference_registry() -> InMemoryRegistry:
             description="Customer support knowledge and ticket operations",
             endpoints=[
                 _endpoint("search", "Search support knowledge base articles", "id", "title"),
-                _endpoint("create_ticket", "Create a customer support ticket", "id", "status", read_only=False),
+                _endpoint(
+                    "create_ticket",
+                    "Create a customer support ticket",
+                    "id",
+                    "status",
+                    read_only=False,
+                ),
             ],
         )
     )
@@ -144,7 +179,13 @@ def reference_registry() -> InMemoryRegistry:
             description="Inventory lookup and stock update operations",
             endpoints=[
                 _endpoint("search", "Search inventory and stock by SKU", "sku", "quantity"),
-                _endpoint("update", "Update inventory quantity for a SKU", "sku", "quantity", read_only=False),
+                _endpoint(
+                    "update",
+                    "Update inventory quantity for a SKU",
+                    "sku",
+                    "quantity",
+                    read_only=False,
+                ),
             ],
         )
     )
