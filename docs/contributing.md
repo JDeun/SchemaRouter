@@ -14,7 +14,7 @@ pytest -q -m "not mcp_integration"
 python examples/quickstart.py
 
 # Check the complete typed surface and optional integrations.
-pip install -e ".[dev,mcp,langchain,llamaindex,jev]"
+pip install -e ".[dev,mcp,langchain,llamaindex,jev,otel]"
 pyright
 pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing
 ```
