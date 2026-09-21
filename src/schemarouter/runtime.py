@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Sequence
 from typing import Any, TypeVar
 from urllib.parse import urlparse
@@ -68,8 +69,15 @@ def _stream_sync(factory: Callable[[], AsyncIterator[_T]]) -> Iterator[_T]:
                 break
     finally:
         aclose = getattr(iterator, "aclose", None)
-        if callable(aclose):
-            loop.run_until_complete(aclose())
+
+        async def close_iterator() -> None:
+            if not callable(aclose):
+                return
+            close_result = aclose()
+            if inspect.isawaitable(close_result):
+                await close_result
+
+        loop.run_until_complete(close_iterator())
         loop.close()
 
 
