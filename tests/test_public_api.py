@@ -4,8 +4,10 @@ import schemarouter
 def test_public_framework_exports_are_intentional_and_stable() -> None:
     expected = {
         "__version__",
+        "ADAPTER_ENTRY_POINT_GROUP",
         "AdapterContext",
         "AdapterLoadResult",
+        "AdapterPluginInfo",
         "AdapterRegistry",
         "ApprovalCallback",
         "ApprovalDeniedError",
@@ -70,6 +72,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "analyze_openapi_compatibility",
         "choose_async",
         "choose_sync",
+        "discover_adapter_plugins",
+        "load_adapter_plugins",
     }
 
     assert set(schemarouter.__all__) == expected
