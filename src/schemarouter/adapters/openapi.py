@@ -351,7 +351,11 @@ class OpenAPIRemoteInvoker:
         self.base_url = base_url.rstrip("/")
         self.approved_origin = _origin(base_url)
         self.trusted_headers = trusted
-        if isinstance(max_response_bytes, bool) or max_response_bytes <= 0:
+        if (
+            isinstance(max_response_bytes, bool)
+            or not isinstance(max_response_bytes, int)
+            or max_response_bytes <= 0
+        ):
             raise ValueError("max_response_bytes must be a positive integer")
 
         self.trusted_header_names = set(trusted_names)
