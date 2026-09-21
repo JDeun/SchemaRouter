@@ -110,10 +110,24 @@ def load_adapter_plugins(
             + ", ".join(ambiguous)
         )
 
-    registered: list[str] = []
+    staged: list[SourceAdapter] = []
+    staged_kinds: list[str] = []
     for name in sorted(requested):
         entry_point = available[name][0]
         adapter = _coerce_adapter(entry_point.load())
+        staged.append(adapter)
+        staged_kinds.append(str(adapter.kind).strip().lower())
+
+    if len(staged_kinds) != len(set(staged_kinds)):
+        raise ValueError("allowlisted adapter plugins resolved to duplicate adapter kinds")
+
+    if not replace:
+        collisions = sorted(set(staged_kinds) & set(registry.kinds()))
+        if collisions:
+            raise ValueError(
+                "adapter plugin kind(s) already registered: " + ", ".join(collisions)
+            )
+
+    for adapter in staged:
         registry.register(adapter, replace=replace)
-        registered.append(str(adapter.kind).strip().lower())
-    return tuple(registered)
+    return tuple(staged_kinds)
