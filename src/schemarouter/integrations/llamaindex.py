@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import re
-from copy import deepcopy
 from collections.abc import Sequence
+from copy import deepcopy
 from typing import Any
 
 from pydantic import ConfigDict, create_model
