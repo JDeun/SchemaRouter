@@ -15,11 +15,11 @@ from .adapters.mcp import MCPClientFactory
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
 from .errors import ProposalApprovalError, RegistrationError
-from .executor import RegistryExecutor
+from .executor import ExecutionBudgetTracker, RegistryExecutor
 from .ingestion import SourceKind, URLSchemaLoader
 from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
 from .planner import QueryAnalyzer, SchemaPlanner
-from .policy import ExecutionPolicy
+from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
 from .registry import InMemoryRegistry, ToolRegistry
 from .runs import RunConfig, RunEvent
@@ -91,12 +91,17 @@ class SchemaRouter:
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
+        approval_callback: ApprovalCallback | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
     ) -> None:
         self.registry = registry if registry is not None else InMemoryRegistry()
         self.planner = SchemaPlanner(self.registry, analyzer=analyzer)
-        self.executor = RegistryExecutor(self.registry, policy=policy)
+        self.executor = RegistryExecutor(
+            self.registry,
+            policy=policy,
+            approval_callback=approval_callback,
+        )
         self.loader = URLSchemaLoader(
             self.registry,
             self.executor,
@@ -133,6 +138,7 @@ class SchemaRouter:
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
+        approval_callback: ApprovalCallback | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
         base_url: str | None = None,
@@ -144,6 +150,7 @@ class SchemaRouter:
             analyzer=analyzer,
             http_client=http_client,
             policy=policy,
+            approval_callback=approval_callback,
             registry=registry,
             adapter_registry=adapter_registry,
         )
@@ -355,7 +362,11 @@ class SchemaRouter:
         config: RunConfig | dict[str, Any] | None = None,
     ) -> list[ToolResult]:
         run_config = _coerce_config(config)
-        return await self.executor.execute(plan, retry=run_config.retry)
+        return await self.executor.execute(
+            plan,
+            retry=run_config.retry,
+            budget=run_config.budget,
+        )
 
     async def ainvoke(
         self,
@@ -365,7 +376,11 @@ class SchemaRouter:
     ) -> list[ToolResult]:
         run_config = _coerce_config(config)
         plan = await self.aplan(request)
-        return await self.executor.execute(plan, retry=run_config.retry)
+        return await self.executor.execute(
+            plan,
+            retry=run_config.retry,
+            budget=run_config.budget,
+        )
 
     def invoke(
         self,
@@ -471,6 +486,7 @@ class SchemaRouter:
         async for result in self.executor.execute_iter(
             plan,
             retry=run_config.retry,
+            budget=run_config.budget,
         ):
             yield result
 
@@ -542,6 +558,7 @@ class SchemaRouter:
         sequence += 1
 
         result_count = 0
+        budget_tracker = ExecutionBudgetTracker(run_config.budget)
         for call in plan.calls:
             start_data: dict[str, Any] = {
                 "argument_names": sorted(call.arguments),
@@ -564,6 +581,8 @@ class SchemaRouter:
                 result = await self.executor.execute_call(
                     call,
                     retry=run_config.retry,
+                    budget=run_config.budget,
+                    _tracker=budget_tracker,
                 )
             except Exception as exc:
                 error_data = {"error_type": type(exc).__name__}
