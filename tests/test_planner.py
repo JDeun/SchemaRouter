@@ -120,7 +120,16 @@ def test_decision_backend_can_select_from_bounded_candidates() -> None:
     )
     backend = CallableDecisionBackend(
         lambda request: {
-            "selections": [{"option_id": request.options[-1].id, "score": 0.9}]
+            "selections": [
+                {
+                    "option_id": next(
+                        option.id
+                        for option in request.options
+                        if option.label == "secondary.lookup"
+                    ),
+                    "score": 0.9,
+                }
+            ]
         }
     )
     plan = SchemaPlanner(
