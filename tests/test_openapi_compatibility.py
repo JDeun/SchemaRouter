@@ -83,7 +83,7 @@ def test_openapi_compatibility_makes_unsupported_semantics_visible() -> None:
     }
 
     report = analyze_openapi_compatibility(document)
-    constructs = {issue.construct: issue.support for issue in report.issues}
+    constructs = {issue.schema_construct: issue.support for issue in report.issues}
 
     assert report.status == "partial"
     assert constructs["external_ref"] == "unsupported"
@@ -131,7 +131,7 @@ def test_openapi_compatibility_detects_recursive_component_refs() -> None:
 
     report = analyze_openapi_compatibility(document)
 
-    assert any(issue.construct == "recursive_ref" for issue in report.issues)
+    assert any(issue.schema_construct == "recursive_ref" for issue in report.issues)
 
 
 def test_openapi_import_attaches_machine_readable_compatibility_report() -> None:
