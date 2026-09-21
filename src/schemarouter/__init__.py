@@ -1,6 +1,7 @@
 from ._version import __version__
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
 from .adapters.mcp import DefaultMCPClientFactory, MCPClientFactory
+from .adapters.optimade import OPTIMADESourceAdapter
 from .adapters.plugins import (
     ADAPTER_ENTRY_POINT_GROUP,
     AdapterPluginInfo,
