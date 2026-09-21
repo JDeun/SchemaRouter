@@ -97,6 +97,7 @@ nav:
       - Registry and schema identity: concepts/registry.md
       - Execution and trust boundaries: concepts/execution.md
       - Adapter ecosystem: concepts/adapters.md
+      - Decision backends: concepts/decision-backends.md
   - Guides:
       - Python tools: guides/python-tools.md
       - OpenAPI: guides/openapi.md
