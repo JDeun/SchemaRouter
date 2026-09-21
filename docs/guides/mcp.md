@@ -22,8 +22,49 @@ router = await SchemaRouter.from_url(
 )
 ```
 
-Discovery performs protocol negotiation through the SDK, paginates `list_tools()`, and imports each
-advertised `inputSchema` and `outputSchema`.
+Discovery performs protocol negotiation, paginates `list_tools()`, and imports each advertised
+`inputSchema` and `outputSchema`.
+
+## Authenticated Streamable HTTP
+
+HTTP authentication is trusted runtime configuration, not a model-selectable parameter.
+
+```python
+import os
+
+router = await SchemaRouter.from_url(
+    "https://mcp.example.com/mcp",
+    kind="mcp",
+    trusted_headers={
+        "Authorization": f"Bearer {os.environ['MCP_TOKEN']}",
+    },
+)
+```
+
+The same trusted header set is used for discovery and runtime calls, but the header values are not
+copied into `ToolSpec`, endpoint metadata, planner state, or model-visible arguments.
+
+MCP protocol headers such as `Mcp-Protocol-Version` cannot be overridden through trusted headers,
+and credentials embedded in the URL are rejected.
+
+## Custom OAuth, mTLS, proxies, or gateway transports
+
+For more complex authentication, inject an `MCPClientFactory`:
+
+```python
+router = await SchemaRouter.from_url(
+    "https://mcp.example.com/mcp",
+    kind="mcp",
+    mcp_client_factory=my_trusted_factory,
+)
+```
+
+The factory owns the official SDK client/transport lifecycle. It can configure OAuth, client
+credentials, mTLS, proxies, enterprise gateways, or application-specific HTTP clients without
+moving secrets into SchemaRouter's planning contract.
+
+This follows the MCP SDK's transport layering: HTTP authentication belongs on the caller-owned HTTP
+client passed to the Streamable HTTP transport.
 
 ## Execution
 
@@ -42,12 +83,18 @@ code can opt in with:
 ExecutionPolicy(allow_unclassified_remote=True)
 ```
 
-A future local classification layer can make this more granular without trusting the remote server
-to classify itself.
+For stronger control, combine this with per-call approval:
+
+```python
+ExecutionPolicy(
+    allow_unclassified_remote=True,
+    approval_mode="non_read_only",
+)
+```
 
 ## Integration coverage
 
-The repository CI starts a real Streamable HTTP MCP server using the official SDK and verifies:
+Repository CI starts a real Streamable HTTP MCP server using the official SDK and verifies:
 
 ```text
 HTTP server
@@ -59,4 +106,4 @@ HTTP server
  -> structured output validation
 ```
 
-This is separate from the normal core test matrix so the base package does not depend on MCP.
+Separate transport tests verify credential isolation and unsafe-header rejection.
