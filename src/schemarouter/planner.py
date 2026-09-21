@@ -6,6 +6,8 @@ from collections.abc import Awaitable
 from dataclasses import dataclass
 from typing import Protocol
 
+from .decision_policy import DecisionPolicy
+from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
 from .errors import PlanningError
 from .models import (
     EndpointSpec,
@@ -62,9 +64,25 @@ class _Candidate:
 class SchemaPlanner:
     """Schema-aware planner with sync and async query-analysis paths."""
 
-    def __init__(self, registry: ToolRegistry, analyzer: QueryAnalyzer | None = None) -> None:
+    def __init__(
+        self,
+        registry: ToolRegistry,
+        analyzer: QueryAnalyzer | None = None,
+        *,
+        decision_backend: DecisionBackend | None = None,
+        decision_policy: DecisionPolicy | None = None,
+    ) -> None:
         self.registry = registry
         self.analyzer = analyzer or KeywordAnalyzer()
+        self.decision_backend = decision_backend
+        self.decision_policy = decision_policy or DecisionPolicy()
+        if self.decision_policy.enabled and self.decision_backend is None:
+            raise PlanningError("decision policy is enabled but no decision backend is configured")
+        if self.decision_policy.reserved_surfaces_enabled:
+            raise PlanningError(
+                "field_selection and evidence_sufficiency decision surfaces are reserved "
+                "until dedicated bounded contracts are available"
+            )
 
     def plan(self, request: PlanRequest | str) -> ExecutionPlan:
         request = self._prepare_request(request)
@@ -75,14 +93,14 @@ class SchemaPlanner:
             raise PlanningError(
                 "the configured analyzer is asynchronous; use await planner.aplan(...)"
             )
-        return self._build_plan(request, intent)
+        return self._build_plan(request, intent, async_decision=False)
 
     async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
         request = self._prepare_request(request)
         intent = self.analyzer.analyze(request, self.registry)
         if inspect.isawaitable(intent):
             intent = await intent
-        return self._build_plan(request, intent)
+        return await self._abuild_plan(request, intent)
 
     def _prepare_request(self, request: PlanRequest | str) -> PlanRequest:
         if isinstance(request, str):
@@ -91,7 +109,7 @@ class SchemaPlanner:
             raise PlanningError("cannot plan with an empty registry")
         return request
 
-    def _build_plan(self, request: PlanRequest, intent: QueryIntent) -> ExecutionPlan:
+    def _candidates(self, request: PlanRequest, intent: QueryIntent) -> list[_Candidate]:
         candidates = [
             self._score_endpoint(tool, endpoint, request.query, intent)
             for tool in self.registry.tools()
@@ -105,8 +123,85 @@ class SchemaPlanner:
                 candidate.endpoint.name,
             )
         )
+        return candidates
 
-        warnings: list[str] = []
+    def _decision_request(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> DecisionRequest:
+        return DecisionRequest(
+            query=request.query,
+            options=[
+                DecisionOption(
+                    id=f"candidate:{index}",
+                    label=f"{candidate.tool.key}.{candidate.endpoint.name}",
+                    description=candidate.endpoint.description,
+                    metadata={"schema_score": candidate.score},
+                )
+                for index, candidate in enumerate(candidates)
+            ],
+            max_selections=min(request.max_calls, len(candidates)),
+        )
+
+    def _select_candidates_sync(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if not candidates or not self.decision_policy.candidate_selection_enabled:
+            return candidates, []
+        assert self.decision_backend is not None
+        try:
+            result = choose_sync(
+                self.decision_backend,
+                self._decision_request(request, candidates),
+            )
+        except Exception as exc:
+            if self.decision_policy.fallback == "deterministic":
+                return candidates, [f"decision backend fallback: {type(exc).__name__}"]
+            raise
+        if result.abstained or not result.selections:
+            if self.decision_policy.fallback == "deterministic":
+                return candidates, ["decision backend abstained; used deterministic ranking"]
+            raise PlanningError("decision backend abstained")
+        return [candidates[int(item.option_id.split(":", 1)[1])] for item in result.selections], []
+
+    async def _select_candidates_async(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if not candidates or not self.decision_policy.candidate_selection_enabled:
+            return candidates, []
+        assert self.decision_backend is not None
+        try:
+            result = await choose_async(
+                self.decision_backend,
+                self._decision_request(request, candidates),
+            )
+        except Exception as exc:
+            if self.decision_policy.fallback == "deterministic":
+                return candidates, [f"decision backend fallback: {type(exc).__name__}"]
+            raise
+        if result.abstained or not result.selections:
+            if self.decision_policy.fallback == "deterministic":
+                return candidates, ["decision backend abstained; used deterministic ranking"]
+            raise PlanningError("decision backend abstained")
+        return [candidates[int(item.option_id.split(":", 1)[1])] for item in result.selections], []
+
+    def _build_plan(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        async_decision: bool,
+    ) -> ExecutionPlan:
+        del async_decision
+        candidates = self._candidates(request, intent)
+        candidates, decision_warnings = self._select_candidates_sync(request, candidates)
+
+        warnings: list[str] = list(decision_warnings)
         if not candidates:
             return ExecutionPlan(
                 query=request.query,
@@ -149,6 +244,62 @@ class SchemaPlanner:
                 )
             )
 
+        return ExecutionPlan(
+            query=request.query,
+            registry_version=self.registry.version,
+            calls=calls,
+            warnings=warnings,
+        )
+
+    async def _abuild_plan(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+    ) -> ExecutionPlan:
+        candidates = self._candidates(request, intent)
+        candidates, decision_warnings = await self._select_candidates_async(request, candidates)
+        if not candidates:
+            return ExecutionPlan(
+                query=request.query,
+                registry_version=self.registry.version,
+                calls=[],
+                warnings=[*decision_warnings, "no schema candidate matched the request"],
+            )
+
+        calls: list[ToolCall] = []
+        warnings = list(decision_warnings)
+        for candidate in candidates[: request.max_calls]:
+            endpoint = candidate.endpoint
+            declared = {parameter.name: parameter for parameter in endpoint.parameters}
+            arguments = {
+                name: value
+                for name, value in intent.arguments.items()
+                if name in declared
+            }
+            dropped = sorted(set(intent.arguments) - set(arguments))
+            if dropped:
+                warnings.append(
+                    f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
+                    + ", ".join(dropped)
+                )
+            missing = [
+                parameter.name
+                for parameter in endpoint.parameters
+                if parameter.required and parameter.name not in arguments
+            ]
+            fields = self._project_fields(endpoint, intent, candidate.matched_fields)
+            calls.append(
+                ToolCall(
+                    tool=candidate.tool.key,
+                    endpoint=endpoint.name,
+                    arguments=arguments,
+                    fields=fields,
+                    evidence=self._evidence(candidate.tool, fields, intent.evidence),
+                    schema_fingerprint=endpoint.fingerprint,
+                    missing_required_arguments=missing,
+                    score=candidate.score,
+                )
+            )
         return ExecutionPlan(
             query=request.query,
             registry_version=self.registry.version,
