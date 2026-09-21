@@ -252,3 +252,12 @@ async def test_wall_clock_budget_interrupts_async_invocation() -> None:
             plan,
             budget=ExecutionBudget(max_elapsed_seconds=0.01),
         )
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
+def test_budget_rejects_non_finite_costs(value: float) -> None:
+    with pytest.raises(ValueError):
+        ExecutionBudget(max_cost_units=value)
+
+    with pytest.raises(ValueError):
+        ExecutionBudget(cost_units={"demo.run": value})
