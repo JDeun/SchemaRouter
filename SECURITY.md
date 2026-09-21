@@ -43,6 +43,11 @@ arguments.
 
 Do not embed credentials in schema, documentation, or API URLs.
 
+Authenticated MCP keeps bearer/custom headers inside the trusted transport boundary. MCP URLs with
+embedded userinfo credentials are rejected, protocol-controlled `Mcp-*` headers cannot be
+overridden through trusted headers, and OAuth/mTLS/proxy/gateway behavior should be implemented
+behind a trusted application-supplied `MCPClientFactory`.
+
 ### Network destinations and SSRF
 
 SchemaRouter intentionally supports localhost and private-network MCP/OpenAPI endpoints because local
@@ -70,14 +75,32 @@ OPTIMADE adapter. These checks do not replace an application's initial URL admis
 Run-event arguments and result payloads are redacted by default.
 
 `RunConfig(include_payloads=True)` may expose user data, API responses, identifiers, or other
-sensitive information to the trace consumer. Enable payload tracing only when the destination is
-trusted and appropriate retention controls exist.
+sensitive information to the direct event consumer. Enable payload tracing only when the destination
+is trusted and appropriate retention controls exist.
 
-### Retries
+The optional OpenTelemetry exporter is stricter than the direct event stream: it exports structural
+attributes but does not export argument values, result payloads, RunConfig metadata, tags, or
+exception messages, even when the source event stream opted into payloads.
 
-Automatic retries are limited to endpoints classified as read-only unless trusted local code
-explicitly opts into retrying non-read-only operations. Schema contract violations are never
+### Approval, budgets, and retries
+
+Applications may require a trusted sync/async approval callback for non-read-only calls or for every
+call. Missing callbacks, denied decisions, and callback exceptions fail closed.
+
+Per-run execution budgets can bound logical tool calls, invoker attempts, remote attempts, elapsed
+time, per-tool call counts, and application-defined cost units. Retry attempts consume attempt,
+remote, and cost budgets before invocation. Budget refusals and schema contract violations are never
 retried.
+
+Automatic retries remain limited to endpoints classified as read-only unless trusted local code
+explicitly opts into retrying non-read-only operations.
+
+### Third-party adapter plugins
+
+Installed adapter entry points are executable local Python code. SchemaRouter can discover their
+metadata without importing them, but actual loading requires a non-empty explicit allowlist supplied
+by trusted application code. Remote schemas and model output cannot choose installed plugins to
+import.
 
 ### Human-readable documentation
 
@@ -95,7 +118,10 @@ Changes affecting any of the following require adversarial regression tests:
 - execution policy;
 - retries or side effects;
 - input/output validation;
-- event payload redaction;
+- event payload redaction and telemetry export;
+- adapter plugin discovery/loading;
+- authenticated/custom MCP transports;
+- per-call approval or execution budgets;
 - documentation grounding or proposal approval.
 
 See also:
