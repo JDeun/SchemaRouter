@@ -78,6 +78,11 @@ class SchemaPlanner:
         self.decision_policy = decision_policy or DecisionPolicy()
         if self.decision_policy.enabled and self.decision_backend is None:
             raise PlanningError("decision policy is enabled but no decision backend is configured")
+        if self.decision_policy.reserved_surfaces_enabled:
+            raise PlanningError(
+                "field_selection and evidence_sufficiency decision surfaces are reserved "
+                "until dedicated bounded contracts are available"
+            )
 
     def plan(self, request: PlanRequest | str) -> ExecutionPlan:
         request = self._prepare_request(request)
