@@ -4,9 +4,9 @@ import asyncio
 import re
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, cast, Literal
+from typing import Any, Literal, cast
 
-from pydantic import BaseModel, ConfigDict, create_model
+from pydantic import BaseModel, ConfigDict
 
 from ..models import ToolCall
 from ..runtime import SchemaRouter
@@ -80,7 +80,16 @@ def _llamaindex_schema_model(
             return deepcopy(exported)
 
     safe_name = re.sub(r"[^A-Za-z0-9_]+", "_", model_name) or "SchemaRouterArgs"
-    return create_model(safe_name, __base__=SchemaCarrier, **fields)
+    annotations = {field_name: annotation for field_name, (annotation, _) in fields.items()}
+    namespace: dict[str, Any] = {
+        "__module__": __name__,
+        "__annotations__": annotations,
+    }
+    for field_name, (_, default) in fields.items():
+        if default is not ...:
+            namespace[field_name] = default
+
+    return cast(type[BaseModel], type(safe_name, (SchemaCarrier,), namespace))
 
 
 def _sync_await(coroutine_factory):
