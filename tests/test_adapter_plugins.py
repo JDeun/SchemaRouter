@@ -109,3 +109,18 @@ def test_duplicate_plugin_names_fail_before_import(monkeypatch) -> None:
         plugins.load_adapter_plugins(AdapterRegistry(), allowlist={"demo"})
 
     assert loaded == []
+
+
+
+def test_duplicate_adapter_kinds_fail_without_partial_registry_mutation(monkeypatch) -> None:
+    loaded = _install_fake_entry_points(monkeypatch, "demo", "other")
+    registry = AdapterRegistry()
+
+    with pytest.raises(ValueError, match="duplicate adapter kinds"):
+        plugins.load_adapter_plugins(
+            registry,
+            allowlist={"demo", "other"},
+        )
+
+    assert loaded == ["demo", "other"]
+    assert registry.kinds() == ()
