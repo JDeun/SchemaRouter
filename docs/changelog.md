@@ -21,7 +21,7 @@ The project is pre-1.0 and follows the compatibility rules in
 - a non-blocking Python 3.15 release-candidate preview;
 - a Windows + Python 3.14 smoke surface;
 - a Pyright static-type gate for the typed package surface;
-- full-suite branch-coverage reporting;
+- full-suite branch-coverage reporting with an 82% blocking floor;
 - declared lower-bound runtime dependency testing;
 - clean wheel and sdist installation smoke tests.
 
