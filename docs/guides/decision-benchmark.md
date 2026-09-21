@@ -94,11 +94,11 @@ Each row records:
 
 The aggregate report includes:
 
-- accuracy;
+- final-plan routing accuracy (an abstention case is correct only when the final plan has no route);
 - invalid-plan rate;
 - error count;
 - abstention rate;
-- expected-abstention recall;
+- expected-abstention recall for bounded backends, reported separately from final-plan accuracy;
 - fallback count;
 - mean, p50, and p95 latency;
 - category-level accuracy;
