@@ -11,6 +11,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "ConfiguredSchemaRouter",
         "CallableDecisionBackend",
         "DecisionBackend",
+        "DecisionFallback",
+        "DecisionPolicy",
         "DecisionCallable",
         "DecisionOption",
         "DecisionRequest",
