@@ -96,5 +96,6 @@ branch = true
 source = ["schemarouter"]
 
 [tool.coverage.report]
+fail_under = 82
 show_missing = true
 skip_covered = false
