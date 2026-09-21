@@ -23,7 +23,16 @@ The project is pre-1.0 and follows the compatibility rules in
 - a Pyright static-type gate for the typed package surface;
 - full-suite branch-coverage reporting with an 82% blocking floor;
 - declared lower-bound runtime dependency testing;
-- clean wheel and sdist installation smoke tests.
+- clean wheel and sdist installation smoke tests;
+- a checked-in 144-case multilingual/adversarial decision-routing corpus with JSON/CSV output,
+  category metrics, invalid-plan rate, abstention/fallback tracking, and p50/p95 latency;
+- machine-readable OpenAPI compatibility reports for partial/unsupported constructs;
+- authenticated MCP trusted-header and custom client-factory transport boundaries;
+- trusted sync/async per-call approval callbacks;
+- per-run execution budgets for logical calls, attempts, remote attempts, elapsed time, per-tool
+  quotas, and application-defined cost units;
+- optional privacy-preserving OpenTelemetry run/tool span export;
+- explicit allowlisted third-party adapter plugins through `schemarouter.adapters` entry points.
 
 ### Changed
 
@@ -44,7 +53,12 @@ The project is pre-1.0 and follows the compatibility rules in
   closed;
 - Jev credentials remain SDK client configuration and are never placed in model state;
 - `DecisionOption.metadata` is not forwarded to Jev;
-- provider failures can deterministically fall back without weakening execution policy.
+- provider failures can deterministically fall back without weakening execution policy;
+- MCP credentials are rejected in URLs and remain outside tool/planner metadata;
+- MCP protocol-controlled headers cannot be overridden through trusted runtime headers;
+- adapter entry points are metadata-only during discovery and are never auto-imported;
+- OpenTelemetry export omits payload values, RunConfig metadata, tags, and exception messages;
+- approval callback failures and execution budget exhaustion fail closed.
 
 ## 0.2.0a1 - 2026-09-20
 
