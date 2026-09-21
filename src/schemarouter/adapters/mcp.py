@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any, Protocol
+from urllib.parse import urlparse
 
 from ..errors import SchemaSourceError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
@@ -82,6 +83,16 @@ class DefaultMCPClientFactory:
 
 
 _DEFAULT_CLIENT_FACTORY = DefaultMCPClientFactory()
+
+
+def _validate_mcp_url(url: str) -> None:
+    parsed = urlparse(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("MCP URL must be an absolute http(s) URL")
+    if parsed.username or parsed.password:
+        raise ValueError(
+            "MCP URL must not contain credentials; use trusted transport authentication"
+        )
 
 
 def _properties(schema: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
@@ -187,6 +198,7 @@ async def inspect_mcp_url(
     client_factory: MCPClientFactory | None = None,
 ) -> ToolSpec:
     """Connect to a Streamable HTTP MCP URL and import all advertised tools."""
+    _validate_mcp_url(url)
     factory = client_factory or _DEFAULT_CLIENT_FACTORY
     headers = _validated_trusted_headers(trusted_headers)
 
@@ -236,6 +248,7 @@ class MCPRemoteInvoker:
         timeout: float = 20.0,
         client_factory: MCPClientFactory | None = None,
     ) -> None:
+        _validate_mcp_url(url)
         self.url = url
         self._trusted_headers = _validated_trusted_headers(trusted_headers)
         self.timeout = timeout
