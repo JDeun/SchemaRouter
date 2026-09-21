@@ -37,3 +37,28 @@ The top-level `schemarouter` package exposes the stable public surface intended 
 ## ExecutionPolicy
 
 ::: schemarouter.ExecutionPolicy
+
+
+## ExecutionBudget
+
+::: schemarouter.ExecutionBudget
+
+## ApprovalDeniedError
+
+::: schemarouter.ApprovalDeniedError
+
+## ExecutionBudgetExceededError
+
+::: schemarouter.ExecutionBudgetExceededError
+
+## MCPClientFactory
+
+::: schemarouter.MCPClientFactory
+
+## OpenAPICompatibilityReport
+
+::: schemarouter.OpenAPICompatibilityReport
+
+## AdapterPluginInfo
+
+::: schemarouter.AdapterPluginInfo

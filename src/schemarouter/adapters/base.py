@@ -16,6 +16,7 @@ class AdapterContext:
     base_url: str | None = None
     schema_headers: dict[str, str] | None = None
     trusted_headers: dict[str, str] | None = None
+    mcp_client_factory: Any | None = None
     timeout: float = 20.0
     http_client: httpx.AsyncClient | None = None
 

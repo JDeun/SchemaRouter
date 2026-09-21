@@ -224,22 +224,28 @@ class MCPSourceAdapter:
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None:
         if context.base_url is not None:
             raise SchemaSourceError("base_url is not valid for MCP sources")
-        if context.trusted_headers:
-            raise SchemaSourceError(
-                "MCP custom trusted headers are not wired in v0.2; "
-                "use an explicit transport integration"
-            )
         try:
             tool = await inspect_mcp_url(
                 context.url,
                 server_name=context.name,
                 namespace=context.namespace,
+                trusted_headers=context.trusted_headers,
+                timeout=context.timeout,
+                client_factory=context.mcp_client_factory,
             )
         except Exception:  # noqa: BLE001
             return None
 
         tool.metadata["remote"] = True
-        return AdapterLoadResult(tool=tool, invoker=MCPRemoteInvoker(context.url))
+        return AdapterLoadResult(
+            tool=tool,
+            invoker=MCPRemoteInvoker(
+                context.url,
+                trusted_headers=context.trusted_headers,
+                timeout=context.timeout,
+                client_factory=context.mcp_client_factory,
+            ),
+        )
 
 
 def default_adapter_registry() -> AdapterRegistry:
@@ -282,6 +288,7 @@ class URLSchemaLoader:
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: Any | None = None,
         timeout: float = 20.0,
     ) -> ToolSpec:
         _validate_url(url)
@@ -293,6 +300,7 @@ class URLSchemaLoader:
             base_url=base_url,
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
             timeout=timeout,
             http_client=self.http_client,
         )

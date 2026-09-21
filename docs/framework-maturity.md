@@ -11,24 +11,24 @@ This document tracks framework-level maturity rather than research metrics.
 | Typed tool / endpoint / parameter / field contracts | Implemented | Core invariant |
 | Natural-language planning | Implemented | Improve candidate indexing at scale |
 | Sync / async invocation | Implemented | Stable public surface |
-| Batch execution | Implemented | Add batch-as-completed later |
+| Batch execution | Implemented, including completion-order APIs | Stable public surface |
 | Result streaming | Implemented | Add parallel-call streaming later |
-| Typed event streaming | Implemented | Add callback exporters / trace stores |
+| Typed event streaming | Implemented | Extend exporter ecosystem without exposing payloads |
 | Input / output / config schema introspection | Implemented | Keep machine-readable |
 | Retry policy | Implemented | Add provider-specific transient error classifiers |
 | Python callable tools | Implemented | Improve docstring parameter descriptions |
-| Structured-source adapter registry | Implemented in v0.2 | Add third-party plugin packaging conventions |
-| OpenAPI ingestion | Implemented common subset | Add external refs / composition |
+| Structured-source adapter registry | Implemented with explicit entry-point plugins | Expand certified third-party adapters |
+| OpenAPI ingestion | Implemented common subset + compatibility report | Improve external refs / composition fidelity |
 | OPTIMADE ingestion and execution | Implemented in v0.2 | Add provider federation / index meta-database traversal |
-| MCP ingestion and execution | Implemented | Add authenticated custom transports |
+| MCP ingestion and execution | Implemented with authenticated/custom transport boundary | Expand OAuth/gateway examples |
 | Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
-| Runtime policy | Implemented | Add per-call approval / budgets / quotas |
+| Runtime policy | Implemented with per-call approval and execution budgets | Add richer organization policy adapters |
 | Runtime JSON Schema validation | Implemented | Add richer nested projection |
 | LangChain / LlamaIndex integrations | Implemented optional adapters | Add LangGraph-native nodes and ecosystem listings |
 | Bounded decision backends | Implemented, opt-in | Extend dedicated field/evidence contracts |
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
-| Decision benchmark harness | Implemented | Expand datasets and publish reproducible measurements |
-| Framework callbacks / exporters | Typed redacted event stream | Add callback manager / OpenTelemetry exporters |
+| Decision benchmark harness | 144-case checked-in corpus + JSON/CSV metrics | Gather dated live-provider evidence |
+| Framework callbacks / exporters | Typed redacted events + optional OpenTelemetry exporter | Add additional trusted sinks as needed |
 | Middleware interception | Policy-specific only | Add trusted before/after hooks |
 | Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
 | Persistence / checkpoints | Out of scope for core | Delegate to orchestration layer |
@@ -101,20 +101,35 @@ Completed locally:
 - runnable LangChain and LlamaIndex examples;
 - published ecosystem compatibility and maintenance policy;
 - optional Jev decision provider with adversarial contract tests;
-- provider-neutral decision benchmark harness.
+- provider-neutral decision benchmark harness;
+- 144-case multilingual/adversarial benchmark corpus;
+- OpenAPI compatibility reporting;
+- authenticated MCP transport boundary;
+- per-call approval and per-run execution budgets;
+- privacy-preserving OpenTelemetry exporter;
+- explicit allowlisted third-party adapter plugins.
 
 Still external or follow-up work:
 
 - upstream ecosystem listing/discussion requests;
 - broader live benchmark evidence;
 - LangGraph-native integration;
-- richer OpenAPI references and schema composition.
+- richer OpenAPI external-reference and composition execution support.
 
 ### Gate C — production operations
 
+Implemented locally:
+
+- deterministic call/attempt/remote/time/cost budgets;
+- trusted sync/async per-call approval;
+- OpenTelemetry span export from the redacted event stream;
+- authenticated MCP/custom client-factory boundary;
+- explicit allowlisted adapter plugin loading;
+- OpenAPI compatibility reports.
+
+Remaining larger follow-up work:
+
 - persistent registry implementations behind the `ToolRegistry` protocol;
-- quotas/cost budgets;
-- per-call human approval;
-- replayable execution traces;
-- callback/exporter and OpenTelemetry support;
-- benchmark and compatibility dashboard.
+- replayable execution trace storage;
+- benchmark and compatibility dashboard;
+- organization-specific policy/approval integrations.

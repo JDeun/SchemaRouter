@@ -169,13 +169,21 @@ proposal로 변환한 뒤 명시적인 승인을 받아야 합니다.
   차단합니다.
 - **Local execution authority** — 원격 metadata나 모델 출력이 mutation/destructive 권한을
   부여할 수 없습니다.
-- **Credential separation** — schema fetch credential과 runtime credential을 분리합니다.
+- **Credential separation** — schema fetch credential과 runtime credential을 분리하며,
+  인증 MCP secret은 trusted transport 경계 안에만 둡니다.
 - **Read-only retry by default** — 계약 위반이나 위험한 호출을 자동 재시도하지 않습니다.
+- **호출별 승인 및 실행 budget** — trusted local callback과 call/attempt/remote/time/quota/
+  cost-unit 제한을 fail-closed로 적용합니다.
+- **OpenAPI compatibility report** — partial/unsupported construct를 숨기지 않고
+  machine-readable report로 노출합니다.
 - **Redacted runtime event by default** — payload trace는 명시적으로 opt-in해야 합니다.
 - **Pluggable registry** — 커스텀 registry는 공개 `ToolRegistry` protocol을 구현할 수
   있습니다.
 - **Pluggable adapter** — `AdapterRegistry`를 통해 다양한 structured protocol을 동일한
-  `ToolSpec` / `EndpointSpec` 실행 모델로 변환할 수 있습니다.
+  `ToolSpec` / `EndpointSpec` 실행 모델로 변환할 수 있으며, 설치된 entry-point plugin은
+  명시적 allowlist가 있어야 import됩니다.
+- **선택형 OpenTelemetry export** — payload 값 없이 redacted runtime event를 run/tool span으로
+  변환할 수 있습니다.
 
 ## LangChain과 사용
 
@@ -260,9 +268,17 @@ API key가 있다면 같은 케이스로 Jev도 비교할 수 있습니다.
 TYPESAFE_API_KEY="..." python scripts/benchmark_decision_routing.py --jev
 ```
 
-benchmark는 routing accuracy, abstention, latency, token usage, error와 선택적인 비용 추정치를
-기록합니다. `--model-callable module:function`을 이용하면 provider-neutral
-`ModelQueryAnalyzer`도 같은 harness에서 비교할 수 있습니다.
+benchmark에는 144개 multilingual/adversarial 고정 corpus가 포함되며 routing accuracy,
+invalid-plan rate, abstention/fallback, category accuracy, p50/p95 latency, token usage, error와
+선택적인 비용 추정치를 기록합니다. `--model-callable module:function`을 이용하면
+provider-neutral `ModelQueryAnalyzer`도 같은 harness에서 비교할 수 있습니다.
+
+```bash
+python scripts/benchmark_decision_routing.py \
+  --corpus benchmarks/decision-routing-v1.json \
+  --json-out artifacts/decision-benchmark.json \
+  --csv-out artifacts/decision-benchmark.csv
+```
 
 ## 문서
 
@@ -271,11 +287,14 @@ benchmark는 routing accuracy, abstention, latency, token usage, error와 선택
 - [Getting started](https://jdeun.github.io/SchemaRouter/getting-started/installation/)
 - [Core concepts](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
 - [OpenAPI guide](https://jdeun.github.io/SchemaRouter/guides/openapi/)
+- [OpenAPI compatibility](https://jdeun.github.io/SchemaRouter/guides/openapi-compatibility/)
 - [OPTIMADE guide](https://jdeun.github.io/SchemaRouter/guides/optimade/)
 - [MCP guide](https://jdeun.github.io/SchemaRouter/guides/mcp/)
 - [LangChain integration](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
 - [LlamaIndex integration](https://jdeun.github.io/SchemaRouter/integrations/llamaindex/)
 - [Jev / TypeSafe integration](https://jdeun.github.io/SchemaRouter/integrations/jev/)
+- [OpenTelemetry integration](https://jdeun.github.io/SchemaRouter/integrations/opentelemetry/)
+- [Third-party adapter plugins](https://jdeun.github.io/SchemaRouter/guides/adapter-plugins/)
 - [Decision backends](https://jdeun.github.io/SchemaRouter/concepts/decision-backends/)
 - [Decision benchmark](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
@@ -302,7 +321,7 @@ python examples/quickstart.py
 python scripts/benchmark_decision_routing.py
 
 # 선택형 통합을 포함한 전체 패키지 surface 타입 검사
-pip install -e ".[dev,mcp,langchain,llamaindex,jev]"
+pip install -e ".[dev,mcp,langchain,llamaindex,jev,otel]"
 pyright
 pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing
 ```
@@ -321,6 +340,9 @@ pytest -q tests/test_llamaindex_integration.py
 
 pip install -e ".[dev,jev]"
 pytest -q tests/test_jev_integration.py
+
+pip install -e ".[dev,otel]"
+pytest -q tests/test_opentelemetry_integration.py
 ```
 
 ## 프로젝트 범위

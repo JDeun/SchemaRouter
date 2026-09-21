@@ -33,13 +33,13 @@ schemarouter.registry      versioned namespaced catalog
 schemarouter.planner       deterministic candidate scoring + recall-first projection
 schemarouter.analyzers     optional model-assisted intent extraction
 schemarouter.validation    JSON Schema runtime validation
-schemarouter.policy        trusted local side-effect authority
-schemarouter.runs          run configuration, retry policy, typed lifecycle events
+schemarouter.policy        trusted local side-effect + approval authority
+schemarouter.runs          run configuration, retry policy, budgets, typed lifecycle events
 schemarouter.executor      plan, binding, schema and policy enforcement
 schemarouter.adapters      adapter contracts + OpenAPI/MCP/OPTIMADE/Python implementations
 schemarouter.ingestion     AdapterRegistry dispatch, safe source loading, registry binding
 schemarouter.proposals     evidence-grounded HTML documentation proposals
-schemarouter.integrations  optional LangChain/LlamaIndex bridges + Jev decision provider
+schemarouter.integrations  optional LangChain/LlamaIndex/Jev/OpenTelemetry integrations
 schemarouter.runtime       high-level invoke/batch/stream facade
 ```
 
@@ -158,6 +158,41 @@ reader. OpenAPI runtime execution now uses the same posture: responses are strea
 16 MiB by default, checking both declared `Content-Length` and bytes actually received before
 JSON/text decoding.
 
+### 15. Unsupported OpenAPI semantics must be visible
+
+OpenAPI parsing success does not imply perfect semantic fidelity. Imported OpenAPI tools therefore
+carry a machine-readable compatibility report that marks partial or unsupported constructs such as
+external references, composition, cookie parameters, non-JSON bodies, callbacks, webhooks, and
+server variables.
+
+### 16. Authenticated MCP must preserve credential separation
+
+MCP authentication belongs to the trusted HTTP transport/client boundary. Credentials embedded in
+MCP URLs are rejected, protocol-controlled headers cannot be overridden, and custom OAuth/mTLS/
+gateway behavior is injected as a trusted client factory rather than represented in tool schemas.
+
+### 17. Runtime permission and per-call approval are separate gates
+
+Local `ExecutionPolicy` grants category-level authority. Optional trusted approval callbacks gate
+individual calls after schema/policy validation and fail closed on missing, negative, or exceptional
+decisions.
+
+### 18. Execution budgets must account for retries
+
+One logical call may produce multiple real invoker attempts. Budgets therefore count logical calls,
+total attempts, remote attempts, wall-clock execution, per-tool quotas, and application-defined cost
+units separately. Retries consume attempt/remote/cost budget before invocation.
+
+### 19. Observability must not weaken payload privacy
+
+The OpenTelemetry integration consumes typed RunEvents but intentionally exports only structural
+attributes. Argument/result values, RunConfig metadata, tags, and exception messages are omitted.
+
+### 20. Installed adapter plugins are executable code
+
+Plugin metadata can be discovered without import. Entry-point loading requires an explicit non-empty
+allowlist so installed packages are never auto-executed merely because they are discoverable.
+
 ## Core invariants
 
 1. A plan cannot call an unregistered tool or endpoint.
@@ -180,19 +215,24 @@ JSON/text decoding.
 18. Optional framework integrations call back through the same executor boundary rather than bypassing policy or validation.
 19. Optional decision providers can select only locally offered option IDs and cannot grant execution authority.
 20. OpenAPI runtime responses are bounded before decoding, including when Content-Length is absent or misleading.
+21. MCP runtime credentials remain inside trusted transport configuration and are never planner-visible.
+22. Calls requiring local approval fail closed if approval is absent, denied, or errors.
+23. Execution budgets are checked before each logical call and real invoker attempt.
+24. Adapter plugins are never auto-imported from discovery alone.
+25. OpenTelemetry export omits payload values and exception messages by design.
+26. OpenAPI compatibility limitations are surfaced explicitly rather than silently guessed.
 
 ## Current extension backlog
 
-- authenticated/custom-transport MCP clients;
 - trusted local classification for individual MCP tool side effects;
-- OpenAPI external refs and richer `oneOf` / `allOf` / recursive-schema handling;
+- deeper OpenAPI external-ref resolution and composition-aware planning/execution;
 - non-object request-body ergonomics and richer nested field projection;
-- per-call human approval, quotas, cost budgets, license/provenance policy extensions;
+- organization-specific policy/approval and license/provenance extensions;
 - compensation, transactions, and distributed execution;
 - persistent/distributed registries;
 - multi-page and client-rendered documentation crawling;
-- callback exporters, OpenTelemetry integration, and replay;
-- larger reproducible decision-routing benchmark datasets and live provider evidence;
+- replayable trace storage and additional trusted exporters;
+- dated live-provider benchmark evidence and compatibility dashboards;
 - LangGraph-native integration adapters.
 
 These are extension layers. They should not weaken the core fail-closed contracts above.

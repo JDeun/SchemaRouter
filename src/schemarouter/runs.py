@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import math
 from datetime import datetime, timezone
 from typing import Any, Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from .models import StrictModel
 
@@ -18,6 +19,35 @@ class RetryPolicy(StrictModel):
     retry_non_read_only: bool = False
 
 
+class ExecutionBudget(StrictModel):
+    """Trusted per-run execution limits.
+
+    Logical tool calls are counted once. Attempts, remote attempts, and cost units are counted for
+    every actual invoker attempt, including retries.
+    """
+
+    max_tool_calls: int | None = Field(default=None, ge=0, le=10_000)
+    max_attempts: int | None = Field(default=None, ge=0, le=100_000)
+    max_remote_attempts: int | None = Field(default=None, ge=0, le=100_000)
+    max_elapsed_seconds: float | None = Field(default=None, gt=0.0, le=86_400.0)
+    max_cost_units: float | None = Field(default=None, ge=0.0)
+    per_tool_calls: dict[str, int] = Field(default_factory=dict)
+    cost_units: dict[str, float] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_maps(self) -> ExecutionBudget:
+        if any(not key.strip() or value < 0 for key, value in self.per_tool_calls.items()):
+            raise ValueError("per_tool_calls requires non-empty keys and non-negative limits")
+        if self.max_cost_units is not None and not math.isfinite(self.max_cost_units):
+            raise ValueError("max_cost_units must be finite")
+        if any(
+            not key.strip() or value < 0 or not math.isfinite(value)
+            for key, value in self.cost_units.items()
+        ):
+            raise ValueError("cost_units requires non-empty keys and finite non-negative costs")
+        return self
+
+
 class RunConfig(StrictModel):
     """Per-run metadata and execution controls."""
 
@@ -26,6 +56,7 @@ class RunConfig(StrictModel):
     max_concurrency: int = Field(default=8, ge=1, le=128)
     include_payloads: bool = False
     retry: RetryPolicy = Field(default_factory=RetryPolicy)
+    budget: ExecutionBudget = Field(default_factory=ExecutionBudget)
 
 
 RunEventName = Literal[

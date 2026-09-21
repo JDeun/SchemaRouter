@@ -9,7 +9,7 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Static type checking passes for the typed package surface.
 - [ ] The 82% branch-coverage floor passes.
 - [ ] Minimum declared runtime dependencies pass the core suite.
-- [ ] Optional integration CI passes.
+- [ ] Optional integration CI passes, including LangChain, LlamaIndex, Jev, MCP, and OpenTelemetry.
 - [ ] Linux core CI passes on Python 3.10 through 3.14.
 - [ ] The Windows + Python 3.14 smoke job passes.
 - [ ] The Python 3.15 preview is reviewed for forward-compatibility signals.
@@ -38,6 +38,12 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Mutation/destructive policy tests pass.
 - [ ] Retry tests prove that non-read-only operations are not retried by default.
 - [ ] Event tests prove payload redaction is the default.
+- [ ] OpenTelemetry tests prove payload values and exception messages are not exported.
+- [ ] Approval tests prove missing/denied/error decisions fail closed.
+- [ ] Budget tests prove retries consume attempt/remote/cost limits before invocation.
+- [ ] Adapter plugin tests prove discovery does not import code and loading requires an allowlist.
+- [ ] MCP auth tests prove trusted credentials remain transport-local and protected headers cannot be overridden.
+- [ ] OpenAPI compatibility tests make unsupported semantics visible.
 
 ## Release mechanics
 

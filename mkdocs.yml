@@ -101,6 +101,7 @@ nav:
   - Guides:
       - Python tools: guides/python-tools.md
       - OpenAPI: guides/openapi.md
+      - OpenAPI compatibility: guides/openapi-compatibility.md
       - OPTIMADE: guides/optimade.md
       - MCP: guides/mcp.md
       - Human-readable documentation: guides/html-documentation.md
@@ -109,10 +110,12 @@ nav:
       - Batch, streaming, and events: guides/runtime.md
       - Retry policy: guides/retry.md
       - Execution policy: guides/execution-policy.md
+      - Third-party adapter plugins: guides/adapter-plugins.md
   - Integrations:
       - LangChain: integrations/langchain.md
       - LlamaIndex: integrations/llamaindex.md
       - Jev / TypeSafe: integrations/jev.md
+      - OpenTelemetry: integrations/opentelemetry.md
   - Recipes:
       - OpenAPI agent boundary: recipes/openapi-agent.md
       - MCP agent boundary: recipes/mcp-agent.md

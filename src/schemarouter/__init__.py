@@ -1,6 +1,13 @@
 from ._version import __version__
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .adapters.mcp import DefaultMCPClientFactory, MCPClientFactory
 from .adapters.optimade import OPTIMADESourceAdapter
+from .adapters.plugins import (
+    ADAPTER_ENTRY_POINT_GROUP,
+    AdapterPluginInfo,
+    discover_adapter_plugins,
+    load_adapter_plugins,
+)
 from .adapters.python import schema_tool, tool_from_callable
 from .analyzers import ModelCallable, ModelQueryAnalyzer
 from .decision_policy import DecisionFallback, DecisionPolicy
@@ -17,7 +24,9 @@ from .decisions import (
     choose_sync,
 )
 from .errors import (
+    ApprovalDeniedError,
     BindingDriftError,
+    ExecutionBudgetExceededError,
     ExecutionError,
     ModelAnalysisError,
     PlanningError,
@@ -44,18 +53,27 @@ from .models import (
     ToolResult,
     ToolSpec,
 )
+from .openapi_compatibility import (
+    OpenAPICompatibilityIssue,
+    OpenAPICompatibilityReport,
+    analyze_openapi_compatibility,
+)
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
-from .policy import ExecutionPolicy
+from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import SchemaProposal
 from .registry import InMemoryRegistry, ToolRegistry
-from .runs import RetryPolicy, RunConfig, RunEvent
+from .runs import ExecutionBudget, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
 
 __all__ = [
     "__version__",
+    "ADAPTER_ENTRY_POINT_GROUP",
     "AdapterContext",
     "AdapterLoadResult",
+    "AdapterPluginInfo",
     "AdapterRegistry",
+    "ApprovalCallback",
+    "ApprovalDeniedError",
     "BindingDriftError",
     "ConfiguredSchemaRouter",
     "CallableDecisionBackend",
@@ -67,8 +85,11 @@ __all__ = [
     "DecisionRequest",
     "DecisionResult",
     "DecisionSelection",
+    "DefaultMCPClientFactory",
     "EndpointSpec",
     "EvidenceRequirements",
+    "ExecutionBudget",
+    "ExecutionBudgetExceededError",
     "ExecutionError",
     "ExecutionPlan",
     "ExecutionPolicy",
@@ -76,9 +97,12 @@ __all__ = [
     "FirstOptionDecisionBackend",
     "InMemoryRegistry",
     "KeywordAnalyzer",
+    "MCPClientFactory",
     "ModelAnalysisError",
     "ModelCallable",
     "ModelQueryAnalyzer",
+    "OpenAPICompatibilityIssue",
+    "OpenAPICompatibilityReport",
     "ParameterSpec",
     "PlanRequest",
     "PlanValidationError",
@@ -108,6 +132,9 @@ __all__ = [
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
+    "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
+    "discover_adapter_plugins",
+    "load_adapter_plugins",
 ]

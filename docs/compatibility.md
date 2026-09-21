@@ -15,6 +15,7 @@ claim that every historical version inside the range is exhaustively tested.
 | LlamaIndex | `llama-index-core>=0.14,<1` | Dedicated contract tests + runnable example on Python 3.12 | Optional `schemarouter[llamaindex]` extra |
 | Jev / TypeSafe | `typesafe-sdk>=0.7,<1` | Dedicated adversarial contract tests on Python 3.12 | Optional `schemarouter[jev]` extra; no live API call in required CI |
 | MCP | `mcp>=2,<3` | Real Streamable HTTP integration against a local server | Optional `schemarouter[mcp]` extra |
+| OpenTelemetry | `opentelemetry-api/sdk>=1.44,<2` | In-memory span hierarchy, error status, and privacy tests | Optional `schemarouter[otel]` extra; core has no OTel dependency |
 | OpenAPI | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OpenAPI SDK dependency |
 | OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |
 
@@ -39,6 +40,7 @@ Every pull request runs:
 - LlamaIndex integration contract tests and `examples/llamaindex_quickstart.py`;
 - Jev adapter adversarial tests with the official SDK installed but no external API dependency;
 - real MCP Streamable HTTP integration using the official SDK and a local HTTP server;
+- OpenTelemetry integration tests using the SDK in-memory exporter;
 - strict MkDocs build.
 
 All jobs above are deterministic release blockers except the explicitly non-blocking Python 3.15
@@ -53,8 +55,8 @@ apart.
 
 Optional ecosystem bridges remain thin adapters around SchemaRouter's existing trust boundary.
 
-- The core package must import and run without LangChain, LlamaIndex, Jev/TypeSafe, or MCP
-  installed.
+- The core package must import and run without LangChain, LlamaIndex, Jev/TypeSafe, MCP, or
+  OpenTelemetry installed.
 - Integration modules use lazy imports and bounded dependency ranges.
 - An integration may translate framework/provider metadata, but execution must still flow through
   SchemaRouter schema identity, policy, binding checks, and validation.
@@ -77,7 +79,8 @@ these becomes true:
 4. the integration grows beyond a thin translation layer.
 
 The Jev provider follows the same principle: it remains an optional `schemarouter[jev]` extra and
-does not make TypeSafe a core dependency.
+does not make TypeSafe a core dependency. OpenTelemetry likewise remains an optional
+`schemarouter[otel]` exporter integration.
 
 ## External compatibility checks
 

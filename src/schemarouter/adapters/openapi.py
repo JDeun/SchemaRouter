@@ -9,6 +9,7 @@ from urllib.parse import quote, unquote, urljoin, urlparse
 import httpx
 
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
+from ..openapi_compatibility import analyze_openapi_compatibility
 
 _HTTP_METHODS = {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
 _SENSITIVE_RUNTIME_HEADERS = {
@@ -286,6 +287,7 @@ def tool_from_openapi(
                 )
             )
 
+    compatibility = analyze_openapi_compatibility(document)
     return ToolSpec(
         name=name,
         namespace=namespace,
@@ -295,6 +297,7 @@ def tool_from_openapi(
             "adapter": "openapi",
             "openapi": document.get("openapi"),
             "title": (document.get("info") or {}).get("title"),
+            "compatibility": compatibility.model_dump(mode="json", by_alias=True),
         },
     )
 

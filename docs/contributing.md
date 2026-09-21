@@ -14,13 +14,14 @@ pytest -q -m "not mcp_integration"
 python examples/quickstart.py
 
 # Check the complete typed surface and optional integrations.
-pip install -e ".[dev,mcp,langchain,llamaindex,jev]"
+pip install -e ".[dev,mcp,langchain,llamaindex,jev,otel]"
 pyright
 pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing
 ```
 
 Optional integrations have separate extras and focused tests. The required CI exercises
-LangChain, LlamaIndex, Jev/TypeSafe, and MCP independently in addition to the full coverage run.
+LangChain, LlamaIndex, Jev/TypeSafe, MCP, and OpenTelemetry independently in addition to the full
+coverage run.
 
 ## Design rules
 
@@ -33,7 +34,9 @@ Changes must preserve these principles:
 5. raw input/output values are validated before crossing the trusted execution boundary;
 6. mutations, destructive calls, and ambiguous remote side effects require local policy;
 7. observability must not expose payloads by default;
-8. integrations must call through SchemaRouter execution rather than bypassing it.
+8. integrations must call through SchemaRouter execution rather than bypassing it;
+9. installed adapter plugins must never be auto-imported from discovery alone;
+10. approval and execution-budget failures must remain fail-closed.
 
 ## Adding an adapter
 
