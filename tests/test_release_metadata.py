@@ -55,3 +55,7 @@ def test_release_workflow_uses_tag_gate_and_trusted_publishing() -> None:
     assert "pypa/gh-action-pypi-publish@release/v1" in workflow
     assert 'gh release create "$GITHUB_REF_NAME"' in workflow
     assert "prerelease_args" in workflow
+    assert "verify:" in workflow
+    assert "needs: verify" in workflow
+    assert "pyright" in workflow
+    assert "pytest -q" in workflow
