@@ -11,6 +11,7 @@ import httpx
 from pydantic import TypeAdapter
 
 from .adapters.base import AdapterRegistry, SourceAdapter
+from .adapters.mcp import MCPClientFactory
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
 from .errors import ProposalApprovalError, RegistrationError
@@ -137,6 +138,7 @@ class SchemaRouter:
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: MCPClientFactory | None = None,
     ) -> SchemaRouter:
         router = cls(
             analyzer=analyzer,
@@ -153,6 +155,7 @@ class SchemaRouter:
             base_url=base_url,
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
         )
         return router
 
@@ -323,6 +326,7 @@ class SchemaRouter:
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: MCPClientFactory | None = None,
         timeout: float = 20.0,
     ) -> ToolSpec:
         return await self.loader.load(
@@ -334,6 +338,7 @@ class SchemaRouter:
             base_url=base_url,
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
             timeout=timeout,
         )
 
