@@ -30,6 +30,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "ModelAnalysisError",
         "ModelCallable",
         "ModelQueryAnalyzer",
+        "OpenAPICompatibilityIssue",
+        "OpenAPICompatibilityReport",
         "ParameterSpec",
         "PlanRequest",
         "PlanValidationError",
@@ -59,6 +61,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "UnsupportedSchemaSourceError",
         "schema_tool",
         "tool_from_callable",
+        "analyze_openapi_compatibility",
         "choose_async",
         "choose_sync",
     }
