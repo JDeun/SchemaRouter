@@ -111,3 +111,24 @@ def test_mcp_invoker_rejects_unsafe_trusted_headers(headers: dict[str, str]) -> 
             trusted_headers=headers,
             client_factory=RecordingFactory(),
         )
+
+
+@pytest.mark.asyncio
+async def test_mcp_rejects_credentials_embedded_in_url_before_factory_use() -> None:
+    factory = RecordingFactory()
+
+    with pytest.raises(ValueError, match="must not contain credentials"):
+        await inspect_mcp_url(
+            "https://user:password@mcp.example.com/mcp",
+            client_factory=factory,
+        )
+
+    assert factory.calls == []
+
+
+def test_mcp_invoker_rejects_credentials_embedded_in_url() -> None:
+    with pytest.raises(ValueError, match="must not contain credentials"):
+        MCPRemoteInvoker(
+            "https://user:password@mcp.example.com/mcp",
+            client_factory=RecordingFactory(),
+        )
