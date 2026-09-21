@@ -2,20 +2,24 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import time
 from collections.abc import AsyncIterator, Awaitable
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 from .errors import (
+    ApprovalDeniedError,
     BindingDriftError,
+    ExecutionBudgetExceededError,
     ExecutionError,
     PlanValidationError,
     SchemaDriftError,
     SchemaValidationError,
 )
-from .models import ExecutionPlan, ToolCall, ToolResult
-from .policy import ExecutionPolicy
+from .models import EndpointSpec, ExecutionPlan, ToolCall, ToolResult, ToolSpec
+from .policy import ApprovalCallback, ExecutionPolicy, is_remote_tool
 from .registry import ToolRegistry
-from .runs import RetryPolicy
+from .runs import ExecutionBudget, RetryPolicy
 from .validation import (
     effective_input_schema,
     effective_output_schema,
@@ -31,6 +35,82 @@ class CallAwareEndpointInvoker(Protocol):
     def invoke_call(self, call: ToolCall) -> Any | Awaitable[Any]: ...
 
 
+@dataclass
+class _BudgetTracker:
+    budget: ExecutionBudget
+    started: float = field(default_factory=time.monotonic)
+    tool_calls: int = 0
+    attempts: int = 0
+    remote_attempts: int = 0
+    cost_units: float = 0.0
+    per_tool_calls: dict[str, int] = field(default_factory=dict)
+
+    def _check_elapsed(self) -> None:
+        limit = self.budget.max_elapsed_seconds
+        if limit is not None and time.monotonic() - self.started > limit:
+            raise ExecutionBudgetExceededError(
+                f"execution exceeded max_elapsed_seconds={limit}"
+            )
+
+    def before_call(self, call: ToolCall) -> None:
+        self._check_elapsed()
+        next_total = self.tool_calls + 1
+        if self.budget.max_tool_calls is not None and next_total > self.budget.max_tool_calls:
+            raise ExecutionBudgetExceededError(
+                f"execution would exceed max_tool_calls={self.budget.max_tool_calls}"
+            )
+
+        tool_total = self.per_tool_calls.get(call.tool, 0) + 1
+        tool_limit = self.budget.per_tool_calls.get(call.tool)
+        if tool_limit is not None and tool_total > tool_limit:
+            raise ExecutionBudgetExceededError(
+                f"execution would exceed per_tool_calls[{call.tool!r}]={tool_limit}"
+            )
+
+        self.tool_calls = next_total
+        self.per_tool_calls[call.tool] = tool_total
+
+    def before_attempt(self, call: ToolCall, tool: ToolSpec) -> None:
+        self._check_elapsed()
+        next_attempts = self.attempts + 1
+        if self.budget.max_attempts is not None and next_attempts > self.budget.max_attempts:
+            raise ExecutionBudgetExceededError(
+                f"execution would exceed max_attempts={self.budget.max_attempts}"
+            )
+
+        remote = is_remote_tool(tool)
+        next_remote = self.remote_attempts + (1 if remote else 0)
+        if (
+            self.budget.max_remote_attempts is not None
+            and next_remote > self.budget.max_remote_attempts
+        ):
+            raise ExecutionBudgetExceededError(
+                "execution would exceed "
+                f"max_remote_attempts={self.budget.max_remote_attempts}"
+            )
+
+        operation = f"{call.tool}.{call.endpoint}"
+        cost = self.budget.cost_units.get(
+            operation,
+            self.budget.cost_units.get(
+                call.tool,
+                self.budget.cost_units.get("*", 0.0),
+            ),
+        )
+        next_cost = self.cost_units + cost
+        if (
+            self.budget.max_cost_units is not None
+            and next_cost > self.budget.max_cost_units
+        ):
+            raise ExecutionBudgetExceededError(
+                f"execution would exceed max_cost_units={self.budget.max_cost_units}"
+            )
+
+        self.attempts = next_attempts
+        self.remote_attempts = next_remote
+        self.cost_units = next_cost
+
+
 class RegistryExecutor:
     """Executes validated plans using caller-supplied trusted invokers."""
 
@@ -39,14 +119,16 @@ class RegistryExecutor:
         registry: ToolRegistry,
         *,
         policy: ExecutionPolicy | None = None,
+        approval_callback: ApprovalCallback | None = None,
     ) -> None:
         self.registry = registry
         self.policy = policy or ExecutionPolicy()
+        self.approval_callback = approval_callback
         self._invokers: dict[str, EndpointInvoker] = {}
         self._binding_fingerprints: dict[str, str] = {}
 
     def bind(self, tool_key: str, invoker: EndpointInvoker) -> None:
-        tool = self.registry.get(tool_key)  # fail early for unknown tool
+        tool = self.registry.get(tool_key)
         self._invokers[tool_key] = invoker
         self._binding_fingerprints[tool_key] = tool.fingerprint
 
@@ -110,24 +192,58 @@ class RegistryExecutor:
                 f"explicit output projection required for {call.tool}.{call.endpoint}"
             )
 
+    async def _approve(
+        self,
+        tool: ToolSpec,
+        endpoint: EndpointSpec,
+        call: ToolCall,
+    ) -> None:
+        if not self.policy.requires_approval(endpoint):
+            return
+        if self.approval_callback is None:
+            raise ApprovalDeniedError(
+                f"operation {call.tool}.{call.endpoint} requires trusted local approval"
+            )
+        try:
+            decision = self.approval_callback(tool, endpoint, call)
+            if inspect.isawaitable(decision):
+                decision = await decision
+        except ApprovalDeniedError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            raise ApprovalDeniedError(
+                f"approval callback failed closed for {call.tool}.{call.endpoint}"
+            ) from exc
+        if decision is not True:
+            raise ApprovalDeniedError(
+                f"operation {call.tool}.{call.endpoint} was not approved"
+            )
+
     async def execute_call(
         self,
         call: ToolCall,
         *,
         retry: RetryPolicy | None = None,
+        budget: ExecutionBudget | None = None,
+        _tracker: _BudgetTracker | None = None,
     ) -> ToolResult:
         self.validate_call(call)
         endpoint = self.registry.endpoint(call.tool, call.endpoint)
+        tool = self.registry.get(call.tool)
         invoker = self._invokers.get(call.tool)
         if invoker is None:
             raise ExecutionError(f"no invoker bound for tool {call.tool!r}")
 
-        current_tool = self.registry.get(call.tool)
         bound_fingerprint = self._binding_fingerprints.get(call.tool)
-        if bound_fingerprint != current_tool.fingerprint:
+        if bound_fingerprint != tool.fingerprint:
             raise BindingDriftError(
                 f"invoker binding is stale for tool {call.tool!r}; rebind before execution"
             )
+
+        await self._approve(tool, endpoint, call)
+
+        tracker = _tracker or _BudgetTracker(budget or ExecutionBudget())
+        tracker.before_call(call)
 
         retry = retry or RetryPolicy()
         can_retry = endpoint.read_only is True or retry.retry_non_read_only
@@ -136,6 +252,7 @@ class RegistryExecutor:
 
         last_error: Exception | None = None
         for attempt in range(1, max_attempts + 1):
+            tracker.before_attempt(call, tool)
             try:
                 invoke_call = getattr(invoker, "invoke_call", None)
                 call_aware = callable(invoke_call)
@@ -161,9 +278,7 @@ class RegistryExecutor:
                     data=projected,
                     projected_fields=call.fields,
                 )
-            except SchemaValidationError:
-                # Contract violations are deterministic from SchemaRouter's perspective.
-                # Retrying would only repeat invalid data and can hide a broken provider.
+            except (SchemaValidationError, ExecutionBudgetExceededError):
                 raise
             except Exception as exc:  # noqa: BLE001
                 last_error = exc
@@ -185,10 +300,11 @@ class RegistryExecutor:
         plan: ExecutionPlan,
         *,
         retry: RetryPolicy | None = None,
+        budget: ExecutionBudget | None = None,
     ) -> list[ToolResult]:
         return [
             result
-            async for result in self.execute_iter(plan, retry=retry)
+            async for result in self.execute_iter(plan, retry=retry, budget=budget)
         ]
 
     async def execute_iter(
@@ -196,9 +312,16 @@ class RegistryExecutor:
         plan: ExecutionPlan,
         *,
         retry: RetryPolicy | None = None,
+        budget: ExecutionBudget | None = None,
     ) -> AsyncIterator[ToolResult]:
+        tracker = _BudgetTracker(budget or ExecutionBudget())
         for call in plan.calls:
-            yield await self.execute_call(call, retry=retry)
+            yield await self.execute_call(
+                call,
+                retry=retry,
+                budget=budget,
+                _tracker=tracker,
+            )
 
     @staticmethod
     def _project(value: Any, fields: list[str]) -> Any:
