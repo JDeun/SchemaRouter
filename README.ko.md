@@ -304,6 +304,7 @@ python scripts/benchmark_decision_routing.py
 # 선택형 통합을 포함한 전체 패키지 surface 타입 검사
 pip install -e ".[dev,mcp,langchain,llamaindex,jev]"
 pyright
+pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing
 ```
 
 선택형 통합은 코어 의존성과 분리되어 있습니다.
