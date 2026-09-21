@@ -4,6 +4,7 @@ import pytest
 
 from schemarouter import (
     ApprovalDeniedError,
+    BindingDriftError,
     EndpointSpec,
     ExecutionBudget,
     ExecutionBudgetExceededError,
@@ -350,7 +351,5 @@ async def test_registry_drift_during_async_approval_fails_closed() -> None:
     )
     executor.bind("demo", lambda endpoint_name, arguments: {"ok": True})
 
-    from schemarouter import SchemaDriftError
-
-    with pytest.raises(SchemaDriftError):
+    with pytest.raises(BindingDriftError):
         await executor.execute(plan)
