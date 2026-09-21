@@ -319,7 +319,11 @@ async def benchmark_planner(
             output_tokens = metadata.get("output_tokens")
             abstained = bool(getattr(result, "abstained", False))
             invalid_plan = predicted is not None and predicted not in allowed_routes
-            correct = abstained if case.expect_abstain else predicted == case.expected
+            correct = (
+                predicted is None
+                if case.expect_abstain
+                else predicted == case.expected
+            )
 
             rows.append(
                 BenchmarkRow(
