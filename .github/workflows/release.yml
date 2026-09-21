@@ -77,15 +77,23 @@ jobs:
         with:
           name: python-dist
           path: dist
-      - name: Create GitHub prerelease
+      - name: Create or update GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/* \
-            --title "SchemaRouter 0.2.0a1" \
-            --notes-file "docs/releases/0.2.0a1.md" \
-            --prerelease \
-            --verify-tag
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
+            gh release edit "$GITHUB_REF_NAME" \
+              --title "SchemaRouter 0.2.0a1" \
+              --notes-file "docs/releases/0.2.0a1.md" \
+              --prerelease
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* \
+              --title "SchemaRouter 0.2.0a1" \
+              --notes-file "docs/releases/0.2.0a1.md" \
+              --prerelease \
+              --verify-tag
+          fi
 
   pypi:
     needs: build
