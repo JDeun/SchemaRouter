@@ -122,6 +122,16 @@ def test_jev_unknown_choice_fails_closed() -> None:
         choose_sync(JevDecisionBackend(client=client), request())
 
 
+def test_jev_unknown_choice_cannot_hide_behind_low_confidence() -> None:
+    client = FakeSyncClient(FakeResponse("candidate:evil", 0.01))
+
+    with pytest.raises(PlanningError, match="unknown option"):
+        choose_sync(
+            JevDecisionBackend(client=client, min_confidence=0.5),
+            request(),
+        )
+
+
 @pytest.mark.parametrize("confidence", [math.nan, math.inf, -0.1, 1.1])
 def test_jev_rejects_invalid_confidence(confidence: float) -> None:
     client = FakeSyncClient(FakeResponse("candidate:0", confidence))
