@@ -20,6 +20,8 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Security
 
+- OpenAPI runtime responses are now streamed through a bounded reader with a 16 MiB default limit,
+  enforcing the bound both from declared `Content-Length` and actual bytes received;
 - Jev option IDs are validated before confidence-based abstention, so unknown IDs always fail
   closed;
 - Jev credentials remain SDK client configuration and are never placed in model state;

@@ -61,8 +61,9 @@ policy before passing those URLs to SchemaRouter. A hosted service should normal
 - use egress controls where possible.
 
 SchemaRouter restricts schema/document redirects to the original origin and restricts OpenAPI
-runtime calls to an explicitly approved origin, but those checks do not replace an application's
-initial URL admission policy.
+runtime calls to an explicitly approved origin. OpenAPI runtime responses are streamed through a
+bounded reader with a 16 MiB default limit, matching the bounded-response posture used by the
+OPTIMADE adapter. These checks do not replace an application's initial URL admission policy.
 
 ### Observability
 

@@ -1,3 +1,6 @@
+import gzip
+
+import httpx
 import pytest
 
 from schemarouter import (
@@ -346,3 +349,152 @@ def test_openapi_parameter_name_collisions_are_disambiguated() -> None:
         "header__id",
         "body__id",
     }
+
+class ChunkedBody(httpx.AsyncByteStream):
+    def __init__(self, *chunks: bytes) -> None:
+        self.chunks = chunks
+
+    async def __aiter__(self):
+        for chunk in self.chunks:
+            yield chunk
+
+
+@pytest.mark.asyncio
+async def test_openapi_invoker_rejects_oversized_declared_response() -> None:
+    tool = ToolSpec(
+        name="manual",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                method="GET",
+                path="/read",
+            )
+        ],
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={
+                "content-type": "application/json",
+                "content-length": "1024",
+            },
+            content=b"{}",
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        invoker = OpenAPIRemoteInvoker(
+            tool,
+            "https://api.example.com",
+            max_response_bytes=16,
+            http_client=client,
+        )
+        with pytest.raises(RuntimeError, match="exceeds 16 byte safety limit"):
+            await invoker("read", {})
+
+
+@pytest.mark.asyncio
+async def test_openapi_invoker_rejects_streamed_response_over_limit() -> None:
+    tool = ToolSpec(
+        name="manual",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                method="GET",
+                path="/read",
+            )
+        ],
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={"content-type": "text/plain"},
+            stream=ChunkedBody(b"12345678", b"9"),
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        invoker = OpenAPIRemoteInvoker(
+            tool,
+            "https://api.example.com",
+            max_response_bytes=8,
+            http_client=client,
+        )
+        with pytest.raises(RuntimeError, match="exceeds 8 byte safety limit"):
+            await invoker("read", {})
+
+
+@pytest.mark.asyncio
+async def test_openapi_invoker_decodes_bounded_json_response() -> None:
+    tool = ToolSpec(
+        name="manual",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                method="GET",
+                path="/read",
+            )
+        ],
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={"content-type": "application/json"},
+            json={"ok": True},
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        invoker = OpenAPIRemoteInvoker(
+            tool,
+            "https://api.example.com",
+            max_response_bytes=1024,
+            http_client=client,
+        )
+        assert await invoker("read", {}) == {"ok": True}
+
+
+@pytest.mark.parametrize("max_response_bytes", [0, -1, True, 1.5])
+def test_openapi_invoker_rejects_invalid_response_limit(max_response_bytes: object) -> None:
+    tool = ToolSpec(
+        name="manual",
+        endpoints=[EndpointSpec(name="read", method="GET", path="/read")],
+    )
+    with pytest.raises(ValueError, match="max_response_bytes"):
+        OpenAPIRemoteInvoker(
+            tool,
+            "https://api.example.com",
+            max_response_bytes=max_response_bytes,  # type: ignore[arg-type]
+        )
+
+@pytest.mark.asyncio
+async def test_openapi_invoker_handles_compressed_json_without_double_decoding() -> None:
+    tool = ToolSpec(
+        name="manual",
+        endpoints=[EndpointSpec(name="read", method="GET", path="/read")],
+    )
+    compressed = gzip.compress(b'{"ok": true}')
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            headers={
+                "content-type": "application/json",
+                "content-encoding": "gzip",
+            },
+            content=compressed,
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        invoker = OpenAPIRemoteInvoker(
+            tool,
+            "https://api.example.com",
+            max_response_bytes=1024,
+            http_client=client,
+        )
+        assert await invoker("read", {}) == {"ok": True}
+
