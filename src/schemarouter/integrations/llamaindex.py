@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from copy import deepcopy
 from typing import Any
 
-from pydantic import ConfigDict, create_model
+from pydantic import BaseModel, ConfigDict, create_model
 
 from ..models import ToolCall
 from ..runtime import SchemaRouter
@@ -37,7 +37,7 @@ def _llamaindex_schema_model(
     schema: dict[str, Any],
     *,
     model_name: str,
-):
+) -> type[BaseModel]:
     """Build a Pydantic schema carrier for LlamaIndex tool metadata.
 
     LlamaIndex requires fn_schema to be a BaseModel class, while SchemaRouter
@@ -67,10 +67,18 @@ def _llamaindex_schema_model(
         field_name: (Any, ... if field_name in required else None)
         for field_name in property_names
     }
-    extra = "forbid" if exported.get("additionalProperties") is False else "allow"
-    config = ConfigDict(extra=extra, json_schema_extra=exported)
+    extra_mode = "forbid" if exported.get("additionalProperties") is False else "allow"
+
+    class SchemaCarrier(BaseModel):
+        model_config = ConfigDict(extra=extra_mode)
+
+        @classmethod
+        def model_json_schema(cls, *args: Any, **kwargs: Any) -> dict[str, Any]:
+            del cls, args, kwargs
+            return deepcopy(exported)
+
     safe_name = re.sub(r"[^A-Za-z0-9_]+", "_", model_name) or "SchemaRouterArgs"
-    return create_model(safe_name, __config__=config, **fields)
+    return create_model(safe_name, __base__=SchemaCarrier, **fields)
 
 
 def _sync_await(coroutine_factory):
