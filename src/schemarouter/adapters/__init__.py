@@ -1,5 +1,11 @@
 from .base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
-from .mcp import MCPRemoteInvoker, inspect_mcp_url, tool_from_mcp
+from .mcp import (
+    DefaultMCPClientFactory,
+    MCPClientFactory,
+    MCPRemoteInvoker,
+    inspect_mcp_url,
+    tool_from_mcp,
+)
 from .openapi import OpenAPIRemoteInvoker, resolve_openapi_base_url, tool_from_openapi
 from ..openapi_compatibility import (
     OpenAPICompatibilityIssue,
@@ -18,6 +24,8 @@ __all__ = [
     "AdapterContext",
     "AdapterLoadResult",
     "AdapterRegistry",
+    "DefaultMCPClientFactory",
+    "MCPClientFactory",
     "MCPRemoteInvoker",
     "OPTIMADERemoteInvoker",
     "OPTIMADESourceAdapter",
