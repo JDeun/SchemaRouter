@@ -3,6 +3,7 @@ from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, S
 from .adapters.optimade import OPTIMADESourceAdapter
 from .adapters.python import schema_tool, tool_from_callable
 from .analyzers import ModelCallable, ModelQueryAnalyzer
+from .decision_policy import DecisionFallback, DecisionPolicy
 from .decisions import (
     CallableDecisionBackend,
     DecisionBackend,
@@ -59,6 +60,8 @@ __all__ = [
     "ConfiguredSchemaRouter",
     "CallableDecisionBackend",
     "DecisionBackend",
+    "DecisionFallback",
+    "DecisionPolicy",
     "DecisionCallable",
     "DecisionOption",
     "DecisionRequest",
