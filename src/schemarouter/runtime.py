@@ -12,6 +12,7 @@ from pydantic import TypeAdapter
 
 from .adapters.base import AdapterRegistry, SourceAdapter
 from .adapters.mcp import MCPClientFactory
+from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
 from .errors import ProposalApprovalError, RegistrationError
@@ -180,6 +181,18 @@ class SchemaRouter:
     @property
     def adapter_registry(self) -> AdapterRegistry:
         return self.loader.adapters
+
+    def load_adapter_plugins(
+        self,
+        *,
+        allowlist: set[str] | list[str] | tuple[str, ...],
+        replace: bool = False,
+    ) -> tuple[str, ...]:
+        return _load_adapter_plugins(
+            self.loader.adapters,
+            allowlist=allowlist,
+            replace=replace,
+        )
 
     def add_callable(
         self,
