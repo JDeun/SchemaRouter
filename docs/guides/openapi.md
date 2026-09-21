@@ -80,3 +80,13 @@ Supported paths include:
 
 Richer external references, advanced composition, and more ergonomic non-object request bodies remain
 post-v0.1 work. Unsupported constructs should not be guessed.
+
+
+## Runtime response bound
+
+OpenAPI runtime responses are streamed and capped at **16 MiB by default** before JSON/text decoding.
+The bound applies even when a server omits or lies about `Content-Length`.
+
+When constructing `OpenAPIRemoteInvoker` manually, trusted local code may choose a smaller or
+larger positive integer through `max_response_bytes`. Keep the limit appropriate for the endpoint
+contract; a high limit weakens protection against unexpectedly large remote responses.
