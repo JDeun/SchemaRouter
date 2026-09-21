@@ -25,7 +25,9 @@ This document tracks framework-level maturity rather than research metrics.
 | Runtime policy | Implemented | Add per-call approval / budgets / quotas |
 | Runtime JSON Schema validation | Implemented | Add richer nested projection |
 | LangChain / LlamaIndex integrations | Implemented optional adapters | Add LangGraph-native nodes and ecosystem listings |
-| Bounded decision backends | Implemented, opt-in and experimental | Add provider adapters behind the finite-option contract |
+| Bounded decision backends | Implemented, opt-in | Extend dedicated field/evidence contracts |
+| Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
+| Decision benchmark harness | Implemented | Expand datasets and publish reproducible measurements |
 | Framework callbacks / exporters | Typed redacted event stream | Add callback manager / OpenTelemetry exporters |
 | Middleware interception | Policy-specific only | Add trusted before/after hooks |
 | Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
@@ -65,8 +67,8 @@ Python callables can be registered directly through `add_callable()` and optiona
 
 ### 4. Integrations should be optional
 
-The core package should not become a dependency aggregator. Ecosystem bridges such as LangChain and
-LlamaIndex belong behind optional extras and lazy imports.
+The core package should not become a dependency aggregator. Ecosystem bridges and decision
+providers belong behind optional extras and lazy imports.
 
 ### 5. Observability must not weaken privacy
 
@@ -89,22 +91,23 @@ compiler/runtime boundary for tool schemas.
 
 ### Gate A — published alpha baseline
 
-- public API examples;
-- live OpenAPI compatibility tests;
-- live MCP compatibility tests;
-- API versioning/deprecation policy;
-- release checklist;
-- MIT license metadata and release artifact verification.
+The package, documentation, release automation, deterministic compatibility tests, and public
+OpenAPI/OPTIMADE smokes are in place.
 
 ### Gate B — ecosystem-ready
 
+Completed locally:
+
 - runnable LangChain and LlamaIndex examples;
 - published ecosystem compatibility and maintenance policy;
+- optional Jev decision provider with adversarial contract tests;
+- provider-neutral decision benchmark harness.
+
+Still external or follow-up work:
+
 - upstream ecosystem listing/discussion requests;
-- callback/exporter API;
-- OpenTelemetry-compatible trace exporter;
+- broader live benchmark evidence;
 - LangGraph-native integration;
-- trusted local MCP side-effect classification;
 - richer OpenAPI references and schema composition.
 
 ### Gate C — production operations
@@ -113,4 +116,5 @@ compiler/runtime boundary for tool schemas.
 - quotas/cost budgets;
 - per-call human approval;
 - replayable execution traces;
+- callback/exporter and OpenTelemetry support;
 - benchmark and compatibility dashboard.
