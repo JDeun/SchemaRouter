@@ -9,6 +9,8 @@
 
 **Schema-aware planning and execution for LLM tool ecosystems.**
 
+[English](README.md) · [한국어](README.ko.md)
+
 [![CI](https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml/badge.svg)](https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml)
 [![Docs](https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg)](https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/JDeun/SchemaRouter/blob/main/LICENSE)
@@ -34,8 +36,9 @@ SchemaRouter is intentionally narrower than LangChain or LangGraph. It is design
 OPTIMADE, Python callables, and third-party adapter protocols.
 
 > Status: **0.2.0a1 published alpha**. Install it from PyPI with
-> `pip install --pre schemarouter`. The current main branch also contains opt-in bounded decision
-> backends and first-class LangChain/LlamaIndex integration work for the next release.
+> `pip install --pre schemarouter`. Current main also contains opt-in bounded decision backends,
+> LangChain/LlamaIndex integrations, and an optional Jev / TypeSafe System One decision provider
+> for the next release.
 
 ## Why
 
@@ -174,13 +177,9 @@ evidence-grounded proposal and then requires explicit approval.
 
 ## With LangChain
 
-Install the optional integration:
-
 ```bash
 pip install "schemarouter[langchain]"
 ```
-
-Then expose registered endpoints as LangChain `StructuredTool` objects:
 
 ```python
 from schemarouter.integrations import to_langchain_tools
@@ -192,13 +191,9 @@ Execution still flows through SchemaRouter's policy, fingerprint, input, and out
 
 ## With LlamaIndex
 
-Install the optional integration:
-
 ```bash
 pip install "schemarouter[llamaindex]"
 ```
-
-Then expose registered endpoints as LlamaIndex `FunctionTool` objects:
 
 ```python
 from schemarouter.integrations import to_llamaindex_tools
@@ -212,9 +207,51 @@ endpoint execution.
 ## Experimental bounded decisions
 
 The next release adds an optional bounded `DecisionBackend` for tool/endpoint selection. It is
-**off by default** and cannot invent executable schema members. Applications may enable it
-selectively and retain deterministic fallback behavior. Jev-style/System-One providers belong
-behind this provider-neutral interface rather than in SchemaRouter core.
+**off by default** and cannot invent executable schema members.
+
+```python
+from schemarouter import DecisionPolicy, SchemaPlanner
+from schemarouter.integrations import JevDecisionBackend
+
+planner = SchemaPlanner(
+    registry,
+    decision_backend=JevDecisionBackend(min_confidence=0.65),
+    decision_policy=DecisionPolicy(
+        enabled=True,
+        endpoint_selection=True,
+        fallback="deterministic",
+    ),
+)
+```
+
+Jev / TypeSafe System One is optional:
+
+```bash
+pip install "schemarouter[jev]"
+export TYPESAFE_API_KEY="..."
+```
+
+The provider receives only bounded decision inputs. Unknown option IDs fail closed, low-confidence
+valid choices can abstain, and deterministic fallback remains available. Jev is never enabled just
+because the package or an API key exists.
+
+## Decision benchmark
+
+Run the deterministic baseline:
+
+```bash
+python scripts/benchmark_decision_routing.py
+```
+
+Compare Jev when credentials are available:
+
+```bash
+TYPESAFE_API_KEY="..." python scripts/benchmark_decision_routing.py --jev
+```
+
+The harness reports routing accuracy, abstentions, latency, token usage, errors, and optional cost
+estimates. A provider-neutral `ModelQueryAnalyzer` callable can also be supplied with
+`--model-callable module:function`.
 
 ## Documentation
 
@@ -227,7 +264,9 @@ Full documentation is organized as a framework manual rather than embedded in th
 - [MCP guide](https://jdeun.github.io/SchemaRouter/guides/mcp/)
 - [LangChain integration](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
 - [LlamaIndex integration](https://jdeun.github.io/SchemaRouter/integrations/llamaindex/)
+- [Jev / TypeSafe integration](https://jdeun.github.io/SchemaRouter/integrations/jev/)
 - [Decision backends](https://jdeun.github.io/SchemaRouter/concepts/decision-backends/)
+- [Decision benchmark](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
 - [Architecture](https://jdeun.github.io/SchemaRouter/architecture/)
 - [Security](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md)
@@ -249,6 +288,7 @@ pip install -e ".[dev]"
 ruff check .
 pytest -q -m "not mcp_integration"
 python examples/quickstart.py
+python scripts/benchmark_decision_routing.py
 ```
 
 Optional integration suites are isolated from the core package:
@@ -262,6 +302,9 @@ pytest -q tests/test_langchain_integration.py
 
 pip install -e ".[dev,llamaindex]"
 pytest -q tests/test_llamaindex_integration.py
+
+pip install -e ".[dev,jev]"
+pytest -q tests/test_jev_integration.py
 ```
 
 ## Project scope
