@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "schemarouter"
-version = "0.2.0a1"
+version = "0.3.0.dev0"
 description = "Schema-aware planning and execution layer for LLM tool ecosystems"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -24,6 +24,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Typing :: Typed",
   "Intended Audience :: Developers",
   "Topic :: Software Development :: Libraries :: Python Modules",
@@ -49,6 +50,7 @@ docs = [
 ]
 dev = [
   "build>=1.2",
+  "pyright>=1.1,<2",
   "pytest>=8.2",
   "pytest-asyncio>=0.23",
   "ruff>=0.6",
@@ -80,3 +82,9 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[tool.pyright]
+include = ["src/schemarouter"]
+pythonVersion = "3.10"
+typeCheckingMode = "standard"
+reportMissingTypeStubs = false
