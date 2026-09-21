@@ -191,9 +191,13 @@ Execution still flows through SchemaRouter's policy, fingerprint, input, and out
 
 ## With LlamaIndex
 
+The LlamaIndex bridge is on current unreleased `main`:
+
 ```bash
-pip install "schemarouter[llamaindex]"
+pip install -e ".[llamaindex]"
 ```
+
+The packaged extra will be `schemarouter[llamaindex]` in the next release.
 
 ```python
 from schemarouter.integrations import to_llamaindex_tools
@@ -224,12 +228,14 @@ planner = SchemaPlanner(
 )
 ```
 
-Jev / TypeSafe System One is optional:
+Jev / TypeSafe System One is optional and currently on unreleased `main`:
 
 ```bash
-pip install "schemarouter[jev]"
+pip install -e ".[jev]"
 export TYPESAFE_API_KEY="..."
 ```
+
+The packaged extra will be `schemarouter[jev]` in the next release.
 
 The provider receives only bounded decision inputs. Unknown option IDs fail closed, low-confidence
 valid choices can abstain, and deterministic fallback remains available. Jev is never enabled just
