@@ -24,6 +24,10 @@ def test_llamaindex_tool_preserves_metadata_and_sync_execution() -> None:
 
     assert tool.metadata.name == "schemarouter__add__call"
     assert tool.metadata.description == "Add two integers."
+    parameters = tool.metadata.get_parameters_dict()
+    assert parameters["properties"]["a"]["type"] == "integer"
+    assert parameters["properties"]["b"]["type"] == "integer"
+    assert set(parameters["required"]) == {"a", "b"}
     assert tool(a=2, b=3).raw_output == 5
 
 
