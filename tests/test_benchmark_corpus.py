@@ -41,3 +41,27 @@ def test_benchmark_loader_validates_corpus_against_reference_catalog() -> None:
     assert len(cases) >= 100
     assert all(case.expected in allowed for case in cases if not case.expect_abstain)
     assert all(case.expected is None for case in cases if case.expect_abstain)
+
+
+
+def test_benchmark_keeps_final_route_accuracy_separate_from_abstention_recall() -> None:
+    module = _benchmark_module()
+    row = module.BenchmarkRow(
+        backend="bounded",
+        case_id="abstain",
+        category="adversarial",
+        query="out of domain",
+        expected=None,
+        predicted="weather.current",
+        correct=False,
+        invalid_plan=False,
+        latency_ms=1.0,
+        abstained=True,
+        fallback_used=True,
+    )
+
+    summary = module.summarize([row])
+
+    assert summary["accuracy"] == 0.0
+    assert summary["expected_abstention_recall"] == 1.0
+    assert summary["fallbacks"] == 1
