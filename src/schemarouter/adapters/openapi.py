@@ -21,6 +21,7 @@ _SENSITIVE_RUNTIME_HEADERS = {
     "upgrade",
 }
 _HEADER_NAME_RE = re.compile(r"^[!#$%&'*+.^_\x60|~0-9A-Za-z-]+$")
+_MAX_RUNTIME_RESPONSE_BYTES = 16 * 1024 * 1024
 
 
 def _resolve_local_ref(document: dict[str, Any], value: Any) -> Any:
@@ -327,6 +328,8 @@ class OpenAPIRemoteInvoker:
         *,
         trusted_headers: dict[str, str] | None = None,
         timeout: float = 20.0,
+        max_response_bytes: int = _MAX_RUNTIME_RESPONSE_BYTES,
+        http_client: httpx.AsyncClient | None = None,
     ) -> None:
         parsed_base = urlparse(base_url)
         if parsed_base.scheme not in {"http", "https"} or not parsed_base.netloc:
@@ -348,8 +351,13 @@ class OpenAPIRemoteInvoker:
         self.base_url = base_url.rstrip("/")
         self.approved_origin = _origin(base_url)
         self.trusted_headers = trusted
+        if isinstance(max_response_bytes, bool) or max_response_bytes <= 0:
+            raise ValueError("max_response_bytes must be a positive integer")
+
         self.trusted_header_names = set(trusted_names)
         self.timeout = timeout
+        self.max_response_bytes = max_response_bytes
+        self.http_client = http_client
 
     async def __call__(self, endpoint_name: str, arguments: dict[str, Any]) -> Any:
         endpoint = self.tool.endpoint(endpoint_name)
@@ -403,16 +411,59 @@ class OpenAPIRemoteInvoker:
         if _origin(url) != self.approved_origin:
             raise RuntimeError("endpoint path escaped the approved API origin")
 
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=False) as client:
-            response = await client.request(
+        owns_client = self.http_client is None
+        client = self.http_client or httpx.AsyncClient(
+            timeout=self.timeout,
+            follow_redirects=False,
+        )
+        try:
+            async with client.stream(
                 endpoint.method,
                 url,
                 params=query or None,
                 json=body or None,
                 headers=headers or None,
-            )
-            response.raise_for_status()
-            content_type = response.headers.get("content-type", "").lower()
-            if "json" in content_type:
-                return response.json()
-            return {"text": response.text}
+                follow_redirects=False,
+            ) as response:
+                response.raise_for_status()
+
+                content_length = response.headers.get("content-length")
+                if content_length is not None:
+                    try:
+                        declared_size = int(content_length)
+                    except ValueError:
+                        declared_size = None
+                    if (
+                        declared_size is not None
+                        and declared_size > self.max_response_bytes
+                    ):
+                        raise RuntimeError(
+                            "OpenAPI response exceeds "
+                            f"{self.max_response_bytes} byte safety limit"
+                        )
+
+                chunks: list[bytes] = []
+                total = 0
+                async for chunk in response.aiter_bytes():
+                    total += len(chunk)
+                    if total > self.max_response_bytes:
+                        raise RuntimeError(
+                            "OpenAPI response exceeds "
+                            f"{self.max_response_bytes} byte safety limit"
+                        )
+                    chunks.append(chunk)
+
+                bounded = httpx.Response(
+                    status_code=response.status_code,
+                    headers=response.headers,
+                    content=b"".join(chunks),
+                    request=response.request,
+                )
+        finally:
+            if owns_client:
+                await client.aclose()
+
+        content_type = bounded.headers.get("content-type", "").lower()
+        if "json" in content_type:
+            return bounded.json()
+        return {"text": bounded.text}
