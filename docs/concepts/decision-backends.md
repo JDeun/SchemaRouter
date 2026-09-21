@@ -59,11 +59,13 @@ remain unchanged.
 
 ## Jev / TypeSafe System One
 
-SchemaRouter includes an optional `JevDecisionBackend`:
+SchemaRouter includes an optional `JevDecisionBackend` on current unreleased `main`:
 
 ```bash
-pip install "schemarouter[jev]"
+pip install -e ".[jev]"
 ```
+
+The normal packaged extra name will be `schemarouter[jev]` in the next release.
 
 ```python
 from schemarouter.integrations import JevDecisionBackend
