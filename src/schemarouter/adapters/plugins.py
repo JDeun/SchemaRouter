@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Collection
 from dataclasses import dataclass
 from importlib import metadata
-from typing import Any
+from typing import Any, cast
 
 from .base import AdapterRegistry, SourceAdapter
 
@@ -77,7 +77,7 @@ def _coerce_adapter(value: Any) -> SourceAdapter:
         raise TypeError("adapter plugin must expose an integer priority")
     if not callable(loader):
         raise TypeError("adapter plugin must expose an async-compatible load method")
-    return candidate
+    return cast(SourceAdapter, candidate)
 
 
 def load_adapter_plugins(
