@@ -33,8 +33,9 @@ SchemaRouter is intentionally narrower than LangChain or LangGraph. It is design
 **tool-schema boundary** between an agent and structured capability sources such as OpenAPI, MCP,
 OPTIMADE, Python callables, and third-party adapter protocols.
 
-> Status: **0.2.0a1 pre-release candidate**. The adapter ecosystem, OPTIMADE support, package
-> artifact, and public OpenAPI/OPTIMADE compatibility smokes are release-gated in CI.
+> Status: **0.2.0a1 published alpha**. Install it from PyPI with
+> `pip install --pre schemarouter`. The current main branch also contains opt-in bounded decision
+> backends and first-class LangChain/LlamaIndex integration work for the next release.
 
 ## Why
 
@@ -121,7 +122,7 @@ into the protocol's `response_fields` query parameter before execution.
 ### MCP
 
 ```bash
-pip install -e ".[mcp]"
+pip install "schemarouter[mcp]"
 ```
 
 ```python
@@ -176,7 +177,7 @@ evidence-grounded proposal and then requires explicit approval.
 Install the optional integration:
 
 ```bash
-pip install -e ".[langchain]"
+pip install "schemarouter[langchain]"
 ```
 
 Then expose registered endpoints as LangChain `StructuredTool` objects:
@@ -189,6 +190,32 @@ tools = to_langchain_tools(router)
 
 Execution still flows through SchemaRouter's policy, fingerprint, input, and output validation.
 
+## With LlamaIndex
+
+Install the optional integration:
+
+```bash
+pip install "schemarouter[llamaindex]"
+```
+
+Then expose registered endpoints as LlamaIndex `FunctionTool` objects:
+
+```python
+from schemarouter.integrations import to_llamaindex_tools
+
+tools = to_llamaindex_tools(router)
+```
+
+LlamaIndex remains the agent/workflow layer; SchemaRouter retains schema identity, validation, and
+endpoint execution.
+
+## Experimental bounded decisions
+
+The next release adds an optional bounded `DecisionBackend` for tool/endpoint selection. It is
+**off by default** and cannot invent executable schema members. Applications may enable it
+selectively and retain deterministic fallback behavior. Jev-style/System-One providers belong
+behind this provider-neutral interface rather than in SchemaRouter core.
+
 ## Documentation
 
 Full documentation is organized as a framework manual rather than embedded in this README:
@@ -199,6 +226,8 @@ Full documentation is organized as a framework manual rather than embedded in th
 - [OPTIMADE guide](https://jdeun.github.io/SchemaRouter/guides/optimade/)
 - [MCP guide](https://jdeun.github.io/SchemaRouter/guides/mcp/)
 - [LangChain integration](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
+- [LlamaIndex integration](https://jdeun.github.io/SchemaRouter/integrations/llamaindex/)
+- [Decision backends](https://jdeun.github.io/SchemaRouter/concepts/decision-backends/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
 - [Architecture](https://jdeun.github.io/SchemaRouter/architecture/)
 - [Security](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md)
@@ -230,6 +259,9 @@ pytest -q tests/test_mcp_integration.py
 
 pip install -e ".[dev,langchain]"
 pytest -q tests/test_langchain_integration.py
+
+pip install -e ".[dev,llamaindex]"
+pytest -q tests/test_llamaindex_integration.py
 ```
 
 ## Project scope
