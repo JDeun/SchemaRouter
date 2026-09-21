@@ -9,6 +9,7 @@ from opentelemetry.trace import StatusCode
 
 from schemarouter import (
     EndpointSpec,
+    ExecutionError,
     FieldSpec,
     ParameterSpec,
     PlanRequest,
@@ -119,7 +120,7 @@ async def test_otel_exporter_marks_tool_and_run_errors_without_exporting_message
     exporter = OpenTelemetryRunExporter(tracer)
     router = _router(fail=True)
 
-    with pytest.raises(Exception):
+    with pytest.raises(ExecutionError):
         async for _ in trace_run_events(
             router.astream_events(
                 PlanRequest(
