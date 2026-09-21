@@ -77,23 +77,25 @@ class OpenTelemetryRunExporter:
             return
 
         if event.event == "tool.start":
-            key = self._tool_key(event)
-            if key is None:
+            tool = event.tool
+            endpoint = event.endpoint
+            if tool is None or endpoint is None:
                 raise SchemaRouterError("tool.start requires tool and endpoint")
+            key = (event.run_id, tool, endpoint)
             if key in self._tool_spans:
                 raise SchemaRouterError(
-                    f"duplicate tool.start for {event.tool}.{event.endpoint}"
+                    f"duplicate tool.start for {tool}.{endpoint}"
                 )
             parent = self._trace.set_span_in_context(run_span)
             self._tool_spans[key] = self.tracer.start_span(
-                f"schemarouter.tool {event.tool}.{event.endpoint}",
+                f"schemarouter.tool {tool}.{endpoint}",
                 context=parent,
                 start_time=timestamp,
                 attributes={
                     "schemarouter.run_id": event.run_id,
                     "schemarouter.sequence": event.sequence,
-                    "schemarouter.tool": event.tool,
-                    "schemarouter.endpoint": event.endpoint,
+                    "schemarouter.tool": tool,
+                    "schemarouter.endpoint": endpoint,
                     "schemarouter.argument_count": len(event.data.get("argument_names", [])),
                     "schemarouter.selected_field_count": len(event.data.get("fields", [])),
                 },
