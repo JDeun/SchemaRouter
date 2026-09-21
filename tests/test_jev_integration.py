@@ -166,7 +166,9 @@ def test_sync_mode_rejects_async_client() -> None:
         choose_sync(JevDecisionBackend(client=client), request())
 
 
-def test_credentials_are_client_configuration_not_model_state(\n    monkeypatch: pytest.MonkeyPatch,\n) -> None:
+def test_credentials_are_client_configuration_not_model_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     captured: dict[str, Any] = {}
 
     class SDKClient:
