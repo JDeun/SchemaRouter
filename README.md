@@ -36,9 +36,9 @@ SchemaRouter is intentionally narrower than LangChain or LangGraph. It is design
 OPTIMADE, Python callables, and third-party adapter protocols.
 
 > Status: **0.2.0a1 published alpha**. Install it from PyPI with
-> `pip install --pre schemarouter`. Current main also contains opt-in bounded decision backends,
-> LangChain/LlamaIndex integrations, and an optional Jev / TypeSafe System One decision provider
-> for the next release.
+> `pip install --pre schemarouter`. Current `main` identifies itself as **0.3.0.dev0** and
+> contains opt-in bounded decision backends, LangChain/LlamaIndex integrations, and an optional
+> Jev / TypeSafe System One decision provider for the next release.
 
 ## Why
 
@@ -292,6 +292,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 ruff check .
+pyright
 pytest -q -m "not mcp_integration"
 python examples/quickstart.py
 python scripts/benchmark_decision_routing.py
