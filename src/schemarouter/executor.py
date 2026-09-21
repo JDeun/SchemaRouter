@@ -280,7 +280,7 @@ class RegistryExecutor:
                             if remaining is not None
                             else await value
                         )
-                    except TimeoutError as exc:
+                    except asyncio.TimeoutError as exc:
                         raise ExecutionBudgetExceededError(
                             "execution exceeded max_elapsed_seconds during invocation"
                         ) from exc
