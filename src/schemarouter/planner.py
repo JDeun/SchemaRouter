@@ -266,7 +266,11 @@ class SchemaPlanner:
         for candidate in candidates[: request.max_calls]:
             endpoint = candidate.endpoint
             declared = {parameter.name: parameter for parameter in endpoint.parameters}
-            arguments = {name: value for name, value in intent.arguments.items() if name in declared}
+            arguments = {
+                name: value
+                for name, value in intent.arguments.items()
+                if name in declared
+            }
             dropped = sorted(set(intent.arguments) - set(arguments))
             if dropped:
                 warnings.append(
