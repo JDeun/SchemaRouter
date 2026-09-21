@@ -297,7 +297,7 @@ def tool_from_openapi(
             "adapter": "openapi",
             "openapi": document.get("openapi"),
             "title": (document.get("info") or {}).get("title"),
-            "compatibility": compatibility.model_dump(mode="json"),
+            "compatibility": compatibility.model_dump(mode="json", by_alias=True),
         },
     )
 
