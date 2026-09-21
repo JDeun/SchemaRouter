@@ -12,8 +12,8 @@ from pydantic import TypeAdapter
 
 from .adapters.base import AdapterRegistry, SourceAdapter
 from .adapters.mcp import MCPClientFactory
-from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.openapi import OpenAPIRemoteInvoker
+from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
 from .errors import ProposalApprovalError, RegistrationError
 from .executor import ExecutionBudgetTracker, RegistryExecutor
