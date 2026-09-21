@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 import math
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import Awaitable, Callable
 from typing import Any, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -36,7 +36,7 @@ class DecisionRequest(_DecisionModel):
     context: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def validate_bounds(self) -> "DecisionRequest":
+    def validate_bounds(self) -> DecisionRequest:
         ids = [option.id for option in self.options]
         if len(ids) != len(set(ids)):
             raise ValueError("decision option IDs must be unique")
@@ -50,7 +50,7 @@ class DecisionSelection(_DecisionModel):
     score: float | None = Field(default=None, ge=0.0, le=1.0)
 
     @model_validator(mode="after")
-    def validate_finite_score(self) -> "DecisionSelection":
+    def validate_finite_score(self) -> DecisionSelection:
         if self.score is not None and not math.isfinite(self.score):
             raise ValueError("decision scores must be finite")
         return self
@@ -62,7 +62,7 @@ class DecisionResult(_DecisionModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def validate_abstention(self) -> "DecisionResult":
+    def validate_abstention(self) -> DecisionResult:
         if self.abstained and self.selections:
             raise ValueError("an abstaining decision cannot contain selections")
         return self
