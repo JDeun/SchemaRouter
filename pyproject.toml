@@ -36,6 +36,9 @@ mcp = [
 langchain = [
   "langchain-core>=1.6,<2",
 ]
+llamaindex = [
+  "llama-index-core>=0.14,<1",
+]
 docs = [
   "mkdocs-material>=9.7,<10",
   "mkdocstrings>=1,<2",
