@@ -162,21 +162,30 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                     location,
                     construct,
                     "partial",
-                    f"{construct} is preserved for runtime validation but is not fully flattened for planning.",
+                    (
+                        f"{construct} is preserved for runtime validation but is not fully "
+                        "flattened for planning."
+                    ),
                 )
         if node.get("nullable") is True and version_text and version_text.startswith("3.0"):
             add(
                 location,
                 "nullable",
                 "partial",
-                "OpenAPI 3.0 nullable semantics are preserved but not rewritten into JSON Schema unions.",
+                (
+                    "OpenAPI 3.0 nullable semantics are preserved but not rewritten into "
+                    "JSON Schema unions."
+                ),
             )
         if "discriminator" in node:
             add(
                 location,
                 "discriminator",
                 "partial",
-                "Discriminator metadata is preserved but not used for planner-side variant selection.",
+                (
+                    "Discriminator metadata is preserved but not used for planner-side "
+                    "variant selection."
+                ),
             )
 
     for name in sorted(_recursive_component_refs(document)):
@@ -184,7 +193,10 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
             f"#/components/schemas/{name}",
             "recursive_ref",
             "partial",
-            "Recursive local references remain available to runtime validation but are not recursively flattened.",
+            (
+                "Recursive local references remain available to runtime validation but are "
+                "not recursively flattened."
+            ),
         )
 
     operations_total = 0
@@ -208,7 +220,8 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                 }:
                     continue
                 operations_total += 1
-                op_location = f"#/paths/{path.replace('~', '~0').replace('/', '~1')}/{method_lower}"
+                escaped_path = path.replace("~", "~0").replace("/", "~1")
+                op_location = f"#/paths/{escaped_path}/{method_lower}"
                 if not isinstance(operation, dict):
                     add(
                         op_location,
@@ -228,8 +241,16 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                 operations_importable += 1
 
                 parameters = [
-                    *(path_item.get("parameters", []) if isinstance(path_item.get("parameters"), list) else []),
-                    *(operation.get("parameters", []) if isinstance(operation.get("parameters"), list) else []),
+                    *(
+                        path_item.get("parameters", [])
+                        if isinstance(path_item.get("parameters"), list)
+                        else []
+                    ),
+                    *(
+                        operation.get("parameters", [])
+                        if isinstance(operation.get("parameters"), list)
+                        else []
+                    ),
                 ]
                 for index, parameter in enumerate(parameters):
                     resolved = parameter
@@ -242,7 +263,10 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                             f"{op_location}/parameters/{index}",
                             "cookie_parameter",
                             "unsupported",
-                            "Cookie parameters are not model-selectable or emitted by the OpenAPI invoker.",
+                            (
+                                "Cookie parameters are not model-selectable or emitted by the "
+                                "OpenAPI invoker."
+                            ),
                         )
 
                 request_body = operation.get("requestBody")
@@ -266,25 +290,41 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                                 f"{op_location}/requestBody/content",
                                 "non_json_request_body",
                                 "unsupported",
-                                "Request bodies without application/json are not compiled for execution.",
+                                (
+                                    "Request bodies without application/json are not compiled "
+                                    "for execution."
+                                ),
                             )
                         else:
                             media = content.get("application/json")
                             schema = media.get("schema") if isinstance(media, dict) else None
-                            if isinstance(schema, dict) and isinstance(schema.get("$ref"), str):
+                            if (
+                                isinstance(schema, dict)
+                                and isinstance(schema.get("$ref"), str)
+                            ):
                                 target = _local_ref_target(document, schema["$ref"])
                                 if isinstance(target, dict):
                                     schema = target
                             if isinstance(schema, dict):
                                 schema_type = schema.get("type")
                                 has_properties = isinstance(schema.get("properties"), dict)
-                                composed = any(key in schema for key in ("allOf", "oneOf", "anyOf"))
-                                if schema_type not in {None, "object"} and not has_properties and not composed:
+                                composed = any(
+                                    key in schema
+                                    for key in ("allOf", "oneOf", "anyOf")
+                                )
+                                if (
+                                    schema_type not in {None, "object"}
+                                    and not has_properties
+                                    and not composed
+                                ):
                                     add(
                                         f"{op_location}/requestBody/content/application~1json/schema",
                                         "non_object_request_body",
                                         "unsupported",
-                                        "Non-object JSON request bodies cannot be represented as named parameters.",
+                                        (
+                                            "Non-object JSON request bodies cannot be "
+                                            "represented as named parameters."
+                                        ),
                                     )
 
                 responses = operation.get("responses")
@@ -293,7 +333,10 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                         if not str(code).startswith("2"):
                             continue
                         resolved_response = response
-                        if isinstance(response, dict) and isinstance(response.get("$ref"), str):
+                        if (
+                            isinstance(response, dict)
+                            and isinstance(response.get("$ref"), str)
+                        ):
                             target = _local_ref_target(document, response["$ref"])
                             if isinstance(target, dict):
                                 resolved_response = target
@@ -318,7 +361,10 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                                     f"{op_location}/responses/{code}/content",
                                     "non_json_response",
                                     "unsupported",
-                                    "Non-JSON response schemas are not imported for output validation.",
+                                    (
+                                        "Non-JSON response schemas are not imported for output "
+                                        "validation."
+                                    ),
                                 )
                         break
 
@@ -334,7 +380,10 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                         f"{op_location}/security",
                         "security_requirements",
                         "partial",
-                        "Security requirements are preserved as metadata; credentials must be bound locally.",
+                        (
+                            "Security requirements are preserved as metadata; credentials must "
+                            "be bound locally."
+                        ),
                     )
 
     if document.get("webhooks"):
