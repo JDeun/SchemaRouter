@@ -292,10 +292,13 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 ruff check .
-pyright
 pytest -q -m "not mcp_integration"
 python examples/quickstart.py
 python scripts/benchmark_decision_routing.py
+
+# Type-check the complete packaged surface, including optional integrations.
+pip install -e ".[dev,mcp,langchain,llamaindex,jev]"
+pyright
 ```
 
 Optional integration suites are isolated from the core package:
