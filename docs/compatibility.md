@@ -45,6 +45,10 @@ All jobs above are deterministic release blockers except the explicitly non-bloc
 preview. The preview exists to surface upcoming interpreter incompatibilities before Python 3.15
 becomes a supported stable release.
 
+The same CI workflow is reusable and is invoked by the tag-based release workflow before release
+artifacts are built or published. This prevents pull-request and release quality gates from drifting
+apart.
+
 ## Integration maintenance policy
 
 Optional ecosystem bridges remain thin adapters around SchemaRouter's existing trust boundary.
