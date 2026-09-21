@@ -7,7 +7,7 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Core CI passes on every supported Python version.
 - [ ] Warnings are treated as failures.
 - [ ] Static type checking passes for the typed package surface.
-- [ ] The configured branch-coverage floor passes.
+- [ ] The 82% branch-coverage floor passes.
 - [ ] Minimum declared runtime dependencies pass the core suite.
 - [ ] Optional integration CI passes.
 - [ ] Linux core CI passes on Python 3.10 through 3.14.
