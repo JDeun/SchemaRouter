@@ -3,6 +3,18 @@ from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, S
 from .adapters.optimade import OPTIMADESourceAdapter
 from .adapters.python import schema_tool, tool_from_callable
 from .analyzers import ModelCallable, ModelQueryAnalyzer
+from .decisions import (
+    CallableDecisionBackend,
+    DecisionBackend,
+    DecisionCallable,
+    DecisionOption,
+    DecisionRequest,
+    DecisionResult,
+    DecisionSelection,
+    FirstOptionDecisionBackend,
+    choose_async,
+    choose_sync,
+)
 from .errors import (
     BindingDriftError,
     ExecutionError,
@@ -45,12 +57,20 @@ __all__ = [
     "AdapterRegistry",
     "BindingDriftError",
     "ConfiguredSchemaRouter",
+    "CallableDecisionBackend",
+    "DecisionBackend",
+    "DecisionCallable",
+    "DecisionOption",
+    "DecisionRequest",
+    "DecisionResult",
+    "DecisionSelection",
     "EndpointSpec",
     "EvidenceRequirements",
     "ExecutionError",
     "ExecutionPlan",
     "ExecutionPolicy",
     "FieldSpec",
+    "FirstOptionDecisionBackend",
     "InMemoryRegistry",
     "KeywordAnalyzer",
     "ModelAnalysisError",
@@ -85,4 +105,6 @@ __all__ = [
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
+    "choose_async",
+    "choose_sync",
 ]
