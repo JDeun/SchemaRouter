@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from datetime import datetime, timezone
 from typing import Any, Literal
 
@@ -37,8 +38,13 @@ class ExecutionBudget(StrictModel):
     def validate_maps(self) -> ExecutionBudget:
         if any(not key.strip() or value < 0 for key, value in self.per_tool_calls.items()):
             raise ValueError("per_tool_calls requires non-empty keys and non-negative limits")
-        if any(not key.strip() or value < 0 for key, value in self.cost_units.items()):
-            raise ValueError("cost_units requires non-empty keys and non-negative costs")
+        if self.max_cost_units is not None and not math.isfinite(self.max_cost_units):
+            raise ValueError("max_cost_units must be finite")
+        if any(
+            not key.strip() or value < 0 or not math.isfinite(value)
+            for key, value in self.cost_units.items()
+        ):
+            raise ValueError("cost_units requires non-empty keys and finite non-negative costs")
         return self
 
 
