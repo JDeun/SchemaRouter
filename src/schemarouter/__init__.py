@@ -1,5 +1,6 @@
 from ._version import __version__
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .adapters.mcp import DefaultMCPClientFactory, MCPClientFactory
 from .adapters.optimade import OPTIMADESourceAdapter
 from .adapters.python import schema_tool, tool_from_callable
 from .analyzers import ModelCallable, ModelQueryAnalyzer
@@ -72,6 +73,7 @@ __all__ = [
     "DecisionRequest",
     "DecisionResult",
     "DecisionSelection",
+    "DefaultMCPClientFactory",
     "EndpointSpec",
     "EvidenceRequirements",
     "ExecutionError",
@@ -81,6 +83,7 @@ __all__ = [
     "FirstOptionDecisionBackend",
     "InMemoryRegistry",
     "KeywordAnalyzer",
+    "MCPClientFactory",
     "ModelAnalysisError",
     "ModelCallable",
     "ModelQueryAnalyzer",
