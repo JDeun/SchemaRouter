@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from copy import deepcopy
 from typing import Any
@@ -457,17 +458,13 @@ class OpenAPIRemoteInvoker:
                         )
                     chunks.append(chunk)
 
-                bounded = httpx.Response(
-                    status_code=response.status_code,
-                    headers=response.headers,
-                    content=b"".join(chunks),
-                    request=response.request,
-                )
+                content = b"".join(chunks)
+                content_type = response.headers.get("content-type", "").lower()
+                encoding = response.encoding or "utf-8"
         finally:
             if owns_client:
                 await client.aclose()
 
-        content_type = bounded.headers.get("content-type", "").lower()
         if "json" in content_type:
-            return bounded.json()
-        return {"text": bounded.text}
+            return json.loads(content)
+        return {"text": content.decode(encoding, errors="replace")}
