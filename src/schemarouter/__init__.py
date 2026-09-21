@@ -32,6 +32,11 @@ from .errors import (
     UnsupportedSchemaSourceError,
 )
 from .executor import RegistryExecutor
+from .openapi_compatibility import (
+    OpenAPICompatibilityIssue,
+    OpenAPICompatibilityReport,
+    analyze_openapi_compatibility,
+)
 from .models import (
     EndpointSpec,
     EvidenceRequirements,
@@ -79,6 +84,8 @@ __all__ = [
     "ModelAnalysisError",
     "ModelCallable",
     "ModelQueryAnalyzer",
+    "OpenAPICompatibilityIssue",
+    "OpenAPICompatibilityReport",
     "ParameterSpec",
     "PlanRequest",
     "PlanValidationError",
@@ -108,6 +115,7 @@ __all__ = [
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
+    "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
 ]
