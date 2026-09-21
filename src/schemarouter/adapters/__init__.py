@@ -13,6 +13,12 @@ from ..openapi_compatibility import (
     analyze_openapi_compatibility,
 )
 from .optimade import OPTIMADERemoteInvoker, OPTIMADESourceAdapter
+from .plugins import (
+    ADAPTER_ENTRY_POINT_GROUP,
+    AdapterPluginInfo,
+    discover_adapter_plugins,
+    load_adapter_plugins,
+)
 from .python import (
     PythonCallableInvoker,
     callable_options,
@@ -22,7 +28,9 @@ from .python import (
 
 __all__ = [
     "AdapterContext",
+    "ADAPTER_ENTRY_POINT_GROUP",
     "AdapterLoadResult",
+    "AdapterPluginInfo",
     "AdapterRegistry",
     "DefaultMCPClientFactory",
     "MCPClientFactory",
@@ -36,7 +44,9 @@ __all__ = [
     "SourceAdapter",
     "analyze_openapi_compatibility",
     "callable_options",
+    "discover_adapter_plugins",
     "inspect_mcp_url",
+    "load_adapter_plugins",
     "resolve_openapi_base_url",
     "schema_tool",
     "tool_from_callable",
