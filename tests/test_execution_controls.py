@@ -261,3 +261,96 @@ def test_budget_rejects_non_finite_costs(value: float) -> None:
 
     with pytest.raises(ValueError):
         ExecutionBudget(cost_units={"demo.run": value})
+
+
+@pytest.mark.asyncio
+async def test_approval_callback_receives_detached_call_snapshot() -> None:
+    seen_arguments = []
+
+    def approve(tool, endpoint, call):
+        call.arguments["injected"] = "attacker"
+        seen_arguments.append(dict(call.arguments))
+        return True
+
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="demo",
+        endpoints=[EndpointSpec(name="run", read_only=True)],
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("demo", "run")
+    call = ToolCall(
+        tool="demo",
+        endpoint="run",
+        schema_fingerprint=endpoint.fingerprint,
+    )
+    plan = ExecutionPlan(
+        query="run",
+        registry_version=registry.version,
+        calls=[call],
+    )
+    executor = RegistryExecutor(
+        registry,
+        policy=ExecutionPolicy(approval_mode="all"),
+        approval_callback=approve,
+    )
+    invoked_arguments = []
+
+    def invoke(endpoint_name, arguments):
+        invoked_arguments.append(dict(arguments))
+        return {"ok": True}
+
+    executor.bind("demo", invoke)
+    result = await executor.execute(plan)
+
+    assert result[0].data == {"ok": True}
+    assert seen_arguments == [{"injected": "attacker"}]
+    assert invoked_arguments == [{}]
+    assert call.arguments == {}
+
+
+@pytest.mark.asyncio
+async def test_registry_drift_during_async_approval_fails_closed() -> None:
+    registry = InMemoryRegistry()
+    original = ToolSpec(
+        name="demo",
+        endpoints=[EndpointSpec(name="run", read_only=True)],
+    )
+    registry.register(original)
+    endpoint = registry.endpoint("demo", "run")
+    call = ToolCall(
+        tool="demo",
+        endpoint="run",
+        schema_fingerprint=endpoint.fingerprint,
+    )
+    plan = ExecutionPlan(
+        query="run",
+        registry_version=registry.version,
+        calls=[call],
+    )
+
+    async def approve(tool, approved_endpoint, approved_call):
+        replacement = ToolSpec(
+            name="demo",
+            endpoints=[
+                EndpointSpec(
+                    name="run",
+                    read_only=True,
+                    metadata={"revision": 2},
+                )
+            ],
+        )
+        registry.register(replacement, replace=True)
+        return True
+
+    executor = RegistryExecutor(
+        registry,
+        policy=ExecutionPolicy(approval_mode="all"),
+        approval_callback=approve,
+    )
+    executor.bind("demo", lambda endpoint_name, arguments: {"ok": True})
+
+    from schemarouter import SchemaDriftError
+
+    with pytest.raises(SchemaDriftError):
+        await executor.execute(plan)
