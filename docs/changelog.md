@@ -16,7 +16,16 @@ The project is pre-1.0 and follows the compatibility rules in
 - provider-neutral decision-routing benchmark harness covering accuracy, abstention, latency,
   token usage, and optional cost estimation;
 - explicit ecosystem compatibility matrix and integration maintenance policy;
-- Korean project overview in `README.ko.md`.
+- Korean project overview in `README.ko.md`;
+- Python 3.13 core CI coverage;
+- a Pyright static-type gate for the typed package surface.
+
+### Changed
+
+- current `main` now identifies as `0.3.0.dev0`, separating unreleased development builds from
+  the published `0.2.0a1` alpha;
+- release automation now derives version, release title, release-note path, prerelease state, and
+  artifact verification from `pyproject.toml` instead of hard-coded release literals.
 
 ### Security
 
