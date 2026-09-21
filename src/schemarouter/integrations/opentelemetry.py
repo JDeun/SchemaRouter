@@ -146,9 +146,20 @@ class OpenTelemetryRunExporter:
             return
 
     def close(self) -> None:
-        """Fail closed if the supplied event sequence was incomplete."""
-        if self._run_spans or self._tool_spans:
-            raise SchemaRouterError("OpenTelemetry exporter has unfinished spans")
+        """End unfinished spans as errors without disrupting application cleanup."""
+        if not self._run_spans and not self._tool_spans:
+            return
+        from opentelemetry.trace import Status, StatusCode
+
+        for span in self._tool_spans.values():
+            span.set_status(Status(StatusCode.ERROR, "event stream ended before tool completion"))
+            span.end()
+        self._tool_spans.clear()
+
+        for span in self._run_spans.values():
+            span.set_status(Status(StatusCode.ERROR, "event stream ended before run completion"))
+            span.end()
+        self._run_spans.clear()
 
 
 async def trace_run_events(
