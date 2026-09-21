@@ -32,7 +32,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - release automation now derives version, release title, release-note path, prerelease state, and
   artifact verification from `pyproject.toml` instead of hard-coded release literals;
 - tag releases reuse the same full CI quality workflow as pull requests and verify both wheel and
-  sdist artifacts in clean environments before publication.
+  sdist artifacts in clean environments before publication;
+- superseded pull-request CI runs are cancelled automatically to avoid stale validation consuming
+  runner capacity.
 
 ### Security
 
