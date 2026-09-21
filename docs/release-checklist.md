@@ -43,6 +43,7 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 
 - [ ] Replace the development version in `pyproject.toml` with the intended release version.
 - [ ] Add `docs/releases/<version>.md`; release metadata is derived from this version automatically.
+- [ ] The tag workflow invokes the reusable full CI quality suite before artifact build.
 - [ ] Build from a clean checkout.
 - [ ] Run the full test suite against the built artifact.
 - [ ] Create an annotated Git tag.
