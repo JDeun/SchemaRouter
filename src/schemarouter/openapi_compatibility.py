@@ -15,7 +15,7 @@ class OpenAPICompatibilityIssue(StrictModel):
     """One explicit compatibility limitation found in an OpenAPI document."""
 
     location: str
-    construct: str
+    schema_construct: str = Field(alias="construct", serialization_alias="construct")
     support: Literal["partial", "unsupported"]
     message: str
 
