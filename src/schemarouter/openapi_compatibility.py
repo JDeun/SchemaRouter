@@ -1,0 +1,374 @@
+from __future__ import annotations
+
+from collections import Counter
+from typing import Any, Literal
+from urllib.parse import unquote, urlparse
+
+from pydantic import Field
+
+from .models import StrictModel
+
+OpenAPISupport = Literal["supported", "partial", "unsupported"]
+
+
+class OpenAPICompatibilityIssue(StrictModel):
+    """One explicit compatibility limitation found in an OpenAPI document."""
+
+    location: str
+    construct: str
+    support: Literal["partial", "unsupported"]
+    message: str
+
+
+class OpenAPICompatibilityReport(StrictModel):
+    """Machine-readable summary of SchemaRouter's OpenAPI import fidelity."""
+
+    openapi_version: str | None = None
+    status: OpenAPISupport
+    operations_total: int = Field(ge=0)
+    operations_importable: int = Field(ge=0)
+    issues: list[OpenAPICompatibilityIssue] = Field(default_factory=list)
+    counts: dict[str, int] = Field(default_factory=dict)
+
+
+def _pointer(parts: tuple[str, ...]) -> str:
+    if not parts:
+        return "#"
+    encoded = [part.replace("~", "~0").replace("/", "~1") for part in parts]
+    return "#/" + "/".join(encoded)
+
+
+def _safe_path(path: str) -> bool:
+    parsed = urlparse(path)
+    if (
+        not path.startswith("/")
+        or parsed.scheme
+        or parsed.netloc
+        or parsed.query
+        or parsed.fragment
+    ):
+        return False
+    return all(unquote(segment).casefold() not in {".", ".."} for segment in parsed.path.split("/"))
+
+
+def _walk(node: Any, parts: tuple[str, ...] = ()):
+    yield parts, node
+    if isinstance(node, dict):
+        for key, value in node.items():
+            yield from _walk(value, (*parts, str(key)))
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            yield from _walk(value, (*parts, str(index)))
+
+
+def _local_ref_target(document: dict[str, Any], ref: str) -> Any | None:
+    if not ref.startswith("#/"):
+        return None
+    node: Any = document
+    try:
+        for part in ref[2:].split("/"):
+            part = part.replace("~1", "/").replace("~0", "~")
+            node = node[part]
+    except (KeyError, TypeError, IndexError):
+        return None
+    return node
+
+
+def _collect_schema_refs(node: Any) -> set[str]:
+    refs: set[str] = set()
+    for _, value in _walk(node):
+        if isinstance(value, dict) and isinstance(value.get("$ref"), str):
+            refs.add(value["$ref"])
+    return refs
+
+
+def _recursive_component_refs(document: dict[str, Any]) -> set[str]:
+    components = document.get("components")
+    schemas = components.get("schemas") if isinstance(components, dict) else None
+    if not isinstance(schemas, dict):
+        return set()
+
+    graph: dict[str, set[str]] = {}
+    prefix = "#/components/schemas/"
+    for name, schema in schemas.items():
+        targets: set[str] = set()
+        for ref in _collect_schema_refs(schema):
+            if ref.startswith(prefix):
+                target = ref[len(prefix) :].replace("~1", "/").replace("~0", "~")
+                if target in schemas:
+                    targets.add(target)
+        graph[str(name)] = targets
+
+    recursive: set[str] = set()
+
+    def visit(name: str, path: list[str]) -> None:
+        if name in path:
+            start = path.index(name)
+            recursive.update(path[start:])
+            return
+        if name not in graph:
+            return
+        for target in graph[name]:
+            visit(target, [*path, name])
+
+    for name in graph:
+        visit(name, [])
+    return recursive
+
+
+def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibilityReport:
+    """Report constructs SchemaRouter preserves, partially interprets, or cannot import safely."""
+
+    issues: list[OpenAPICompatibilityIssue] = []
+    issue_keys: set[tuple[str, str, str]] = set()
+
+    def add(
+        location: str,
+        construct: str,
+        support: Literal["partial", "unsupported"],
+        message: str,
+    ) -> None:
+        key = (location, construct, support)
+        if key in issue_keys:
+            return
+        issue_keys.add(key)
+        issues.append(
+            OpenAPICompatibilityIssue(
+                location=location,
+                construct=construct,
+                support=support,
+                message=message,
+            )
+        )
+
+    version = document.get("openapi")
+    version_text = str(version) if isinstance(version, str) else None
+
+    for parts, node in _walk(document):
+        if not isinstance(node, dict):
+            continue
+        location = _pointer(parts)
+        ref = node.get("$ref")
+        if isinstance(ref, str) and not ref.startswith("#/"):
+            add(
+                location,
+                "external_ref",
+                "unsupported",
+                "External $ref targets are not fetched or resolved automatically.",
+            )
+        for construct in ("allOf", "oneOf", "anyOf"):
+            if construct in node:
+                add(
+                    location,
+                    construct,
+                    "partial",
+                    f"{construct} is preserved for runtime validation but is not fully flattened for planning.",
+                )
+        if node.get("nullable") is True and version_text and version_text.startswith("3.0"):
+            add(
+                location,
+                "nullable",
+                "partial",
+                "OpenAPI 3.0 nullable semantics are preserved but not rewritten into JSON Schema unions.",
+            )
+        if "discriminator" in node:
+            add(
+                location,
+                "discriminator",
+                "partial",
+                "Discriminator metadata is preserved but not used for planner-side variant selection.",
+            )
+
+    for name in sorted(_recursive_component_refs(document)):
+        add(
+            f"#/components/schemas/{name}",
+            "recursive_ref",
+            "partial",
+            "Recursive local references remain available to runtime validation but are not recursively flattened.",
+        )
+
+    operations_total = 0
+    operations_importable = 0
+    paths = document.get("paths")
+    if isinstance(paths, dict):
+        for path, path_item in paths.items():
+            if not isinstance(path, str) or not isinstance(path_item, dict):
+                continue
+            for method, operation in path_item.items():
+                method_lower = str(method).lower()
+                if method_lower not in {
+                    "get",
+                    "post",
+                    "put",
+                    "patch",
+                    "delete",
+                    "options",
+                    "head",
+                    "trace",
+                }:
+                    continue
+                operations_total += 1
+                op_location = f"#/paths/{path.replace('~', '~0').replace('/', '~1')}/{method_lower}"
+                if not isinstance(operation, dict):
+                    add(
+                        op_location,
+                        "operation_shape",
+                        "unsupported",
+                        "Operation must be an object.",
+                    )
+                    continue
+                if not _safe_path(path):
+                    add(
+                        op_location,
+                        "unsafe_path",
+                        "unsupported",
+                        "Unsafe or non-relative operation paths are skipped.",
+                    )
+                    continue
+                operations_importable += 1
+
+                parameters = [
+                    *(path_item.get("parameters", []) if isinstance(path_item.get("parameters"), list) else []),
+                    *(operation.get("parameters", []) if isinstance(operation.get("parameters"), list) else []),
+                ]
+                for index, parameter in enumerate(parameters):
+                    resolved = parameter
+                    if isinstance(parameter, dict) and isinstance(parameter.get("$ref"), str):
+                        target = _local_ref_target(document, parameter["$ref"])
+                        if target is not None:
+                            resolved = target
+                    if isinstance(resolved, dict) and resolved.get("in") == "cookie":
+                        add(
+                            f"{op_location}/parameters/{index}",
+                            "cookie_parameter",
+                            "unsupported",
+                            "Cookie parameters are not model-selectable or emitted by the OpenAPI invoker.",
+                        )
+
+                request_body = operation.get("requestBody")
+                if isinstance(request_body, dict) and isinstance(request_body.get("$ref"), str):
+                    resolved = _local_ref_target(document, request_body["$ref"])
+                    if isinstance(resolved, dict):
+                        request_body = resolved
+                if isinstance(request_body, dict):
+                    content = request_body.get("content")
+                    if isinstance(content, dict) and content:
+                        media_types = list(content)
+                        if len(media_types) > 1:
+                            add(
+                                f"{op_location}/requestBody/content",
+                                "multiple_request_content_types",
+                                "partial",
+                                "Only application/json is compiled into body parameters.",
+                            )
+                        if "application/json" not in content:
+                            add(
+                                f"{op_location}/requestBody/content",
+                                "non_json_request_body",
+                                "unsupported",
+                                "Request bodies without application/json are not compiled for execution.",
+                            )
+                        else:
+                            media = content.get("application/json")
+                            schema = media.get("schema") if isinstance(media, dict) else None
+                            if isinstance(schema, dict) and isinstance(schema.get("$ref"), str):
+                                target = _local_ref_target(document, schema["$ref"])
+                                if isinstance(target, dict):
+                                    schema = target
+                            if isinstance(schema, dict):
+                                schema_type = schema.get("type")
+                                has_properties = isinstance(schema.get("properties"), dict)
+                                composed = any(key in schema for key in ("allOf", "oneOf", "anyOf"))
+                                if schema_type not in {None, "object"} and not has_properties and not composed:
+                                    add(
+                                        f"{op_location}/requestBody/content/application~1json/schema",
+                                        "non_object_request_body",
+                                        "unsupported",
+                                        "Non-object JSON request bodies cannot be represented as named parameters.",
+                                    )
+
+                responses = operation.get("responses")
+                if isinstance(responses, dict):
+                    for code, response in responses.items():
+                        if not str(code).startswith("2"):
+                            continue
+                        resolved_response = response
+                        if isinstance(response, dict) and isinstance(response.get("$ref"), str):
+                            target = _local_ref_target(document, response["$ref"])
+                            if isinstance(target, dict):
+                                resolved_response = target
+                        content = (
+                            resolved_response.get("content")
+                            if isinstance(resolved_response, dict)
+                            else None
+                        )
+                        if isinstance(content, dict) and content:
+                            if len(content) > 1:
+                                add(
+                                    f"{op_location}/responses/{code}/content",
+                                    "multiple_response_content_types",
+                                    "partial",
+                                    "SchemaRouter selects a JSON response schema for validation.",
+                                )
+                            if not any(
+                                media in content
+                                for media in ("application/json", "application/problem+json")
+                            ):
+                                add(
+                                    f"{op_location}/responses/{code}/content",
+                                    "non_json_response",
+                                    "unsupported",
+                                    "Non-JSON response schemas are not imported for output validation.",
+                                )
+                        break
+
+                if operation.get("callbacks"):
+                    add(
+                        f"{op_location}/callbacks",
+                        "callbacks",
+                        "unsupported",
+                        "OpenAPI callbacks are not registered as executable endpoints.",
+                    )
+                if "security" in operation:
+                    add(
+                        f"{op_location}/security",
+                        "security_requirements",
+                        "partial",
+                        "Security requirements are preserved as metadata; credentials must be bound locally.",
+                    )
+
+    if document.get("webhooks"):
+        add(
+            "#/webhooks",
+            "webhooks",
+            "unsupported",
+            "OpenAPI webhooks are not registered as executable endpoints.",
+        )
+
+    servers = document.get("servers")
+    if isinstance(servers, list):
+        for index, server in enumerate(servers):
+            if isinstance(server, dict) and server.get("variables"):
+                add(
+                    f"#/servers/{index}/variables",
+                    "server_variables",
+                    "partial",
+                    "Server variables are not expanded automatically; bind an explicit base URL.",
+                )
+
+    counts = Counter(issue.support for issue in issues)
+    if not issues:
+        status: OpenAPISupport = "supported"
+    elif operations_importable == 0 and operations_total > 0:
+        status = "unsupported"
+    else:
+        status = "partial"
+
+    return OpenAPICompatibilityReport(
+        openapi_version=version_text,
+        status=status,
+        operations_total=operations_total,
+        operations_importable=operations_importable,
+        issues=issues,
+        counts={key: counts.get(key, 0) for key in ("partial", "unsupported")},
+    )
