@@ -110,6 +110,7 @@ nav:
       - Execution policy: guides/execution-policy.md
   - Integrations:
       - LangChain: integrations/langchain.md
+      - LlamaIndex: integrations/llamaindex.md
   - Recipes:
       - OpenAPI agent boundary: recipes/openapi-agent.md
       - MCP agent boundary: recipes/mcp-agent.md
