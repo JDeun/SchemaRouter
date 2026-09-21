@@ -55,7 +55,24 @@ def test_release_workflow_uses_tag_gate_and_trusted_publishing() -> None:
     assert "pypa/gh-action-pypi-publish@release/v1" in workflow
     assert 'gh release create "$GITHUB_REF_NAME"' in workflow
     assert "prerelease_args" in workflow
-    assert "verify:" in workflow
-    assert "needs: verify" in workflow
-    assert "pyright" in workflow
-    assert "pytest -q" in workflow
+    assert "quality:" in workflow
+    assert "uses: ./.github/workflows/ci.yml" in workflow
+    assert "needs: quality" in workflow
+    assert 'glob.glob("dist/*.tar.gz")[0]' in workflow
+    assert 'subprocess.check_call([str(python), "examples/quickstart.py"])' in workflow
+
+
+
+def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
+    workflow = (
+        ROOT / ".github" / "workflows" / "ci.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "workflow_call:" in workflow
+    assert '"3.14"' in workflow
+    assert '"3.15.0-rc.2"' in workflow
+    assert "windows-smoke:" in workflow
+    assert "minimum-dependencies:" in workflow
+    assert "coverage:" in workflow
+    assert "--cov-branch" in workflow
+    assert 'dist/*.tar.gz' in workflow
