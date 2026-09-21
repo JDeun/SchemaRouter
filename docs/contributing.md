@@ -57,7 +57,7 @@ A change is not complete until:
 - tests cover its public behavior and adversarial failure cases;
 - warnings remain clean;
 - supported Python versions pass, including the Windows smoke surface;
-- Pyright and the configured coverage floor pass;
+- Pyright and the 82% branch-coverage floor pass;
 - minimum declared runtime dependencies remain usable;
 - wheel and sdist clean-install smokes pass;
 - public behavior is documented;
