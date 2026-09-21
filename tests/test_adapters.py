@@ -455,8 +455,8 @@ async def test_openapi_invoker_decodes_bounded_json_response() -> None:
         assert await invoker("read", {}) == {"ok": True}
 
 
-@pytest.mark.parametrize("max_response_bytes", [0, -1, True])
-def test_openapi_invoker_rejects_invalid_response_limit(max_response_bytes: int) -> None:
+@pytest.mark.parametrize("max_response_bytes", [0, -1, True, 1.5])
+def test_openapi_invoker_rejects_invalid_response_limit(max_response_bytes: object) -> None:
     tool = ToolSpec(
         name="manual",
         endpoints=[EndpointSpec(name="read", method="GET", path="/read")],
@@ -465,6 +465,6 @@ def test_openapi_invoker_rejects_invalid_response_limit(max_response_bytes: int)
         OpenAPIRemoteInvoker(
             tool,
             "https://api.example.com",
-            max_response_bytes=max_response_bytes,
+            max_response_bytes=max_response_bytes,  # type: ignore[arg-type]
         )
 
