@@ -30,7 +30,7 @@ Every pull request runs:
 - a Windows + Python 3.14 core smoke test;
 - warnings-as-errors;
 - Pyright static type checking across the packaged surface;
-- full-suite branch coverage measurement with a retained XML artifact;
+- full-suite branch coverage with an 82% blocking floor and a retained XML artifact;
 - a minimum-runtime-dependency job that exercises the declared lower bounds;
 - executable core quickstart;
 - wheel and sdist build + metadata checks;
