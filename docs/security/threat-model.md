@@ -105,7 +105,8 @@ decisions, and callback failures deny execution.
 
 Per-run budgets bound logical calls, total attempts, remote attempts, elapsed time, per-tool calls,
 and application-defined cost units. Retry attempts consume attempt/remote/cost budgets before the
-invoker runs. Budget refusals and schema contract violations are never retried.
+invoker runs, and retry backoff is capped by the remaining elapsed-time budget. Budget refusals and
+schema contract violations are never retried.
 
 Automatic retries remain limited to endpoints classified as read-only unless trusted local code
 explicitly opts into retrying non-read-only operations. Built-in OpenAPI and OPTIMADE HTTP invokers
