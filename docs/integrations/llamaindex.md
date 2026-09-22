@@ -8,10 +8,10 @@ schema validation and execution boundary.
 For consumers, install the published optional extra:
 
 ```bash
-pip install --pre "schemarouter[llamaindex]"
+pip install "schemarouter[llamaindex]"
 ```
 
-The bridge is included in the published `0.3.0a1` alpha.
+The bridge is included in the published `0.3.0` release.
 
 For repository development:
 
