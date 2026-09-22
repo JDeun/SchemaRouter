@@ -247,6 +247,23 @@ planner = SchemaPlanner(
 )
 ```
 
+A provider-neutral local embedding backend is also available without adding an embedding library to
+SchemaRouter's dependencies:
+
+```python
+from schemarouter import EmbeddingDecisionBackend
+
+backend = EmbeddingDecisionBackend(
+    embed_batch,
+    min_similarity=0.35,
+    min_margin=0.05,
+)
+```
+
+The callable can wrap a local SentenceTransformers/FastEmbed-style encoder or an application-owned
+embedding service. SchemaRouter computes cosine ranking locally and can abstain on weak or ambiguous
+matches.
+
 Jev / TypeSafe System One is optional:
 
 ```bash
@@ -266,6 +283,14 @@ Run the deterministic baseline:
 python scripts/benchmark_decision_routing.py
 ```
 
+Compare an embedding backend through a local callable:
+
+```bash
+python scripts/benchmark_decision_routing.py \
+  --corpus benchmarks/decision-routing-v1.json \
+  --embedding-callable my_embeddings:embed_batch
+```
+
 Compare Jev when credentials are available:
 
 ```bash
@@ -275,7 +300,8 @@ TYPESAFE_API_KEY="..." python scripts/benchmark_decision_routing.py --jev
 The harness includes a checked-in 144-case multilingual/adversarial corpus and reports routing
 accuracy, invalid-plan rate, abstentions/fallbacks, category accuracy, p50/p95 latency, token usage,
 errors, and optional cost estimates. A provider-neutral `ModelQueryAnalyzer` callable can also be
-supplied with `--model-callable module:function`.
+supplied with `--model-callable module:function`; embedding encoders use
+`--embedding-callable module:function`.
 
 ```bash
 python scripts/benchmark_decision_routing.py \
