@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 import inspect
 import time
-from copy import deepcopy
 from collections.abc import AsyncIterator, Awaitable
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
