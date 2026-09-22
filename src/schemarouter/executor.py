@@ -393,6 +393,7 @@ class RegistryExecutor:
                     projected_fields=call.fields,
                 )
                 await self._run_after_hooks(tool, endpoint, call, result)
+                tracker.after_attempt()
                 return result
             except (
                 SchemaValidationError,
