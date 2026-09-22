@@ -353,6 +353,7 @@ class OpenAPISourceAdapter:
             timeout=context.timeout,
             follow_redirects=False,
         )
+        ref_stats = {"documents": 0, "bytes": 0}
         try:
             response = await _fetch_with_safe_redirects(
                 client,
@@ -360,6 +361,22 @@ class OpenAPISourceAdapter:
                 headers=context.schema_headers,
             )
             document = _parse_openapi_text(response.text)
+            if document is not None:
+                resolved_schema_url = str(response.url)
+                document, normalized_ref_count = normalize_same_document_refs(
+                    document,
+                    resolved_schema_url,
+                )
+                if context.openapi_external_refs:
+                    bundler = _OpenAPIRefBundler(
+                        client,
+                        root_url=resolved_schema_url,
+                        headers=context.schema_headers,
+                        max_depth=context.openapi_ref_max_depth,
+                        max_documents=context.openapi_ref_max_documents,
+                        max_bytes=context.openapi_ref_max_bytes,
+                    )
+                    document, ref_stats = await bundler.resolve(document)
         except SchemaSourceError:
             raise
         except Exception:  # noqa: BLE001
@@ -371,11 +388,6 @@ class OpenAPISourceAdapter:
         if document is None:
             return None
 
-        resolved_schema_url = str(response.url)
-        document, normalized_ref_count = normalize_same_document_refs(
-            document,
-            resolved_schema_url,
-        )
         inferred_name = context.name or _slug(
             str((document.get("info") or {}).get("title") or _name_from_url(context.url))
         )
@@ -395,6 +407,14 @@ class OpenAPISourceAdapter:
                 "resolved_schema_url": resolved_schema_url,
                 "suggested_base_url": suggested_base_url,
                 "same_document_refs_normalized": normalized_ref_count,
+                "external_refs_enabled": context.openapi_external_refs,
+                "external_ref_documents_resolved": ref_stats["documents"],
+                "external_ref_bytes_fetched": ref_stats["bytes"],
+                "external_ref_limits": {
+                    "max_depth": context.openapi_ref_max_depth,
+                    "max_documents": context.openapi_ref_max_documents,
+                    "max_bytes": context.openapi_ref_max_bytes,
+                },
                 "remote": True,
             }
         )
@@ -510,9 +530,21 @@ class URLSchemaLoader:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: Any | None = None,
+        openapi_external_refs: bool = False,
+        openapi_ref_max_depth: int = _DEFAULT_OPENAPI_REF_MAX_DEPTH,
+        openapi_ref_max_documents: int = _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS,
+        openapi_ref_max_bytes: int = _DEFAULT_OPENAPI_REF_MAX_BYTES,
         timeout: float = 20.0,
     ) -> ToolSpec:
         _validate_url(url)
+        for value, label in (
+            (openapi_ref_max_depth, "openapi_ref_max_depth"),
+            (openapi_ref_max_documents, "openapi_ref_max_documents"),
+            (openapi_ref_max_bytes, "openapi_ref_max_bytes"),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise SchemaSourceError(f"{label} must be a positive integer")
+
         normalized_kind = kind.strip().lower()
         context = AdapterContext(
             url=url,
@@ -522,6 +554,10 @@ class URLSchemaLoader:
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            openapi_external_refs=openapi_external_refs,
+            openapi_ref_max_depth=openapi_ref_max_depth,
+            openapi_ref_max_documents=openapi_ref_max_documents,
+            openapi_ref_max_bytes=openapi_ref_max_bytes,
             timeout=timeout,
             http_client=self.http_client,
         )
