@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- local Ollama bounded-decision backend using structured JSON Schema output, local option-ID
+  revalidation, sync/async HTTP paths, redirect rejection, token metadata capture, adversarial
+  mock-transport tests, and shared benchmark-harness support.
 - provider-neutral `EmbeddingDecisionBackend` with sync/async embedding callables, cosine ranking,
   bounded top-k selection, similarity/margin abstention, malformed-vector fail-closed validation,
   and common benchmark-harness support.
