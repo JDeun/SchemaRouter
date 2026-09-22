@@ -36,7 +36,8 @@ schemarouter.validation    JSON Schema runtime validation
 schemarouter.policy        trusted local side-effect + approval authority
 schemarouter.runs          run configuration, retry policy, budgets, typed lifecycle events
 schemarouter.traces        validated append-only run-event persistence + non-executing replay
-schemarouter.executor      plan, binding, schema and policy enforcement
+schemarouter.hooks         trusted snapshot-only before/after execution middleware
+schemarouter.executor      plan, binding, schema, policy and hook enforcement
 schemarouter.adapters      adapter contracts + OpenAPI/MCP/OPTIMADE/Python implementations
 schemarouter.ingestion     AdapterRegistry dispatch, safe source loading, registry binding
 schemarouter.proposals     evidence-grounded HTML documentation proposals
@@ -211,7 +212,17 @@ attributes. Argument/result values, RunConfig metadata, tags, and exception mess
 Plugin metadata can be discovered without import. Entry-point loading requires an explicit non-empty
 allowlist so installed packages are never auto-executed merely because they are discoverable.
 
-### 22. Trace replay must never become execution authority
+### 22. Trusted middleware must not become transformation authority
+
+Execution hooks run only after schema/policy/approval validation and receive detached snapshots.
+Before hooks may veto by failing but cannot mutate the executable call. After hooks receive only the
+validated, projected result and cannot mutate the result returned to the caller. Non-None returns
+are rejected, hook errors fail closed, and after-hook failures are never retried as tool failures.
+
+Because sync/async before hooks may wait while local state changes, SchemaRouter refreshes current
+schema and binding state after hooks complete before invocation.
+
+### 23. Trace replay must never become execution authority
 
 Persistent traces store validated `RunEvent` envelopes. Replay returns detached historical events
 only and never invokes the planner, executor, network, or tool bindings. Sequence gaps, identity
@@ -254,6 +265,8 @@ and therefore creates an application-managed sensitive-data store.
 25. OpenTelemetry export omits payload values and exception messages by design.
 26. OpenAPI compatibility limitations are surfaced explicitly rather than silently guessed.
 27. Candidate indexing may reduce scorer work but must preserve exhaustive deterministic planner recall.
+28. Execution hooks receive detached snapshots and cannot transform calls or results.
+29. Hook failures fail closed and never create additional tool invocation attempts.
 
 ## Current extension backlog
 
