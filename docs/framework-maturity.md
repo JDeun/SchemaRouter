@@ -18,7 +18,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Retry policy | Read-only gate + explicit non-retryable invocation marker + built-in OpenAPI/OPTIMADE HTTP classification | Extend protocol-specific classifiers only where recovery semantics are well-defined |
 | Python callable tools | Implemented | Improve docstring parameter descriptions |
 | Structured-source adapter registry | Implemented with explicit entry-point plugins | Expand certified third-party adapters |
-| OpenAPI ingestion | Common subset + operation-over-path parameter overrides + collision-safe generated operation names + local refs + opt-in bounded same-origin cross-document refs + allOf object flattening + compatibility report | Add $id/anchor-aware resolution and richer oneOf/anyOf handling |
+| OpenAPI ingestion | Common subset + operation-over-path parameter overrides + required JSON object-body presence + collision-safe generated operation names + local refs + opt-in bounded same-origin cross-document refs + allOf object flattening + compatibility report | Add $id/anchor-aware resolution and richer oneOf/anyOf handling |
 | OPTIMADE ingestion and execution | Implemented in v0.2 | Add provider federation / index meta-database traversal |
 | MCP ingestion and execution | Implemented with authenticated/custom transport boundary | Expand OAuth/gateway examples |
 | Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
