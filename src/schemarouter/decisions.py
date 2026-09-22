@@ -309,6 +309,7 @@ class EmbeddingDecisionBackend:
 
         raw = self.embedder(texts)
         if inspect.isawaitable(raw):
+
             async def resolve() -> DecisionResult:
                 return self._result(request, await raw)
 
