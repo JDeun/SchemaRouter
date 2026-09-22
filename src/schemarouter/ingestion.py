@@ -134,7 +134,7 @@ async def _fetch_with_safe_redirects(
     raise SchemaSourceError("schema URL exceeded the redirect limit")
 
 
-def _parse_reference_text(text: str) -> Any | None:
+def _parse_reference_text(text: str) -> dict[str, Any] | None:
     try:
         value = json.loads(text)
     except json.JSONDecodeError:
@@ -142,7 +142,7 @@ def _parse_reference_text(text: str) -> Any | None:
             value = yaml.safe_load(text)
         except yaml.YAMLError:
             return None
-    if isinstance(value, (dict, list)):
+    if isinstance(value, dict):
         return value
     return None
 
@@ -187,7 +187,6 @@ class _OpenAPIRefBundler:
         self.max_bytes = max_bytes
         self.total_bytes = 0
         self.documents: dict[str, str] = {}
-        self.document_urls: dict[str, str] = {}
         self.bundle: dict[str, Any] = {}
 
     async def resolve(self, document: dict[str, Any]) -> tuple[dict[str, Any], dict[str, int]]:
@@ -336,7 +335,6 @@ class _OpenAPIRefBundler:
         document_key = f"doc{len(self.bundle)}"
         self.documents[resource_url] = document_key
         self.documents[final_url] = document_key
-        self.document_urls[document_key] = final_url
         self.bundle[document_key] = deepcopy(parsed)
 
         await self._rewrite(
