@@ -125,7 +125,7 @@ OPTIMADE entry schema는 `/info/<entry_type>`에서 탐색하며, 계획된 fiel
 ### MCP
 
 ```bash
-pip install "schemarouter[mcp]"
+pip install --pre "schemarouter[mcp]"
 ```
 
 ```python
@@ -187,7 +187,7 @@ proposal로 변환한 뒤 명시적인 승인을 받아야 합니다.
 ## LangChain과 사용
 
 ```bash
-pip install "schemarouter[langchain]"
+pip install --pre "schemarouter[langchain]"
 ```
 
 ```python
@@ -204,7 +204,7 @@ LangChain 도구로 노출해도 실행은 SchemaRouter의 policy, fingerprint, 
 LlamaIndex bridge는 패키지 extra로 설치할 수 있습니다.
 
 ```bash
-pip install "schemarouter[llamaindex]"
+pip install --pre "schemarouter[llamaindex]"
 ```
 
 ```python
@@ -239,7 +239,7 @@ planner = SchemaPlanner(
 Jev / TypeSafe System One은 선택형 기능입니다.
 
 ```bash
-pip install "schemarouter[jev]"
+pip install --pre "schemarouter[jev]"
 export TYPESAFE_API_KEY="..."
 ```
 
