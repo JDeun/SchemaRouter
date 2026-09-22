@@ -295,6 +295,198 @@ async def test_openapi_nested_local_refs_remain_runtime_resolvable() -> None:
         await executor.execute(plan)
 
 
+def test_openapi_multiple_success_responses_compile_union_schema_and_fields() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Multi Success API"},
+        "paths": {
+            "/items": {
+                "post": {
+                    "operationId": "create_item",
+                    "responses": {
+                        "200": {
+                            "description": "existing",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {"type": "string"},
+                                            "name": {"type": "string"},
+                                        },
+                                        "required": ["id", "name"],
+                                    }
+                                }
+                            },
+                        },
+                        "201": {
+                            "description": "created",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "id": {"type": "string"},
+                                            "created": {"type": "boolean"},
+                                        },
+                                        "required": ["id", "created"],
+                                    }
+                                }
+                            },
+                        },
+                        "204": {"description": "accepted without payload"},
+                    },
+                }
+            }
+        },
+    }
+
+    endpoint = tool_from_openapi("multi_success", document).endpoint("create_item")
+
+    assert "anyOf" in endpoint.output_schema
+    assert len(endpoint.output_schema["anyOf"]) == 3
+    assert {"type": "null"} in endpoint.output_schema["anyOf"]
+    assert [field.name for field in endpoint.output_fields] == [
+        "id",
+        "name",
+        "created",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_openapi_later_success_json_schema_validates_at_runtime() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Multi Success API"},
+        "paths": {
+            "/items": {
+                "post": {
+                    "operationId": "create_item",
+                    "responses": {
+                        "200": {
+                            "description": "existing",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {"name": {"type": "string"}},
+                                        "required": ["name"],
+                                    }
+                                }
+                            },
+                        },
+                        "201": {
+                            "description": "created",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {"created": {"type": "boolean"}},
+                                        "required": ["created"],
+                                    }
+                                }
+                            },
+                        },
+                    },
+                }
+            }
+        },
+    }
+    tool = tool_from_openapi("multi_success", document)
+    endpoint = tool.endpoint("create_item")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(201, json={"created": True}, request=request)
+
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool=tool.key,
+        endpoint=endpoint.name,
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        executor = RegistryExecutor(registry)
+        executor.bind(
+            tool.key,
+            OpenAPIRemoteInvoker(
+                tool,
+                "https://api.example.com",
+                http_client=client,
+            ),
+        )
+        result = await executor.execute_call(call)
+
+    assert result.data == {"created": True}
+
+
+@pytest.mark.asyncio
+async def test_openapi_no_content_success_returns_none_and_validates() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "No Content API"},
+        "paths": {
+            "/items/{item_id}": {
+                "delete": {
+                    "operationId": "delete_item",
+                    "parameters": [
+                        {
+                            "name": "item_id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string"},
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "deleted payload",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {"deleted": {"type": "boolean"}},
+                                        "required": ["deleted"],
+                                    }
+                                }
+                            },
+                        },
+                        "204": {"description": "deleted without payload"},
+                    },
+                }
+            }
+        },
+    }
+    tool = tool_from_openapi("no_content", document)
+    endpoint = tool.endpoint("delete_item")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(204, request=request)
+
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool=tool.key,
+        endpoint=endpoint.name,
+        arguments={"item_id": "42"},
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        executor = RegistryExecutor(registry)
+        executor.bind(
+            tool.key,
+            OpenAPIRemoteInvoker(
+                tool,
+                "https://api.example.com",
+                http_client=client,
+            ),
+        )
+        result = await executor.execute_call(call)
+
+    assert result.data is None
+
+
 def test_openapi_generated_operation_names_disambiguate_path_collisions() -> None:
     document = {
         "openapi": "3.1.0",
