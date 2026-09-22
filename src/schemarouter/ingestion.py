@@ -317,6 +317,12 @@ class _OpenAPIRefBundler:
                 "external OpenAPI $ref exceeded the configured byte budget"
             )
 
+        final_url = urldefrag(str(response.url))[0]
+        existing = self.documents.get(final_url)
+        if existing is not None:
+            self.documents[resource_url] = existing
+            return existing
+
         parsed = _parse_reference_text(response.text)
         if parsed is None:
             raise SchemaSourceError(
@@ -328,7 +334,6 @@ class _OpenAPIRefBundler:
             )
 
         document_key = f"doc{len(self.bundle)}"
-        final_url = urldefrag(str(response.url))[0]
         self.documents[resource_url] = document_key
         self.documents[final_url] = document_key
         self.document_urls[document_key] = final_url
