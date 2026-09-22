@@ -462,7 +462,10 @@ def tool_from_openapi(
                     and "oneOf" not in body_schema
                     and "anyOf" not in body_schema
                 )
-                request_body_required = bool(request_body.get("required")) and body_is_supported_object
+                request_body_required = (
+                    bool(request_body.get("required"))
+                    and body_is_supported_object
+                )
                 required_body = _schema_required(document, body_schema)
                 for prop_name, prop_schema in body_properties.items():
                     parameters.append(
