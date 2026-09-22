@@ -12,6 +12,7 @@ from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, S
 from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
 from .adapters.openapi import (
     OpenAPIRemoteInvoker,
+    normalize_same_document_refs,
     resolve_openapi_base_url,
     same_origin,
     tool_from_openapi,
@@ -156,6 +157,10 @@ class OpenAPISourceAdapter:
             return None
 
         resolved_schema_url = str(response.url)
+        document, normalized_ref_count = normalize_same_document_refs(
+            document,
+            resolved_schema_url,
+        )
         inferred_name = context.name or _slug(
             str((document.get("info") or {}).get("title") or _name_from_url(context.url))
         )
@@ -174,6 +179,7 @@ class OpenAPISourceAdapter:
                 "source_url": context.url,
                 "resolved_schema_url": resolved_schema_url,
                 "suggested_base_url": suggested_base_url,
+                "same_document_refs_normalized": normalized_ref_count,
                 "remote": True,
             }
         )
