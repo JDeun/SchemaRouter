@@ -156,7 +156,7 @@ class _EmbeddingAwaitable:
 
     def __init__(
         self,
-        backend: "EmbeddingDecisionBackend",
+        backend: EmbeddingDecisionBackend,
         request: DecisionRequest,
         raw: Awaitable[Iterable[Iterable[float]]],
     ) -> None:
