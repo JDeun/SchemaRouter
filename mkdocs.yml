@@ -108,6 +108,7 @@ nav:
       - Model-assisted analysis: guides/model-analyzer.md
       - Decision routing benchmark: guides/decision-benchmark.md
       - Batch, streaming, and events: guides/runtime.md
+      - Persistent run traces: guides/run-traces.md
       - Retry policy: guides/retry.md
       - Execution policy: guides/execution-policy.md
       - Third-party adapter plugins: guides/adapter-plugins.md
