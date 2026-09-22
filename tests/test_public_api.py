@@ -62,6 +62,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "SchemaRouter",
         "SchemaRouterError",
         "SchemaSourceError",
+        "SQLiteRegistry",
         "SchemaValidationError",
         "SourceAdapter",
         "OPTIMADESourceAdapter",
