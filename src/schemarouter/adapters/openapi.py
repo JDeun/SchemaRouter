@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from copy import deepcopy
@@ -329,6 +330,52 @@ def _merge_parameters(
     return merged
 
 
+def _disambiguate_generated_endpoint_names(
+    endpoints: list[EndpointSpec],
+) -> list[EndpointSpec]:
+    """Resolve internal fallback-name collisions without rewriting explicit operationId values."""
+    counts: dict[str, int] = {}
+    for endpoint in endpoints:
+        counts[endpoint.name] = counts.get(endpoint.name, 0) + 1
+
+    reserved = {
+        endpoint.name
+        for endpoint in endpoints
+        if counts[endpoint.name] == 1
+        or not bool(endpoint.metadata.get("operation_id_generated"))
+    }
+    result: list[EndpointSpec] = []
+    for endpoint in endpoints:
+        if (
+            counts[endpoint.name] == 1
+            or not bool(endpoint.metadata.get("operation_id_generated"))
+        ):
+            result.append(endpoint)
+            continue
+
+        seed = f"{endpoint.method or ''} {endpoint.path or ''}"
+        digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()[:12]
+        candidate_base = f"{endpoint.name}__{digest}"
+        candidate = candidate_base
+        suffix = 2
+        while candidate in reserved:
+            candidate = f"{candidate_base}__{suffix}"
+            suffix += 1
+        reserved.add(candidate)
+
+        metadata = dict(endpoint.metadata)
+        metadata["generated_operation_id_base"] = endpoint.name
+        metadata["generated_operation_id_disambiguated"] = True
+        result.append(
+            endpoint.model_copy(
+                update={"name": candidate, "metadata": metadata},
+                deep=True,
+            )
+        )
+
+    return result
+
+
 def tool_from_openapi(
     name: str,
     document: dict[str, Any],
@@ -358,8 +405,13 @@ def tool_from_openapi(
         for method, operation in path_item.items():
             if method.lower() not in _HTTP_METHODS or not isinstance(operation, dict):
                 continue
+            explicit_operation_id = operation.get("operationId")
             fallback_name = path.strip("/").replace("/", "_") or "root"
-            operation_id = operation.get("operationId") or f"{method.lower()}_{fallback_name}"
+            operation_id = (
+                explicit_operation_id
+                if isinstance(explicit_operation_id, str) and explicit_operation_id
+                else f"{method.lower()}_{fallback_name}"
+            )
             parameters: list[ParameterSpec] = []
             operation_parameters = operation.get("parameters", [])
             if not isinstance(operation_parameters, list):
@@ -450,10 +502,15 @@ def tool_from_openapi(
                         "tags": operation.get("tags", []),
                         "security": operation.get("security"),
                         "deprecated": bool(operation.get("deprecated", False)),
+                        "operation_id_generated": not (
+                            isinstance(explicit_operation_id, str)
+                            and bool(explicit_operation_id)
+                        ),
                     },
                 )
             )
 
+    endpoints = _disambiguate_generated_endpoint_names(endpoints)
     compatibility = analyze_openapi_compatibility(document)
     return ToolSpec(
         name=name,

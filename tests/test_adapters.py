@@ -1,4 +1,5 @@
 import gzip
+import hashlib
 
 import httpx
 import pytest
@@ -282,6 +283,106 @@ async def test_openapi_nested_local_refs_remain_runtime_resolvable() -> None:
     )
     with pytest.raises(SchemaValidationError, match="not of type 'string'"):
         await executor.execute(plan)
+
+
+def test_openapi_generated_operation_names_disambiguate_path_collisions() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Fallback Collision API"},
+        "paths": {
+            "/a_b": {
+                "get": {
+                    "responses": {"204": {"description": "ok"}},
+                }
+            },
+            "/a/b": {
+                "get": {
+                    "responses": {"204": {"description": "ok"}},
+                }
+            },
+        },
+    }
+
+    tool = tool_from_openapi("fallbacks", document)
+
+    assert len(tool.endpoints) == 2
+    assert len({endpoint.name for endpoint in tool.endpoints}) == 2
+    assert {endpoint.path for endpoint in tool.endpoints} == {"/a_b", "/a/b"}
+    assert all(
+        endpoint.metadata["operation_id_generated"] is True
+        for endpoint in tool.endpoints
+    )
+    assert all(
+        endpoint.metadata["generated_operation_id_disambiguated"] is True
+        for endpoint in tool.endpoints
+    )
+    assert all(
+        endpoint.metadata["generated_operation_id_base"] == "get_a_b"
+        for endpoint in tool.endpoints
+    )
+
+
+def test_openapi_generated_operation_name_collision_resolution_is_bounded() -> None:
+    digest = hashlib.sha256(b"GET /a/b").hexdigest()[:12]
+    reserved_name = f"get_a_b__{digest}"
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Reserved Fallback API"},
+        "paths": {
+            "/explicit-base": {
+                "get": {
+                    "operationId": "get_a_b",
+                    "responses": {"204": {"description": "ok"}},
+                }
+            },
+            "/explicit-hash": {
+                "get": {
+                    "operationId": reserved_name,
+                    "responses": {"204": {"description": "ok"}},
+                }
+            },
+            "/a/b": {
+                "get": {
+                    "responses": {"204": {"description": "ok"}},
+                }
+            },
+        },
+    }
+
+    tool = tool_from_openapi("fallbacks", document)
+    by_path = {endpoint.path: endpoint for endpoint in tool.endpoints}
+
+    assert by_path["/explicit-base"].name == "get_a_b"
+    assert by_path["/explicit-hash"].name == reserved_name
+    assert by_path["/a/b"].name == f"{reserved_name}__2"
+
+
+def test_openapi_generated_operation_name_never_rewrites_explicit_operation_id() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Explicit Collision API"},
+        "paths": {
+            "/explicit": {
+                "get": {
+                    "operationId": "get_a_b",
+                    "responses": {"204": {"description": "ok"}},
+                }
+            },
+            "/a/b": {
+                "get": {
+                    "responses": {"204": {"description": "ok"}},
+                }
+            },
+        },
+    }
+
+    tool = tool_from_openapi("fallbacks", document)
+    by_path = {endpoint.path: endpoint for endpoint in tool.endpoints}
+
+    assert by_path["/explicit"].name == "get_a_b"
+    assert by_path["/explicit"].metadata["operation_id_generated"] is False
+    assert by_path["/a/b"].name.startswith("get_a_b__")
+    assert by_path["/a/b"].metadata["generated_operation_id_base"] == "get_a_b"
 
 
 def test_openapi_operation_parameters_override_path_parameters() -> None:

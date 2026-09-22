@@ -22,6 +22,8 @@ The project is pre-1.0 and follows the compatibility rules in
   timeout.
 - OpenAPI operation-level parameters now correctly override same-identity Path Item parameters,
   preserving the specification's `(name, in)` override semantics during schema import.
+- generated OpenAPI endpoint names now remain collision-safe for valid paths that normalize to the
+  same fallback token, while explicit `operationId` values are preserved unchanged.
 
 ### Changed
 
