@@ -275,6 +275,17 @@ The provider receives only bounded decision inputs. Unknown option IDs fail clos
 valid choices can abstain, and deterministic fallback remains available. Jev is never enabled just
 because the package or an API key exists.
 
+A local Ollama model can also serve as a bounded decision backend without an additional Python SDK:
+
+```python
+from schemarouter.integrations import OllamaDecisionBackend
+
+backend = OllamaDecisionBackend("your-installed-model")
+```
+
+Ollama structured output constrains the finite option IDs, and SchemaRouter revalidates the result
+locally. No local model is enabled automatically.
+
 ## Decision benchmark
 
 Run the deterministic baseline:
@@ -295,6 +306,12 @@ Compare Jev when credentials are available:
 
 ```bash
 TYPESAFE_API_KEY="..." python scripts/benchmark_decision_routing.py --jev
+```
+
+Compare an installed local Ollama model:
+
+```bash
+python scripts/benchmark_decision_routing.py --ollama-model your-installed-model
 ```
 
 The harness includes a checked-in 144-case multilingual/adversarial corpus and reports routing
@@ -323,6 +340,7 @@ Full documentation is organized as a framework manual rather than embedded in th
 - [LangChain integration](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
 - [LlamaIndex integration](https://jdeun.github.io/SchemaRouter/integrations/llamaindex/)
 - [Jev / TypeSafe integration](https://jdeun.github.io/SchemaRouter/integrations/jev/)
+- [Ollama decision backend](https://jdeun.github.io/SchemaRouter/integrations/ollama/)
 - [OpenTelemetry integration](https://jdeun.github.io/SchemaRouter/integrations/opentelemetry/)
 - [Third-party adapter plugins](https://jdeun.github.io/SchemaRouter/guides/adapter-plugins/)
 - [Decision backends](https://jdeun.github.io/SchemaRouter/concepts/decision-backends/)

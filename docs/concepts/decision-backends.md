@@ -115,6 +115,27 @@ configuration rather than model state.
 
 See [Jev / TypeSafe System One](../integrations/jev.md) for sync/async usage and security details.
 
+## Local Ollama models
+
+SchemaRouter also includes an `OllamaDecisionBackend` that uses Ollama structured outputs over the
+native HTTP API. No Ollama Python SDK is required.
+
+```python
+from schemarouter.integrations import OllamaDecisionBackend
+
+backend = OllamaDecisionBackend(
+    "your-installed-model",
+    async_mode=True,
+)
+```
+
+The backend constrains `option_id` with a JSON Schema enum, includes that schema in the prompt for
+grounding, and then revalidates the returned `DecisionResult` locally. `DecisionOption.metadata`
+is never forwarded. Model-reported scores are treated as self-assessments rather than calibrated
+probabilities.
+
+See [Ollama](../integrations/ollama.md) for configuration and benchmark usage.
+
 ## Experimental providers
 
 Other System-One-style or decision-model providers should implement `DecisionBackend` rather than
@@ -128,6 +149,7 @@ registered tools, execution policy, or the deterministic planner.
 ## Benchmarking
 
 Use `scripts/benchmark_decision_routing.py` to compare the deterministic baseline,
-`ModelQueryAnalyzer`, local embedding backends, and Jev on the same cases.
+`ModelQueryAnalyzer`, local embedding backends, Jev, and explicitly selected local Ollama models
+on the same cases.
 
 See [Decision routing benchmark](../guides/decision-benchmark.md).

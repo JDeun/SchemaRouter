@@ -116,6 +116,7 @@ nav:
       - LangGraph: integrations/langgraph.md
       - LlamaIndex: integrations/llamaindex.md
       - Jev / TypeSafe: integrations/jev.md
+      - Ollama decisions: integrations/ollama.md
       - OpenTelemetry: integrations/opentelemetry.md
   - Recipes:
       - OpenAPI agent boundary: recipes/openapi-agent.md

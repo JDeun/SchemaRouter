@@ -2,10 +2,12 @@ from .jev import JevDecisionBackend
 from .langchain import to_langchain_tool, to_langchain_tools
 from .langgraph import LangGraphRequestFactory, LangGraphState, to_langgraph_node
 from .llamaindex import to_llamaindex_tool, to_llamaindex_tools
+from .ollama import OllamaDecisionBackend
 from .opentelemetry import OpenTelemetryRunExporter, trace_run_events
 
 __all__ = [
     "JevDecisionBackend",
+    "OllamaDecisionBackend",
     "OpenTelemetryRunExporter",
     "LangGraphRequestFactory",
     "LangGraphState",

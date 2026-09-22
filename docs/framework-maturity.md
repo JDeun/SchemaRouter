@@ -27,6 +27,7 @@ This document tracks framework-level maturity rather than research metrics.
 | LangChain / LangGraph / LlamaIndex integrations | Implemented optional adapters and native graph node | Expand ecosystem listings |
 | Bounded decision backends | Provider-neutral callable + local embedding similarity + optional Jev, all opt-in | Extend dedicated field/evidence contracts |
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
+| Local Ollama decision provider | Implemented over structured-output HTTP API | Benchmark specific local models/hardware before quality claims |
 | Decision benchmark harness | 144-case checked-in corpus + JSON/CSV metrics | Gather dated live-provider evidence |
 | Framework callbacks / exporters | Typed redacted events + optional OpenTelemetry exporter | Add additional trusted sinks as needed |
 | Middleware interception | Policy-specific only | Add trusted before/after hooks |

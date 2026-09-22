@@ -26,7 +26,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.analyzers import ModelQueryAnalyzer
-from schemarouter.integrations import JevDecisionBackend
+from schemarouter.integrations import JevDecisionBackend, OllamaDecisionBackend
 
 
 @dataclass(frozen=True)
@@ -448,6 +448,17 @@ async def main() -> None:
     )
     parser.add_argument("--jev-model", default=None)
     parser.add_argument("--min-confidence", type=float, default=0.0)
+    parser.add_argument(
+        "--ollama-model",
+        default=None,
+        help="Run a local Ollama bounded-decision backend with this installed model.",
+    )
+    parser.add_argument(
+        "--ollama-base-url",
+        default="http://127.0.0.1:11434",
+        help="Trusted Ollama API base URL.",
+    )
+    parser.add_argument("--ollama-timeout", type=float, default=60.0)
     parser.add_argument("--input-cost-per-million", type=float, default=None)
     parser.add_argument("--output-cost-per-million", type=float, default=None)
     args = parser.parse_args()
@@ -456,6 +467,8 @@ async def main() -> None:
         raise ValueError("--repeat must be >= 1")
     if args.max_cases is not None and args.max_cases < 1:
         raise ValueError("--max-cases must be >= 1")
+    if args.ollama_timeout <= 0:
+        raise ValueError("--ollama-timeout must be > 0")
 
     registry = reference_registry()
     allowed_routes = {
@@ -540,6 +553,31 @@ async def main() -> None:
         planners.append(
             (
                 "jev",
+                SchemaPlanner(
+                    registry,
+                    decision_backend=recorder,
+                    decision_policy=DecisionPolicy(
+                        enabled=True,
+                        endpoint_selection=True,
+                        fallback="deterministic",
+                    ),
+                ),
+                recorder,
+            )
+        )
+
+    if args.ollama_model:
+        recorder = RecordingDecisionBackend(
+            OllamaDecisionBackend(
+                args.ollama_model,
+                base_url=args.ollama_base_url,
+                timeout=args.ollama_timeout,
+                async_mode=True,
+            )
+        )
+        planners.append(
+            (
+                f"ollama:{args.ollama_model}",
                 SchemaPlanner(
                     registry,
                     decision_backend=recorder,

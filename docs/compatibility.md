@@ -15,6 +15,7 @@ claim that every historical version inside the range is exhaustively tested.
 | LangGraph | `langgraph>=1.2,<2` | Real `StateGraph` sync/async contract tests + runnable example on Python 3.12 | Optional `schemarouter[langgraph]` extra |
 | LlamaIndex | `llama-index-core>=0.14,<1` | Dedicated contract tests + runnable example on Python 3.12 | Optional `schemarouter[llamaindex]` extra |
 | Jev / TypeSafe | `typesafe-sdk>=0.7,<1` | Dedicated adversarial contract tests on Python 3.12 | Optional `schemarouter[jev]` extra; no live API call in required CI |
+| Ollama decision backend | Ollama structured-output HTTP API | Mock-transport adversarial tests in the core suite | No SDK dependency; live model benchmark is explicit and non-blocking |
 | MCP | `mcp>=2,<3` | Real Streamable HTTP integration against a local server | Optional `schemarouter[mcp]` extra |
 | OpenTelemetry | `opentelemetry-api/sdk>=1.44,<2` | In-memory span hierarchy, error status, and privacy tests | Optional `schemarouter[otel]` extra; core has no OTel dependency |
 | OpenAPI | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OpenAPI SDK dependency |
@@ -40,6 +41,7 @@ Every pull request runs the blocking `CI` workflow with:
 - LangGraph `StateGraph` sync/async contract tests and `examples/langgraph_quickstart.py`;
 - LlamaIndex integration contract tests and `examples/llamaindex_quickstart.py`;
 - Jev adapter adversarial tests with the official SDK installed but no external API dependency;
+- Ollama bounded-decision adversarial tests using a local mock HTTP transport;
 - real MCP Streamable HTTP integration using the official SDK and a local HTTP server;
 - OpenTelemetry integration tests using the SDK in-memory exporter;
 - strict MkDocs build.
@@ -92,8 +94,9 @@ OpenAPI/OPTIMADE services.
 External-service failures are compatibility signals, not pull-request blockers, because third-party
 availability is outside SchemaRouter's control.
 
-Live Jev benchmarking is also intentionally excluded from required CI. Run it explicitly with
-`TYPESAFE_API_KEY` using `scripts/benchmark_decision_routing.py --jev`.
+Live decision-model benchmarking is intentionally excluded from required CI. Run Jev explicitly
+with `TYPESAFE_API_KEY` and `--jev`, or run a trusted local Ollama model with
+`--ollama-model <installed-model>`.
 
 ## Live OpenAPI smoke
 
