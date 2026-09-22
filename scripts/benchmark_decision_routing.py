@@ -17,6 +17,7 @@ from typing import Any
 
 from schemarouter import (
     DecisionPolicy,
+    EmbeddingDecisionBackend,
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
@@ -252,14 +253,14 @@ class RecordingDecisionBackend:
         return value
 
 
-def load_callable(spec: str) -> Any:
+def load_callable(spec: str, *, option_name: str = "--model-callable") -> Any:
     module_name, separator, attr = spec.partition(":")
     if not separator or not module_name or not attr:
-        raise ValueError("--model-callable must use module:function syntax")
+        raise ValueError(f"{option_name} must use module:function syntax")
     module = importlib.import_module(module_name)
     value = getattr(module, attr)
     if not callable(value):
-        raise TypeError(f"{spec} is not callable")
+        raise TypeError(f"{option_name} target {spec!r} is not callable")
     return value
 
 
@@ -432,6 +433,15 @@ async def main() -> None:
         help="Optional ModelQueryAnalyzer callable in module:function form.",
     )
     parser.add_argument(
+        "--embedding-callable",
+        help=(
+            "Optional embedding batch callable in module:function form. "
+            "It receives [query, option_text, ...] and returns one vector per input."
+        ),
+    )
+    parser.add_argument("--min-similarity", type=float, default=-1.0)
+    parser.add_argument("--min-margin", type=float, default=0.0)
+    parser.add_argument(
         "--jev",
         action="store_true",
         help="Run the Jev backend. Requires TYPESAFE_API_KEY.",
@@ -478,12 +488,43 @@ async def main() -> None:
     ]
 
     if args.model_callable:
-        model_callable = load_callable(args.model_callable)
+        model_callable = load_callable(
+            args.model_callable,
+            option_name="--model-callable",
+        )
         planners.append(
             (
                 "model-query-analyzer",
                 SchemaPlanner(registry, analyzer=ModelQueryAnalyzer(model_callable)),
                 None,
+            )
+        )
+
+    if args.embedding_callable:
+        embedding_callable = load_callable(
+            args.embedding_callable,
+            option_name="--embedding-callable",
+        )
+        recorder = RecordingDecisionBackend(
+            EmbeddingDecisionBackend(
+                embedding_callable,
+                min_similarity=args.min_similarity,
+                min_margin=args.min_margin,
+            )
+        )
+        planners.append(
+            (
+                "embedding",
+                SchemaPlanner(
+                    registry,
+                    decision_backend=recorder,
+                    decision_policy=DecisionPolicy(
+                        enabled=True,
+                        endpoint_selection=True,
+                        fallback="deterministic",
+                    ),
+                ),
+                recorder,
             )
         )
 

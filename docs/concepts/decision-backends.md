@@ -57,6 +57,37 @@ A decision provider:
 The planner, execution policy, schema fingerprint checks, argument validation, and output validation
 remain unchanged.
 
+## Local embedding similarity
+
+`EmbeddingDecisionBackend` provides a zero-provider-dependency path for local or hosted embedding
+models. The embedder receives the user query followed by one text representation per authorized
+option; SchemaRouter computes cosine similarity locally and maps ranked vector positions back to the
+original opaque option IDs.
+
+```python
+from schemarouter import EmbeddingDecisionBackend
+
+backend = EmbeddingDecisionBackend(
+    embed_batch,
+    min_similarity=0.35,
+    min_margin=0.05,
+)
+```
+
+The backend can use any sync or async callable that returns one finite, same-dimensional vector per
+input text. This makes it compatible with application-owned SentenceTransformers, FastEmbed,
+semantic-router encoders, remote embedding APIs, or custom domain encoders without adding any of
+those packages to SchemaRouter's core dependency graph.
+
+The default option-text formatter does not pass `DecisionOption.metadata` to the embedder. A
+custom `option_text` callback is trusted application code and may intentionally choose a different
+data boundary. A zero-norm vector, NaN/Infinity, dimension mismatch, wrong batch size, or malformed
+vector fails closed. `min_similarity` can
+abstain on weak matches; `min_margin` can abstain when the selection boundary is ambiguous.
+
+For asymmetric retrieval encoders, wrap the callable so the first input (the query) uses the
+encoder's query path and option texts use its passage/document path.
+
 ## Jev / TypeSafe System One
 
 SchemaRouter includes an optional `JevDecisionBackend` on current unreleased `main`:
@@ -88,6 +119,8 @@ See [Jev / TypeSafe System One](../integrations/jev.md) for sync/async usage and
 
 Other System-One-style or decision-model providers should implement `DecisionBackend` rather than
 being imported into SchemaRouter core. Provider integrations remain optional and explicitly enabled.
+Embedding libraries should likewise remain application-owned unless a stable provider-specific
+contract justifies a dedicated adapter.
 
 This separation lets applications change, disable, or compare a decision provider without changing
 registered tools, execution policy, or the deterministic planner.
@@ -95,6 +128,6 @@ registered tools, execution policy, or the deterministic planner.
 ## Benchmarking
 
 Use `scripts/benchmark_decision_routing.py` to compare the deterministic baseline,
-`ModelQueryAnalyzer`, and Jev on the same cases.
+`ModelQueryAnalyzer`, local embedding backends, and Jev on the same cases.
 
 See [Decision routing benchmark](../guides/decision-benchmark.md).

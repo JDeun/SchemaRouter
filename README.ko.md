@@ -250,6 +250,23 @@ planner = SchemaPlanner(
 )
 ```
 
+특정 provider에 종속되지 않는 local embedding backend도 core dependency 추가 없이 사용할 수
+있습니다.
+
+```python
+from schemarouter import EmbeddingDecisionBackend
+
+backend = EmbeddingDecisionBackend(
+    embed_batch,
+    min_similarity=0.35,
+    min_margin=0.05,
+)
+```
+
+callable에는 local SentenceTransformers/FastEmbed 계열 encoder나 애플리케이션 소유 embedding
+service를 연결할 수 있습니다. cosine ranking은 SchemaRouter가 로컬에서 수행하며 약하거나
+모호한 선택은 abstain할 수 있습니다.
+
 Jev / TypeSafe System One은 선택형 기능입니다.
 
 ```bash
@@ -271,6 +288,14 @@ abstain한 뒤 deterministic fallback으로 돌아갈 수 있습니다.
 python scripts/benchmark_decision_routing.py
 ```
 
+local embedding callable도 같은 corpus에서 비교할 수 있습니다.
+
+```bash
+python scripts/benchmark_decision_routing.py \
+  --corpus benchmarks/decision-routing-v1.json \
+  --embedding-callable my_embeddings:embed_batch
+```
+
 API key가 있다면 같은 케이스로 Jev도 비교할 수 있습니다.
 
 ```bash
@@ -280,7 +305,8 @@ TYPESAFE_API_KEY="..." python scripts/benchmark_decision_routing.py --jev
 benchmark에는 144개 multilingual/adversarial 고정 corpus가 포함되며 routing accuracy,
 invalid-plan rate, abstention/fallback, category accuracy, p50/p95 latency, token usage, error와
 선택적인 비용 추정치를 기록합니다. `--model-callable module:function`을 이용하면
-provider-neutral `ModelQueryAnalyzer`도 같은 harness에서 비교할 수 있습니다.
+provider-neutral `ModelQueryAnalyzer`도 같은 harness에서 비교할 수 있고, embedding
+encoder는 `--embedding-callable module:function`으로 연결할 수 있습니다.
 
 ```bash
 python scripts/benchmark_decision_routing.py \
