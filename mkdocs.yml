@@ -24,9 +24,13 @@ theme:
   features:
     - navigation.instant
     - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.indexes
+    - navigation.prune
     - navigation.top
+    - navigation.footer
     - toc.follow
     - search.suggest
     - search.highlight
@@ -86,7 +90,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Getting started:
+  - Start:
       - Installation: getting-started/installation.md
       - Quickstart: getting-started/quickstart.md
       - Choose an ingestion path: getting-started/ingestion-paths.md
@@ -98,23 +102,28 @@ nav:
       - Execution and trust boundaries: concepts/execution.md
       - Adapter ecosystem: concepts/adapters.md
       - Decision backends: concepts/decision-backends.md
-  - Guides:
+  - Connect:
       - Python tools: guides/python-tools.md
       - OpenAPI: guides/openapi.md
       - OpenAPI compatibility: guides/openapi-compatibility.md
       - OPTIMADE: guides/optimade.md
       - MCP: guides/mcp.md
       - Human-readable documentation: guides/html-documentation.md
-      - Model-assisted analysis: guides/model-analyzer.md
+      - Third-party adapter plugins: guides/adapter-plugins.md
+      - Recipes:
+          - OpenAPI agent boundary: recipes/openapi-agent.md
+          - MCP agent boundary: recipes/mcp-agent.md
+          - Many-tool catalogs: recipes/many-tools.md
+  - Runtime:
+      - Batch, streaming, and events: guides/runtime.md
+      - Execution policy: guides/execution-policy.md
+      - Retry policy: guides/retry.md
+      - Trusted execution hooks: guides/execution-hooks.md
+      - Persistent run traces: guides/run-traces.md
       - Field projection: guides/field-projection.md
       - Candidate indexing: guides/candidate-indexing.md
+      - Model-assisted analysis: guides/model-analyzer.md
       - Decision routing benchmark: guides/decision-benchmark.md
-      - Batch, streaming, and events: guides/runtime.md
-      - Persistent run traces: guides/run-traces.md
-      - Retry policy: guides/retry.md
-      - Execution policy: guides/execution-policy.md
-      - Trusted execution hooks: guides/execution-hooks.md
-      - Third-party adapter plugins: guides/adapter-plugins.md
   - Integrations:
       - LangChain: integrations/langchain.md
       - LangGraph: integrations/langgraph.md
@@ -122,22 +131,17 @@ nav:
       - Jev / TypeSafe: integrations/jev.md
       - Ollama decisions: integrations/ollama.md
       - OpenTelemetry: integrations/opentelemetry.md
-  - Recipes:
-      - OpenAPI agent boundary: recipes/openapi-agent.md
-      - MCP agent boundary: recipes/mcp-agent.md
-      - Many-tool catalogs: recipes/many-tools.md
-  - API reference:
-      - Public API: reference/api.md
-      - Runtime: reference/runtime.md
-      - Models: reference/models.md
-      - Registry and planner: reference/planning.md
-  - Architecture:
+  - Reference:
+      - API:
+          - Public API: reference/api.md
+          - Runtime: reference/runtime.md
+          - Models: reference/models.md
+          - Registry and planner: reference/planning.md
       - Architecture: architecture.md
       - Framework maturity: framework-maturity.md
       - Compatibility testing: compatibility.md
       - Adapter authoring: adapter-authoring.md
-  - Security:
-      - Threat model: security/threat-model.md
+      - Security model: security/threat-model.md
   - Project:
       - Versioning: versioning.md
       - Release notes:

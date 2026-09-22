@@ -1,6 +1,6 @@
 .brand-lockup {
-  margin: 0 auto 1.5rem;
-  max-width: 760px;
+  margin: 0 auto 1rem;
+  max-width: 620px;
 }
 
 .brand-lockup img {
@@ -25,4 +25,46 @@
 .md-header__button.md-logo svg {
   height: 2rem;
   width: 2rem;
+}
+
+.sr-hero {
+  max-width: 54rem;
+  margin: 0 auto 2rem;
+  text-align: center;
+}
+
+.sr-hero h1 {
+  max-width: 46rem;
+  margin: 0.35rem auto 0.75rem;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.sr-hero > p:not(:first-child) {
+  max-width: 44rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sr-kicker {
+  display: inline-block;
+  margin-bottom: 0.25rem;
+  color: var(--md-accent-fg-color);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sr-hero .md-button {
+  margin: 0.35rem 0.2rem 0;
+}
+
+.md-typeset .grid.cards > ul > li {
+  border-radius: 0.5rem;
+}
+
+.md-typeset h2 {
+  margin-top: 2.2em;
 }
