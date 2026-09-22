@@ -8,6 +8,7 @@ from schemarouter import (
     ParameterSpec,
     RegistrationError,
     SQLiteRegistry,
+    SchemaRouter,
     ToolSpec,
 )
 
@@ -189,3 +190,27 @@ def test_sqlite_registry_rejects_operations_after_close(tmp_path) -> None:
         _ = registry.version
     with pytest.raises(RuntimeError, match="closed"):
         registry.register(tool("alpha"))
+
+
+def test_schema_router_can_plan_and_execute_with_reopened_sqlite_registry(tmp_path) -> None:
+    path = tmp_path / "registry.sqlite3"
+
+    with SQLiteRegistry(path) as registry:
+        registry.register(tool("weather"))
+
+    with SQLiteRegistry(path) as reopened:
+        router = SchemaRouter(registry=reopened)
+        router.executor.bind(
+            "weather",
+            lambda endpoint, arguments: {"value": f"result:{arguments['id']}"},
+        )
+
+        result = router.invoke(
+            {
+                "query": "weather value",
+                "arguments": {"id": "seoul"},
+            }
+        )
+
+        assert result[0].tool == "weather"
+        assert result[0].data == {"value": "result:seoul"}
