@@ -509,7 +509,6 @@ class SchemaPlanner:
                 field.name,
                 *field.aliases,
                 ".".join(field.projection_path),
-                *field.projection_path,
             ]
             norms = {_normalize(name) for name in names if name}
             exact = bool(norms & concept_norms)
