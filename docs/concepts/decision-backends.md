@@ -79,8 +79,10 @@ input text. This makes it compatible with application-owned SentenceTransformers
 semantic-router encoders, remote embedding APIs, or custom domain encoders without adding any of
 those packages to SchemaRouter's core dependency graph.
 
-`DecisionOption.metadata` is never passed to the embedder. A zero-norm vector, NaN/Infinity,
-dimension mismatch, wrong batch size, or malformed vector fails closed. `min_similarity` can
+The default option-text formatter does not pass `DecisionOption.metadata` to the embedder. A
+custom `option_text` callback is trusted application code and may intentionally choose a different
+data boundary. A zero-norm vector, NaN/Infinity, dimension mismatch, wrong batch size, or malformed
+vector fails closed. `min_similarity` can
 abstain on weak matches; `min_margin` can abstain when the selection boundary is ambiguous.
 
 For asymmetric retrieval encoders, wrap the callable so the first input (the query) uses the
