@@ -7,8 +7,8 @@ from schemarouter import (
     EvidenceRequirements,
     FieldSpec,
     InMemoryRegistry,
-    PlanRequest,
     PlanningError,
+    PlanRequest,
     SchemaPlanner,
     ToolSpec,
 )
