@@ -235,6 +235,7 @@ class OllamaDecisionBackend:
                 self.base_url + "/api/chat",
                 json=payload,
                 timeout=self.timeout,
+                follow_redirects=False,
             )
             if inspect.isawaitable(response):
                 response = await response
