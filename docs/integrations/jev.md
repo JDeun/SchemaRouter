@@ -8,13 +8,13 @@ returns one of those IDs. SchemaRouter validates the result before the planner c
 
 ## Install
 
-The Jev bridge is currently on unreleased `main`. Install it from a repository checkout:
+For consumers, install the published optional extra:
 
 ```bash
-pip install -e ".[jev]"
+pip install --pre "schemarouter[jev]"
 ```
 
-After the next package release, the packaged extra will be `schemarouter[jev]`.
+The bridge is included in the published `0.3.0a1` alpha.
 
 The integration currently supports `typesafe-sdk>=0.7,<1`.
 
