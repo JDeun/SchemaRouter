@@ -2,15 +2,15 @@
 
 SchemaRouter requires Python 3.10 or newer.
 
-## Published alpha
+## Published release
 
-The current pre-release is `0.3.0a1`:
+The current public release is `0.3.0`:
 
 ```bash
-pip install --pre schemarouter
+pip install schemarouter
 ```
 
-The alpha includes the structured-source core, bounded decision backends, OpenAPI/OPTIMADE/MCP,
+The release includes the structured-source core, bounded decision backends, OpenAPI/OPTIMADE/MCP,
 LangChain/LlamaIndex bridges, authenticated MCP transports, approval/budgets, OpenTelemetry, and
 the explicit adapter-plugin contract.
 
@@ -31,31 +31,31 @@ Install only the integrations you use.
 === "MCP"
 
     ```bash
-    pip install --pre "schemarouter[mcp]"
+    pip install "schemarouter[mcp]"
     ```
 
 === "LangChain"
 
     ```bash
-    pip install --pre "schemarouter[langchain]"
+    pip install "schemarouter[langchain]"
     ```
 
 === "LlamaIndex"
 
     ```bash
-    pip install --pre "schemarouter[llamaindex]"
+    pip install "schemarouter[llamaindex]"
     ```
 
 === "Jev / TypeSafe"
 
     ```bash
-    pip install --pre "schemarouter[jev]"
+    pip install "schemarouter[jev]"
     ```
 
 === "OpenTelemetry"
 
     ```bash
-    pip install --pre "schemarouter[otel]"
+    pip install "schemarouter[otel]"
     ```
 
 === "Documentation"
@@ -71,8 +71,8 @@ Install only the integrations you use.
 python -c "import schemarouter; print(schemarouter.__version__)"
 ```
 
-The published release tag and package metadata identify the current alpha as `0.3.0a1`.
-Current `main` uses the PEP 440 development version `0.3.0a2.dev0` so source checkouts remain
+The published release tag and package metadata identify `0.3.0` as the current non-prerelease
+release. Development snapshots use PEP 440 `.dev0` versions so source checkouts remain
 distinguishable from released artifacts.
 
 ## Release verification
