@@ -263,7 +263,8 @@ and therefore creates an application-managed sensitive-data store.
 20. OpenAPI runtime responses are bounded before decoding, including when Content-Length is absent or misleading.
 21. MCP runtime credentials remain inside trusted transport configuration and are never planner-visible.
 22. Calls requiring local approval fail closed if approval is absent, denied, or errors.
-23. Execution budgets are checked before each logical call and real invoker attempt.
+23. Execution budgets are checked before each logical call and real invoker attempt; retry
+    backoff is also bounded by the remaining wall-clock budget and cannot sleep past it.
 24. Adapter plugins are never auto-imported from discovery alone.
 25. OpenTelemetry export omits payload values and exception messages by design.
 26. OpenAPI compatibility limitations are surfaced explicitly rather than silently guessed.
