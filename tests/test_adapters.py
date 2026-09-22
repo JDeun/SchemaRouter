@@ -1,4 +1,5 @@
 import gzip
+import hashlib
 
 import httpx
 import pytest
@@ -319,6 +320,41 @@ def test_openapi_generated_operation_names_disambiguate_path_collisions() -> Non
         endpoint.metadata["generated_operation_id_base"] == "get_a_b"
         for endpoint in tool.endpoints
     )
+
+
+def test_openapi_generated_operation_name_collision_resolution_is_bounded() -> None:
+    digest = hashlib.sha256(b"GET /a/b").hexdigest()[:12]
+    reserved_name = f"get_a_b__{digest}"
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Reserved Fallback API"},
+        "paths": {
+            "/explicit-base": {
+                "get": {
+                    "operationId": "get_a_b",
+                    "responses": {"204": {"description": "ok"}},
+                }
+            },
+            "/explicit-hash": {
+                "get": {
+                    "operationId": reserved_name,
+                    "responses": {"204": {"description": "ok"}},
+                }
+            },
+            "/a/b": {
+                "get": {
+                    "responses": {"204": {"description": "ok"}},
+                }
+            },
+        },
+    }
+
+    tool = tool_from_openapi("fallbacks", document)
+    by_path = {endpoint.path: endpoint for endpoint in tool.endpoints}
+
+    assert by_path["/explicit-base"].name == "get_a_b"
+    assert by_path["/explicit-hash"].name == reserved_name
+    assert by_path["/a/b"].name == f"{reserved_name}__2"
 
 
 def test_openapi_generated_operation_name_never_rewrites_explicit_operation_id() -> None:
