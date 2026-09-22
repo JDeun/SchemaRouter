@@ -173,20 +173,22 @@ def test_invalid_decision_can_fail_closed_without_fallback() -> None:
         planner.plan("band gap")
 
 
-def test_evidence_sufficiency_decision_surface_remains_reserved() -> None:
+def test_evidence_sufficiency_surface_no_longer_blocks_planner_construction() -> None:
     reg = registry()
-    backend = CallableDecisionBackend(
-        lambda _: {"selections": [{"option_id": "candidate:0"}]}
+    planner = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(
+            lambda _: {"selections": [{"option_id": "evidence:sufficient"}]}
+        ),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            evidence_sufficiency=True,
+        ),
     )
-    with pytest.raises(PlanningError, match="reserved"):
-        SchemaPlanner(
-            reg,
-            decision_backend=backend,
-            decision_policy=DecisionPolicy(
-                enabled=True,
-                evidence_sufficiency=True,
-            ),
-        )
+
+    plan = planner.plan("band gap")
+
+    assert plan.calls
 
 
 def test_field_decision_selects_only_declared_fields_and_preserves_identifier() -> None:
