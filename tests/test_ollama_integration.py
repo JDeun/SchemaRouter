@@ -220,6 +220,36 @@ def test_ollama_backend_rejects_invalid_message_content() -> None:
         client.close()
 
 
+
+def test_ollama_backend_never_follows_redirects_from_injected_client() -> None:
+    seen: list[httpx.URL] = []
+
+    def handler(request_: httpx.Request) -> httpx.Response:
+        seen.append(request_.url)
+        if request_.url == httpx.URL("http://127.0.0.1:11434/api/chat"):
+            return httpx.Response(
+                302,
+                headers={"location": "https://evil.example.com/api/chat"},
+                request=request_,
+            )
+        raise AssertionError("redirect target must never be requested")
+
+    client = httpx.Client(
+        transport=httpx.MockTransport(handler),
+        follow_redirects=True,
+    )
+    try:
+        with pytest.raises(PlanningError, match="HTTP/JSON"):
+            choose_sync(
+                OllamaDecisionBackend("qwen3:8b", http_client=client),
+                request(),
+            )
+    finally:
+        client.close()
+
+    assert seen == [httpx.URL("http://127.0.0.1:11434/api/chat")]
+
+
 @pytest.mark.asyncio
 async def test_ollama_backend_supports_async_http_execution() -> None:
     def handler(request_: httpx.Request) -> httpx.Response:
