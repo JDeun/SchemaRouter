@@ -187,6 +187,8 @@ proposal로 변환한 뒤 명시적인 승인을 받아야 합니다.
 - **Read-only retry by default** — 계약 위반이나 위험한 호출을 자동 재시도하지 않습니다.
 - **호출별 승인 및 실행 budget** — trusted local callback과 call/attempt/remote/time/quota/
   cost-unit 제한을 fail-closed로 적용합니다.
+- **Trusted execution hook** — 순서가 보장되는 sync/async before/after hook은 detached snapshot만
+  받고 call/result를 변환하지 못하며, hook 실패를 tool retry로 오인하지 않고 fail closed 처리합니다.
 - **OpenAPI compatibility report** — partial/unsupported construct를 숨기지 않고
   machine-readable report로 노출합니다.
 - **Redacted runtime event by default** — payload trace는 명시적으로 opt-in해야 합니다.
@@ -395,6 +397,7 @@ python scripts/benchmark_decision_routing.py \
 - [Decision backends](https://jdeun.github.io/SchemaRouter/concepts/decision-backends/)
 - [Decision benchmark](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/)
 - [Persistent run traces](https://jdeun.github.io/SchemaRouter/guides/run-traces/)
+- [Trusted execution hooks](https://jdeun.github.io/SchemaRouter/guides/execution-hooks/)
 - [Field projection](https://jdeun.github.io/SchemaRouter/guides/field-projection/)
 - [Candidate indexing](https://jdeun.github.io/SchemaRouter/guides/candidate-indexing/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)

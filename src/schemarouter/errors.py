@@ -50,6 +50,10 @@ class ExecutionError(SchemaRouterError):
     """Raised when tool invocation fails."""
 
 
+class ExecutionHookError(ExecutionError):
+    """Raised when a trusted execution hook violates or fails its contract."""
+
+
 class BindingDriftError(ExecutionError):
     """Raised when an invoker is bound to an older tool schema."""
 

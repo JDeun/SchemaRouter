@@ -13,10 +13,12 @@ from .errors import (
     BindingDriftError,
     ExecutionBudgetExceededError,
     ExecutionError,
+    ExecutionHookError,
     PlanValidationError,
     SchemaDriftError,
     SchemaValidationError,
 )
+from .hooks import ExecutionHooks
 from .models import EndpointSpec, ExecutionPlan, ToolCall, ToolResult, ToolSpec
 from .policy import ApprovalCallback, ExecutionPolicy, is_remote_tool
 from .registry import ToolRegistry
@@ -133,10 +135,12 @@ class RegistryExecutor:
         *,
         policy: ExecutionPolicy | None = None,
         approval_callback: ApprovalCallback | None = None,
+        hooks: ExecutionHooks | None = None,
     ) -> None:
         self.registry = registry
         self.policy = policy or ExecutionPolicy()
         self.approval_callback = approval_callback
+        self.hooks = hooks or ExecutionHooks()
         self._invokers: dict[str, EndpointInvoker] = {}
         self._binding_fingerprints: dict[str, str] = {}
 
@@ -236,14 +240,10 @@ class RegistryExecutor:
                 f"operation {call.tool}.{call.endpoint} was not approved"
             )
 
-    async def execute_call(
+    def _execution_state(
         self,
         call: ToolCall,
-        *,
-        retry: RetryPolicy | None = None,
-        budget: ExecutionBudget | None = None,
-        _tracker: ExecutionBudgetTracker | None = None,
-    ) -> ToolResult:
+    ) -> tuple[ToolSpec, EndpointSpec, EndpointInvoker]:
         self.validate_call(call)
         endpoint = self.registry.endpoint(call.tool, call.endpoint)
         tool = self.registry.get(call.tool)
@@ -256,22 +256,83 @@ class RegistryExecutor:
             raise BindingDriftError(
                 f"invoker binding is stale for tool {call.tool!r}; rebind before execution"
             )
+        return tool, endpoint, invoker
+
+    async def _run_before_hooks(
+        self,
+        tool: ToolSpec,
+        endpoint: EndpointSpec,
+        call: ToolCall,
+    ) -> None:
+        for hook in self.hooks.before_call:
+            try:
+                outcome = hook(
+                    tool.model_copy(deep=True),
+                    endpoint.model_copy(deep=True),
+                    call.model_copy(deep=True),
+                )
+                if inspect.isawaitable(outcome):
+                    outcome = await outcome
+            except ExecutionHookError:
+                raise
+            except Exception as exc:  # noqa: BLE001
+                raise ExecutionHookError(
+                    f"before execution hook failed for {call.tool}.{call.endpoint}"
+                ) from exc
+            if outcome is not None:
+                raise ExecutionHookError(
+                    "before execution hooks must return None"
+                )
+
+    async def _run_after_hooks(
+        self,
+        tool: ToolSpec,
+        endpoint: EndpointSpec,
+        call: ToolCall,
+        result: ToolResult,
+    ) -> None:
+        for hook in self.hooks.after_call:
+            try:
+                outcome = hook(
+                    tool.model_copy(deep=True),
+                    endpoint.model_copy(deep=True),
+                    call.model_copy(deep=True),
+                    result.model_copy(deep=True),
+                )
+                if inspect.isawaitable(outcome):
+                    outcome = await outcome
+            except ExecutionHookError:
+                raise
+            except Exception as exc:  # noqa: BLE001
+                raise ExecutionHookError(
+                    f"after execution hook failed for {call.tool}.{call.endpoint}"
+                ) from exc
+            if outcome is not None:
+                raise ExecutionHookError(
+                    "after execution hooks must return None"
+                )
+
+    async def execute_call(
+        self,
+        call: ToolCall,
+        *,
+        retry: RetryPolicy | None = None,
+        budget: ExecutionBudget | None = None,
+        _tracker: ExecutionBudgetTracker | None = None,
+    ) -> ToolResult:
+        tool, endpoint, invoker = self._execution_state(call)
 
         await self._approve(tool, endpoint, call)
 
-        # Approval may await external trusted code. Revalidate against the current registry and
-        # binding before execution so schema/binding drift during approval fails closed.
-        self.validate_call(call)
-        endpoint = self.registry.endpoint(call.tool, call.endpoint)
-        tool = self.registry.get(call.tool)
-        bound_fingerprint = self._binding_fingerprints.get(call.tool)
-        if bound_fingerprint != tool.fingerprint:
-            raise BindingDriftError(
-                f"invoker binding is stale for tool {call.tool!r}; rebind before execution"
-            )
+        # Trusted callbacks may await while schema or bindings change. Refresh all executable state
+        # after approval and again after before-hooks so stale local references cannot execute.
+        tool, endpoint, invoker = self._execution_state(call)
 
         tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
         tracker.before_call(call)
+
+        await self._run_before_hooks(tool, endpoint, call)
+        tool, endpoint, invoker = self._execution_state(call)
 
         retry = retry or RetryPolicy()
         can_retry = endpoint.read_only is True or retry.retry_non_read_only
@@ -325,13 +386,20 @@ class RegistryExecutor:
                     if adapter_projected
                     else self._project(value, call.fields, endpoint)
                 )
-                return ToolResult(
+                result = ToolResult(
                     tool=call.tool,
                     endpoint=call.endpoint,
                     data=projected,
                     projected_fields=call.fields,
                 )
-            except (SchemaValidationError, ExecutionBudgetExceededError):
+                await self._run_after_hooks(tool, endpoint, call, result)
+                tracker.after_attempt()
+                return result
+            except (
+                SchemaValidationError,
+                ExecutionBudgetExceededError,
+                ExecutionHookError,
+            ):
                 raise
             except Exception as exc:  # noqa: BLE001
                 last_error = exc

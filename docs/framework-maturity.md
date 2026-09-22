@@ -30,7 +30,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Local Ollama decision provider | Implemented over structured-output HTTP API | Benchmark specific local models/hardware before quality claims |
 | Decision benchmark harness | 144-case checked-in corpus + JSON/CSV metrics | Gather dated live-provider evidence |
 | Framework callbacks / exporters | Typed redacted events + optional OpenTelemetry exporter | Add additional trusted sinks as needed |
-| Middleware interception | Policy-specific only | Add trusted before/after hooks |
+| Middleware interception | Trusted ordered before/after execution hooks with detached snapshots | Add organization-specific hook libraries only when needed |
 | Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
 | Replayable run trace persistence | SQLite append-only event traces + non-executing replay | Add alternate trusted stores/export paths as needed |
 | Persistence / checkpoints | Workflow checkpoints remain out of scope | Delegate orchestration state to LangGraph or another runtime |
@@ -136,7 +136,8 @@ Implemented locally:
 - transactional persistent SQLite registry behind the `ToolRegistry` protocol;
 - OpenAPI compatibility reports;
 - transactional SQLite tool registry persistence;
-- validated SQLite run-event trace persistence with non-executing replay.
+- validated SQLite run-event trace persistence with non-executing replay;
+- trusted sync/async before/after execution hooks with snapshot-only, fail-closed semantics.
 
 Remaining larger follow-up work:
 

@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- trusted ordered sync/async before/after execution hooks with detached schema/call/result
+  snapshots, non-transforming None-only return contracts, post-await schema/binding refresh, and
+  fail-closed non-retryable hook errors.
 - explicit opt-in bounded same-origin OpenAPI cross-document `$ref` bundling with schema-header
   credential confinement, redirect/origin enforcement, depth/document/aggregate-byte budgets,
   complete-document JSON/YAML parsing, cycle caching, runtime schema preservation, and fail-closed

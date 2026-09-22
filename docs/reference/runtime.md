@@ -16,6 +16,22 @@
 
 ::: schemarouter.RunEvent
 
+## ExecutionHooks
+
+::: schemarouter.ExecutionHooks
+
+## ExecutionHookError
+
+::: schemarouter.ExecutionHookError
+
+## BeforeExecutionHook
+
+::: schemarouter.BeforeExecutionHook
+
+## AfterExecutionHook
+
+::: schemarouter.AfterExecutionHook
+
 ## RegistryExecutor
 
 ::: schemarouter.RegistryExecutor

@@ -17,6 +17,7 @@ from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
 from .errors import ProposalApprovalError, RegistrationError
 from .executor import ExecutionBudgetTracker, RegistryExecutor
+from .hooks import ExecutionHooks
 from .ingestion import SourceKind, URLSchemaLoader
 from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
 from .planner import QueryAnalyzer, SchemaPlanner
@@ -94,6 +95,7 @@ class SchemaRouter:
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
         approval_callback: ApprovalCallback | None = None,
+        execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
     ) -> None:
@@ -103,6 +105,7 @@ class SchemaRouter:
             self.registry,
             policy=policy,
             approval_callback=approval_callback,
+            hooks=execution_hooks,
         )
         self.loader = URLSchemaLoader(
             self.registry,
@@ -141,6 +144,7 @@ class SchemaRouter:
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
         approval_callback: ApprovalCallback | None = None,
+        execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
         base_url: str | None = None,
@@ -157,6 +161,7 @@ class SchemaRouter:
             http_client=http_client,
             policy=policy,
             approval_callback=approval_callback,
+            execution_hooks=execution_hooks,
             registry=registry,
             adapter_registry=adapter_registry,
         )

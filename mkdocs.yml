@@ -113,6 +113,7 @@ nav:
       - Persistent run traces: guides/run-traces.md
       - Retry policy: guides/retry.md
       - Execution policy: guides/execution-policy.md
+      - Trusted execution hooks: guides/execution-hooks.md
       - Third-party adapter plugins: guides/adapter-plugins.md
   - Integrations:
       - LangChain: integrations/langchain.md
