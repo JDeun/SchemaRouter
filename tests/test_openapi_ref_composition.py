@@ -135,10 +135,13 @@ def test_local_ref_chains_and_path_item_refs_are_resolved() -> None:
         },
     }
 
-    endpoint = tool_from_openapi("pathref", document).endpoint("get_user")
+    tool = tool_from_openapi("pathref", document)
+    endpoint = tool.endpoint("get_user")
 
     assert [parameter.name for parameter in endpoint.parameters] == ["user_id"]
     assert [field.name for field in endpoint.output_fields] == ["user_id", "name"]
+    assert tool.metadata["compatibility"]["operations_total"] == 1
+    assert tool.metadata["compatibility"]["operations_importable"] == 1
 
 
 def test_recursive_allof_reference_is_bounded_during_planner_flattening() -> None:
