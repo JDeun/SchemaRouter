@@ -364,10 +364,11 @@ class SchemaPlanner:
 
         provenance_available = bool(
             candidate.tool.source_type
-            or any(field.source_type for field in selected)
+            or any(field.source_type for field in answer_fields)
         )
-        license_available = bool(candidate.tool.license) or bool(selected) and all(
-            field.license for field in selected
+        license_available = bool(candidate.tool.license) or (
+            bool(answer_fields)
+            and all(field.license for field in answer_fields)
         )
         units_available = bool(answer_fields) and all(
             field.unit for field in answer_fields
