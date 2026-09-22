@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 import pytest
 
@@ -257,6 +258,37 @@ async def test_wall_clock_budget_interrupts_async_invocation() -> None:
         )
 
     assert invocation_started.is_set()
+
+
+@pytest.mark.asyncio
+async def test_wall_clock_budget_interrupts_retry_backoff() -> None:
+    _, executor, call, _ = _setup(read_only=True)
+    attempts = 0
+
+    async def flaky(endpoint, arguments):
+        nonlocal attempts
+        attempts += 1
+        raise RuntimeError("transient")
+
+    executor.bind("demo", flaky)
+
+    started = time.monotonic()
+    with pytest.raises(
+        ExecutionBudgetExceededError,
+        match="during retry backoff",
+    ):
+        await executor.execute_call(
+            call,
+            retry=RetryPolicy(
+                max_attempts=3,
+                initial_backoff_seconds=2.0,
+            ),
+            budget=ExecutionBudget(max_elapsed_seconds=0.2),
+        )
+    elapsed = time.monotonic() - started
+
+    assert attempts == 1
+    assert elapsed < 1.0
 
 
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
