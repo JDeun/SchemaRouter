@@ -27,7 +27,9 @@ router = SchemaRouter(
 )
 ```
 
-Both sync and async callables are supported. Hooks run in declaration order.
+Both sync and async callables are supported. Hooks run in declaration order. Async hooks are
+bounded by the remaining `ExecutionBudget.max_elapsed_seconds` budget; synchronous hooks cannot be
+preempted, but elapsed time is checked immediately after they return.
 
 ## Execution order
 
@@ -36,6 +38,7 @@ For one logical tool call, the relevant boundary is:
 ```text
 plan
  -> current schema + policy validation
+ -> elapsed-budget clock
  -> optional trusted approval
  -> schema/binding revalidation
  -> budget logical-call accounting
@@ -81,7 +84,8 @@ Hook failures are fail-closed.
 - In particular, an after-hook failure does **not** repeat a successful read-only invocation.
 
 A hook can deliberately veto execution by raising an exception. SchemaRouter wraps ordinary hook
-exceptions in `ExecutionHookError`.
+exceptions in `ExecutionHookError`. Elapsed-budget expiration remains an
+`ExecutionBudgetExceededError` and is not rewritten as a hook failure.
 
 ## Privacy
 
