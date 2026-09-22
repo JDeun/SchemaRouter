@@ -64,7 +64,7 @@ from .openapi_compatibility import (
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import SchemaProposal
-from .registry import InMemoryRegistry, ToolRegistry
+from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 from .runs import ExecutionBudget, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
 
@@ -128,6 +128,7 @@ __all__ = [
     "SchemaRouter",
     "SchemaRouterError",
     "SchemaSourceError",
+    "SQLiteRegistry",
     "SchemaValidationError",
     "SourceAdapter",
     "OPTIMADESourceAdapter",
