@@ -198,6 +198,21 @@ tools = to_langchain_tools(router)
 LangChain 도구로 노출해도 실행은 SchemaRouter의 policy, fingerprint, input/output validation
 경계를 그대로 통과합니다.
 
+## LangGraph와 사용
+
+```bash
+pip install "schemarouter[langgraph]"
+```
+
+```python
+from schemarouter.integrations import to_langgraph_node
+
+builder.add_node("schema_router", to_langgraph_node(router))
+```
+
+이 노드는 sync/async `StateGraph` 실행을 지원하고 checkpoint에 적합한 partial state update를
+반환합니다. planning, policy, 검증된 execution authority는 SchemaRouter가 계속 유지합니다.
+
 ## LlamaIndex와 사용
 
 LlamaIndex bridge는 패키지 extra로 설치할 수 있습니다.
@@ -315,7 +330,7 @@ python examples/quickstart.py
 python scripts/benchmark_decision_routing.py
 
 # 선택형 통합을 포함한 전체 패키지 surface 타입 검사
-pip install -e ".[dev,mcp,langchain,llamaindex,jev,otel]"
+pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel]"
 pyright
 pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing
 ```
