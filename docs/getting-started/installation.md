@@ -4,28 +4,23 @@ SchemaRouter requires Python 3.10 or newer.
 
 ## Published alpha
 
-The published pre-release is `0.2.0a1`:
+The current pre-release is `0.3.0a1`:
 
 ```bash
 pip install --pre schemarouter
 ```
 
-The published alpha contains the v0.2 core, OpenAPI/OPTIMADE/MCP support, and the LangChain bridge.
+The alpha includes the structured-source core, bounded decision backends, OpenAPI/OPTIMADE/MCP,
+LangChain/LlamaIndex bridges, authenticated MCP transports, approval/budgets, OpenTelemetry, and
+the explicit adapter-plugin contract.
 
-## Current main
-
-Current `main` contains unreleased next-release work, including bounded decision backends,
-LlamaIndex integration, and the Jev / TypeSafe provider. Install those features from source:
-
-```bash
-git clone https://github.com/JDeun/SchemaRouter.git
-cd SchemaRouter
-pip install -e .
-```
+## Development checkout
 
 For local development and tests:
 
 ```bash
+git clone https://github.com/JDeun/SchemaRouter.git
+cd SchemaRouter
 pip install -e ".[dev]"
 ```
 
@@ -45,16 +40,22 @@ Install only the integrations you use.
     pip install "schemarouter[langchain]"
     ```
 
-=== "LlamaIndex (current main)"
+=== "LlamaIndex"
 
     ```bash
-    pip install -e ".[llamaindex]"
+    pip install "schemarouter[llamaindex]"
     ```
 
-=== "Jev / TypeSafe (current main)"
+=== "Jev / TypeSafe"
 
     ```bash
-    pip install -e ".[jev]"
+    pip install "schemarouter[jev]"
+    ```
+
+=== "OpenTelemetry"
+
+    ```bash
+    pip install "schemarouter[otel]"
     ```
 
 === "Documentation"
@@ -64,18 +65,14 @@ Install only the integrations you use.
     mkdocs serve
     ```
 
-After the next package release, the LlamaIndex and Jev extras will use the same normal package-extra
-form (`schemarouter[llamaindex]` and `schemarouter[jev]`).
-
 ## Verify the installation
 
 ```bash
 python -c "import schemarouter; print(schemarouter.__version__)"
 ```
 
-The repository `main` branch identifies itself as `0.3.0.dev0`, while the published alpha
-remains `0.2.0a1`. This keeps source checkouts distinguishable from released artifacts through
-normal package metadata.
+The release tag and package metadata identify this artifact as `0.3.0a1`. Development branches
+use PEP 440 development versions so source checkouts remain distinguishable from released artifacts.
 
 ## Release verification
 
