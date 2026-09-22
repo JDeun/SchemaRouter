@@ -150,7 +150,9 @@ One is an optional provider adapter; low-confidence valid choices may abstain an
 fallback remains locally controlled.
 
 Decision providers never construct `ToolCall` objects and never receive execution credentials or
-authority. Jev additionally does not receive `DecisionOption.metadata`.
+authority. For bounded field selection, providers receive only declared non-identifier output
+fields; identifier fields are preserved locally and cannot be removed by the provider. Jev
+additionally does not receive `DecisionOption.metadata`.
 
 ### 14. Remote runtime responses need memory bounds
 
