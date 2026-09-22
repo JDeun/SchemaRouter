@@ -31,31 +31,31 @@ Install only the integrations you use.
 === "MCP"
 
     ```bash
-    pip install "schemarouter[mcp]"
+    pip install --pre "schemarouter[mcp]"
     ```
 
 === "LangChain"
 
     ```bash
-    pip install "schemarouter[langchain]"
+    pip install --pre "schemarouter[langchain]"
     ```
 
 === "LlamaIndex"
 
     ```bash
-    pip install "schemarouter[llamaindex]"
+    pip install --pre "schemarouter[llamaindex]"
     ```
 
 === "Jev / TypeSafe"
 
     ```bash
-    pip install "schemarouter[jev]"
+    pip install --pre "schemarouter[jev]"
     ```
 
 === "OpenTelemetry"
 
     ```bash
-    pip install "schemarouter[otel]"
+    pip install --pre "schemarouter[otel]"
     ```
 
 === "Documentation"
