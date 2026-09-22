@@ -147,6 +147,10 @@ class SchemaRouter:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: MCPClientFactory | None = None,
+        openapi_external_refs: bool = False,
+        openapi_ref_max_depth: int = 3,
+        openapi_ref_max_documents: int = 8,
+        openapi_ref_max_bytes: int = 10 * 1024 * 1024,
     ) -> SchemaRouter:
         router = cls(
             analyzer=analyzer,
@@ -165,6 +169,10 @@ class SchemaRouter:
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            openapi_external_refs=openapi_external_refs,
+            openapi_ref_max_depth=openapi_ref_max_depth,
+            openapi_ref_max_documents=openapi_ref_max_documents,
+            openapi_ref_max_bytes=openapi_ref_max_bytes,
         )
         return router
 
@@ -348,6 +356,10 @@ class SchemaRouter:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: MCPClientFactory | None = None,
+        openapi_external_refs: bool = False,
+        openapi_ref_max_depth: int = 3,
+        openapi_ref_max_documents: int = 8,
+        openapi_ref_max_bytes: int = 10 * 1024 * 1024,
         timeout: float = 20.0,
     ) -> ToolSpec:
         return await self.loader.load(
@@ -360,6 +372,10 @@ class SchemaRouter:
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            openapi_external_refs=openapi_external_refs,
+            openapi_ref_max_depth=openapi_ref_max_depth,
+            openapi_ref_max_documents=openapi_ref_max_documents,
+            openapi_ref_max_bytes=openapi_ref_max_bytes,
             timeout=timeout,
         )
 
