@@ -186,6 +186,8 @@ evidence-grounded proposal and then requires explicit approval.
 - **Read-only retries by default** — contract violations are never retried.
 - **Per-call approval and execution budgets** — trusted local callbacks and deterministic call,
   attempt, remote, time, quota, and cost-unit limits fail closed.
+- **Trusted execution hooks** — ordered sync/async before/after hooks receive detached snapshots,
+  cannot transform calls/results, and fail closed without turning hook failures into tool retries.
 - **OpenAPI compatibility reporting** — partial/unsupported constructs are machine-readable instead
   of silently reinterpreted.
 - **Redacted runtime events by default** — payload tracing is opt-in.
@@ -392,6 +394,7 @@ Full documentation is organized as a framework manual rather than embedded in th
 - [Decision backends](https://jdeun.github.io/SchemaRouter/concepts/decision-backends/)
 - [Decision benchmark](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/)
 - [Persistent run traces](https://jdeun.github.io/SchemaRouter/guides/run-traces/)
+- [Trusted execution hooks](https://jdeun.github.io/SchemaRouter/guides/execution-hooks/)
 - [Field projection](https://jdeun.github.io/SchemaRouter/guides/field-projection/)
 - [Candidate indexing](https://jdeun.github.io/SchemaRouter/guides/candidate-indexing/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
