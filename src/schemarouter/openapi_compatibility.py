@@ -154,19 +154,32 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                 location,
                 "external_ref",
                 "unsupported",
-                "External $ref targets are not fetched or resolved automatically.",
+                (
+                    "Cross-document $ref targets are not fetched automatically. "
+                    "URI refs that resolve back to the loaded document are normalized "
+                    "during URL ingestion."
+                ),
             )
         for construct in ("allOf", "oneOf", "anyOf"):
-            if construct in node:
-                add(
-                    location,
-                    construct,
-                    "partial",
-                    (
-                        f"{construct} is preserved for runtime validation but is not fully "
-                        "flattened for planning."
-                    ),
+            if construct not in node:
+                continue
+            if construct == "allOf":
+                message = (
+                    "allOf is preserved for runtime validation and object properties/required "
+                    "fields are flattened for planning when safely derivable; more general "
+                    "composition semantics remain partial."
                 )
+            else:
+                message = (
+                    f"{construct} is preserved for runtime validation but is not flattened "
+                    "for planner-side variant selection."
+                )
+            add(
+                location,
+                construct,
+                "partial",
+                message,
+            )
         if node.get("nullable") is True and version_text and version_text.startswith("3.0"):
             add(
                 location,
