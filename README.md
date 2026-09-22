@@ -107,7 +107,7 @@ OpenTelemetry**. They do not bypass SchemaRouter's policy or validation boundary
 - protocol-controlled OpenAPI headers kept out of planner arguments;
 - multiple 2xx JSON/no-content response variants preserved and validated correctly.
 
-See the [0.5.0 release notes](https://jdeun.github.io/SchemaRouter/project/releases/0.5.0/) for details.
+See the [0.5.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.5.0/) for details.
 
 ## Documentation
 
@@ -116,11 +116,11 @@ Start with the manual rather than this README:
 - [Install and quickstart](https://jdeun.github.io/SchemaRouter/getting-started/installation/)
 - [Understand the execution model](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
 - [OpenAPI guide](https://jdeun.github.io/SchemaRouter/guides/openapi/)
-- [Runtime policy and retry](https://jdeun.github.io/SchemaRouter/runtime/execution-policy/)
+- [Runtime policy and retry](https://jdeun.github.io/SchemaRouter/guides/execution-policy/)
 - [Framework integrations](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
-- [Architecture and maturity](https://jdeun.github.io/SchemaRouter/reference/architecture/)
-- [Security model](https://jdeun.github.io/SchemaRouter/reference/security/)
+- [Architecture and maturity](https://jdeun.github.io/SchemaRouter/architecture/)
+- [Security model](https://jdeun.github.io/SchemaRouter/security/threat-model/)
 
 ## Development
 
