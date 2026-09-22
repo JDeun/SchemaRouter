@@ -383,6 +383,7 @@ python scripts/benchmark_decision_routing.py \
 - [Decision benchmark](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/)
 - [Persistent run traces](https://jdeun.github.io/SchemaRouter/guides/run-traces/)
 - [Field projection](https://jdeun.github.io/SchemaRouter/guides/field-projection/)
+- [Candidate indexing](https://jdeun.github.io/SchemaRouter/guides/candidate-indexing/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
 - [Architecture](https://jdeun.github.io/SchemaRouter/architecture/)
 - [Security](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md)
