@@ -107,6 +107,7 @@ nav:
       - Human-readable documentation: guides/html-documentation.md
       - Model-assisted analysis: guides/model-analyzer.md
       - Field projection: guides/field-projection.md
+      - Candidate indexing: guides/candidate-indexing.md
       - Decision routing benchmark: guides/decision-benchmark.md
       - Batch, streaming, and events: guides/runtime.md
       - Persistent run traces: guides/run-traces.md

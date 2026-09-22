@@ -61,6 +61,109 @@ class _Candidate:
     matched_fields: tuple[str, ...]
 
 
+@dataclass(frozen=True, order=True)
+class _EndpointRef:
+    tool_key: str
+    endpoint_name: str
+
+
+class _CandidateIndex:
+    """Exact-recall lexical prefilter for the deterministic endpoint scorer."""
+
+    def __init__(self, version: int, tools: tuple[ToolSpec, ...]) -> None:
+        self.version = version
+        self._entries: dict[_EndpointRef, tuple[ToolSpec, EndpointSpec]] = {}
+        self._token_refs: dict[str, set[_EndpointRef]] = {}
+        self._field_norm_refs: dict[str, set[_EndpointRef]] = {}
+        self._parameter_refs: dict[str, set[_EndpointRef]] = {}
+        self._tool_refs: dict[str, set[_EndpointRef]] = {}
+        self._endpoint_refs: dict[str, set[_EndpointRef]] = {}
+
+        for tool in tools:
+            for endpoint in tool.endpoints:
+                ref = _EndpointRef(tool.key, endpoint.name)
+                self._entries[ref] = (tool, endpoint)
+                self._add(self._tool_refs, tool.key, ref)
+                self._add(self._tool_refs, tool.name, ref)
+                self._add(
+                    self._endpoint_refs,
+                    f"{tool.key}.{endpoint.name}",
+                    ref,
+                )
+
+                tool_text = " ".join(
+                    [
+                        tool.name,
+                        tool.description,
+                        endpoint.name,
+                        endpoint.description,
+                    ]
+                )
+                for token in _tokens(tool_text):
+                    self._add(self._token_refs, token, ref)
+
+                for field in endpoint.output_fields:
+                    names = [
+                        field.name,
+                        *field.aliases,
+                        ".".join(field.projection_path),
+                    ]
+                    for name in names:
+                        if not name:
+                            continue
+                        for token in _tokens(name):
+                            self._add(self._token_refs, token, ref)
+                        norm = _normalize(name)
+                        if norm:
+                            self._add(self._field_norm_refs, norm, ref)
+
+                for parameter in endpoint.parameters:
+                    self._add(self._parameter_refs, parameter.name, ref)
+
+    @staticmethod
+    def _add(
+        index: dict[str, set[_EndpointRef]],
+        key: str,
+        ref: _EndpointRef,
+    ) -> None:
+        index.setdefault(key, set()).add(ref)
+
+    def endpoint_pairs(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+    ) -> tuple[tuple[ToolSpec, EndpointSpec], ...]:
+        refs: set[_EndpointRef] = set()
+
+        for preferred in intent.preferred_tools:
+            refs.update(self._tool_refs.get(preferred, ()))
+        for preferred in intent.preferred_endpoints:
+            refs.update(self._endpoint_refs.get(preferred, ()))
+
+        for token in _tokens(request.query):
+            refs.update(self._token_refs.get(token, ()))
+        for parameter_name in intent.arguments:
+            refs.update(self._parameter_refs.get(parameter_name, ()))
+
+        concept_norms = {
+            _normalize(concept)
+            for concept in intent.concepts
+            if concept and _normalize(concept)
+        }
+        for concept in concept_norms:
+            refs.update(self._field_norm_refs.get(concept, ()))
+
+        if concept_norms:
+            for norm, norm_refs in self._field_norm_refs.items():
+                if any(
+                    concept in norm or norm in concept
+                    for concept in concept_norms
+                ):
+                    refs.update(norm_refs)
+
+        return tuple(self._entries[ref] for ref in sorted(refs))
+
+
 class SchemaPlanner:
     """Schema-aware planner with sync and async query-analysis paths."""
 
@@ -71,11 +174,14 @@ class SchemaPlanner:
         *,
         decision_backend: DecisionBackend | None = None,
         decision_policy: DecisionPolicy | None = None,
+        candidate_index: bool = True,
     ) -> None:
         self.registry = registry
         self.analyzer = analyzer or KeywordAnalyzer()
         self.decision_backend = decision_backend
         self.decision_policy = decision_policy or DecisionPolicy()
+        self.candidate_index = candidate_index
+        self._candidate_index: _CandidateIndex | None = None
         if self.decision_policy.enabled and self.decision_backend is None:
             raise PlanningError("decision policy is enabled but no decision backend is configured")
 
@@ -100,15 +206,43 @@ class SchemaPlanner:
     def _prepare_request(self, request: PlanRequest | str) -> PlanRequest:
         if isinstance(request, str):
             request = PlanRequest(query=request)
-        if not self.registry.tools():
+        if not self.registry.keys():
             raise PlanningError("cannot plan with an empty registry")
         return request
 
+    def _index(self) -> _CandidateIndex:
+        current_version = self.registry.version
+        if (
+            self._candidate_index is not None
+            and self._candidate_index.version == current_version
+        ):
+            return self._candidate_index
+
+        for _ in range(4):
+            before = self.registry.version
+            tools = self.registry.tools()
+            after = self.registry.version
+            if before == after:
+                self._candidate_index = _CandidateIndex(after, tools)
+                return self._candidate_index
+
+        raise PlanningError(
+            "registry changed repeatedly while building the candidate index"
+        )
+
     def _candidates(self, request: PlanRequest, intent: QueryIntent) -> list[_Candidate]:
+        if self.candidate_index:
+            endpoint_pairs = self._index().endpoint_pairs(request, intent)
+        else:
+            endpoint_pairs = tuple(
+                (tool, endpoint)
+                for tool in self.registry.tools()
+                for endpoint in tool.endpoints
+            )
+
         candidates = [
             self._score_endpoint(tool, endpoint, request.query, intent)
-            for tool in self.registry.tools()
-            for endpoint in tool.endpoints
+            for tool, endpoint in endpoint_pairs
         ]
         candidates = [candidate for candidate in candidates if candidate.score > 0]
         candidates.sort(

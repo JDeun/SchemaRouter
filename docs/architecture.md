@@ -30,7 +30,7 @@ request
 ```text
 schemarouter.models        typed tool / endpoint / plan contracts
 schemarouter.registry      versioned namespaced catalog + optional SQLite persistence
-schemarouter.planner       deterministic candidate scoring + recall-first projection
+schemarouter.planner       exact-recall candidate indexing + deterministic scoring + recall-first projection
 schemarouter.analyzers     optional model-assisted intent extraction
 schemarouter.validation    JSON Schema runtime validation
 schemarouter.policy        trusted local side-effect + approval authority
@@ -58,20 +58,28 @@ The research artifact conventionally used one search endpoint per tool. Producti
 servers expose many operations. `ToolSpec` therefore owns multiple first-class `EndpointSpec`
 objects.
 
-### 3. Aggressive field minimization harms recall
+### 3. Candidate indexing must not change planner recall
+
+Large registries should not require scoring every endpoint on every request, but approximate
+prefilters can silently remove valid tools. SchemaRouter therefore indexes every input that can
+produce a positive deterministic score under the current scorer and still runs the unchanged
+scoring function on the resulting candidates. The index is cached by registry version and can be
+disabled for exhaustive parity checks.
+
+### 4. Aggressive field minimization harms recall
 
 The research results showed that minimizing field count can remove answer-critical information.
 The planner keeps identifiers, keeps confidently matched fields, and falls back to the full
 declared field set when output intent is ambiguous. `FieldSpec.path` can map a bounded logical
 field ID onto a nested object path without exposing arbitrary JSONPath syntax to planning.
 
-### 4. Remote schemas drift independently
+### 5. Remote schemas drift independently
 
 Every endpoint and tool has a canonical schema fingerprint. A plan compiled against an older
 endpoint is rejected. A bound invoker tied to an older tool contract is also rejected after the
 registry changes.
 
-### 5. Model analysis is untrusted
+### 6. Model analysis is untrusted
 
 `ModelQueryAnalyzer` returns a structured proposal, not an executable command. Unknown tools,
 endpoints, parameters, fields, and extra JSON keys are rejected or removed. Explicit caller
@@ -80,7 +88,7 @@ arguments override model-produced values.
 Descriptions from remote schemas are passed to models only as untrusted data and cannot extend the
 registry or execution authority.
 
-### 6. Remote authorization metadata is untrusted
+### 7. Remote authorization metadata is untrusted
 
 MCP annotations and OpenAPI descriptions never grant permissions. Sensitive runtime credentials
 stay outside model-visible schemas.
@@ -88,13 +96,13 @@ stay outside model-visible schemas.
 For OpenAPI, `Authorization`, `Cookie`, `Host`, proxy authorization, connection framing, and
 other sensitive runtime headers cannot be supplied through tool arguments.
 
-### 7. Schema fetch credentials and API credentials are different trust domains
+### 8. Schema fetch credentials and API credentials are different trust domains
 
 `schema_headers` are used only to fetch an OpenAPI document. `trusted_headers` are injected only
 by the runtime invoker. OpenAPI document redirects are followed manually and only within the
 original origin, preventing schema-fetch credentials from crossing origins.
 
-### 8. OpenAPI documents can point at another host
+### 9. OpenAPI documents can point at another host
 
 A cross-origin `servers` entry is treated as descriptive, not executable authority. SchemaRouter
 imports the schema but leaves it unbound until trusted local code supplies `base_url` or calls
@@ -103,7 +111,7 @@ imports the schema but leaves it unbound until trusted local code supplies `base
 Runtime HTTP redirects are disabled and endpoint paths are constrained to the approved origin/base
 path.
 
-### 9. Declared parameter names are not enough
+### 10. Declared parameter names are not enough
 
 The executor validates the actual argument object against JSON Schema immediately before
 invocation. Type, enum, range, required-property, pattern, and other supported constraints therefore
@@ -112,7 +120,7 @@ cannot be bypassed by manually constructing a `ToolCall`.
 Raw structured tool output is validated before projection, so field projection cannot hide an
 invalid response.
 
-### 10. Side effects require local authority
+### 11. Side effects require local authority
 
 The default `ExecutionPolicy` blocks known remote mutations and destructive operations. It also
 blocks MCP operations whose side effects are not trusted locally because MCP annotations remain
@@ -126,7 +134,7 @@ Local application code may explicitly opt into:
 
 A model or remote schema cannot set these flags.
 
-### 11. Human-readable documentation is not an executable contract
+### 12. Human-readable documentation is not an executable contract
 
 `inspect_url()` creates a non-executable `SchemaProposal`. Every accepted endpoint, parameter,
 and field must cite an exact quote found in the fetched document. Script/style content is removed
@@ -135,7 +143,7 @@ before model analysis.
 `approve_proposal()` is a separate authority transition with grounding thresholds, explicit API
 base URL, and mutation opt-in. Runtime execution policy remains an independent second gate.
 
-### 12. Protocol diversity must not leak into the planner
+### 13. Protocol diversity must not leak into the planner
 
 v0.2 introduces `AdapterRegistry`. OpenAPI, OPTIMADE, MCP, and future structured protocols compile
 into the same `ToolSpec` / `EndpointSpec` model. The planner does not branch on protocol type.
@@ -143,7 +151,7 @@ into the same `ToolSpec` / `EndpointSpec` model. The planner does not branch on 
 Call-aware invokers may receive the validated `ToolCall` when a protocol needs selected fields at
 transport time. The executor still owns schema, policy, retry, and binding-drift enforcement.
 
-### 13. Decision models must remain bounded and non-authoritative
+### 14. Decision models must remain bounded and non-authoritative
 
 `DecisionBackend` receives a finite set of locally generated option IDs. Unknown IDs, duplicate
 selections, out-of-range/non-finite scores, and malformed results fail closed. Jev / TypeSafe System
@@ -158,49 +166,49 @@ requirements before the provider is consulted; the provider can then only preser
 call and cannot upgrade missing evidence. Jev additionally does not receive
 `DecisionOption.metadata`.
 
-### 14. Remote runtime responses need memory bounds
+### 15. Remote runtime responses need memory bounds
 
 Schema and documentation fetches were already bounded, and OPTIMADE runtime execution used a bounded
 reader. OpenAPI runtime execution now uses the same posture: responses are streamed and capped at
 16 MiB by default, checking both declared `Content-Length` and bytes actually received before
 JSON/text decoding.
 
-### 15. Unsupported OpenAPI semantics must be visible
+### 16. Unsupported OpenAPI semantics must be visible
 
 OpenAPI parsing success does not imply perfect semantic fidelity. Imported OpenAPI tools therefore
 carry a machine-readable compatibility report that marks partial or unsupported constructs such as
 external references, composition, cookie parameters, non-JSON bodies, callbacks, webhooks, and
 server variables.
 
-### 16. Authenticated MCP must preserve credential separation
+### 17. Authenticated MCP must preserve credential separation
 
 MCP authentication belongs to the trusted HTTP transport/client boundary. Credentials embedded in
 MCP URLs are rejected, protocol-controlled headers cannot be overridden, and custom OAuth/mTLS/
 gateway behavior is injected as a trusted client factory rather than represented in tool schemas.
 
-### 17. Runtime permission and per-call approval are separate gates
+### 18. Runtime permission and per-call approval are separate gates
 
 Local `ExecutionPolicy` grants category-level authority. Optional trusted approval callbacks gate
 individual calls after schema/policy validation and fail closed on missing, negative, or exceptional
 decisions.
 
-### 18. Execution budgets must account for retries
+### 19. Execution budgets must account for retries
 
 One logical call may produce multiple real invoker attempts. Budgets therefore count logical calls,
 total attempts, remote attempts, wall-clock execution, per-tool quotas, and application-defined cost
 units separately. Retries consume attempt/remote/cost budget before invocation.
 
-### 19. Observability must not weaken payload privacy
+### 20. Observability must not weaken payload privacy
 
 The OpenTelemetry integration consumes typed RunEvents but intentionally exports only structural
 attributes. Argument/result values, RunConfig metadata, tags, and exception messages are omitted.
 
-### 20. Installed adapter plugins are executable code
+### 21. Installed adapter plugins are executable code
 
 Plugin metadata can be discovered without import. Entry-point loading requires an explicit non-empty
 allowlist so installed packages are never auto-executed merely because they are discoverable.
 
-### 21. Trace replay must never become execution authority
+### 22. Trace replay must never become execution authority
 
 Persistent traces store validated `RunEvent` envelopes. Replay returns detached historical events
 only and never invokes the planner, executor, network, or tool bindings. Sequence gaps, identity
@@ -240,6 +248,7 @@ and therefore creates an application-managed sensitive-data store.
 24. Adapter plugins are never auto-imported from discovery alone.
 25. OpenTelemetry export omits payload values and exception messages by design.
 26. OpenAPI compatibility limitations are surfaced explicitly rather than silently guessed.
+27. Candidate indexing may reduce scorer work but must preserve exhaustive deterministic planner recall.
 
 ## Current extension backlog
 

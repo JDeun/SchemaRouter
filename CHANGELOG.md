@@ -9,6 +9,8 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- exact-recall candidate indexing cached by registry version, with exhaustive-mode parity tests,
+  stable-snapshot rebuilds, synthetic scorer-call benchmarking, and no approximate pruning.
 - conservative bounded `evidence_sufficiency` decision surface with deterministic local
   provenance/license/unit/source-type prechecks, provider veto-only semantics, sync/async support,
   abstention/error fallback policy, and no ability to upgrade missing evidence.

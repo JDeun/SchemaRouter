@@ -9,7 +9,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Capability | Current main | Direction |
 | --- | --- | --- |
 | Typed tool / endpoint / parameter / field contracts | Implemented | Core invariant |
-| Natural-language planning | Implemented | Improve candidate indexing at scale |
+| Natural-language planning | Deterministic scoring + exact-recall candidate index cached by registry version | Add approximate/remote retrieval only behind an explicit contract if future scale requires it |
 | Sync / async invocation | Implemented | Stable public surface |
 | Batch execution | Implemented, including completion-order APIs | Stable public surface |
 | Result streaming | Implemented | Add parallel-call streaming later |
@@ -109,6 +109,7 @@ Completed locally:
 - conservative evidence-sufficiency contract with local provenance/license/unit/source-type precheck
   and provider veto-only semantics;
 - provider-neutral decision benchmark harness;
+- exact-recall candidate index with registry-version cache invalidation and exhaustive parity tests;
 - 144-case multilingual/adversarial benchmark corpus;
 - OpenAPI compatibility reporting;
 - authenticated MCP transport boundary;
