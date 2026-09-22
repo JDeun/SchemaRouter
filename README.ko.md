@@ -175,8 +175,9 @@ proposal로 변환한 뒤 명시적인 승인을 받아야 합니다.
 - **OpenAPI compatibility report** — partial/unsupported construct를 숨기지 않고
   machine-readable report로 노출합니다.
 - **Redacted runtime event by default** — payload trace는 명시적으로 opt-in해야 합니다.
-- **Pluggable registry** — 커스텀 registry는 공개 `ToolRegistry` protocol을 구현할 수
-  있습니다.
+- **Persistent/pluggable registry** — built-in transactional `SQLiteRegistry`를 사용하거나
+  공개 `ToolRegistry` protocol 기반 커스텀 구현을 주입할 수 있습니다. persistent catalog에는
+  trusted invoker나 credential을 직렬화하지 않습니다.
 - **Pluggable adapter** — `AdapterRegistry`를 통해 다양한 structured protocol을 동일한
   `ToolSpec` / `EndpointSpec` 실행 모델로 변환할 수 있으며, 설치된 entry-point plugin은
   명시적 allowlist가 있어야 import됩니다.

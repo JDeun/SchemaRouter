@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- transactional `SQLiteRegistry` persistence with monotonic version retention, deterministic tool
+  ordering, atomic batch writes, JSON-only storage, corruption/key-mismatch fail-closed validation,
+  and no persistence of trusted invokers or credentials.
 - local Ollama bounded-decision backend using structured JSON Schema output, local option-ID
   revalidation, sync/async HTTP paths, redirect rejection, token metadata capture, adversarial
   mock-transport tests, and shared benchmark-harness support.

@@ -174,7 +174,9 @@ evidence-grounded proposal and then requires explicit approval.
 - **OpenAPI compatibility reporting** — partial/unsupported constructs are machine-readable instead
   of silently reinterpreted.
 - **Redacted runtime events by default** — payload tracing is opt-in.
-- **Pluggable registry** — custom registries can implement the public `ToolRegistry` protocol.
+- **Persistent/pluggable registry** — use the built-in transactional `SQLiteRegistry` or inject a
+  custom implementation of the public `ToolRegistry` protocol. Persistent catalog state never
+  serializes trusted invokers or credentials.
 - **Pluggable source adapters** — `AdapterRegistry` lets structured protocols compile into the same
   `ToolSpec` / `EndpointSpec` execution model; installed entry-point plugins require an explicit
   allowlist before import.

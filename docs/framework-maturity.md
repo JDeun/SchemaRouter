@@ -34,7 +34,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
 | Persistence / checkpoints | Out of scope for core | Delegate to orchestration layer |
 | HTTP serving layer | Not implemented | Consider optional server package |
-| Pluggable registry boundary | Implemented via `ToolRegistry` protocol | Add persistent implementations |
+| Pluggable registry boundary | `ToolRegistry` protocol + transactional `SQLiteRegistry` | Add distributed/remote implementations only when needed |
 | Release / compatibility policy | Implemented | Enforce during RC reviews |
 | Package artifact CI | Implemented | Keep wheel/sdist metadata checks blocking |
 | Documentation site | Implemented with MkDocs Material | Keep strict docs build blocking |
@@ -127,11 +127,11 @@ Implemented locally:
 - OpenTelemetry span export from the redacted event stream;
 - authenticated MCP/custom client-factory boundary;
 - explicit allowlisted adapter plugin loading;
+- transactional persistent SQLite registry behind the `ToolRegistry` protocol;
 - OpenAPI compatibility reports.
 
 Remaining larger follow-up work:
 
-- persistent registry implementations behind the `ToolRegistry` protocol;
 - replayable execution trace storage;
 - benchmark and compatibility dashboard;
 - organization-specific policy/approval integrations.

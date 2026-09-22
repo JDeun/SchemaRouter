@@ -29,7 +29,7 @@ request
 
 ```text
 schemarouter.models        typed tool / endpoint / plan contracts
-schemarouter.registry      versioned namespaced catalog
+schemarouter.registry      versioned namespaced catalog + optional SQLite persistence
 schemarouter.planner       deterministic candidate scoring + recall-first projection
 schemarouter.analyzers     optional model-assisted intent extraction
 schemarouter.validation    JSON Schema runtime validation
@@ -229,7 +229,7 @@ allowlist so installed packages are never auto-executed merely because they are 
 - non-object request-body ergonomics and richer nested field projection;
 - organization-specific policy/approval and license/provenance extensions;
 - compensation, transactions, and distributed execution;
-- persistent/distributed registries;
+- distributed/remote registry implementations beyond the built-in SQLite persistence;
 - multi-page and client-rendered documentation crawling;
 - replayable trace storage and additional trusted exporters;
 - dated live-provider benchmark evidence and compatibility dashboards;
