@@ -1,0 +1,64 @@
+name: Cleanup stale branches
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/cleanup-stale-branches.yml"
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete superseded merged branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          branches=(
+            "chore/automate-release-tagging"
+            "chore/ecosystem-readiness"
+            "chore/final-quality-gates"
+            "chore/pages-deploy-guard"
+            "chore/post-release-0.3.0a2-dev"
+            "chore/post-release-0.3.0a2-dev2"
+            "chore/post-release-0.3.0a2-dev-v2"
+            "chore/release-0.2.0a1"
+            "chore/release-type-hardening"
+            "ci/separate-python-preview"
+            "ci/unified-release-pipeline"
+            "docs/released-integration-installs"
+            "feat/ecosystem-examples"
+            "feat/jev-hardening-docs"
+            "feat/llamaindex-integration"
+            "feat/production-maturity-suite"
+            "feat/v0.1-core"
+            "feat/v0.2-adapter-ecosystem"
+            "feat/v0.3-decision-backends"
+            "fix/openapi-runtime-response-bound"
+            "fix/release-existing-tag"
+            "fix/release-full-history"
+            "fix/release-tag-ancestry"
+            "release/0.3.0a1"
+          )
+
+          for branch in "${branches[@]}"; do
+            open_prs="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$branch" --json number --jq 'length')"
+            if [[ "$open_prs" != "0" ]]; then
+              echo "::error::Refusing to delete $branch because it has an open pull request."
+              exit 1
+            fi
+
+            encoded_ref="heads/${branch//\//%2F}"
+            if gh api --silent "repos/$GITHUB_REPOSITORY/git/ref/$encoded_ref" >/dev/null 2>&1; then
+              echo "Deleting $branch"
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/$encoded_ref"
+            else
+              echo "$branch is already absent; skipping."
+            fi
+          done
