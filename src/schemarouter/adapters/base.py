@@ -7,6 +7,34 @@ import httpx
 
 from ..models import ToolSpec
 
+_MAX_OPENAPI_REF_DOCUMENTS = 64
+_MAX_OPENAPI_REF_DEPTH = 8
+_MAX_OPENAPI_REF_BYTES = 50 * 1024 * 1024
+
+
+@dataclass(frozen=True)
+class OpenAPIRefPolicy:
+    """Trusted local policy for bounded cross-document OpenAPI reference loading."""
+
+    enabled: bool = False
+    max_documents: int = 16
+    max_depth: int = 4
+    max_bytes: int = 10 * 1024 * 1024
+
+    def __post_init__(self) -> None:
+        if not 1 <= self.max_documents <= _MAX_OPENAPI_REF_DOCUMENTS:
+            raise ValueError(
+                f"max_documents must be between 1 and {_MAX_OPENAPI_REF_DOCUMENTS}"
+            )
+        if not 1 <= self.max_depth <= _MAX_OPENAPI_REF_DEPTH:
+            raise ValueError(
+                f"max_depth must be between 1 and {_MAX_OPENAPI_REF_DEPTH}"
+            )
+        if not 1 <= self.max_bytes <= _MAX_OPENAPI_REF_BYTES:
+            raise ValueError(
+                f"max_bytes must be between 1 and {_MAX_OPENAPI_REF_BYTES}"
+            )
+
 
 @dataclass(frozen=True)
 class AdapterContext:
@@ -17,6 +45,7 @@ class AdapterContext:
     schema_headers: dict[str, str] | None = None
     trusted_headers: dict[str, str] | None = None
     mcp_client_factory: Any | None = None
+    openapi_ref_policy: OpenAPIRefPolicy = OpenAPIRefPolicy()
     timeout: float = 20.0
     http_client: httpx.AsyncClient | None = None
 
