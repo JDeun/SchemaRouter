@@ -322,7 +322,17 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                             media = content.get("application/json")
                             schema = media.get("schema") if isinstance(media, dict) else None
                             schema = _resolve_local_ref(document, schema)
-                            if isinstance(schema, dict):
+                            if not isinstance(schema, dict) or not schema:
+                                add(
+                                    f"{op_location}/requestBody/content/application~1json/schema",
+                                    "schema_less_request_body",
+                                    "unsupported",
+                                    (
+                                        "JSON request bodies without an explicit schema cannot be "
+                                        "safely represented as named planner parameters."
+                                    ),
+                                )
+                            else:
                                 schema_type = schema.get("type")
                                 has_properties = isinstance(schema.get("properties"), dict)
                                 composed = any(
