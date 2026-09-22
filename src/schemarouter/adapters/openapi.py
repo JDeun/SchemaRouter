@@ -24,6 +24,11 @@ _SENSITIVE_RUNTIME_HEADERS = {
     "transfer-encoding",
     "upgrade",
 }
+_OPENAPI_IGNORED_HEADER_PARAMETERS = {
+    "accept",
+    "authorization",
+    "content-type",
+}
 _HEADER_NAME_RE = re.compile(r"^[!#$%&'*+.^_\x60|~0-9A-Za-z-]+$")
 _MAX_RUNTIME_RESPONSE_BYTES = 16 * 1024 * 1024
 _TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
@@ -426,11 +431,13 @@ def tool_from_openapi(
                 location = parameter.get("in", "query")
                 if location not in {"path", "query", "header"}:
                     continue
-                if (
-                    location == "header"
-                    and parameter_name.casefold() in _SENSITIVE_RUNTIME_HEADERS
-                ):
-                    continue
+                if location == "header":
+                    normalized_parameter_name = parameter_name.casefold()
+                    if (
+                        normalized_parameter_name in _SENSITIVE_RUNTIME_HEADERS
+                        or normalized_parameter_name in _OPENAPI_IGNORED_HEADER_PARAMETERS
+                    ):
+                        continue
                 parameters.append(
                     ParameterSpec(
                         name=parameter_name,
