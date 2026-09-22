@@ -84,6 +84,9 @@ def test_ollama_backend_uses_bounded_structured_output_and_hides_metadata() -> N
     assert captured["options"]["temperature"] == 0
     ids = captured["format"]["properties"]["selections"]["items"]["properties"]["option_id"]["enum"]
     assert ids == ["endpoint:0", "endpoint:1"]
+    assert json.dumps(captured["format"], ensure_ascii=False, sort_keys=True) in (
+        captured["messages"][0]["content"]
+    )
 
     user_payload = json.loads(captured["messages"][1]["content"])
     assert user_payload["context"] == {"tenant": "demo"}
@@ -167,6 +170,20 @@ def test_ollama_backend_rejects_unknown_option_ids_even_if_server_ignores_schema
         {"selections": [], "abstained": False},
         {"selections": [{"option_id": "endpoint:0", "score": 1.5}], "abstained": False},
         {"selections": [{"option_id": "endpoint:0"}], "abstained": True},
+        {
+            "selections": [
+                {"option_id": "endpoint:0"},
+                {"option_id": "endpoint:1"},
+            ],
+            "abstained": False,
+        },
+        {
+            "selections": [
+                {"option_id": "endpoint:0"},
+                {"option_id": "endpoint:0"},
+            ],
+            "abstained": False,
+        },
     ],
 )
 def test_ollama_backend_rejects_malformed_bounded_decisions(content: dict) -> None:
