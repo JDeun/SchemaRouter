@@ -6,6 +6,7 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     ParameterSpec,
+    PlanRequest,
     RegistrationError,
     SchemaRouter,
     SQLiteRegistry,
@@ -206,10 +207,10 @@ def test_schema_router_can_plan_and_execute_with_reopened_sqlite_registry(tmp_pa
         )
 
         result = router.invoke(
-            {
-                "query": "weather value",
-                "arguments": {"id": "seoul"},
-            }
+            PlanRequest(
+                query="weather value",
+                arguments={"id": "seoul"},
+            )
         )
 
         assert result[0].tool == "weather"
