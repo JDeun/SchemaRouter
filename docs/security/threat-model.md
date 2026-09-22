@@ -5,8 +5,9 @@ local application code remains the authority for credentials, side effects, bind
 
 ## Supported versions
 
-SchemaRouter is currently pre-1.0. Security fixes are applied to the latest development/release line.
-Once non-alpha releases are published, supported release lines will be listed here explicitly.
+SchemaRouter is currently pre-1.0. Security fixes are applied to the latest non-prerelease release
+line and the current development line. Older 0.x lines are not guaranteed to receive backports unless
+a release-specific support window is announced.
 
 ## Reporting a vulnerability
 
@@ -107,7 +108,10 @@ and application-defined cost units. Retry attempts consume attempt/remote/cost b
 invoker runs. Budget refusals and schema contract violations are never retried.
 
 Automatic retries remain limited to endpoints classified as read-only unless trusted local code
-explicitly opts into retrying non-read-only operations.
+explicitly opts into retrying non-read-only operations. Built-in OpenAPI and OPTIMADE HTTP invokers
+retry only a conservative transient-status set and fail fast on other HTTP errors plus deterministic
+response-contract failures. Trusted custom invokers can raise `NonRetryableInvocationError` to
+prevent retrying a failure that cannot safely recover.
 
 ### Trusted execution hooks
 
