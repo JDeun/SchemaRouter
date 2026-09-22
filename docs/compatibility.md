@@ -12,6 +12,7 @@ claim that every historical version inside the range is exhaustively tested.
 | --- | --- | --- | --- |
 | Python | 3.10, 3.11, 3.12, 3.13, 3.14 | Full core suite on all five versions | Package metadata requires Python >=3.10; Python 3.15 RC is exercised as a non-blocking preview |
 | LangChain | `langchain-core>=1.6,<2` | Dedicated contract tests + runnable example on Python 3.12 | Optional `schemarouter[langchain]` extra |
+| LangGraph | `langgraph>=1.2,<2` | Real `StateGraph` sync/async contract tests + runnable example on Python 3.12 | Optional `schemarouter[langgraph]` extra |
 | LlamaIndex | `llama-index-core>=0.14,<1` | Dedicated contract tests + runnable example on Python 3.12 | Optional `schemarouter[llamaindex]` extra |
 | Jev / TypeSafe | `typesafe-sdk>=0.7,<1` | Dedicated adversarial contract tests on Python 3.12 | Optional `schemarouter[jev]` extra; no live API call in required CI |
 | MCP | `mcp>=2,<3` | Real Streamable HTTP integration against a local server | Optional `schemarouter[mcp]` extra |
@@ -36,6 +37,7 @@ Every pull request runs the blocking `CI` workflow with:
 - wheel and sdist build + metadata checks;
 - clean-environment installation and quickstart smoke tests from both wheel and sdist;
 - LangChain integration contract tests and `examples/langchain_quickstart.py`;
+- LangGraph `StateGraph` sync/async contract tests and `examples/langgraph_quickstart.py`;
 - LlamaIndex integration contract tests and `examples/llamaindex_quickstart.py`;
 - Jev adapter adversarial tests with the official SDK installed but no external API dependency;
 - real MCP Streamable HTTP integration using the official SDK and a local HTTP server;
@@ -54,8 +56,8 @@ release blockers without waiting on preview-only interpreter experiments.
 
 Optional ecosystem bridges remain thin adapters around SchemaRouter's existing trust boundary.
 
-- The core package must import and run without LangChain, LlamaIndex, Jev/TypeSafe, MCP, or
-  OpenTelemetry installed.
+- The core package must import and run without LangChain, LangGraph, LlamaIndex, Jev/TypeSafe,
+  MCP, or OpenTelemetry installed.
 - Integration modules use lazy imports and bounded dependency ranges.
 - An integration may translate framework/provider metadata, but execution must still flow through
   SchemaRouter schema identity, policy, binding checks, and validation.
@@ -66,8 +68,9 @@ Optional ecosystem bridges remain thin adapters around SchemaRouter's existing t
 
 ### Package layout decision
 
-For now, the LangChain and LlamaIndex bridges stay inside the main distribution as optional extras:
-`schemarouter[langchain]` and `schemarouter[llamaindex]`.
+For now, the LangChain, LangGraph, and LlamaIndex bridges stay inside the main distribution as
+optional extras: `schemarouter[langchain]`, `schemarouter[langgraph]`, and
+`schemarouter[llamaindex]`.
 
 A separate package such as `langchain-schemarouter` should be introduced only if at least one of
 these becomes true:

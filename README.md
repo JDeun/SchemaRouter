@@ -195,6 +195,21 @@ tools = to_langchain_tools(router)
 
 Execution still flows through SchemaRouter's policy, fingerprint, input, and output validation.
 
+## With LangGraph
+
+```bash
+pip install "schemarouter[langgraph]"
+```
+
+```python
+from schemarouter.integrations import to_langgraph_node
+
+builder.add_node("schema_router", to_langgraph_node(router))
+```
+
+The node supports sync/async `StateGraph` execution and returns checkpoint-friendly partial state
+updates while SchemaRouter retains planning, policy, and validated execution authority.
+
 ## With LlamaIndex
 
 Install the packaged LlamaIndex bridge:
@@ -310,7 +325,7 @@ python examples/quickstart.py
 python scripts/benchmark_decision_routing.py
 
 # Type-check the complete packaged surface, including optional integrations.
-pip install -e ".[dev,mcp,langchain,llamaindex,jev,otel]"
+pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel]"
 pyright
 pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing
 ```

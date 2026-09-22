@@ -113,6 +113,7 @@ nav:
       - Third-party adapter plugins: guides/adapter-plugins.md
   - Integrations:
       - LangChain: integrations/langchain.md
+      - LangGraph: integrations/langgraph.md
       - LlamaIndex: integrations/llamaindex.md
       - Jev / TypeSafe: integrations/jev.md
       - OpenTelemetry: integrations/opentelemetry.md

@@ -7,6 +7,12 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+### Added
+
+- native LangGraph `StateGraph` integration through `schemarouter[langgraph]`, with sync/async
+  execution, checkpoint-friendly result serialization, custom state-to-request adaptation, contract
+  tests, and a runnable example.
+
 ### Changed
 
 - post-release development has resumed as `0.4.0.dev0`; published `0.3.0` artifacts remain immutable.
