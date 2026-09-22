@@ -50,17 +50,18 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Replace the development version in `pyproject.toml` with the intended release version.
 - [ ] Add `docs/releases/<version>.md`; release metadata is derived from this version automatically.
 - [ ] The release commit is merged to `main` and the normal CI workflow is green.
-- [ ] `Auto Tag Release` observes that green `main` CI and verifies that the commit is still the
-  current `main` head.
-- [ ] The automatic tagger rejects `.dev` versions and requires matching release notes and a dated
+- [ ] The top-level `Release` workflow consumes that successful `main` CI event and verifies that
+  the tested SHA is still the current `main` head.
+- [ ] The release workflow rejects `.dev` versions and requires matching release notes and a dated
   changelog heading.
-- [ ] If `v<version>` does not already exist, the automatic tagger creates an annotated tag at the
+- [ ] If `v<version>` does not already exist, the release workflow creates an annotated tag at the
   exact green `main` SHA.
-- [ ] The tag-triggered Release workflow invokes the reusable full CI quality suite again before
-  artifact build.
-- [ ] Build from a clean checkout.
-- [ ] Run the full test suite against the built artifact.
-- [ ] Publish the GitHub release notes and package artifacts automatically from the tag.
+- [ ] If the tag already exists but the GitHub release does not, the workflow may resume from that
+  tagged SHA only when it is an ancestor of the green current `main` and carries the same version.
+- [ ] Build wheel and sdist from the resolved release SHA in an unprivileged job.
+- [ ] Clean-install and smoke-test both built artifacts before publication.
+- [ ] Publish GitHub release assets and PyPI artifacts from separate jobs; only the PyPI job receives
+  OIDC `id-token: write` permission.
 - [ ] Confirm the PyPI Trusted Publisher is configured for the `pypi` GitHub environment.
 - [ ] Publish to the package index only after all blocking gates are green.
 - [ ] Verify install/import in a clean environment.

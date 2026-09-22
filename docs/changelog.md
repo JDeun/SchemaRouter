@@ -40,16 +40,17 @@ No unreleased changes yet.
 
 ### Changed
 
-- current `main` now identifies as `0.3.0.dev0`, separating unreleased development builds from
-  the published `0.2.0a1` alpha;
+- release preparation now uses explicit PEP 440 release versions while normal post-release
+  development returns to a `.dev0` version;
 - release automation now derives version, release title, release-note path, prerelease state, and
   artifact verification from `pyproject.toml` instead of hard-coded release literals;
-- tag releases reuse the same full CI quality workflow as pull requests and verify both wheel and
-  sdist artifacts in clean environments before publication;
+- release publication now consumes a successful current-`main` CI result, verifies or creates the
+  annotated version tag, and clean-installs both wheel and sdist artifacts before publication;
 - superseded pull-request CI runs are cancelled automatically to avoid stale validation consuming
   runner capacity;
-- releasable `main` commits are automatically annotated with `v<version>` only after green CI,
-  current-head verification, release-note/changelog validation, and duplicate-tag checks.
+- releasable `main` commits are automatically published by the top-level Release workflow only
+  after green CI, current-head verification, release-note/changelog validation, and duplicate-tag
+  checks; existing unpublished tags may be resumed only from a compatible ancestor SHA.
 
 ### Security
 

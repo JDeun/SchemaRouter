@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
   push:
     tags:
       - "v*"
@@ -8,56 +11,245 @@ on:
 permissions:
   contents: read
 
-jobs:
-  quality:
-    uses: ./.github/workflows/ci.yml
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
 
-  build:
-    needs: quality
+jobs:
+  prepare:
+    if: >-
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
+      should_release: ${{ steps.state.outputs.should_release }}
       version: ${{ steps.metadata.outputs.version }}
+      tag: ${{ steps.metadata.outputs.tag }}
+      release_sha: ${{ steps.metadata.outputs.release_sha }}
       release_notes: ${{ steps.metadata.outputs.release_notes }}
       prerelease: ${{ steps.metadata.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
         with:
-          python-version: "3.12"
-      - name: Resolve and verify release metadata
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Verify successful CI still refers to current main
+        if: github.event_name == 'workflow_run'
+        env:
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          git fetch origin main --depth=1
+          current_main="$(git rev-parse origin/main)"
+          if [[ "$current_main" != "$TESTED_SHA" ]]; then
+            echo "CI passed for stale main SHA $TESTED_SHA; current main is $current_main."
+            echo "SKIP_RELEASE=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Resolve release metadata and target SHA
         id: metadata
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          PUSHED_TAG: ${{ github.ref_name }}
         run: |
           python - <<'PY'
           import os
           import re
+          import subprocess
           import tomllib
           from pathlib import Path
 
-          version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
-          tag = os.environ["GITHUB_REF_NAME"]
-          expected = f"v{version}"
-          if tag != expected:
-              raise SystemExit(f"tag {tag!r} does not match package version {expected!r}")
+          output_path = Path(os.environ["GITHUB_OUTPUT"])
+
+          def emit(**values: object) -> None:
+              with output_path.open("a", encoding="utf-8") as output:
+                  for key, value in values.items():
+                      print(f"{key}={value}", file=output)
+
+          if os.environ.get("SKIP_RELEASE") == "true":
+              emit(releasable="false")
+              raise SystemExit(0)
+
+          def read_version_at(ref: str | None = None) -> str:
+              if ref is None:
+                  content = Path("pyproject.toml").read_bytes()
+              else:
+                  content = subprocess.check_output(
+                      ["git", "show", f"{ref}:pyproject.toml"]
+                  )
+              return tomllib.loads(content.decode("utf-8"))["project"]["version"]
+
+          version = read_version_at()
           if ".dev" in version:
-              raise SystemExit("development versions cannot be published by the release workflow")
+              emit(releasable="false")
+              raise SystemExit(0)
+
+          if not re.fullmatch(r"\d+\.\d+\.\d+(?:(?:a|b|rc)\d+)?", version):
+              raise SystemExit(
+                  f"unsupported automatic release version format: {version!r}"
+              )
 
           release_notes = Path("docs") / "releases" / f"{version}.md"
           if not release_notes.is_file():
               raise SystemExit(f"missing release notes: {release_notes}")
 
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          if f"## {version} -" not in changelog:
+              raise SystemExit(
+                  f"CHANGELOG.md is missing a dated {version} release heading"
+              )
+
+          tag = f"v{version}"
+          event_name = os.environ["EVENT_NAME"]
+
+          if event_name == "push":
+              pushed_tag = os.environ["PUSHED_TAG"]
+              if pushed_tag != tag:
+                  raise SystemExit(
+                      f"tag {pushed_tag!r} does not match package version {tag!r}"
+                  )
+              subprocess.check_call(["git", "fetch", "origin", "tag", tag, "--force"])
+              release_sha = subprocess.check_output(
+                  ["git", "rev-list", "-n", "1", tag],
+                  text=True,
+              ).strip()
+          else:
+              tested_sha = os.environ["TESTED_SHA"]
+              remote = subprocess.run(
+                  [
+                      "git",
+                      "ls-remote",
+                      "--exit-code",
+                      "--tags",
+                      "origin",
+                      f"refs/tags/{tag}",
+                  ],
+                  stdout=subprocess.DEVNULL,
+                  stderr=subprocess.DEVNULL,
+                  check=False,
+              )
+              if remote.returncode == 0:
+                  subprocess.check_call(
+                      ["git", "fetch", "origin", "tag", tag, "--force"]
+                  )
+                  release_sha = subprocess.check_output(
+                      ["git", "rev-list", "-n", "1", tag],
+                      text=True,
+                  ).strip()
+                  if release_sha != tested_sha:
+                      ancestor = subprocess.run(
+                          [
+                              "git",
+                              "merge-base",
+                              "--is-ancestor",
+                              release_sha,
+                              tested_sha,
+                          ],
+                          check=False,
+                      )
+                      if ancestor.returncode != 0:
+                          raise SystemExit(
+                              f"existing {tag} points to {release_sha}, which is not "
+                              f"an ancestor of green main {tested_sha}"
+                          )
+                      tagged_version = read_version_at(release_sha)
+                      if tagged_version != version:
+                          raise SystemExit(
+                              f"existing {tag} contains package version "
+                              f"{tagged_version!r}, expected {version!r}"
+                          )
+              else:
+                  release_sha = tested_sha
+
           prerelease = bool(re.search(r"(?:a|b|rc)\d+(?:$|[.+-])", version))
-          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
-              print(f"version={version}", file=output)
-              print(f"release_notes={release_notes.as_posix()}", file=output)
-              print(f"prerelease={'true' if prerelease else 'false'}", file=output)
+          emit(
+              releasable="true",
+              version=version,
+              tag=tag,
+              release_sha=release_sha,
+              release_notes=release_notes.as_posix(),
+              prerelease="true" if prerelease else "false",
+          )
+          PY
+
+      - name: Create annotated tag when missing
+        if: >-
+          github.event_name == 'workflow_run' &&
+          steps.metadata.outputs.releasable == 'true'
+        env:
+          RELEASE_SHA: ${{ steps.metadata.outputs.release_sha }}
+          RELEASE_TAG: ${{ steps.metadata.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "$RELEASE_TAG already exists."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$RELEASE_TAG" "$RELEASE_SHA" -m "SchemaRouter $RELEASE_VERSION"
+          git push origin "refs/tags/$RELEASE_TAG"
+
+      - name: Check whether GitHub release already exists
+        id: state
+        if: steps.metadata.outputs.releasable == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.metadata.outputs.tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            echo "$RELEASE_TAG is already published on GitHub."
+          else
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: prepare
+    if: needs.prepare.outputs.should_release == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ needs.prepare.outputs.version }}
+      release_notes: ${{ needs.prepare.outputs.release_notes }}
+      prerelease: ${{ needs.prepare.outputs.prerelease }}
+      tag: ${{ needs.prepare.outputs.tag }}
+      release_sha: ${{ needs.prepare.outputs.release_sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.release_sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Verify release checkout metadata
+        env:
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          expected = os.environ["RELEASE_VERSION"]
+          if version != expected:
+              raise SystemExit(
+                  f"release checkout version {version!r} does not match {expected!r}"
+              )
           PY
       - run: python -m pip install --upgrade pip
       - run: pip install build twine
       - run: python -m build
       - run: twine check dist/*
-      - name: Verify release artifact
+      - name: Verify release artifacts
         env:
-          RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
         run: |
           python - <<'PY'
           import glob
@@ -85,18 +277,24 @@ jobs:
               with tempfile.TemporaryDirectory() as root:
                   env = Path(root) / "venv"
                   venv.EnvBuilder(with_pip=True).create(env)
-                  python = env / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
+                  python = env / (
+                      "Scripts/python.exe" if sys.platform == "win32" else "bin/python"
+                  )
                   subprocess.check_call([str(python), "-m", "pip", "install", artifact])
-                  subprocess.check_call([
-                      str(python),
-                      "-c",
-                      (
-                          "from importlib.metadata import version; "
-                          "import schemarouter; "
-                          f"assert schemarouter.__version__ == {os.environ['RELEASE_VERSION']!r}; "
-                          f"assert version('schemarouter') == {os.environ['RELEASE_VERSION']!r}"
-                      ),
-                  ])
+                  subprocess.check_call(
+                      [
+                          str(python),
+                          "-c",
+                          (
+                              "from importlib.metadata import version; "
+                              "import schemarouter; "
+                              f"assert schemarouter.__version__ == "
+                              f"{os.environ['RELEASE_VERSION']!r}; "
+                              f"assert version('schemarouter') == "
+                              f"{os.environ['RELEASE_VERSION']!r}"
+                          ),
+                      ]
+                  )
                   subprocess.check_call([str(python), "examples/quickstart.py"])
           PY
       - uses: actions/upload-artifact@v4
@@ -107,44 +305,37 @@ jobs:
           retention-days: 7
 
   github-release:
-    needs: build
+    needs: [prepare, build]
+    if: needs.prepare.outputs.should_release == 'true'
     permissions:
       contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prepare.outputs.release_sha }}
       - uses: actions/download-artifact@v4
         with:
           name: python-dist
           path: dist
-      - name: Create or update GitHub release
+      - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_VERSION: ${{ needs.build.outputs.version }}
-          RELEASE_NOTES: ${{ needs.build.outputs.release_notes }}
-          IS_PRERELEASE: ${{ needs.build.outputs.prerelease }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          RELEASE_NOTES: ${{ needs.prepare.outputs.release_notes }}
+          IS_PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
         run: |
           prerelease_args=()
           if [[ "$IS_PRERELEASE" == "true" ]]; then
             prerelease_args+=(--prerelease)
           fi
 
-          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist/* --clobber
-            gh release edit "$GITHUB_REF_NAME" \
-              --title "SchemaRouter $RELEASE_VERSION" \
-              --notes-file "$RELEASE_NOTES" \
-              "${prerelease_args[@]}"
-          else
-            gh release create "$GITHUB_REF_NAME" dist/* \
-              --title "SchemaRouter $RELEASE_VERSION" \
-              --notes-file "$RELEASE_NOTES" \
-              "${prerelease_args[@]}" \
-              --verify-tag
-          fi
+          gh release create "$RELEASE_TAG" dist/*             --title "SchemaRouter $RELEASE_VERSION"             --notes-file "$RELEASE_NOTES"             "${prerelease_args[@]}"             --verify-tag
 
   pypi:
-    needs: build
+    needs: [prepare, build]
+    if: needs.prepare.outputs.should_release == 'true'
     permissions:
       id-token: write
     runs-on: ubuntu-latest
@@ -159,3 +350,4 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
+          skip-existing: true
