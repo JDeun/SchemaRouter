@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- OpenAPI planner fidelity for chained local references, local Path Item references, safe
+  same-document URI-reference normalization during URL ingestion, and object property/required
+  discovery through `allOf` while preserving runtime schema validation.
 - native LangGraph `StateGraph` integration through `schemarouter[langgraph]`, with sync/async
   execution, checkpoint-friendly result serialization, custom state-to-request adaptation, contract
   tests, and a runnable example.

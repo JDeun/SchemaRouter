@@ -74,6 +74,21 @@ def _local_ref_target(document: dict[str, Any], ref: str) -> Any | None:
     return node
 
 
+def _resolve_local_ref(document: dict[str, Any], value: Any) -> Any:
+    current = value
+    seen: set[str] = set()
+    while isinstance(current, dict):
+        ref = current.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/") or ref in seen:
+            break
+        target = _local_ref_target(document, ref)
+        if target is None:
+            break
+        seen.add(ref)
+        current = target
+    return current
+
+
 def _collect_schema_refs(node: Any) -> set[str]:
     refs: set[str] = set()
     for _, value in _walk(node):
@@ -154,19 +169,32 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                 location,
                 "external_ref",
                 "unsupported",
-                "External $ref targets are not fetched or resolved automatically.",
+                (
+                    "Cross-document $ref targets are not fetched automatically. "
+                    "URI refs that resolve back to the loaded document are normalized "
+                    "during URL ingestion."
+                ),
             )
         for construct in ("allOf", "oneOf", "anyOf"):
-            if construct in node:
-                add(
-                    location,
-                    construct,
-                    "partial",
-                    (
-                        f"{construct} is preserved for runtime validation but is not fully "
-                        "flattened for planning."
-                    ),
+            if construct not in node:
+                continue
+            if construct == "allOf":
+                message = (
+                    "allOf is preserved for runtime validation and object properties/required "
+                    "fields are flattened for planning when safely derivable; more general "
+                    "composition semantics remain partial."
                 )
+            else:
+                message = (
+                    f"{construct} is preserved for runtime validation but is not flattened "
+                    "for planner-side variant selection."
+                )
+            add(
+                location,
+                construct,
+                "partial",
+                message,
+            )
         if node.get("nullable") is True and version_text and version_text.startswith("3.0"):
             add(
                 location,
@@ -205,6 +233,9 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
     if isinstance(paths, dict):
         for path, path_item in paths.items():
             if not isinstance(path, str) or not isinstance(path_item, dict):
+                continue
+            path_item = _resolve_local_ref(document, path_item)
+            if not isinstance(path_item, dict):
                 continue
             for method, operation in path_item.items():
                 method_lower = str(method).lower()
@@ -253,11 +284,7 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                     ),
                 ]
                 for index, parameter in enumerate(parameters):
-                    resolved = parameter
-                    if isinstance(parameter, dict) and isinstance(parameter.get("$ref"), str):
-                        target = _local_ref_target(document, parameter["$ref"])
-                        if target is not None:
-                            resolved = target
+                    resolved = _resolve_local_ref(document, parameter)
                     if isinstance(resolved, dict) and resolved.get("in") == "cookie":
                         add(
                             f"{op_location}/parameters/{index}",
@@ -269,11 +296,7 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                             ),
                         )
 
-                request_body = operation.get("requestBody")
-                if isinstance(request_body, dict) and isinstance(request_body.get("$ref"), str):
-                    resolved = _local_ref_target(document, request_body["$ref"])
-                    if isinstance(resolved, dict):
-                        request_body = resolved
+                request_body = _resolve_local_ref(document, operation.get("requestBody"))
                 if isinstance(request_body, dict):
                     content = request_body.get("content")
                     if isinstance(content, dict) and content:
@@ -298,13 +321,7 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                         else:
                             media = content.get("application/json")
                             schema = media.get("schema") if isinstance(media, dict) else None
-                            if (
-                                isinstance(schema, dict)
-                                and isinstance(schema.get("$ref"), str)
-                            ):
-                                target = _local_ref_target(document, schema["$ref"])
-                                if isinstance(target, dict):
-                                    schema = target
+                            schema = _resolve_local_ref(document, schema)
                             if isinstance(schema, dict):
                                 schema_type = schema.get("type")
                                 has_properties = isinstance(schema.get("properties"), dict)
@@ -332,14 +349,7 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                     for code, response in responses.items():
                         if not str(code).startswith("2"):
                             continue
-                        resolved_response = response
-                        if (
-                            isinstance(response, dict)
-                            and isinstance(response.get("$ref"), str)
-                        ):
-                            target = _local_ref_target(document, response["$ref"])
-                            if isinstance(target, dict):
-                                resolved_response = target
+                        resolved_response = _resolve_local_ref(document, response)
                         content = (
                             resolved_response.get("content")
                             if isinstance(resolved_response, dict)

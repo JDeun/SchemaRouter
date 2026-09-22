@@ -4,7 +4,7 @@ import json
 import re
 from copy import deepcopy
 from typing import Any
-from urllib.parse import quote, unquote, urljoin, urlparse
+from urllib.parse import quote, unquote, urldefrag, urljoin, urlparse
 
 import httpx
 
@@ -26,27 +26,115 @@ _HEADER_NAME_RE = re.compile(r"^[!#$%&'*+.^_\x60|~0-9A-Za-z-]+$")
 _MAX_RUNTIME_RESPONSE_BYTES = 16 * 1024 * 1024
 
 
-def _resolve_local_ref(document: dict[str, Any], value: Any) -> Any:
-    if not isinstance(value, dict) or "$ref" not in value:
-        return value
-    ref = value["$ref"]
-    if not isinstance(ref, str) or not ref.startswith("#/"):
-        return value
+def _local_ref_target(document: dict[str, Any], ref: str) -> Any | None:
+    if not ref.startswith("#/"):
+        return None
     node: Any = document
-    for part in ref[2:].split("/"):
-        part = part.replace("~1", "/").replace("~0", "~")
-        node = node[part]
+    try:
+        for part in ref[2:].split("/"):
+            part = part.replace("~1", "/").replace("~0", "~")
+            node = node[part]
+    except (KeyError, TypeError):
+        return None
     return deepcopy(node)
 
 
-def _schema_properties(document: dict[str, Any], schema: Any) -> dict[str, dict[str, Any]]:
-    schema = _resolve_local_ref(document, schema)
+def _resolve_local_ref(document: dict[str, Any], value: Any) -> Any:
+    if not isinstance(value, dict):
+        return value
+
+    current = deepcopy(value)
+    seen: set[str] = set()
+    while isinstance(current, dict):
+        ref = current.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/") or ref in seen:
+            break
+        target = _local_ref_target(document, ref)
+        if target is None:
+            break
+        seen.add(ref)
+        siblings = {key: item for key, item in current.items() if key != "$ref"}
+        if siblings and isinstance(target, dict):
+            merged = deepcopy(target)
+            merged.update(deepcopy(siblings))
+            current = merged
+        else:
+            current = target
+    return current
+
+
+def _schema_fragments(
+    document: dict[str, Any],
+    schema: Any,
+    *,
+    seen_refs: frozenset[str] = frozenset(),
+) -> list[dict[str, Any]]:
     if not isinstance(schema, dict):
-        return {}
-    props = schema.get("properties", {})
-    if not isinstance(props, dict):
-        return {}
-    return {name: _resolve_local_ref(document, spec) for name, spec in props.items()}
+        return []
+
+    ref = schema.get("$ref")
+    if isinstance(ref, str) and ref.startswith("#/"):
+        if ref in seen_refs:
+            return []
+        target = _local_ref_target(document, ref)
+        fragments: list[dict[str, Any]] = []
+        if isinstance(target, dict):
+            fragments.extend(
+                _schema_fragments(
+                    document,
+                    target,
+                    seen_refs=seen_refs | {ref},
+                )
+            )
+        siblings = {key: value for key, value in schema.items() if key != "$ref"}
+        if siblings:
+            fragments.extend(
+                _schema_fragments(
+                    document,
+                    siblings,
+                    seen_refs=seen_refs,
+                )
+            )
+        return fragments
+
+    fragments = [schema]
+    all_of = schema.get("allOf")
+    if isinstance(all_of, list):
+        for branch in all_of:
+            fragments.extend(
+                _schema_fragments(
+                    document,
+                    branch,
+                    seen_refs=seen_refs,
+                )
+            )
+    return fragments
+
+
+def _schema_properties(document: dict[str, Any], schema: Any) -> dict[str, dict[str, Any]]:
+    merged: dict[str, dict[str, Any]] = {}
+    for fragment in _schema_fragments(document, schema):
+        props = fragment.get("properties", {})
+        if not isinstance(props, dict):
+            continue
+        for name, spec in props.items():
+            resolved = _resolve_local_ref(document, spec)
+            if not isinstance(resolved, dict):
+                resolved = {}
+            if name in merged and merged[name] != resolved:
+                merged[name] = {"allOf": [merged[name], resolved]}
+            else:
+                merged[name] = resolved
+    return merged
+
+
+def _schema_required(document: dict[str, Any], schema: Any) -> set[str]:
+    required: set[str] = set()
+    for fragment in _schema_fragments(document, schema):
+        names = fragment.get("required")
+        if isinstance(names, list):
+            required.update(name for name in names if isinstance(name, str))
+    return required
 
 
 def _with_components(
@@ -58,6 +146,34 @@ def _with_components(
     if isinstance(components, dict) and components:
         resolved["components"] = deepcopy(components)
     return resolved
+
+
+def normalize_same_document_refs(
+    document: dict[str, Any],
+    source_url: str,
+) -> tuple[dict[str, Any], int]:
+    """Rewrite URI refs that resolve back to the loaded OpenAPI document as local refs."""
+    source_resource, _ = urldefrag(source_url)
+    normalized_count = 0
+
+    def visit(value: Any) -> Any:
+        nonlocal normalized_count
+        if isinstance(value, dict):
+            result = {key: visit(item) for key, item in value.items()}
+            ref = result.get("$ref")
+            if isinstance(ref, str) and not ref.startswith("#"):
+                absolute = urljoin(source_resource, ref)
+                resource, fragment = urldefrag(absolute)
+                decoded_fragment = unquote(fragment)
+                if resource == source_resource and decoded_fragment.startswith("/"):
+                    result["$ref"] = "#" + decoded_fragment
+                    normalized_count += 1
+            return result
+        if isinstance(value, list):
+            return [visit(item) for item in value]
+        return value
+
+    return visit(deepcopy(document)), normalized_count
 
 
 def _disambiguate_parameter_names(
@@ -178,19 +294,27 @@ def tool_from_openapi(
     for path, path_item in document.get("paths", {}).items():
         if not isinstance(path, str) or not isinstance(path_item, dict):
             continue
+        path_item = _resolve_local_ref(document, path_item)
+        if not isinstance(path_item, dict):
+            continue
         try:
             _validate_endpoint_path(path)
         except ValueError:
             continue
 
         path_parameters = path_item.get("parameters", [])
+        if not isinstance(path_parameters, list):
+            path_parameters = []
         for method, operation in path_item.items():
             if method.lower() not in _HTTP_METHODS or not isinstance(operation, dict):
                 continue
             fallback_name = path.strip("/").replace("/", "_") or "root"
             operation_id = operation.get("operationId") or f"{method.lower()}_{fallback_name}"
             parameters: list[ParameterSpec] = []
-            merged_parameters = [*path_parameters, *operation.get("parameters", [])]
+            operation_parameters = operation.get("parameters", [])
+            if not isinstance(operation_parameters, list):
+                operation_parameters = []
+            merged_parameters = [*path_parameters, *operation_parameters]
             seen: set[tuple[str, str]] = set()
             for raw_parameter in merged_parameters:
                 parameter = _resolve_local_ref(document, raw_parameter)
@@ -227,11 +351,7 @@ def tool_from_openapi(
                     if isinstance(json_body, dict)
                     else {}
                 )
-                required_body = (
-                    set(body_schema.get("required", []))
-                    if isinstance(body_schema, dict)
-                    else set()
-                )
+                required_body = _schema_required(document, body_schema)
                 for prop_name, prop_schema in _schema_properties(document, body_schema).items():
                     parameters.append(
                         ParameterSpec(

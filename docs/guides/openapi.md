@@ -14,7 +14,10 @@ router = await SchemaRouter.from_url(
 ```
 
 The adapter imports operations, path/query/header parameters, JSON request-body properties, response
-schemas, local component references, and read/write classification inferred from the HTTP method.
+schemas, local component references, local reference chains, local Path Item references, and
+read/write classification inferred from the HTTP method. Object properties and required fields
+reachable through `allOf` are flattened for planner visibility while the original composition is
+retained for runtime JSON Schema validation.
 
 ## Same-origin and cross-origin servers
 
@@ -60,10 +63,19 @@ body:id   -> body__id
 
 The transport maps those keys back to the original wire name.
 
-## Local component references
+## Local and same-document references
 
-Nested `#/components/...` references are preserved with their component root so runtime JSON Schema
-validation can resolve them, including array item schemas.
+Nested `#/components/...` reference chains are resolved for planner-side schema discovery while
+their component root remains available to runtime JSON Schema validation, including array item
+schemas and recursive structures.
+
+When a document is loaded from a URL, URI references that resolve back to that exact document are
+normalized to local JSON Pointer references. For example,
+`./openapi.json#/components/schemas/User` is treated as a local reference when the loaded resource
+is that same `openapi.json`.
+
+SchemaRouter does **not** fetch cross-document references automatically. Doing so would expand the
+schema-fetch trust boundary and requires separate bounded origin/size/depth controls.
 
 ## Current common subset
 
@@ -74,12 +86,14 @@ Supported paths include:
 - path/query/header parameters;
 - object-like JSON request bodies;
 - JSON responses;
-- local component references;
+- local component/path-item reference chains;
+- same-document URI-reference normalization;
+- planner-side object-property/required flattening through `allOf`;
 - explicit cross-origin binding;
 - runtime origin confinement.
 
-Richer external references, advanced composition, and more ergonomic non-object request bodies remain
-post-v0.1 work. Unsupported constructs should not be guessed.
+Cross-document references, planner-side `oneOf`/`anyOf` variant selection, and more ergonomic
+non-object request bodies remain follow-up work. Unsupported constructs should not be guessed.
 
 
 ## Runtime response bound
