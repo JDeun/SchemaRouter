@@ -9,6 +9,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- explicit opt-in bounded same-origin OpenAPI cross-document `$ref` bundling with schema-header
+  credential confinement, redirect/origin enforcement, depth/document/aggregate-byte budgets,
+  complete-document JSON/YAML parsing, cycle caching, runtime schema preservation, and fail-closed
+  handling for `$id` rebasing and non-JSON-Pointer anchors.
 - exact-recall candidate indexing cached by registry version, with exhaustive-mode parity tests,
   stable-snapshot rebuilds, synthetic scorer-call benchmarking, and no approximate pruning.
 - conservative bounded `evidence_sufficiency` decision surface with deterministic local
