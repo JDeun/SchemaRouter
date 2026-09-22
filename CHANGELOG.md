@@ -7,6 +7,13 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+### Added
+
+- public `NonRetryableInvocationError` contract for trusted invokers that can prove repeating the
+  same call cannot recover safely.
+- conservative built-in HTTP retry classification for OpenAPI and OPTIMADE, including fail-fast
+  handling for non-transient status codes and deterministic response-contract violations.
+
 ### Changed
 
 - post-release development has resumed as `0.5.0.dev0`; published `0.4.0` artifacts remain immutable.
