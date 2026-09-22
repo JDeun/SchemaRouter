@@ -357,7 +357,12 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                 responses = operation.get("responses")
                 if isinstance(responses, dict):
                     for code, response in responses.items():
-                        if not str(code).startswith("2"):
+                        code_text = str(code).upper()
+                        if not (
+                            len(code_text) == 3
+                            and code_text.startswith("2")
+                            and (code_text[1:].isdigit() or code_text == "2XX")
+                        ):
                             continue
                         resolved_response = _resolve_local_ref(document, response)
                         content = (
@@ -371,7 +376,10 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                                     f"{op_location}/responses/{code}/content",
                                     "multiple_response_content_types",
                                     "partial",
-                                    "SchemaRouter selects a JSON response schema for validation.",
+                                    (
+                                        "SchemaRouter validates supported JSON media types; "
+                                        "other success media types remain partial."
+                                    ),
                                 )
                             if not any(
                                 media in content
@@ -386,7 +394,6 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                                         "validation."
                                     ),
                                 )
-                        break
 
                 if operation.get("callbacks"):
                     add(
