@@ -68,6 +68,30 @@ class ExecutionBudgetTracker:
     def after_attempt(self) -> None:
         self._check_elapsed()
 
+    async def wait_backoff(self, delay: float) -> None:
+        """Wait between attempts without sleeping past the wall-clock budget."""
+        if delay <= 0:
+            return
+
+        remaining = self.remaining_seconds()
+        if remaining is None:
+            await asyncio.sleep(delay)
+            return
+
+        if delay >= remaining:
+            await asyncio.sleep(remaining)
+            raise ExecutionBudgetExceededError(
+                "execution exceeded max_elapsed_seconds during retry backoff"
+            )
+
+        await asyncio.sleep(delay)
+        try:
+            self._check_elapsed()
+        except ExecutionBudgetExceededError as exc:
+            raise ExecutionBudgetExceededError(
+                "execution exceeded max_elapsed_seconds during retry backoff"
+            ) from exc
+
     def before_call(self, call: ToolCall) -> None:
         self._check_elapsed()
         next_total = self.tool_calls + 1
@@ -408,7 +432,7 @@ class RegistryExecutor:
                 if attempt >= max_attempts:
                     break
                 if delay > 0:
-                    await asyncio.sleep(delay)
+                    await tracker.wait_backoff(delay)
                     delay = min(
                         retry.max_backoff_seconds,
                         delay * retry.backoff_multiplier,
