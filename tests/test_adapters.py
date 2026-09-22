@@ -284,6 +284,50 @@ async def test_openapi_nested_local_refs_remain_runtime_resolvable() -> None:
         await executor.execute(plan)
 
 
+def test_openapi_operation_parameters_override_path_parameters() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Override API"},
+        "paths": {
+            "/items": {
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": False,
+                        "description": "path-level",
+                        "schema": {"type": "integer", "maximum": 100},
+                    }
+                ],
+                "get": {
+                    "operationId": "list_items",
+                    "parameters": [
+                        {
+                            "name": "limit",
+                            "in": "query",
+                            "required": True,
+                            "description": "operation-level",
+                            "schema": {"type": "integer", "maximum": 10},
+                        }
+                    ],
+                    "responses": {"204": {"description": "ok"}},
+                },
+            }
+        },
+    }
+
+    endpoint = tool_from_openapi("override", document).endpoint("list_items")
+
+    assert len(endpoint.parameters) == 1
+    parameter = endpoint.parameters[0]
+    assert parameter.name == "limit"
+    assert parameter.description == "operation-level"
+    assert parameter.required is True
+    assert parameter.json_schema["maximum"] == 10
+    assert endpoint.input_schema["required"] == ["limit"]
+    assert endpoint.input_schema["properties"]["limit"]["maximum"] == 10
+
+
 def test_openapi_parameter_name_collisions_are_disambiguated() -> None:
     document = {
         "openapi": "3.0.4",
