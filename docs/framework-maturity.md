@@ -25,7 +25,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Runtime policy | Implemented with per-call approval and execution budgets | Add richer organization policy adapters |
 | Runtime JSON Schema validation | Implemented | Add richer nested projection |
 | LangChain / LangGraph / LlamaIndex integrations | Implemented optional adapters and native graph node | Expand ecosystem listings |
-| Bounded decision backends | Provider-neutral callable + local embedding similarity + optional Jev, all opt-in | Extend dedicated field/evidence contracts |
+| Bounded decision backends | Candidate + bounded field selection, provider-neutral callable/embedding + optional Jev/Ollama, all opt-in | Add dedicated evidence-sufficiency contract |
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
 | Local Ollama decision provider | Implemented over structured-output HTTP API | Benchmark specific local models/hardware before quality claims |
 | Decision benchmark harness | 144-case checked-in corpus + JSON/CSV metrics | Gather dated live-provider evidence |
@@ -105,6 +105,7 @@ Completed locally:
 - optional Jev decision provider with adversarial contract tests;
 - provider-neutral embedding-similarity decision backend with threshold/margin abstention and
   malformed-vector fail-closed validation;
+- bounded field-selection contract with identifier preservation and deterministic fallback;
 - provider-neutral decision benchmark harness;
 - 144-case multilingual/adversarial benchmark corpus;
 - OpenAPI compatibility reporting;

@@ -40,6 +40,8 @@ Every pull request runs the blocking `CI` workflow with:
 - LangChain integration contract tests and `examples/langchain_quickstart.py`;
 - LangGraph `StateGraph` sync/async contract tests and `examples/langgraph_quickstart.py`;
 - LlamaIndex integration contract tests and `examples/llamaindex_quickstart.py`;
+- bounded candidate and field-selection planner tests, including identifier preservation,
+  malformed/unknown IDs, abstention, sync/async paths, and deterministic fallback;
 - Jev adapter adversarial tests with the official SDK installed but no external API dependency;
 - Ollama bounded-decision adversarial tests using a local mock HTTP transport;
 - real MCP Streamable HTTP integration using the official SDK and a local HTTP server;

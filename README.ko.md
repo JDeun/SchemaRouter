@@ -233,8 +233,8 @@ validation 및 endpoint execution 경계를 유지합니다.
 
 ## 실험적 bounded decision
 
-SchemaRouter는 tool/endpoint 선택을 보조하는 opt-in `DecisionBackend`를 제공합니다.
-기본값은 **OFF**이며 모델이 임의의 실행 가능한 스키마 멤버를 만들 수 없습니다.
+SchemaRouter는 tool/endpoint와 output field 선택을 보조하는 opt-in `DecisionBackend`를
+제공합니다. 기본값은 **OFF**이며 모델이 임의의 실행 가능한 스키마 멤버를 만들 수 없습니다.
 
 ```python
 from schemarouter import DecisionPolicy, SchemaPlanner
@@ -291,6 +291,19 @@ backend = OllamaDecisionBackend("your-installed-model")
 
 Ollama structured output으로 유한한 option ID를 제한하고, SchemaRouter가 결과를 다시 로컬
 검증합니다. 로컬 모델이 존재한다는 이유만으로 자동 활성화되지는 않습니다.
+
+bounded field selection도 별도로 opt-in할 수 있습니다.
+
+```python
+policy = DecisionPolicy(
+    enabled=True,
+    field_selection=True,
+    fallback="deterministic",
+)
+```
+
+backend에는 선언된 non-identifier field만 제공되고 identifier field는 항상 로컬에서
+보존됩니다. invalid output이나 abstain은 deterministic projection으로 fallback됩니다.
 
 ## Decision benchmark
 

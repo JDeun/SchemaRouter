@@ -31,9 +31,34 @@ The master `enabled` switch must be true. Individual surfaces are separately con
 - `field_selection`
 - `evidence_sufficiency`
 
-In the initial v0.3 contract, bounded candidate selection is active when tool or endpoint selection
-is enabled. Field and evidence switches are reserved controls and fail closed until their dedicated
-bounded contracts are implemented.
+Bounded candidate selection is active when tool or endpoint selection is enabled. `field_selection`
+is also implemented: the backend can select only from the endpoint's declared non-identifier
+output fields, while identifier fields are always preserved locally. `evidence_sufficiency`
+remains reserved and fails closed until its dedicated bounded contract is implemented.
+
+## Bounded field selection
+
+Enable field selection explicitly:
+
+```python
+policy = DecisionPolicy(
+    enabled=True,
+    field_selection=True,
+    fallback="deterministic",
+)
+```
+
+For each already-selected endpoint, SchemaRouter offers only declared non-identifier output fields
+as finite `field:N` options. Identifier fields never enter the provider's choice set and are
+always retained locally.
+
+The decision request's `max_selections` never exceeds the deterministic projection's answer-field
+width. When deterministic projection is in recall-first mode and keeps all fields, the backend may
+select any bounded subset of those declared fields.
+
+Provider failure, malformed/unknown field IDs, duplicate IDs, overflow, or abstention follows the
+same fallback policy as candidate routing. Evidence requirements are recomputed from the final
+locally validated field set.
 
 ## Fallbacks
 

@@ -9,6 +9,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- bounded `field_selection` decision surface that exposes only declared non-identifier output
+  fields, always preserves identifier fields locally, caps selections by the deterministic
+  projection width, recomputes evidence from the final field set, and supports sync/async
+  deterministic fallback.
 - append-only `SQLiteRunTraceStore` with strict sequence/run/timestamp invariants, corruption
   fail-closed validation, direct `astream_events(..., trace_store=...)` persistence, redaction-
   preserving storage, and non-executing historical replay.

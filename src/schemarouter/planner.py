@@ -80,8 +80,8 @@ class SchemaPlanner:
             raise PlanningError("decision policy is enabled but no decision backend is configured")
         if self.decision_policy.reserved_surfaces_enabled:
             raise PlanningError(
-                "field_selection and evidence_sufficiency decision surfaces are reserved "
-                "until dedicated bounded contracts are available"
+                "evidence_sufficiency decision surface is reserved until a dedicated bounded "
+                "contract is available"
             )
 
     def plan(self, request: PlanRequest | str) -> ExecutionPlan:
@@ -190,6 +190,159 @@ class SchemaPlanner:
             raise PlanningError("decision backend abstained")
         return [candidates[int(item.option_id.split(":", 1)[1])] for item in result.selections], []
 
+
+    @staticmethod
+    def _field_decision_request(
+        request: PlanRequest,
+        candidate: _Candidate,
+        deterministic_fields: list[str],
+    ) -> DecisionRequest | None:
+        endpoint = candidate.endpoint
+        selectable = [field for field in endpoint.output_fields if not field.identifier]
+        if not selectable:
+            return None
+
+        deterministic_answer_fields = [
+            name
+            for name in deterministic_fields
+            if any(field.name == name and not field.identifier for field in endpoint.output_fields)
+        ]
+        max_selections = len(deterministic_answer_fields) or len(selectable)
+
+        options: list[DecisionOption] = []
+        for index, field in enumerate(selectable):
+            detail_parts = [field.description.strip()]
+            if field.aliases:
+                detail_parts.append("aliases: " + ", ".join(field.aliases))
+            if field.unit:
+                detail_parts.append(f"unit: {field.unit}")
+            description = "; ".join(part for part in detail_parts if part)
+            options.append(
+                DecisionOption(
+                    id=f"field:{index}",
+                    label=field.name,
+                    description=description,
+                    metadata={
+                        "tool": candidate.tool.key,
+                        "endpoint": endpoint.name,
+                    },
+                )
+            )
+
+        return DecisionRequest(
+            query=request.query,
+            options=options,
+            max_selections=min(max_selections, len(options)),
+            context={
+                "surface": "field_selection",
+                "tool": candidate.tool.key,
+                "endpoint": endpoint.name,
+                "deterministic_fields": list(deterministic_fields),
+            },
+        )
+
+    @staticmethod
+    def _apply_field_decision(
+        candidate: _Candidate,
+        result_ids: list[str],
+    ) -> list[str]:
+        endpoint = candidate.endpoint
+        identifiers = [field.name for field in endpoint.output_fields if field.identifier]
+        selectable = [field for field in endpoint.output_fields if not field.identifier]
+        selected = [
+            selectable[int(option_id.split(":", 1)[1])].name
+            for option_id in result_ids
+        ]
+        return list(dict.fromkeys([*identifiers, *selected]))
+
+    def _select_fields_sync(
+        self,
+        request: PlanRequest,
+        candidate: _Candidate,
+        deterministic_fields: list[str],
+    ) -> tuple[list[str], list[str]]:
+        if not self.decision_policy.field_selection_enabled:
+            return deterministic_fields, []
+
+        decision_request = self._field_decision_request(
+            request,
+            candidate,
+            deterministic_fields,
+        )
+        if decision_request is None:
+            return deterministic_fields, []
+
+        assert self.decision_backend is not None
+        prefix = f"{candidate.tool.key}.{candidate.endpoint.name}"
+        try:
+            result = choose_sync(self.decision_backend, decision_request)
+        except Exception as exc:
+            if self.decision_policy.fallback == "deterministic":
+                return deterministic_fields, [
+                    f"{prefix}: field decision fallback: {type(exc).__name__}"
+                ]
+            raise
+
+        if result.abstained or not result.selections:
+            if self.decision_policy.fallback == "deterministic":
+                return deterministic_fields, [
+                    f"{prefix}: field decision backend abstained; "
+                    "used deterministic projection"
+                ]
+            raise PlanningError(f"{prefix}: field decision backend abstained")
+
+        return (
+            self._apply_field_decision(
+                candidate,
+                [item.option_id for item in result.selections],
+            ),
+            [],
+        )
+
+    async def _select_fields_async(
+        self,
+        request: PlanRequest,
+        candidate: _Candidate,
+        deterministic_fields: list[str],
+    ) -> tuple[list[str], list[str]]:
+        if not self.decision_policy.field_selection_enabled:
+            return deterministic_fields, []
+
+        decision_request = self._field_decision_request(
+            request,
+            candidate,
+            deterministic_fields,
+        )
+        if decision_request is None:
+            return deterministic_fields, []
+
+        assert self.decision_backend is not None
+        prefix = f"{candidate.tool.key}.{candidate.endpoint.name}"
+        try:
+            result = await choose_async(self.decision_backend, decision_request)
+        except Exception as exc:
+            if self.decision_policy.fallback == "deterministic":
+                return deterministic_fields, [
+                    f"{prefix}: field decision fallback: {type(exc).__name__}"
+                ]
+            raise
+
+        if result.abstained or not result.selections:
+            if self.decision_policy.fallback == "deterministic":
+                return deterministic_fields, [
+                    f"{prefix}: field decision backend abstained; "
+                    "used deterministic projection"
+                ]
+            raise PlanningError(f"{prefix}: field decision backend abstained")
+
+        return (
+            self._apply_field_decision(
+                candidate,
+                [item.option_id for item in result.selections],
+            ),
+            [],
+        )
+
     def _build_plan(
         self,
         request: PlanRequest,
@@ -230,7 +383,17 @@ class SchemaPlanner:
                 for parameter in endpoint.parameters
                 if parameter.required and parameter.name not in arguments
             ]
-            fields = self._project_fields(endpoint, intent, candidate.matched_fields)
+            deterministic_fields = self._project_fields(
+                endpoint,
+                intent,
+                candidate.matched_fields,
+            )
+            fields, field_warnings = self._select_fields_sync(
+                request,
+                candidate,
+                deterministic_fields,
+            )
+            warnings.extend(field_warnings)
             calls.append(
                 ToolCall(
                     tool=candidate.tool.key,
@@ -287,7 +450,17 @@ class SchemaPlanner:
                 for parameter in endpoint.parameters
                 if parameter.required and parameter.name not in arguments
             ]
-            fields = self._project_fields(endpoint, intent, candidate.matched_fields)
+            deterministic_fields = self._project_fields(
+                endpoint,
+                intent,
+                candidate.matched_fields,
+            )
+            fields, field_warnings = await self._select_fields_async(
+                request,
+                candidate,
+                deterministic_fields,
+            )
+            warnings.extend(field_warnings)
             calls.append(
                 ToolCall(
                     tool=candidate.tool.key,

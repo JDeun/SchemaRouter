@@ -233,8 +233,8 @@ endpoint execution.
 
 ## Experimental bounded decisions
 
-SchemaRouter includes an optional bounded `DecisionBackend` for tool/endpoint selection. It is
-**off by default** and cannot invent executable schema members.
+SchemaRouter includes an optional bounded `DecisionBackend` for tool/endpoint and output-field
+selection. It is **off by default** and cannot invent executable schema members.
 
 ```python
 from schemarouter import DecisionPolicy, SchemaPlanner
@@ -289,6 +289,19 @@ backend = OllamaDecisionBackend("your-installed-model")
 
 Ollama structured output constrains the finite option IDs, and SchemaRouter revalidates the result
 locally. No local model is enabled automatically.
+
+Bounded field selection is independently opt-in:
+
+```python
+policy = DecisionPolicy(
+    enabled=True,
+    field_selection=True,
+    fallback="deterministic",
+)
+```
+
+Only declared non-identifier fields are offered to the backend. Identifier fields are always
+preserved locally, and invalid/abstaining provider output falls back to deterministic projection.
 
 ## Decision benchmark
 
