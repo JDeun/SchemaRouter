@@ -505,7 +505,12 @@ class SchemaPlanner:
 
         matched_fields: list[str] = []
         for field in endpoint.output_fields:
-            names = [field.name, *field.aliases]
+            names = [
+                field.name,
+                *field.aliases,
+                ".".join(field.projection_path),
+                *field.projection_path,
+            ]
             norms = {_normalize(name) for name in names if name}
             exact = bool(norms & concept_norms)
             lexical = any(query_tokens & _tokens(name) for name in names)
