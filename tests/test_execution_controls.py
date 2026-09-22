@@ -9,6 +9,7 @@ from schemarouter import (
     EndpointSpec,
     ExecutionBudget,
     ExecutionBudgetExceededError,
+    ExecutionError,
     ExecutionPlan,
     ExecutionPolicy,
     InMemoryRegistry,
@@ -258,7 +259,7 @@ async def test_max_backoff_caps_the_first_retry_delay(monkeypatch) -> None:
     monkeypatch.setattr(ExecutionBudgetTracker, "wait_backoff", capture_backoff)
     executor.bind("demo", flaky)
 
-    with pytest.raises(Exception):
+    with pytest.raises(ExecutionError, match="after 3 attempt"):
         await executor.execute_call(
             call,
             retry=RetryPolicy(
