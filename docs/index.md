@@ -20,17 +20,17 @@ validates policy, schema identity, arguments, and raw output before execution is
 
 <div class="grid cards" markdown>
 
--   :material-file-tree:{ .lg .middle } **Compile**
+-   **Compile**
 
     Turn OpenAPI, MCP, OPTIMADE, Python callables, or approved documentation into one typed
     Tool / Endpoint / Parameter / Field model.
 
--   :material-shield-check:{ .lg .middle } **Validate**
+-   **Validate**
 
     Reject undeclared arguments, invalid raw outputs, stale schema fingerprints, stale bindings,
     and unsupported schema assumptions.
 
--   :material-lock-check:{ .lg .middle } **Enforce**
+-   **Enforce**
 
     Keep mutation authority, credentials, retries, budgets, approvals, and execution hooks inside
     trusted local boundaries.
