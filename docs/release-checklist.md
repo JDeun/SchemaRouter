@@ -49,11 +49,18 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 
 - [ ] Replace the development version in `pyproject.toml` with the intended release version.
 - [ ] Add `docs/releases/<version>.md`; release metadata is derived from this version automatically.
-- [ ] The tag workflow invokes the reusable full CI quality suite before artifact build.
+- [ ] The release commit is merged to `main` and the normal CI workflow is green.
+- [ ] `Auto Tag Release` observes that green `main` CI and verifies that the commit is still the
+  current `main` head.
+- [ ] The automatic tagger rejects `.dev` versions and requires matching release notes and a dated
+  changelog heading.
+- [ ] If `v<version>` does not already exist, the automatic tagger creates an annotated tag at the
+  exact green `main` SHA.
+- [ ] The tag-triggered Release workflow invokes the reusable full CI quality suite again before
+  artifact build.
 - [ ] Build from a clean checkout.
 - [ ] Run the full test suite against the built artifact.
-- [ ] Create an annotated Git tag.
-- [ ] Publish the tag/release notes.
+- [ ] Publish the GitHub release notes and package artifacts automatically from the tag.
 - [ ] Confirm the PyPI Trusted Publisher is configured for the `pypi` GitHub environment.
 - [ ] Publish to the package index only after all blocking gates are green.
 - [ ] Verify install/import in a clean environment.
