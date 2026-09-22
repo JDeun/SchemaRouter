@@ -91,7 +91,9 @@ call. Missing callbacks, denied decisions, and callback exceptions fail closed.
 Per-run execution budgets can bound logical tool calls, invoker attempts, remote attempts, elapsed
 time, per-tool call counts, and application-defined cost units. Retry attempts consume attempt,
 remote, and cost budgets before invocation, and retry backoff is capped by the remaining elapsed-time
-budget. Budget refusals and schema contract violations are never retried.
+budget. Async approval callbacks and execution hooks are also bounded by the remaining elapsed
+time; synchronous trusted callbacks are checked immediately after they return. Budget refusals and
+schema contract violations are never retried.
 
 Automatic retries remain limited to endpoints classified as read-only unless trusted local code
 explicitly opts into retrying non-read-only operations. Built-in OpenAPI and OPTIMADE HTTP invokers

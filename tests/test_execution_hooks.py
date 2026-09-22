@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 import pytest
 
@@ -269,12 +270,12 @@ async def test_approval_denial_happens_before_execution_hooks() -> None:
 
 
 @pytest.mark.asyncio
-async def test_before_hook_time_counts_against_elapsed_budget() -> None:
+async def test_before_hook_time_is_interrupted_by_elapsed_budget() -> None:
     registry, call = build_registry()
     invoked = False
 
     async def before(tool, endpoint, hook_call):
-        await asyncio.sleep(0.02)
+        await asyncio.sleep(1.0)
 
     def invoke(endpoint_name, arguments):
         nonlocal invoked
@@ -287,24 +288,27 @@ async def test_before_hook_time_counts_against_elapsed_budget() -> None:
     )
     executor.bind("demo", invoke)
 
+    started = time.monotonic()
     with pytest.raises(
         ExecutionBudgetExceededError,
-        match="max_elapsed_seconds",
+        match="during before execution hook",
     ):
         await executor.execute_call(
             call,
-            budget=ExecutionBudget(max_elapsed_seconds=0.01),
+            budget=ExecutionBudget(max_elapsed_seconds=0.1),
         )
+    elapsed = time.monotonic() - started
 
     assert invoked is False
+    assert elapsed < 0.75
 
 
 @pytest.mark.asyncio
-async def test_after_hook_time_counts_against_elapsed_budget() -> None:
+async def test_after_hook_time_is_interrupted_by_elapsed_budget() -> None:
     registry, call = build_registry()
 
     async def after(tool, endpoint, hook_call, result):
-        await asyncio.sleep(0.02)
+        await asyncio.sleep(1.0)
 
     executor = RegistryExecutor(
         registry,
@@ -315,14 +319,18 @@ async def test_after_hook_time_counts_against_elapsed_budget() -> None:
         lambda endpoint_name, arguments: {"value": 2},
     )
 
+    started = time.monotonic()
     with pytest.raises(
         ExecutionBudgetExceededError,
-        match="max_elapsed_seconds",
+        match="during after execution hook",
     ):
         await executor.execute_call(
             call,
-            budget=ExecutionBudget(max_elapsed_seconds=0.01),
+            budget=ExecutionBudget(max_elapsed_seconds=0.1),
         )
+    elapsed = time.monotonic() - started
+
+    assert elapsed < 0.75
 
 @pytest.mark.asyncio
 async def test_after_hook_failure_is_never_retried() -> None:

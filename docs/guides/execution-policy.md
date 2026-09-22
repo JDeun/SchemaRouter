@@ -58,7 +58,8 @@ router = SchemaRouter(
 - `all` — approval before every call.
 
 If approval is required and no callback exists, the call fails closed. Callback exceptions also fail
-closed. Only the literal boolean `True` approves a call.
+closed. Only the literal boolean `True` approves a call. Async approval is bounded by the run's
+remaining elapsed-time budget.
 
 The callback exists only in trusted local code. It is not serializable planner input and cannot be
 created by remote metadata or a model.
@@ -95,7 +96,10 @@ Semantics are deterministic:
 - cost units are charged per attempt;
 - operation-specific cost overrides tool-specific cost, which overrides `"*"`;
 - the same budget state is shared by all calls in one plan;
-- async invocations are interrupted when the wall-clock budget expires.
+- async approval callbacks, execution hooks, invocations, and retry backoff are interrupted or
+  bounded when the wall-clock budget expires;
+- synchronous approval/hooks cannot be preempted, but elapsed time is checked immediately after
+  they return.
 
 Batch APIs treat each input invocation as its own run and therefore its own budget.
 

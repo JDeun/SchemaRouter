@@ -49,21 +49,44 @@ class ExecutionBudgetTracker:
     cost_units: float = 0.0
     per_tool_calls: dict[str, int] = field(default_factory=dict)
 
-    def _check_elapsed(self) -> None:
+    def _check_elapsed(self, *, stage: str | None = None) -> None:
         limit = self.budget.max_elapsed_seconds
         if limit is not None and time.monotonic() - self.started >= limit:
+            suffix = f" during {stage}" if stage else ""
             raise ExecutionBudgetExceededError(
-                f"execution exceeded max_elapsed_seconds={limit}"
+                f"execution exceeded max_elapsed_seconds={limit}{suffix}"
             )
 
-    def remaining_seconds(self) -> float | None:
+    def remaining_seconds(self, *, stage: str | None = None) -> float | None:
         limit = self.budget.max_elapsed_seconds
         if limit is None:
             return None
         remaining = limit - (time.monotonic() - self.started)
         if remaining <= 0:
-            self._check_elapsed()
+            self._check_elapsed(stage=stage)
         return max(remaining, 0.0)
+
+    async def wait_awaitable(
+        self,
+        awaitable: Awaitable[Any],
+        *,
+        stage: str,
+    ) -> Any:
+        """Await trusted async work without allowing it to outlive the elapsed budget."""
+        remaining = self.remaining_seconds(stage=stage)
+        if remaining is None:
+            value = await awaitable
+            self._check_elapsed(stage=stage)
+            return value
+        try:
+            value = await asyncio.wait_for(awaitable, timeout=remaining)
+        except asyncio.TimeoutError as exc:
+            limit = self.budget.max_elapsed_seconds
+            raise ExecutionBudgetExceededError(
+                f"execution exceeded max_elapsed_seconds={limit} during {stage}"
+            ) from exc
+        self._check_elapsed(stage=stage)
+        return value
 
     def after_attempt(self) -> None:
         self._check_elapsed()
@@ -73,7 +96,7 @@ class ExecutionBudgetTracker:
         if delay <= 0:
             return
 
-        remaining = self.remaining_seconds()
+        remaining = self.remaining_seconds(stage="retry backoff")
         if remaining is None:
             await asyncio.sleep(delay)
             return
@@ -81,16 +104,12 @@ class ExecutionBudgetTracker:
         if delay >= remaining:
             await asyncio.sleep(remaining)
             raise ExecutionBudgetExceededError(
-                "execution exceeded max_elapsed_seconds during retry backoff"
+                "execution exceeded "
+                f"max_elapsed_seconds={self.budget.max_elapsed_seconds} during retry backoff"
             )
 
         await asyncio.sleep(delay)
-        try:
-            self._check_elapsed()
-        except ExecutionBudgetExceededError as exc:
-            raise ExecutionBudgetExceededError(
-                "execution exceeded max_elapsed_seconds during retry backoff"
-            ) from exc
+        self._check_elapsed(stage="retry backoff")
 
     def before_call(self, call: ToolCall) -> None:
         self._check_elapsed()
@@ -239,6 +258,7 @@ class RegistryExecutor:
         tool: ToolSpec,
         endpoint: EndpointSpec,
         call: ToolCall,
+        tracker: ExecutionBudgetTracker,
     ) -> None:
         if not self.policy.requires_approval(endpoint):
             return
@@ -253,8 +273,13 @@ class RegistryExecutor:
                 call.model_copy(deep=True),
             )
             if inspect.isawaitable(decision):
-                decision = await decision
-        except ApprovalDeniedError:
+                decision = await tracker.wait_awaitable(
+                    decision,
+                    stage="approval callback",
+                )
+            else:
+                tracker._check_elapsed(stage="approval callback")
+        except (ApprovalDeniedError, ExecutionBudgetExceededError):
             raise
         except Exception as exc:  # noqa: BLE001
             raise ApprovalDeniedError(
@@ -288,6 +313,7 @@ class RegistryExecutor:
         tool: ToolSpec,
         endpoint: EndpointSpec,
         call: ToolCall,
+        tracker: ExecutionBudgetTracker,
     ) -> None:
         for hook in self.hooks.before_call:
             try:
@@ -297,8 +323,13 @@ class RegistryExecutor:
                     call.model_copy(deep=True),
                 )
                 if inspect.isawaitable(outcome):
-                    outcome = await outcome
-            except ExecutionHookError:
+                    outcome = await tracker.wait_awaitable(
+                        outcome,
+                        stage="before execution hook",
+                    )
+                else:
+                    tracker._check_elapsed(stage="before execution hook")
+            except (ExecutionHookError, ExecutionBudgetExceededError):
                 raise
             except Exception as exc:  # noqa: BLE001
                 raise ExecutionHookError(
@@ -315,6 +346,7 @@ class RegistryExecutor:
         endpoint: EndpointSpec,
         call: ToolCall,
         result: ToolResult,
+        tracker: ExecutionBudgetTracker,
     ) -> None:
         for hook in self.hooks.after_call:
             try:
@@ -325,8 +357,13 @@ class RegistryExecutor:
                     result.model_copy(deep=True),
                 )
                 if inspect.isawaitable(outcome):
-                    outcome = await outcome
-            except ExecutionHookError:
+                    outcome = await tracker.wait_awaitable(
+                        outcome,
+                        stage="after execution hook",
+                    )
+                else:
+                    tracker._check_elapsed(stage="after execution hook")
+            except (ExecutionHookError, ExecutionBudgetExceededError):
                 raise
             except Exception as exc:  # noqa: BLE001
                 raise ExecutionHookError(
@@ -345,18 +382,18 @@ class RegistryExecutor:
         budget: ExecutionBudget | None = None,
         _tracker: ExecutionBudgetTracker | None = None,
     ) -> ToolResult:
+        tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
         tool, endpoint, invoker = self._execution_state(call)
 
-        await self._approve(tool, endpoint, call)
+        await self._approve(tool, endpoint, call, tracker)
 
         # Trusted callbacks may await while schema or bindings change. Refresh all executable state
         # after approval and again after before-hooks so stale local references cannot execute.
         tool, endpoint, invoker = self._execution_state(call)
 
-        tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
         tracker.before_call(call)
 
-        await self._run_before_hooks(tool, endpoint, call)
+        await self._run_before_hooks(tool, endpoint, call, tracker)
         tool, endpoint, invoker = self._execution_state(call)
 
         retry = retry or RetryPolicy()
@@ -375,17 +412,10 @@ class RegistryExecutor:
                 else:
                     value = invoker(call.endpoint, dict(call.arguments))
                 if inspect.isawaitable(value):
-                    remaining = tracker.remaining_seconds()
-                    try:
-                        value = (
-                            await asyncio.wait_for(value, timeout=remaining)
-                            if remaining is not None
-                            else await value
-                        )
-                    except asyncio.TimeoutError as exc:
-                        raise ExecutionBudgetExceededError(
-                            "execution exceeded max_elapsed_seconds during invocation"
-                        ) from exc
+                    value = await tracker.wait_awaitable(
+                        value,
+                        stage="invocation",
+                    )
                 tracker.after_attempt()
 
                 validate_json_schema_value(
@@ -417,7 +447,7 @@ class RegistryExecutor:
                     data=projected,
                     projected_fields=call.fields,
                 )
-                await self._run_after_hooks(tool, endpoint, call, result)
+                await self._run_after_hooks(tool, endpoint, call, result, tracker)
                 tracker.after_attempt()
                 return result
             except (

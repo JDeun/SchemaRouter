@@ -17,6 +17,9 @@ The project is pre-1.0 and follows the compatibility rules in
   sleeping past `ExecutionBudget.max_elapsed_seconds`.
 - retry delay capping now applies `max_backoff_seconds` to the initial delay as well as subsequent
   exponentially increased delays.
+- elapsed-time budgets now start before per-call approval and actively bound async approval callbacks
+  and before/after execution hooks, eliminating unbounded awaited middleware outside the invocation
+  timeout.
 
 ### Changed
 
