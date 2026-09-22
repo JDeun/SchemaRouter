@@ -74,8 +74,49 @@ normalized to local JSON Pointer references. For example,
 `./openapi.json#/components/schemas/User` is treated as a local reference when the loaded resource
 is that same `openapi.json`.
 
-SchemaRouter does **not** fetch cross-document references automatically. Doing so would expand the
-schema-fetch trust boundary and requires separate bounded origin/size/depth controls.
+SchemaRouter does **not** fetch cross-document references by default. Trusted callers may opt in to
+bounded same-origin resolution:
+
+```python
+router = await SchemaRouter.from_url(
+    "https://docs.example.com/openapi.json",
+    kind="openapi",
+    openapi_external_refs=True,
+)
+```
+
+The resolver follows relative/absolute HTTP(S) references only when they stay on the entry
+document's origin. It reuses `schema_headers` only after this explicit opt-in and applies independent
+limits for recursion depth, unique referenced documents, aggregate referenced bytes, per-document
+bytes, and redirects.
+
+Defaults:
+
+```text
+openapi_ref_max_depth      = 3
+openapi_ref_max_documents  = 8
+openapi_ref_max_bytes      = 10 MiB
+per referenced document    = 5 MiB
+redirects per document     = 5
+```
+
+These bounds can be reduced by trusted application code through the corresponding
+`SchemaRouter.from_url()` / `add_url()` keyword arguments.
+
+Referenced JSON/YAML documents are fetched completely, rewritten into a local in-memory bundle, and
+then consumed through the same local-ref parser and runtime JSON Schema validator. This avoids
+fragment-only parsing and keeps execution schemas self-contained.
+
+The current bounded resolver intentionally fails closed for:
+
+- cross-origin referenced documents;
+- non-JSON-Pointer URI fragments such as `schema.json#SomeAnchor`;
+- documents using JSON Schema `$id` base-URI rebasing;
+- depth/document/byte limit exhaustion;
+- unstructured referenced content.
+
+This is deliberate. OpenAPI 3.1 permits `$id` to change schema base URIs, so silently treating those
+documents as retrieval-URL-relative would be incorrect.
 
 ## Current common subset
 
@@ -88,12 +129,14 @@ Supported paths include:
 - JSON responses;
 - local component/path-item reference chains;
 - same-document URI-reference normalization;
+- explicitly enabled bounded same-origin cross-document `$ref` bundling;
 - planner-side object-property/required flattening through `allOf`;
 - explicit cross-origin binding;
 - runtime origin confinement.
 
-Cross-document references, planner-side `oneOf`/`anyOf` variant selection, and more ergonomic
-non-object request bodies remain follow-up work. Unsupported constructs should not be guessed.
+JSON Schema `$id` rebasing, non-JSON-Pointer anchors, planner-side `oneOf`/`anyOf` variant
+selection, and more ergonomic non-object request bodies remain follow-up work. Unsupported
+constructs should not be guessed.
 
 
 ## Runtime response bound
