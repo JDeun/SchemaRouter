@@ -35,8 +35,9 @@ SchemaRouter is intentionally narrower than LangChain or LangGraph. It is design
 **tool-schema boundary** between an agent and structured capability sources such as OpenAPI, MCP,
 OPTIMADE, Python callables, and third-party adapter protocols.
 
-> Status: **0.3.0a1 alpha**. Install the current prerelease from PyPI with
-> `pip install --pre schemarouter`. This release includes bounded decision backends,
+> Status: **0.3.0a1 is the published alpha**. Install it from PyPI with
+> `pip install --pre schemarouter`. Current `main` identifies as **0.3.0a2.dev0** for
+> post-release development. The published alpha includes bounded decision backends,
 > LangChain/LlamaIndex integrations, authenticated MCP transports, execution approval/budgets,
 > OpenAPI compatibility reporting, OpenTelemetry export, and explicit third-party adapter plugins.
 

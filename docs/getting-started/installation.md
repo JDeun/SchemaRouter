@@ -71,8 +71,9 @@ Install only the integrations you use.
 python -c "import schemarouter; print(schemarouter.__version__)"
 ```
 
-The release tag and package metadata identify this artifact as `0.3.0a1`. Development branches
-use PEP 440 development versions so source checkouts remain distinguishable from released artifacts.
+The published release tag and package metadata identify the current alpha as `0.3.0a1`.
+Current `main` uses the PEP 440 development version `0.3.0a2.dev0` so source checkouts remain
+distinguishable from released artifacts.
 
 ## Release verification
 
