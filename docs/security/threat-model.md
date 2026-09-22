@@ -109,6 +109,17 @@ invoker runs. Budget refusals and schema contract violations are never retried.
 Automatic retries remain limited to endpoints classified as read-only unless trusted local code
 explicitly opts into retrying non-read-only operations.
 
+### Trusted execution hooks
+
+Before/after execution hooks are trusted local executable code. They are not redacted telemetry.
+Before hooks can observe validated argument values; after hooks can observe the final projected
+result payload. Do not attach remote or third-party callbacks unless they are trusted for that data.
+
+Hooks receive detached model snapshots and cannot mutate the executable call or returned result.
+Non-None hook returns are rejected. Hook exceptions fail closed, and after-hook failures are not
+classified as retryable tool failures, preventing an observability/middleware outage from repeating
+an already successful invocation.
+
 ### Third-party adapter plugins
 
 Installed entry points are local executable code. SchemaRouter can inspect plugin metadata without
@@ -136,6 +147,7 @@ Changes affecting any of the following require adversarial regression tests:
 - adapter plugin loading;
 - MCP authenticated/custom transports;
 - per-call approval or execution budgets;
+- trusted execution hooks;
 - documentation grounding or proposal approval.
 
 See also:
