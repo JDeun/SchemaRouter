@@ -24,5 +24,9 @@ class DecisionPolicy(BaseModel):
         return self.enabled and (self.tool_selection or self.endpoint_selection)
 
     @property
+    def field_selection_enabled(self) -> bool:
+        return self.enabled and self.field_selection
+
+    @property
     def reserved_surfaces_enabled(self) -> bool:
-        return self.enabled and (self.field_selection or self.evidence_sufficiency)
+        return self.enabled and self.evidence_sufficiency
