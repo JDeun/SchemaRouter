@@ -181,8 +181,9 @@ class EmbeddingDecisionBackend:
 
     The embedder receives the query followed by one text representation for every locally
     authorized option. SchemaRouter performs cosine ranking itself and maps ranked vector positions
-    back to the original opaque option IDs. DecisionOption.metadata and execution authority are
-    never forwarded to the embedder.
+    back to the original opaque option IDs. The default option text omits DecisionOption.metadata;
+    a custom option_text callback is trusted application code and controls its own disclosure.
+    Execution authority is never forwarded to the embedder.
     """
 
     def __init__(
