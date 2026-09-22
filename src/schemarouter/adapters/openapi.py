@@ -246,18 +246,98 @@ def _parameters_schema(
     return _with_components(document, schema)
 
 
-def _response_schema(document: dict[str, Any], responses: dict[str, Any]) -> dict[str, Any]:
+def _success_response_schemas(
+    document: dict[str, Any],
+    responses: Any,
+) -> tuple[list[dict[str, Any]], bool]:
+    """Collect supported success payload schemas and whether all success variants are validated."""
+    if not isinstance(responses, dict):
+        return [], False
+
+    schemas: list[dict[str, Any]] = []
+    validation_complete = True
+    seen: set[str] = set()
+
     for code in sorted(responses, key=str):
-        if str(code).startswith("2"):
-            response = _resolve_local_ref(document, responses[code])
-            content = response.get("content", {}) if isinstance(response, dict) else {}
+        code_text = str(code).upper()
+        if not re.fullmatch(r"2(?:[0-9]{2}|XX)", code_text):
+            continue
+
+        response = _resolve_local_ref(document, responses[code])
+        if not isinstance(response, dict):
+            validation_complete = False
+            continue
+
+        content = response.get("content")
+        if content is None or content == {}:
+            schema: dict[str, Any] = {"type": "null"}
+        elif not isinstance(content, dict):
+            validation_complete = False
+            continue
+        else:
+            schema = {}
+            found_supported_media = False
             for media in ("application/json", "application/problem+json"):
-                if media in content and isinstance(content[media], dict):
-                    schema = _resolve_local_ref(document, content[media].get("schema", {}))
-                    if isinstance(schema, dict):
-                        return _with_components(document, schema)
-                    return {}
-    return {}
+                media_spec = content.get(media)
+                if not isinstance(media_spec, dict):
+                    continue
+                found_supported_media = True
+                resolved = _resolve_local_ref(document, media_spec.get("schema", {}))
+                if not isinstance(resolved, dict):
+                    validation_complete = False
+                    break
+                schema = resolved
+                break
+            if not found_supported_media:
+                validation_complete = False
+                continue
+            if not validation_complete and not schema:
+                continue
+
+        canonical = json.dumps(schema, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+        if canonical not in seen:
+            seen.add(canonical)
+            schemas.append(schema)
+
+    return schemas, validation_complete
+
+
+def _combined_response_schema(
+    document: dict[str, Any],
+    schemas: list[dict[str, Any]],
+    *,
+    validation_complete: bool,
+) -> dict[str, Any]:
+    if not schemas or not validation_complete:
+        return {}
+    if len(schemas) == 1:
+        return _with_components(document, schemas[0])
+    return _with_components(document, {"anyOf": schemas})
+
+
+def _response_properties(
+    document: dict[str, Any],
+    schemas: list[dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    merged: dict[str, dict[str, Any]] = {}
+    for schema in schemas:
+        if schema.get("type") == "null":
+            continue
+        for name, spec in _schema_properties(document, schema).items():
+            existing = merged.get(name)
+            if existing is None or existing == spec:
+                merged[name] = spec
+                continue
+
+            options = (
+                list(existing["anyOf"])
+                if set(existing) == {"anyOf"} and isinstance(existing.get("anyOf"), list)
+                else [existing]
+            )
+            if spec not in options:
+                options.append(spec)
+            merged[name] = {"anyOf": options}
+    return merged
 
 
 def _origin(url: str) -> tuple[str, str, int]:
@@ -389,7 +469,7 @@ def tool_from_openapi(
 ) -> ToolSpec:
     """Create a ToolSpec from an OpenAPI 3.x document.
 
-    v0.1 intentionally supports the stable common subset and preserves unsupported constructs
+    The adapter intentionally supports a stable common subset and preserves unsupported constructs
     in metadata instead of guessing their runtime semantics.
     """
     endpoints: list[EndpointSpec] = []
@@ -491,7 +571,15 @@ def tool_from_openapi(
 
             parameters = _disambiguate_parameter_names(parameters)
 
-            response_schema = _response_schema(document, operation.get("responses", {}))
+            response_schemas, response_validation_complete = _success_response_schemas(
+                document,
+                operation.get("responses", {}),
+            )
+            response_schema = _combined_response_schema(
+                document,
+                response_schemas,
+                validation_complete=response_validation_complete,
+            )
             fields = [
                 FieldSpec(
                     name=field_name,
@@ -504,8 +592,8 @@ def tool_from_openapi(
                     identifier=field_name in {"id", "uuid", "key"} or field_name.endswith("_id"),
                     aliases=[field_name.replace("_", " ")],
                 )
-                for field_name, field_schema in _schema_properties(
-                    document, response_schema
+                for field_name, field_schema in _response_properties(
+                    document, response_schemas
                 ).items()
             ]
 
@@ -740,6 +828,12 @@ class OpenAPIRemoteInvoker:
             if owns_client:
                 await client.aclose()
 
+        if not content and (
+            endpoint_spec.method == "HEAD"
+            or response.status_code in {204, 205}
+            or not content_type
+        ):
+            return None
         if "json" in content_type:
             try:
                 return json.loads(content)

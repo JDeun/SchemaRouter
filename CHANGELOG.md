@@ -31,6 +31,10 @@ The project is pre-1.0 and follows the compatibility rules in
   arguments.
 - schema-less OpenAPI JSON request bodies are no longer inferred as empty objects; they remain
   unrepresented at runtime and are surfaced explicitly as unsupported compatibility findings.
+- OpenAPI success-response handling now preserves multiple 2xx JSON/no-content variants, validates
+  supported payloads through a combined schema, keeps planner-visible fields across JSON variants,
+  treats empty no-content successes as `None`, and scans every success response for compatibility
+  findings.
 
 ### Changed
 

@@ -95,6 +95,45 @@ def test_openapi_compatibility_makes_unsupported_semantics_visible() -> None:
     assert constructs["security_requirements"] == "partial"
 
 
+def test_openapi_compatibility_scans_every_success_response() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Multi Response"},
+        "paths": {
+            "/items": {
+                "get": {
+                    "responses": {
+                        "200": {
+                            "description": "json",
+                            "content": {
+                                "application/json": {
+                                    "schema": {"type": "object"}
+                                }
+                            },
+                        },
+                        "201": {
+                            "description": "text",
+                            "content": {
+                                "text/plain": {
+                                    "schema": {"type": "string"}
+                                }
+                            },
+                        },
+                    }
+                }
+            }
+        },
+    }
+
+    report = analyze_openapi_compatibility(document)
+
+    assert any(
+        issue.schema_construct == "non_json_response"
+        and "/responses/201/" in issue.location
+        for issue in report.issues
+    )
+
+
 def test_openapi_compatibility_reports_schema_less_json_request_body() -> None:
     document = {
         "openapi": "3.1.0",
