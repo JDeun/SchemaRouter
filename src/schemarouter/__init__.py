@@ -31,6 +31,7 @@ from .errors import (
     BindingDriftError,
     ExecutionBudgetExceededError,
     ExecutionError,
+    ExecutionHookError,
     ModelAnalysisError,
     PlanningError,
     PlanValidationError,
@@ -45,6 +46,7 @@ from .errors import (
     UnsupportedSchemaSourceError,
 )
 from .executor import RegistryExecutor
+from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
 from .models import (
     EndpointSpec,
     EvidenceRequirements,
@@ -84,7 +86,9 @@ __all__ = [
     "AdapterPluginInfo",
     "AdapterRegistry",
     "ApprovalCallback",
+    "AfterExecutionHook",
     "ApprovalDeniedError",
+    "BeforeExecutionHook",
     "BindingDriftError",
     "ConfiguredSchemaRouter",
     "CallableDecisionBackend",
@@ -105,6 +109,8 @@ __all__ = [
     "ExecutionBudget",
     "ExecutionBudgetExceededError",
     "ExecutionError",
+    "ExecutionHookError",
+    "ExecutionHooks",
     "ExecutionPlan",
     "ExecutionPolicy",
     "FieldSpec",
