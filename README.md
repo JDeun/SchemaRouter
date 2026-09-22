@@ -163,6 +163,8 @@ evidence-grounded proposal and then requires explicit approval.
   executable calls.
 - **Runtime JSON Schema validation** — validate arguments before invocation and raw output before
   projection.
+- **Bounded nested projection** — declared logical fields may map to explicit nested object paths
+  without allowing model-produced JSONPath or undeclared field traversal.
 - **Schema and binding drift detection** — stale plans and stale transports fail closed.
 - **Local execution authority** — remote metadata and model output cannot grant mutation or
   destructive permissions.
@@ -363,6 +365,7 @@ Full documentation is organized as a framework manual rather than embedded in th
 - [Decision backends](https://jdeun.github.io/SchemaRouter/concepts/decision-backends/)
 - [Decision benchmark](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/)
 - [Persistent run traces](https://jdeun.github.io/SchemaRouter/guides/run-traces/)
+- [Field projection](https://jdeun.github.io/SchemaRouter/guides/field-projection/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
 - [Architecture](https://jdeun.github.io/SchemaRouter/architecture/)
 - [Security](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md)
