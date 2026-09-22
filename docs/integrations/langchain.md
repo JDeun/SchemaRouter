@@ -84,6 +84,8 @@ A useful composition is:
 
 SchemaRouter should not duplicate the graph runtime merely to integrate with it.
 
+For direct `StateGraph` integration, see [LangGraph](langgraph.md).
+
 ## Packaging
 
 The bridge currently stays in the main distribution behind the `langchain` extra. A separate
