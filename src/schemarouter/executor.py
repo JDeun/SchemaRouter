@@ -109,10 +109,7 @@ class ExecutionBudgetTracker:
             )
 
         await asyncio.sleep(delay)
-        try:
-            self._check_elapsed(stage="retry backoff")
-        except ExecutionBudgetExceededError:
-            raise
+        self._check_elapsed(stage="retry backoff")
 
     def before_call(self, call: ToolCall) -> None:
         self._check_elapsed()
@@ -415,17 +412,10 @@ class RegistryExecutor:
                 else:
                     value = invoker(call.endpoint, dict(call.arguments))
                 if inspect.isawaitable(value):
-                    remaining = tracker.remaining_seconds()
-                    try:
-                        value = (
-                            await asyncio.wait_for(value, timeout=remaining)
-                            if remaining is not None
-                            else await value
-                        )
-                    except asyncio.TimeoutError as exc:
-                        raise ExecutionBudgetExceededError(
-                            "execution exceeded max_elapsed_seconds during invocation"
-                        ) from exc
+                    value = await tracker.wait_awaitable(
+                        value,
+                        stage="invocation",
+                    )
                 tracker.after_attempt()
 
                 validate_json_schema_value(
