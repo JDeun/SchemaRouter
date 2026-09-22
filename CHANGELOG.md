@@ -7,10 +7,22 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+## 0.3.0 - 2026-09-22
+
 ### Changed
 
-- post-release development has resumed as `0.3.0a2.dev0`; published `0.3.0a1` artifacts remain
-  immutable.
+- promoted the 0.3 line to the first non-prerelease release after the 0.3.0a1 validation cycle;
+- standard PyPI installation no longer requires `--pre`;
+- package maturity metadata now identifies the project as beta while retaining the documented
+  pre-1.0 compatibility policy;
+- GitHub Pages deployment and protected-main required-check enforcement are now active repository
+  controls.
+
+### Compatibility
+
+- no intentional public API changes were introduced relative to 0.3.0a1;
+- the 0.x line remains pre-1.0, so later minor releases may still include deliberate, documented
+  compatibility changes.
 
 ## 0.3.0a1 - 2026-09-22
 
