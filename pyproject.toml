@@ -51,6 +51,10 @@ otel = [
   "opentelemetry-api>=1.44,<2",
   "opentelemetry-sdk>=1.44,<2",
 ]
+server = [
+  "fastapi>=0.141,<1",
+  "uvicorn>=0.53,<1",
+]
 docs = [
   "mkdocs-material>=9.7,<10",
   "mkdocstrings>=1,<2",
