@@ -7,7 +7,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
-No unreleased changes yet.
+### Changed
+
+- post-release development has resumed as `0.3.0a2.dev0`; published `0.3.0a1` artifacts remain
+  immutable.
 
 ## 0.3.0a1 - 2026-09-22
 
