@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- append-only `SQLiteRunTraceStore` with strict sequence/run/timestamp invariants, corruption
+  fail-closed validation, direct `astream_events(..., trace_store=...)` persistence, redaction-
+  preserving storage, and non-executing historical replay.
 - transactional `SQLiteRegistry` persistence with monotonic version retention, deterministic tool
   ordering, atomic batch writes, JSON-only storage, corruption/key-mismatch fail-closed validation,
   and no persistence of trusted invokers or credentials.
