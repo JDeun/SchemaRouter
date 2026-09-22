@@ -4,6 +4,8 @@ import pytest
 
 from schemarouter import (
     EndpointSpec,
+    ExecutionBudget,
+    ExecutionBudgetExceededError,
     ExecutionHookError,
     ExecutionHooks,
     ExecutionPlan,
@@ -209,6 +211,52 @@ async def test_hook_return_values_are_rejected() -> None:
     with pytest.raises(ExecutionHookError, match="must return None"):
         await executor.execute_call(call)
 
+
+
+@pytest.mark.asyncio
+async def test_after_hook_return_values_are_rejected() -> None:
+    registry, call = build_registry()
+
+    def after(tool, endpoint, hook_call, result):
+        return {"replace": "forbidden"}
+
+    executor = RegistryExecutor(
+        registry,
+        hooks=ExecutionHooks(after_call=[after]),
+    )
+    executor.bind(
+        "demo",
+        lambda endpoint_name, arguments: {"value": 2},
+    )
+
+    with pytest.raises(ExecutionHookError, match="must return None"):
+        await executor.execute_call(call)
+
+
+@pytest.mark.asyncio
+async def test_after_hook_time_counts_against_elapsed_budget() -> None:
+    registry, call = build_registry()
+
+    async def after(tool, endpoint, hook_call, result):
+        await asyncio.sleep(0.02)
+
+    executor = RegistryExecutor(
+        registry,
+        hooks=ExecutionHooks(after_call=[after]),
+    )
+    executor.bind(
+        "demo",
+        lambda endpoint_name, arguments: {"value": 2},
+    )
+
+    with pytest.raises(
+        ExecutionBudgetExceededError,
+        match="max_elapsed_seconds",
+    ):
+        await executor.execute_call(
+            call,
+            budget=ExecutionBudget(max_elapsed_seconds=0.01),
+        )
 
 @pytest.mark.asyncio
 async def test_after_hook_failure_is_never_retried() -> None:
