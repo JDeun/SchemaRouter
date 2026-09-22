@@ -495,6 +495,128 @@ def test_openapi_parameter_name_collisions_are_disambiguated() -> None:
         "body__id",
     }
 
+@pytest.mark.asyncio
+async def test_openapi_required_object_body_is_sent_even_when_empty() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Required Body API"},
+        "paths": {
+            "/items": {
+                "post": {
+                    "operationId": "create_item",
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "note": {"type": "string"},
+                                    },
+                                }
+                            }
+                        },
+                    },
+                    "responses": {"204": {"description": "created"}},
+                }
+            }
+        },
+    }
+    tool = tool_from_openapi("required_body", document)
+    endpoint = tool.endpoint("create_item")
+    assert endpoint.metadata["request_body_required"] is True
+    assert endpoint.parameters[0].name == "note"
+    assert endpoint.parameters[0].required is False
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.content == b"{}"
+        assert request.headers["content-type"].startswith("application/json")
+        return httpx.Response(204, request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        invoker = OpenAPIRemoteInvoker(
+            tool,
+            "https://api.example.com",
+            http_client=client,
+        )
+        await invoker("create_item", {})
+
+
+@pytest.mark.asyncio
+async def test_openapi_optional_empty_object_body_remains_omitted() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Optional Body API"},
+        "paths": {
+            "/items": {
+                "post": {
+                    "operationId": "create_item",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "note": {"type": "string"},
+                                    },
+                                }
+                            }
+                        },
+                    },
+                    "responses": {"204": {"description": "created"}},
+                }
+            }
+        },
+    }
+    tool = tool_from_openapi("optional_body", document)
+    endpoint = tool.endpoint("create_item")
+    assert endpoint.metadata["request_body_required"] is False
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.content == b""
+        assert "content-type" not in request.headers
+        return httpx.Response(204, request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        invoker = OpenAPIRemoteInvoker(
+            tool,
+            "https://api.example.com",
+            http_client=client,
+        )
+        await invoker("create_item", {})
+
+
+def test_openapi_required_unsupported_non_object_body_is_not_fabricated() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Array Body API"},
+        "paths": {
+            "/items": {
+                "post": {
+                    "operationId": "create_items",
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                }
+                            }
+                        },
+                    },
+                    "responses": {"204": {"description": "created"}},
+                }
+            }
+        },
+    }
+
+    endpoint = tool_from_openapi("array_body", document).endpoint("create_items")
+
+    assert endpoint.metadata["request_body_required"] is False
+    assert endpoint.parameters == []
+
+
 class ChunkedBody(httpx.AsyncByteStream):
     def __init__(self, *chunks: bytes) -> None:
         self.chunks = chunks
