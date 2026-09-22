@@ -241,9 +241,11 @@ async def test_cost_units_are_charged_per_attempt() -> None:
 @pytest.mark.asyncio
 async def test_wall_clock_budget_interrupts_async_invocation() -> None:
     _, executor, _, plan = _setup(read_only=True)
+    invocation_started = asyncio.Event()
 
     async def slow(endpoint, arguments):
-        await asyncio.sleep(0.1)
+        invocation_started.set()
+        await asyncio.sleep(1.0)
         return {"ok": True}
 
     executor.bind("demo", slow)
@@ -251,8 +253,10 @@ async def test_wall_clock_budget_interrupts_async_invocation() -> None:
     with pytest.raises(ExecutionBudgetExceededError, match="during invocation"):
         await executor.execute(
             plan,
-            budget=ExecutionBudget(max_elapsed_seconds=0.01),
+            budget=ExecutionBudget(max_elapsed_seconds=0.1),
         )
+
+    assert invocation_started.is_set()
 
 
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
