@@ -280,6 +280,17 @@ abstain한 뒤 deterministic fallback으로 돌아갈 수 있습니다.
 
 패키지를 설치했거나 API key가 존재한다는 이유만으로 Jev가 자동 활성화되지는 않습니다.
 
+로컬 Ollama 모델도 별도 Python SDK 없이 bounded decision backend로 사용할 수 있습니다.
+
+```python
+from schemarouter.integrations import OllamaDecisionBackend
+
+backend = OllamaDecisionBackend("your-installed-model")
+```
+
+Ollama structured output으로 유한한 option ID를 제한하고, SchemaRouter가 결과를 다시 로컬
+검증합니다. 로컬 모델이 존재한다는 이유만으로 자동 활성화되지는 않습니다.
+
 ## Decision benchmark
 
 기본 deterministic routing을 측정합니다.
@@ -300,6 +311,12 @@ API key가 있다면 같은 케이스로 Jev도 비교할 수 있습니다.
 
 ```bash
 TYPESAFE_API_KEY="..." python scripts/benchmark_decision_routing.py --jev
+```
+
+설치된 로컬 Ollama 모델도 같은 corpus로 비교할 수 있습니다.
+
+```bash
+python scripts/benchmark_decision_routing.py --ollama-model your-installed-model
 ```
 
 benchmark에는 144개 multilingual/adversarial 고정 corpus가 포함되며 routing accuracy,
@@ -328,6 +345,7 @@ python scripts/benchmark_decision_routing.py \
 - [LangChain integration](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
 - [LlamaIndex integration](https://jdeun.github.io/SchemaRouter/integrations/llamaindex/)
 - [Jev / TypeSafe integration](https://jdeun.github.io/SchemaRouter/integrations/jev/)
+- [Ollama decision backend](https://jdeun.github.io/SchemaRouter/integrations/ollama/)
 - [OpenTelemetry integration](https://jdeun.github.io/SchemaRouter/integrations/opentelemetry/)
 - [Third-party adapter plugins](https://jdeun.github.io/SchemaRouter/guides/adapter-plugins/)
 - [Decision backends](https://jdeun.github.io/SchemaRouter/concepts/decision-backends/)
