@@ -33,7 +33,7 @@ The report also includes total/importable operation counts and issue counts.
 
 The current analyzer reports, among other cases:
 
-- external `$ref` targets;
+- cross-document `$ref` targets (same-document URI refs are normalized during URL ingestion);
 - `allOf`, `oneOf`, and `anyOf`;
 - recursive local component references;
 - OpenAPI 3.0 `nullable`;
@@ -47,7 +47,9 @@ The current analyzer reports, among other cases:
 - operation security requirements.
 
 Some constructs are marked `partial` because the full JSON Schema is retained for runtime
-validation even though planner-side flattening is intentionally incomplete.
+validation even when planner-side interpretation is intentionally bounded. For `allOf`,
+SchemaRouter now flattens object properties and required fields when safely derivable, but does not
+claim complete support for every JSON Schema composition interaction.
 
 ## Why this is separate from parsing
 
