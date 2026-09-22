@@ -8,7 +8,7 @@ LangChain runtime.
 For consumers:
 
 ```bash
-pip install --pre "schemarouter[langchain]"
+pip install "schemarouter[langchain]"
 ```
 
 For repository development:
