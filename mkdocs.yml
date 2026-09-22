@@ -141,6 +141,9 @@ nav:
   - Project:
       - Versioning: versioning.md
       - Release notes:
+          - 0.4.0: releases/0.4.0.md
+          - 0.3.0: releases/0.3.0.md
+          - 0.3.0a1: releases/0.3.0a1.md
           - 0.2.0a1: releases/0.2.0a1.md
       - Release checklist: release-checklist.md
       - Contributing: contributing.md

@@ -7,6 +7,8 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+## 0.4.0 - 2026-09-22
+
 ### Added
 
 - trusted ordered sync/async before/after execution hooks with detached schema/call/result
@@ -49,7 +51,16 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
-- post-release development has resumed as `0.4.0.dev0`; published `0.3.0` artifacts remain immutable.
+- promoted the 0.4 development line to the non-prerelease `0.4.0` release after the persistence,
+  bounded-decision, OpenAPI, LangGraph, and execution-hook surfaces passed the required release gates.
+
+### Compatibility
+
+- no intentional public API removals are introduced relative to `0.3.0`;
+- new operational surfaces remain opt-in where they can affect persistence, model-assisted decisions,
+  cross-document network access, or execution interception;
+- the project remains pre-1.0, so later 0.x minor releases may still include deliberate documented
+  compatibility changes.
 
 ## 0.3.0 - 2026-09-22
 

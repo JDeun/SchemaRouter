@@ -5,8 +5,9 @@ local application code remains the authority for credentials, side effects, bind
 
 ## Supported versions
 
-SchemaRouter is currently pre-1.0. Security fixes are applied to the latest development/release line.
-Once non-alpha releases are published, supported release lines will be listed here explicitly.
+SchemaRouter is currently pre-1.0. Security fixes are applied to the latest non-prerelease release
+line and the current development line. Older 0.x lines are not guaranteed to receive backports unless
+a release-specific support window is announced.
 
 ## Reporting a vulnerability
 
