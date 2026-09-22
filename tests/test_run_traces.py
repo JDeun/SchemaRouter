@@ -282,6 +282,45 @@ async def test_record_run_events_helper_persists_before_yield(tmp_path) -> None:
     assert [item.sequence for item in captured] == [0, 1]
 
 
+
+def test_sqlite_trace_store_summary_corruption_fails_closed(tmp_path) -> None:
+    path = tmp_path / "traces.sqlite3"
+
+    with SQLiteRunTraceStore(path) as store:
+        store.append(event("run-1", 0, "run.start"))
+        store.append(event("run-1", 1, "run.end", seconds=1))
+
+    connection = sqlite3.connect(path)
+    try:
+        connection.execute(
+            """
+            UPDATE schemarouter_trace_runs
+            SET last_sequence = 99, terminal = 0
+            WHERE run_id = ?
+            """,
+            ("run-1",),
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    with SQLiteRunTraceStore(path) as reopened:
+        with pytest.raises(TraceError, match="summary"):
+            reopened.trace("run-1")
+
+
+def test_replayed_events_are_detached_from_persistent_state(tmp_path) -> None:
+    path = tmp_path / "traces.sqlite3"
+
+    with SQLiteRunTraceStore(path) as store:
+        store.append(event("run-1", 0, "run.start", data={"safe": True}))
+        store.append(event("run-1", 1, "run.end", seconds=1))
+
+        replayed = list(replay_run_events(store, "run-1"))
+        replayed[0].data["safe"] = False
+
+        assert store.trace("run-1").events[0].data["safe"] is True
+
 def test_trace_store_delete_and_closed_state(tmp_path) -> None:
     store = SQLiteRunTraceStore(tmp_path / "traces.sqlite3")
     store.append(event("run-1", 0, "run.start"))
