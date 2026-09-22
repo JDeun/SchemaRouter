@@ -50,6 +50,10 @@ class ExecutionError(SchemaRouterError):
     """Raised when tool invocation fails."""
 
 
+class NonRetryableInvocationError(ExecutionError):
+    """Raised when repeating the same invocation cannot safely recover."""
+
+
 class ExecutionHookError(ExecutionError):
     """Raised when a trusted execution hook violates or fails its contract."""
 
