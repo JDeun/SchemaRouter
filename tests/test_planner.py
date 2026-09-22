@@ -173,8 +173,7 @@ def test_invalid_decision_can_fail_closed_without_fallback() -> None:
         planner.plan("band gap")
 
 
-@pytest.mark.parametrize("surface", ["field_selection", "evidence_sufficiency"])
-def test_reserved_decision_surfaces_fail_closed(surface: str) -> None:
+def test_evidence_sufficiency_decision_surface_remains_reserved() -> None:
     reg = registry()
     backend = CallableDecisionBackend(
         lambda _: {"selections": [{"option_id": "candidate:0"}]}
@@ -183,8 +182,166 @@ def test_reserved_decision_surfaces_fail_closed(surface: str) -> None:
         SchemaPlanner(
             reg,
             decision_backend=backend,
-            decision_policy=DecisionPolicy(enabled=True, **{surface: True}),
+            decision_policy=DecisionPolicy(
+                enabled=True,
+                evidence_sufficiency=True,
+            ),
         )
+
+
+def test_field_decision_selects_only_declared_fields_and_preserves_identifier() -> None:
+    reg = registry()
+
+    def choose_density(request):
+        assert request.context["surface"] == "field_selection"
+        assert request.context["tool"] == "materials"
+        assert request.context["endpoint"] == "search"
+        assert [option.label for option in request.options] == [
+            "band_gap",
+            "formation_energy_per_atom",
+            "density",
+        ]
+        density = next(option for option in request.options if option.label == "density")
+        return {"selections": [{"option_id": density.id, "score": 0.9}]}
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(choose_density),
+        decision_policy=DecisionPolicy(enabled=True, field_selection=True),
+    ).plan(
+        PlanRequest(
+            query="tell me about this material",
+            arguments={"formula": "Si"},
+        )
+    )
+
+    assert plan.calls[0].fields == ["material_id", "density"]
+    assert plan.calls[0].evidence.units is True
+
+
+def test_field_decision_bound_does_not_exceed_deterministic_answer_width() -> None:
+    reg = registry()
+
+    def inspect_request(request):
+        assert request.max_selections == 2
+        selected = [
+            option.id
+            for option in request.options
+            if option.label in {"band_gap", "formation_energy_per_atom"}
+        ]
+        return {"selections": [{"option_id": option_id} for option_id in selected]}
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(inspect_request),
+        decision_policy=DecisionPolicy(enabled=True, field_selection=True),
+    ).plan(
+        PlanRequest(
+            query="band gap and formation energy",
+            arguments={"formula": "Si"},
+        )
+    )
+
+    assert plan.calls[0].fields == [
+        "material_id",
+        "band_gap",
+        "formation_energy_per_atom",
+    ]
+
+
+def test_invalid_field_decision_falls_back_to_deterministic_projection() -> None:
+    reg = registry()
+    backend = CallableDecisionBackend(
+        lambda _: {"selections": [{"option_id": "field:999"}]}
+    )
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=backend,
+        decision_policy=DecisionPolicy(enabled=True, field_selection=True),
+    ).plan(
+        PlanRequest(
+            query="band gap",
+            arguments={"formula": "Si"},
+        )
+    )
+
+    assert plan.calls[0].fields == ["material_id", "band_gap"]
+    assert any("field decision fallback" in warning for warning in plan.warnings)
+
+
+def test_field_decision_abstention_falls_back_to_deterministic_projection() -> None:
+    reg = registry()
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(lambda _: {"abstained": True}),
+        decision_policy=DecisionPolicy(enabled=True, field_selection=True),
+    ).plan(
+        PlanRequest(
+            query="band gap",
+            arguments={"formula": "Si"},
+        )
+    )
+
+    assert plan.calls[0].fields == ["material_id", "band_gap"]
+    assert any(
+        "field decision backend abstained" in warning
+        for warning in plan.warnings
+    )
+
+
+def test_invalid_field_decision_can_fail_closed_without_fallback() -> None:
+    reg = registry()
+    planner = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(
+            lambda _: {"selections": [{"option_id": "field:999"}]}
+        ),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            field_selection=True,
+            fallback="error",
+        ),
+    )
+
+    with pytest.raises(PlanningError, match="unknown option"):
+        planner.plan(
+            PlanRequest(
+                query="band gap",
+                arguments={"formula": "Si"},
+            )
+        )
+
+
+@pytest.mark.asyncio
+async def test_async_field_decision_uses_async_backend() -> None:
+    reg = registry()
+
+    async def choose_formation_energy(request):
+        option = next(
+            option
+            for option in request.options
+            if option.label == "formation_energy_per_atom"
+        )
+        return {"selections": [{"option_id": option.id, "score": 0.8}]}
+
+    plan = await SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(choose_formation_energy),
+        decision_policy=DecisionPolicy(enabled=True, field_selection=True),
+    ).aplan(
+        PlanRequest(
+            query="tell me about this material",
+            arguments={"formula": "Si"},
+        )
+    )
+
+    assert plan.calls[0].fields == [
+        "material_id",
+        "formation_energy_per_atom",
+    ]
+
 
 def test_decision_abstention_falls_back_to_deterministic() -> None:
     reg = registry()
