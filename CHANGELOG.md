@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- provider-neutral `EmbeddingDecisionBackend` with sync/async embedding callables, cosine ranking,
+  bounded top-k selection, similarity/margin abstention, malformed-vector fail-closed validation,
+  and common benchmark-harness support.
 - OpenAPI planner fidelity for chained local references, local Path Item references, safe
   same-document URI-reference normalization during URL ingestion, and object property/required
   discovery through `allOf` while preserving runtime schema validation.
