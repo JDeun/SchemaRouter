@@ -85,9 +85,29 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
 
     assert "workflow_call:" in workflow
     assert '"3.14"' in workflow
-    assert '"3.15.0-rc.2"' in workflow
     assert "windows-smoke:" in workflow
     assert "minimum-dependencies:" in workflow
     assert "coverage:" in workflow
     assert "--cov-branch" in workflow
     assert 'dist/*.tar.gz' in workflow
+
+
+def test_python_preview_is_separate_from_release_blocking_ci() -> None:
+    ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    preview = (
+        ROOT / ".github" / "workflows" / "python-preview.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "python-preview:" not in ci
+    assert '"3.15.0-rc.2"' in preview
+    assert "allow-prereleases: true" in preview
+    assert "timeout-minutes: 20" in preview
+    assert "pull_request:" in preview
+    assert "branches: [main]" in preview
+    assert "workflow_call:" not in preview
+
+    release = (
+        ROOT / ".github" / "workflows" / "release.yml"
+    ).read_text(encoding="utf-8")
+    assert 'workflows: ["CI"]' in release
+    assert 'workflows: ["Python Preview"]' not in release
