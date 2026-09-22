@@ -138,13 +138,17 @@ def test_candidate_index_covers_preferred_tool_and_endpoint_scores() -> None:
         query="unrelated",
         preferred_tools=["tool_1"],
     )
-    preferred_endpoint = PlanRequest(
-        query="unrelated",
-        preferred_endpoints=["tool_0.search"],
+    endpoint_analyzer = StaticAnalyzer(
+        QueryIntent(
+            preferred_endpoints=["tool_0.search"],
+        )
     )
 
     tool_plan = SchemaPlanner(registry).plan(preferred_tool)
-    endpoint_plan = SchemaPlanner(registry).plan(preferred_endpoint)
+    endpoint_plan = SchemaPlanner(
+        registry,
+        analyzer=endpoint_analyzer,
+    ).plan("unrelated")
 
     assert [call.tool for call in tool_plan.calls] == ["tool_1"]
     assert [call.tool for call in endpoint_plan.calls] == ["tool_0"]
@@ -171,7 +175,7 @@ def test_candidate_index_covers_normalized_field_substring_matching() -> None:
     )
     analyzer = StaticAnalyzer(
         QueryIntent(
-            concepts=["conductivityvalue"],
+            concepts=["conductivity"],
         )
     )
 
