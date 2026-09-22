@@ -109,6 +109,17 @@ router = await SchemaRouter.from_url(
 )
 ```
 
+OpenAPI cross-document `$ref` fetch는 기본적으로 꺼져 있습니다. 신뢰된 호출자가 명시적으로
+same-origin bounded resolution을 켤 수 있습니다.
+
+```python
+router = await SchemaRouter.from_url(
+    "https://api.example.com/openapi.json",
+    kind="openapi",
+    openapi_external_refs=True,
+)
+```
+
 ### OPTIMADE
 
 ```python
@@ -171,6 +182,8 @@ proposal로 변환한 뒤 명시적인 승인을 받아야 합니다.
   부여할 수 없습니다.
 - **Credential separation** — schema fetch credential과 runtime credential을 분리하며,
   인증 MCP secret은 trusted transport 경계 안에만 둡니다.
+- **Bounded OpenAPI external ref** — cross-document `$ref`는 명시적 opt-in일 때만 entry
+  document와 같은 origin에서 fetch되며 redirect/depth/document/byte limit을 적용합니다.
 - **Read-only retry by default** — 계약 위반이나 위험한 호출을 자동 재시도하지 않습니다.
 - **호출별 승인 및 실행 budget** — trusted local callback과 call/attempt/remote/time/quota/
   cost-unit 제한을 fail-closed로 적용합니다.
