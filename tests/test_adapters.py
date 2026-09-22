@@ -7,6 +7,7 @@ import pytest
 from schemarouter import (
     EndpointSpec,
     ExecutionPlan,
+    ExecutionPolicy,
     InMemoryRegistry,
     ParameterSpec,
     RegistryExecutor,
@@ -407,7 +408,10 @@ async def test_openapi_later_success_json_schema_validates_at_runtime() -> None:
     )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        executor = RegistryExecutor(registry)
+        executor = RegistryExecutor(
+            registry,
+            policy=ExecutionPolicy(allow_mutations=True),
+        )
         executor.bind(
             tool.key,
             OpenAPIRemoteInvoker(
@@ -473,7 +477,13 @@ async def test_openapi_no_content_success_returns_none_and_validates() -> None:
     )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        executor = RegistryExecutor(registry)
+        executor = RegistryExecutor(
+            registry,
+            policy=ExecutionPolicy(
+                allow_mutations=True,
+                allow_destructive=True,
+            ),
+        )
         executor.bind(
             tool.key,
             OpenAPIRemoteInvoker(
