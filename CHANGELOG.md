@@ -7,7 +7,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
-No unreleased changes yet.
+### Changed
+
+- post-release development version advanced to `0.3.0a2.dev0` after publishing `0.3.0a1`.
 
 ## 0.3.0a1 - 2026-09-22
 
