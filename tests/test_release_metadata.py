@@ -52,6 +52,8 @@ def test_release_workflow_consumes_green_main_ci_and_can_create_tag() -> None:
     assert "github.event.workflow_run.conclusion == 'success'" in workflow
     assert "github.event.workflow_run.head_branch == 'main'" in workflow
     assert 'git rev-parse origin/main' in workflow
+    assert "git fetch origin main --tags" in workflow
+    assert "git fetch origin main --depth=1" not in workflow
     assert 'git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG"' in workflow
     assert 'git tag -a "$RELEASE_TAG" "$RELEASE_SHA"' in workflow
     assert 'git push origin "refs/tags/$RELEASE_TAG"' in workflow
