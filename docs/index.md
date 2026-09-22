@@ -12,6 +12,10 @@
 SchemaRouter compiles a natural-language request into a **schema-constrained tool call**, then
 validates policy, schema identity, arguments, and raw output before execution is accepted.
 
+```bash
+pip install schemarouter
+```
+
 [Get started](getting-started/installation.md){ .md-button .md-button--primary }
 [OpenAPI guide](guides/openapi.md){ .md-button }
 [GitHub](https://github.com/JDeun/SchemaRouter){ .md-button }
