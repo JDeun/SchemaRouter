@@ -496,12 +496,16 @@ class OpenAPIRemoteInvoker:
         endpoint_name = endpoint
         endpoint_spec = self.tool.endpoint(endpoint_name)
         if not endpoint_spec.method or not endpoint_spec.path:
-            raise RuntimeError(f"endpoint {endpoint_name!r} is missing HTTP method/path")
+            raise NonRetryableInvocationError(
+                f"endpoint {endpoint_name!r} is missing HTTP method/path"
+            )
 
         try:
             _validate_endpoint_path(endpoint_spec.path)
         except ValueError as exc:
-            raise RuntimeError(f"unsafe endpoint path for {endpoint_name!r}") from exc
+            raise NonRetryableInvocationError(
+                f"unsafe endpoint path for {endpoint_name!r}"
+            ) from exc
 
         path = endpoint_spec.path
         query: dict[str, Any] = {}
@@ -521,13 +525,15 @@ class OpenAPIRemoteInvoker:
             elif parameter.location == "header":
                 normalized_name = wire_name.casefold()
                 if not _HEADER_NAME_RE.fullmatch(wire_name):
-                    raise RuntimeError(f"invalid header parameter name: {wire_name!r}")
+                    raise NonRetryableInvocationError(
+                        f"invalid header parameter name: {wire_name!r}"
+                    )
                 if normalized_name in self.trusted_header_names:
-                    raise RuntimeError(
+                    raise NonRetryableInvocationError(
                         f"tool argument cannot override trusted header {wire_name!r}"
                     )
                 if normalized_name in _SENSITIVE_RUNTIME_HEADERS:
-                    raise RuntimeError(
+                    raise NonRetryableInvocationError(
                         f"sensitive header {wire_name!r} must come from trusted runtime auth"
                     )
                 headers[wire_name] = str(value)
@@ -535,7 +541,9 @@ class OpenAPIRemoteInvoker:
                 body[wire_name] = value
 
         if re.search(r"{[^{}]+}", path):
-            raise RuntimeError(f"unresolved path parameter in endpoint {endpoint_name!r}")
+            raise NonRetryableInvocationError(
+                f"unresolved path parameter in endpoint {endpoint_name!r}"
+            )
 
         headers.update(self.trusted_headers)
 
@@ -543,7 +551,9 @@ class OpenAPIRemoteInvoker:
         # absolute path to replace the approved server path prefix.
         url = self.base_url + "/" + path.lstrip("/")
         if _origin(url) != self.approved_origin:
-            raise RuntimeError("endpoint path escaped the approved API origin")
+            raise NonRetryableInvocationError(
+                "endpoint path escaped the approved API origin"
+            )
 
         owns_client = self.http_client is None
         client = self.http_client or httpx.AsyncClient(
