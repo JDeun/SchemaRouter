@@ -559,7 +559,7 @@ class SchemaRouter:
                 sequence=sequence,
                 config=run_config,
                 data=data,
-            )
+            ))
             raise
 
         plan_data: dict[str, Any] = {
@@ -594,7 +594,7 @@ class SchemaRouter:
                 tool=call.tool,
                 endpoint=call.endpoint,
                 data=start_data,
-            )
+            ))
             sequence += 1
 
             try:
@@ -616,7 +616,7 @@ class SchemaRouter:
                     tool=call.tool,
                     endpoint=call.endpoint,
                     data=error_data,
-                )
+                ))
                 sequence += 1
                 yield await emit(RunEvent.create(
                     event="run.error",
@@ -627,7 +627,7 @@ class SchemaRouter:
                         "error_type": type(exc).__name__,
                         "stage": "execution",
                     },
-                )
+                ))
                 raise
 
             end_data: dict[str, Any] = {
@@ -643,7 +643,7 @@ class SchemaRouter:
                 tool=result.tool,
                 endpoint=result.endpoint,
                 data=end_data,
-            )
+            ))
             sequence += 1
             result_count += 1
 
@@ -653,7 +653,7 @@ class SchemaRouter:
             sequence=sequence,
             config=run_config,
             data={"result_count": result_count},
-        )
+        ))
 
     async def run(
         self,
