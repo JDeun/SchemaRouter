@@ -6,6 +6,7 @@ import pytest
 from schemarouter import (
     PlanRequest,
     SchemaRouter,
+    SchemaSourceError,
     UnsupportedSchemaSourceError,
 )
 
@@ -449,7 +450,7 @@ async def test_external_ref_limits_require_positive_integers(
         )
     ) as client:
         router = SchemaRouter(http_client=client)
-        with pytest.raises(Exception, match=message):
+        with pytest.raises(SchemaSourceError, match=message):
             await router.add_url(
                 "https://docs.example.com/openapi.json",
                 kind="openapi",
