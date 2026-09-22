@@ -78,6 +78,27 @@ Optional controls include `--jev-model`, `--min-confidence`,
 
 Provider pricing is never hard-coded because it can change independently of SchemaRouter.
 
+## Ollama
+
+Run an already-installed local Ollama model against the same corpus:
+
+```bash
+python scripts/benchmark_decision_routing.py \
+  --corpus benchmarks/decision-routing-v1.json \
+  --ollama-model your-installed-model
+```
+
+The default API endpoint is `http://127.0.0.1:11434`. Use `--ollama-base-url` for another
+trusted endpoint and `--ollama-timeout` to adjust the per-request timeout.
+
+The benchmark records Ollama prompt/evaluation token counters when the server reports them. A local
+model result should also record the exact model tag, quantization/runtime configuration, hardware,
+and Ollama version when publishing evidence; model tags alone are not enough to reproduce local
+latency or quality.
+
+Provider pricing is irrelevant for a purely local Ollama run unless the operator explicitly assigns
+a local cost model.
+
 ## Metrics
 
 Each row records:
