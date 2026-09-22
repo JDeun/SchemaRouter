@@ -3,12 +3,14 @@ import asyncio
 import pytest
 
 from schemarouter import (
+    ApprovalDeniedError,
     EndpointSpec,
     ExecutionBudget,
     ExecutionBudgetExceededError,
     ExecutionHookError,
     ExecutionHooks,
     ExecutionPlan,
+    ExecutionPolicy,
     FieldSpec,
     InMemoryRegistry,
     ParameterSpec,
@@ -235,6 +237,66 @@ async def test_after_hook_return_values_are_rejected() -> None:
 
     with pytest.raises(ExecutionHookError, match="must return None"):
         await executor.execute_call(call)
+
+
+@pytest.mark.asyncio
+async def test_approval_denial_happens_before_execution_hooks() -> None:
+    registry, call = build_registry()
+    seen: list[str] = []
+    invoked = False
+
+    def before(tool, endpoint, hook_call):
+        seen.append("before")
+
+    def invoke(endpoint_name, arguments):
+        nonlocal invoked
+        invoked = True
+        return {"value": 2}
+
+    executor = RegistryExecutor(
+        registry,
+        policy=ExecutionPolicy(approval_mode="all"),
+        approval_callback=lambda tool, endpoint, hook_call: False,
+        hooks=ExecutionHooks(before_call=[before]),
+    )
+    executor.bind("demo", invoke)
+
+    with pytest.raises(ApprovalDeniedError, match="not approved"):
+        await executor.execute_call(call)
+
+    assert seen == []
+    assert invoked is False
+
+
+@pytest.mark.asyncio
+async def test_before_hook_time_counts_against_elapsed_budget() -> None:
+    registry, call = build_registry()
+    invoked = False
+
+    async def before(tool, endpoint, hook_call):
+        await asyncio.sleep(0.02)
+
+    def invoke(endpoint_name, arguments):
+        nonlocal invoked
+        invoked = True
+        return {"value": 2}
+
+    executor = RegistryExecutor(
+        registry,
+        hooks=ExecutionHooks(before_call=[before]),
+    )
+    executor.bind("demo", invoke)
+
+    with pytest.raises(
+        ExecutionBudgetExceededError,
+        match="max_elapsed_seconds",
+    ):
+        await executor.execute_call(
+            call,
+            budget=ExecutionBudget(max_elapsed_seconds=0.01),
+        )
+
+    assert invoked is False
 
 
 @pytest.mark.asyncio
