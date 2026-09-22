@@ -116,7 +116,8 @@ class SQLiteRegistry:
         )
         self._connection.row_factory = sqlite3.Row
         self._connection.execute("PRAGMA foreign_keys = ON")
-        self._connection.execute("PRAGMA busy_timeout = ?", (int(timeout * 1000),))
+        busy_timeout_ms = int(timeout * 1000)
+        self._connection.execute(f"PRAGMA busy_timeout = {busy_timeout_ms}")
         if self.path != ":memory:":
             self._connection.execute("PRAGMA journal_mode = WAL")
         self._initialize()
