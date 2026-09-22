@@ -6,6 +6,7 @@ from schemarouter import (
     EndpointSpec,
     ExecutionHookError,
     ExecutionHooks,
+    ExecutionPlan,
     FieldSpec,
     InMemoryRegistry,
     ParameterSpec,
@@ -359,7 +360,7 @@ async def test_schemarouter_exposes_execution_hooks() -> None:
     )
     endpoint = router.registry.endpoint("demo", "run")
     result = await router.execute(
-        __import__("schemarouter").ExecutionPlan(
+        ExecutionPlan(
             query="run",
             registry_version=router.registry.version,
             calls=[
