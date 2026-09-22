@@ -19,3 +19,24 @@
 ## RegistryExecutor
 
 ::: schemarouter.RegistryExecutor
+
+
+## RunTrace
+
+::: schemarouter.RunTrace
+
+## RunTraceStore
+
+::: schemarouter.RunTraceStore
+
+## SQLiteRunTraceStore
+
+::: schemarouter.SQLiteRunTraceStore
+
+## record_run_events
+
+::: schemarouter.record_run_events
+
+## replay_run_events
+
+::: schemarouter.replay_run_events
