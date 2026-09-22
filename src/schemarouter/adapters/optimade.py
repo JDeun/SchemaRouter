@@ -593,7 +593,9 @@ class OPTIMADERemoteInvoker:
                 raise RuntimeError("OPTIMADE get endpoint requires a non-empty id")
             url = f"{self.base_url}/{entry_type}/{quote(entry_id, safe='')}"
         else:
-            raise RuntimeError(f"unknown OPTIMADE endpoint mode: {mode!r}")
+            raise NonRetryableInvocationError(
+                f"unknown OPTIMADE endpoint mode: {mode!r}"
+            )
 
         owns_client = self.http_client is None
         client = self.http_client or httpx.AsyncClient(
@@ -634,20 +636,24 @@ class OPTIMADERemoteInvoker:
         data = payload.get("data") if isinstance(payload, dict) else None
         if mode == "search":
             if not isinstance(data, list):
-                raise RuntimeError("OPTIMADE listing response must contain a data list")
+                raise NonRetryableInvocationError(
+                    "OPTIMADE listing response must contain a data list"
+                )
             return [
                 self._flatten_entry(item, call.fields)
                 for item in data
             ]
 
         if not isinstance(data, dict):
-            raise RuntimeError("OPTIMADE single-entry response must contain a data object")
+            raise NonRetryableInvocationError(
+                "OPTIMADE single-entry response must contain a data object"
+            )
         return self._flatten_entry(data, call.fields)
 
     @staticmethod
     def _flatten_entry(item: Any, fields: list[str]) -> dict[str, Any]:
         if not isinstance(item, dict):
-            raise RuntimeError("OPTIMADE entry must be an object")
+            raise NonRetryableInvocationError("OPTIMADE entry must be an object")
         attributes = item.get("attributes")
         if not isinstance(attributes, dict):
             attributes = {}
@@ -664,7 +670,7 @@ class OPTIMADERemoteInvoker:
             if field not in value
         )
         if missing:
-            raise RuntimeError(
+            raise NonRetryableInvocationError(
                 "OPTIMADE provider omitted requested response fields: "
                 + ", ".join(missing)
             )
