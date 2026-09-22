@@ -170,9 +170,9 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                 "external_ref",
                 "unsupported",
                 (
-                    "Cross-document $ref targets are not fetched automatically. "
-                    "URI refs that resolve back to the loaded document are normalized "
-                    "during URL ingestion."
+                    "Cross-document $ref targets remain unresolved unless bounded external-ref "
+                    "resolution is explicitly enabled during URL ingestion. URI refs that resolve "
+                    "back to the loaded document are normalized automatically."
                 ),
             )
         for construct in ("allOf", "oneOf", "anyOf"):
