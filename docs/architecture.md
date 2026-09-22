@@ -152,8 +152,11 @@ fallback remains locally controlled.
 
 Decision providers never construct `ToolCall` objects and never receive execution credentials or
 authority. For bounded field selection, providers receive only declared non-identifier output
-fields; identifier fields are preserved locally and cannot be removed by the provider. Jev
-additionally does not receive `DecisionOption.metadata`.
+fields; identifier fields are preserved locally and cannot be removed by the provider. For evidence
+sufficiency, local schema metadata must already satisfy requested provenance/license/unit/source-type
+requirements before the provider is consulted; the provider can then only preserve or veto the
+call and cannot upgrade missing evidence. Jev additionally does not receive
+`DecisionOption.metadata`.
 
 ### 14. Remote runtime responses need memory bounds
 
