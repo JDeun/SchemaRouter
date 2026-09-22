@@ -112,6 +112,16 @@ def test_openapi_adapter_hides_sensitive_runtime_headers() -> None:
                             "schema": {"type": "string"},
                         },
                         {
+                            "name": "Accept",
+                            "in": "header",
+                            "schema": {"type": "string"},
+                        },
+                        {
+                            "name": "content-type",
+                            "in": "header",
+                            "schema": {"type": "string"},
+                        },
+                        {
                             "name": "X-Trace-Id",
                             "in": "header",
                             "schema": {"type": "string"},
