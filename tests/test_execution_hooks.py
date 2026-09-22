@@ -182,7 +182,9 @@ async def test_before_hook_failure_blocks_invocation() -> None:
 
     executor = RegistryExecutor(
         registry,
-        hooks=ExecutionHooks(before_call=[before]),
+        hooks=ExecutionHooks(
+            before_call=[before],  # type: ignore[list-item]
+        ),
     )
     executor.bind("demo", invoke)
 
@@ -222,7 +224,9 @@ async def test_after_hook_return_values_are_rejected() -> None:
 
     executor = RegistryExecutor(
         registry,
-        hooks=ExecutionHooks(after_call=[after]),
+        hooks=ExecutionHooks(
+            after_call=[after],  # type: ignore[list-item]
+        ),
     )
     executor.bind(
         "demo",
