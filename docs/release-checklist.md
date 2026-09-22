@@ -12,7 +12,8 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Optional integration CI passes, including LangChain, LlamaIndex, Jev, MCP, and OpenTelemetry.
 - [ ] Linux core CI passes on Python 3.10 through 3.14.
 - [ ] The Windows + Python 3.14 smoke job passes.
-- [ ] The Python 3.15 preview is reviewed for forward-compatibility signals.
+- [ ] The separate Python 3.15 preview workflow is reviewed for forward-compatibility signals,
+  but is not treated as a release blocker.
 - [ ] Quickstart examples execute successfully.
 - [ ] Package wheel and sdist build successfully.
 - [ ] Wheel and sdist both install and run the quickstart in clean environments.

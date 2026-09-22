@@ -24,10 +24,9 @@ tests must pass against that target and the change must be documented in release
 
 ## Required CI
 
-Every pull request runs:
+Every pull request runs the blocking `CI` workflow with:
 
 - Python 3.10 / 3.11 / 3.12 / 3.13 / 3.14 core tests;
-- a non-blocking Python 3.15 release-candidate preview job;
 - a Windows + Python 3.14 core smoke test;
 - warnings-as-errors;
 - Pyright static type checking across the packaged surface;
@@ -43,13 +42,13 @@ Every pull request runs:
 - OpenTelemetry integration tests using the SDK in-memory exporter;
 - strict MkDocs build.
 
-All jobs above are deterministic release blockers except the explicitly non-blocking Python 3.15
-preview. The preview exists to surface upcoming interpreter incompatibilities before Python 3.15
-becomes a supported stable release.
+A separate `Python Preview` workflow runs Python 3.15 RC on pull requests and `main` pushes.
+It is intentionally outside the blocking `CI` workflow and has a bounded runtime. Failures remain
+visible as forward-compatibility signals but cannot stall release publication.
 
-The same CI workflow is reusable and is invoked by the tag-based release workflow before release
-artifacts are built or published. This prevents pull-request and release quality gates from drifting
-apart.
+The top-level Release workflow consumes a successful current-`main` `CI` result before it
+resolves the release tag and builds artifacts. This keeps publication coupled to deterministic
+release blockers without waiting on preview-only interpreter experiments.
 
 ## Integration maintenance policy
 

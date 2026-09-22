@@ -31,21 +31,6 @@ jobs:
       - run: pytest -q -m "not mcp_integration"
       - run: python examples/quickstart.py
 
-  python-preview:
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.15.0-rc.2"
-          allow-prereleases: true
-      - run: python -m pip install --upgrade pip
-      - run: pip install -e ".[dev]"
-      - run: ruff check .
-      - run: pytest -q -m "not mcp_integration"
-      - run: python examples/quickstart.py
-
   windows-smoke:
     runs-on: windows-latest
     steps:
