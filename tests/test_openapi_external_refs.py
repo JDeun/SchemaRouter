@@ -1,5 +1,3 @@
-import json
-
 import httpx
 import pytest
 
@@ -189,6 +187,49 @@ async def test_external_ref_cross_origin_is_rejected_before_target_fetch() -> No
             )
 
     assert seen == [httpx.URL("https://docs.example.com/openapi.json")]
+
+
+@pytest.mark.asyncio
+async def test_external_ref_redirect_cannot_cross_origin_or_leak_schema_headers() -> None:
+    seen: list[httpx.URL] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url)
+        assert request.headers["x-doc-token"] == "schema-secret"
+        if request.url == httpx.URL(
+            "https://docs.example.com/openapi.json"
+        ):
+            return httpx.Response(
+                200,
+                json=root_document("./schema.json#/User"),
+            )
+        if request.url == httpx.URL("https://docs.example.com/schema.json"):
+            return httpx.Response(
+                302,
+                headers={"location": "https://evil.example.com/schema.json"},
+            )
+        raise AssertionError("cross-origin redirect target must never be requested")
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler),
+        follow_redirects=True,
+    ) as client:
+        with pytest.raises(
+            UnsupportedSchemaSourceError,
+            match="cross-origin schema redirects",
+        ):
+            await SchemaRouter.from_url(
+                "https://docs.example.com/openapi.json",
+                kind="openapi",
+                schema_headers={"X-Doc-Token": "schema-secret"},
+                openapi_external_refs=True,
+                http_client=client,
+            )
+
+    assert seen == [
+        httpx.URL("https://docs.example.com/openapi.json"),
+        httpx.URL("https://docs.example.com/schema.json"),
+    ]
 
 
 @pytest.mark.asyncio
