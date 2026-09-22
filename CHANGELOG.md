@@ -20,6 +20,8 @@ The project is pre-1.0 and follows the compatibility rules in
 - elapsed-time budgets now start before per-call approval and actively bound async approval callbacks
   and before/after execution hooks, eliminating unbounded awaited middleware outside the invocation
   timeout.
+- OpenAPI operation-level parameters now correctly override same-identity Path Item parameters,
+  preserving the specification's `(name, in)` override semantics during schema import.
 
 ### Changed
 
