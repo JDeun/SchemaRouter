@@ -61,6 +61,27 @@ python scripts/benchmark_decision_routing.py \
 The callable receives the same structured request used by `ModelQueryAnalyzer` and may be sync or
 async. This keeps the benchmark provider-neutral.
 
+## Embedding backend
+
+Pass a batch embedding callable using `module:function` syntax:
+
+```bash
+python scripts/benchmark_decision_routing.py \
+  --corpus benchmarks/decision-routing-v1.json \
+  --embedding-callable my_embeddings:embed_batch \
+  --min-similarity 0.35 \
+  --min-margin 0.05
+```
+
+The callable receives a list containing the query followed by one text representation per offered
+option, and returns one vector per input. It may be synchronous or asynchronous. SchemaRouter
+performs cosine ranking locally, so the benchmark can compare FastEmbed, SentenceTransformers,
+semantic-router encoders, or an application-specific embedding service without changing the
+benchmark contract.
+
+The threshold values are workload/model specific. Do not reuse a threshold measured for a different
+embedding model without recalibration.
+
 ## Jev
 
 Install the optional integration and configure TypeSafe locally:
