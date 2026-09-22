@@ -37,7 +37,8 @@ Trusted local code can set `retry_non_read_only=True`, but that is an explicit i
 
 ## What is not retryable
 
-Schema contract violations fail immediately.
+Schema contract violations fail immediately. Trusted invokers can also raise
+`NonRetryableInvocationError` when repeating the same call cannot safely recover.
 
 Examples:
 
@@ -50,6 +51,15 @@ Examples:
 
 Retrying these would hide a deterministic correctness problem rather than recover a transient
 transport failure.
+
+The built-in OpenAPI and OPTIMADE HTTP invokers classify `408`, `425`, `429`, `500`,
+`502`, `503`, and `504` as retryable HTTP statuses. Other HTTP error statuses fail fast.
+Deterministic transport-contract failures such as an oversized response, malformed declared JSON,
+or an invalid OPTIMADE success shape also fail fast.
+
+Custom invokers keep the existing behavior: ordinary exceptions may be retried when the endpoint and
+`RetryPolicy` allow it. Raise `NonRetryableInvocationError` to opt a deterministic failure out of
+that retry loop.
 
 ## Choosing a policy
 

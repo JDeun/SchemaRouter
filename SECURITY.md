@@ -94,7 +94,10 @@ remote, and cost budgets before invocation. Budget refusals and schema contract 
 retried.
 
 Automatic retries remain limited to endpoints classified as read-only unless trusted local code
-explicitly opts into retrying non-read-only operations.
+explicitly opts into retrying non-read-only operations. Built-in OpenAPI and OPTIMADE HTTP invokers
+retry only a conservative transient-status set and fail fast on other HTTP errors plus deterministic
+response-contract failures. Trusted custom invokers can raise `NonRetryableInvocationError` to
+prevent retrying a failure that cannot safely recover.
 
 ### Third-party adapter plugins
 

@@ -14,6 +14,7 @@ from .errors import (
     ExecutionBudgetExceededError,
     ExecutionError,
     ExecutionHookError,
+    NonRetryableInvocationError,
     PlanValidationError,
     SchemaDriftError,
     SchemaValidationError,
@@ -399,6 +400,7 @@ class RegistryExecutor:
                 SchemaValidationError,
                 ExecutionBudgetExceededError,
                 ExecutionHookError,
+                NonRetryableInvocationError,
             ):
                 raise
             except Exception as exc:  # noqa: BLE001

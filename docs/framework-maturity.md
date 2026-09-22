@@ -15,7 +15,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Result streaming | Implemented | Add parallel-call streaming later |
 | Typed event streaming | Implemented | Extend exporter ecosystem without exposing payloads |
 | Input / output / config schema introspection | Implemented | Keep machine-readable |
-| Retry policy | Implemented | Add provider-specific transient error classifiers |
+| Retry policy | Read-only gate + explicit non-retryable invocation marker + built-in OpenAPI/OPTIMADE HTTP classification | Extend protocol-specific classifiers only where recovery semantics are well-defined |
 | Python callable tools | Implemented | Improve docstring parameter descriptions |
 | Structured-source adapter registry | Implemented with explicit entry-point plugins | Expand certified third-party adapters |
 | OpenAPI ingestion | Common subset + local refs + opt-in bounded same-origin cross-document refs + allOf object flattening + compatibility report | Add $id/anchor-aware resolution and richer oneOf/anyOf handling |

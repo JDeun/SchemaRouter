@@ -12,6 +12,10 @@
 
 ::: schemarouter.RetryPolicy
 
+## NonRetryableInvocationError
+
+::: schemarouter.NonRetryableInvocationError
+
 ## RunEvent
 
 ::: schemarouter.RunEvent

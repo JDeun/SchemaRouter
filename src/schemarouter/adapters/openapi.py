@@ -8,6 +8,7 @@ from urllib.parse import quote, unquote, urldefrag, urljoin, urlparse
 
 import httpx
 
+from ..errors import NonRetryableInvocationError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 from ..openapi_compatibility import analyze_openapi_compatibility
 
@@ -24,6 +25,7 @@ _SENSITIVE_RUNTIME_HEADERS = {
 }
 _HEADER_NAME_RE = re.compile(r"^[!#$%&'*+.^_\x60|~0-9A-Za-z-]+$")
 _MAX_RUNTIME_RESPONSE_BYTES = 16 * 1024 * 1024
+_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
 
 
 def _local_ref_target(document: dict[str, Any], ref: str) -> Any | None:
@@ -494,12 +496,16 @@ class OpenAPIRemoteInvoker:
         endpoint_name = endpoint
         endpoint_spec = self.tool.endpoint(endpoint_name)
         if not endpoint_spec.method or not endpoint_spec.path:
-            raise RuntimeError(f"endpoint {endpoint_name!r} is missing HTTP method/path")
+            raise NonRetryableInvocationError(
+                f"endpoint {endpoint_name!r} is missing HTTP method/path"
+            )
 
         try:
             _validate_endpoint_path(endpoint_spec.path)
         except ValueError as exc:
-            raise RuntimeError(f"unsafe endpoint path for {endpoint_name!r}") from exc
+            raise NonRetryableInvocationError(
+                f"unsafe endpoint path for {endpoint_name!r}"
+            ) from exc
 
         path = endpoint_spec.path
         query: dict[str, Any] = {}
@@ -519,13 +525,15 @@ class OpenAPIRemoteInvoker:
             elif parameter.location == "header":
                 normalized_name = wire_name.casefold()
                 if not _HEADER_NAME_RE.fullmatch(wire_name):
-                    raise RuntimeError(f"invalid header parameter name: {wire_name!r}")
+                    raise NonRetryableInvocationError(
+                        f"invalid header parameter name: {wire_name!r}"
+                    )
                 if normalized_name in self.trusted_header_names:
-                    raise RuntimeError(
+                    raise NonRetryableInvocationError(
                         f"tool argument cannot override trusted header {wire_name!r}"
                     )
                 if normalized_name in _SENSITIVE_RUNTIME_HEADERS:
-                    raise RuntimeError(
+                    raise NonRetryableInvocationError(
                         f"sensitive header {wire_name!r} must come from trusted runtime auth"
                     )
                 headers[wire_name] = str(value)
@@ -533,7 +541,9 @@ class OpenAPIRemoteInvoker:
                 body[wire_name] = value
 
         if re.search(r"{[^{}]+}", path):
-            raise RuntimeError(f"unresolved path parameter in endpoint {endpoint_name!r}")
+            raise NonRetryableInvocationError(
+                f"unresolved path parameter in endpoint {endpoint_name!r}"
+            )
 
         headers.update(self.trusted_headers)
 
@@ -541,7 +551,9 @@ class OpenAPIRemoteInvoker:
         # absolute path to replace the approved server path prefix.
         url = self.base_url + "/" + path.lstrip("/")
         if _origin(url) != self.approved_origin:
-            raise RuntimeError("endpoint path escaped the approved API origin")
+            raise NonRetryableInvocationError(
+                "endpoint path escaped the approved API origin"
+            )
 
         owns_client = self.http_client is None
         client = self.http_client or httpx.AsyncClient(
@@ -557,7 +569,15 @@ class OpenAPIRemoteInvoker:
                 headers=headers or None,
                 follow_redirects=False,
             ) as response:
-                response.raise_for_status()
+                try:
+                    response.raise_for_status()
+                except httpx.HTTPStatusError as exc:
+                    if response.status_code not in _TRANSIENT_HTTP_STATUS_CODES:
+                        raise NonRetryableInvocationError(
+                            "OpenAPI request failed with non-retryable HTTP status "
+                            f"{response.status_code}"
+                        ) from exc
+                    raise
 
                 content_length = response.headers.get("content-length")
                 if content_length is not None:
@@ -569,7 +589,7 @@ class OpenAPIRemoteInvoker:
                         declared_size is not None
                         and declared_size > self.max_response_bytes
                     ):
-                        raise RuntimeError(
+                        raise NonRetryableInvocationError(
                             "OpenAPI response exceeds "
                             f"{self.max_response_bytes} byte safety limit"
                         )
@@ -579,7 +599,7 @@ class OpenAPIRemoteInvoker:
                 async for chunk in response.aiter_bytes():
                     total += len(chunk)
                     if total > self.max_response_bytes:
-                        raise RuntimeError(
+                        raise NonRetryableInvocationError(
                             "OpenAPI response exceeds "
                             f"{self.max_response_bytes} byte safety limit"
                         )
@@ -593,5 +613,10 @@ class OpenAPIRemoteInvoker:
                 await client.aclose()
 
         if "json" in content_type:
-            return json.loads(content)
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError as exc:
+                raise NonRetryableInvocationError(
+                    "OpenAPI response declared JSON but could not be decoded"
+                ) from exc
         return {"text": content.decode(encoding, errors="replace")}

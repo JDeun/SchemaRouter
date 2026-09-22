@@ -254,6 +254,9 @@ and therefore creates an application-managed sensitive-data store.
 14. Runtime API secrets are not model-visible tool parameters.
 15. Ambiguous output selection favors recall over aggressive pruning.
 16. Automatic retries apply only to endpoints trusted as read-only unless local code opts in.
+    Built-in OpenAPI/OPTIMADE transports fail fast on known non-transient HTTP and deterministic
+    response-contract failures; trusted custom invokers can raise `NonRetryableInvocationError`
+    to opt a failure out of the retry loop.
 17. Run-event arguments and result payloads are redacted unless payload tracing is explicitly enabled.
 18. Optional framework integrations call back through the same executor boundary rather than bypassing policy or validation.
 19. Optional decision providers can select only locally offered option IDs and cannot grant execution authority.
@@ -270,7 +273,7 @@ and therefore creates an application-managed sensitive-data store.
 
 ## Current extension backlog
 
-- trusted local classification for individual MCP tool side effects;
+- trusted local classification for individual MCP tool side effects and richer MCP retry semantics;
 - OpenAPI `$id`/anchor-aware resolution and richer composition-aware planning/execution;
 - non-object request-body ergonomics and typed array-element projection if justified;
 - organization-specific policy/approval and license/provenance extensions;
