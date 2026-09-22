@@ -471,6 +471,47 @@ async def test_external_ref_cycle_uses_cached_documents_without_refetching() -> 
     ]
 
 
+
+@pytest.mark.asyncio
+async def test_external_ref_reserved_bundle_key_is_rejected() -> None:
+    document = root_document("./schema.json#/User")
+    document["x-schemarouter-external-refs"] = {"attacker": {"User": {}}}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url == httpx.URL("https://docs.example.com/openapi.json")
+        return httpx.Response(200, json=document)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(
+            UnsupportedSchemaSourceError,
+            match="reserved external-ref bundle key",
+        ):
+            await SchemaRouter.from_url(
+                "https://docs.example.com/openapi.json",
+                kind="openapi",
+                openapi_external_refs=True,
+                http_client=client,
+            )
+
+
+@pytest.mark.asyncio
+async def test_external_ref_opt_in_requires_real_boolean() -> None:
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda request: httpx.Response(500, request=request)
+        )
+    ) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(
+            SchemaSourceError,
+            match="openapi_external_refs must be a boolean",
+        ):
+            await router.add_url(
+                "https://docs.example.com/openapi.json",
+                kind="openapi",
+                openapi_external_refs=1,  # type: ignore[arg-type]
+            )
+
 @pytest.mark.parametrize(
     ("kwargs", "message"),
     [
