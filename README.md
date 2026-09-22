@@ -125,7 +125,7 @@ into the protocol's `response_fields` query parameter before execution.
 ### MCP
 
 ```bash
-pip install "schemarouter[mcp]"
+pip install --pre "schemarouter[mcp]"
 ```
 
 ```python
@@ -185,7 +185,7 @@ evidence-grounded proposal and then requires explicit approval.
 ## With LangChain
 
 ```bash
-pip install "schemarouter[langchain]"
+pip install --pre "schemarouter[langchain]"
 ```
 
 ```python
@@ -201,7 +201,7 @@ Execution still flows through SchemaRouter's policy, fingerprint, input, and out
 Install the packaged LlamaIndex bridge:
 
 ```bash
-pip install "schemarouter[llamaindex]"
+pip install --pre "schemarouter[llamaindex]"
 ```
 
 ```python
@@ -236,7 +236,7 @@ planner = SchemaPlanner(
 Jev / TypeSafe System One is optional:
 
 ```bash
-pip install "schemarouter[jev]"
+pip install --pre "schemarouter[jev]"
 export TYPESAFE_API_KEY="..."
 ```
 
