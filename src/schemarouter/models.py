@@ -26,10 +26,21 @@ class FieldSpec(StrictModel):
     description: str = ""
     json_schema: dict[str, Any] = Field(default_factory=dict)
     aliases: list[str] = Field(default_factory=list)
+    path: list[str] = Field(default_factory=list)
     unit: str | None = None
     identifier: bool = False
     source_type: str | None = None
     license: str | None = None
+
+    @model_validator(mode="after")
+    def validate_path(self) -> FieldSpec:
+        if any(not isinstance(part, str) or not part for part in self.path):
+            raise ValueError("field path requires non-empty string segments")
+        return self
+
+    @property
+    def projection_path(self) -> tuple[str, ...]:
+        return tuple(self.path or [self.name])
 
 
 class EndpointSpec(StrictModel):
@@ -53,6 +64,22 @@ class EndpointSpec(StrictModel):
             raise ValueError(f"duplicate parameter name in endpoint {self.name!r}")
         if len(fnames) != len(set(fnames)):
             raise ValueError(f"duplicate output field name in endpoint {self.name!r}")
+
+        paths = [(field.name, field.projection_path) for field in self.output_fields]
+        if len({path for _, path in paths}) != len(paths):
+            raise ValueError(f"duplicate output field path in endpoint {self.name!r}")
+        for index, (left_name, left_path) in enumerate(paths):
+            for right_name, right_path in paths[index + 1 :]:
+                shorter, longer = (
+                    (left_path, right_path)
+                    if len(left_path) <= len(right_path)
+                    else (right_path, left_path)
+                )
+                if longer[: len(shorter)] == shorter:
+                    raise ValueError(
+                        "overlapping output field paths in endpoint "
+                        f"{self.name!r}: {left_name!r} and {right_name!r}"
+                    )
         return self
 
     @property

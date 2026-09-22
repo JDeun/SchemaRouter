@@ -23,7 +23,7 @@ This document tracks framework-level maturity rather than research metrics.
 | MCP ingestion and execution | Implemented with authenticated/custom transport boundary | Expand OAuth/gateway examples |
 | Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
 | Runtime policy | Implemented with per-call approval and execution budgets | Add richer organization policy adapters |
-| Runtime JSON Schema validation | Implemented | Add richer nested projection |
+| Runtime JSON Schema validation / projection | Full raw validation + explicit nested object projection paths | Add typed array-element projection only if needed |
 | LangChain / LangGraph / LlamaIndex integrations | Implemented optional adapters and native graph node | Expand ecosystem listings |
 | Bounded decision backends | Candidate + bounded field selection, provider-neutral callable/embedding + optional Jev/Ollama, all opt-in | Add dedicated evidence-sufficiency contract |
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |

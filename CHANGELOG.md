@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- explicit `FieldSpec.path` nested-object projection with logical field IDs, full raw-output
+  validation before extraction, overlap/collision fail-closed validation, planner path-token
+  matching, local projection enforcement for nested paths, and detached projected values.
 - bounded `field_selection` decision surface that exposes only declared non-identifier output
   fields, always preserves identifier fields locally, caps selections by the deterministic
   projection width, recomputes evidence from the final field set, and supports sync/async

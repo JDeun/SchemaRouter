@@ -61,8 +61,9 @@ objects.
 ### 3. Aggressive field minimization harms recall
 
 The research results showed that minimizing field count can remove answer-critical information.
-The v0.1 planner keeps identifiers, keeps confidently matched fields, and falls back to the full
-declared top-level field set when output intent is ambiguous.
+The planner keeps identifiers, keeps confidently matched fields, and falls back to the full
+declared field set when output intent is ambiguous. `FieldSpec.path` can map a bounded logical
+field ID onto a nested object path without exposing arbitrary JSONPath syntax to planning.
 
 ### 4. Remote schemas drift independently
 
@@ -213,7 +214,8 @@ and therefore creates an application-managed sensitive-data store.
 2. A plan cannot pass undeclared parameters.
 3. Required parameters are recomputed at execution; a forged plan cannot suppress them.
 4. Arguments must satisfy the current endpoint input JSON Schema.
-5. Requested projection fields must be declared by the current endpoint.
+5. Requested projection fields must be declared logical field IDs from the current endpoint; nested
+   wire paths come only from trusted `FieldSpec.path` metadata.
 6. Raw tool output must satisfy the current endpoint output JSON Schema before projection.
 7. A stale endpoint fingerprint cannot execute.
 8. A stale invoker binding cannot execute after tool replacement.
@@ -240,13 +242,12 @@ and therefore creates an application-managed sensitive-data store.
 
 - trusted local classification for individual MCP tool side effects;
 - deeper OpenAPI external-ref resolution and composition-aware planning/execution;
-- non-object request-body ergonomics and richer nested field projection;
+- non-object request-body ergonomics and typed array-element projection if justified;
 - organization-specific policy/approval and license/provenance extensions;
 - compensation, transactions, and distributed execution;
 - distributed/remote registry implementations beyond the built-in SQLite persistence;
 - multi-page and client-rendered documentation crawling;
-- replayable trace storage and additional trusted exporters;
-- dated live-provider benchmark evidence and compatibility dashboards;
-- LangGraph-native integration adapters.
+- additional trusted trace/export sinks;
+- dated live-provider benchmark evidence and compatibility dashboards.
 
 These are extension layers. They should not weaken the core fail-closed contracts above.

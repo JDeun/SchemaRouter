@@ -163,6 +163,8 @@ proposal로 변환한 뒤 명시적인 승인을 받아야 합니다.
   가능한 호출이 될 수 없습니다.
 - **Runtime JSON Schema validation** — 호출 전 argument와 projection 전 raw output을
   검증합니다.
+- **Bounded nested projection** — 선언된 logical field만 명시적 nested object path에
+  매핑할 수 있으며 모델이 임의 JSONPath나 미선언 경로를 만들 수 없습니다.
 - **Schema / binding drift detection** — 오래된 plan이나 transport binding은 fail closed로
   차단합니다.
 - **Local execution authority** — 원격 metadata나 모델 출력이 mutation/destructive 권한을
@@ -365,6 +367,7 @@ python scripts/benchmark_decision_routing.py \
 - [Decision backends](https://jdeun.github.io/SchemaRouter/concepts/decision-backends/)
 - [Decision benchmark](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/)
 - [Persistent run traces](https://jdeun.github.io/SchemaRouter/guides/run-traces/)
+- [Field projection](https://jdeun.github.io/SchemaRouter/guides/field-projection/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
 - [Architecture](https://jdeun.github.io/SchemaRouter/architecture/)
 - [Security](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md)
