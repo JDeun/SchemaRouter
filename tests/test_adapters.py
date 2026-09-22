@@ -404,6 +404,7 @@ async def test_openapi_later_success_json_schema_validates_at_runtime() -> None:
     call = ToolCall(
         tool=tool.key,
         endpoint=endpoint.name,
+        fields=["created"],
         schema_fingerprint=endpoint.fingerprint,
     )
 
@@ -473,6 +474,7 @@ async def test_openapi_no_content_success_returns_none_and_validates() -> None:
         tool=tool.key,
         endpoint=endpoint.name,
         arguments={"item_id": "42"},
+        fields=["deleted"],
         schema_fingerprint=endpoint.fingerprint,
     )
 
