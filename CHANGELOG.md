@@ -15,6 +15,8 @@ The project is pre-1.0 and follows the compatibility rules in
   handling for non-transient status codes and deterministic response-contract violations.
 - wall-clock-budget-aware retry backoff that stops at the remaining elapsed-time boundary instead of
   sleeping past `ExecutionBudget.max_elapsed_seconds`.
+- retry delay capping now applies `max_backoff_seconds` to the initial delay as well as subsequent
+  exponentially increased delays.
 
 ### Changed
 

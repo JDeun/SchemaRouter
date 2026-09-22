@@ -362,7 +362,7 @@ class RegistryExecutor:
         retry = retry or RetryPolicy()
         can_retry = endpoint.read_only is True or retry.retry_non_read_only
         max_attempts = retry.max_attempts if can_retry else 1
-        delay = retry.initial_backoff_seconds
+        delay = min(retry.initial_backoff_seconds, retry.max_backoff_seconds)
 
         last_error: Exception | None = None
         for attempt in range(1, max_attempts + 1):
