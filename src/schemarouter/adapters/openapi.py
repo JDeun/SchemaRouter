@@ -8,6 +8,7 @@ from urllib.parse import quote, unquote, urldefrag, urljoin, urlparse
 
 import httpx
 
+from ..errors import NonRetryableInvocationError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 from ..openapi_compatibility import analyze_openapi_compatibility
 
@@ -24,6 +25,7 @@ _SENSITIVE_RUNTIME_HEADERS = {
 }
 _HEADER_NAME_RE = re.compile(r"^[!#$%&'*+.^_\x60|~0-9A-Za-z-]+$")
 _MAX_RUNTIME_RESPONSE_BYTES = 16 * 1024 * 1024
+_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
 
 
 def _local_ref_target(document: dict[str, Any], ref: str) -> Any | None:
@@ -557,7 +559,15 @@ class OpenAPIRemoteInvoker:
                 headers=headers or None,
                 follow_redirects=False,
             ) as response:
-                response.raise_for_status()
+                try:
+                    response.raise_for_status()
+                except httpx.HTTPStatusError as exc:
+                    if response.status_code not in _TRANSIENT_HTTP_STATUS_CODES:
+                        raise NonRetryableInvocationError(
+                            "OpenAPI request failed with non-retryable HTTP status "
+                            f"{response.status_code}"
+                        ) from exc
+                    raise
 
                 content_length = response.headers.get("content-length")
                 if content_length is not None:
@@ -569,7 +579,7 @@ class OpenAPIRemoteInvoker:
                         declared_size is not None
                         and declared_size > self.max_response_bytes
                     ):
-                        raise RuntimeError(
+                        raise NonRetryableInvocationError(
                             "OpenAPI response exceeds "
                             f"{self.max_response_bytes} byte safety limit"
                         )
@@ -579,7 +589,7 @@ class OpenAPIRemoteInvoker:
                 async for chunk in response.aiter_bytes():
                     total += len(chunk)
                     if total > self.max_response_bytes:
-                        raise RuntimeError(
+                        raise NonRetryableInvocationError(
                             "OpenAPI response exceeds "
                             f"{self.max_response_bytes} byte safety limit"
                         )
@@ -593,5 +603,10 @@ class OpenAPIRemoteInvoker:
                 await client.aclose()
 
         if "json" in content_type:
-            return json.loads(content)
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError as exc:
+                raise NonRetryableInvocationError(
+                    "OpenAPI response declared JSON but could not be decoded"
+                ) from exc
         return {"text": content.decode(encoding, errors="replace")}
