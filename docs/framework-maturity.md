@@ -24,7 +24,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
 | Runtime policy | Implemented with per-call approval and execution budgets | Add richer organization policy adapters |
 | Runtime JSON Schema validation | Implemented | Add richer nested projection |
-| LangChain / LlamaIndex integrations | Implemented optional adapters | Add LangGraph-native nodes and ecosystem listings |
+| LangChain / LangGraph / LlamaIndex integrations | Implemented optional adapters and native graph node | Expand ecosystem listings |
 | Bounded decision backends | Implemented, opt-in | Extend dedicated field/evidence contracts |
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
 | Decision benchmark harness | 144-case checked-in corpus + JSON/CSV metrics | Gather dated live-provider evidence |
@@ -98,7 +98,7 @@ OpenAPI/OPTIMADE smokes are in place.
 
 Completed locally:
 
-- runnable LangChain and LlamaIndex examples;
+- runnable LangChain, LangGraph, and LlamaIndex examples;
 - published ecosystem compatibility and maintenance policy;
 - optional Jev decision provider with adversarial contract tests;
 - provider-neutral decision benchmark harness;
@@ -113,7 +113,6 @@ Still external or follow-up work:
 
 - upstream ecosystem listing/discussion requests;
 - broader live benchmark evidence;
-- LangGraph-native integration;
 - richer OpenAPI external-reference and composition execution support.
 
 ### Gate C — production operations
