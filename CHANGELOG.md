@@ -26,6 +26,9 @@ The project is pre-1.0 and follows the compatibility rules in
   same fallback token, while explicit `operationId` values are preserved unchanged.
 - required supported OpenAPI JSON object request bodies now preserve body presence even when every
   flattened property is optional, sending an empty object instead of silently omitting the body.
+- OpenAPI `Accept`, `Content-Type`, and `Authorization` header parameters are now ignored during
+  import as required by the Parameter Object contract, keeping protocol/auth control out of planner
+  arguments.
 
 ### Changed
 
