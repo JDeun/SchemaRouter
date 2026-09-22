@@ -2,7 +2,6 @@ import pytest
 
 from schemarouter import (
     EndpointSpec,
-    ExecutionPlan,
     FieldSpec,
     InMemoryRegistry,
     PlanRequest,
