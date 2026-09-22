@@ -7,6 +7,8 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+## 0.5.0 - 2026-09-23
+
 ### Added
 
 - public `NonRetryableInvocationError` contract for trusted invokers that can prove repeating the
@@ -38,7 +40,16 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
-- post-release development has resumed as `0.5.0.dev0`; published `0.4.0` artifacts remain immutable.
+- promoted the 0.5 development line to the non-prerelease `0.5.0` release after the retry/budget
+  hardening and OpenAPI fidelity pass completed the protected release gates.
+
+### Compatibility
+
+- no intentional public API removals are introduced relative to `0.4.0`;
+- built-in OpenAPI and retry behavior is stricter or more spec-faithful only in cases that were
+  previously retried, omitted, fabricated, collided, or validated against the wrong success schema;
+- the project remains pre-1.0, so later 0.x minor releases may still include deliberate documented
+  compatibility changes.
 
 ## 0.4.0 - 2026-09-22
 

@@ -35,7 +35,7 @@ SchemaRouter는 LangChain이나 LangGraph를 대체하는 범용 에이전트 �
 OpenAPI, MCP, OPTIMADE, Python callable 및 제3자 어댑터와 에이전트 사이의
 **tool-schema boundary**를 담당하도록 설계되었습니다.
 
-> 현재 공개 non-prerelease 릴리스는 **0.4.0**입니다. PyPI에서
+> 현재 공개 non-prerelease 릴리스는 **0.5.0**입니다. PyPI에서
 > `pip install schemarouter`로 설치할 수 있습니다. SchemaRouter는 아직 pre-1.0이므로
 > 이후 0.x minor 릴리스에서는 문서화된 버전 정책에 따라 의도적인 호환성 변경이 있을 수 있습니다.
 
