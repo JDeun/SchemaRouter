@@ -29,6 +29,8 @@ The project is pre-1.0 and follows the compatibility rules in
 - OpenAPI `Accept`, `Content-Type`, and `Authorization` header parameters are now ignored during
   import as required by the Parameter Object contract, keeping protocol/auth control out of planner
   arguments.
+- schema-less OpenAPI JSON request bodies are no longer inferred as empty objects; they remain
+  unrepresented at runtime and are surfaced explicitly as unsupported compatibility findings.
 
 ### Changed
 

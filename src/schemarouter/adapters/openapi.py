@@ -461,9 +461,9 @@ def tool_from_openapi(
                 body_properties = _schema_properties(document, body_schema)
                 body_is_supported_object = (
                     isinstance(body_schema, dict)
+                    and bool(body_schema)
                     and (
-                        body_schema == {}
-                        or body_schema.get("type") == "object"
+                        body_schema.get("type") == "object"
                         or bool(body_properties)
                     )
                     and "oneOf" not in body_schema

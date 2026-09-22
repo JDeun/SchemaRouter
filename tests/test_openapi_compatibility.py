@@ -95,6 +95,33 @@ def test_openapi_compatibility_makes_unsupported_semantics_visible() -> None:
     assert constructs["security_requirements"] == "partial"
 
 
+def test_openapi_compatibility_reports_schema_less_json_request_body() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Schema-less Body"},
+        "paths": {
+            "/items": {
+                "post": {
+                    "requestBody": {
+                        "required": True,
+                        "content": {"application/json": {}},
+                    },
+                    "responses": {"204": {"description": "ok"}},
+                }
+            }
+        },
+    }
+
+    report = analyze_openapi_compatibility(document)
+
+    assert report.status == "partial"
+    assert any(
+        issue.schema_construct == "schema_less_request_body"
+        and issue.support == "unsupported"
+        for issue in report.issues
+    )
+
+
 def test_openapi_compatibility_detects_recursive_component_refs() -> None:
     document = {
         "openapi": "3.1.0",
