@@ -354,12 +354,13 @@ def _disambiguate_generated_endpoint_names(
             continue
 
         seed = f"{endpoint.method or ''} {endpoint.path or ''}"
-        digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()
-        width = 8
-        candidate = f"{endpoint.name}__{digest[:width]}"
+        digest = hashlib.sha256(seed.encode("utf-8")).hexdigest()[:12]
+        candidate_base = f"{endpoint.name}__{digest}"
+        candidate = candidate_base
+        suffix = 2
         while candidate in reserved:
-            width += 2
-            candidate = f"{endpoint.name}__{digest[:width]}"
+            candidate = f"{candidate_base}__{suffix}"
+            suffix += 1
         reserved.add(candidate)
 
         metadata = dict(endpoint.metadata)
