@@ -307,6 +307,21 @@ policy = DecisionPolicy(
 backend에는 선언된 non-identifier field만 제공되고 identifier field는 항상 로컬에서
 보존됩니다. invalid output이나 abstain은 deterministic projection으로 fallback됩니다.
 
+Evidence sufficiency도 별도로 opt-in할 수 있는 보수적 gate입니다.
+
+```python
+policy = DecisionPolicy(
+    enabled=True,
+    evidence_sufficiency=True,
+    fallback="deterministic",
+)
+```
+
+요청된 provenance/license/unit/source-type은 먼저 로컬 schema metadata로 충족되어야 합니다.
+그 뒤 backend는 `evidence:sufficient` / `evidence:insufficient` 두 선택지만 받으며,
+로컬에서 충분한 call을 veto할 수 있을 뿐 없는 evidence를 만들어내거나 실행 권한을 높일 수
+없습니다.
+
 ## Decision benchmark
 
 기본 deterministic routing을 측정합니다.

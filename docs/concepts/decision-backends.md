@@ -32,9 +32,11 @@ The master `enabled` switch must be true. Individual surfaces are separately con
 - `evidence_sufficiency`
 
 Bounded candidate selection is active when tool or endpoint selection is enabled. `field_selection`
-is also implemented: the backend can select only from the endpoint's declared non-identifier
-output fields, while identifier fields are always preserved locally. `evidence_sufficiency`
-remains reserved and fails closed until its dedicated bounded contract is implemented.
+lets the backend choose only from declared non-identifier output fields while identifier fields are
+preserved locally. `evidence_sufficiency` is also implemented as a conservative binary gate:
+SchemaRouter first proves the requested provenance/license/unit/source-type requirements from local
+schema metadata, then the backend may only keep that locally sufficient call or veto it as
+insufficient. A provider can never upgrade missing local evidence.
 
 ## Bounded field selection
 
@@ -60,6 +62,41 @@ Provider failure, malformed/unknown field IDs, duplicate IDs, overflow, or abste
 same fallback policy as candidate routing. Evidence requirements are recomputed from the final
 locally validated field set.
 
+## Bounded evidence sufficiency
+
+Enable the surface explicitly and request evidence on the plan request:
+
+```python
+policy = DecisionPolicy(
+    enabled=True,
+    evidence_sufficiency=True,
+    fallback="deterministic",
+)
+
+request = PlanRequest(
+    query="band gap",
+    evidence=EvidenceRequirements(
+        provenance=True,
+        license=True,
+        units=True,
+        source_type="calculated",
+    ),
+)
+```
+
+SchemaRouter performs a deterministic local precheck before contacting the backend. Tool-level
+`source_type` / `license` metadata and selected answer-field `source_type`, `license`, and
+`unit` metadata are the only evidence that can satisfy this precheck.
+
+If any requested requirement is locally missing, the call is rejected without asking the provider.
+If local evidence is sufficient, the provider receives exactly two finite options:
+`evidence:sufficient` and `evidence:insufficient`. Selecting `insufficient` acts only as a
+conservative veto. Selecting `sufficient` cannot add provenance, licenses, units, fields, tools, or
+execution authority.
+
+Provider failure or abstention can fall back to the local evidence assessment when
+`fallback="deterministic"`; `fallback="error"` fails planning instead.
+
 ## Fallbacks
 
 `fallback="deterministic"` is the default. Invalid output, provider failure, unknown option IDs,
@@ -75,6 +112,8 @@ A decision provider:
 - cannot create a `ToolCall`;
 - cannot add tools, endpoints, fields, parameters, credentials, or execution permissions;
 - cannot make an unknown option executable;
+- cannot upgrade locally missing evidence;
+- may only veto a call that already passed the local evidence precheck;
 - must return bounded, finite scores;
 - may abstain;
 - supplies metadata that is always non-authoritative.

@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- conservative bounded `evidence_sufficiency` decision surface with deterministic local
+  provenance/license/unit/source-type prechecks, provider veto-only semantics, sync/async support,
+  abstention/error fallback policy, and no ability to upgrade missing evidence.
 - explicit `FieldSpec.path` nested-object projection with logical field IDs, full raw-output
   validation before extraction, overlap/collision fail-closed validation, planner path-token
   matching, local projection enforcement for nested paths, and detached projected values.

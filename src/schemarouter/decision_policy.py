@@ -28,5 +28,10 @@ class DecisionPolicy(BaseModel):
         return self.enabled and self.field_selection
 
     @property
-    def reserved_surfaces_enabled(self) -> bool:
+    def evidence_sufficiency_enabled(self) -> bool:
         return self.enabled and self.evidence_sufficiency
+
+    @property
+    def reserved_surfaces_enabled(self) -> bool:
+        """Backward-compatible indicator for not-yet-implemented decision surfaces."""
+        return False

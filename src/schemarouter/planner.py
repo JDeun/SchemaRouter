@@ -78,11 +78,6 @@ class SchemaPlanner:
         self.decision_policy = decision_policy or DecisionPolicy()
         if self.decision_policy.enabled and self.decision_backend is None:
             raise PlanningError("decision policy is enabled but no decision backend is configured")
-        if self.decision_policy.reserved_surfaces_enabled:
-            raise PlanningError(
-                "evidence_sufficiency decision surface is reserved until a dedicated bounded "
-                "contract is available"
-            )
 
     def plan(self, request: PlanRequest | str) -> ExecutionPlan:
         request = self._prepare_request(request)
@@ -343,6 +338,214 @@ class SchemaPlanner:
             [],
         )
 
+    @staticmethod
+    def _evidence_request_active(requested: EvidenceRequirements) -> bool:
+        return bool(
+            requested.provenance
+            or requested.license
+            or requested.units
+            or requested.source_type
+        )
+
+    @staticmethod
+    def _local_evidence_status(
+        candidate: _Candidate,
+        selected_fields: list[str],
+        requested: EvidenceRequirements,
+    ) -> tuple[bool, dict[str, object], list[str]]:
+        endpoint = candidate.endpoint
+        field_map = {field.name: field for field in endpoint.output_fields}
+        selected = [
+            field_map[name]
+            for name in selected_fields
+            if name in field_map
+        ]
+        answer_fields = [field for field in selected if not field.identifier]
+
+        provenance_available = bool(
+            candidate.tool.source_type
+            or any(field.source_type for field in answer_fields)
+        )
+        license_available = bool(candidate.tool.license) or (
+            bool(answer_fields)
+            and all(field.license for field in answer_fields)
+        )
+        units_available = bool(answer_fields) and all(
+            field.unit for field in answer_fields
+        )
+        requested_source_type = requested.source_type
+        source_type_available = (
+            requested_source_type is None
+            or candidate.tool.source_type == requested_source_type
+            or (
+                bool(answer_fields)
+                and all(
+                    field.source_type == requested_source_type
+                    for field in answer_fields
+                )
+            )
+        )
+
+        missing: list[str] = []
+        if requested.provenance and not provenance_available:
+            missing.append("provenance")
+        if requested.license and not license_available:
+            missing.append("license")
+        if requested.units and not units_available:
+            missing.append("units")
+        if requested_source_type is not None and not source_type_available:
+            missing.append(f"source_type={requested_source_type}")
+
+        context: dict[str, object] = {
+            "surface": "evidence_sufficiency",
+            "tool": candidate.tool.key,
+            "endpoint": endpoint.name,
+            "selected_fields": list(selected_fields),
+            "requested": requested.model_dump(mode="json"),
+            "available": {
+                "provenance": provenance_available,
+                "license": license_available,
+                "units": units_available,
+                "source_type": source_type_available,
+            },
+        }
+        return not missing, context, missing
+
+    @staticmethod
+    def _evidence_decision_request(
+        request: PlanRequest,
+        context: dict[str, object],
+    ) -> DecisionRequest:
+        return DecisionRequest(
+            query=request.query,
+            options=[
+                DecisionOption(
+                    id="evidence:sufficient",
+                    label="sufficient",
+                    description=(
+                        "The declared local schema evidence is sufficient for this request."
+                    ),
+                ),
+                DecisionOption(
+                    id="evidence:insufficient",
+                    label="insufficient",
+                    description=(
+                        "Treat the declared local schema evidence as insufficient for this request."
+                    ),
+                ),
+            ],
+            max_selections=1,
+            context=context,
+        )
+
+    def _assess_evidence_sync(
+        self,
+        request: PlanRequest,
+        candidate: _Candidate,
+        selected_fields: list[str],
+        requested: EvidenceRequirements,
+    ) -> tuple[bool, list[str]]:
+        if not self.decision_policy.evidence_sufficiency_enabled:
+            return True, []
+        if not self._evidence_request_active(requested):
+            return True, []
+
+        prefix = f"{candidate.tool.key}.{candidate.endpoint.name}"
+        locally_sufficient, context, missing = self._local_evidence_status(
+            candidate,
+            selected_fields,
+            requested,
+        )
+        if not locally_sufficient:
+            message = (
+                f"{prefix}: local evidence insufficient: " + ", ".join(missing)
+            )
+            if self.decision_policy.fallback == "error":
+                raise PlanningError(message)
+            return False, [message]
+
+        assert self.decision_backend is not None
+        try:
+            result = choose_sync(
+                self.decision_backend,
+                self._evidence_decision_request(request, context),
+            )
+        except Exception as exc:
+            if self.decision_policy.fallback == "deterministic":
+                return True, [
+                    f"{prefix}: evidence decision fallback: {type(exc).__name__}"
+                ]
+            raise
+
+        if result.abstained or not result.selections:
+            if self.decision_policy.fallback == "deterministic":
+                return True, [
+                    f"{prefix}: evidence decision backend abstained; "
+                    "used local evidence assessment"
+                ]
+            raise PlanningError(f"{prefix}: evidence decision backend abstained")
+
+        option_id = result.selections[0].option_id
+        if option_id == "evidence:sufficient":
+            return True, []
+        if option_id == "evidence:insufficient":
+            return False, [f"{prefix}: evidence decision marked evidence insufficient"]
+        raise PlanningError(f"{prefix}: unsupported evidence decision {option_id!r}")
+
+    async def _assess_evidence_async(
+        self,
+        request: PlanRequest,
+        candidate: _Candidate,
+        selected_fields: list[str],
+        requested: EvidenceRequirements,
+    ) -> tuple[bool, list[str]]:
+        if not self.decision_policy.evidence_sufficiency_enabled:
+            return True, []
+        if not self._evidence_request_active(requested):
+            return True, []
+
+        prefix = f"{candidate.tool.key}.{candidate.endpoint.name}"
+        locally_sufficient, context, missing = self._local_evidence_status(
+            candidate,
+            selected_fields,
+            requested,
+        )
+        if not locally_sufficient:
+            message = (
+                f"{prefix}: local evidence insufficient: " + ", ".join(missing)
+            )
+            if self.decision_policy.fallback == "error":
+                raise PlanningError(message)
+            return False, [message]
+
+        assert self.decision_backend is not None
+        try:
+            result = await choose_async(
+                self.decision_backend,
+                self._evidence_decision_request(request, context),
+            )
+        except Exception as exc:
+            if self.decision_policy.fallback == "deterministic":
+                return True, [
+                    f"{prefix}: evidence decision fallback: {type(exc).__name__}"
+                ]
+            raise
+
+        if result.abstained or not result.selections:
+            if self.decision_policy.fallback == "deterministic":
+                return True, [
+                    f"{prefix}: evidence decision backend abstained; "
+                    "used local evidence assessment"
+                ]
+            raise PlanningError(f"{prefix}: evidence decision backend abstained")
+
+        option_id = result.selections[0].option_id
+        if option_id == "evidence:sufficient":
+            return True, []
+        if option_id == "evidence:insufficient":
+            return False, [f"{prefix}: evidence decision marked evidence insufficient"]
+        raise PlanningError(f"{prefix}: unsupported evidence decision {option_id!r}")
+
     def _build_plan(
         self,
         request: PlanRequest,
@@ -394,13 +597,29 @@ class SchemaPlanner:
                 deterministic_fields,
             )
             warnings.extend(field_warnings)
+            evidence = self._evidence(
+                candidate.tool,
+                endpoint,
+                fields,
+                intent.evidence,
+            )
+            evidence_ok, evidence_warnings = self._assess_evidence_sync(
+                request,
+                candidate,
+                fields,
+                intent.evidence,
+            )
+            warnings.extend(evidence_warnings)
+            if not evidence_ok:
+                continue
+
             calls.append(
                 ToolCall(
                     tool=candidate.tool.key,
                     endpoint=endpoint.name,
                     arguments=arguments,
                     fields=fields,
-                    evidence=self._evidence(candidate.tool, fields, intent.evidence),
+                    evidence=evidence,
                     schema_fingerprint=endpoint.fingerprint,
                     missing_required_arguments=missing,
                     score=candidate.score,
@@ -461,13 +680,29 @@ class SchemaPlanner:
                 deterministic_fields,
             )
             warnings.extend(field_warnings)
+            evidence = self._evidence(
+                candidate.tool,
+                endpoint,
+                fields,
+                intent.evidence,
+            )
+            evidence_ok, evidence_warnings = await self._assess_evidence_async(
+                request,
+                candidate,
+                fields,
+                intent.evidence,
+            )
+            warnings.extend(evidence_warnings)
+            if not evidence_ok:
+                continue
+
             calls.append(
                 ToolCall(
                     tool=candidate.tool.key,
                     endpoint=endpoint.name,
                     arguments=arguments,
                     fields=fields,
-                    evidence=self._evidence(candidate.tool, fields, intent.evidence),
+                    evidence=evidence,
                     schema_fingerprint=endpoint.fingerprint,
                     missing_required_arguments=missing,
                     score=candidate.score,
@@ -561,12 +796,12 @@ class SchemaPlanner:
     @staticmethod
     def _evidence(
         tool: ToolSpec,
+        endpoint: EndpointSpec,
         selected_fields: list[str],
         requested: EvidenceRequirements,
     ) -> EvidenceRequirements:
         field_map: dict[str, FieldSpec] = {
             field.name: field
-            for endpoint in tool.endpoints
             for field in endpoint.output_fields
         }
         return EvidenceRequirements(
