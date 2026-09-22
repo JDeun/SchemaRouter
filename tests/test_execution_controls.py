@@ -18,6 +18,8 @@ from schemarouter import (
     ToolSpec,
 )
 
+from schemarouter.executor import ExecutionBudgetTracker
+
 
 def _setup(
     *,
@@ -237,6 +239,38 @@ async def test_cost_units_are_charged_per_attempt() -> None:
         )
 
     assert attempts == 1
+
+
+@pytest.mark.asyncio
+async def test_max_backoff_caps_the_first_retry_delay(monkeypatch) -> None:
+    _, executor, call, _ = _setup(read_only=True)
+    attempts = 0
+    delays: list[float] = []
+
+    async def flaky(endpoint, arguments):
+        nonlocal attempts
+        attempts += 1
+        raise RuntimeError("transient")
+
+    async def capture_backoff(self, delay: float) -> None:
+        delays.append(delay)
+
+    monkeypatch.setattr(ExecutionBudgetTracker, "wait_backoff", capture_backoff)
+    executor.bind("demo", flaky)
+
+    with pytest.raises(Exception):
+        await executor.execute_call(
+            call,
+            retry=RetryPolicy(
+                max_attempts=3,
+                initial_backoff_seconds=10.0,
+                backoff_multiplier=2.0,
+                max_backoff_seconds=1.0,
+            ),
+        )
+
+    assert attempts == 3
+    assert delays == [1.0, 1.0]
 
 
 @pytest.mark.asyncio
