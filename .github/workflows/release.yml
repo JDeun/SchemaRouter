@@ -43,7 +43,7 @@ jobs:
         env:
           TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          git fetch origin main --depth=1
+          git fetch origin main --tags
           current_main="$(git rev-parse origin/main)"
           if [[ "$current_main" != "$TESTED_SHA" ]]; then
             echo "CI passed for stale main SHA $TESTED_SHA; current main is $current_main."
