@@ -109,6 +109,17 @@ router = await SchemaRouter.from_url(
 )
 ```
 
+Cross-document OpenAPI `$ref` fetching stays off by default. Trusted callers can opt into bounded
+same-origin resolution:
+
+```python
+router = await SchemaRouter.from_url(
+    "https://api.example.com/openapi.json",
+    kind="openapi",
+    openapi_external_refs=True,
+)
+```
+
 ### OPTIMADE
 
 ```python
@@ -170,6 +181,8 @@ evidence-grounded proposal and then requires explicit approval.
   destructive permissions.
 - **Credential separation** — schema-fetch credentials and runtime credentials stay in different
   channels; authenticated MCP keeps secrets in the trusted transport boundary.
+- **Bounded OpenAPI external refs** — cross-document `$ref` loading is explicit opt-in, confined to
+  the entry-document origin, and bounded by redirect/depth/document/byte limits.
 - **Read-only retries by default** — contract violations are never retried.
 - **Per-call approval and execution budgets** — trusted local callbacks and deterministic call,
   attempt, remote, time, quota, and cost-unit limits fail closed.
