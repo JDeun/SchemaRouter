@@ -441,6 +441,7 @@ def tool_from_openapi(
                     )
                 )
 
+            request_body_required = False
             request_body = _resolve_local_ref(document, operation.get("requestBody", {}))
             if isinstance(request_body, dict):
                 content = request_body.get("content", {})
@@ -450,8 +451,23 @@ def tool_from_openapi(
                     if isinstance(json_body, dict)
                     else {}
                 )
+                body_properties = _schema_properties(document, body_schema)
+                body_is_supported_object = (
+                    isinstance(body_schema, dict)
+                    and (
+                        body_schema == {}
+                        or body_schema.get("type") == "object"
+                        or bool(body_properties)
+                    )
+                    and "oneOf" not in body_schema
+                    and "anyOf" not in body_schema
+                )
+                request_body_required = (
+                    bool(request_body.get("required"))
+                    and body_is_supported_object
+                )
                 required_body = _schema_required(document, body_schema)
-                for prop_name, prop_schema in _schema_properties(document, body_schema).items():
+                for prop_name, prop_schema in body_properties.items():
                     parameters.append(
                         ParameterSpec(
                             name=prop_name,
@@ -502,6 +518,7 @@ def tool_from_openapi(
                         "tags": operation.get("tags", []),
                         "security": operation.get("security"),
                         "deprecated": bool(operation.get("deprecated", False)),
+                        "request_body_required": request_body_required,
                         "operation_id_generated": not (
                             isinstance(explicit_operation_id, str)
                             and bool(explicit_operation_id)
@@ -660,11 +677,16 @@ class OpenAPIRemoteInvoker:
             follow_redirects=False,
         )
         try:
+            request_json = (
+                body
+                if body or bool(endpoint_spec.metadata.get("request_body_required"))
+                else None
+            )
             async with client.stream(
                 endpoint_spec.method,
                 url,
                 params=query or None,
-                json=body or None,
+                json=request_json,
                 headers=headers or None,
                 follow_redirects=False,
             ) as response:

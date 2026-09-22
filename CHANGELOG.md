@@ -24,6 +24,8 @@ The project is pre-1.0 and follows the compatibility rules in
   preserving the specification's `(name, in)` override semantics during schema import.
 - generated OpenAPI endpoint names now remain collision-safe for valid paths that normalize to the
   same fallback token, while explicit `operationId` values are preserved unchanged.
+- required supported OpenAPI JSON object request bodies now preserve body presence even when every
+  flattened property is optional, sending an empty object instead of silently omitting the body.
 
 ### Changed
 
