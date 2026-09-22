@@ -248,6 +248,14 @@ class SQLiteRunTraceStore:
     def trace(self, run_id: str) -> RunTrace:
         with self._lock:
             self._ensure_open()
+            summary = self._connection.execute(
+                """
+                SELECT last_sequence, terminal
+                FROM schemarouter_trace_runs
+                WHERE run_id = ?
+                """,
+                (run_id,),
+            ).fetchone()
             rows = self._connection.execute(
                 """
                 SELECT sequence, document
@@ -257,7 +265,7 @@ class SQLiteRunTraceStore:
                 """,
                 (run_id,),
             ).fetchall()
-            if not rows:
+            if summary is None or not rows:
                 raise KeyError(run_id)
             events = [
                 self._deserialize(
@@ -268,9 +276,15 @@ class SQLiteRunTraceStore:
                 for row in rows
             ]
         try:
-            return RunTrace(run_id=run_id, events=events)
+            trace = RunTrace(run_id=run_id, events=events)
         except ValidationError as exc:
             raise TraceError(f"stored run trace {run_id!r} is invalid") from exc
+
+        if int(summary["last_sequence"]) != trace.events[-1].sequence:
+            raise TraceError(f"stored run trace {run_id!r} summary sequence is invalid")
+        if bool(summary["terminal"]) != trace.complete:
+            raise TraceError(f"stored run trace {run_id!r} terminal summary is invalid")
+        return trace
 
     def run_ids(self, *, complete: bool | None = None) -> tuple[str, ...]:
         with self._lock:
