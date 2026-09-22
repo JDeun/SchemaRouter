@@ -8,6 +8,10 @@
 
 ::: schemarouter.InMemoryRegistry
 
+## SQLiteRegistry
+
+::: schemarouter.SQLiteRegistry
+
 ## SchemaPlanner
 
 ::: schemarouter.SchemaPlanner
