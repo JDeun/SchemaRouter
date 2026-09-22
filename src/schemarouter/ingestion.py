@@ -8,7 +8,13 @@ from urllib.parse import urljoin, urlparse
 import httpx
 import yaml
 
-from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .adapters.base import (
+    AdapterContext,
+    AdapterLoadResult,
+    AdapterRegistry,
+    OpenAPIRefPolicy,
+    SourceAdapter,
+)
 from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
 from .adapters.openapi import (
     OpenAPIRemoteInvoker,
@@ -21,6 +27,7 @@ from .adapters.optimade import OPTIMADESourceAdapter
 from .errors import SchemaSourceError, UnsupportedSchemaSourceError
 from .executor import RegistryExecutor
 from .models import ToolSpec
+from .openapi_refs import resolve_external_openapi_refs
 from .registry import ToolRegistry
 
 SourceKind = str
@@ -49,7 +56,7 @@ def _validate_url(url: str) -> None:
         raise SchemaSourceError("schema URL must not contain credentials")
 
 
-def _parse_openapi_text(text: str) -> dict[str, Any] | None:
+def _parse_mapping_text(text: str) -> dict[str, Any] | None:
     value: object
     try:
         value = json.loads(text)
@@ -58,8 +65,12 @@ def _parse_openapi_text(text: str) -> dict[str, Any] | None:
             value = yaml.safe_load(text)
         except yaml.YAMLError:
             return None
+    return value if isinstance(value, dict) else None
 
-    if not isinstance(value, dict):
+
+def _parse_openapi_text(text: str) -> dict[str, Any] | None:
+    value = _parse_mapping_text(text)
+    if value is None:
         return None
     version = value.get("openapi")
     if not isinstance(version, str) or not version.startswith("3."):
@@ -138,6 +149,7 @@ class OpenAPISourceAdapter:
             timeout=context.timeout,
             follow_redirects=False,
         )
+        ref_stats = None
         try:
             response = await _fetch_with_safe_redirects(
                 client,
@@ -145,6 +157,41 @@ class OpenAPISourceAdapter:
                 headers=context.schema_headers,
             )
             document = _parse_openapi_text(response.text)
+            if document is None:
+                return None
+
+            resolved_schema_url = str(response.url)
+            document, normalized_ref_count = normalize_same_document_refs(
+                document,
+                resolved_schema_url,
+            )
+
+            if context.openapi_ref_policy.enabled:
+                async def fetch_ref(
+                    resource_url: str,
+                ) -> tuple[str, dict[str, Any], int]:
+                    ref_response = await _fetch_with_safe_redirects(
+                        client,
+                        resource_url,
+                        headers=context.schema_headers,
+                    )
+                    ref_document = _parse_mapping_text(ref_response.text)
+                    if ref_document is None:
+                        raise SchemaSourceError(
+                            "external OpenAPI $ref document must be a JSON/YAML object"
+                        )
+                    return (
+                        str(ref_response.url),
+                        ref_document,
+                        len(ref_response.content),
+                    )
+
+                document, ref_stats = await resolve_external_openapi_refs(
+                    document,
+                    source_url=resolved_schema_url,
+                    policy=context.openapi_ref_policy,
+                    fetcher=fetch_ref,
+                )
         except SchemaSourceError:
             raise
         except Exception:  # noqa: BLE001
@@ -153,14 +200,6 @@ class OpenAPISourceAdapter:
             if owns_client:
                 await client.aclose()
 
-        if document is None:
-            return None
-
-        resolved_schema_url = str(response.url)
-        document, normalized_ref_count = normalize_same_document_refs(
-            document,
-            resolved_schema_url,
-        )
         inferred_name = context.name or _slug(
             str((document.get("info") or {}).get("title") or _name_from_url(context.url))
         )
@@ -180,6 +219,19 @@ class OpenAPISourceAdapter:
                 "resolved_schema_url": resolved_schema_url,
                 "suggested_base_url": suggested_base_url,
                 "same_document_refs_normalized": normalized_ref_count,
+                "external_refs_enabled": context.openapi_ref_policy.enabled,
+                "external_refs_resolved": (
+                    ref_stats.resolved_refs if ref_stats is not None else 0
+                ),
+                "external_ref_documents": (
+                    ref_stats.documents if ref_stats is not None else 0
+                ),
+                "external_ref_bytes": (
+                    ref_stats.bytes_loaded if ref_stats is not None else 0
+                ),
+                "external_ref_cycles": (
+                    ref_stats.cycles if ref_stats is not None else 0
+                ),
                 "remote": True,
             }
         )
@@ -295,6 +347,7 @@ class URLSchemaLoader:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: Any | None = None,
+        openapi_ref_policy: OpenAPIRefPolicy | None = None,
         timeout: float = 20.0,
     ) -> ToolSpec:
         _validate_url(url)
@@ -307,6 +360,7 @@ class URLSchemaLoader:
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            openapi_ref_policy=openapi_ref_policy or OpenAPIRefPolicy(),
             timeout=timeout,
             http_client=self.http_client,
         )
