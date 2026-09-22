@@ -7,7 +7,7 @@ from urllib.parse import quote, urljoin, urlparse
 
 import httpx
 
-from ..errors import SchemaSourceError
+from ..errors import NonRetryableInvocationError, SchemaSourceError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
 from .base import AdapterContext, AdapterLoadResult
 
@@ -15,6 +15,7 @@ _MAX_DISCOVERY_BYTES = 2 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 16 * 1024 * 1024
 _VERSION_SEGMENT = re.compile(r"^v\d+(?:\.\d+)?$")
 _ENTRY_SEGMENT = re.compile(r"^[A-Za-z0-9._-]+$")
+_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
 
 
 def _slug(value: str) -> str:
@@ -600,14 +601,32 @@ class OPTIMADERemoteInvoker:
             follow_redirects=False,
         )
         try:
-            response = await _bounded_get(
-                client,
-                url,
-                headers=self.trusted_headers,
-                params=query or None,
-                max_bytes=_MAX_RESPONSE_BYTES,
-            )
-            payload = response.json()
+            try:
+                response = await _bounded_get(
+                    client,
+                    url,
+                    headers=self.trusted_headers,
+                    params=query or None,
+                    max_bytes=_MAX_RESPONSE_BYTES,
+                )
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code not in _TRANSIENT_HTTP_STATUS_CODES:
+                    raise NonRetryableInvocationError(
+                        "OPTIMADE request failed with non-retryable HTTP status "
+                        f"{exc.response.status_code}"
+                    ) from exc
+                raise
+            except SchemaSourceError as exc:
+                raise NonRetryableInvocationError(
+                    "OPTIMADE runtime response violated the transport safety contract"
+                ) from exc
+
+            try:
+                payload = response.json()
+            except ValueError as exc:
+                raise NonRetryableInvocationError(
+                    "OPTIMADE response could not be decoded as JSON"
+                ) from exc
         finally:
             if owns_client:
                 await client.aclose()
