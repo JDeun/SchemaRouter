@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- local Ollama bounded-decision backend using structured JSON Schema output, local option-ID
+  revalidation, sync/async HTTP paths, token metadata capture, adversarial mock-transport tests, and
+  shared benchmark-harness support.
 - OpenAPI planner fidelity for chained local references, local Path Item references, safe
   same-document URI-reference normalization during URL ingestion, and object property/required
   discovery through `allOf` while preserving runtime schema validation.
