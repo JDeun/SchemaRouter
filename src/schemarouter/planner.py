@@ -596,18 +596,29 @@ class SchemaPlanner:
                 deterministic_fields,
             )
             warnings.extend(field_warnings)
+            evidence = self._evidence(
+                candidate.tool,
+                endpoint,
+                fields,
+                intent.evidence,
+            )
+            evidence_ok, evidence_warnings = self._assess_evidence_sync(
+                request,
+                candidate,
+                fields,
+                intent.evidence,
+            )
+            warnings.extend(evidence_warnings)
+            if not evidence_ok:
+                continue
+
             calls.append(
                 ToolCall(
                     tool=candidate.tool.key,
                     endpoint=endpoint.name,
                     arguments=arguments,
                     fields=fields,
-                    evidence=self._evidence(
-                        candidate.tool,
-                        endpoint,
-                        fields,
-                        intent.evidence,
-                    ),
+                    evidence=evidence,
                     schema_fingerprint=endpoint.fingerprint,
                     missing_required_arguments=missing,
                     score=candidate.score,
@@ -668,18 +679,29 @@ class SchemaPlanner:
                 deterministic_fields,
             )
             warnings.extend(field_warnings)
+            evidence = self._evidence(
+                candidate.tool,
+                endpoint,
+                fields,
+                intent.evidence,
+            )
+            evidence_ok, evidence_warnings = await self._assess_evidence_async(
+                request,
+                candidate,
+                fields,
+                intent.evidence,
+            )
+            warnings.extend(evidence_warnings)
+            if not evidence_ok:
+                continue
+
             calls.append(
                 ToolCall(
                     tool=candidate.tool.key,
                     endpoint=endpoint.name,
                     arguments=arguments,
                     fields=fields,
-                    evidence=self._evidence(
-                        candidate.tool,
-                        endpoint,
-                        fields,
-                        intent.evidence,
-                    ),
+                    evidence=evidence,
                     schema_fingerprint=endpoint.fingerprint,
                     missing_required_arguments=missing,
                     score=candidate.score,
