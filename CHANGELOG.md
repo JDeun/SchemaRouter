@@ -13,6 +13,8 @@ The project is pre-1.0 and follows the compatibility rules in
   same call cannot recover safely.
 - conservative built-in HTTP retry classification for OpenAPI and OPTIMADE, including fail-fast
   handling for non-transient status codes and deterministic response-contract violations.
+- wall-clock-budget-aware retry backoff that stops at the remaining elapsed-time boundary instead of
+  sleeping past `ExecutionBudget.max_elapsed_seconds`.
 
 ### Changed
 

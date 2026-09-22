@@ -66,5 +66,9 @@ that retry loop.
 Keep the default `max_attempts=1` unless the underlying operation and transport semantics justify
 automatic retry.
 
+Retry backoff also consumes the run's wall-clock budget. If the requested delay would extend past
+`ExecutionBudget.max_elapsed_seconds`, SchemaRouter stops at the remaining budget boundary instead
+of sleeping for the full backoff interval.
+
 For remote HTTP APIs, consider whether the endpoint itself is idempotent in addition to the HTTP
 method or schema classification.
