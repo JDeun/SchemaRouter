@@ -370,18 +370,18 @@ def tool_from_openapi(
                 operation_parameters,
             )
             for parameter in merged_parameters:
-                name = parameter["name"]
+                parameter_name = parameter["name"]
                 location = parameter.get("in", "query")
                 if location not in {"path", "query", "header"}:
                     continue
                 if (
                     location == "header"
-                    and name.casefold() in _SENSITIVE_RUNTIME_HEADERS
+                    and parameter_name.casefold() in _SENSITIVE_RUNTIME_HEADERS
                 ):
                     continue
                 parameters.append(
                     ParameterSpec(
-                        name=name,
+                        name=parameter_name,
                         description=parameter.get("description", ""),
                         required=bool(parameter.get("required")) or location == "path",
                         location=location,
