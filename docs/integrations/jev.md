@@ -11,10 +11,10 @@ returns one of those IDs. SchemaRouter validates the result before the planner c
 For consumers, install the published optional extra:
 
 ```bash
-pip install --pre "schemarouter[jev]"
+pip install "schemarouter[jev]"
 ```
 
-The bridge is included in the published `0.3.0a1` alpha.
+The bridge is included in the published `0.3.0` release.
 
 The integration currently supports `typesafe-sdk>=0.7,<1`.
 
