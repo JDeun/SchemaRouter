@@ -305,6 +305,20 @@ policy = DecisionPolicy(
 Only declared non-identifier fields are offered to the backend. Identifier fields are always
 preserved locally, and invalid/abstaining provider output falls back to deterministic projection.
 
+Evidence sufficiency is independently opt-in as a conservative gate:
+
+```python
+policy = DecisionPolicy(
+    enabled=True,
+    evidence_sufficiency=True,
+    fallback="deterministic",
+)
+```
+
+Requested provenance/license/unit/source-type requirements must first be satisfied by local schema
+metadata. The backend then receives only `evidence:sufficient` / `evidence:insufficient` and can
+veto a locally sufficient call, but it cannot upgrade missing evidence or grant execution authority.
+
 ## Decision benchmark
 
 Run the deterministic baseline:
