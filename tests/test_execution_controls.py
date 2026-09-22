@@ -130,6 +130,40 @@ async def test_approval_callback_exception_fails_closed() -> None:
 
 
 @pytest.mark.asyncio
+async def test_wall_clock_budget_interrupts_async_approval_for_direct_call() -> None:
+    async def approve(tool, endpoint, call):
+        await asyncio.sleep(1.0)
+        return True
+
+    _, executor, call, _ = _setup(
+        policy=ExecutionPolicy(approval_mode="all"),
+        approval_callback=approve,
+    )
+    invoked = False
+
+    def invoke(endpoint, arguments):
+        nonlocal invoked
+        invoked = True
+        return {"ok": True}
+
+    executor.bind("demo", invoke)
+
+    started = time.monotonic()
+    with pytest.raises(
+        ExecutionBudgetExceededError,
+        match="during approval callback",
+    ):
+        await executor.execute_call(
+            call,
+            budget=ExecutionBudget(max_elapsed_seconds=0.1),
+        )
+    elapsed = time.monotonic() - started
+
+    assert invoked is False
+    assert elapsed < 0.75
+
+
+@pytest.mark.asyncio
 async def test_budget_limits_logical_tool_calls_across_plan() -> None:
     registry = InMemoryRegistry()
     tool = ToolSpec(
