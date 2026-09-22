@@ -351,6 +351,7 @@ python scripts/benchmark_decision_routing.py \
 - [Third-party adapter plugins](https://jdeun.github.io/SchemaRouter/guides/adapter-plugins/)
 - [Decision backends](https://jdeun.github.io/SchemaRouter/concepts/decision-backends/)
 - [Decision benchmark](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/)
+- [Persistent run traces](https://jdeun.github.io/SchemaRouter/guides/run-traces/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
 - [Architecture](https://jdeun.github.io/SchemaRouter/architecture/)
 - [Security](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md)
