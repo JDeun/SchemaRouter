@@ -1,0 +1,99 @@
+name: Auto Tag Release
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-tag-release-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Verify release commit is still current main
+        env:
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          git fetch origin main --depth=1
+          current_main="$(git rev-parse origin/main)"
+          if [[ "$current_main" != "$RELEASE_SHA" ]]; then
+            echo "CI succeeded for $RELEASE_SHA, but current main is $current_main; skipping stale run."
+            echo "SKIP_RELEASE_TAG=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Resolve release metadata
+        if: env.SKIP_RELEASE_TAG != 'true'
+        id: metadata
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          import tomllib
+          from pathlib import Path
+
+          version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          if ".dev" in version:
+              with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+                  print("releasable=false", file=output)
+              raise SystemExit(0)
+
+          release_notes = Path("docs") / "releases" / f"{version}.md"
+          if not release_notes.is_file():
+              raise SystemExit(f"missing release notes for releasable version: {release_notes}")
+
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          if f"## {version} -" not in changelog:
+              raise SystemExit(f"CHANGELOG.md is missing a dated {version} release heading")
+
+          if not re.fullmatch(r"\d+\.\d+\.\d+(?:(?:a|b|rc)\d+)?", version):
+              raise SystemExit(f"unsupported automatic release version format: {version!r}")
+
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              print("releasable=true", file=output)
+              print(f"version={version}", file=output)
+              print(f"tag=v{version}", file=output)
+          PY
+
+      - name: Check whether release tag already exists
+        if: >-
+          env.SKIP_RELEASE_TAG != 'true' &&
+          steps.metadata.outputs.releasable == 'true'
+        id: existing
+        env:
+          RELEASE_TAG: ${{ steps.metadata.outputs.tag }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "$RELEASE_TAG already exists; nothing to do."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create annotated release tag
+        if: >-
+          env.SKIP_RELEASE_TAG != 'true' &&
+          steps.metadata.outputs.releasable == 'true' &&
+          steps.existing.outputs.exists == 'false'
+        env:
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RELEASE_TAG: ${{ steps.metadata.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$RELEASE_TAG" "$RELEASE_SHA" -m "SchemaRouter $RELEASE_VERSION"
+          git push origin "refs/tags/$RELEASE_TAG"

@@ -76,3 +76,48 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     assert "coverage:" in workflow
     assert "--cov-branch" in workflow
     assert 'dist/*.tar.gz' in workflow
+
+
+
+def test_auto_tag_release_waits_for_green_main_ci_and_is_idempotent() -> None:
+    workflow = (
+        ROOT / ".github" / "workflows" / "auto-tag-release.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "workflow_run:" in workflow
+    assert 'workflows: ["CI"]' in workflow
+    assert "github.event.workflow_run.conclusion == 'success'" in workflow
+    assert "github.event.workflow_run.head_branch == 'main'" in workflow
+    assert "permissions:" in workflow
+    assert "contents: write" in workflow
+    assert "pull_request_target" not in workflow
+    assert "workflow_dispatch" not in workflow
+
+    assert 'ref: ${{ github.event.workflow_run.head_sha }}' in workflow
+    assert 'git rev-parse origin/main' in workflow
+    assert 'SKIP_RELEASE_TAG=true' in workflow
+
+    assert 'if ".dev" in version:' in workflow
+    assert 'Path("docs") / "releases" / f"{version}.md"' in workflow
+    assert 'f"## {version} -"' in workflow
+    assert 'tag=v{version}' in workflow
+
+    assert 'git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG"' in workflow
+    assert 'git tag -a "$RELEASE_TAG" "$RELEASE_SHA"' in workflow
+    assert 'git push origin "refs/tags/$RELEASE_TAG"' in workflow
+
+
+def test_auto_tag_release_does_not_execute_repository_code() -> None:
+    workflow = (
+        ROOT / ".github" / "workflows" / "auto-tag-release.yml"
+    ).read_text(encoding="utf-8")
+
+    forbidden = [
+        "pip install",
+        "pytest",
+        "python -m",
+        "bash scripts/",
+        "sh scripts/",
+        "./scripts/",
+    ]
+    assert all(command not in workflow for command in forbidden)

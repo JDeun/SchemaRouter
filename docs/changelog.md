@@ -47,7 +47,9 @@ No unreleased changes yet.
 - tag releases reuse the same full CI quality workflow as pull requests and verify both wheel and
   sdist artifacts in clean environments before publication;
 - superseded pull-request CI runs are cancelled automatically to avoid stale validation consuming
-  runner capacity.
+  runner capacity;
+- releasable `main` commits are automatically annotated with `v<version>` only after green CI,
+  current-head verification, release-note/changelog validation, and duplicate-tag checks.
 
 ### Security
 
