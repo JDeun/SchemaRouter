@@ -12,18 +12,22 @@ The default branch uses a PEP 440 development version for unreleased work. For e
 
 Release tags must match the version declared in `pyproject.toml`.
 
-After a releasable version is merged to `main`, the `Auto Tag Release` workflow waits for the
-normal `CI` workflow to succeed. It then verifies that the tested SHA is still the current
-`main` head, rejects `.dev` versions, requires a matching `docs/releases/<version>.md` file and
-dated changelog heading, and creates `v<version>` only when that tag does not already exist.
+After a releasable version is merged to `main`, the top-level `Release` workflow waits for the
+normal `CI` workflow to succeed. It verifies that the tested SHA is still the current `main`
+head, rejects `.dev` versions, requires a matching `docs/releases/<version>.md` file and dated
+changelog heading, and creates `v<version>` only when that tag does not already exist.
 
-That tag triggers the Release workflow, which reuses the full CI quality suite, verifies the
-tag/version match, derives release titles and notes from package metadata, builds and clean-installs
-wheel/sdist artifacts, creates the GitHub release, and publishes through the configured PyPI Trusted
-Publisher.
+If a tag already exists without a GitHub release, publication can resume from that tagged SHA only
+when it is an ancestor of the successful current `main` and contains the same package version.
+This makes interrupted releases recoverable without silently moving an existing tag.
 
-This keeps source checkouts distinguishable from released artifacts while removing manual tag
-creation from the normal release path.
+The same top-level workflow then builds wheel and sdist artifacts from the resolved release SHA,
+clean-installs and smoke-tests both artifacts, creates the GitHub release, and publishes through the
+configured PyPI Trusted Publisher. Build jobs remain unprivileged; only the dedicated publishing job
+receives OIDC `id-token: write` permission.
+
+This keeps source checkouts distinguishable from released artifacts, removes manual tag creation,
+and preserves PyPI Trusted Publishing on the stable `.github/workflows/release.yml` identity.
 
 ## Public API
 
