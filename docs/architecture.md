@@ -98,9 +98,11 @@ other sensitive runtime headers cannot be supplied through tool arguments.
 
 ### 8. Schema fetch credentials and API credentials are different trust domains
 
-`schema_headers` are used only to fetch an OpenAPI document. `trusted_headers` are injected only
+`schema_headers` are used only for OpenAPI schema retrieval. `trusted_headers` are injected only
 by the runtime invoker. OpenAPI document redirects are followed manually and only within the
-original origin, preventing schema-fetch credentials from crossing origins.
+original origin, preventing schema-fetch credentials from crossing origins. Cross-document
+`$ref` retrieval is disabled by default; when explicitly enabled, it reuses schema headers only for
+same-origin referenced documents and remains bounded by redirect/depth/document/byte limits.
 
 ### 9. OpenAPI documents can point at another host
 
@@ -176,9 +178,10 @@ JSON/text decoding.
 ### 16. Unsupported OpenAPI semantics must be visible
 
 OpenAPI parsing success does not imply perfect semantic fidelity. Imported OpenAPI tools therefore
-carry a machine-readable compatibility report that marks partial or unsupported constructs such as
-external references, composition, cookie parameters, non-JSON bodies, callbacks, webhooks, and
-server variables.
+carry a machine-readable compatibility report that marks partial or unsupported constructs. Same-
+origin cross-document references can be explicitly bundled under bounded limits; unresolved external
+references, `$id` rebasing, non-JSON-Pointer anchors, composition, cookie parameters, non-JSON
+bodies, callbacks, webhooks, and server variables remain visible rather than guessed.
 
 ### 17. Authenticated MCP must preserve credential separation
 
@@ -233,8 +236,10 @@ and therefore creates an application-managed sensitive-data store.
 9. Remote metadata cannot grant authorization.
 10. Known remote mutations/destructive operations require local policy opt-in.
 11. Unclassified remote MCP operations require local policy opt-in.
-12. Schema-fetch credentials cannot cross an origin redirect.
-13. Cross-origin OpenAPI server declarations require explicit local binding.
+12. Schema-fetch credentials cannot cross an origin redirect or an explicitly enabled external-ref
+    fetch boundary.
+13. Cross-origin OpenAPI server declarations and external-ref targets require explicit local
+    authority; external-ref targets are same-origin only in the built-in resolver.
 14. Runtime API secrets are not model-visible tool parameters.
 15. Ambiguous output selection favors recall over aggressive pruning.
 16. Automatic retries apply only to endpoints trusted as read-only unless local code opts in.
@@ -253,7 +258,7 @@ and therefore creates an application-managed sensitive-data store.
 ## Current extension backlog
 
 - trusted local classification for individual MCP tool side effects;
-- deeper OpenAPI external-ref resolution and composition-aware planning/execution;
+- OpenAPI `$id`/anchor-aware resolution and richer composition-aware planning/execution;
 - non-object request-body ergonomics and typed array-element projection if justified;
 - organization-specific policy/approval and license/provenance extensions;
 - compensation, transactions, and distributed execution;
