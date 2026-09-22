@@ -6,7 +6,7 @@ OpenTelemetry dependency to the core package.
 ## Install
 
 ```bash
-pip install "schemarouter[otel]"
+pip install --pre "schemarouter[otel]"
 ```
 
 ## Export a run

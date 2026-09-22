@@ -5,13 +5,13 @@ schema validation and execution boundary.
 
 ## Install
 
-The LlamaIndex bridge is currently on unreleased `main`. Install it from a repository checkout:
+For consumers, install the published optional extra:
 
 ```bash
-pip install -e ".[llamaindex]"
+pip install --pre "schemarouter[llamaindex]"
 ```
 
-After the next package release, the packaged extra will be `schemarouter[llamaindex]`.
+The bridge is included in the published `0.3.0a1` alpha.
 
 For repository development:
 
