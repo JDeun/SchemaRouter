@@ -254,9 +254,18 @@ pip install "schemarouter[jev]"
 export TYPESAFE_API_KEY="..."
 ```
 
-The provider receives only bounded decision inputs. Unknown option IDs fail closed, low-confidence
-valid choices can abstain, and deterministic fallback remains available. Jev is never enabled just
-because the package or an API key exists.
+A local Ollama model can also serve as the bounded decision backend without an additional Python
+SDK:
+
+```python
+from schemarouter.integrations import OllamaDecisionBackend
+
+backend = OllamaDecisionBackend("your-installed-model")
+```
+
+Providers receive only bounded decision inputs. Unknown option IDs fail closed, and deterministic
+fallback remains available. No decision backend is enabled merely because a dependency, API key, or
+local model exists.
 
 ## Decision benchmark
 
@@ -270,6 +279,12 @@ Compare Jev when credentials are available:
 
 ```bash
 TYPESAFE_API_KEY="..." python scripts/benchmark_decision_routing.py --jev
+```
+
+Compare an installed local Ollama model:
+
+```bash
+python scripts/benchmark_decision_routing.py --ollama-model your-installed-model
 ```
 
 The harness includes a checked-in 144-case multilingual/adversarial corpus and reports routing
