@@ -257,11 +257,17 @@ pip install "schemarouter[jev]"
 export TYPESAFE_API_KEY="..."
 ```
 
-Jev는 SchemaRouter가 미리 허용한 유한한 option 중 하나만 선택합니다. 존재하지 않는 option
-ID는 confidence와 무관하게 fail closed 처리되고, 유효하지만 confidence가 낮은 선택은
-abstain한 뒤 deterministic fallback으로 돌아갈 수 있습니다.
+로컬 Ollama 모델도 별도 Python SDK 없이 bounded decision backend로 사용할 수 있습니다.
 
-패키지를 설치했거나 API key가 존재한다는 이유만으로 Jev가 자동 활성화되지는 않습니다.
+```python
+from schemarouter.integrations import OllamaDecisionBackend
+
+backend = OllamaDecisionBackend("your-installed-model")
+```
+
+모든 provider는 SchemaRouter가 미리 허용한 유한한 option만 다루며, 존재하지 않는 option ID는
+fail closed 처리됩니다. dependency, API key, 로컬 모델이 존재한다는 이유만으로 decision
+backend가 자동 활성화되지는 않습니다.
 
 ## Decision benchmark
 
@@ -275,6 +281,12 @@ API key가 있다면 같은 케이스로 Jev도 비교할 수 있습니다.
 
 ```bash
 TYPESAFE_API_KEY="..." python scripts/benchmark_decision_routing.py --jev
+```
+
+설치된 로컬 Ollama 모델도 같은 corpus로 비교할 수 있습니다.
+
+```bash
+python scripts/benchmark_decision_routing.py --ollama-model your-installed-model
 ```
 
 benchmark에는 144개 multilingual/adversarial 고정 corpus가 포함되며 routing accuracy,
