@@ -106,7 +106,7 @@ print(result[0].data)
 - protocol-controlled header를 planner argument에서 제외;
 - 여러 2xx JSON/no-content 응답 variant를 정확히 보존·검증.
 
-자세한 내용은 [0.5.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/project/releases/0.5.0/)를 참고하세요.
+자세한 내용은 [0.5.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.5.0/)를 참고하세요.
 
 ## 문서
 
@@ -115,11 +115,11 @@ README보다 framework manual을 기준 문서로 사용합니다.
 - [설치와 빠른 시작](https://jdeun.github.io/SchemaRouter/getting-started/installation/)
 - [실행 모델 이해](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
 - [OpenAPI 가이드](https://jdeun.github.io/SchemaRouter/guides/openapi/)
-- [Runtime policy와 retry](https://jdeun.github.io/SchemaRouter/runtime/execution-policy/)
+- [Runtime policy와 retry](https://jdeun.github.io/SchemaRouter/guides/execution-policy/)
 - [Framework integration](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
-- [Architecture와 maturity](https://jdeun.github.io/SchemaRouter/reference/architecture/)
-- [Security model](https://jdeun.github.io/SchemaRouter/reference/security/)
+- [Architecture와 maturity](https://jdeun.github.io/SchemaRouter/architecture/)
+- [Security model](https://jdeun.github.io/SchemaRouter/security/threat-model/)
 
 ## 개발
 
