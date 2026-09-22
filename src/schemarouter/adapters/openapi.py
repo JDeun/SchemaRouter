@@ -145,6 +145,9 @@ def _with_components(
     components = document.get("components")
     if isinstance(components, dict) and components:
         resolved["components"] = deepcopy(components)
+    external_refs = document.get("x-schemarouter-external-refs")
+    if isinstance(external_refs, dict) and external_refs:
+        resolved["x-schemarouter-external-refs"] = deepcopy(external_refs)
     return resolved
 
 

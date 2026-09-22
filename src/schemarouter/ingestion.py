@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import re
+from copy import deepcopy
 from typing import Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import unquote, urldefrag, urljoin, urlparse
 
 import httpx
 import yaml
@@ -26,6 +27,10 @@ from .registry import ToolRegistry
 SourceKind = str
 
 _MAX_SCHEMA_BYTES = 5 * 1024 * 1024
+_DEFAULT_OPENAPI_REF_MAX_DEPTH = 3
+_DEFAULT_OPENAPI_REF_MAX_DOCUMENTS = 8
+_DEFAULT_OPENAPI_REF_MAX_BYTES = 10 * 1024 * 1024
+_OPENAPI_EXTERNAL_REFS_KEY = "x-schemarouter-external-refs"
 
 
 def _slug(value: str) -> str:
@@ -75,6 +80,7 @@ async def _fetch_with_safe_redirects(
     *,
     headers: dict[str, str] | None,
     max_redirects: int = 5,
+    max_bytes: int = _MAX_SCHEMA_BYTES,
 ) -> httpx.Response:
     current = url
     initial = url
@@ -103,18 +109,18 @@ async def _fetch_with_safe_redirects(
                     declared_size = int(content_length)
                 except ValueError:
                     declared_size = None
-                if declared_size is not None and declared_size > _MAX_SCHEMA_BYTES:
+                if declared_size is not None and declared_size > max_bytes:
                     raise SchemaSourceError(
-                        f"OpenAPI document exceeds {_MAX_SCHEMA_BYTES} byte safety limit"
+                        f"schema document exceeds {max_bytes} byte safety limit"
                     )
 
             chunks: list[bytes] = []
             total = 0
             async for chunk in response.aiter_bytes():
                 total += len(chunk)
-                if total > _MAX_SCHEMA_BYTES:
+                if total > max_bytes:
                     raise SchemaSourceError(
-                        f"OpenAPI document exceeds {_MAX_SCHEMA_BYTES} byte safety limit"
+                        f"schema document exceeds {max_bytes} byte safety limit"
                     )
                 chunks.append(chunk)
 
@@ -128,6 +134,223 @@ async def _fetch_with_safe_redirects(
     raise SchemaSourceError("schema URL exceeded the redirect limit")
 
 
+def _parse_reference_text(text: str) -> dict[str, Any] | None:
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        try:
+            value = yaml.safe_load(text)
+        except yaml.YAMLError:
+            return None
+    if isinstance(value, dict):
+        return value
+    return None
+
+
+def _contains_schema_id(value: Any) -> bool:
+    if isinstance(value, dict):
+        if "$id" in value:
+            return True
+        return any(_contains_schema_id(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_contains_schema_id(item) for item in value)
+    return False
+
+
+def _contains_external_ref(value: Any) -> bool:
+    if isinstance(value, dict):
+        ref = value.get("$ref")
+        if isinstance(ref, str) and not ref.startswith("#"):
+            return True
+        return any(_contains_external_ref(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_contains_external_ref(item) for item in value)
+    return False
+
+
+class _OpenAPIRefBundler:
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+        *,
+        root_url: str,
+        headers: dict[str, str] | None,
+        max_depth: int,
+        max_documents: int,
+        max_bytes: int,
+    ) -> None:
+        self.client = client
+        self.root_url = urldefrag(root_url)[0]
+        self.headers = headers
+        self.max_depth = max_depth
+        self.max_documents = max_documents
+        self.max_bytes = max_bytes
+        self.total_bytes = 0
+        self.documents: dict[str, str] = {}
+        self.bundle: dict[str, Any] = {}
+
+    async def resolve(self, document: dict[str, Any]) -> tuple[dict[str, Any], dict[str, int]]:
+        if not _contains_external_ref(document):
+            return deepcopy(document), {
+                "documents": 0,
+                "bytes": 0,
+            }
+        if _contains_schema_id(document):
+            raise SchemaSourceError(
+                "bounded external OpenAPI refs do not support $id-based base URI rebasing"
+            )
+
+        if _OPENAPI_EXTERNAL_REFS_KEY in document:
+            raise SchemaSourceError(
+                "OpenAPI document uses the reserved external-ref bundle key"
+            )
+
+        resolved = deepcopy(document)
+        await self._rewrite(
+            resolved,
+            base_url=self.root_url,
+            current_document=None,
+            depth=0,
+        )
+        if self.bundle:
+            resolved[_OPENAPI_EXTERNAL_REFS_KEY] = deepcopy(self.bundle)
+        return resolved, {
+            "documents": len(self.bundle),
+            "bytes": self.total_bytes,
+        }
+
+    @staticmethod
+    def _fragment_pointer(fragment: str) -> str:
+        decoded = unquote(fragment)
+        if not decoded:
+            return ""
+        if not decoded.startswith("/"):
+            raise SchemaSourceError(
+                "bounded external OpenAPI refs require JSON-Pointer fragments"
+            )
+        return decoded
+
+    @staticmethod
+    def _bundle_ref(document_key: str, fragment: str) -> str:
+        base = f"#/{_OPENAPI_EXTERNAL_REFS_KEY}/{document_key}"
+        return base + fragment
+
+    async def _rewrite(
+        self,
+        value: Any,
+        *,
+        base_url: str,
+        current_document: str | None,
+        depth: int,
+    ) -> None:
+        if isinstance(value, list):
+            for item in value:
+                await self._rewrite(
+                    item,
+                    base_url=base_url,
+                    current_document=current_document,
+                    depth=depth,
+                )
+            return
+        if not isinstance(value, dict):
+            return
+
+        ref = value.get("$ref")
+        if isinstance(ref, str):
+            if ref.startswith("#"):
+                if current_document is not None:
+                    _, fragment = urldefrag(ref)
+                    value["$ref"] = self._bundle_ref(
+                        current_document,
+                        self._fragment_pointer(fragment),
+                    )
+            else:
+                absolute = urljoin(base_url, ref)
+                resource_url, fragment = urldefrag(absolute)
+                _validate_url(resource_url)
+                if not same_origin(self.root_url, resource_url):
+                    raise SchemaSourceError(
+                        "cross-origin external OpenAPI $ref targets are not allowed"
+                    )
+                pointer = self._fragment_pointer(fragment)
+                if resource_url == self.root_url:
+                    value["$ref"] = "#" + pointer
+                else:
+                    if depth + 1 > self.max_depth:
+                        raise SchemaSourceError(
+                            "external OpenAPI $ref exceeded the configured depth limit"
+                        )
+                    document_key = await self._load_document(
+                        resource_url,
+                        depth=depth + 1,
+                    )
+                    value["$ref"] = self._bundle_ref(document_key, pointer)
+
+        for item in list(value.values()):
+            await self._rewrite(
+                item,
+                base_url=base_url,
+                current_document=current_document,
+                depth=depth,
+            )
+
+    async def _load_document(self, resource_url: str, *, depth: int) -> str:
+        cached = self.documents.get(resource_url)
+        if cached is not None:
+            return cached
+        if len(self.bundle) >= self.max_documents:
+            raise SchemaSourceError(
+                "external OpenAPI $ref exceeded the configured document limit"
+            )
+
+        remaining = self.max_bytes - self.total_bytes
+        if remaining <= 0:
+            raise SchemaSourceError(
+                "external OpenAPI $ref exceeded the configured byte budget"
+            )
+        response = await _fetch_with_safe_redirects(
+            self.client,
+            resource_url,
+            headers=self.headers,
+            max_bytes=min(_MAX_SCHEMA_BYTES, remaining),
+        )
+        body = response.content
+        self.total_bytes += len(body)
+        if self.total_bytes > self.max_bytes:
+            raise SchemaSourceError(
+                "external OpenAPI $ref exceeded the configured byte budget"
+            )
+
+        final_url = urldefrag(str(response.url))[0]
+        existing = self.documents.get(final_url)
+        if existing is not None:
+            self.documents[resource_url] = existing
+            return existing
+
+        parsed = _parse_reference_text(response.text)
+        if parsed is None:
+            raise SchemaSourceError(
+                "external OpenAPI $ref target is not structured JSON/YAML"
+            )
+        if _contains_schema_id(parsed):
+            raise SchemaSourceError(
+                "bounded external OpenAPI refs do not support $id-based base URI rebasing"
+            )
+
+        document_key = f"doc{len(self.bundle)}"
+        self.documents[resource_url] = document_key
+        self.documents[final_url] = document_key
+        self.bundle[document_key] = deepcopy(parsed)
+
+        await self._rewrite(
+            self.bundle[document_key],
+            base_url=final_url,
+            current_document=document_key,
+            depth=depth,
+        )
+        return document_key
+
+
 class OpenAPISourceAdapter:
     kind = "openapi"
     priority = 100
@@ -138,6 +361,9 @@ class OpenAPISourceAdapter:
             timeout=context.timeout,
             follow_redirects=False,
         )
+        ref_stats = {"documents": 0, "bytes": 0}
+        resolved_schema_url = context.url
+        normalized_ref_count = 0
         try:
             response = await _fetch_with_safe_redirects(
                 client,
@@ -145,6 +371,22 @@ class OpenAPISourceAdapter:
                 headers=context.schema_headers,
             )
             document = _parse_openapi_text(response.text)
+            if document is not None:
+                resolved_schema_url = str(response.url)
+                document, normalized_ref_count = normalize_same_document_refs(
+                    document,
+                    resolved_schema_url,
+                )
+                if context.openapi_external_refs:
+                    bundler = _OpenAPIRefBundler(
+                        client,
+                        root_url=resolved_schema_url,
+                        headers=context.schema_headers,
+                        max_depth=context.openapi_ref_max_depth,
+                        max_documents=context.openapi_ref_max_documents,
+                        max_bytes=context.openapi_ref_max_bytes,
+                    )
+                    document, ref_stats = await bundler.resolve(document)
         except SchemaSourceError:
             raise
         except Exception:  # noqa: BLE001
@@ -156,11 +398,6 @@ class OpenAPISourceAdapter:
         if document is None:
             return None
 
-        resolved_schema_url = str(response.url)
-        document, normalized_ref_count = normalize_same_document_refs(
-            document,
-            resolved_schema_url,
-        )
         inferred_name = context.name or _slug(
             str((document.get("info") or {}).get("title") or _name_from_url(context.url))
         )
@@ -180,6 +417,14 @@ class OpenAPISourceAdapter:
                 "resolved_schema_url": resolved_schema_url,
                 "suggested_base_url": suggested_base_url,
                 "same_document_refs_normalized": normalized_ref_count,
+                "external_refs_enabled": context.openapi_external_refs,
+                "external_ref_documents_resolved": ref_stats["documents"],
+                "external_ref_bytes_fetched": ref_stats["bytes"],
+                "external_ref_limits": {
+                    "max_depth": context.openapi_ref_max_depth,
+                    "max_documents": context.openapi_ref_max_documents,
+                    "max_bytes": context.openapi_ref_max_bytes,
+                },
                 "remote": True,
             }
         )
@@ -295,9 +540,23 @@ class URLSchemaLoader:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: Any | None = None,
+        openapi_external_refs: bool = False,
+        openapi_ref_max_depth: int = _DEFAULT_OPENAPI_REF_MAX_DEPTH,
+        openapi_ref_max_documents: int = _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS,
+        openapi_ref_max_bytes: int = _DEFAULT_OPENAPI_REF_MAX_BYTES,
         timeout: float = 20.0,
     ) -> ToolSpec:
         _validate_url(url)
+        if not isinstance(openapi_external_refs, bool):
+            raise SchemaSourceError("openapi_external_refs must be a boolean")
+        for value, label in (
+            (openapi_ref_max_depth, "openapi_ref_max_depth"),
+            (openapi_ref_max_documents, "openapi_ref_max_documents"),
+            (openapi_ref_max_bytes, "openapi_ref_max_bytes"),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise SchemaSourceError(f"{label} must be a positive integer")
+
         normalized_kind = kind.strip().lower()
         context = AdapterContext(
             url=url,
@@ -307,6 +566,10 @@ class URLSchemaLoader:
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            openapi_external_refs=openapi_external_refs,
+            openapi_ref_max_depth=openapi_ref_max_depth,
+            openapi_ref_max_documents=openapi_ref_max_documents,
+            openapi_ref_max_bytes=openapi_ref_max_bytes,
             timeout=timeout,
             http_client=self.http_client,
         )

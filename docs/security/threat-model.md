@@ -68,7 +68,15 @@ policy before passing those URLs to SchemaRouter. A hosted service should normal
 SchemaRouter restricts schema/document redirects to the original origin and restricts OpenAPI
 runtime calls to an explicitly approved origin. OpenAPI runtime responses are streamed through a
 bounded reader with a 16 MiB default limit, matching the bounded-response posture used by the
-OPTIMADE adapter. These checks do not replace an application's initial URL admission policy.
+OPTIMADE adapter.
+
+Cross-document OpenAPI `$ref` fetching is disabled by default. When trusted application code opts
+in, referenced documents must stay on the entry document's origin, schema headers are reused only
+within that origin, redirects remain same-origin, and depth/document/aggregate-byte limits apply.
+Documents using `$id` base-URI rebasing or non-JSON-Pointer anchors fail closed in the current
+resolver rather than being guessed.
+
+These checks do not replace an application's initial URL admission policy.
 
 ### Observability
 

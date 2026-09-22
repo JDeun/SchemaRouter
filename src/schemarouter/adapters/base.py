@@ -17,6 +17,10 @@ class AdapterContext:
     schema_headers: dict[str, str] | None = None
     trusted_headers: dict[str, str] | None = None
     mcp_client_factory: Any | None = None
+    openapi_external_refs: bool = False
+    openapi_ref_max_depth: int = 3
+    openapi_ref_max_documents: int = 8
+    openapi_ref_max_bytes: int = 10 * 1024 * 1024
     timeout: float = 20.0
     http_client: httpx.AsyncClient | None = None
 
