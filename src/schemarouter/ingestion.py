@@ -547,6 +547,8 @@ class URLSchemaLoader:
         timeout: float = 20.0,
     ) -> ToolSpec:
         _validate_url(url)
+        if not isinstance(openapi_external_refs, bool):
+            raise SchemaSourceError("openapi_external_refs must be a boolean")
         for value, label in (
             (openapi_ref_max_depth, "openapi_ref_max_depth"),
             (openapi_ref_max_documents, "openapi_ref_max_documents"),
