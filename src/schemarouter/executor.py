@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 import time
+from copy import deepcopy
 from collections.abc import AsyncIterator, Awaitable
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -306,10 +307,24 @@ class RegistryExecutor:
                     effective_output_schema(endpoint),
                     context=f"output from {call.tool}.{call.endpoint}",
                 )
-                adapter_projected = call_aware and bool(
-                    getattr(invoker, "projects_fields", False)
+                selected_field_specs = {
+                    field.name: field
+                    for field in endpoint.output_fields
+                    if field.name in call.fields
+                }
+                has_explicit_paths = any(
+                    field.path for field in selected_field_specs.values()
                 )
-                projected = value if adapter_projected else self._project(value, call.fields)
+                adapter_projected = (
+                    call_aware
+                    and bool(getattr(invoker, "projects_fields", False))
+                    and not has_explicit_paths
+                )
+                projected = (
+                    value
+                    if adapter_projected
+                    else self._project(value, call.fields, endpoint)
+                )
                 return ToolResult(
                     tool=call.tool,
                     endpoint=call.endpoint,
@@ -362,7 +377,38 @@ class RegistryExecutor:
             )
 
     @staticmethod
-    def _project(value: Any, fields: list[str]) -> Any:
+    def _project(value: Any, fields: list[str], endpoint: EndpointSpec) -> Any:
         if not fields or not isinstance(value, dict):
             return value
-        return {name: value[name] for name in fields if name in value}
+
+        field_map = {field.name: field for field in endpoint.output_fields}
+        projected: dict[str, Any] = {}
+
+        for field_name in fields:
+            field = field_map[field_name]
+            current: Any = value
+            missing = False
+            for part in field.projection_path:
+                if not isinstance(current, dict) or part not in current:
+                    missing = True
+                    break
+                current = current[part]
+            if missing:
+                continue
+
+            target = projected
+            path = field.projection_path
+            for part in path[:-1]:
+                child = target.get(part)
+                if child is None:
+                    child = {}
+                    target[part] = child
+                if not isinstance(child, dict):
+                    raise PlanValidationError(
+                        "nested projection path collision for "
+                        f"{field_name!r} in {endpoint.name!r}"
+                    )
+                target = child
+            target[path[-1]] = deepcopy(current)
+
+        return projected
