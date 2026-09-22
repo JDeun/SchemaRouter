@@ -284,6 +284,51 @@ def _validate_endpoint_path(path: str) -> None:
             raise ValueError("endpoint path must not contain dot segments")
 
 
+def _merge_parameters(
+    document: dict[str, Any],
+    path_parameters: list[Any],
+    operation_parameters: list[Any],
+) -> list[dict[str, Any]]:
+    """Merge OpenAPI parameters with operation-level definitions overriding path-level ones."""
+    merged: list[dict[str, Any]] = []
+    positions: dict[tuple[str, str], int] = {}
+
+    for raw_parameter in path_parameters:
+        parameter = _resolve_local_ref(document, raw_parameter)
+        if not isinstance(parameter, dict):
+            continue
+        name = parameter.get("name")
+        location = parameter.get("in", "query")
+        if not isinstance(name, str) or not name or not isinstance(location, str):
+            continue
+        key = (name, location)
+        if key in positions:
+            continue
+        positions[key] = len(merged)
+        merged.append(parameter)
+
+    operation_seen: set[tuple[str, str]] = set()
+    for raw_parameter in operation_parameters:
+        parameter = _resolve_local_ref(document, raw_parameter)
+        if not isinstance(parameter, dict):
+            continue
+        name = parameter.get("name")
+        location = parameter.get("in", "query")
+        if not isinstance(name, str) or not name or not isinstance(location, str):
+            continue
+        key = (name, location)
+        if key in operation_seen:
+            continue
+        operation_seen.add(key)
+        if key in positions:
+            merged[positions[key]] = parameter
+        else:
+            positions[key] = len(merged)
+            merged.append(parameter)
+
+    return merged
+
+
 def tool_from_openapi(
     name: str,
     document: dict[str, Any],
@@ -319,27 +364,24 @@ def tool_from_openapi(
             operation_parameters = operation.get("parameters", [])
             if not isinstance(operation_parameters, list):
                 operation_parameters = []
-            merged_parameters = [*path_parameters, *operation_parameters]
-            seen: set[tuple[str, str]] = set()
-            for raw_parameter in merged_parameters:
-                parameter = _resolve_local_ref(document, raw_parameter)
-                if not isinstance(parameter, dict) or "name" not in parameter:
-                    continue
+            merged_parameters = _merge_parameters(
+                document,
+                path_parameters,
+                operation_parameters,
+            )
+            for parameter in merged_parameters:
+                name = parameter["name"]
                 location = parameter.get("in", "query")
-                key = (parameter["name"], location)
-                if key in seen:
-                    continue
-                seen.add(key)
                 if location not in {"path", "query", "header"}:
                     continue
                 if (
                     location == "header"
-                    and str(parameter["name"]).casefold() in _SENSITIVE_RUNTIME_HEADERS
+                    and name.casefold() in _SENSITIVE_RUNTIME_HEADERS
                 ):
                     continue
                 parameters.append(
                     ParameterSpec(
-                        name=parameter["name"],
+                        name=name,
                         description=parameter.get("description", ""),
                         required=bool(parameter.get("required")) or location == "path",
                         location=location,
