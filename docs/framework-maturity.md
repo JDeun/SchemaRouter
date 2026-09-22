@@ -89,7 +89,7 @@ compiler/runtime boundary for tool schemas.
 
 ## Next maturity gates
 
-### Gate A — published alpha baseline
+### Gate A — published non-prerelease baseline
 
 The package, documentation, release automation, deterministic compatibility tests, and public
 OpenAPI/OPTIMADE smokes are in place.

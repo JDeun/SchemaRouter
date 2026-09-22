@@ -7,7 +7,7 @@ SchemaRouter uses the official MCP Python SDK for Streamable HTTP discovery and 
 For consumers:
 
 ```bash
-pip install --pre "schemarouter[mcp]"
+pip install "schemarouter[mcp]"
 ```
 
 For repository development:

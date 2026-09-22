@@ -35,11 +35,9 @@ SchemaRouter는 LangChain이나 LangGraph를 대체하는 범용 에이전트 �
 OpenAPI, MCP, OPTIMADE, Python callable 및 제3자 어댑터와 에이전트 사이의
 **tool-schema boundary**를 담당하도록 설계되었습니다.
 
-> 현재 공개 알파는 **0.3.0a1**입니다. PyPI에서
-> `pip install --pre schemarouter`로 설치할 수 있습니다. 현재 `main`은
-> post-release 개발 버전인 **0.3.0a2.dev0**으로 식별됩니다. 공개 알파에는 bounded
-> decision backend, LangChain/LlamaIndex 통합, 인증 MCP transport, 호출별 승인/실행 budget,
-> OpenAPI compatibility report, OpenTelemetry export, 명시적 제3자 adapter plugin이 포함됩니다.
+> 현재 공개 non-prerelease 릴리스는 **0.3.0**입니다. PyPI에서
+> `pip install schemarouter`로 설치할 수 있습니다. SchemaRouter는 아직 pre-1.0이므로
+> 이후 0.x minor 릴리스에서는 문서화된 버전 정책에 따라 의도적인 호환성 변경이 있을 수 있습니다.
 
 ## 왜 필요한가
 
@@ -126,7 +124,7 @@ OPTIMADE entry schema는 `/info/<entry_type>`에서 탐색하며, 계획된 fiel
 ### MCP
 
 ```bash
-pip install --pre "schemarouter[mcp]"
+pip install "schemarouter[mcp]"
 ```
 
 ```python
@@ -188,7 +186,7 @@ proposal로 변환한 뒤 명시적인 승인을 받아야 합니다.
 ## LangChain과 사용
 
 ```bash
-pip install --pre "schemarouter[langchain]"
+pip install "schemarouter[langchain]"
 ```
 
 ```python
@@ -205,7 +203,7 @@ LangChain 도구로 노출해도 실행은 SchemaRouter의 policy, fingerprint, 
 LlamaIndex bridge는 패키지 extra로 설치할 수 있습니다.
 
 ```bash
-pip install --pre "schemarouter[llamaindex]"
+pip install "schemarouter[llamaindex]"
 ```
 
 ```python
@@ -240,7 +238,7 @@ planner = SchemaPlanner(
 Jev / TypeSafe System One은 선택형 기능입니다.
 
 ```bash
-pip install --pre "schemarouter[jev]"
+pip install "schemarouter[jev]"
 export TYPESAFE_API_KEY="..."
 ```
 

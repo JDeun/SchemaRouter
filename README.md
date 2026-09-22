@@ -35,11 +35,9 @@ SchemaRouter is intentionally narrower than LangChain or LangGraph. It is design
 **tool-schema boundary** between an agent and structured capability sources such as OpenAPI, MCP,
 OPTIMADE, Python callables, and third-party adapter protocols.
 
-> Status: **0.3.0a1 is the published alpha**. Install it from PyPI with
-> `pip install --pre schemarouter`. Current `main` identifies as **0.3.0a2.dev0** for
-> post-release development. The published alpha includes bounded decision backends,
-> LangChain/LlamaIndex integrations, authenticated MCP transports, execution approval/budgets,
-> OpenAPI compatibility reporting, OpenTelemetry export, and explicit third-party adapter plugins.
+> Status: **0.3.0 is the current public non-prerelease release**. Install it from PyPI with
+> `pip install schemarouter`. SchemaRouter remains pre-1.0, so deliberate compatibility changes
+> may still occur in later 0.x minor releases under the documented versioning policy.
 
 ## Why
 
@@ -126,7 +124,7 @@ into the protocol's `response_fields` query parameter before execution.
 ### MCP
 
 ```bash
-pip install --pre "schemarouter[mcp]"
+pip install "schemarouter[mcp]"
 ```
 
 ```python
@@ -186,7 +184,7 @@ evidence-grounded proposal and then requires explicit approval.
 ## With LangChain
 
 ```bash
-pip install --pre "schemarouter[langchain]"
+pip install "schemarouter[langchain]"
 ```
 
 ```python
@@ -202,7 +200,7 @@ Execution still flows through SchemaRouter's policy, fingerprint, input, and out
 Install the packaged LlamaIndex bridge:
 
 ```bash
-pip install --pre "schemarouter[llamaindex]"
+pip install "schemarouter[llamaindex]"
 ```
 
 ```python
@@ -237,7 +235,7 @@ planner = SchemaPlanner(
 Jev / TypeSafe System One is optional:
 
 ```bash
-pip install --pre "schemarouter[jev]"
+pip install "schemarouter[jev]"
 export TYPESAFE_API_KEY="..."
 ```
 

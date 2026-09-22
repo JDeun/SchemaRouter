@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "schemarouter"
-version = "0.3.0a2.dev0"
+version = "0.3.0"
 description = "Schema-aware planning and execution layer for LLM tool ecosystems"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -18,7 +18,7 @@ dependencies = [
   "pyyaml>=6.0,<7",
 ]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
