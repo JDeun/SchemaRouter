@@ -151,6 +151,31 @@ class CallableDecisionBackend:
         return validate_decision(request, result)
 
 
+class _EmbeddingAwaitable:
+    """Awaitable embedding result that can release an unconsumed provider coroutine."""
+
+    def __init__(
+        self,
+        backend: "EmbeddingDecisionBackend",
+        request: DecisionRequest,
+        raw: Awaitable[Iterable[Iterable[float]]],
+    ) -> None:
+        self._backend = backend
+        self._request = request
+        self._raw = raw
+
+    def __await__(self):  # type: ignore[no-untyped-def]
+        async def resolve() -> DecisionResult:
+            return self._backend._result(self._request, await self._raw)
+
+        return resolve().__await__()
+
+    def close(self) -> None:
+        close = getattr(self._raw, "close", None)
+        if callable(close):
+            close()
+
+
 class EmbeddingDecisionBackend:
     """Bounded local/provider-neutral decision backend based on embedding similarity.
 
@@ -309,11 +334,7 @@ class EmbeddingDecisionBackend:
 
         raw = self.embedder(texts)
         if inspect.isawaitable(raw):
-
-            async def resolve() -> DecisionResult:
-                return self._result(request, await raw)
-
-            return resolve()
+            return _EmbeddingAwaitable(self, request, raw)
         return self._result(request, raw)
 
 
