@@ -18,7 +18,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Retry policy | Implemented | Add provider-specific transient error classifiers |
 | Python callable tools | Implemented | Improve docstring parameter descriptions |
 | Structured-source adapter registry | Implemented with explicit entry-point plugins | Expand certified third-party adapters |
-| OpenAPI ingestion | Common subset + local ref chains + allOf object flattening + compatibility report | Add bounded cross-document refs and richer oneOf/anyOf handling |
+| OpenAPI ingestion | Common subset + local refs + opt-in bounded same-origin cross-document refs + allOf object flattening + compatibility report | Add $id/anchor-aware resolution and richer oneOf/anyOf handling |
 | OPTIMADE ingestion and execution | Implemented in v0.2 | Add provider federation / index meta-database traversal |
 | MCP ingestion and execution | Implemented with authenticated/custom transport boundary | Expand OAuth/gateway examples |
 | Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
@@ -112,6 +112,7 @@ Completed locally:
 - exact-recall candidate index with registry-version cache invalidation and exhaustive parity tests;
 - 144-case multilingual/adversarial benchmark corpus;
 - OpenAPI compatibility reporting;
+- opt-in bounded same-origin cross-document OpenAPI reference bundling;
 - authenticated MCP transport boundary;
 - per-call approval and per-run execution budgets;
 - privacy-preserving OpenTelemetry exporter;
@@ -121,7 +122,7 @@ Still external or follow-up work:
 
 - upstream ecosystem listing/discussion requests;
 - broader live benchmark evidence;
-- bounded cross-document OpenAPI references and richer oneOf/anyOf planner handling.
+- richer OpenAPI `$id`/anchor semantics and oneOf/anyOf planner handling.
 
 ### Gate C — production operations
 
