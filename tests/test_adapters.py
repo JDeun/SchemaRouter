@@ -596,6 +596,51 @@ async def test_openapi_optional_empty_object_body_remains_omitted() -> None:
         await invoker("create_item", {})
 
 
+@pytest.mark.asyncio
+async def test_openapi_required_schema_less_body_is_not_fabricated() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Schema-less Body API"},
+        "paths": {
+            "/items": {
+                "post": {
+                    "operationId": "create_item",
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {},
+                        },
+                    },
+                    "responses": {"204": {"description": "created"}},
+                }
+            }
+        },
+    }
+
+    tool = tool_from_openapi("schema_less_body", document)
+    endpoint = tool.endpoint("create_item")
+
+    assert endpoint.metadata["request_body_required"] is False
+    assert endpoint.parameters == []
+    assert any(
+        issue["construct"] == "schema_less_request_body"
+        for issue in tool.metadata["compatibility"]["issues"]
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.content == b""
+        assert "content-type" not in request.headers
+        return httpx.Response(204, request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        invoker = OpenAPIRemoteInvoker(
+            tool,
+            "https://api.example.com",
+            http_client=client,
+        )
+        await invoker("create_item", {})
+
+
 def test_openapi_required_unsupported_non_object_body_is_not_fabricated() -> None:
     document = {
         "openapi": "3.1.0",
