@@ -200,6 +200,11 @@ class _OpenAPIRefBundler:
                 "bounded external OpenAPI refs do not support $id-based base URI rebasing"
             )
 
+        if _OPENAPI_EXTERNAL_REFS_KEY in document:
+            raise SchemaSourceError(
+                "OpenAPI document uses the reserved external-ref bundle key"
+            )
+
         resolved = deepcopy(document)
         await self._rewrite(
             resolved,
@@ -357,6 +362,8 @@ class OpenAPISourceAdapter:
             follow_redirects=False,
         )
         ref_stats = {"documents": 0, "bytes": 0}
+        resolved_schema_url = context.url
+        normalized_ref_count = 0
         try:
             response = await _fetch_with_safe_redirects(
                 client,
