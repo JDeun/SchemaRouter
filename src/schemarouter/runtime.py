@@ -24,6 +24,7 @@ from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
 from .registry import InMemoryRegistry, ToolRegistry
 from .runs import RunConfig, RunEvent
+from .traces import RunTraceStore
 
 _T = TypeVar("_T")
 
@@ -516,8 +517,14 @@ class SchemaRouter:
         request: PlanRequest | str,
         *,
         config: RunConfig | dict[str, Any] | None = None,
+        trace_store: RunTraceStore | None = None,
     ) -> AsyncIterator[RunEvent]:
         run_config = _coerce_config(config)
+
+        async def emit(event: RunEvent) -> RunEvent:
+            if trace_store is not None:
+                trace_store.append(event)
+            return event
         run_id = uuid4().hex
         sequence = 0
 
@@ -531,13 +538,13 @@ class SchemaRouter:
                 else request
             )
 
-        yield RunEvent.create(
+        yield await emit(RunEvent.create(
             event="run.start",
             run_id=run_id,
             sequence=sequence,
             config=run_config,
             data=request_payload,
-        )
+        ))
         sequence += 1
 
         try:
@@ -546,13 +553,13 @@ class SchemaRouter:
             data = {"error_type": type(exc).__name__, "stage": "planning"}
             if run_config.include_payloads:
                 data["message"] = str(exc)
-            yield RunEvent.create(
+            yield await emit(RunEvent.create(
                 event="run.error",
                 run_id=run_id,
                 sequence=sequence,
                 config=run_config,
                 data=data,
-            )
+            ))
             raise
 
         plan_data: dict[str, Any] = {
@@ -561,13 +568,13 @@ class SchemaRouter:
         }
         if run_config.include_payloads:
             plan_data["plan"] = plan.model_dump(mode="json")
-        yield RunEvent.create(
+        yield await emit(RunEvent.create(
             event="plan.end",
             run_id=run_id,
             sequence=sequence,
             config=run_config,
             data=plan_data,
-        )
+        ))
         sequence += 1
 
         result_count = 0
@@ -579,7 +586,7 @@ class SchemaRouter:
             }
             if run_config.include_payloads:
                 start_data["arguments"] = dict(call.arguments)
-            yield RunEvent.create(
+            yield await emit(RunEvent.create(
                 event="tool.start",
                 run_id=run_id,
                 sequence=sequence,
@@ -587,7 +594,7 @@ class SchemaRouter:
                 tool=call.tool,
                 endpoint=call.endpoint,
                 data=start_data,
-            )
+            ))
             sequence += 1
 
             try:
@@ -601,7 +608,7 @@ class SchemaRouter:
                 error_data = {"error_type": type(exc).__name__}
                 if run_config.include_payloads:
                     error_data["message"] = str(exc)
-                yield RunEvent.create(
+                yield await emit(RunEvent.create(
                     event="tool.error",
                     run_id=run_id,
                     sequence=sequence,
@@ -609,9 +616,9 @@ class SchemaRouter:
                     tool=call.tool,
                     endpoint=call.endpoint,
                     data=error_data,
-                )
+                ))
                 sequence += 1
-                yield RunEvent.create(
+                yield await emit(RunEvent.create(
                     event="run.error",
                     run_id=run_id,
                     sequence=sequence,
@@ -620,7 +627,7 @@ class SchemaRouter:
                         "error_type": type(exc).__name__,
                         "stage": "execution",
                     },
-                )
+                ))
                 raise
 
             end_data: dict[str, Any] = {
@@ -628,7 +635,7 @@ class SchemaRouter:
             }
             if run_config.include_payloads:
                 end_data["result"] = result.model_dump(mode="json")
-            yield RunEvent.create(
+            yield await emit(RunEvent.create(
                 event="tool.end",
                 run_id=run_id,
                 sequence=sequence,
@@ -636,17 +643,17 @@ class SchemaRouter:
                 tool=result.tool,
                 endpoint=result.endpoint,
                 data=end_data,
-            )
+            ))
             sequence += 1
             result_count += 1
 
-        yield RunEvent.create(
+        yield await emit(RunEvent.create(
             event="run.end",
             run_id=run_id,
             sequence=sequence,
             config=run_config,
             data={"result_count": result_count},
-        )
+        ))
 
     async def run(
         self,
@@ -732,5 +739,14 @@ class ConfiguredSchemaRouter:
     def astream(self, request: PlanRequest | str) -> AsyncIterator[ToolResult]:
         return self.router.astream(request, config=self.config)
 
-    def astream_events(self, request: PlanRequest | str) -> AsyncIterator[RunEvent]:
-        return self.router.astream_events(request, config=self.config)
+    def astream_events(
+        self,
+        request: PlanRequest | str,
+        *,
+        trace_store: RunTraceStore | None = None,
+    ) -> AsyncIterator[RunEvent]:
+        return self.router.astream_events(
+            request,
+            config=self.config,
+            trace_store=trace_store,
+        )

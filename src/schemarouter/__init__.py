@@ -41,6 +41,7 @@ from .errors import (
     SchemaRouterError,
     SchemaSourceError,
     SchemaValidationError,
+    TraceError,
     UnsupportedSchemaSourceError,
 )
 from .executor import RegistryExecutor
@@ -67,6 +68,13 @@ from .proposals import SchemaProposal
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 from .runs import ExecutionBudget, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
+from .traces import (
+    RunTrace,
+    RunTraceStore,
+    SQLiteRunTraceStore,
+    record_run_events,
+    replay_run_events,
+)
 
 __all__ = [
     "__version__",
@@ -122,6 +130,9 @@ __all__ = [
     "RetryPolicy",
     "RunConfig",
     "RunEvent",
+    "RunTrace",
+    "RunTraceStore",
+    "SQLiteRunTraceStore",
     "SchemaDriftError",
     "SchemaPlanner",
     "SchemaProposal",
@@ -136,6 +147,7 @@ __all__ = [
     "ToolRegistry",
     "ToolResult",
     "ToolSpec",
+    "TraceError",
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
@@ -144,4 +156,6 @@ __all__ = [
     "choose_sync",
     "discover_adapter_plugins",
     "load_adapter_plugins",
+    "record_run_events",
+    "replay_run_events",
 ]

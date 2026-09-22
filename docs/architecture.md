@@ -35,6 +35,7 @@ schemarouter.analyzers     optional model-assisted intent extraction
 schemarouter.validation    JSON Schema runtime validation
 schemarouter.policy        trusted local side-effect + approval authority
 schemarouter.runs          run configuration, retry policy, budgets, typed lifecycle events
+schemarouter.traces        validated append-only run-event persistence + non-executing replay
 schemarouter.executor      plan, binding, schema and policy enforcement
 schemarouter.adapters      adapter contracts + OpenAPI/MCP/OPTIMADE/Python implementations
 schemarouter.ingestion     AdapterRegistry dispatch, safe source loading, registry binding
@@ -192,6 +193,17 @@ attributes. Argument/result values, RunConfig metadata, tags, and exception mess
 
 Plugin metadata can be discovered without import. Entry-point loading requires an explicit non-empty
 allowlist so installed packages are never auto-executed merely because they are discoverable.
+
+### 21. Trace replay must never become execution authority
+
+Persistent traces store validated `RunEvent` envelopes. Replay returns detached historical events
+only and never invokes the planner, executor, network, or tool bindings. Sequence gaps, identity
+mismatches, timestamp regressions, corrupt stored JSON, and events appended after a terminal event
+fail closed.
+
+The trace database preserves the privacy level of the source event stream: default redacted events
+remain structural, while an explicit `include_payloads=True` choice persists payload-bearing data
+and therefore creates an application-managed sensitive-data store.
 
 ## Core invariants
 

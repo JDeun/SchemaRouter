@@ -56,6 +56,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "RetryPolicy",
         "RunConfig",
         "RunEvent",
+        "RunTrace",
+        "RunTraceStore",
         "SchemaDriftError",
         "SchemaPlanner",
         "SchemaProposal",
@@ -63,6 +65,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "SchemaRouterError",
         "SchemaSourceError",
         "SQLiteRegistry",
+        "SQLiteRunTraceStore",
         "SchemaValidationError",
         "SourceAdapter",
         "OPTIMADESourceAdapter",
@@ -70,6 +73,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "ToolRegistry",
         "ToolResult",
         "ToolSpec",
+        "TraceError",
         "UnsupportedSchemaSourceError",
         "schema_tool",
         "tool_from_callable",
@@ -78,6 +82,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "choose_sync",
         "discover_adapter_plugins",
         "load_adapter_plugins",
+        "record_run_events",
+        "replay_run_events",
     }
 
     assert set(schemarouter.__all__) == expected

@@ -82,6 +82,12 @@ The optional OpenTelemetry exporter is intentionally stricter: it exports struct
 does not export argument values, result payloads, RunConfig metadata, tags, or exception messages,
 even when the underlying event stream opted into payloads.
 
+Persistent run traces store the exact `RunEvent` envelope they receive. With the default runtime
+configuration, argument values and result payloads remain redacted. If
+`RunConfig(include_payloads=True)` is used, those values may be written to disk and become subject
+to the application's access-control, encryption-at-rest, backup, and retention policy. SchemaRouter
+does not encrypt the SQLite trace database.
+
 ### Approval, budgets, and retries
 
 Local execution policy remains the first side-effect gate. Applications can additionally require a

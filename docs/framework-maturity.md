@@ -32,7 +32,8 @@ This document tracks framework-level maturity rather than research metrics.
 | Framework callbacks / exporters | Typed redacted events + optional OpenTelemetry exporter | Add additional trusted sinks as needed |
 | Middleware interception | Policy-specific only | Add trusted before/after hooks |
 | Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
-| Persistence / checkpoints | Out of scope for core | Delegate to orchestration layer |
+| Replayable run trace persistence | SQLite append-only event traces + non-executing replay | Add alternate trusted stores/export paths as needed |
+| Persistence / checkpoints | Workflow checkpoints remain out of scope | Delegate orchestration state to LangGraph or another runtime |
 | HTTP serving layer | Not implemented | Consider optional server package |
 | Pluggable registry boundary | `ToolRegistry` protocol + transactional `SQLiteRegistry` | Add distributed/remote implementations only when needed |
 | Release / compatibility policy | Implemented | Enforce during RC reviews |
@@ -128,10 +129,11 @@ Implemented locally:
 - authenticated MCP/custom client-factory boundary;
 - explicit allowlisted adapter plugin loading;
 - transactional persistent SQLite registry behind the `ToolRegistry` protocol;
-- OpenAPI compatibility reports.
+- OpenAPI compatibility reports;
+- transactional SQLite tool registry persistence;
+- validated SQLite run-event trace persistence with non-executing replay.
 
 Remaining larger follow-up work:
 
-- replayable execution trace storage;
 - benchmark and compatibility dashboard;
 - organization-specific policy/approval integrations.

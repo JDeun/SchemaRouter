@@ -111,3 +111,24 @@ async for event in trace_run_events(
 
 The exporter intentionally omits payload values, RunConfig metadata, tags, and exception messages
 even when `include_payloads=True`. See [OpenTelemetry](../integrations/opentelemetry.md).
+
+
+## Persist and replay event traces
+
+Use `SQLiteRunTraceStore` when the event stream must survive process restarts:
+
+```python
+from schemarouter import SQLiteRunTraceStore
+
+with SQLiteRunTraceStore("traces.sqlite3") as store:
+    events = [
+        event
+        async for event in router.astream_events(
+            request,
+            trace_store=store,
+        )
+    ]
+```
+
+Replay reads historical events only and never re-executes tools. See
+[Persistent run traces](run-traces.md) for privacy, corruption handling, and lifecycle details.

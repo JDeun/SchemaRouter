@@ -174,6 +174,8 @@ evidence-grounded proposal and then requires explicit approval.
 - **OpenAPI compatibility reporting** — partial/unsupported constructs are machine-readable instead
   of silently reinterpreted.
 - **Redacted runtime events by default** — payload tracing is opt-in.
+- **Replayable persistent traces** — `SQLiteRunTraceStore` can persist validated event streams and
+  replay them later without re-running planners, network calls, or tools.
 - **Persistent/pluggable registry** — use the built-in transactional `SQLiteRegistry` or inject a
   custom implementation of the public `ToolRegistry` protocol. Persistent catalog state never
   serializes trusted invokers or credentials.
@@ -347,6 +349,7 @@ Full documentation is organized as a framework manual rather than embedded in th
 - [Third-party adapter plugins](https://jdeun.github.io/SchemaRouter/guides/adapter-plugins/)
 - [Decision backends](https://jdeun.github.io/SchemaRouter/concepts/decision-backends/)
 - [Decision benchmark](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/)
+- [Persistent run traces](https://jdeun.github.io/SchemaRouter/guides/run-traces/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
 - [Architecture](https://jdeun.github.io/SchemaRouter/architecture/)
 - [Security](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md)

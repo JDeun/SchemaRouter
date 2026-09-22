@@ -6,6 +6,10 @@ class RegistrationError(SchemaRouterError):
     """Raised when a tool cannot be registered safely."""
 
 
+class TraceError(SchemaRouterError):
+    """Raised when persisted run-trace data violates the trace contract."""
+
+
 class ProposalApprovalError(RegistrationError):
     """Raised when an inferred schema proposal is not safe to approve."""
 
