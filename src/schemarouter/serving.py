@@ -18,10 +18,9 @@ from .errors import (
     SchemaRouterError,
     SchemaValidationError,
 )
-from .models import PlanRequest
+from .models import PlanRequest, StrictModel
 from .runs import RunConfig
 from .runtime import SchemaRouter
-from .models import StrictModel
 
 _MAX_HTTP_REQUEST_BYTES = 16 * 1024 * 1024
 
@@ -34,6 +33,8 @@ class HTTPServerPolicy:
     max_request_bytes: int = 1024 * 1024
     expose_error_messages: bool = False
     expose_docs: bool = False
+    enable_execution: bool = False
+    allow_unauthenticated_execution: bool = False
 
     def __post_init__(self) -> None:
         if self.bearer_token is not None:
@@ -44,6 +45,15 @@ class HTTPServerPolicy:
         if not 1 <= self.max_request_bytes <= _MAX_HTTP_REQUEST_BYTES:
             raise ValueError(
                 f"max_request_bytes must be between 1 and {_MAX_HTTP_REQUEST_BYTES}"
+            )
+        if (
+            self.enable_execution
+            and self.bearer_token is None
+            and not self.allow_unauthenticated_execution
+        ):
+            raise ValueError(
+                "enable_execution requires bearer_token or explicit "
+                "allow_unauthenticated_execution=True"
             )
 
 
@@ -86,6 +96,7 @@ def create_app(
     """
     try:
         from fastapi import FastAPI
+        from fastapi.exceptions import RequestValidationError
         from fastapi.responses import JSONResponse
     except ImportError as exc:
         raise ImportError(
@@ -163,6 +174,19 @@ def create_app(
 
         return await call_next(request)
 
+    @app.exception_handler(RequestValidationError)
+    async def handle_request_validation_error(
+        request: Any,
+        exc: RequestValidationError,
+    ) -> Any:
+        del request
+        detail = str(exc) if server_policy.expose_error_messages else None
+        return await json_error(
+            422,
+            "RequestValidationError",
+            detail=detail,
+        )
+
     @app.exception_handler(SchemaRouterError)
     async def handle_schemarouter_error(request: Any, exc: SchemaRouterError) -> Any:
         del request
@@ -189,11 +213,13 @@ def create_app(
     async def plan(envelope: _PlanEnvelope) -> Any:
         return await router.aplan(envelope.request)
 
-    @app.post("/v1/invoke")
-    async def invoke(envelope: _InvokeEnvelope) -> Any:
-        return await router.ainvoke(
-            envelope.request,
-            config=envelope.config,
-        )
+    if server_policy.enable_execution:
+
+        @app.post("/v1/invoke")
+        async def invoke(envelope: _InvokeEnvelope) -> Any:
+            return await router.ainvoke(
+                envelope.request,
+                config=envelope.config,
+            )
 
     return app
