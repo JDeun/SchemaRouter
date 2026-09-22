@@ -25,7 +25,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Runtime policy | Implemented with per-call approval and execution budgets | Add richer organization policy adapters |
 | Runtime JSON Schema validation | Implemented | Add richer nested projection |
 | LangChain / LangGraph / LlamaIndex integrations | Implemented optional adapters and native graph node | Expand ecosystem listings |
-| Bounded decision backends | Implemented, opt-in | Extend dedicated field/evidence contracts |
+| Bounded decision backends | Provider-neutral callable + local embedding similarity + optional Jev, all opt-in | Extend dedicated field/evidence contracts |
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
 | Decision benchmark harness | 144-case checked-in corpus + JSON/CSV metrics | Gather dated live-provider evidence |
 | Framework callbacks / exporters | Typed redacted events + optional OpenTelemetry exporter | Add additional trusted sinks as needed |
@@ -101,6 +101,8 @@ Completed locally:
 - runnable LangChain, LangGraph, and LlamaIndex examples;
 - published ecosystem compatibility and maintenance policy;
 - optional Jev decision provider with adversarial contract tests;
+- provider-neutral embedding-similarity decision backend with threshold/margin abstention and
+  malformed-vector fail-closed validation;
 - provider-neutral decision benchmark harness;
 - 144-case multilingual/adversarial benchmark corpus;
 - OpenAPI compatibility reporting;
