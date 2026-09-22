@@ -7,8 +7,8 @@ from schemarouter import (
     FieldSpec,
     ParameterSpec,
     RegistrationError,
-    SQLiteRegistry,
     SchemaRouter,
+    SQLiteRegistry,
     ToolSpec,
 )
 
