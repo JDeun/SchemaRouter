@@ -20,6 +20,10 @@
 
 ::: schemarouter.ExecutionHooks
 
+## ExecutionHookError
+
+::: schemarouter.ExecutionHookError
+
 ## BeforeExecutionHook
 
 ::: schemarouter.BeforeExecutionHook
