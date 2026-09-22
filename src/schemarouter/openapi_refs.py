@@ -56,12 +56,7 @@ class _Resolver:
 
     @staticmethod
     def _fragment(ref: str) -> str:
-        fragment = unquote(urldefrag(ref)[1])
-        if fragment and not fragment.startswith("/"):
-            raise SchemaSourceError(
-                "external OpenAPI $ref fragments must use JSON Pointer syntax"
-            )
-        return fragment
+        return unquote(urldefrag(ref)[1])
 
     @staticmethod
     def _document_id(resource: str) -> str:
@@ -153,10 +148,19 @@ class _Resolver:
         if resource == current_resource:
             if current_prefix == "#":
                 return "#" + fragment
+            if fragment and not fragment.startswith("/"):
+                raise SchemaSourceError(
+                    "anchors inside fetched external OpenAPI documents are not supported"
+                )
             return current_prefix + fragment
 
         if resource == self.root_resource:
             return "#" + fragment
+
+        if fragment and not fragment.startswith("/"):
+            raise SchemaSourceError(
+                "cross-document OpenAPI $ref fragments must use JSON Pointer syntax"
+            )
 
         self._validate_resource_url(resource)
         if not same_origin(self.root_resource, resource):
@@ -216,17 +220,18 @@ class _Resolver:
         document: dict[str, Any],
     ) -> tuple[dict[str, Any], OpenAPIRefResolutionStats]:
         resolved = deepcopy(document)
-        components = resolved.setdefault("components", {})
-        if not isinstance(components, dict):
+        existing_components = resolved.get("components")
+        if existing_components is not None and not isinstance(existing_components, dict):
             raise SchemaSourceError("OpenAPI components must be an object")
-
-        if _EXTERNAL_COMPONENT_KEY in components:
+        if (
+            isinstance(existing_components, dict)
+            and _EXTERNAL_COMPONENT_KEY in existing_components
+        ):
             raise SchemaSourceError(
                 f"OpenAPI components reserves {_EXTERNAL_COMPONENT_KEY!r} "
                 "when external ref resolution is enabled"
             )
 
-        components[_EXTERNAL_COMPONENT_KEY] = self.embedded
         resolved = await self._rewrite(
             resolved,
             current_resource=self.root_resource,
@@ -234,11 +239,11 @@ class _Resolver:
             depth=0,
         )
 
-        components = resolved.get("components")
-        if isinstance(components, dict):
-            external = components.get(_EXTERNAL_COMPONENT_KEY)
-            if isinstance(external, dict) and not external:
-                components.pop(_EXTERNAL_COMPONENT_KEY, None)
+        if self.embedded:
+            components = resolved.setdefault("components", {})
+            if not isinstance(components, dict):
+                raise SchemaSourceError("OpenAPI components must be an object")
+            components[_EXTERNAL_COMPONENT_KEY] = deepcopy(self.embedded)
 
         return resolved, OpenAPIRefResolutionStats(
             resolved_refs=self.resolved_refs,
