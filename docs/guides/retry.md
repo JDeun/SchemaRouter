@@ -66,6 +66,9 @@ that retry loop.
 Keep the default `max_attempts=1` unless the underlying operation and transport semantics justify
 automatic retry.
 
+`max_backoff_seconds` caps every retry delay, including the first delay requested by
+`initial_backoff_seconds`.
+
 Retry backoff also consumes the run's wall-clock budget. If the requested delay would extend past
 `ExecutionBudget.max_elapsed_seconds`, SchemaRouter stops at the remaining budget boundary instead
 of sleeping for the full backoff interval.
