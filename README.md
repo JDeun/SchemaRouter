@@ -35,10 +35,10 @@ SchemaRouter is intentionally narrower than LangChain or LangGraph. It is design
 **tool-schema boundary** between an agent and structured capability sources such as OpenAPI, MCP,
 OPTIMADE, Python callables, and third-party adapter protocols.
 
-> Status: **0.2.0a1 published alpha**. Install it from PyPI with
-> `pip install --pre schemarouter`. Current `main` identifies itself as **0.3.0.dev0** and
-> contains opt-in bounded decision backends, LangChain/LlamaIndex integrations, and an optional
-> Jev / TypeSafe System One decision provider for the next release.
+> Status: **0.3.0a1 alpha**. Install the current prerelease from PyPI with
+> `pip install --pre schemarouter`. This release includes bounded decision backends,
+> LangChain/LlamaIndex integrations, authenticated MCP transports, execution approval/budgets,
+> OpenAPI compatibility reporting, OpenTelemetry export, and explicit third-party adapter plugins.
 
 ## Why
 
@@ -125,7 +125,7 @@ into the protocol's `response_fields` query parameter before execution.
 ### MCP
 
 ```bash
-pip install "schemarouter[mcp]"
+pip install --pre "schemarouter[mcp]"
 ```
 
 ```python
@@ -185,7 +185,7 @@ evidence-grounded proposal and then requires explicit approval.
 ## With LangChain
 
 ```bash
-pip install "schemarouter[langchain]"
+pip install --pre "schemarouter[langchain]"
 ```
 
 ```python
@@ -198,13 +198,11 @@ Execution still flows through SchemaRouter's policy, fingerprint, input, and out
 
 ## With LlamaIndex
 
-The LlamaIndex bridge is on current unreleased `main`:
+Install the packaged LlamaIndex bridge:
 
 ```bash
-pip install -e ".[llamaindex]"
+pip install --pre "schemarouter[llamaindex]"
 ```
-
-The packaged extra will be `schemarouter[llamaindex]` in the next release.
 
 ```python
 from schemarouter.integrations import to_llamaindex_tools
@@ -217,7 +215,7 @@ endpoint execution.
 
 ## Experimental bounded decisions
 
-The next release adds an optional bounded `DecisionBackend` for tool/endpoint selection. It is
+SchemaRouter includes an optional bounded `DecisionBackend` for tool/endpoint selection. It is
 **off by default** and cannot invent executable schema members.
 
 ```python
@@ -235,14 +233,12 @@ planner = SchemaPlanner(
 )
 ```
 
-Jev / TypeSafe System One is optional and currently on unreleased `main`:
+Jev / TypeSafe System One is optional:
 
 ```bash
-pip install -e ".[jev]"
+pip install --pre "schemarouter[jev]"
 export TYPESAFE_API_KEY="..."
 ```
-
-The packaged extra will be `schemarouter[jev]` in the next release.
 
 The provider receives only bounded decision inputs. Unknown option IDs fail closed, low-confidence
 valid choices can abstain, and deterministic fallback remains available. Jev is never enabled just

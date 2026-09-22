@@ -7,6 +7,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+No unreleased changes yet.
+
+## 0.3.0a1 - 2026-09-22
+
 ### Added
 
 - provider-neutral bounded `DecisionBackend` contracts with deterministic fallback;

@@ -35,11 +35,10 @@ SchemaRouter는 LangChain이나 LangGraph를 대체하는 범용 에이전트 �
 OpenAPI, MCP, OPTIMADE, Python callable 및 제3자 어댑터와 에이전트 사이의
 **tool-schema boundary**를 담당하도록 설계되었습니다.
 
-> 현재 상태는 **0.2.0a1 공개 알파**입니다. PyPI에서
-> `pip install --pre schemarouter`로 설치할 수 있습니다. 현재 `main`은
-> **0.3.0.dev0**으로 식별되며 다음 릴리스를 위한 opt-in bounded decision backend,
-> LangChain/LlamaIndex 통합, 선택형 Jev / TypeSafe System One decision provider도
-> 포함되어 있습니다.
+> 현재 상태는 **0.3.0a1 알파**입니다. PyPI에서
+> `pip install --pre schemarouter`로 설치할 수 있습니다. 이번 릴리스에는 bounded
+> decision backend, LangChain/LlamaIndex 통합, 인증 MCP transport, 호출별 승인/실행 budget,
+> OpenAPI compatibility report, OpenTelemetry export, 명시적 제3자 adapter plugin이 포함됩니다.
 
 ## 왜 필요한가
 
@@ -126,7 +125,7 @@ OPTIMADE entry schema는 `/info/<entry_type>`에서 탐색하며, 계획된 fiel
 ### MCP
 
 ```bash
-pip install "schemarouter[mcp]"
+pip install --pre "schemarouter[mcp]"
 ```
 
 ```python
@@ -188,7 +187,7 @@ proposal로 변환한 뒤 명시적인 승인을 받아야 합니다.
 ## LangChain과 사용
 
 ```bash
-pip install "schemarouter[langchain]"
+pip install --pre "schemarouter[langchain]"
 ```
 
 ```python
@@ -202,13 +201,11 @@ LangChain 도구로 노출해도 실행은 SchemaRouter의 policy, fingerprint, 
 
 ## LlamaIndex와 사용
 
-LlamaIndex bridge는 현재 아직 릴리스되지 않은 `main`에 포함되어 있습니다.
+LlamaIndex bridge는 패키지 extra로 설치할 수 있습니다.
 
 ```bash
-pip install -e ".[llamaindex]"
+pip install --pre "schemarouter[llamaindex]"
 ```
-
-다음 패키지 릴리스부터는 `schemarouter[llamaindex]` extra로 설치할 수 있습니다.
 
 ```python
 from schemarouter.integrations import to_llamaindex_tools
@@ -221,7 +218,7 @@ validation 및 endpoint execution 경계를 유지합니다.
 
 ## 실험적 bounded decision
 
-다음 릴리스에서는 tool/endpoint 선택을 보조하는 opt-in `DecisionBackend`를 제공합니다.
+SchemaRouter는 tool/endpoint 선택을 보조하는 opt-in `DecisionBackend`를 제공합니다.
 기본값은 **OFF**이며 모델이 임의의 실행 가능한 스키마 멤버를 만들 수 없습니다.
 
 ```python
@@ -239,14 +236,12 @@ planner = SchemaPlanner(
 )
 ```
 
-Jev / TypeSafe System One은 선택형 기능이며 현재 아직 릴리스되지 않은 `main`에 있습니다.
+Jev / TypeSafe System One은 선택형 기능입니다.
 
 ```bash
-pip install -e ".[jev]"
+pip install --pre "schemarouter[jev]"
 export TYPESAFE_API_KEY="..."
 ```
-
-다음 패키지 릴리스부터는 `schemarouter[jev]` extra로 설치할 수 있습니다.
 
 Jev는 SchemaRouter가 미리 허용한 유한한 option 중 하나만 선택합니다. 존재하지 않는 option
 ID는 confidence와 무관하게 fail closed 처리되고, 유효하지만 confidence가 낮은 선택은
