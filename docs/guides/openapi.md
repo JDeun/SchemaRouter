@@ -17,7 +17,9 @@ The adapter imports operations, path/query/header parameters, JSON request-body 
 schemas, local component references, local reference chains, local Path Item references, and
 read/write classification inferred from the HTTP method. Object properties and required fields
 reachable through `allOf` are flattened for planner visibility while the original composition is
-retained for runtime JSON Schema validation.
+retained for runtime JSON Schema validation. For response schemas, object fields reachable through
+`oneOf` / `anyOf` variants are also exposed as conditional planner-visible output fields. The
+original composed response schema remains authoritative at runtime.
 
 ## Same-origin and cross-origin servers
 
@@ -131,11 +133,15 @@ Supported paths include:
 - same-document URI-reference normalization;
 - explicitly enabled bounded same-origin cross-document `$ref` bundling;
 - planner-side object-property/required flattening through `allOf`;
+- planner-visible response-field discovery across `oneOf` / `anyOf` object variants while
+  preserving composed runtime validation;
 - explicit cross-origin binding;
 - runtime origin confinement.
 
-JSON Schema `$id` rebasing, non-JSON-Pointer anchors, planner-side `oneOf`/`anyOf` variant
-selection, and more ergonomic non-object request bodies remain follow-up work. Unsupported
+JSON Schema `$id` rebasing, non-JSON-Pointer anchors, planner-side schema-variant selection,
+variant request-body flattening, and more ergonomic non-object request bodies remain follow-up
+work. Response variant fields may be selected for projection, but a field that is absent from the
+actual validated response variant is simply absent from the projected result. Unsupported
 constructs should not be guessed.
 
 
