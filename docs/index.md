@@ -59,6 +59,10 @@ Optional decision backends such as Laya, Ollama, and Jev sit **inside the bounde
 They receive only finite candidate IDs already produced from the local schema catalog. They do not
 become orchestrators, cannot invent executable capabilities, and cannot grant execution authority.
 
+Applications that already use GPT, Gemini, Claude, or another hosted model can inject that existing
+client through SchemaRouter's provider-neutral analyzer or decision-backend callable contracts.
+SchemaRouter does not require a second local model stack.
+
 ## Start in five minutes
 
 ```python
