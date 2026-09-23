@@ -57,6 +57,10 @@ jobs:
       - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
       - run: pip install -e ".[dev,laya]"
       - name: Run Laya CPU lexical versus recall-on-empty benchmark
+        env:
+          # Keep both language checkpoints resident. Preloading happens before the
+          # timed per-case loop so steady-state latency excludes model-load churn.
+          SCHEMAROUTER_LAYA_RESIDENT_CHECKPOINTS: "2"
         run: |
           mkdir -p \
             artifacts/laya/lexical \
@@ -66,7 +70,8 @@ jobs:
             --corpus benchmarks/decision-routing-v1.json \
             --laya \
             --laya-device cpu \
-            --laya-max-loaded 1 \
+            --laya-max-loaded 2 \
+            --laya-preload \
             --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
             --json-out artifacts/laya/lexical/report.json \
             --csv-out artifacts/laya/lexical/rows.csv \
@@ -75,7 +80,8 @@ jobs:
             --corpus benchmarks/decision-routing-v1.json \
             --laya \
             --laya-device cpu \
-            --laya-max-loaded 1 \
+            --laya-max-loaded 2 \
+            --laya-preload \
             --decision-recall-on-empty \
             --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
             --json-out artifacts/laya/recall-on-empty/report.json \
@@ -86,7 +92,8 @@ jobs:
             --corpus benchmarks/decision-routing-v1.json \
             --laya \
             --laya-device cpu \
-            --laya-max-loaded 1 \
+            --laya-max-loaded 2 \
+            --laya-preload \
             --laya-min-confidence 0.25 \
             --decision-recall-on-empty \
             --candidate-abstention no_route \
