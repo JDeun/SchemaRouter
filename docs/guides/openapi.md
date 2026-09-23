@@ -127,6 +127,35 @@ arguments and schema-invalid variants are rejected locally before execution.
 A discriminator mapping by itself is not sufficient. SchemaRouter requires the branch schemas to
 prove their own unique tags so a stale or incorrect mapping cannot weaken the local contract.
 
+## OpenAPI 3.0 nullable
+
+OpenAPI 3.0 uses `nullable: true` instead of JSON Schema's `null` type. When `type` is declared
+in the same Schema Object, SchemaRouter compiles the 3.0 semantics into an ordinary JSON Schema type
+union:
+
+```yaml
+type: string
+nullable: true
+```
+
+becomes:
+
+```json
+{"type": ["string", "null"]}
+```
+
+Other constraints remain authoritative. For example, an `enum` that omits `null` can still
+reject `null`, matching OpenAPI 3.0's rule that other constraints retain their behavior.
+
+Normalization is recursive through component schemas and the bounded external-reference bundle.
+Examples/default values and arbitrary extension payloads are not rewritten.
+
+A nullable object request body remains a typed root `body` rather than being flattened, because
+the JSON root itself may legally be `null`.
+
+OpenAPI 3.1 documents are not rewritten: they should express nullability with JSON Schema types,
+for example `type: ["string", "null"]`.
+
 ## Parameter collisions
 
 OpenAPI identifies parameters by both name and location. If an operation defines the same wire name
@@ -221,6 +250,7 @@ Supported paths include:
 - same-document URI-reference normalization;
 - explicitly enabled bounded same-origin cross-document `$ref` bundling;
 - bounded same-origin JSON Schema `$id` rebasing and static `$anchor` resolution;
+- OpenAPI 3.0 `nullable: true` normalization when `type` is declared in the same Schema Object;
 - planner-side object-property/required flattening through `allOf`;
 - planner-visible response-field discovery across `oneOf` / `anyOf` object variants while
   preserving composed runtime validation;

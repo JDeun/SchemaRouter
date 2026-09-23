@@ -197,16 +197,6 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                 "partial",
                 message,
             )
-        if node.get("nullable") is True and version_text and version_text.startswith("3.0"):
-            add(
-                location,
-                "nullable",
-                "partial",
-                (
-                    "OpenAPI 3.0 nullable semantics are preserved but not rewritten into "
-                    "JSON Schema unions."
-                ),
-            )
         if "discriminator" in node:
             add(
                 location,
