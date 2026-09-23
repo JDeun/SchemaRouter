@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 DecisionFallback = Literal["deterministic", "error"]
-CandidateAbstention = Literal["deterministic", "no_route", "error"]
+CandidateAbstention = Literal["inherit", "deterministic", "no_route", "error"]
 
 
 class DecisionPolicy(BaseModel):
@@ -19,7 +19,7 @@ class DecisionPolicy(BaseModel):
     field_selection: bool = False
     evidence_sufficiency: bool = False
     recall_on_empty: bool = False
-    candidate_abstention: CandidateAbstention = "deterministic"
+    candidate_abstention: CandidateAbstention = "inherit"
     fallback: DecisionFallback = "deterministic"
 
     @property
@@ -29,6 +29,12 @@ class DecisionPolicy(BaseModel):
     @property
     def candidate_recall_on_empty_enabled(self) -> bool:
         return self.candidate_selection_enabled and self.recall_on_empty
+
+    @property
+    def candidate_abstention_mode(self) -> DecisionFallback | Literal["no_route"]:
+        if self.candidate_abstention == "inherit":
+            return self.fallback
+        return self.candidate_abstention
 
     @property
     def field_selection_enabled(self) -> bool:
