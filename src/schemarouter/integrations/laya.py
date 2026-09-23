@@ -106,6 +106,8 @@ class LayaDecisionBackend:
         self,
         request: DecisionRequest,
         response: Any,
+        *,
+        actual_device: str | None = None,
     ) -> DecisionResult:
         try:
             answer = response["answers"]["selection"]
@@ -121,7 +123,12 @@ class LayaDecisionBackend:
         if not math.isfinite(confidence) or not 0.0 <= confidence <= 1.0:
             raise PlanningError("Laya returned an invalid confidence value")
 
-        metadata: dict[str, Any] = {"provider": "laya"}
+        metadata: dict[str, Any] = {
+            "provider": "laya",
+            "requested_device": self.device or "auto",
+        }
+        if actual_device is not None:
+            metadata["actual_device"] = actual_device
 
         routing = response.get("routing")
         if isinstance(routing, dict):
@@ -182,6 +189,24 @@ class LayaDecisionBackend:
             ),
         )
 
+    def _actual_device(self, router: Any, response: dict[str, Any]) -> str | None:
+        routing = response.get("routing")
+        routed_model = routing.get("model") if isinstance(routing, dict) else None
+        model_name = (
+            routed_model
+            if isinstance(routed_model, str)
+            else self.model
+        )
+        load = getattr(router, "load", None)
+        if model_name is None or not callable(load):
+            return None
+        try:
+            agent = load(model_name)
+        except Exception:
+            return None
+        device = getattr(agent, "device", None)
+        return str(device) if device is not None else None
+
     def _decide_sync(self, request: DecisionRequest) -> DecisionResult:
         router = self._get_router()
         kwargs: dict[str, Any] = {}
@@ -199,7 +224,11 @@ class LayaDecisionBackend:
 
         if not isinstance(response, dict):
             raise PlanningError("Laya response must be a mapping")
-        return self._parse_response(request, response)
+        return self._parse_response(
+            request,
+            response,
+            actual_device=self._actual_device(router, response),
+        )
 
     async def _decide_async(self, request: DecisionRequest) -> DecisionResult:
         return await asyncio.to_thread(self._decide_sync, request)
