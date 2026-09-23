@@ -213,6 +213,11 @@ jobs:
   build:
     needs: prepare
     if: needs.prepare.outputs.should_release == 'true'
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-latest
     outputs:
       version: ${{ needs.prepare.outputs.version }}
@@ -297,6 +302,10 @@ jobs:
                   )
                   subprocess.check_call([str(python), "examples/quickstart.py"])
           PY
+      - name: Attest release artifacts
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/*
       - uses: actions/upload-artifact@v7
         with:
           name: python-dist
