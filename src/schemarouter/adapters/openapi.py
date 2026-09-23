@@ -136,7 +136,7 @@ def _normalize_openapi30_document(
         if not isinstance(node, dict):
             return
 
-        if path == ("components", "schemas"):
+        if len(path) >= 2 and path[-2:] == ("components", "schemas"):
             for name, schema in list(node.items()):
                 if not isinstance(schema, dict):
                     continue
@@ -145,8 +145,22 @@ def _normalize_openapi30_document(
                 converted += count
             return
 
+        if (
+            path
+            and path[0] == "x-schemarouter-external-refs"
+            and node.get("nullable") is True
+            and "type" in node
+        ):
+            normalized, count = _normalize_openapi30_schema(node)
+            node.clear()
+            node.update(normalized)
+            converted += count
+            return
+
         for key, value in list(node.items()):
-            if key in {"example", "examples"}:
+            if key in {"example", "examples", "default", "enum", "const"}:
+                continue
+            if key.startswith("x-") and key != "x-schemarouter-external-refs":
                 continue
             if key == "schema" and isinstance(value, dict):
                 normalized, count = _normalize_openapi30_schema(value)
