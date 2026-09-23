@@ -34,7 +34,7 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] A recent public OPTIMADE live smoke is green.
 - [ ] The real MCP Streamable HTTP integration job is green when the MCP extra is part of the release.
 - [ ] Optional framework/provider integration jobs are green for every extra included in the release.
-- [ ] Dependency audit, latest PR/main CodeQL analysis, and latest OpenSSF Scorecard findings are green or explicitly triaged.
+- [ ] The merge-blocking CI dependency audit passes; the latest independent audit, PR/main CodeQL analysis, and OpenSSF Scorecard findings are green or explicitly triaged.
 - [ ] Property-based OpenAPI serialization tests pass on supported Python versions.
 - [ ] Cross-origin OpenAPI behavior is tested with explicit local approval.
 - [ ] Schema drift and stale binding tests pass.

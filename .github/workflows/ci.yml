@@ -86,11 +86,25 @@ jobs:
       - run: pytest -q -m "not mcp_integration"
       - run: python examples/quickstart.py
 
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install .
+      - run: pip install "pip-audit>=2.9,<4"
+      - run: python -m pip check
+      - run: pip-audit --strict .
+
   package:
-    # "package" is a protected-main required check. Keeping Laya as a dependency
-    # makes the optional Laya contract release-blocking even when repository rules
-    # cannot yet require the newer laya-integration check directly.
-    needs: [laya-integration]
+    # "package" is a protected-main required check. Transitive dependencies make
+    # Laya contract tests and dependency vulnerability auditing release-blocking
+    # even when the repository ruleset has not caught up with newer job names.
+    needs: [laya-integration, dependency-audit]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
