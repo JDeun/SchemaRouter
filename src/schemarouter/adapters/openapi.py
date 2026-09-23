@@ -843,12 +843,17 @@ def tool_from_openapi(
                     request_body_mode = "discriminated_root"
                     request_body_discriminator = discriminator_property
                 else:
+                    body_type = (
+                        body_schema.get("type")
+                        if isinstance(body_schema, dict)
+                        else None
+                    )
                     body_is_supported_object = (
                         isinstance(body_schema, dict)
                         and bool(body_schema)
                         and (
-                            body_schema.get("type") == "object"
-                            or bool(body_properties)
+                            body_type == "object"
+                            or (body_type is None and bool(body_properties))
                         )
                         and "oneOf" not in body_schema
                         and "anyOf" not in body_schema
