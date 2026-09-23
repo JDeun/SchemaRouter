@@ -294,7 +294,10 @@ def write_outputs(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Replay recorded decision confidence across thresholds without re-running models."
+        description=(
+            "Replay recorded decision confidence across thresholds "
+            "without re-running models."
+        )
     )
     parser.add_argument("report", type=Path)
     parser.add_argument("--backend", required=True)
