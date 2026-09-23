@@ -544,3 +544,20 @@ async def test_async_candidate_abstention_can_suppress_route() -> None:
 
     assert plan.calls == []
     assert any("suppressed candidate route" in item for item in plan.warnings)
+
+
+
+def test_inherited_candidate_abstention_preserves_fallback_error_behavior() -> None:
+    reg = registry()
+    planner = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(lambda _: {"abstained": True}),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            fallback="error",
+        ),
+    )
+
+    with pytest.raises(PlanningError, match="decision backend abstained"):
+        planner.plan("band gap")
