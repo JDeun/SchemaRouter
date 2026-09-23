@@ -3,7 +3,7 @@ import json
 import httpx
 import pytest
 
-from schemarouter import SchemaRouter
+from schemarouter import PlanRequest, SchemaRouter
 from schemarouter.adapters.openapi import normalize_same_document_refs, tool_from_openapi
 
 
@@ -475,3 +475,59 @@ def test_oneof_request_body_remains_unflattened_and_non_executable_as_named_fiel
     assert endpoint.parameters == []
     assert endpoint.metadata["request_body_required"] is False
     assert endpoint.input_schema["properties"] == {}
+
+
+def test_planner_can_select_field_unique_to_oneof_response_variant() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Planner Variant API"},
+        "paths": {
+            "/pet": {
+                "get": {
+                    "operationId": "get_pet",
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "cat_name": {"type": "string"},
+                                                    "lives": {"type": "integer"},
+                                                },
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "dog_name": {"type": "string"},
+                                                    "breed": {
+                                                        "type": "string",
+                                                        "description": "Dog breed",
+                                                    },
+                                                },
+                                            },
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                }
+            }
+        },
+    }
+
+    router = SchemaRouter()
+    router.add_tool(tool_from_openapi("pets", document))
+
+    plan = router.plan(
+        PlanRequest(
+            query="what breed is the dog",
+            preferred_tools=["pets"],
+        )
+    )
+
+    assert plan.calls[0].endpoint == "get_pet"
+    assert plan.calls[0].fields == ["breed"]
