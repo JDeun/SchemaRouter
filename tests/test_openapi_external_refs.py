@@ -1,3 +1,5 @@
+import json
+
 import httpx
 import pytest
 
@@ -351,15 +353,14 @@ async def test_external_ref_byte_budget_is_enforced() -> None:
             )
 
 
+
 @pytest.mark.asyncio
-async def test_external_ref_rejects_schema_id_rebasing() -> None:
+async def test_external_ref_supports_same_origin_schema_id_rebasing() -> None:
     seen: list[httpx.URL] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         seen.append(request.url)
-        if request.url == httpx.URL(
-            "https://docs.example.com/openapi.json"
-        ):
+        if request.url == httpx.URL("https://docs.example.com/openapi.json"):
             return httpx.Response(
                 200,
                 json=root_document("./schema.json#/User"),
@@ -368,7 +369,246 @@ async def test_external_ref_rejects_schema_id_rebasing() -> None:
             return httpx.Response(
                 200,
                 json={
-                    "$id": "https://schemas.example.com/base",
+                    "$id": "./models/base.json",
+                    "User": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string"},
+                            "profile": {"$ref": "./profile.json#Profile"},
+                        },
+                        "required": ["id", "profile"],
+                    },
+                },
+            )
+        if request.url == httpx.URL("https://docs.example.com/models/profile.json"):
+            return httpx.Response(
+                200,
+                json={
+                    "$defs": {
+                        "Profile": {
+                            "$anchor": "Profile",
+                            "type": "object",
+                            "properties": {"name": {"type": "string"}},
+                            "required": ["name"],
+                        }
+                    }
+                },
+            )
+        raise AssertionError(f"unexpected URL: {request.url}")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://docs.example.com/openapi.json",
+            kind="openapi",
+            openapi_external_refs=True,
+            http_client=client,
+        )
+
+    tool = router.registry.get("external_refs_api")
+    endpoint = tool.endpoint("get_user")
+
+    assert [field.name for field in endpoint.output_fields] == ["id", "profile"]
+    assert "$id" not in json.dumps(endpoint.output_schema)
+    assert "$anchor" not in json.dumps(endpoint.output_schema)
+
+    router.executor.bind(
+        "external_refs_api",
+        lambda endpoint_name, arguments: {
+            "id": "42",
+            "profile": {"name": "Ada"},
+        },
+    )
+    result = await router.ainvoke(PlanRequest(query="user id profile"))
+    assert result[0].data == {
+        "id": "42",
+        "profile": {"name": "Ada"},
+    }
+
+    assert tool.metadata["external_ref_documents_resolved"] == 2
+    assert tool.metadata["external_ref_schema_ids_resolved"] == 1
+    assert tool.metadata["external_ref_anchors_resolved"] == 1
+    assert seen == [
+        httpx.URL("https://docs.example.com/openapi.json"),
+        httpx.URL("https://docs.example.com/schema.json"),
+        httpx.URL("https://docs.example.com/models/profile.json"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_external_ref_supports_static_anchor_fragments() -> None:
+    seen: list[httpx.URL] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url)
+        if request.url == httpx.URL("https://docs.example.com/openapi.json"):
+            return httpx.Response(
+                200,
+                json=root_document("./schema.json#User"),
+            )
+        if request.url == httpx.URL("https://docs.example.com/schema.json"):
+            return httpx.Response(
+                200,
+                json={
+                    "$defs": {
+                        "user": {
+                            "$anchor": "User",
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string"},
+                                "name": {"type": "string"},
+                            },
+                            "required": ["id", "name"],
+                        }
+                    }
+                },
+            )
+        raise AssertionError(f"unexpected URL: {request.url}")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://docs.example.com/openapi.json",
+            kind="openapi",
+            openapi_external_refs=True,
+            http_client=client,
+        )
+
+    tool = router.registry.get("external_refs_api")
+    endpoint = tool.endpoint("get_user")
+
+    assert [field.name for field in endpoint.output_fields] == ["id", "name"]
+    assert tool.metadata["external_ref_anchors_resolved"] == 1
+    assert seen == [
+        httpx.URL("https://docs.example.com/openapi.json"),
+        httpx.URL("https://docs.example.com/schema.json"),
+    ]
+
+@pytest.mark.asyncio
+async def test_same_document_static_anchor_resolves_without_extra_fetch() -> None:
+    seen: list[httpx.URL] = []
+    document = root_document("#User")
+    document["components"] = {
+        "schemas": {
+            "User": {
+                "$anchor": "User",
+                "type": "object",
+                "properties": {"name": {"type": "string"}},
+            }
+        }
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url)
+        assert request.url == httpx.URL("https://docs.example.com/openapi.json")
+        return httpx.Response(200, json=document)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://docs.example.com/openapi.json",
+            kind="openapi",
+            openapi_external_refs=True,
+            http_client=client,
+        )
+
+    tool = router.registry.get("external_refs_api")
+    assert [field.name for field in tool.endpoint("get_user").output_fields] == ["name"]
+    assert tool.metadata["external_ref_documents_resolved"] == 0
+    assert tool.metadata["external_ref_anchors_resolved"] == 1
+    assert seen == [httpx.URL("https://docs.example.com/openapi.json")]
+
+
+@pytest.mark.asyncio
+async def test_missing_static_anchor_fails_closed() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url == httpx.URL("https://docs.example.com/openapi.json"):
+            return httpx.Response(
+                200,
+                json=root_document("./schema.json#Missing"),
+            )
+        if request.url == httpx.URL("https://docs.example.com/schema.json"):
+            return httpx.Response(
+                200,
+                json={"type": "object"},
+            )
+        raise AssertionError(f"unexpected URL: {request.url}")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(
+            UnsupportedSchemaSourceError,
+            match=r"\$anchor 'Missing' was not found",
+        ):
+            await SchemaRouter.from_url(
+                "https://docs.example.com/openapi.json",
+                kind="openapi",
+                openapi_external_refs=True,
+                http_client=client,
+            )
+
+
+@pytest.mark.asyncio
+async def test_nested_schema_id_is_indexed_as_virtual_resource_without_refetch() -> None:
+    seen: list[httpx.URL] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url)
+        if request.url == httpx.URL("https://docs.example.com/openapi.json"):
+            return httpx.Response(
+                200,
+                json=root_document("./schemas.json#/Alias"),
+            )
+        if request.url == httpx.URL("https://docs.example.com/schemas.json"):
+            return httpx.Response(
+                200,
+                json={
+                    "$defs": {
+                        "user": {
+                            "$id": "./models/user.json",
+                            "$anchor": "User",
+                            "type": "object",
+                            "properties": {"name": {"type": "string"}},
+                        }
+                    },
+                    "Alias": {"$ref": "./models/user.json#User"},
+                },
+            )
+        raise AssertionError(
+            "nested $id resource must resolve from the loaded document without refetch"
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://docs.example.com/openapi.json",
+            kind="openapi",
+            openapi_external_refs=True,
+            http_client=client,
+        )
+
+    tool = router.registry.get("external_refs_api")
+    assert [field.name for field in tool.endpoint("get_user").output_fields] == ["name"]
+    assert tool.metadata["external_ref_documents_resolved"] == 1
+    assert tool.metadata["external_ref_schema_ids_resolved"] == 1
+    assert tool.metadata["external_ref_anchors_resolved"] == 1
+    assert seen == [
+        httpx.URL("https://docs.example.com/openapi.json"),
+        httpx.URL("https://docs.example.com/schemas.json"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_cross_origin_schema_id_is_rejected() -> None:
+    seen: list[httpx.URL] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url)
+        if request.url == httpx.URL("https://docs.example.com/openapi.json"):
+            return httpx.Response(
+                200,
+                json=root_document("./schema.json#/User"),
+            )
+        if request.url == httpx.URL("https://docs.example.com/schema.json"):
+            return httpx.Response(
+                200,
+                json={
+                    "$id": "https://schemas.example.net/base.json",
                     "User": {"type": "object"},
                 },
             )
@@ -377,7 +617,7 @@ async def test_external_ref_rejects_schema_id_rebasing() -> None:
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         with pytest.raises(
             UnsupportedSchemaSourceError,
-            match=r"\$id-based base URI rebasing",
+            match=r"cross-origin JSON Schema \$id",
         ):
             await SchemaRouter.from_url(
                 "https://docs.example.com/openapi.json",
@@ -393,20 +633,30 @@ async def test_external_ref_rejects_schema_id_rebasing() -> None:
 
 
 @pytest.mark.asyncio
-async def test_external_ref_rejects_non_json_pointer_anchor_without_fetch() -> None:
-    seen: list[httpx.URL] = []
-
+async def test_dynamic_schema_reference_is_rejected_fail_closed() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
-        seen.append(request.url)
-        return httpx.Response(
-            200,
-            json=root_document("./schema.json#User"),
-        )
+        if request.url == httpx.URL("https://docs.example.com/openapi.json"):
+            document = root_document("./schema.json#/Node")
+            return httpx.Response(200, json=document)
+        if request.url == httpx.URL("https://docs.example.com/schema.json"):
+            return httpx.Response(
+                200,
+                json={
+                    "Node": {
+                        "$dynamicAnchor": "node",
+                        "type": "object",
+                        "properties": {
+                            "child": {"$dynamicRef": "#node"},
+                        },
+                    }
+                },
+            )
+        raise AssertionError(f"unexpected URL: {request.url}")
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         with pytest.raises(
             UnsupportedSchemaSourceError,
-            match="JSON-Pointer fragments",
+            match="dynamic or recursive schema refs",
         ):
             await SchemaRouter.from_url(
                 "https://docs.example.com/openapi.json",
@@ -414,8 +664,6 @@ async def test_external_ref_rejects_non_json_pointer_anchor_without_fetch() -> N
                 openapi_external_refs=True,
                 http_client=client,
             )
-
-    assert seen == [httpx.URL("https://docs.example.com/openapi.json")]
 
 
 @pytest.mark.asyncio
