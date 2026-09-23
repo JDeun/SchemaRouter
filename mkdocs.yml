@@ -120,6 +120,7 @@ nav:
       - Retry policy: guides/retry.md
       - Trusted execution hooks: guides/execution-hooks.md
       - Persistent run traces: guides/run-traces.md
+      - Observability CLI and dashboard: guides/observability.md
       - Field projection: guides/field-projection.md
       - Candidate indexing: guides/candidate-indexing.md
       - Model-assisted analysis: guides/model-analyzer.md
