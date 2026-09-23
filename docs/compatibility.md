@@ -121,3 +121,15 @@ service.
 A green required CI proves package and protocol behavior under controlled conditions. Recent green
 external smokes provide additional evidence that remote adapters remain compatible with real public
 services. Both should be reviewed before a release candidate is promoted.
+
+
+## Scheduled live-smoke artifacts
+
+The non-blocking public OpenAPI and OPTIMADE compatibility workflow emits one machine-readable JSON
+artifact per smoke job. Reports include a schema version, UTC generation time, SchemaRouter version,
+adapter/source identity, runtime environment, success/failure state, and bounded success details.
+On failure, only the exception type is recorded; exception messages are intentionally omitted.
+
+GitHub Actions retains these artifacts for 30 days. This makes compatibility drift inspectable
+without turning live third-party availability into a release-blocking gate. The raw JSON remains the
+source of truth for any later history/dashboard tooling.
