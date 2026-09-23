@@ -3,7 +3,14 @@ import json
 import httpx
 import pytest
 
-from schemarouter import PlanRequest, SchemaRouter
+from schemarouter import (
+    InMemoryRegistry,
+    PlanRequest,
+    RegistryExecutor,
+    SchemaRouter,
+    SchemaValidationError,
+    ToolCall,
+)
 from schemarouter.adapters.openapi import normalize_same_document_refs, tool_from_openapi
 
 
@@ -531,3 +538,74 @@ def test_planner_can_select_field_unique_to_oneof_response_variant() -> None:
 
     assert plan.calls[0].endpoint == "get_pet"
     assert plan.calls[0].fields == ["breed"]
+
+
+@pytest.mark.asyncio
+async def test_oneof_runtime_validation_remains_authoritative_before_projection() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Variant Runtime API"},
+        "paths": {
+            "/pet": {
+                "get": {
+                    "operationId": "get_pet",
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {"const": "cat"},
+                                                    "lives": {"type": "integer"},
+                                                },
+                                                "required": ["kind", "lives"],
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {"const": "dog"},
+                                                    "breed": {"type": "string"},
+                                                },
+                                                "required": ["kind", "breed"],
+                                            },
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                }
+            }
+        },
+    }
+    tool = tool_from_openapi("variant_runtime", document)
+    endpoint = tool.endpoint("get_pet")
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    executor = RegistryExecutor(registry)
+
+    call = ToolCall(
+        tool="variant_runtime",
+        endpoint="get_pet",
+        fields=["breed"],
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    executor.bind(
+        "variant_runtime",
+        lambda endpoint_name, arguments: {"kind": "cat", "lives": 9},
+    )
+    result = await executor.execute_call(call)
+
+    assert result.data == {}
+    assert result.projected_fields == ["breed"]
+
+    executor.bind(
+        "variant_runtime",
+        lambda endpoint_name, arguments: {"kind": "cat", "breed": "poodle"},
+    )
+    with pytest.raises(SchemaValidationError, match="output from variant_runtime.get_pet"):
+        await executor.execute_call(call)
