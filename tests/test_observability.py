@@ -136,12 +136,12 @@ def test_trace_observation_exposes_error_types_but_not_payload_values(tmp_path: 
         store.close()
 
     assert observed[0].error_types == ["ExampleError"]
-    html = render_dashboard(
-        ObservabilitySnapshot(
-            registry=observe_registry(SQLiteRegistry(":memory:")),
+    with SQLiteRegistry(":memory:") as registry:
+        snapshot = ObservabilitySnapshot(
+            registry=observe_registry(registry),
             traces=observed,
         )
-    )
+    html = render_dashboard(snapshot)
     assert "ExampleError" in html
     assert "sensitive-query" not in html
     assert "sensitive-error-detail" not in html
