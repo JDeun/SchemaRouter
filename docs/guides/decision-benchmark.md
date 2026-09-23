@@ -143,11 +143,43 @@ bounded request state. Optional controls include:
 - `--laya-preload` to preload checkpoints before measurement;
 - `--laya-max-loaded N` to control resident checkpoint count;
 - `--laya-min-confidence FLOAT` to measure confidence-gated abstention;
-- `--hardware-label TEXT` to attach the concrete machine/GPU description to the report.
+- `--hardware-label TEXT` to attach the concrete machine/GPU description to the report;
+- `--decision-recall-on-empty` to explicitly let an enabled bounded decision backend inspect the
+  registered endpoint catalog when lexical candidate recall is empty;
+- `--candidate-abstention inherit|deterministic|no_route|error` to separate explicit backend
+  abstention from provider-error fallback behavior.
 
-Laya rows record the routed checkpoint plus `requested_device` and, when Laya exposes the loaded
-agent device, `actual_device`. This matters because an unavailable CUDA/MPS target can fall back to
-CPU and should not be counted as an accelerator result.
+Laya rows record the routed checkpoint plus `requested_device`, decision confidence, and, when
+Laya exposes the loaded agent device, `actual_device`. This matters because an unavailable
+CUDA/MPS target can fall back to CPU and should not be counted as an accelerator result.
+
+Empty-candidate recall is deliberately off by default. When enabled, SchemaRouter does not invent a
+route: it exposes only endpoints already registered in the trusted local catalog. The expanded
+bounded choice also includes an explicit `none_of_the_above` option so a decision backend is not
+forced to route an out-of-domain request merely because at least one endpoint was offered. Choosing
+that option produces no tool call. If the backend errors or abstains after this expansion, planning
+still fails closed with no arbitrary deterministic route because there was no lexical candidate to
+fall back to.
+
+A zero-threshold run can be recalibrated offline without repeating model inference:
+
+```bash
+python scripts/calibrate_decision_threshold.py \
+  artifacts/laya/recall-on-empty/report.json \
+  --backend laya:auto \
+  --json-out artifacts/laya/calibration.json \
+  --csv-out artifacts/laya/calibration.csv \
+  --html-out artifacts/laya/calibration.html
+```
+
+The calibration can replay low-confidence cases either through the recorded deterministic fallback
+route or as a final no-route result with `--abstention-mode no_route`. It reports
+overall/category accuracy, confidence coverage, backend abstention, final no-route rate, expected
+no-route recall, and expanded-candidate selection rate for thresholds 0.00 through 0.95. This
+separates threshold tuning from model/runtime latency and avoids paying for repeated inference.
+
+Benchmark JSON also records the installed Laya, PyTorch, and Transformers package versions when
+Laya is enabled so dated results can be reproduced against the actual local runtime.
 
 Published results should record the exact Laya package version, checkpoint/routing policy, hardware,
 device, preload policy, confidence threshold, corpus revision, and repeated-run count. Do not compare
@@ -197,6 +229,9 @@ Each row records:
 - correctness;
 - invalid-plan state;
 - end-to-end planning latency;
+- whether the bounded decision backend was actually invoked;
+- whether empty lexical recall was explicitly expanded to the registered catalog;
+- whether the bounded backend explicitly selected the no-route option;
 - bounded-backend abstention and deterministic fallback state;
 - input/output tokens when reported;
 - optional cost estimate;
@@ -207,6 +242,8 @@ The aggregate report includes:
 - final-plan routing accuracy (an abstention case is correct only when the final plan has no route);
 - invalid-plan rate;
 - error count;
+- bounded-backend invocation count/rate;
+- final expected no-route recall and explicit no-route count;
 - abstention rate;
 - expected-abstention recall for bounded backends, reported separately from final-plan accuracy;
 - fallback count;

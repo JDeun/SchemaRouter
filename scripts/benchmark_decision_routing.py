@@ -8,6 +8,7 @@ import csv
 import importlib
 import inspect
 import json
+import math
 import os
 import platform
 import statistics
@@ -53,6 +54,10 @@ class BenchmarkRow:
     correct: bool
     invalid_plan: bool
     latency_ms: float
+    backend_invoked: bool = False
+    recall_expanded: bool = False
+    explicit_no_route: bool = False
+    confidence: float | None = None
     abstained: bool = False
     fallback_used: bool = False
     input_tokens: int | None = None
@@ -245,8 +250,10 @@ class RecordingDecisionBackend:
     def __init__(self, backend: Any) -> None:
         self.backend = backend
         self.last_result: Any | None = None
+        self.last_invoked = False
 
     def decide(self, request: Any) -> Any:
+        self.last_invoked = True
         value = self.backend.decide(request)
         if inspect.isawaitable(value):
 
@@ -281,6 +288,13 @@ def parse_json_mapping(value: str | None, *, option_name: str) -> dict[str, Any]
     if not isinstance(parsed, dict):
         raise ValueError(f"{option_name} must decode to a JSON object")
     return parsed
+
+
+def _installed_version(package: str) -> str | None:
+    try:
+        return version(package)
+    except PackageNotFoundError:
+        return None
 
 
 def estimate_cost(
@@ -322,6 +336,7 @@ async def benchmark_planner(
     for case in cases:
         if recorder is not None:
             recorder.last_result = None
+            recorder.last_invoked = False
 
         started = time.perf_counter()
         try:
@@ -334,6 +349,14 @@ async def benchmark_planner(
             )
 
             result = recorder.last_result if recorder is not None else None
+            recall_expanded = any(
+                "expanded an empty lexical candidate set" in warning
+                for warning in plan.warnings
+            )
+            explicit_no_route = any(
+                "selected no route after empty lexical recall" in warning
+                for warning in plan.warnings
+            )
             metadata = getattr(result, "metadata", {}) if result is not None else {}
             input_tokens = metadata.get("input_tokens")
             output_tokens = metadata.get("output_tokens")
@@ -346,6 +369,14 @@ async def benchmark_planner(
             actual_device = (
                 metadata.get("actual_device")
                 if isinstance(metadata.get("actual_device"), str)
+                else None
+            )
+            raw_confidence = metadata.get("confidence")
+            confidence = (
+                float(raw_confidence)
+                if isinstance(raw_confidence, (int, float))
+                and not isinstance(raw_confidence, bool)
+                and math.isfinite(float(raw_confidence))
                 else None
             )
             abstained = bool(getattr(result, "abstained", False))
@@ -367,6 +398,10 @@ async def benchmark_planner(
                     correct=correct and not invalid_plan,
                     invalid_plan=invalid_plan,
                     latency_ms=round(latency_ms, 3),
+                    backend_invoked=bool(recorder and recorder.last_invoked),
+                    recall_expanded=recall_expanded,
+                    explicit_no_route=explicit_no_route,
+                    confidence=confidence,
                     abstained=abstained,
                     fallback_used=abstained and predicted is not None,
                     input_tokens=input_tokens,
@@ -395,6 +430,7 @@ async def benchmark_planner(
                     correct=False,
                     invalid_plan=False,
                     latency_ms=round(latency_ms, 3),
+                    backend_invoked=bool(recorder and recorder.last_invoked),
                     error=f"{type(exc).__name__}: {exc}",
                 )
             )
@@ -407,6 +443,7 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
     latencies = [row.latency_ms for row in successful]
     categories = sorted({row.category for row in rows})
     expected_abstentions = [row for row in rows if row.expected is None]
+    confidences = [row.confidence for row in rows if row.confidence is not None]
     return {
         "cases": total,
         "accuracy": sum(row.correct for row in rows) / total if total else 0.0,
@@ -414,6 +451,23 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
             sum(row.invalid_plan for row in rows) / total if total else 0.0
         ),
         "errors": sum(row.error is not None for row in rows),
+        "backend_invocations": sum(row.backend_invoked for row in rows),
+        "backend_invocation_rate": (
+            sum(row.backend_invoked for row in rows) / total if total else 0.0
+        ),
+        "explicit_no_routes": sum(row.explicit_no_route for row in rows),
+        "expected_no_route_recall": (
+            sum(row.predicted is None for row in expected_abstentions)
+            / len(expected_abstentions)
+            if expected_abstentions
+            else None
+        ),
+        "confidence_count": len(confidences),
+        "mean_confidence": (
+            round(statistics.fmean(confidences), 6) if confidences else None
+        ),
+        "p10_confidence": _percentile(confidences, 0.10),
+        "p50_confidence": _percentile(confidences, 0.50),
         "abstentions": sum(row.abstained for row in rows),
         "abstention_rate": sum(row.abstained for row in rows) / total if total else 0.0,
         "expected_abstention_recall": (
@@ -497,6 +551,9 @@ def render_html_report(report: dict[str, Any]) -> str:
             escape(_metric(raw_metrics.get("accuracy"), percent=True)),
             escape(_metric(raw_metrics.get("invalid_plan_rate"), percent=True)),
             escape(_metric(raw_metrics.get("errors"))),
+            escape(_metric(raw_metrics.get("backend_invocation_rate"), percent=True)),
+            escape(_metric(raw_metrics.get("mean_confidence"))),
+            escape(_metric(raw_metrics.get("expected_no_route_recall"), percent=True)),
             escape(_metric(raw_metrics.get("abstention_rate"), percent=True)),
             escape(_metric(raw_metrics.get("mean_latency_ms"))),
             escape(_metric(raw_metrics.get("p50_latency_ms"))),
@@ -568,7 +625,8 @@ model/runtime configuration, hardware, and measurement conditions are equivalent
 <thead>
 <tr>
 <th>Backend</th><th>Cases</th><th>Accuracy</th><th>Invalid</th><th>Errors</th>
-<th>Abstention</th><th>Mean ms</th><th>P50 ms</th><th>P95 ms</th><th>Cost</th>
+<th>Invoked</th><th>Mean confidence</th><th>No-route recall</th><th>Abstention</th><th>Mean ms</th>
+<th>P50 ms</th><th>P95 ms</th><th>Cost</th>
 <th>Models</th><th>Requested device</th><th>Actual device</th>
 </tr>
 </thead>
@@ -678,6 +736,23 @@ async def main() -> None:
     )
     parser.add_argument("--input-cost-per-million", type=float, default=None)
     parser.add_argument("--output-cost-per-million", type=float, default=None)
+    parser.add_argument(
+        "--decision-recall-on-empty",
+        action="store_true",
+        help=(
+            "Allow enabled bounded decision backends to inspect the registered endpoint "
+            "catalog when lexical candidate recall is empty."
+        ),
+    )
+    parser.add_argument(
+        "--candidate-abstention",
+        choices=("inherit", "deterministic", "no_route", "error"),
+        default="inherit",
+        help=(
+            "How candidate-selection abstention is handled. Provider errors remain governed "
+            "by DecisionPolicy.fallback."
+        ),
+    )
     args = parser.parse_args()
 
     if args.repeat < 1:
@@ -759,6 +834,8 @@ async def main() -> None:
                     decision_policy=DecisionPolicy(
                         enabled=True,
                         endpoint_selection=True,
+                        recall_on_empty=args.decision_recall_on_empty,
+                        candidate_abstention=args.candidate_abstention,
                         fallback="deterministic",
                     ),
                 ),
@@ -784,6 +861,8 @@ async def main() -> None:
                     decision_policy=DecisionPolicy(
                         enabled=True,
                         endpoint_selection=True,
+                        recall_on_empty=args.decision_recall_on_empty,
+                        candidate_abstention=args.candidate_abstention,
                         fallback="deterministic",
                     ),
                 ),
@@ -812,6 +891,8 @@ async def main() -> None:
                     decision_policy=DecisionPolicy(
                         enabled=True,
                         endpoint_selection=True,
+                        recall_on_empty=args.decision_recall_on_empty,
+                        candidate_abstention=args.candidate_abstention,
                         fallback="deterministic",
                     ),
                 ),
@@ -838,6 +919,8 @@ async def main() -> None:
                     decision_policy=DecisionPolicy(
                         enabled=True,
                         endpoint_selection=True,
+                        recall_on_empty=args.decision_recall_on_empty,
+                        candidate_abstention=args.candidate_abstention,
                         fallback="deterministic",
                     ),
                 ),
@@ -856,6 +939,8 @@ async def main() -> None:
         "schemarouter_version": package_version,
         "corpus": args.corpus or "smoke",
         "case_count": len(cases),
+        "decision_recall_on_empty": args.decision_recall_on_empty,
+        "candidate_abstention": args.candidate_abstention,
         "environment": {
             "system": platform.system(),
             "release": platform.release(),
@@ -872,6 +957,9 @@ async def main() -> None:
                     "preload": args.laya_preload,
                     "max_loaded": args.laya_max_loaded,
                     "min_confidence": args.laya_min_confidence,
+                    "package_version": _installed_version("laya"),
+                    "torch_version": _installed_version("torch"),
+                    "transformers_version": _installed_version("transformers"),
                 }
                 if args.laya
                 else {"enabled": False}

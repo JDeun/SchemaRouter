@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: research-benchmark-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deterministic-full:
     runs-on: ubuntu-latest
@@ -52,21 +56,62 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
       - run: pip install -e ".[dev,laya]"
-      - name: Run full Laya CPU benchmark
+      - name: Run Laya CPU lexical versus recall-on-empty benchmark
         run: |
-          mkdir -p artifacts/laya
+          mkdir -p \
+            artifacts/laya/lexical \
+            artifacts/laya/recall-on-empty \
+            artifacts/laya/calibrated-no-route
           python scripts/benchmark_decision_routing.py \
             --corpus benchmarks/decision-routing-v1.json \
             --laya \
             --laya-device cpu \
             --laya-max-loaded 1 \
             --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
-            --json-out artifacts/laya/report.json \
-            --csv-out artifacts/laya/rows.csv \
-            --html-out artifacts/laya/report.html
+            --json-out artifacts/laya/lexical/report.json \
+            --csv-out artifacts/laya/lexical/rows.csv \
+            --html-out artifacts/laya/lexical/report.html
+          python scripts/benchmark_decision_routing.py \
+            --corpus benchmarks/decision-routing-v1.json \
+            --laya \
+            --laya-device cpu \
+            --laya-max-loaded 1 \
+            --decision-recall-on-empty \
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+            --json-out artifacts/laya/recall-on-empty/report.json \
+            --csv-out artifacts/laya/recall-on-empty/rows.csv \
+            --html-out artifacts/laya/recall-on-empty/report.html
+          python scripts/benchmark_decision_routing.py \
+            --corpus benchmarks/decision-routing-v1.json \
+            --laya \
+            --laya-device cpu \
+            --laya-max-loaded 1 \
+            --laya-min-confidence 0.25 \
+            --decision-recall-on-empty \
+            --candidate-abstention no_route \
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+            --json-out artifacts/laya/calibrated-no-route/report.json \
+            --csv-out artifacts/laya/calibrated-no-route/rows.csv \
+            --html-out artifacts/laya/calibrated-no-route/report.html
           python scripts/render_benchmark_history.py \
-            artifacts/laya/report.json \
+            artifacts/laya/lexical/report.json \
+            artifacts/laya/recall-on-empty/report.json \
+            artifacts/laya/calibrated-no-route/report.json \
             --output artifacts/laya/history.html
+          python scripts/calibrate_decision_threshold.py \
+            artifacts/laya/recall-on-empty/report.json \
+            --backend laya:auto \
+            --abstention-mode deterministic \
+            --json-out artifacts/laya/calibration-deterministic.json \
+            --csv-out artifacts/laya/calibration-deterministic.csv \
+            --html-out artifacts/laya/calibration-deterministic.html
+          python scripts/calibrate_decision_threshold.py \
+            artifacts/laya/recall-on-empty/report.json \
+            --backend laya:auto \
+            --abstention-mode no_route \
+            --json-out artifacts/laya/calibration-no-route.json \
+            --csv-out artifacts/laya/calibration-no-route.csv \
+            --html-out artifacts/laya/calibration-no-route.html
       - uses: actions/upload-artifact@v7
         if: always()
         with:

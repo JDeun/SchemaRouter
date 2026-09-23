@@ -375,3 +375,270 @@ def test_decision_provider_error_falls_back_to_deterministic() -> None:
     assert plan.calls[0].tool == "materials"
     assert any("decision backend fallback: RuntimeError" in warning for warning in plan.warnings)
 
+
+
+
+def test_decision_backend_does_not_expand_empty_lexical_recall_by_default() -> None:
+    reg = registry()
+    called = False
+
+    def choose(_: object) -> dict[str, object]:
+        nonlocal called
+        called = True
+        return {"selections": [{"option_id": "candidate:0"}]}
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(choose),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+        ),
+    ).plan("재료의 전자 구조를 알려줘")
+
+    assert plan.calls == []
+    assert called is False
+    assert plan.warnings == ["no schema candidate matched the request"]
+
+
+def test_decision_backend_can_expand_empty_lexical_recall_when_opted_in() -> None:
+    reg = registry()
+
+    def choose(request):
+        assert [option.label for option in request.options] == [
+            "materials.search",
+            "none_of_the_above",
+        ]
+        assert request.options[0].metadata["schema_score"] == 0.0
+        return {"selections": [{"option_id": request.options[0].id, "score": 0.9}]}
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(choose),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            recall_on_empty=True,
+        ),
+    ).plan("재료의 전자 구조를 알려줘")
+
+    assert plan.calls[0].tool == "materials"
+    assert plan.calls[0].endpoint == "search"
+    assert any("expanded an empty lexical candidate set" in item for item in plan.warnings)
+
+
+def test_empty_recall_abstention_fails_closed_without_arbitrary_deterministic_route() -> None:
+    reg = registry()
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(lambda _: {"abstained": True}),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            recall_on_empty=True,
+        ),
+    ).plan("완전히 어휘가 다른 요청")
+
+    assert plan.calls == []
+    assert any(
+        "abstained after empty lexical recall" in item
+        for item in plan.warnings
+    )
+
+
+def test_empty_recall_provider_error_fails_closed_without_arbitrary_route() -> None:
+    reg = registry()
+
+    def fail(_: object) -> dict[str, object]:
+        raise RuntimeError("offline")
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(fail),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            recall_on_empty=True,
+        ),
+    ).plan("완전히 어휘가 다른 요청")
+
+    assert plan.calls == []
+    assert any(
+        "fallback after empty lexical recall: RuntimeError" in item
+        for item in plan.warnings
+    )
+
+
+@pytest.mark.asyncio
+async def test_async_decision_backend_can_expand_empty_lexical_recall() -> None:
+    reg = registry()
+
+    async def choose(request):
+        return {"selections": [{"option_id": request.options[0].id}]}
+
+    plan = await SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(choose),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            recall_on_empty=True,
+        ),
+    ).aplan("재료의 전자 구조를 알려줘")
+
+    assert plan.calls[0].tool == "materials"
+    assert any("expanded an empty lexical candidate set" in item for item in plan.warnings)
+
+
+
+def test_candidate_abstention_can_suppress_existing_lexical_route() -> None:
+    reg = registry()
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(lambda _: {"abstained": True}),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            candidate_abstention="no_route",
+        ),
+    ).plan("band gap")
+
+    assert plan.calls == []
+    assert any("suppressed candidate route" in item for item in plan.warnings)
+
+
+def test_candidate_no_route_abstention_does_not_change_provider_error_fallback() -> None:
+    reg = registry()
+
+    def fail(_: object) -> dict[str, object]:
+        raise RuntimeError("offline")
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(fail),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            candidate_abstention="no_route",
+            fallback="deterministic",
+        ),
+    ).plan("band gap")
+
+    assert plan.calls[0].tool == "materials"
+    assert any("decision backend fallback: RuntimeError" in item for item in plan.warnings)
+
+
+@pytest.mark.asyncio
+async def test_async_candidate_abstention_can_suppress_route() -> None:
+    reg = registry()
+
+    async def abstain(_: object) -> dict[str, object]:
+        return {"abstained": True}
+
+    plan = await SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(abstain),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            candidate_abstention="no_route",
+        ),
+    ).aplan("band gap")
+
+    assert plan.calls == []
+    assert any("suppressed candidate route" in item for item in plan.warnings)
+
+
+
+def test_inherited_candidate_abstention_preserves_fallback_error_behavior() -> None:
+    reg = registry()
+    planner = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(lambda _: {"abstained": True}),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            fallback="error",
+        ),
+    )
+
+    with pytest.raises(PlanningError, match="decision backend abstained"):
+        planner.plan("band gap")
+
+
+
+def test_empty_recall_backend_can_explicitly_select_no_route() -> None:
+    reg = registry()
+
+    def choose(request):
+        no_route = next(
+            option for option in request.options if option.label == "none_of_the_above"
+        )
+        return {"selections": [{"option_id": no_route.id, "score": 0.9}]}
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(choose),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            recall_on_empty=True,
+        ),
+    ).plan("이 요청에 맞는 등록 기능이 없다면 선택하지 마")
+
+    assert plan.calls == []
+    assert any(
+        "expanded an empty lexical candidate set" in warning
+        for warning in plan.warnings
+    )
+    assert any(
+        "selected no route after empty lexical recall" in warning
+        for warning in plan.warnings
+    )
+
+
+def test_normal_lexical_candidate_selection_does_not_offer_no_route_sentinel() -> None:
+    reg = registry()
+
+    def choose(request):
+        assert all(option.label != "none_of_the_above" for option in request.options)
+        return {"selections": [{"option_id": request.options[0].id}]}
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(choose),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            recall_on_empty=True,
+        ),
+    ).plan(PlanRequest(query="band gap", arguments={"formula": "Si"}))
+
+    assert plan.calls[0].tool == "materials"
+
+
+@pytest.mark.asyncio
+async def test_async_empty_recall_can_explicitly_select_no_route() -> None:
+    reg = registry()
+
+    async def choose(request):
+        no_route = next(
+            option for option in request.options if option.label == "none_of_the_above"
+        )
+        return {"selections": [{"option_id": no_route.id}]}
+
+    plan = await SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(choose),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            recall_on_empty=True,
+        ),
+    ).aplan("등록된 기능 어디에도 해당하지 않는 요청")
+
+    assert plan.calls == []
+    assert any(
+        "selected no route after empty lexical recall" in warning
+        for warning in plan.warnings
+    )

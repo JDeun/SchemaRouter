@@ -122,3 +122,80 @@ def test_benchmark_html_report_rejects_malformed_summary() -> None:
         assert "summary must be an object" in str(exc)
     else:
         raise AssertionError("malformed benchmark summaries must fail closed")
+
+
+
+def test_benchmark_summary_tracks_backend_invocation_coverage() -> None:
+    module = _benchmark_module()
+    rows = [
+        module.BenchmarkRow(
+            backend="bounded",
+            case_id="called",
+            category="normal",
+            query="query",
+            expected="weather.current",
+            predicted="weather.current",
+            correct=True,
+            invalid_plan=False,
+            latency_ms=1.0,
+            backend_invoked=True,
+        ),
+        module.BenchmarkRow(
+            backend="bounded",
+            case_id="not-called",
+            category="multilingual_ko",
+            query="질문",
+            expected=None,
+            predicted=None,
+            correct=True,
+            invalid_plan=False,
+            latency_ms=0.5,
+            backend_invoked=False,
+        ),
+    ]
+
+    summary = module.summarize(rows)
+
+    assert summary["backend_invocations"] == 1
+    assert summary["backend_invocation_rate"] == 0.5
+
+
+
+def test_benchmark_summary_tracks_explicit_and_final_no_route() -> None:
+    module = _benchmark_module()
+    rows = [
+        module.BenchmarkRow(
+            backend="bounded",
+            case_id="none",
+            category="adversarial",
+            query="out of domain",
+            expected=None,
+            predicted=None,
+            correct=True,
+            invalid_plan=False,
+            latency_ms=1.0,
+            backend_invoked=True,
+            recall_expanded=True,
+            explicit_no_route=True,
+            confidence=0.9,
+        ),
+        module.BenchmarkRow(
+            backend="bounded",
+            case_id="wrong",
+            category="adversarial",
+            query="another out of domain query",
+            expected=None,
+            predicted="weather.current",
+            correct=False,
+            invalid_plan=False,
+            latency_ms=1.0,
+            backend_invoked=True,
+            recall_expanded=True,
+            confidence=0.8,
+        ),
+    ]
+
+    summary = module.summarize(rows)
+
+    assert summary["explicit_no_routes"] == 1
+    assert summary["expected_no_route_recall"] == 0.5
