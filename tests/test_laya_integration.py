@@ -1,4 +1,6 @@
 import math
+import sys
+from types import ModuleType
 from typing import Any
 
 import pytest
@@ -206,6 +208,50 @@ async def test_laya_async_mode_runs_local_inference_without_blocking_contract() 
 
     assert result.selections[0].option_id == "candidate:0"
     assert result.selections[0].score == 0.77
+
+
+def test_laya_sdk_router_is_lazy_and_keeps_token_out_of_state(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, Any] = {}
+
+    class SDKRouter:
+        def __init__(self, **kwargs: Any) -> None:
+            captured["router_kwargs"] = kwargs
+
+        def predict(self, state: Any, questions: Any, **kwargs: Any) -> dict[str, Any]:
+            captured["call"] = {
+                "state": state,
+                "questions": questions,
+                "kwargs": kwargs,
+            }
+            return response("candidate:0", 0.9)
+
+    module = ModuleType("laya")
+    module.Router = SDKRouter  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "laya", module)
+
+    result = choose_sync(
+        LayaDecisionBackend(
+            model="english",
+            device="cpu",
+            token="secret-hf-token",
+            preload=True,
+            max_loaded=2,
+        ),
+        request(),
+    )
+
+    assert result.selections[0].option_id == "candidate:0"
+    assert captured["router_kwargs"] == {
+        "device": "cpu",
+        "token": "secret-hf-token",
+        "max_loaded": 2,
+        "preload": True,
+    }
+    assert captured["call"]["kwargs"] == {"model": "english"}
+    assert "secret-hf-token" not in repr(captured["call"]["state"])
+    assert "secret-hf-token" not in repr(captured["call"]["questions"])
 
 
 @pytest.mark.parametrize(
