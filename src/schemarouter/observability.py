@@ -5,6 +5,8 @@ from dataclasses import asdict
 from datetime import datetime
 from typing import Any
 
+from pydantic import Field
+
 from .models import StrictModel
 from .policy import ExecutionPolicy, is_remote_tool
 from .registry import ToolRegistry
@@ -80,7 +82,9 @@ class TraceObservation(StrictModel):
 
 class ObservabilitySnapshot(StrictModel):
     registry: RegistryObservation
-    traces: list[TraceObservation] = []
+    planner: PlannerObservation | None = None
+    execution: ExecutionObservation | None = None
+    traces: list[TraceObservation] = Field(default_factory=list)
 
 
 def _class_name(value: Any) -> str:
@@ -217,6 +221,20 @@ def observe_trace(trace: RunTrace) -> TraceObservation:
         terminal_event=terminal.event if terminal is not None else None,
         tools=tools,
         error_types=error_types,
+    )
+
+
+def snapshot_router(
+    router: Any,
+    *,
+    traces: list[TraceObservation] | None = None,
+) -> ObservabilitySnapshot:
+    observed = observe_router(router)
+    return ObservabilitySnapshot(
+        registry=observed.registry,
+        planner=observed.planner,
+        execution=observed.execution,
+        traces=list(traces or []),
     )
 
 
