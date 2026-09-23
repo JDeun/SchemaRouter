@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+
 from pydantic import Field
 
 from .models import StrictModel, ToolSpec
@@ -62,7 +63,7 @@ class ToolInspection(StrictModel):
     license: str | None = None
     endpoint_count: int = Field(ge=0)
     fingerprint: str
-    provenance: dict[str, Any] = Field(default_factory=dict)
+    provenance: dict[str, object] = Field(default_factory=dict)
     endpoints: list[EndpointInspection] = Field(default_factory=list)
 
 
@@ -193,7 +194,7 @@ def inspect_traces(
     )
 
 
-def tool_spec_document(tool: ToolSpec) -> dict[str, Any]:
+def tool_spec_document(tool: ToolSpec) -> dict[str, object]:
     """Return a safe detached inspection document plus derived fingerprints.
 
     Arbitrary ToolSpec/EndpointSpec metadata is intentionally omitted. Only the allowlisted
