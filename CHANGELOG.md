@@ -43,6 +43,8 @@ The project is pre-1.0 and follows the compatibility rules in
   uploads findings to GitHub Code Scanning on main and a weekly schedule;
 - pinned every external GitHub Action dependency to an immutable commit SHA and added a CI invariant
   that prevents tag/branch-based Action references from returning;
+- extended CodeQL to pull requests and narrowed its write permission to the analysis job;
+- made the Docs workflow read-only by default and grants Pages/OIDC write access only to deployment;
 - removed the dynamic event-derived checkout from the write-capable release preparation path and
   made GitHub Release publication consume trusted build artifacts without checking out release code;
 - linked SECURITY.md directly to GitHub private vulnerability reporting;
