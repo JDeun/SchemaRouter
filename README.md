@@ -53,7 +53,7 @@ Optional decision backends (Laya / Ollama / Jev) plug into SchemaRouter's bounde
 They do not become agents, do not run tool loops, and do not receive execution authority.
 ```
 
-> **Current stable release: 0.5.0** · `pip install schemarouter` · pre-1.0
+> **Current stable release: 0.6.0** · `pip install schemarouter` · pre-1.0
 
 ## Why SchemaRouter
 
@@ -113,24 +113,23 @@ can also be injected through the provider-neutral `ModelQueryAnalyzer` or
 `CallableDecisionBackend` contracts. None of these paths bypass SchemaRouter's policy, schema
 validation, or execution boundary.
 
-## What 0.5 adds
+## What 0.6 adds
 
-0.5 is a runtime-hardening release rather than a scope expansion:
+0.6 adds optional local/model-assisted decision backends, operational inspection/dashboard
+surfaces, and a broader fail-closed OpenAPI subset:
 
-- transient-aware HTTP retry classification and explicit non-retryable failures;
-- retry backoff constrained by wall-clock execution budgets;
-- elapsed-time enforcement across approval callbacks and execution hooks;
-- more faithful OpenAPI parameter precedence and generated endpoint naming;
-- required JSON request-body presence without fabricating schema-less bodies;
-- protocol-controlled OpenAPI headers kept out of planner arguments;
-- multiple 2xx JSON/no-content response variants preserved and validated correctly.
+- local Laya decisions with CPU/CUDA/MPS device controls and benchmark metadata;
+- provider-neutral reuse of existing GPT, Gemini, Claude, or other hosted clients;
+- live/persistent inspection plus a self-contained read-only HTML dashboard;
+- response `oneOf`/`anyOf` field discovery and static same-origin `$id`/`$anchor` resolution;
+- typed JSON root request bodies, OpenAPI 3.0 nullable normalization, and default parameter-style
+  serialization.
 
-See the [0.5.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.5.0/) for details.
+See the [0.6.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.6.0/) for details.
 
 ## Inspect what SchemaRouter built
 
-On the 0.6 development line, persisted registries and run traces can be inspected without executing
-tools:
+Persisted registries and run traces can be inspected without executing tools:
 
 ```bash
 schemarouter inspect registry --db ./registry.sqlite3

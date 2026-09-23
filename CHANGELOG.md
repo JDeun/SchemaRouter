@@ -5,7 +5,7 @@ All notable changes to SchemaRouter are documented here.
 The project is pre-1.0 and follows the compatibility rules in
 [`docs/versioning.md`](docs/versioning.md).
 
-## Unreleased
+## 0.6.0 - 2026-09-23
 
 ### Added
 
@@ -42,7 +42,14 @@ The project is pre-1.0 and follows the compatibility rules in
   `$id` base-URI rebasing, nested virtual resources, and static `$anchor` fragments before
   rewriting all resolved references into the self-contained local bundle; cross-origin IDs and
   dynamic/recursive reference semantics remain fail-closed.
-- post-release development has resumed as `0.6.0.dev0`; published `0.5.0` artifacts remain immutable.
+- promoted the 0.6 development line to the non-prerelease `0.6.0` release after the local decision-backend, operational inspection, and OpenAPI fidelity work passed the protected release gates.
+
+### Compatibility
+
+- no intentional public API removals are introduced relative to `0.5.0`;
+- new Laya, inspection/dashboard, and typed root-body surfaces are additive and opt-in where they can affect model-assisted decisions or operational output;
+- OpenAPI behavior is more spec-faithful for supported static references, nullable schemas, composed responses, root request bodies, and default parameter serialization while unsupported dynamic semantics remain fail-closed;
+- the project remains pre-1.0, so later 0.x minor releases may still include deliberate documented compatibility changes.
 
 ## 0.5.0 - 2026-09-23
 

@@ -4,7 +4,7 @@ SchemaRouter requires Python 3.10 or newer.
 
 ## Published release
 
-The current public release is `0.5.0`:
+The current public release is `0.6.0`:
 
 ```bash
 pip install schemarouter
@@ -52,16 +52,11 @@ Install only the integrations you use.
     pip install "schemarouter[jev]"
     ```
 
-=== "Laya (0.6 development)"
-
-    The current public `0.5.0` package does not contain the Laya extra yet.
+=== "Laya"
 
     ```bash
-    pip install -e ".[laya]"
+    pip install "schemarouter[laya]"
     ```
-
-    The packaged `schemarouter[laya]` extra will become available in the first release that
-    includes the 0.6 development work.
 
 === "OpenTelemetry"
 
@@ -82,7 +77,7 @@ Install only the integrations you use.
 python -c "import schemarouter; print(schemarouter.__version__)"
 ```
 
-The published release tag and package metadata identify `0.5.0` as the current non-prerelease
+The published release tag and package metadata identify `0.6.0` as the current non-prerelease
 release. Development snapshots use PEP 440 `.dev0` versions so source checkouts remain
 distinguishable from released artifacts.
 
