@@ -20,6 +20,7 @@ from .executor import ExecutionBudgetTracker, RegistryExecutor
 from .hooks import ExecutionHooks
 from .ingestion import SourceKind, URLSchemaLoader
 from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
+from .observability import RouterObservation, observe_router
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
@@ -126,10 +127,8 @@ class SchemaRouter:
     def config_schema(self) -> dict[str, Any]:
         return RunConfig.model_json_schema()
 
-    def observe(self):
+    def observe(self) -> RouterObservation:
         """Return a privacy-safe snapshot of live registry, planner, policy, and bindings."""
-        from .observability import observe_router
-
         return observe_router(self)
 
     def with_config(
