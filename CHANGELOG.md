@@ -9,6 +9,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- read-only operational inspection API and `schemarouter inspect` CLI for persisted SQLite
+  registries and run traces, including tool/endpoint classification, schema fingerprints, parameter
+  and output-field structure, trace completion/error summaries, human-readable output, and stable
+  JSON output for dashboards/automation.
 - optional local `LayaDecisionBackend` through `schemarouter[laya]`, with language-aware local
   checkpoint routing, confidence-based abstention, lazy/preloaded execution, fail-closed option-ID
   validation, trusted credential separation, and shared decision-benchmark support.
