@@ -25,6 +25,10 @@ The project is pre-1.0 and follows the compatibility rules in
 - OpenAPI response `oneOf` / `anyOf` object variants now contribute conditional
   planner-visible output fields while the original composed schema remains authoritative for raw
   runtime validation; variant request bodies remain deliberately unflattened.
+- opt-in bounded OpenAPI external-reference resolution now honors same-origin JSON Schema
+  `$id` base-URI rebasing, nested virtual resources, and static `$anchor` fragments before
+  rewriting all resolved references into the self-contained local bundle; cross-origin IDs and
+  dynamic/recursive reference semantics remain fail-closed.
 - post-release development has resumed as `0.6.0.dev0`; published `0.5.0` artifacts remain immutable.
 
 ## 0.5.0 - 2026-09-23
