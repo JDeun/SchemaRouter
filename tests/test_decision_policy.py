@@ -5,6 +5,8 @@ def test_decision_policy_is_off_by_default() -> None:
     policy = DecisionPolicy()
     assert policy.enabled is False
     assert policy.candidate_selection_enabled is False
+    assert policy.candidate_recall_on_empty_enabled is False
+    assert policy.recall_on_empty is False
     assert policy.fallback == "deterministic"
 
 
@@ -45,3 +47,22 @@ def test_master_switch_overrides_feature_switches() -> None:
     assert policy.field_selection_enabled is False
     assert policy.evidence_sufficiency_enabled is False
     assert policy.reserved_surfaces_enabled is False
+
+
+
+def test_recall_on_empty_requires_enabled_candidate_selection() -> None:
+    disabled = DecisionPolicy(recall_on_empty=True)
+    master_off = DecisionPolicy(
+        enabled=False,
+        endpoint_selection=True,
+        recall_on_empty=True,
+    )
+    enabled = DecisionPolicy(
+        enabled=True,
+        endpoint_selection=True,
+        recall_on_empty=True,
+    )
+
+    assert disabled.candidate_recall_on_empty_enabled is False
+    assert master_off.candidate_recall_on_empty_enabled is False
+    assert enabled.candidate_recall_on_empty_enabled is True
