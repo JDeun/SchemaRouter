@@ -135,9 +135,11 @@ The adapter preserves the same bounded-decision invariants as the Jev and Ollama
 
 ## Current scope and limitations
 
-The SchemaRouter adapter deliberately maps only Laya's `choice` primitive to the generic
-`DecisionBackend` contract. Laya also exposes score/probability-oriented primitives, but adding
-those to SchemaRouter would require a separate typed contract rather than overloading finite
+The SchemaRouter adapter deliberately maps only Laya's single-select `choice` primitive to the
+generic `DecisionBackend` contract. A request with `max_selections > 1` fails closed so the
+planner can apply its configured deterministic/error fallback rather than silently treating a
+multi-select surface as single-select. Laya also exposes score/probability-oriented primitives, but
+adding those to SchemaRouter would require a separate typed contract rather than overloading finite
 selection semantics.
 
 Laya quality is checkpoint-, language-, option-count-, and domain-dependent. In particular,
