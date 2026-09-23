@@ -112,22 +112,75 @@ print(snapshot.endpoint_count)
 Useful public helpers include `inspect_registry`, `inspect_tool`, `inspect_trace`, and
 `inspect_traces`.
 
-## Dashboard direction
+## Live router inspection
 
-The JSON contracts are intentionally stable enough to act as the backend boundary for a later
-local dashboard or TUI. A dashboard should consume these inspection models rather than query
-SchemaRouter's SQLite tables directly.
+Persistent SQLite inspection shows what was saved. A running process can additionally report the
+actual trusted invoker bindings and planner/policy configuration:
 
-That keeps one source of truth for:
+```python
+router = SchemaRouter()
+# ... register/import capabilities ...
 
-```text
-SQLiteRegistry / SQLiteRunTraceStore
-              |
-        inspection API
-         /           \
-       CLI       dashboard/TUI
+snapshot = router.inspect()
+print(snapshot.model_dump_json(indent=2))
 ```
 
-The first dashboard milestone should remain observational: catalog topology, endpoint
-classification, fingerprints, recent runs, errors, and latency/event summaries. Mutation controls,
-credential editing, or execution buttons should not be introduced into the same surface by default.
+The live view adds:
+
+- analyzer class;
+- configured decision-backend class;
+- bounded decision policy;
+- execution policy;
+- actual bound tool keys from the current executor.
+
+Invoker objects, credentials, arbitrary metadata values, arguments, results, and payload values are
+not included.
+
+## Export a dashboard
+
+The 0.6 development line can render the same read-only inspection models into one self-contained
+HTML file:
+
+```bash
+schemarouter dashboard \
+  --registry ./schemarouter-registry.sqlite3 \
+  --traces ./schemarouter-traces.sqlite3 \
+  --output ./artifacts/schemarouter-dashboard.html
+```
+
+The trace database is optional:
+
+```bash
+schemarouter dashboard \
+  --registry ./schemarouter-registry.sqlite3 \
+  --output ./artifacts/schemarouter-dashboard.html
+```
+
+The dashboard contains capability counts, adapter/source provenance, endpoint method/path and
+side-effect classification, schema fingerprints, persisted binding state, recent run summaries, and
+error counts. The capability table is filterable in the browser.
+
+It is deliberately a static export:
+
+- no server dependency;
+- no external JavaScript;
+- no analytics;
+- no tool execution buttons;
+- no credential editing;
+- no raw trace payload rendering.
+
+Applications may also call `render_dashboard(...)` or `write_dashboard(...)` directly with the
+typed inspection models.
+
+The architecture remains:
+
+```text
+SQLiteRegistry / SQLiteRunTraceStore       live SchemaRouter
+              |                                  |
+        inspection API ------------------- inspect_router()
+         /           \
+       CLI       static dashboard
+```
+
+A future TUI or long-running web console should consume these same inspection contracts instead of
+querying SchemaRouter's SQLite tables directly.
