@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- spec-faithful OpenAPI default parameter serialization for path/header `simple` and query
+  `form` styles across scalar, array, and object values, with serialization settings included in
+  the typed parameter contract and unsupported styles/`allowReserved=true` failing closed.
 - generic typed OpenAPI JSON root request bodies for explicit schemas that cannot be safely
   flattened, including arrays, scalars, nullable roots, and non-discriminated `oneOf` / `anyOf`
   compositions; root values are validated locally and transmitted without a synthetic wrapper.
