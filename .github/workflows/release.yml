@@ -302,14 +302,34 @@ jobs:
                   )
                   subprocess.check_call([str(python), "examples/quickstart.py"])
           PY
+      - name: Generate SPDX release SBOM
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          path: .
+          format: spdx-json
+          output-file: artifacts/schemarouter-${{ needs.prepare.outputs.version }}.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
       - name: Attest release artifacts
         uses: actions/attest@v4
         with:
           subject-path: dist/*
+      - name: Attest release SBOM
+        uses: actions/attest@v4
+        with:
+          subject-path: dist/*
+          sbom-path: artifacts/schemarouter-${{ needs.prepare.outputs.version }}.spdx.json
       - uses: actions/upload-artifact@v7
         with:
           name: python-dist
           path: dist/
+          if-no-files-found: error
+          retention-days: 7
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release-sbom
+          path: artifacts/*.spdx.json
           if-no-files-found: error
           retention-days: 7
 
@@ -327,6 +347,10 @@ jobs:
         with:
           name: python-dist
           path: dist
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-sbom
+          path: sbom
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -340,7 +364,7 @@ jobs:
             prerelease_args+=(--prerelease)
           fi
 
-          gh release create "$RELEASE_TAG" dist/*             --title "SchemaRouter $RELEASE_VERSION"             --notes-file "$RELEASE_NOTES"             "${prerelease_args[@]}"             --verify-tag
+          gh release create "$RELEASE_TAG" dist/* sbom/*             --title "SchemaRouter $RELEASE_VERSION"             --notes-file "$RELEASE_NOTES"             "${prerelease_args[@]}"             --verify-tag
 
   pypi:
     needs: [prepare, build]

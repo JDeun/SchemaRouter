@@ -70,6 +70,18 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     assert "artifact-metadata: write" in workflow
     assert "actions/attest@v4" in workflow
     assert "subject-path: dist/*" in workflow
+    assert (
+        "anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26"
+        in workflow
+    )
+    assert "format: spdx-json" in workflow
+    assert "upload-artifact: false" in workflow
+    assert "upload-release-assets: false" in workflow
+    assert "dependency-snapshot: false" in workflow
+    assert "sbom-path: artifacts/schemarouter-" in workflow
+    assert "name: release-sbom" in workflow
+    assert "path: sbom" in workflow
+    assert 'gh release create "$RELEASE_TAG" dist/* sbom/*' in workflow
     assert "environment:" in workflow
     assert "name: pypi" in workflow
     assert "pypa/gh-action-pypi-publish@release/v1" in workflow
