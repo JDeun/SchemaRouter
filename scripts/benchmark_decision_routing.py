@@ -13,6 +13,7 @@ import platform
 import statistics
 import time
 from dataclasses import asdict, dataclass
+from html import escape
 from pathlib import Path
 from typing import Any
 
@@ -458,6 +459,122 @@ def _write_csv(path: str | os.PathLike[str], rows: list[BenchmarkRow]) -> None:
             writer.writerows(asdict(row) for row in rows)
 
 
+def _metric(value: Any, *, percent: bool = False) -> str:
+    if value is None:
+        return "—"
+    if percent:
+        return f"{float(value) * 100:.2f}%"
+    if isinstance(value, float):
+        return f"{value:.3f}"
+    return str(value)
+
+
+def _joined(value: Any) -> str:
+    if not isinstance(value, list) or not value:
+        return "—"
+    return ", ".join(str(item) for item in value)
+
+
+def render_html_report(report: dict[str, Any]) -> str:
+    """Render a self-contained, escaped benchmark summary dashboard."""
+
+    summary = report.get("summary", {})
+    environment = report.get("environment", {})
+    if not isinstance(summary, dict):
+        raise ValueError("benchmark report summary must be an object")
+    if not isinstance(environment, dict):
+        raise ValueError("benchmark report environment must be an object")
+
+    rows: list[str] = []
+    for backend, raw_metrics in sorted(summary.items()):
+        if not isinstance(raw_metrics, dict):
+            raise ValueError(f"benchmark summary for {backend!r} must be an object")
+        cells = (
+            escape(str(backend)),
+            escape(_metric(raw_metrics.get("cases"))),
+            escape(_metric(raw_metrics.get("accuracy"), percent=True)),
+            escape(_metric(raw_metrics.get("invalid_plan_rate"), percent=True)),
+            escape(_metric(raw_metrics.get("errors"))),
+            escape(_metric(raw_metrics.get("abstention_rate"), percent=True)),
+            escape(_metric(raw_metrics.get("mean_latency_ms"))),
+            escape(_metric(raw_metrics.get("p50_latency_ms"))),
+            escape(_metric(raw_metrics.get("p95_latency_ms"))),
+            escape(_metric(raw_metrics.get("estimated_cost"))),
+            escape(_joined(raw_metrics.get("models"))),
+            escape(_joined(raw_metrics.get("requested_devices"))),
+            escape(_joined(raw_metrics.get("actual_devices"))),
+        )
+        rows.append("<tr>" + "".join(f"<td>{cell}</td>" for cell in cells) + "</tr>")
+
+    cards = (
+        ("Corpus", report.get("corpus", "—")),
+        ("Cases", report.get("case_count", "—")),
+        ("System", environment.get("system", "—")),
+        ("Machine", environment.get("machine", "—")),
+        ("Python", environment.get("python", "—")),
+        ("Hardware", environment.get("hardware_label") or "—"),
+    )
+    card_html = "".join(
+        (
+            '<div class="card">'
+            f'<div class="metric">{escape(str(value))}</div>'
+            f'<div class="label">{escape(label)}</div>'
+            "</div>"
+        )
+        for label, value in cards
+    )
+
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SchemaRouter decision benchmark</title>
+<style>
+:root {{ color-scheme: light dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }}
+body {{ max-width: 1600px; margin: 0 auto; padding: 32px; line-height: 1.45; }}
+h1 {{ letter-spacing: -0.025em; }}
+.muted {{ opacity: .68; }}
+.grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }}
+.card {{ border: 1px solid #8885; border-radius: 12px; padding: 16px; }}
+.metric {{ font-size: 1.25rem; font-weight: 700; overflow-wrap: anywhere; }}
+.label {{ opacity: .7; }}
+.table-wrap {{ margin-top: 28px; overflow-x: auto; }}
+table {{ width: 100%; border-collapse: collapse; font-size: .9rem; }}
+th, td {{ text-align: left; padding: 9px 8px; border-bottom: 1px solid #8884; vertical-align: top; }}
+th {{ white-space: nowrap; }}
+</style>
+</head>
+<body>
+<h1>SchemaRouter decision benchmark</h1>
+<p class="muted">
+Self-contained summary generated from one benchmark run. Compare runs only when corpus,
+model/runtime configuration, hardware, and measurement conditions are equivalent.
+</p>
+<div class="grid">{card_html}</div>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Backend</th><th>Cases</th><th>Accuracy</th><th>Invalid</th><th>Errors</th>
+<th>Abstention</th><th>Mean ms</th><th>P50 ms</th><th>P95 ms</th><th>Cost</th>
+<th>Models</th><th>Requested device</th><th>Actual device</th>
+</tr>
+</thead>
+<tbody>{"".join(rows)}</tbody>
+</table>
+</div>
+</body>
+</html>
+"""
+
+
+def _write_html(path: str | os.PathLike[str], report: dict[str, Any]) -> None:
+    destination = Path(path)
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(render_html_report(report), encoding="utf-8")
+
+
 async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--corpus", help="JSON corpus path. Omit for the three-case smoke set.")
@@ -465,6 +582,7 @@ async def main() -> None:
     parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument("--json-out", default=None)
     parser.add_argument("--csv-out", default=None)
+    parser.add_argument("--html-out", default=None)
     parser.add_argument(
         "--model-callable",
         help="Optional ModelQueryAnalyzer callable in module:function form.",
@@ -776,6 +894,8 @@ async def main() -> None:
         destination.write_text(output + "\n", encoding="utf-8")
     if args.csv_out:
         _write_csv(args.csv_out, all_rows)
+    if args.html_out:
+        _write_html(args.html_out, report)
     print(output)
 
 
