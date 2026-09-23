@@ -3,8 +3,9 @@
 SchemaRouter provides an optional bounded-decision adapter for TypeSafe System One models such as
 Jev. The adapter is deliberately outside the core dependency graph and is **off by default**.
 
-Jev does not author a SchemaRouter execution plan. It receives a finite set of option IDs and
-returns one of those IDs. SchemaRouter validates the result before the planner can use it.
+Jev does not author a SchemaRouter execution plan and does not act as an agent/orchestrator. It
+receives a finite set of option IDs and returns one of those IDs. It never owns tool execution,
+memory, or an agent loop. SchemaRouter validates the result before the planner can use it.
 
 ## Install
 

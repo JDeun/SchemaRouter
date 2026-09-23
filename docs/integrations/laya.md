@@ -3,10 +3,11 @@
 SchemaRouter can use [Laya](https://github.com/NandhaKishorM/laya) as an optional local
 `DecisionBackend`.
 
-Laya is a non-autoregressive decision model rather than a general text-generation model. The
-SchemaRouter adapter uses only Laya's finite `choice` primitive: the backend may select one of the
-opaque option IDs that SchemaRouter already authorized, but it cannot invent a tool, endpoint,
-field, parameter, credential, or execution permission.
+Laya is a non-autoregressive decision model rather than a general text-generation model. It is not
+an agent runtime inside SchemaRouter. The adapter uses only Laya's finite `choice` primitive: the
+backend may select one of the opaque option IDs that SchemaRouter already authorized, but it cannot
+invent a tool, endpoint, field, parameter, credential, execution permission, or multi-step tool
+loop.
 
 ## Install
 

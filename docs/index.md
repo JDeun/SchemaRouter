@@ -52,7 +52,16 @@ LangChain / LangGraph / LlamaIndex / your orchestrator
 ```
 
 SchemaRouter is deliberately narrower than an agent framework. The orchestrator owns conversation,
-graphs, models, memory, and checkpoints. SchemaRouter owns the **tool-schema execution boundary**.
+graphs, model invocation strategy, memory, checkpoints, and agent loops. SchemaRouter owns the
+**tool-schema execution boundary**.
+
+Optional decision backends such as Laya, Ollama, and Jev sit **inside the bounded selection step**.
+They receive only finite candidate IDs already produced from the local schema catalog. They do not
+become orchestrators, cannot invent executable capabilities, and cannot grant execution authority.
+
+Applications that already use GPT, Gemini, Claude, or another hosted model can inject that existing
+client through SchemaRouter's provider-neutral analyzer or decision-backend callable contracts.
+SchemaRouter does not require a second local model stack.
 
 ## Start in five minutes
 
@@ -153,11 +162,12 @@ variants.
 
     [Inspect registries and runs →](guides/inspection.md)
 
--   **Framework integrations**
+-   **Frameworks and decision backends**
 
-    LangChain, LangGraph, LlamaIndex, Jev, Laya, Ollama, and OpenTelemetry.
+    LangChain/LangGraph/LlamaIndex integrate above SchemaRouter. Laya/Ollama/Jev are optional
+    bounded decision providers inside it. OpenTelemetry exports telemetry.
 
-    [Integrations →](integrations/langchain.md)
+    [Decision backends →](concepts/decision-backends.md)
 
 -   **Architecture**
 

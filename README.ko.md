@@ -39,6 +39,20 @@ Query
 LlamaIndex 또는 자체 orchestrator는 위에 두고, OpenAPI, MCP, OPTIMADE, Python callable,
 adapter plugin은 아래에 연결하는 **tool-schema boundary**입니다.
 
+```text
+Agent / graph / application orchestrator
+                 |
+           SchemaRouter
+      typed planning + validation
+                 |
+        capability sources
+ OpenAPI / MCP / OPTIMADE / Python
+
+Laya / Ollama / Jev는 SchemaRouter 내부의 제한된 선택 단계를 보조하는
+optional decision backend일 뿐입니다.
+에이전트가 되지 않으며, tool loop를 실행하지 않고, 실행 권한도 받지 않습니다.
+```
+
 > **현재 안정판: 0.5.0** · `pip install schemarouter` · pre-1.0
 
 ## 왜 필요한가
@@ -92,8 +106,11 @@ print(result[0].data)
 | **OPTIMADE** | materials data가 OPTIMADE 제공 | `SchemaRouter.from_url(..., kind="optimade")` |
 | **사람이 읽는 문서** | machine-readable schema가 없음 | inspect → proposal → 명시적 승인 |
 
-**LangChain, LangGraph, LlamaIndex, Jev / TypeSafe, Laya, Ollama, OpenTelemetry**는 선택형 bridge로
-연결할 수 있으며 SchemaRouter의 policy/validation 경계를 우회하지 않습니다.
+**LangChain, LangGraph, LlamaIndex**는 framework bridge이고, **OpenTelemetry**는 선택형
+telemetry export입니다. **Jev / TypeSafe, Laya, Ollama는 optional decision backend**입니다.
+기존 시스템이 사용하는 **GPT, Gemini, Claude 또는 다른 cloud model client**도
+provider-neutral `ModelQueryAnalyzer` 또는 `CallableDecisionBackend`로 주입할 수 있습니다.
+어떤 경로도 SchemaRouter의 policy/schema validation/execution 경계를 우회하지 않습니다.
 
 ## SchemaRouter가 구축한 구조 확인
 

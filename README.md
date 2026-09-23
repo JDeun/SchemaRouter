@@ -40,6 +40,19 @@ It is **not** another general agent framework. LangChain, LangGraph, LlamaIndex,
 orchestrator can stay above it; OpenAPI, MCP, OPTIMADE, Python callables, and adapter plugins stay
 below it.
 
+```text
+Agent / graph / application orchestrator
+                 |
+           SchemaRouter
+     typed planning + validation
+                 |
+        capability sources
+ OpenAPI / MCP / OPTIMADE / Python
+
+Optional decision backends (Laya / Ollama / Jev) plug into SchemaRouter's bounded selection step.
+They do not become agents, do not run tool loops, and do not receive execution authority.
+```
+
 > **Current stable release: 0.5.0** · `pip install schemarouter` · pre-1.0
 
 ## Why SchemaRouter
@@ -93,8 +106,12 @@ print(result[0].data)
 | **OPTIMADE** | materials data is exposed through OPTIMADE | `SchemaRouter.from_url(..., kind="optimade")` |
 | **Human-readable docs** | no machine-readable schema exists | inspect → proposal → explicit approval |
 
-Optional bridges are available for **LangChain, LangGraph, LlamaIndex, Jev / TypeSafe, Laya, Ollama,
-and OpenTelemetry**. They do not bypass SchemaRouter's policy or validation boundary.
+Framework bridges are available for **LangChain, LangGraph, and LlamaIndex**. **OpenTelemetry**
+provides optional telemetry export. **Jev / TypeSafe, Laya, and Ollama are optional decision
+backends**, not agent frameworks. Existing **GPT, Gemini, Claude, or other hosted model clients**
+can also be injected through the provider-neutral `ModelQueryAnalyzer` or
+`CallableDecisionBackend` contracts. None of these paths bypass SchemaRouter's policy, schema
+validation, or execution boundary.
 
 ## What 0.5 adds
 

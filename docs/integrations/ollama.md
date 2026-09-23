@@ -1,8 +1,12 @@
 # Ollama
 
-SchemaRouter can use a locally running Ollama model as a bounded decision backend. The integration
-uses Ollama structured-output `format` and the existing `httpx` dependency, so no Ollama Python
-SDK is required.
+SchemaRouter can use a locally running Ollama model as a **bounded decision backend**. This does
+not turn SchemaRouter into an Ollama agent system: Ollama does not own the tool loop, does not
+construct arbitrary execution plans, and does not execute registered tools. It only selects from
+finite option IDs already authorized by SchemaRouter.
+
+The integration uses Ollama structured-output `format` and the existing `httpx` dependency, so
+no Ollama Python SDK is required.
 
 ## Prerequisites
 
