@@ -145,7 +145,9 @@ bounded request state. Optional controls include:
 - `--laya-min-confidence FLOAT` to measure confidence-gated abstention;
 - `--hardware-label TEXT` to attach the concrete machine/GPU description to the report;
 - `--decision-recall-on-empty` to explicitly let an enabled bounded decision backend inspect the
-  registered endpoint catalog when lexical candidate recall is empty.
+  registered endpoint catalog when lexical candidate recall is empty;
+- `--candidate-abstention inherit|deterministic|no_route|error` to separate explicit backend
+  abstention from provider-error fallback behavior.
 
 Laya rows record the routed checkpoint plus `requested_device`, decision confidence, and, when
 Laya exposes the loaded agent device, `actual_device`. This matters because an unavailable
