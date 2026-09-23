@@ -68,7 +68,10 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     assert "id-token: write" in workflow
     assert "attestations: write" in workflow
     assert "artifact-metadata: write" in workflow
-    assert "actions/attest@v4" in workflow
+    assert (
+        "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6"
+        in workflow
+    )
     assert "subject-path: dist/*" in workflow
     assert (
         "anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26"
@@ -84,10 +87,18 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     assert 'gh release create "$RELEASE_TAG" dist/* sbom/*' in workflow
     assert "environment:" in workflow
     assert "name: pypi" in workflow
-    assert "pypa/gh-action-pypi-publish@release/v1" in workflow
+    assert (
+        "pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33"
+        in workflow
+    )
     assert "skip-existing: true" in workflow
     assert 'gh release create "$RELEASE_TAG"' in workflow
-    assert 'ref: ${{ needs.prepare.outputs.release_sha }}' in workflow
+    assert "name: Checkout current main" in workflow
+    assert "name: Checkout pushed tag" in workflow
+    assert "ref: main" in workflow
+    assert "name: release-notes" in workflow
+    assert "path: release-notes" in workflow
+    assert "GH_REPO: ${{ github.repository }}" in workflow
     assert 'glob.glob("dist/*.tar.gz")[0]' in workflow
     assert 'subprocess.check_call([str(python), "examples/quickstart.py"])' in workflow
     assert "uses: ./.github/workflows/ci.yml" not in workflow
@@ -146,8 +157,14 @@ def test_security_workflows_cover_dependency_and_code_scanning() -> None:
     assert "python -m pip check" in security
 
     assert "security-events: write" in codeql
-    assert "github/codeql-action/init@v4" in codeql
-    assert "github/codeql-action/analyze@v4" in codeql
+    assert (
+        "github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd"
+        in codeql
+    )
+    assert (
+        "github/codeql-action/analyze@1c5b675653bb5c22dbe9b12b556ec555138e09fd"
+        in codeql
+    )
     assert "languages: python" in codeql
 
 
@@ -170,3 +187,21 @@ def test_openssf_scorecard_workflow_is_pinned_and_least_privilege() -> None:
         "github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd"
         in workflow
     )
+
+
+
+def test_all_external_workflow_actions_are_pinned_to_commit_shas() -> None:
+    workflow_dir = ROOT / ".github" / "workflows"
+    uses_pattern = re.compile(r"^\s*uses:\s*([^#\s]+)", flags=re.MULTILINE)
+    pinned_pattern = re.compile(r"^[^@\s]+@[0-9a-f]{40}$")
+
+    unpinned: list[str] = []
+    for path in sorted(workflow_dir.glob("*.yml")):
+        workflow = path.read_text(encoding="utf-8")
+        for reference in uses_pattern.findall(workflow):
+            if reference.startswith("./"):
+                continue
+            if not pinned_pattern.fullmatch(reference):
+                unpinned.append(f"{path.name}: {reference}")
+
+    assert unpinned == []

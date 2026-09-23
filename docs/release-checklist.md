@@ -21,6 +21,7 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Public API changes are reflected in README and architecture docs.
 - [ ] CHANGELOG contains the release entry and migration notes for breaking changes.
 - [ ] Security invariants have regression tests.
+- [ ] Every external GitHub Action reference is pinned to an immutable 40-character commit SHA.
 - [ ] SECURITY.md still matches URL, credential, retry, and observability behavior.
 - [ ] No credentials, tokens, fixtures containing secrets, or generated local state are committed.
 - [ ] MIT license metadata and the root LICENSE file are present in the release artifact.

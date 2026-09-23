@@ -41,6 +41,11 @@ The project is pre-1.0 and follows the compatibility rules in
 
 - added a pinned OpenSSF Scorecard workflow that publishes authenticated results, retains SARIF, and
   uploads findings to GitHub Code Scanning on main and a weekly schedule;
+- pinned every external GitHub Action dependency to an immutable commit SHA and added a CI invariant
+  that prevents tag/branch-based Action references from returning;
+- removed the dynamic event-derived checkout from the write-capable release preparation path and
+  made GitHub Release publication consume trusted build artifacts without checking out release code;
+- linked SECURITY.md directly to GitHub private vulnerability reporting;
 - release wheel and sdist artifacts now receive GitHub/Sigstore build-provenance attestations before
   publication;
 - release builds now generate a pinned-tool SPDX JSON SBOM outside the PyPI distribution directory,
