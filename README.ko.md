@@ -92,7 +92,7 @@ print(result[0].data)
 | **OPTIMADE** | materials data가 OPTIMADE 제공 | `SchemaRouter.from_url(..., kind="optimade")` |
 | **사람이 읽는 문서** | machine-readable schema가 없음 | inspect → proposal → 명시적 승인 |
 
-**LangChain, LangGraph, LlamaIndex, Jev / TypeSafe, Ollama, OpenTelemetry**는 선택형 bridge로
+**LangChain, LangGraph, LlamaIndex, Jev / TypeSafe, Laya, Ollama, OpenTelemetry**는 선택형 bridge로
 연결할 수 있으며 SchemaRouter의 policy/validation 경계를 우회하지 않습니다.
 
 ## 0.5에서 달라진 점
