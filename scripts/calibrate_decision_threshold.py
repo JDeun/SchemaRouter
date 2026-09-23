@@ -57,7 +57,10 @@ def calibrate(
     backend: str,
     fallback_backend: str = "keyword",
     thresholds: list[float],
+    abstention_mode: str = "deterministic",
 ) -> dict[str, Any]:
+    if abstention_mode not in {"deterministic", "no_route"}:
+        raise ValueError("abstention_mode must be deterministic or no_route")
     backend_rows = _row_index(report, backend)
     fallback_rows = _row_index(report, fallback_backend)
     if set(backend_rows) != set(fallback_rows):
@@ -111,7 +114,11 @@ def calibrate(
                     expanded_selected += 1
             elif has_confidence:
                 backend_abstentions += 1
-                predicted = fallback_predicted
+                predicted = (
+                    None
+                    if abstention_mode == "no_route"
+                    else fallback_predicted
+                )
             else:
                 predicted = row.get("predicted")
 
@@ -162,6 +169,7 @@ def calibrate(
         "environment": report.get("environment"),
         "backend": backend,
         "fallback_backend": fallback_backend,
+        "abstention_mode": abstention_mode,
         "results": results,
     }
 
@@ -230,8 +238,8 @@ th {{ white-space: nowrap; }}
 <h1>SchemaRouter confidence threshold calibration</h1>
 <p>
 Backend: <strong>{escape(str(calibration.get("backend")))}</strong>.
-Low-confidence decisions are replayed through the recorded deterministic fallback path; no model
-inference is repeated.
+Abstention mode: <strong>{escape(str(calibration.get("abstention_mode")))}</strong>.
+Low-confidence decisions are replayed without repeating model inference.
 </p>
 <div class="table-wrap">
 <table>
@@ -308,6 +316,11 @@ def main() -> None:
     parser.add_argument("--backend", required=True)
     parser.add_argument("--fallback-backend", default="keyword")
     parser.add_argument(
+        "--abstention-mode",
+        choices=("deterministic", "no_route"),
+        default="deterministic",
+    )
+    parser.add_argument(
         "--thresholds",
         default=",".join(f"{index / 20:.2f}" for index in range(20)),
         help="Comma-separated confidence thresholds in [0,1]. Default: 0.00..0.95 by 0.05.",
@@ -325,6 +338,7 @@ def main() -> None:
         backend=args.backend,
         fallback_backend=args.fallback_backend,
         thresholds=parse_thresholds(args.thresholds),
+        abstention_mode=args.abstention_mode,
     )
     write_outputs(
         calibrated,
