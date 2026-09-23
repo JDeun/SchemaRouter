@@ -12,6 +12,8 @@ The project is pre-1.0 and follows the compatibility rules in
 - self-contained HTML summaries for the decision-routing benchmark, alongside the existing JSON/CSV
   outputs, with escaped metadata and no remote assets;
 - multi-run benchmark history rendering with preserved run/version/corpus/hardware metadata;
+- benchmark reproducibility manifests with exact source revision, corpus SHA-256, repeat count, and
+  case-limit metadata, surfaced in single-run and history HTML reports;
 - machine-readable OpenAPI/OPTIMADE compatibility smoke artifacts retained from scheduled CI;
 - Hypothesis-based property tests for supported OpenAPI path/query/header parameter serialization;
 - automated dependency vulnerability auditing and scheduled CodeQL Python analysis;
@@ -22,8 +24,6 @@ The project is pre-1.0 and follows the compatibility rules in
 - independently configurable candidate-abstention handling with compatibility-preserving
   `inherit`, plus explicit `deterministic`, `no_route`, and `error` modes, without changing
   provider-error fallback semantics;
-- an explicit `none_of_the_above` bounded option for empty-lexical-recall catalog expansion so
-  model-assisted recall recovery can return no route instead of being forced to choose an endpoint.
 
 ### Changed
 

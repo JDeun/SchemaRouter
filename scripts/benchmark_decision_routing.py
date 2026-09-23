@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import csv
+import hashlib
 import importlib
 import inspect
 import json
@@ -296,6 +297,19 @@ def _installed_version(package: str) -> str | None:
         return None
 
 
+def _corpus_sha256(path: str | os.PathLike[str] | None) -> str:
+    if path is not None:
+        payload = Path(path).read_bytes()
+    else:
+        payload = json.dumps(
+            [asdict(case) for case in SMOKE_CASES],
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
 def estimate_cost(
     input_tokens: int | None,
     output_tokens: int | None,
@@ -529,10 +543,13 @@ def render_html_report(report: dict[str, Any]) -> str:
 
     summary = report.get("summary", {})
     environment = report.get("environment", {})
+    reproducibility = report.get("reproducibility", {})
     if not isinstance(summary, dict):
         raise ValueError("benchmark report summary must be an object")
     if not isinstance(environment, dict):
         raise ValueError("benchmark report environment must be an object")
+    if not isinstance(reproducibility, dict):
+        raise ValueError("benchmark report reproducibility must be an object")
 
     rows: list[str] = []
     for backend, raw_metrics in sorted(summary.items()):
@@ -558,9 +575,13 @@ def render_html_report(report: dict[str, Any]) -> str:
         )
         rows.append("<tr>" + "".join(f"<td>{cell}</td>" for cell in cells) + "</tr>")
 
+    source_revision = reproducibility.get("source_revision")
+    corpus_sha256 = reproducibility.get("corpus_sha256")
     cards = (
         ("Corpus", report.get("corpus", "—")),
         ("Cases", report.get("case_count", "—")),
+        ("Source revision", str(source_revision)[:12] if source_revision else "—"),
+        ("Corpus SHA-256", str(corpus_sha256)[:12] if corpus_sha256 else "—"),
         ("System", environment.get("system", "—")),
         ("Machine", environment.get("machine", "—")),
         ("Python", environment.get("python", "—")),
@@ -725,6 +746,14 @@ async def main() -> None:
         help=(
             "Optional free-form hardware label recorded in JSON output, for example "
             "'M4 16GB' or 'RTX 4070 8GB'."
+        ),
+    )
+    parser.add_argument(
+        "--source-revision",
+        default=None,
+        help=(
+            "Optional exact source revision recorded in the report. "
+            "Defaults to SCHEMAROUTER_SOURCE_REVISION or GITHUB_SHA when available."
         ),
     )
     parser.add_argument("--input-cost-per-million", type=float, default=None)
@@ -926,6 +955,13 @@ async def main() -> None:
     except PackageNotFoundError:
         package_version = "0+unknown"
 
+    source_revision = (
+        args.source_revision
+        or os.environ.get("SCHEMAROUTER_SOURCE_REVISION")
+        or os.environ.get("GITHUB_SHA")
+        or ""
+    ).strip() or None
+
     report: dict[str, Any] = {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -934,6 +970,12 @@ async def main() -> None:
         "case_count": len(cases),
         "decision_recall_on_empty": args.decision_recall_on_empty,
         "candidate_abstention": args.candidate_abstention,
+        "reproducibility": {
+            "source_revision": source_revision,
+            "corpus_sha256": _corpus_sha256(args.corpus),
+            "repeat": args.repeat,
+            "max_cases": args.max_cases,
+        },
         "environment": {
             "system": platform.system(),
             "release": platform.release(),

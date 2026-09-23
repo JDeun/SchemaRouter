@@ -51,7 +51,12 @@ def render_history(reports: list[tuple[str, dict[str, Any]]]) -> str:
     for label, report in reports:
         summary = report["summary"]
         environment = report.get("environment", {})
-        if not isinstance(summary, dict) or not isinstance(environment, dict):
+        reproducibility = report.get("reproducibility", {})
+        if (
+            not isinstance(summary, dict)
+            or not isinstance(environment, dict)
+            or not isinstance(reproducibility, dict)
+        ):
             raise ValueError(f"{label}: malformed benchmark report")
         for backend, raw in sorted(summary.items()):
             if not isinstance(raw, dict):
@@ -61,6 +66,8 @@ def render_history(reports: list[tuple[str, dict[str, Any]]]) -> str:
                 report.get("generated_at") or "—",
                 report.get("schemarouter_version") or "—",
                 report.get("corpus") or "—",
+                str(reproducibility.get("source_revision") or "—")[:12],
+                str(reproducibility.get("corpus_sha256") or "—")[:12],
                 environment.get("hardware_label") or environment.get("machine") or "—",
                 backend,
                 _number(raw.get("cases")),
@@ -113,8 +120,9 @@ hardware, and measurement conditions are equivalent.
 <table>
 <thead>
 <tr>
-<th>Run</th><th>Generated</th><th>SchemaRouter</th><th>Corpus</th><th>Hardware</th>
-<th>Backend</th><th>Cases</th><th>Accuracy</th><th>Invalid</th><th>Errors</th>
+<th>Run</th><th>Generated</th><th>SchemaRouter</th><th>Corpus</th><th>Revision</th>
+<th>Corpus SHA</th><th>Hardware</th><th>Backend</th><th>Cases</th><th>Accuracy</th>
+<th>Invalid</th><th>Errors</th>
 <th>Invoked</th><th>Mean confidence</th><th>No-route recall</th><th>Abstention</th><th>P50 ms</th>
 <th>P95 ms</th><th>Cost</th><th>Models</th>
 <th>Actual device</th>
