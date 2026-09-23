@@ -598,7 +598,7 @@ class OpenAPISourceAdapter:
             timeout=context.timeout,
             follow_redirects=False,
         )
-        ref_stats = {"documents": 0, "bytes": 0}
+        ref_stats = {"documents": 0, "bytes": 0, "same_document_refs": 0}
         resolved_schema_url = context.url
         normalized_ref_count = 0
         try:
@@ -610,10 +610,6 @@ class OpenAPISourceAdapter:
             document = _parse_openapi_text(response.text)
             if document is not None:
                 resolved_schema_url = str(response.url)
-                document, normalized_ref_count = normalize_same_document_refs(
-                    document,
-                    resolved_schema_url,
-                )
                 if context.openapi_external_refs:
                     bundler = _OpenAPIRefBundler(
                         client,
@@ -624,6 +620,12 @@ class OpenAPISourceAdapter:
                         max_bytes=context.openapi_ref_max_bytes,
                     )
                     document, ref_stats = await bundler.resolve(document)
+                    normalized_ref_count = ref_stats["same_document_refs"]
+                else:
+                    document, normalized_ref_count = normalize_same_document_refs(
+                        document,
+                        resolved_schema_url,
+                    )
         except SchemaSourceError:
             raise
         except Exception:  # noqa: BLE001
