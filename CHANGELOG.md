@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- generic typed OpenAPI JSON root request bodies for explicit schemas that cannot be safely
+  flattened, including arrays, scalars, nullable roots, and non-discriminated `oneOf` / `anyOf`
+  compositions; root values are validated locally and transmitted without a synthetic wrapper.
 - strict OpenAPI discriminated `oneOf` JSON request-body support as one typed root `body`
   parameter when every object branch requires a unique const/single-enum discriminator tag; the
   full composed schema is validated locally and transmitted as the JSON root without flattening.
@@ -27,7 +30,8 @@ The project is pre-1.0 and follows the compatibility rules in
 
 - OpenAPI response `oneOf` / `anyOf` object variants now contribute conditional
   planner-visible output fields while the original composed schema remains authoritative for raw
-  runtime validation; variant request bodies remain deliberately unflattened.
+  runtime validation; variant request bodies remain deliberately unflattened even when executable
+  through the typed root-body contract.
 - opt-in bounded OpenAPI external-reference resolution now honors same-origin JSON Schema
   `$id` base-URI rebasing, nested virtual resources, and static `$anchor` fragments before
   rewriting all resolved references into the self-contained local bundle; cross-origin IDs and
