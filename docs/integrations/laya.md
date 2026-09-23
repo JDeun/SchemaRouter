@@ -10,16 +10,19 @@ field, parameter, credential, or execution permission.
 
 ## Install
 
-Published packages:
-
-```bash
-pip install "schemarouter[laya]"
-```
+Laya support is currently on the `0.6.0.dev0` development line and is not part of the published
+`0.5.0` wheel.
 
 Development checkout:
 
 ```bash
 pip install -e ".[laya]"
+```
+
+After the next release containing this integration, the packaged form will be:
+
+```bash
+pip install "schemarouter[laya]"
 ```
 
 The extra installs the Laya runtime and its local model dependencies. Model weights are downloaded
