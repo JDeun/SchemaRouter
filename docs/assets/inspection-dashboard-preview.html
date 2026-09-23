@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SchemaRouter inspection dashboard preview</title>
+<style>
+:root {
+  color-scheme: light dark;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+body { max-width: 1400px; margin: 0 auto; padding: 24px; line-height: 1.45; }
+h1, h2 { letter-spacing: -0.025em; }
+.muted { opacity: .68; }
+.grid { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 10px; }
+.card { border: 1px solid #8885; border-radius: 12px; padding: 14px; }
+.metric { font-size: 1.6rem; font-weight: 700; }
+.label { opacity: .7; }
+.live-grid { display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 10px; }
+.live-grid > div { border: 1px solid #8884; border-radius: 10px; padding: 12px; }
+section { margin-top: 28px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+th, td { text-align: left; padding: 8px 7px; border-bottom: 1px solid #8884; vertical-align: top; }
+th { white-space: nowrap; }
+input {
+  width: min(520px, 100%);
+  box-sizing: border-box;
+  padding: 9px 11px;
+  border: 1px solid #8886;
+  border-radius: 8px;
+  margin: 0 0 10px;
+}
+code { overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .grid { grid-template-columns: repeat(2, minmax(110px, 1fr)); }
+  .live-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<h1>SchemaRouter inspection dashboard</h1>
+<p class="muted">
+Representative static preview using the same layout as the generated dashboard.
+No API calls are made from this page.
+</p>
+
+<div class="grid">
+  <div class="card"><div class="metric">1</div><div class="label">Registry version</div></div>
+  <div class="card"><div class="metric">1</div><div class="label">Tools</div></div>
+  <div class="card"><div class="metric">1</div><div class="label">Endpoints</div></div>
+  <div class="card"><div class="metric">1</div><div class="label">Read-only</div></div>
+  <div class="card"><div class="metric">0</div><div class="label">Mutating</div></div>
+  <div class="card"><div class="metric">0</div><div class="label">Unclassified</div></div>
+  <div class="card"><div class="metric">1</div><div class="label">Runs</div></div>
+  <div class="card"><div class="metric">0</div><div class="label">Error events</div></div>
+</div>
+
+<section>
+<h2>Live router</h2>
+<div class="live-grid">
+  <div><strong>Analyzer</strong><br>KeywordAnalyzer</div>
+  <div><strong>Decision backend</strong><br>none</div>
+  <div><strong>Bound tools</strong><br>current_weather</div>
+  <div><strong>Execution policy</strong><br><code>allow_mutations=False</code></div>
+  <div><strong>Decision policy</strong><br><code>enabled=False</code></div>
+</div>
+</section>
+
+<section>
+<h2>Capabilities</h2>
+<input id="filter" type="search"
+       placeholder="Filter tool, endpoint, adapter, method, path…"
+       autocomplete="off">
+<div class="table-wrap">
+<table id="capabilities">
+<thead>
+<tr>
+<th>Tool</th><th>Adapter</th><th>Source</th><th>Endpoint</th><th>Method</th>
+<th>Path</th><th>Mode</th><th>Params</th><th>Fields</th><th>Bound</th><th>Fingerprint</th>
+</tr>
+</thead>
+<tbody>
+<tr data-search="current_weather python current_weather">
+<td>current_weather</td><td>python</td><td>—</td><td>current_weather</td><td>—</td>
+<td>—</td><td>read-only</td><td>1</td><td>3</td><td>yes</td><td><code>7c5d43e1f901</code></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section>
+<h2>Run traces</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Run ID</th><th>Complete</th><th>Events</th><th>Errors</th>
+<th>Terminal</th><th>Endpoints</th><th>Started</th><th>Ended</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>demo-run</code></td><td>yes</td><td>5</td><td>0</td>
+<td>run.end</td><td>current_weather.current_weather</td>
+<td>2026-09-23T05:00:00+00:00</td><td>2026-09-23T05:00:00.120000+00:00</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<script>
+const filter = document.getElementById("filter");
+filter.addEventListener("input", () => {
+  const q = filter.value.trim().toLowerCase();
+  for (const row of document.querySelectorAll("#capabilities tbody tr")) {
+    row.hidden = Boolean(q) && !row.dataset.search.includes(q);
+  }
+});
+</script>
+</body>
+</html>
