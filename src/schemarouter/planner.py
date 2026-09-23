@@ -306,14 +306,23 @@ class SchemaPlanner:
                 return candidates, [f"decision backend fallback: {type(exc).__name__}"]
             raise
         if result.abstained or not result.selections:
-            if self.decision_policy.fallback == "deterministic":
-                if recall_expanded:
-                    return [], [
-                        "decision backend abstained after empty lexical recall; "
-                        "no deterministic candidate available"
-                    ]
-                return candidates, ["decision backend abstained; used deterministic ranking"]
-            raise PlanningError("decision backend abstained")
+            abstention = self.decision_policy.candidate_abstention
+            if abstention == "no_route":
+                message = (
+                    "decision backend abstained after empty lexical recall; "
+                    "suppressed candidate route"
+                    if recall_expanded
+                    else "decision backend abstained; suppressed candidate route"
+                )
+                return [], [message]
+            if abstention == "error":
+                raise PlanningError("decision backend abstained")
+            if recall_expanded:
+                return [], [
+                    "decision backend abstained after empty lexical recall; "
+                    "no deterministic candidate available"
+                ]
+            return candidates, ["decision backend abstained; used deterministic ranking"]
         selected = [
             candidates[int(item.option_id.split(":", 1)[1])]
             for item in result.selections
@@ -349,14 +358,23 @@ class SchemaPlanner:
                 return candidates, [f"decision backend fallback: {type(exc).__name__}"]
             raise
         if result.abstained or not result.selections:
-            if self.decision_policy.fallback == "deterministic":
-                if recall_expanded:
-                    return [], [
-                        "decision backend abstained after empty lexical recall; "
-                        "no deterministic candidate available"
-                    ]
-                return candidates, ["decision backend abstained; used deterministic ranking"]
-            raise PlanningError("decision backend abstained")
+            abstention = self.decision_policy.candidate_abstention
+            if abstention == "no_route":
+                message = (
+                    "decision backend abstained after empty lexical recall; "
+                    "suppressed candidate route"
+                    if recall_expanded
+                    else "decision backend abstained; suppressed candidate route"
+                )
+                return [], [message]
+            if abstention == "error":
+                raise PlanningError("decision backend abstained")
+            if recall_expanded:
+                return [], [
+                    "decision backend abstained after empty lexical recall; "
+                    "no deterministic candidate available"
+                ]
+            return candidates, ["decision backend abstained; used deterministic ranking"]
         selected = [
             candidates[int(item.option_id.split(":", 1)[1])]
             for item in result.selections
