@@ -28,6 +28,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
+- OpenAPI 3.0 `nullable: true` schemas with an explicit same-object `type` are normalized
+  into JSON Schema type unions, including nested components and bounded external-ref bundles, so
+  valid JSON null inputs/outputs are no longer false-rejected by runtime validation.
 - OpenAPI response `oneOf` / `anyOf` object variants now contribute conditional
   planner-visible output fields while the original composed schema remains authoritative for raw
   runtime validation; variant request bodies remain deliberately unflattened even when executable
