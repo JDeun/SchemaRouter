@@ -678,6 +678,14 @@ async def main() -> None:
     )
     parser.add_argument("--input-cost-per-million", type=float, default=None)
     parser.add_argument("--output-cost-per-million", type=float, default=None)
+    parser.add_argument(
+        "--decision-recall-on-empty",
+        action="store_true",
+        help=(
+            "Allow enabled bounded decision backends to inspect the registered endpoint "
+            "catalog when lexical candidate recall is empty."
+        ),
+    )
     args = parser.parse_args()
 
     if args.repeat < 1:
@@ -759,6 +767,7 @@ async def main() -> None:
                     decision_policy=DecisionPolicy(
                         enabled=True,
                         endpoint_selection=True,
+                        recall_on_empty=args.decision_recall_on_empty,
                         fallback="deterministic",
                     ),
                 ),
@@ -784,6 +793,7 @@ async def main() -> None:
                     decision_policy=DecisionPolicy(
                         enabled=True,
                         endpoint_selection=True,
+                        recall_on_empty=args.decision_recall_on_empty,
                         fallback="deterministic",
                     ),
                 ),
@@ -812,6 +822,7 @@ async def main() -> None:
                     decision_policy=DecisionPolicy(
                         enabled=True,
                         endpoint_selection=True,
+                        recall_on_empty=args.decision_recall_on_empty,
                         fallback="deterministic",
                     ),
                 ),
@@ -838,6 +849,7 @@ async def main() -> None:
                     decision_policy=DecisionPolicy(
                         enabled=True,
                         endpoint_selection=True,
+                        recall_on_empty=args.decision_recall_on_empty,
                         fallback="deterministic",
                     ),
                 ),
@@ -856,6 +868,7 @@ async def main() -> None:
         "schemarouter_version": package_version,
         "corpus": args.corpus or "smoke",
         "case_count": len(cases),
+        "decision_recall_on_empty": args.decision_recall_on_empty,
         "environment": {
             "system": platform.system(),
             "release": platform.release(),
