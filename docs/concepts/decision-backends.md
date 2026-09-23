@@ -179,6 +179,35 @@ configuration rather than model state.
 
 See [Jev / TypeSafe System One](../integrations/jev.md) for sync/async usage and security details.
 
+## Local Laya decision models
+
+SchemaRouter includes an optional `LayaDecisionBackend` for local non-autoregressive bounded
+decisions:
+
+```bash
+pip install "schemarouter[laya]"
+```
+
+```python
+from schemarouter.integrations import LayaDecisionBackend
+
+backend = LayaDecisionBackend(
+    min_confidence=0.65,
+)
+```
+
+By default, Laya may route between its English and multilingual checkpoints from the bounded request
+state. Applications may pin a checkpoint with `model=` and may preload checkpoints for a
+long-running process.
+
+The adapter maps Laya's finite `choice` primitive to SchemaRouter's existing
+`DecisionBackend` contract. Unknown option IDs fail closed before confidence gating,
+`DecisionOption.metadata` is not forwarded, and Hugging Face credentials remain trusted local
+configuration.
+
+See [Laya](../integrations/laya.md) for checkpoint, device, preload, confidence, and benchmark
+guidance.
+
 ## Local Ollama models
 
 SchemaRouter also includes an `OllamaDecisionBackend` that uses Ollama structured outputs over the
@@ -213,7 +242,7 @@ registered tools, execution policy, or the deterministic planner.
 ## Benchmarking
 
 Use `scripts/benchmark_decision_routing.py` to compare the deterministic baseline,
-`ModelQueryAnalyzer`, local embedding backends, Jev, and explicitly selected local Ollama models
+`ModelQueryAnalyzer`, local embedding backends, Jev, Laya, and explicitly selected local Ollama models
 on the same cases.
 
 See [Decision routing benchmark](../guides/decision-benchmark.md).
