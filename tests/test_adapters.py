@@ -824,8 +824,12 @@ async def test_openapi_required_schema_less_body_is_not_fabricated() -> None:
     tool = tool_from_openapi("schema_less_body", document)
     endpoint = tool.endpoint("create_item")
 
-    assert endpoint.metadata["request_body_required"] is False
-    assert endpoint.parameters == []
+    assert endpoint.metadata["request_body_required"] is True
+    assert endpoint.metadata["request_body_mode"] == "root_schema"
+    assert len(endpoint.parameters) == 1
+    assert endpoint.parameters[0].name == "body"
+    assert endpoint.parameters[0].location == "body_root"
+    assert endpoint.parameters[0].json_schema["type"] == "array"
     assert any(
         issue["construct"] == "schema_less_request_body"
         for issue in tool.metadata["compatibility"]["issues"]
@@ -845,7 +849,7 @@ async def test_openapi_required_schema_less_body_is_not_fabricated() -> None:
         await invoker("create_item", {})
 
 
-def test_openapi_required_unsupported_non_object_body_is_not_fabricated() -> None:
+def test_openapi_required_array_body_is_exposed_as_typed_root() -> None:
     document = {
         "openapi": "3.1.0",
         "info": {"title": "Array Body API"},
