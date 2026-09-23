@@ -51,12 +51,53 @@ router = await SchemaRouter.from_url(
 `schema_headers` never become runtime API headers, and `trusted_headers` are never exposed as
 model-selectable arguments.
 
+## Typed JSON root request bodies
+
+SchemaRouter keeps ordinary object request bodies ergonomic by flattening their declared properties
+into named `body` parameters.
+
+When an explicit JSON Schema cannot be flattened safely, the whole request payload is instead
+represented as one typed `body` parameter. This covers:
+
+- arrays;
+- scalar JSON values;
+- nullable/root `null` values;
+- general `oneOf` / `anyOf` compositions;
+- other explicit JSON Schema shapes that should remain intact.
+
+For example, an array body:
+
+```yaml
+requestBody:
+  required: true
+  content:
+    application/json:
+      schema:
+        type: array
+        items:
+          type: string
+```
+
+becomes:
+
+```text
+body: array[string]
+```
+
+The full value is validated locally against the original schema and transmitted as the JSON root.
+SchemaRouter does not wrap it as `{"body": ...}`. JSON `null` is also emitted as the literal
+`null` body rather than being mistaken for an omitted request.
+
+A required root body that is absent fails closed before a network request is made.
+
 ## Discriminated JSON request bodies
 
 SchemaRouter does not flatten arbitrary `oneOf` / `anyOf` request bodies because fields from
-different variants could be combined into an invalid request.
+different variants could be combined into an invalid request. They are preserved as one typed root
+`body` parameter instead.
 
-A strictly tagged `oneOf` body can instead be represented as one typed `body` parameter when:
+For a strictly tagged `oneOf`, SchemaRouter additionally recognizes the discriminator contract
+when:
 
 - the schema declares `discriminator.propertyName`;
 - every branch is object-like;
@@ -74,13 +115,8 @@ schema:
     propertyName: kind
 ```
 
-The planner sees one parameter:
-
-```text
-body: <original oneOf schema>
-```
-
-The body remains a single object through planning and validation. SchemaRouter validates the whole
+The planner still sees one parameter carrying the original `oneOf` schema and discriminator
+metadata. The body remains a single object through planning and validation. SchemaRouter validates the whole
 object against the original composed JSON Schema, then the OpenAPI invoker sends that object as the
 JSON request root. It never rewrites the payload as `{"body": ...}`.
 
@@ -188,12 +224,15 @@ Supported paths include:
 - planner-side object-property/required flattening through `allOf`;
 - planner-visible response-field discovery across `oneOf` / `anyOf` object variants while
   preserving composed runtime validation;
-- strictly tagged discriminated `oneOf` JSON request bodies as one typed root-body parameter;
+- any explicit non-flattenable JSON request schema as one typed root-body parameter, including
+  arrays, scalars, nullable roots, and composed `oneOf` / `anyOf` bodies;
+- discriminator recognition for strictly tagged `oneOf` object bodies;
 - explicit cross-origin binding;
 - runtime origin confinement.
 
-Dynamic JSON Schema references/anchors, planner-side schema-variant selection, variant request-body
-flattening, and more ergonomic non-object request bodies remain follow-up work. Response variant
+Dynamic JSON Schema references/anchors and automatic planner-side schema-variant selection remain
+follow-up work. Variant request bodies stay intentionally unflattened even though they are
+executable as one typed root body. Response variant
 fields may be selected for projection, but a field that is absent from the actual validated
 response variant is simply absent from the projected result. Unsupported constructs should not be
 guessed.
