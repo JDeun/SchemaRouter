@@ -273,3 +273,205 @@ async def test_url_ingestion_normalizes_same_document_refs_before_compatibility_
     assert [field.name for field in endpoint.output_fields] == ["name"]
     issues = tool.metadata["compatibility"]["issues"]
     assert not any(issue["construct"] == "external_ref" for issue in issues)
+
+
+def test_oneof_response_fields_are_exposed_without_flattening_runtime_schema() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Variant API"},
+        "paths": {
+            "/pet": {
+                "get": {
+                    "operationId": "get_pet",
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {"const": "cat"},
+                                                    "lives": {"type": "integer"},
+                                                },
+                                                "required": ["kind", "lives"],
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "kind": {"const": "dog"},
+                                                    "breed": {"type": "string"},
+                                                },
+                                                "required": ["kind", "breed"],
+                                            },
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                }
+            }
+        },
+    }
+
+    endpoint = tool_from_openapi("variant", document).endpoint("get_pet")
+    fields = {field.name: field for field in endpoint.output_fields}
+
+    assert list(fields) == ["kind", "lives", "breed"]
+    assert fields["kind"].json_schema == {
+        "anyOf": [{"const": "cat"}, {"const": "dog"}]
+    }
+    assert endpoint.output_schema["oneOf"]
+
+
+def test_anyof_response_variant_local_refs_expose_union_of_fields() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Search API"},
+        "paths": {
+            "/result": {
+                "get": {
+                    "operationId": "get_result",
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "anyOf": [
+                                            {"$ref": "#/components/schemas/Success"},
+                                            {"$ref": "#/components/schemas/Pending"},
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                }
+            }
+        },
+        "components": {
+            "schemas": {
+                "Success": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "value": {"type": "number"},
+                    },
+                },
+                "Pending": {
+                    "allOf": [
+                        {
+                            "type": "object",
+                            "properties": {
+                                "id": {"type": "string"},
+                            },
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "status": {"type": "string"},
+                            },
+                        },
+                    ]
+                },
+            }
+        },
+    }
+
+    endpoint = tool_from_openapi("search", document).endpoint("get_result")
+
+    assert [field.name for field in endpoint.output_fields] == ["id", "value", "status"]
+    assert endpoint.output_schema["anyOf"]
+
+
+def test_oneof_response_conflicting_field_types_become_planner_anyof() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Conflict API"},
+        "paths": {
+            "/value": {
+                "get": {
+                    "operationId": "get_value",
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "oneOf": [
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "value": {"type": "string"}
+                                                },
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "value": {"type": "integer"}
+                                                },
+                                            },
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                }
+            }
+        },
+    }
+
+    endpoint = tool_from_openapi("conflict", document).endpoint("get_value")
+
+    assert endpoint.output_fields[0].name == "value"
+    assert endpoint.output_fields[0].json_schema == {
+        "anyOf": [{"type": "string"}, {"type": "integer"}]
+    }
+
+
+def test_oneof_request_body_remains_unflattened_and_non_executable_as_named_fields() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Variant Request API"},
+        "paths": {
+            "/pet": {
+                "post": {
+                    "operationId": "create_pet",
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "oneOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "cat_name": {"type": "string"}
+                                            },
+                                            "required": ["cat_name"],
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "dog_name": {"type": "string"}
+                                            },
+                                            "required": ["dog_name"],
+                                        },
+                                    ]
+                                }
+                            }
+                        },
+                    },
+                    "responses": {"204": {"description": "created"}},
+                }
+            }
+        },
+    }
+
+    endpoint = tool_from_openapi("variant_request", document).endpoint("create_pet")
+
+    assert endpoint.parameters == []
+    assert endpoint.metadata["request_body_required"] is False
+    assert endpoint.input_schema["properties"] == {}
