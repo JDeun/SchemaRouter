@@ -204,6 +204,7 @@ Each row records:
 - correctness;
 - invalid-plan state;
 - end-to-end planning latency;
+- whether the bounded decision backend was actually invoked;
 - bounded-backend abstention and deterministic fallback state;
 - input/output tokens when reported;
 - optional cost estimate;
@@ -214,6 +215,7 @@ The aggregate report includes:
 - final-plan routing accuracy (an abstention case is correct only when the final plan has no route);
 - invalid-plan rate;
 - error count;
+- bounded-backend invocation count/rate;
 - abstention rate;
 - expected-abstention recall for bounded backends, reported separately from final-plan accuracy;
 - fallback count;
