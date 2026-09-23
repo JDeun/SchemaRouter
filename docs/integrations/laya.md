@@ -78,7 +78,7 @@ misreported as a GPU benchmark.
 ## Preload for a long-running process
 
 Laya can lazily load checkpoints, but switching between uncached checkpoints can dominate latency.
-A server that has enough memory can preload checkpoints:
+A server that has enough memory can preload checkpoints before the first decision:
 
 ```python
 backend = LayaDecisionBackend(
@@ -87,8 +87,12 @@ backend = LayaDecisionBackend(
 )
 ```
 
-Choose `max_loaded` according to available CPU/GPU/MPS memory. Preloading is trusted local
-configuration and is never controlled by the model or request.
+When `model=` is pinned, SchemaRouter preloads that checkpoint. In automatic language-routing
+mode, it preloads only `english` and `multilingual`; the benchmark-specific
+`typed-decisions` checkpoint is not downloaded implicitly. Preloading happens during backend
+construction, before per-case benchmark timing starts. Choose resident checkpoints according to
+available CPU/GPU/MPS memory. Preloading is trusted local configuration and is never controlled by
+the model or request.
 
 ## Async planning
 
