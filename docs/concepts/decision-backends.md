@@ -71,8 +71,10 @@ endpoint.
 
 The default remains `False`. If the backend errors or abstains after this catalog expansion,
 SchemaRouter returns no call rather than selecting an arbitrary endpoint: there was no deterministic
-candidate to fall back to. Use confidence gating and benchmark the workload before enabling this
-policy in production, especially for out-of-domain or adversarial requests.
+candidate to fall back to. A decision backend that returns a concrete option still selects that
+registered route, so out-of-domain suppression should use calibrated confidence plus
+`candidate_abstention="no_route"` when needed. Benchmark the workload before enabling this policy
+in production, especially for multilingual, out-of-domain, or adversarial requests.
 
 Candidate abstention is independently configurable with
 `candidate_abstention="inherit" | "deterministic" | "no_route" | "error"`. The default

@@ -22,7 +22,6 @@ from .models import (
 from .registry import ToolRegistry
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[가-힣]+")
-_NO_ROUTE_OPTION_ID = "candidate:none"
 
 
 def _normalize(text: str) -> str:
@@ -268,32 +267,18 @@ class SchemaPlanner:
         self,
         request: PlanRequest,
         candidates: list[_Candidate],
-        *,
-        include_no_route: bool = False,
     ) -> DecisionRequest:
-        options = [
-            DecisionOption(
-                id=f"candidate:{index}",
-                label=f"{candidate.tool.key}.{candidate.endpoint.name}",
-                description=candidate.endpoint.description,
-                metadata={"schema_score": candidate.score},
-            )
-            for index, candidate in enumerate(candidates)
-        ]
-        if include_no_route:
-            options.append(
-                DecisionOption(
-                    id=_NO_ROUTE_OPTION_ID,
-                    label="none_of_the_above",
-                    description=(
-                        "None of the offered registered endpoints satisfies the user "
-                        "request. Choose this when no listed route applies."
-                    ),
-                )
-            )
         return DecisionRequest(
             query=request.query,
-            options=options,
+            options=[
+                DecisionOption(
+                    id=f"candidate:{index}",
+                    label=f"{candidate.tool.key}.{candidate.endpoint.name}",
+                    description=candidate.endpoint.description,
+                    metadata={"schema_score": candidate.score},
+                )
+                for index, candidate in enumerate(candidates)
+            ],
             max_selections=min(request.max_calls, len(candidates)),
         )
 
@@ -309,11 +294,7 @@ class SchemaPlanner:
         try:
             result = choose_sync(
                 self.decision_backend,
-                self._decision_request(
-                    request,
-                    candidates,
-                    include_no_route=recall_expanded,
-                ),
+                self._decision_request(request, candidates),
             )
         except Exception as exc:
             if self.decision_policy.fallback == "deterministic":
@@ -342,28 +323,9 @@ class SchemaPlanner:
                     "no deterministic candidate available"
                 ]
             return candidates, ["decision backend abstained; used deterministic ranking"]
-        selected_ids = [item.option_id for item in result.selections]
-        if _NO_ROUTE_OPTION_ID in selected_ids:
-            if selected_ids != [_NO_ROUTE_OPTION_ID]:
-                raise PlanningError(
-                    "decision backend combined no-route with endpoint selections"
-                )
-            warnings = (
-                [
-                    "decision backend expanded an empty lexical candidate set "
-                    "to the registered catalog"
-                ]
-                if recall_expanded
-                else []
-            )
-            warnings.append(
-                "decision backend selected no route after empty lexical recall"
-            )
-            return [], warnings
-
         selected = [
-            candidates[int(option_id.split(":", 1)[1])]
-            for option_id in selected_ids
+            candidates[int(item.option_id.split(":", 1)[1])]
+            for item in result.selections
         ]
         warnings = (
             ["decision backend expanded an empty lexical candidate set to the registered catalog"]
@@ -384,11 +346,7 @@ class SchemaPlanner:
         try:
             result = await choose_async(
                 self.decision_backend,
-                self._decision_request(
-                    request,
-                    candidates,
-                    include_no_route=recall_expanded,
-                ),
+                self._decision_request(request, candidates),
             )
         except Exception as exc:
             if self.decision_policy.fallback == "deterministic":
@@ -417,28 +375,9 @@ class SchemaPlanner:
                     "no deterministic candidate available"
                 ]
             return candidates, ["decision backend abstained; used deterministic ranking"]
-        selected_ids = [item.option_id for item in result.selections]
-        if _NO_ROUTE_OPTION_ID in selected_ids:
-            if selected_ids != [_NO_ROUTE_OPTION_ID]:
-                raise PlanningError(
-                    "decision backend combined no-route with endpoint selections"
-                )
-            warnings = (
-                [
-                    "decision backend expanded an empty lexical candidate set "
-                    "to the registered catalog"
-                ]
-                if recall_expanded
-                else []
-            )
-            warnings.append(
-                "decision backend selected no route after empty lexical recall"
-            )
-            return [], warnings
-
         selected = [
-            candidates[int(option_id.split(":", 1)[1])]
-            for option_id in selected_ids
+            candidates[int(item.option_id.split(":", 1)[1])]
+            for item in result.selections
         ]
         warnings = (
             ["decision backend expanded an empty lexical candidate set to the registered catalog"]

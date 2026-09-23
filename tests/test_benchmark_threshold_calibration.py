@@ -198,28 +198,3 @@ def test_threshold_calibration_rejects_unknown_abstention_mode() -> None:
         assert "abstention_mode" in str(exc)
     else:
         raise AssertionError("unknown abstention mode must fail closed")
-
-
-
-def test_threshold_calibration_preserves_explicit_model_no_route() -> None:
-    module = _module()
-    report = _report()
-    backend_row = next(
-        row
-        for row in report["rows"]
-        if row["backend"] == "laya:auto" and row["case_id"] == "abstain"
-    )
-    backend_row["predicted"] = None
-    backend_row["explicit_no_route"] = True
-    backend_row["confidence"] = 0.85
-
-    result = module.calibrate(
-        report,
-        backend="laya:auto",
-        thresholds=[0.0, 0.8, 0.9],
-    )
-    by_threshold = {row["threshold"]: row for row in result["results"]}
-
-    assert by_threshold[0.0]["expected_no_route_recall"] == 1.0
-    assert by_threshold[0.8]["expected_no_route_recall"] == 1.0
-    assert by_threshold[0.9]["expected_no_route_recall"] == 1.0

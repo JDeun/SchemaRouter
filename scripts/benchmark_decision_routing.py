@@ -56,7 +56,6 @@ class BenchmarkRow:
     latency_ms: float
     backend_invoked: bool = False
     recall_expanded: bool = False
-    explicit_no_route: bool = False
     confidence: float | None = None
     abstained: bool = False
     fallback_used: bool = False
@@ -353,10 +352,6 @@ async def benchmark_planner(
                 "expanded an empty lexical candidate set" in warning
                 for warning in plan.warnings
             )
-            explicit_no_route = any(
-                "selected no route after empty lexical recall" in warning
-                for warning in plan.warnings
-            )
             metadata = getattr(result, "metadata", {}) if result is not None else {}
             input_tokens = metadata.get("input_tokens")
             output_tokens = metadata.get("output_tokens")
@@ -400,7 +395,6 @@ async def benchmark_planner(
                     latency_ms=round(latency_ms, 3),
                     backend_invoked=bool(recorder and recorder.last_invoked),
                     recall_expanded=recall_expanded,
-                    explicit_no_route=explicit_no_route,
                     confidence=confidence,
                     abstained=abstained,
                     fallback_used=abstained and predicted is not None,
@@ -455,7 +449,6 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
         "backend_invocation_rate": (
             sum(row.backend_invoked for row in rows) / total if total else 0.0
         ),
-        "explicit_no_routes": sum(row.explicit_no_route for row in rows),
         "expected_no_route_recall": (
             sum(row.predicted is None for row in expected_abstentions)
             / len(expected_abstentions)

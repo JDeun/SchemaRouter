@@ -81,6 +81,7 @@ jobs:
             --json-out artifacts/laya/recall-on-empty/report.json \
             --csv-out artifacts/laya/recall-on-empty/rows.csv \
             --html-out artifacts/laya/recall-on-empty/report.html
+          # 0.25 is a measured comparison point for this corpus, not a library default.
           python scripts/benchmark_decision_routing.py \
             --corpus benchmarks/decision-routing-v1.json \
             --laya \
