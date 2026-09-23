@@ -13,7 +13,9 @@ import platform
 import statistics
 import time
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from html import escape
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
@@ -843,7 +845,15 @@ async def main() -> None:
             )
         )
 
+    try:
+        package_version = version("schemarouter")
+    except PackageNotFoundError:
+        package_version = "0+unknown"
+
     report: dict[str, Any] = {
+        "schema_version": 1,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "schemarouter_version": package_version,
         "corpus": args.corpus or "smoke",
         "case_count": len(cases),
         "environment": {

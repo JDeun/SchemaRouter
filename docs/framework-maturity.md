@@ -29,7 +29,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
 | Local Laya decision provider | Optional local choice adapter with auto language routing, confidence abstention, lazy/preloaded checkpoints, and shared benchmark support | Gather checkpoint/hardware-specific evidence before choosing defaults |
 | Local Ollama decision provider | Implemented over structured-output HTTP API | Benchmark specific local models/hardware before quality claims |
-| Decision benchmark harness | 144-case checked-in corpus + JSON/CSV metrics + self-contained HTML summary | Gather dated live-provider evidence |
+| Decision benchmark harness | 144-case checked-in corpus + JSON/CSV metrics + single-run and multi-run self-contained HTML summaries | Gather dated live-provider evidence |
 | Framework callbacks / exporters | Typed redacted events + optional OpenTelemetry exporter | Add additional trusted sinks as needed |
 | Middleware interception | Trusted ordered before/after execution hooks with detached snapshots | Add organization-specific hook libraries only when needed |
 | Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
@@ -41,7 +41,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Package artifact CI | Implemented with clean wheel/sdist smoke and release provenance attestations | Keep artifact verification blocking |
 | Security automation | Weekly/PR dependency audit + scheduled CodeQL Python analysis | Triage findings without weakening fail-closed runtime policy |
 | Documentation site | Implemented with MkDocs Material | Keep strict docs build blocking |
-| Integration certification suite | Implemented baseline | Extend the live compatibility matrix |
+| Integration certification suite | Implemented baseline + retained machine-readable OpenAPI/OPTIMADE smoke artifacts | Extend the live compatibility matrix |
 
 ## What SchemaRouter should copy from mature frameworks
 
@@ -121,7 +121,8 @@ Completed locally:
 - privacy-preserving OpenTelemetry exporter;
 - explicit allowlisted third-party adapter plugins;
 - property-based OpenAPI default-serialization coverage;
-- self-contained decision benchmark HTML reporting.
+- self-contained decision benchmark HTML reporting and multi-run history rendering;
+- retained machine-readable public OpenAPI/OPTIMADE compatibility smoke artifacts.
 
 Still external or follow-up work:
 
@@ -144,9 +145,10 @@ Implemented locally:
 - validated SQLite run-event trace persistence with non-executing replay;
 - trusted sync/async before/after execution hooks with snapshot-only, fail-closed semantics;
 - dependency vulnerability auditing, CodeQL scanning, and signed release build provenance;
-- benchmark summary dashboard generated without remote assets.
+- benchmark summary/history dashboards generated without remote assets;
+- scheduled compatibility smokes retained as versioned machine-readable artifacts.
 
 Remaining larger follow-up work:
 
-- broader compatibility-history dashboard across dated live runs;
+- populate history views with dated live model/provider measurements;
 - organization-specific policy/approval integrations.

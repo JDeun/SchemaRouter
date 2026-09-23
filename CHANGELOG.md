@@ -11,6 +11,8 @@ The project is pre-1.0 and follows the compatibility rules in
 
 - self-contained HTML summaries for the decision-routing benchmark, alongside the existing JSON/CSV
   outputs, with escaped metadata and no remote assets;
+- multi-run benchmark history rendering with preserved run/version/corpus/hardware metadata;
+- machine-readable OpenAPI/OPTIMADE compatibility smoke artifacts retained from scheduled CI;
 - Hypothesis-based property tests for supported OpenAPI path/query/header parameter serialization;
 - automated dependency vulnerability auditing and scheduled CodeQL Python analysis.
 

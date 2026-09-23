@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
+import json
 import os
+
+from compatibility_report import new_report, write_report
 
 from schemarouter import PlanRequest, SchemaRouter
 
 DEFAULT_OPENAPI_URL = "https://api.apis.guru/v2/openapi.yaml"
 
 
-async def main() -> None:
-    url = os.environ.get("SCHEMAROUTER_LIVE_OPENAPI_URL", DEFAULT_OPENAPI_URL)
+async def run_smoke(url: str) -> dict[str, object]:
     router = await SchemaRouter.from_url(url, kind="openapi")
 
     endpoint_name = "getMetrics"
@@ -41,14 +44,31 @@ async def main() -> None:
     assert isinstance(results[0].data.get("numAPIs"), int)
     assert results[0].data["numAPIs"] > 0
 
-    print(
-        {
-            "source": url,
-            "tool": tool.key,
-            "endpoint": call.endpoint,
-            "numAPIs": results[0].data["numAPIs"],
-        }
-    )
+    return {
+        "tool": tool.key,
+        "endpoint": call.endpoint,
+        "numAPIs": results[0].data["numAPIs"],
+    }
+
+
+async def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--json-out", default=None)
+    args = parser.parse_args()
+    url = os.environ.get("SCHEMAROUTER_LIVE_OPENAPI_URL", DEFAULT_OPENAPI_URL)
+    report = new_report(adapter="openapi", source=url)
+
+    try:
+        report["details"] = await run_smoke(url)
+        report["status"] = "success"
+    except Exception as exc:
+        report["status"] = "failure"
+        report["error_type"] = type(exc).__name__
+        write_report(args.json_out, report)
+        raise
+
+    write_report(args.json_out, report)
+    print(json.dumps(report, ensure_ascii=False, sort_keys=True))
 
 
 if __name__ == "__main__":
