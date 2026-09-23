@@ -10,6 +10,8 @@ This is the operational answer to questions such as:
 - Which endpoints were constructed from them?
 - Which endpoints are read-only, mutating, destructive, or still unclassified?
 - What HTTP method/path, parameters, and output fields does SchemaRouter know?
+- Which source URL/adapter produced the registered capability?
+- Was an OpenAPI execution base URL bound, and were external references resolved?
 - What schema fingerprint is currently bound to each tool/endpoint?
 - Which persisted runs completed, failed, or touched a given endpoint?
 
@@ -30,6 +32,11 @@ Registry v3: 2 tools, 5 endpoints (4 read-only, 1 mutating, 0 unclassified)
 ```
 
 The abbreviated fingerprints are display aids. JSON output contains the full SHA-256 fingerprints.
+
+When available, the registry/tool view also exposes an allowlisted ingestion provenance set such as
+`adapter`, `source_url`, resolved/approved OpenAPI URLs, OPTIMADE versioned base URL, protocol/API
+version, execution-binding state, and external-reference resolution counts. Arbitrary metadata is
+not copied into the inspection view.
 
 ## Inspect one tool in detail
 
