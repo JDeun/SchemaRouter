@@ -3,7 +3,13 @@ import json
 import httpx
 import pytest
 
-from schemarouter import ModelQueryAnalyzer, PlanRequest, SchemaRouter, SchemaValidationError
+from schemarouter import (
+    ModelQueryAnalyzer,
+    NonRetryableInvocationError,
+    PlanRequest,
+    SchemaRouter,
+    SchemaValidationError,
+)
 from schemarouter.adapters.openapi import OpenAPIRemoteInvoker, tool_from_openapi
 from schemarouter.validation import validate_json_schema_value
 
@@ -279,5 +285,5 @@ async def test_required_root_body_missing_fails_closed_even_for_direct_invoker()
             "https://api.example.test",
             http_client=client,
         )
-        with pytest.raises(Exception, match="required root request body missing"):
+        with pytest.raises(NonRetryableInvocationError, match="required root request body missing"):
             await invoker("submit", {})
