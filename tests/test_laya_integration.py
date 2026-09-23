@@ -15,10 +15,22 @@ from schemarouter import (
 from schemarouter.integrations import LayaDecisionBackend
 
 
+class FakeAgent:
+    def __init__(self, device: str) -> None:
+        self.device = device
+
+
 class FakeRouter:
-    def __init__(self, response: Any = None, *, error: Exception | None = None) -> None:
+    def __init__(
+        self,
+        response: Any = None,
+        *,
+        error: Exception | None = None,
+        actual_device: str | None = None,
+    ) -> None:
         self.response = response
         self.error = error
+        self.actual_device = actual_device
         self.calls: list[dict[str, Any]] = []
 
     def predict(self, state: Any, questions: Any, **kwargs: Any) -> Any:
@@ -26,6 +38,11 @@ class FakeRouter:
         if self.error is not None:
             raise self.error
         return self.response
+
+    def load(self, model: str) -> FakeAgent:
+        if self.actual_device is None:
+            raise RuntimeError("no real model attached")
+        return FakeAgent(self.actual_device)
 
 
 def request() -> DecisionRequest:
@@ -85,6 +102,20 @@ def test_laya_selects_only_from_bounded_options() -> None:
     assert result.metadata["repo"] == "convaiinnovations/laya/multilingual"
     assert result.metadata["input_tokens"] == 27
     assert result.metadata["output_tokens"] == 0
+
+
+def test_laya_records_requested_and_actual_runtime_device() -> None:
+    router = FakeRouter(response(), actual_device="cpu")
+    result = choose_sync(
+        LayaDecisionBackend(
+            router=router,
+            device="cuda",
+        ),
+        request(),
+    )
+
+    assert result.metadata["requested_device"] == "cuda"
+    assert result.metadata["actual_device"] == "cpu"
 
 
 def test_laya_payload_hides_option_metadata_and_credentials() -> None:
