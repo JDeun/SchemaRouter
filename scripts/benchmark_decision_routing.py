@@ -53,6 +53,7 @@ class BenchmarkRow:
     correct: bool
     invalid_plan: bool
     latency_ms: float
+    backend_invoked: bool = False
     abstained: bool = False
     fallback_used: bool = False
     input_tokens: int | None = None
@@ -245,8 +246,10 @@ class RecordingDecisionBackend:
     def __init__(self, backend: Any) -> None:
         self.backend = backend
         self.last_result: Any | None = None
+        self.last_invoked = False
 
     def decide(self, request: Any) -> Any:
+        self.last_invoked = True
         value = self.backend.decide(request)
         if inspect.isawaitable(value):
 
@@ -322,6 +325,7 @@ async def benchmark_planner(
     for case in cases:
         if recorder is not None:
             recorder.last_result = None
+            recorder.last_invoked = False
 
         started = time.perf_counter()
         try:
@@ -367,6 +371,7 @@ async def benchmark_planner(
                     correct=correct and not invalid_plan,
                     invalid_plan=invalid_plan,
                     latency_ms=round(latency_ms, 3),
+                    backend_invoked=bool(recorder and recorder.last_invoked),
                     abstained=abstained,
                     fallback_used=abstained and predicted is not None,
                     input_tokens=input_tokens,
@@ -395,6 +400,7 @@ async def benchmark_planner(
                     correct=False,
                     invalid_plan=False,
                     latency_ms=round(latency_ms, 3),
+                    backend_invoked=bool(recorder and recorder.last_invoked),
                     error=f"{type(exc).__name__}: {exc}",
                 )
             )
@@ -414,6 +420,10 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
             sum(row.invalid_plan for row in rows) / total if total else 0.0
         ),
         "errors": sum(row.error is not None for row in rows),
+        "backend_invocations": sum(row.backend_invoked for row in rows),
+        "backend_invocation_rate": (
+            sum(row.backend_invoked for row in rows) / total if total else 0.0
+        ),
         "abstentions": sum(row.abstained for row in rows),
         "abstention_rate": sum(row.abstained for row in rows) / total if total else 0.0,
         "expected_abstention_recall": (
@@ -497,6 +507,7 @@ def render_html_report(report: dict[str, Any]) -> str:
             escape(_metric(raw_metrics.get("accuracy"), percent=True)),
             escape(_metric(raw_metrics.get("invalid_plan_rate"), percent=True)),
             escape(_metric(raw_metrics.get("errors"))),
+            escape(_metric(raw_metrics.get("backend_invocation_rate"), percent=True)),
             escape(_metric(raw_metrics.get("abstention_rate"), percent=True)),
             escape(_metric(raw_metrics.get("mean_latency_ms"))),
             escape(_metric(raw_metrics.get("p50_latency_ms"))),
@@ -568,7 +579,7 @@ model/runtime configuration, hardware, and measurement conditions are equivalent
 <thead>
 <tr>
 <th>Backend</th><th>Cases</th><th>Accuracy</th><th>Invalid</th><th>Errors</th>
-<th>Abstention</th><th>Mean ms</th><th>P50 ms</th><th>P95 ms</th><th>Cost</th>
+<th>Invoked</th><th>Abstention</th><th>Mean ms</th><th>P50 ms</th><th>P95 ms</th><th>Cost</th>
 <th>Models</th><th>Requested device</th><th>Actual device</th>
 </tr>
 </thead>
