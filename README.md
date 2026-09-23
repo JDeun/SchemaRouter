@@ -120,9 +120,14 @@ schemarouter inspect registry --db ./registry.sqlite3
 schemarouter inspect tool materials --db ./registry.sqlite3
 schemarouter inspect traces --db ./traces.sqlite3
 schemarouter inspect trace <RUN_ID> --db ./traces.sqlite3
+schemarouter dashboard \
+  --registry ./registry.sqlite3 \
+  --traces ./traces.sqlite3 \
+  --output ./artifacts/schemarouter-dashboard.html
 ```
 
-Add `--json` for automation or dashboard ingestion. The registry view exposes tool/endpoint
+Add `--json` to inspection commands for automation. The dashboard is a self-contained read-only
+HTML export built from the same inspection contracts. The registry view exposes tool/endpoint
 topology, method/path, mutation classification, parameter/output-field counts, and schema
 fingerprints; trace views expose persisted run/event history.
 

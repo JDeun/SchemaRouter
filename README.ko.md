@@ -104,9 +104,14 @@ schemarouter inspect registry --db ./registry.sqlite3
 schemarouter inspect tool materials --db ./registry.sqlite3
 schemarouter inspect traces --db ./traces.sqlite3
 schemarouter inspect trace <RUN_ID> --db ./traces.sqlite3
+schemarouter dashboard \
+  --registry ./registry.sqlite3 \
+  --traces ./traces.sqlite3 \
+  --output ./artifacts/schemarouter-dashboard.html
 ```
 
-`--json`을 붙이면 자동화나 대시보드에서 사용할 수 있는 구조화된 결과를 출력합니다.
+inspection 명령에 `--json`을 붙이면 자동화에 사용할 수 있는 구조화된 결과를 출력합니다.
+dashboard는 같은 inspection contract를 사용하는 self-contained read-only HTML 파일입니다.
 registry 화면에서는 tool/endpoint 구조, HTTP method/path, read-only/mutating 분류,
 parameter/output field 수, schema fingerprint를 확인할 수 있고, trace 화면에서는 저장된
 실행 이벤트와 오류/완료 상태를 확인할 수 있습니다.

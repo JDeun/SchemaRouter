@@ -10,6 +10,7 @@ from .adapters.plugins import (
 )
 from .adapters.python import schema_tool, tool_from_callable
 from .analyzers import ModelCallable, ModelQueryAnalyzer
+from .dashboard import render_dashboard, write_dashboard
 from .decision_policy import DecisionFallback, DecisionPolicy
 from .decisions import (
     CallableDecisionBackend,
@@ -50,10 +51,14 @@ from .executor import RegistryExecutor
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
 from .inspection import (
     EndpointInspection,
+    ExecutionInspection,
+    PlannerInspection,
     RegistryInspection,
+    RouterInspection,
     ToolInspection,
     TraceInspection,
     inspect_registry,
+    inspect_router,
     inspect_run_trace,
     inspect_tool,
     inspect_tool_spec,
@@ -131,7 +136,10 @@ __all__ = [
     "FirstOptionDecisionBackend",
     "InMemoryRegistry",
     "EndpointInspection",
+    "ExecutionInspection",
+    "PlannerInspection",
     "RegistryInspection",
+    "RouterInspection",
     "ToolInspection",
     "TraceInspection",
     "KeywordAnalyzer",
@@ -181,6 +189,7 @@ __all__ = [
     "choose_sync",
     "discover_adapter_plugins",
     "inspect_registry",
+    "inspect_router",
     "inspect_run_trace",
     "inspect_tool",
     "inspect_tool_spec",
@@ -189,5 +198,7 @@ __all__ = [
     "load_adapter_plugins",
     "tool_spec_document",
     "record_run_events",
+    "render_dashboard",
     "replay_run_events",
+    "write_dashboard",
 ]

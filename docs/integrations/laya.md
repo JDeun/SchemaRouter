@@ -70,7 +70,10 @@ Common Laya checkpoint names include `english`, `multilingual`, and
 `typed-decisions` checkpoint automatically.
 
 `device` is an explicit performance control. Use `cpu`, `cuda`, or `mps` when the runtime
-should request a specific device. If Laya falls back to another device, SchemaRouter records both
+should request a specific device. On Apple Silicon, `mps` uses PyTorch's Metal Performance
+Shaders backend and therefore executes through Apple's Metal stack. It is not an MLX-native path;
+the current Laya runtime uses float32 on MPS, so memory use and latency can differ materially from
+CUDA. If Laya falls back to another device, SchemaRouter records both
 `requested_device` and, when the loaded agent exposes it, `actual_device` in non-authoritative
 decision metadata. This prevents a GPU-requested run that actually executed on CPU from being
 misreported as a GPU benchmark.

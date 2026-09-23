@@ -8,14 +8,18 @@ from schemarouter import (
     InMemoryRegistry,
     ParameterSpec,
     RunEvent,
+    SchemaRouter,
     SQLiteRegistry,
     SQLiteRunTraceStore,
     ToolSpec,
     inspect_registry,
+    inspect_router,
     inspect_trace,
     inspect_traces,
+    schema_tool,
 )
 from schemarouter.cli import main
+from schemarouter.dashboard import render_dashboard
 
 
 def sample_tool() -> ToolSpec:
@@ -234,3 +238,89 @@ def test_cli_trace_list_and_detail(tmp_path, capsys) -> None:
     output = capsys.readouterr().out
     assert '"run_id": "run-1"' in output
     assert '"run_id": "partial"' in output
+
+
+@schema_tool(read_only=True)
+def _echo(value: str) -> str:
+    return value
+
+
+def test_live_router_inspection_reports_actual_binding_without_invoker_object() -> None:
+    router = SchemaRouter()
+    key = router.add_callable(_echo)
+
+    snapshot = inspect_router(router)
+
+    assert snapshot.registry.tool_count == 1
+    assert snapshot.planner.analyzer == "KeywordAnalyzer"
+    assert snapshot.planner.decision_backend is None
+    assert snapshot.execution.bound_tools == [key]
+    assert snapshot.execution.policy["allow_mutations"] is False
+
+    document = snapshot.model_dump_json()
+    assert "PythonCallableInvoker" not in document
+
+
+def test_schema_router_inspect_convenience_matches_public_helper() -> None:
+    router = SchemaRouter()
+    router.add_callable(_echo)
+
+    assert router.inspect() == inspect_router(router)
+
+
+def test_dashboard_uses_safe_inspection_models_only(tmp_path) -> None:
+    registry_path = tmp_path / "registry.sqlite3"
+    trace_path = tmp_path / "traces.sqlite3"
+
+    with SQLiteRegistry(registry_path) as registry:
+        tool = sample_tool().model_copy(deep=True)
+        tool.metadata["dashboard_secret"] = "must-never-render"
+        registry.register(tool)
+        snapshot = inspect_registry(registry)
+
+    with SQLiteRunTraceStore(trace_path) as store:
+        secret_event = event("run-dashboard", 0, "run.start").model_copy(
+            update={"data": {"input": "private-query-value"}}
+        )
+        store.append(secret_event)
+        store.append(event("run-dashboard", 1, "run.end"))
+        traces = inspect_traces(store)
+
+    html = render_dashboard(snapshot, traces=traces)
+
+    assert "SchemaRouter inspection dashboard" in html
+    assert "demo.weather" in html
+    assert "https://example.test/openapi.json" in html
+    assert "run-dashboard" in html
+    assert "must-never-render" not in html
+    assert "private-query-value" not in html
+
+
+def test_cli_dashboard_exports_self_contained_html(tmp_path, capsys) -> None:
+    registry_path = tmp_path / "registry.sqlite3"
+    trace_path = tmp_path / "traces.sqlite3"
+    output = tmp_path / "artifacts" / "dashboard.html"
+
+    with SQLiteRegistry(registry_path) as registry:
+        registry.register(sample_tool())
+
+    with SQLiteRunTraceStore(trace_path) as store:
+        store.append(event("run-dashboard", 0, "run.start"))
+        store.append(event("run-dashboard", 1, "run.end"))
+
+    assert main(
+        [
+            "dashboard",
+            "--registry",
+            str(registry_path),
+            "--traces",
+            str(trace_path),
+            "--output",
+            str(output),
+        ]
+    ) == 0
+    assert str(output) in capsys.readouterr().out
+    html = output.read_text(encoding="utf-8")
+    assert "demo.weather" in html
+    assert "run-dashboard" in html
+    assert "https://" not in html.split("<script>", 1)[1]

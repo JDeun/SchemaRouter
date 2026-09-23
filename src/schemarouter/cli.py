@@ -7,6 +7,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from .dashboard import write_dashboard
 from .inspection import (
     RegistryInspection,
     ToolInspection,
@@ -247,10 +248,47 @@ def build_parser() -> argparse.ArgumentParser:
     trace.add_argument("--db", required=True, type=Path, help="SQLite trace-store path.")
     _add_json_flag(trace)
 
+    dashboard = subparsers.add_parser(
+        "dashboard",
+        help="Export a self-contained read-only HTML inspection dashboard.",
+    )
+    dashboard.add_argument(
+        "--registry",
+        required=True,
+        type=Path,
+        help="SQLite registry path.",
+    )
+    dashboard.add_argument(
+        "--traces",
+        type=Path,
+        default=None,
+        help="Optional SQLite trace-store path.",
+    )
+    dashboard.add_argument(
+        "--output",
+        required=True,
+        type=Path,
+        help="Destination HTML path.",
+    )
+
     return parser
 
 
 def _run(args: argparse.Namespace) -> str:
+    if args.command == "dashboard":
+        with SQLiteRegistry(_existing_db(args.registry)) as registry:
+            snapshot = inspect_registry(registry)
+        traces: Sequence[TraceInspection] = ()
+        if args.traces is not None:
+            with SQLiteRunTraceStore(_existing_db(args.traces)) as store:
+                traces = inspect_traces(store)
+        destination = write_dashboard(
+            snapshot,
+            args.output,
+            traces=traces,
+        )
+        return str(destination)
+
     if args.command != "inspect":
         raise ValueError(f"unsupported command: {args.command}")
 

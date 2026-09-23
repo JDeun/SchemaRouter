@@ -19,6 +19,7 @@ from .errors import ProposalApprovalError, RegistrationError
 from .executor import ExecutionBudgetTracker, RegistryExecutor
 from .hooks import ExecutionHooks
 from .ingestion import SourceKind, URLSchemaLoader
+from .inspection import RouterInspection, inspect_router
 from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
@@ -125,6 +126,10 @@ class SchemaRouter:
     @property
     def config_schema(self) -> dict[str, Any]:
         return RunConfig.model_json_schema()
+
+    def inspect(self) -> RouterInspection:
+        """Return a privacy-safe live operational snapshot."""
+        return inspect_router(self)
 
     def with_config(
         self,
