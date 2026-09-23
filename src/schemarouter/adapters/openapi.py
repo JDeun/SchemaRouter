@@ -294,6 +294,63 @@ def _disambiguate_parameter_names(
     return result
 
 
+def _discriminated_body_schema(
+    document: dict[str, Any],
+    schema: Any,
+) -> tuple[dict[str, Any], str] | None:
+    """Return a safe tagged-union request body schema and discriminator property.
+
+    SchemaRouter intentionally supports only explicit oneOf tagged unions here. Every branch must
+    be object-like, require the discriminator property, and constrain that property to one unique
+    const/single-value enum. This avoids flattening incompatible variant fields.
+    """
+
+    if not isinstance(schema, dict):
+        return None
+
+    discriminator = schema.get("discriminator")
+    if not isinstance(discriminator, dict):
+        return None
+    property_name = discriminator.get("propertyName")
+    if not isinstance(property_name, str) or not property_name:
+        return None
+
+    raw_branches = schema.get("oneOf")
+    if not isinstance(raw_branches, list) or len(raw_branches) < 2:
+        return None
+
+    seen_tags: set[str] = set()
+    for raw_branch in raw_branches:
+        branch = _resolve_local_ref(document, raw_branch)
+        if not isinstance(branch, dict):
+            return None
+
+        properties = _schema_properties(document, branch)
+        required = _schema_required(document, branch)
+        if property_name not in properties or property_name not in required:
+            return None
+
+        if branch.get("type") not in {None, "object"} and not properties:
+            return None
+
+        tag_schema = properties[property_name]
+        raw_tag = tag_schema.get("const")
+        if raw_tag is None:
+            enum = tag_schema.get("enum")
+            if not isinstance(enum, list) or len(enum) != 1:
+                return None
+            raw_tag = enum[0]
+
+        if not isinstance(raw_tag, (str, int, float, bool)) or raw_tag is None:
+            return None
+        tag = json.dumps(raw_tag, sort_keys=True, ensure_ascii=True)
+        if tag in seen_tags:
+            return None
+        seen_tags.add(tag)
+
+    return schema, property_name
+
+
 def _parameters_schema(
     document: dict[str, Any],
     parameters: list[ParameterSpec],
@@ -609,6 +666,8 @@ def tool_from_openapi(
                 )
 
             request_body_required = False
+            request_body_mode: str | None = None
+            request_body_discriminator: str | None = None
             request_body = _resolve_local_ref(document, operation.get("requestBody", {}))
             if isinstance(request_body, dict):
                 content = request_body.get("content", {})
@@ -619,35 +678,60 @@ def tool_from_openapi(
                     else {}
                 )
                 body_properties = _schema_properties(document, body_schema)
-                body_is_supported_object = (
-                    isinstance(body_schema, dict)
-                    and bool(body_schema)
-                    and (
-                        body_schema.get("type") == "object"
-                        or bool(body_properties)
-                    )
-                    and "oneOf" not in body_schema
-                    and "anyOf" not in body_schema
-                )
-                request_body_required = (
-                    bool(request_body.get("required"))
-                    and body_is_supported_object
-                )
-                required_body = _schema_required(document, body_schema)
-                for prop_name, prop_schema in body_properties.items():
+                tagged_union = _discriminated_body_schema(document, body_schema)
+
+                if tagged_union is not None:
+                    tagged_schema, discriminator_property = tagged_union
                     parameters.append(
                         ParameterSpec(
-                            name=prop_name,
+                            name="body",
                             description=(
-                                prop_schema.get("description", "")
-                                if isinstance(prop_schema, dict)
-                                else ""
+                                "OpenAPI discriminated JSON request body "
+                                f"(tag: {discriminator_property})"
                             ),
-                            required=prop_name in required_body,
-                            location="body",
-                            json_schema=prop_schema if isinstance(prop_schema, dict) else {},
+                            required=bool(request_body.get("required")),
+                            location="body_root",
+                            json_schema=tagged_schema,
+                            aliases=["request body", "json body"],
                         )
                     )
+                    request_body_required = bool(request_body.get("required"))
+                    request_body_mode = "discriminated_root"
+                    request_body_discriminator = discriminator_property
+                else:
+                    body_is_supported_object = (
+                        isinstance(body_schema, dict)
+                        and bool(body_schema)
+                        and (
+                            body_schema.get("type") == "object"
+                            or bool(body_properties)
+                        )
+                        and "oneOf" not in body_schema
+                        and "anyOf" not in body_schema
+                    )
+                    request_body_required = (
+                        bool(request_body.get("required"))
+                        and body_is_supported_object
+                    )
+                    if body_is_supported_object:
+                        request_body_mode = "flattened_object"
+                    required_body = _schema_required(document, body_schema)
+                    for prop_name, prop_schema in body_properties.items():
+                        parameters.append(
+                            ParameterSpec(
+                                name=prop_name,
+                                description=(
+                                    prop_schema.get("description", "")
+                                    if isinstance(prop_schema, dict)
+                                    else ""
+                                ),
+                                required=prop_name in required_body,
+                                location="body",
+                                json_schema=(
+                                    prop_schema if isinstance(prop_schema, dict) else {}
+                                ),
+                            )
+                        )
 
             parameters = _disambiguate_parameter_names(parameters)
 
@@ -694,6 +778,8 @@ def tool_from_openapi(
                         "security": operation.get("security"),
                         "deprecated": bool(operation.get("deprecated", False)),
                         "request_body_required": request_body_required,
+                        "request_body_mode": request_body_mode,
+                        "request_body_discriminator": request_body_discriminator,
                         "operation_id_generated": not (
                             isinstance(explicit_operation_id, str)
                             and bool(explicit_operation_id)
@@ -801,6 +887,8 @@ class OpenAPIRemoteInvoker:
         path = endpoint_spec.path
         query: dict[str, Any] = {}
         body: dict[str, Any] = {}
+        root_body: Any | None = None
+        root_body_seen = False
         headers: dict[str, str] = {}
 
         for parameter in endpoint_spec.parameters:
@@ -830,6 +918,18 @@ class OpenAPIRemoteInvoker:
                 headers[wire_name] = str(value)
             elif parameter.location == "body":
                 body[wire_name] = value
+            elif parameter.location == "body_root":
+                if root_body_seen:
+                    raise NonRetryableInvocationError(
+                        f"multiple root request bodies for endpoint {endpoint_name!r}"
+                    )
+                root_body = value
+                root_body_seen = True
+
+        if root_body_seen and body:
+            raise NonRetryableInvocationError(
+                f"mixed root and flattened request body for endpoint {endpoint_name!r}"
+            )
 
         if re.search(r"{[^{}]+}", path):
             raise NonRetryableInvocationError(
@@ -853,9 +953,13 @@ class OpenAPIRemoteInvoker:
         )
         try:
             request_json = (
-                body
-                if body or bool(endpoint_spec.metadata.get("request_body_required"))
-                else None
+                root_body
+                if root_body_seen
+                else (
+                    body
+                    if body or bool(endpoint_spec.metadata.get("request_body_required"))
+                    else None
+                )
             )
             async with client.stream(
                 endpoint_spec.method,
