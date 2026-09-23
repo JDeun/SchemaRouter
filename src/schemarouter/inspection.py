@@ -8,7 +8,6 @@ from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry
 from .traces import RunTrace, RunTraceStore
 
-
 _PROVENANCE_KEYS = (
     "adapter",
     "source_url",
