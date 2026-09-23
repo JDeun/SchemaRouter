@@ -274,14 +274,7 @@ class SchemaPlanner:
                 DecisionOption(
                     id=f"candidate:{index}",
                     label=f"{candidate.tool.key}.{candidate.endpoint.name}",
-                    description="; ".join(
-                        part
-                        for part in (
-                            candidate.tool.description.strip(),
-                            candidate.endpoint.description.strip(),
-                        )
-                        if part
-                    ),
+                    description=candidate.endpoint.description,
                     metadata={"schema_score": candidate.score},
                 )
                 for index, candidate in enumerate(candidates)
