@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+import datetime
 from typing import Any
 
 from pydantic import Field
@@ -86,8 +86,8 @@ class TraceInspection(StrictModel):
     run_id: str
     complete: bool
     event_count: int = Field(ge=1)
-    started_at: datetime
-    ended_at: datetime | None = None
+    started_at: datetime.datetime
+    ended_at: datetime.datetime | None = None
     terminal_event: str | None = None
     tools: list[str] = Field(default_factory=list)
     endpoints: list[str] = Field(default_factory=list)
