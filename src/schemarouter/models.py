@@ -17,6 +17,9 @@ class ParameterSpec(StrictModel):
     description: str = ""
     required: bool = False
     location: Literal["path", "query", "header", "body", "body_root", "argument"] = "argument"
+    style: str | None = None
+    explode: bool | None = None
+    allow_reserved: bool = False
     json_schema: dict[str, Any] = Field(default_factory=dict)
     aliases: list[str] = Field(default_factory=list)
 
