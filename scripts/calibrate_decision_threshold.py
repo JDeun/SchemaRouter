@@ -92,7 +92,10 @@ def calibrate(
                 confidence_rows += 1
 
             fallback_predicted = fallback.get("predicted")
-            expanded = fallback_predicted is None and bool(row.get("backend_invoked"))
+            expanded = (
+                fallback_predicted is None
+                and bool(row.get("backend_invoked"))
+            )
             if expanded:
                 expanded_total += 1
 
