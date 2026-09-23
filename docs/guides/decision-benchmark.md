@@ -180,6 +180,13 @@ separates threshold tuning from model/runtime latency and avoids paying for repe
 Benchmark JSON also records the installed Laya, PyTorch, and Transformers package versions when
 Laya is enabled so dated results can be reproduced against the actual local runtime.
 
+For mixed-language latency measurements, distinguish **cold-swap** from **steady-state resident**
+conditions. With auto language routing, `max_loaded=1` can repeatedly evict English and multilingual
+checkpoints as the corpus alternates languages. The checked-in Research Benchmark therefore uses
+`--laya-max-loaded 2 --laya-preload`: both language checkpoints are loaded before the timed
+per-case loop and remain resident when memory allows. Use `max_loaded=1` only when intentionally
+measuring constrained-memory checkpoint churn.
+
 Published results should record the exact Laya package version, checkpoint/routing policy, hardware,
 device, preload policy, confidence threshold, corpus revision, and repeated-run count. Do not compare
 upstream/provider benchmark numbers directly unless the prompts, options, corpus, and measurement
