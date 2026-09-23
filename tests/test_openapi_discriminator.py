@@ -4,10 +4,13 @@ import httpx
 import pytest
 
 from schemarouter import (
+    InMemoryRegistry,
     ModelQueryAnalyzer,
     PlanRequest,
+    RegistryExecutor,
     SchemaRouter,
     SchemaValidationError,
+    ToolCall,
 )
 from schemarouter.adapters.openapi import OpenAPIRemoteInvoker, tool_from_openapi
 from schemarouter.validation import validate_json_schema_value
@@ -120,6 +123,31 @@ def test_discriminated_body_schema_rejects_wrong_variant_locally() -> None:
             endpoint.input_schema,
             context="invalid body",
         )
+
+
+def test_executor_rejects_invalid_discriminated_body_before_invocation() -> None:
+    tool = tool_from_openapi("pets", discriminated_document())
+    endpoint = tool.endpoint("create_pet")
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    executor = RegistryExecutor(registry)
+
+    call = ToolCall(
+        tool="pets",
+        endpoint="create_pet",
+        arguments={
+            "body": {
+                "kind": "dog",
+                "name": "Mong",
+                "lives": 9,
+            }
+        },
+        fields=["id"],
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    with pytest.raises(SchemaValidationError):
+        executor.validate_call(call)
 
 
 @pytest.mark.asyncio
