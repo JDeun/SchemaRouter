@@ -1,3 +1,4 @@
+import hashlib
 import importlib.util
 import json
 import sys
@@ -75,6 +76,12 @@ def test_benchmark_html_report_is_self_contained_and_escapes_metadata(tmp_path) 
     report = {
         "corpus": "<corpus>",
         "case_count": 2,
+        "reproducibility": {
+            "source_revision": "<revision-script>",
+            "corpus_sha256": "<corpus-script>",
+            "repeat": 1,
+            "max_cases": None,
+        },
         "environment": {
             "system": "Darwin",
             "machine": "arm64",
@@ -104,6 +111,8 @@ def test_benchmark_html_report_is_self_contained_and_escapes_metadata(tmp_path) 
     assert "SchemaRouter decision benchmark" in html
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
     assert "keyword&lt;script&gt;" in html
+    assert "&lt;revision-" in html
+    assert "&lt;corpus-sc" in html
     assert "<script>alert(1)</script>" not in html
     assert "50.00%" in html
     assert "https://" not in html
@@ -158,3 +167,13 @@ def test_benchmark_summary_tracks_backend_invocation_coverage() -> None:
 
     assert summary["backend_invocations"] == 1
     assert summary["backend_invocation_rate"] == 0.5
+
+
+
+def test_benchmark_reproducibility_digest_tracks_exact_corpus_bytes() -> None:
+    module = _benchmark_module()
+
+    assert module._corpus_sha256(CORPUS) == hashlib.sha256(CORPUS.read_bytes()).hexdigest()
+    smoke_digest = module._corpus_sha256(None)
+    assert len(smoke_digest) == 64
+    assert all(char in "0123456789abcdef" for char in smoke_digest)

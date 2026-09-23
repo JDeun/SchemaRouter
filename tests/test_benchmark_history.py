@@ -25,6 +25,12 @@ def _sample_report(*, accuracy: float, hardware: str) -> dict:
         "generated_at": "2026-09-23T12:00:00+00:00",
         "schemarouter_version": "0.7.0.dev0",
         "corpus": "benchmarks/decision-routing-v1.json",
+        "reproducibility": {
+            "source_revision": "abcdef1234567890",
+            "corpus_sha256": "1234567890abcdef",
+            "repeat": 1,
+            "max_cases": None,
+        },
         "environment": {"machine": "arm64", "hardware_label": hardware},
         "summary": {
             "keyword": {
@@ -53,6 +59,8 @@ def test_benchmark_history_renders_multiple_escaped_runs(tmp_path) -> None:
     assert "SchemaRouter benchmark history" in html
     assert "75.00%" in html
     assert "80.00%" in html
+    assert "abcdef123456" in html
+    assert "1234567890ab" in html
     assert "first&lt;script&gt;" in html
     assert "&lt;M4&gt;" in html
     assert "<script>" not in html

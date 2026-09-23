@@ -63,8 +63,9 @@ python scripts/render_benchmark_history.py \
   --output artifacts/decision-benchmark-history.html
 ```
 
-The history renderer preserves each run's timestamp, SchemaRouter version, corpus, hardware,
-backend, accuracy, abstention, latency, model, and device metadata. It does not normalize unlike
+The history renderer preserves each run's timestamp, SchemaRouter version, exact source revision,
+corpus SHA-256, corpus path, hardware, backend, accuracy, abstention, latency, model, and device
+metadata. It does not normalize unlike
 environments, so cross-run comparisons remain valid only when measurement conditions are
 equivalent.
 
@@ -144,6 +145,7 @@ bounded request state. Optional controls include:
 - `--laya-max-loaded N` to control resident checkpoint count;
 - `--laya-min-confidence FLOAT` to measure confidence-gated abstention;
 - `--hardware-label TEXT` to attach the concrete machine/GPU description to the report;
+- `--source-revision TEXT` to record the exact code revision when not supplied by CI;
 - `--decision-recall-on-empty` to explicitly let an enabled bounded decision backend inspect the
   registered endpoint catalog when lexical candidate recall is empty;
 - `--candidate-abstention inherit|deterministic|no_route|error` to separate explicit backend
@@ -188,9 +190,10 @@ per-case loop and remain resident when memory allows. Use `max_loaded=1` only wh
 measuring constrained-memory checkpoint churn.
 
 Published results should record the exact Laya package version, checkpoint/routing policy, hardware,
-device, preload policy, confidence threshold, corpus revision, and repeated-run count. Do not compare
-upstream/provider benchmark numbers directly unless the prompts, options, corpus, and measurement
-conditions are equivalent.
+device, preload policy, confidence threshold, source revision, corpus SHA-256, and repeated-run
+count. The benchmark report records these reproducibility fields directly when available. Do not
+compare upstream/provider benchmark numbers directly unless the prompts, options, corpus, and
+measurement conditions are equivalent.
 
 ## Ollama
 

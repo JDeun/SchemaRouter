@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  SCHEMAROUTER_SOURCE_REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+
 concurrency:
   group: research-benchmark-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
