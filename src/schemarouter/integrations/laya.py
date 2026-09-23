@@ -104,7 +104,7 @@ class LayaDecisionBackend:
                     'Laya integration requires a compatible package exposing laya.Router'
                 )
 
-            self.router = router_type(
+            router_instance: Any = router_type(
                 device=self.device,
                 token=self.token,
                 max_loaded=self.max_loaded,
@@ -116,8 +116,9 @@ class LayaDecisionBackend:
                     if self.model is not None
                     else ["english", "multilingual"]
                 )
-                self.router.preload(preload_models)
-            return self.router
+                router_instance.preload(preload_models)
+            self.router = router_instance
+            return router_instance
 
     def _parse_response(
         self,
