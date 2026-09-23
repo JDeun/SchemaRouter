@@ -145,6 +145,77 @@ def _schema_required(document: dict[str, Any], schema: Any) -> set[str]:
     return required
 
 
+def _schema_variant_branches(
+    document: dict[str, Any],
+    schema: Any,
+    *,
+    seen_refs: frozenset[str] = frozenset(),
+) -> list[dict[str, Any]]:
+    """Collect oneOf/anyOf branches for planner-side response field discovery.
+
+    The original composed schema remains authoritative for runtime validation. This helper only
+    exposes conditional response fields to the planner and never rewrites request-body semantics.
+    """
+
+    if not isinstance(schema, dict):
+        return []
+
+    branches: list[dict[str, Any]] = []
+    seen_canonical: set[str] = set()
+
+    for fragment in _schema_fragments(
+        document,
+        schema,
+        seen_refs=seen_refs,
+    ):
+        for construct in ("oneOf", "anyOf"):
+            raw_branches = fragment.get(construct)
+            if not isinstance(raw_branches, list):
+                continue
+            for raw_branch in raw_branches:
+                if not isinstance(raw_branch, dict):
+                    continue
+
+                next_seen = seen_refs
+                ref = raw_branch.get("$ref")
+                if isinstance(ref, str) and ref.startswith("#/"):
+                    if ref in seen_refs:
+                        continue
+                    next_seen = seen_refs | {ref}
+
+                resolved = _resolve_local_ref(document, raw_branch)
+                if not isinstance(resolved, dict):
+                    continue
+
+                canonical = json.dumps(
+                    resolved,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    ensure_ascii=True,
+                )
+                if canonical not in seen_canonical:
+                    seen_canonical.add(canonical)
+                    branches.append(resolved)
+
+                for nested in _schema_variant_branches(
+                    document,
+                    resolved,
+                    seen_refs=next_seen,
+                ):
+                    nested_canonical = json.dumps(
+                        nested,
+                        sort_keys=True,
+                        separators=(",", ":"),
+                        ensure_ascii=True,
+                    )
+                    if nested_canonical in seen_canonical:
+                        continue
+                    seen_canonical.add(nested_canonical)
+                    branches.append(nested)
+
+    return branches
+
+
 def _with_components(
     document: dict[str, Any],
     schema: dict[str, Any],
@@ -323,20 +394,29 @@ def _response_properties(
     for schema in schemas:
         if schema.get("type") == "null":
             continue
-        for name, spec in _schema_properties(document, schema).items():
-            existing = merged.get(name)
-            if existing is None or existing == spec:
-                merged[name] = spec
-                continue
 
-            options = (
-                list(existing["anyOf"])
-                if set(existing) == {"anyOf"} and isinstance(existing.get("anyOf"), list)
-                else [existing]
-            )
-            if spec not in options:
-                options.append(spec)
-            merged[name] = {"anyOf": options}
+        property_sets = [_schema_properties(document, schema)]
+        property_sets.extend(
+            _schema_properties(document, branch)
+            for branch in _schema_variant_branches(document, schema)
+        )
+
+        for properties in property_sets:
+            for name, spec in properties.items():
+                existing = merged.get(name)
+                if existing is None or existing == spec:
+                    merged[name] = spec
+                    continue
+
+                options = (
+                    list(existing["anyOf"])
+                    if set(existing) == {"anyOf"}
+                    and isinstance(existing.get("anyOf"), list)
+                    else [existing]
+                )
+                if spec not in options:
+                    options.append(spec)
+                merged[name] = {"anyOf": options}
     return merged
 
 

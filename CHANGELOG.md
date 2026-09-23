@@ -22,6 +22,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
+- OpenAPI response `oneOf` / `anyOf` object variants now contribute conditional
+  planner-visible output fields while the original composed schema remains authoritative for raw
+  runtime validation; variant request bodies remain deliberately unflattened.
 - post-release development has resumed as `0.6.0.dev0`; published `0.5.0` artifacts remain immutable.
 
 ## 0.5.0 - 2026-09-23
