@@ -164,3 +164,37 @@ def test_threshold_calibration_prefers_explicit_recall_expansion_marker() -> Non
 
     assert row["expanded_candidate_cases"] == 1
     assert row["expanded_selection_rate"] == 0.0
+
+
+
+def test_threshold_calibration_can_turn_low_confidence_into_no_route() -> None:
+    module = _module()
+    result = module.calibrate(
+        _report(),
+        backend="laya:auto",
+        thresholds=[0.5],
+        abstention_mode="no_route",
+    )
+
+    row = result["results"][0]
+
+    assert result["abstention_mode"] == "no_route"
+    assert row["accuracy"] == 1.0
+    assert row["expected_no_route_recall"] == 1.0
+    assert row["final_no_route_rate"] == 0.5
+
+
+def test_threshold_calibration_rejects_unknown_abstention_mode() -> None:
+    module = _module()
+
+    try:
+        module.calibrate(
+            _report(),
+            backend="laya:auto",
+            thresholds=[0.5],
+            abstention_mode="unknown",
+        )
+    except ValueError as exc:
+        assert "abstention_mode" in str(exc)
+    else:
+        raise AssertionError("unknown abstention mode must fail closed")
