@@ -39,7 +39,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Pluggable registry boundary | `ToolRegistry` protocol + transactional `SQLiteRegistry` | Add distributed/remote implementations only when needed |
 | Release / compatibility policy | Implemented | Enforce during RC reviews |
 | Package artifact CI | Implemented with clean wheel/sdist smoke and release provenance attestations | Keep artifact verification blocking |
-| Security automation | Weekly/PR dependency audit + scheduled CodeQL Python analysis | Triage findings without weakening fail-closed runtime policy |
+| Security automation | Weekly/PR dependency audit + scheduled CodeQL + OpenSSF Scorecard | Triage findings without weakening fail-closed runtime policy |
 | Documentation site | Implemented with MkDocs Material | Keep strict docs build blocking |
 | Integration certification suite | Implemented baseline + retained machine-readable OpenAPI/OPTIMADE smoke artifacts | Extend the live compatibility matrix |
 
@@ -144,7 +144,7 @@ Implemented locally:
 - transactional SQLite tool registry persistence;
 - validated SQLite run-event trace persistence with non-executing replay;
 - trusted sync/async before/after execution hooks with snapshot-only, fail-closed semantics;
-- dependency vulnerability auditing, CodeQL scanning, and signed release build provenance;
+- dependency vulnerability auditing, CodeQL scanning, OpenSSF Scorecard supply-chain analysis, and signed release build provenance;
 - benchmark summary/history dashboards generated without remote assets;
 - scheduled compatibility smokes retained as versioned machine-readable artifacts.
 
