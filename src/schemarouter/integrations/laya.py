@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import math
 import threading
+from importlib import import_module
 from typing import Any
 
 from ..decisions import DecisionRequest, DecisionResult, DecisionSelection, validate_decision
@@ -91,13 +92,14 @@ class LayaDecisionBackend:
             if self.router is not None:
                 return self.router
             try:
-                from laya import Router
-            except ImportError as exc:
+                laya = import_module("laya")
+                router_type = getattr(laya, "Router")
+            except (ImportError, AttributeError) as exc:
                 raise ImportError(
                     'Laya integration requires: pip install "schemarouter[laya]"'
                 ) from exc
 
-            self.router = Router(
+            self.router = router_type(
                 device=self.device,
                 token=self.token,
                 max_loaded=self.max_loaded,
