@@ -222,3 +222,11 @@ def test_docs_workflow_uses_read_only_default_permissions() -> None:
     deploy_section = workflow.split("  deploy:", 1)[1]
     assert "pages: write" in deploy_section
     assert "id-token: write" in deploy_section
+
+
+
+def test_docs_changelog_reuses_the_canonical_root_changelog() -> None:
+    docs_changelog = (ROOT / "docs" / "changelog.md").read_text(encoding="utf-8")
+
+    assert '--8<-- "CHANGELOG.md:8:"' in docs_changelog
+    assert "## Unreleased" not in docs_changelog
