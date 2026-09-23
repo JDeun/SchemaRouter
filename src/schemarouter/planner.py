@@ -245,6 +245,15 @@ class SchemaPlanner:
             for tool, endpoint in endpoint_pairs
         ]
         candidates = [candidate for candidate in candidates if candidate.score > 0]
+        if (
+            not candidates
+            and self.decision_policy.candidate_recall_on_empty_enabled
+        ):
+            candidates = [
+                _Candidate(tool, endpoint, 0.0, ())
+                for tool in self.registry.tools()
+                for endpoint in tool.endpoints
+            ]
         candidates.sort(
             key=lambda candidate: (
                 -candidate.score,
@@ -265,7 +274,14 @@ class SchemaPlanner:
                 DecisionOption(
                     id=f"candidate:{index}",
                     label=f"{candidate.tool.key}.{candidate.endpoint.name}",
-                    description=candidate.endpoint.description,
+                    description="; ".join(
+                        part
+                        for part in (
+                            candidate.tool.description.strip(),
+                            candidate.endpoint.description.strip(),
+                        )
+                        if part
+                    ),
                     metadata={"schema_score": candidate.score},
                 )
                 for index, candidate in enumerate(candidates)
@@ -281,6 +297,7 @@ class SchemaPlanner:
         if not candidates or not self.decision_policy.candidate_selection_enabled:
             return candidates, []
         assert self.decision_backend is not None
+        recall_expanded = all(candidate.score <= 0 for candidate in candidates)
         try:
             result = choose_sync(
                 self.decision_backend,
@@ -288,13 +305,32 @@ class SchemaPlanner:
             )
         except Exception as exc:
             if self.decision_policy.fallback == "deterministic":
+                if recall_expanded:
+                    return [], [
+                        "decision backend fallback after empty lexical recall: "
+                        f"{type(exc).__name__}; no deterministic candidate available"
+                    ]
                 return candidates, [f"decision backend fallback: {type(exc).__name__}"]
             raise
         if result.abstained or not result.selections:
             if self.decision_policy.fallback == "deterministic":
+                if recall_expanded:
+                    return [], [
+                        "decision backend abstained after empty lexical recall; "
+                        "no deterministic candidate available"
+                    ]
                 return candidates, ["decision backend abstained; used deterministic ranking"]
             raise PlanningError("decision backend abstained")
-        return [candidates[int(item.option_id.split(":", 1)[1])] for item in result.selections], []
+        selected = [
+            candidates[int(item.option_id.split(":", 1)[1])]
+            for item in result.selections
+        ]
+        warnings = (
+            ["decision backend expanded an empty lexical candidate set to the registered catalog"]
+            if recall_expanded
+            else []
+        )
+        return selected, warnings
 
     async def _select_candidates_async(
         self,
@@ -304,6 +340,7 @@ class SchemaPlanner:
         if not candidates or not self.decision_policy.candidate_selection_enabled:
             return candidates, []
         assert self.decision_backend is not None
+        recall_expanded = all(candidate.score <= 0 for candidate in candidates)
         try:
             result = await choose_async(
                 self.decision_backend,
@@ -311,13 +348,32 @@ class SchemaPlanner:
             )
         except Exception as exc:
             if self.decision_policy.fallback == "deterministic":
+                if recall_expanded:
+                    return [], [
+                        "decision backend fallback after empty lexical recall: "
+                        f"{type(exc).__name__}; no deterministic candidate available"
+                    ]
                 return candidates, [f"decision backend fallback: {type(exc).__name__}"]
             raise
         if result.abstained or not result.selections:
             if self.decision_policy.fallback == "deterministic":
+                if recall_expanded:
+                    return [], [
+                        "decision backend abstained after empty lexical recall; "
+                        "no deterministic candidate available"
+                    ]
                 return candidates, ["decision backend abstained; used deterministic ranking"]
             raise PlanningError("decision backend abstained")
-        return [candidates[int(item.option_id.split(":", 1)[1])] for item in result.selections], []
+        selected = [
+            candidates[int(item.option_id.split(":", 1)[1])]
+            for item in result.selections
+        ]
+        warnings = (
+            ["decision backend expanded an empty lexical candidate set to the registered catalog"]
+            if recall_expanded
+            else []
+        )
+        return selected, warnings
 
 
     @staticmethod
