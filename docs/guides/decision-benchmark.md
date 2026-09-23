@@ -51,8 +51,22 @@ Useful controls:
 - self-contained HTML output for a portable backend/latency/abstention summary.
 
 The HTML file contains no remote assets or scripts and escapes report metadata before rendering.
-It is intended for sharing one reproducible run summary, not for combining measurements collected
-under different corpus, model, hardware, or runtime conditions.
+It is intended for sharing one reproducible run summary.
+
+For a dated set of benchmark JSON files, render a comparison view without rewriting the raw
+measurements:
+
+```bash
+python scripts/render_benchmark_history.py \
+  artifacts/run-2026-09-23.json \
+  artifacts/run-2026-09-30.json \
+  --output artifacts/decision-benchmark-history.html
+```
+
+The history renderer preserves each run's timestamp, SchemaRouter version, corpus, hardware,
+backend, accuracy, abstention, latency, model, and device metadata. It does not normalize unlike
+environments, so cross-run comparisons remain valid only when measurement conditions are
+equivalent.
 
 ## ModelQueryAnalyzer
 
