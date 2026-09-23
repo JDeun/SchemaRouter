@@ -53,7 +53,7 @@ optional decision backend일 뿐입니다.
 에이전트가 되지 않으며, tool loop를 실행하지 않고, 실행 권한도 받지 않습니다.
 ```
 
-> **현재 안정판: 0.5.0** · `pip install schemarouter` · pre-1.0
+> **현재 안정판: 0.6.0** · `pip install schemarouter` · pre-1.0
 
 ## 왜 필요한가
 
@@ -114,7 +114,7 @@ provider-neutral `ModelQueryAnalyzer` 또는 `CallableDecisionBackend`로 주입
 
 ## SchemaRouter가 구축한 구조 확인
 
-0.6 개발 브랜치에서는 저장된 registry와 run trace를 실제 도구 실행 없이 확인할 수 있습니다.
+저장된 registry와 run trace를 실제 도구 실행 없이 확인할 수 있습니다.
 
 ```bash
 schemarouter inspect registry --db ./registry.sqlite3
@@ -135,19 +135,17 @@ parameter/output field 수, schema fingerprint를 확인할 수 있고, trace �
 
 [Operational inspection 가이드](https://jdeun.github.io/SchemaRouter/guides/inspection/)
 
-## 0.5에서 달라진 점
+## 0.6에서 달라진 점
 
-0.5는 범위 확장보다 runtime 안정화에 집중한 릴리스입니다.
+0.6은 bounded decision, 운영 관측, OpenAPI fidelity를 확장한 릴리스입니다.
 
-- transient-aware HTTP retry와 명시적 non-retryable failure;
-- wall-clock execution budget을 넘지 않는 retry backoff;
-- approval callback/execution hook까지 elapsed-time budget 적용;
-- OpenAPI parameter 우선순위와 자동 endpoint 이름 충돌 처리 개선;
-- required JSON body는 보존하되 schema 없는 body는 임의 생성하지 않음;
-- protocol-controlled header를 planner argument에서 제외;
-- 여러 2xx JSON/no-content 응답 variant를 정확히 보존·검증.
+- CPU/CUDA/MPS를 지원하는 로컬 Laya decision backend;
+- 기존 GPT, Gemini, Claude 등 cloud model client를 재사용하는 provider-neutral 경로;
+- live/persistent inspection과 self-contained read-only HTML dashboard;
+- response `oneOf`/`anyOf` field discovery와 static same-origin `$id`/`$anchor` resolution;
+- typed JSON root request body, OpenAPI 3.0 nullable normalization, default parameter style 직렬화.
 
-자세한 내용은 [0.5.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.5.0/)를 참고하세요.
+자세한 내용은 [0.6.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.6.0/)를 참고하세요.
 
 ## 문서
 
