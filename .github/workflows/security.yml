@@ -28,4 +28,4 @@ jobs:
       - run: pip install .
       - run: pip install "pip-audit>=2.9,<4"
       - run: python -m pip check
-      - run: pip-audit --strict
+      - run: pip-audit --strict .
