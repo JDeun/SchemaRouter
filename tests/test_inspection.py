@@ -158,6 +158,19 @@ def test_cli_registry_and_tool_json_are_read_only(tmp_path, capsys) -> None:
         assert reopened.keys() == ("demo.weather",)
 
 
+def test_cli_missing_database_does_not_create_file(tmp_path) -> None:
+    path = tmp_path / "missing.sqlite3"
+
+    try:
+        main(["inspect", "registry", "--db", str(path)])
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:
+        raise AssertionError("missing inspection database must fail")
+
+    assert not path.exists()
+
+
 def test_cli_trace_list_and_detail(tmp_path, capsys) -> None:
     path = tmp_path / "traces.sqlite3"
     with SQLiteRunTraceStore(path) as store:
