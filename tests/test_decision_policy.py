@@ -7,6 +7,7 @@ def test_decision_policy_is_off_by_default() -> None:
     assert policy.candidate_selection_enabled is False
     assert policy.candidate_recall_on_empty_enabled is False
     assert policy.recall_on_empty is False
+    assert policy.candidate_abstention == "deterministic"
     assert policy.fallback == "deterministic"
 
 
@@ -80,3 +81,16 @@ def test_recall_on_empty_is_visible_in_policy_serialization() -> None:
 
     assert document["recall_on_empty"] is True
     assert policy.candidate_recall_on_empty_enabled is True
+
+
+
+def test_candidate_abstention_is_independent_from_provider_error_fallback() -> None:
+    policy = DecisionPolicy(
+        enabled=True,
+        endpoint_selection=True,
+        candidate_abstention="no_route",
+        fallback="deterministic",
+    )
+
+    assert policy.candidate_abstention == "no_route"
+    assert policy.fallback == "deterministic"
