@@ -753,7 +753,7 @@ class SchemaPlanner:
                 query=request.query,
                 registry_version=self.registry.version,
                 calls=[],
-                warnings=["no schema candidate matched the request"],
+                warnings=[*warnings, "no schema candidate matched the request"],
             )
 
         calls: list[ToolCall] = []
