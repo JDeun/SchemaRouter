@@ -46,6 +46,7 @@ def _report() -> dict:
                 "expected": "materials.search",
                 "predicted": "materials.search",
                 "backend_invoked": True,
+                "recall_expanded": False,
                 "confidence": 0.8,
             },
             {
@@ -55,6 +56,7 @@ def _report() -> dict:
                 "expected": None,
                 "predicted": "users.lookup",
                 "backend_invoked": True,
+                "recall_expanded": True,
                 "confidence": 0.4,
             },
         ],
@@ -140,3 +142,25 @@ def test_threshold_calibration_outputs_are_self_contained(tmp_path) -> None:
     html = html_out.read_text(encoding="utf-8")
     assert "SchemaRouter confidence threshold calibration" in html
     assert "https://" not in html
+
+
+
+def test_threshold_calibration_prefers_explicit_recall_expansion_marker() -> None:
+    module = _module()
+    report = _report()
+    keyword_abstain = next(
+        row
+        for row in report["rows"]
+        if row["backend"] == "keyword" and row["case_id"] == "abstain"
+    )
+    keyword_abstain["predicted"] = "weather.current"
+
+    result = module.calibrate(
+        report,
+        backend="laya:auto",
+        thresholds=[0.5],
+    )
+    row = result["results"][0]
+
+    assert row["expanded_candidate_cases"] == 1
+    assert row["expanded_selection_rate"] == 0.0
