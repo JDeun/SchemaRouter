@@ -14,6 +14,8 @@ The project is pre-1.0 and follows the compatibility rules in
 - multi-run benchmark history rendering with preserved run/version/corpus/hardware metadata;
 - benchmark reproducibility manifests with exact source revision, corpus SHA-256, repeat count, and
   case-limit metadata, surfaced in single-run and history HTML reports;
+- dependency-free 95% Wilson score intervals for routing accuracy, no-route recall, and
+  category-level accuracy in benchmark JSON and HTML history views;
 - machine-readable OpenAPI/OPTIMADE compatibility smoke artifacts retained from scheduled CI;
 - Hypothesis-based property tests for supported OpenAPI path/query/header parameter serialization;
 - automated dependency vulnerability auditing and scheduled CodeQL Python analysis;

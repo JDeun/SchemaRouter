@@ -36,8 +36,11 @@ def _sample_report(*, accuracy: float, hardware: str) -> dict:
             "keyword": {
                 "cases": 144,
                 "accuracy": accuracy,
+                "accuracy_ci95": [0.70, 0.84],
                 "invalid_plan_rate": 0.0,
                 "errors": 0,
+                "expected_no_route_recall": 0.5,
+                "expected_no_route_recall_ci95": [0.30, 0.70],
                 "abstention_rate": 0.0,
                 "p50_latency_ms": 1.0,
                 "p95_latency_ms": 2.0,
@@ -59,6 +62,8 @@ def test_benchmark_history_renders_multiple_escaped_runs(tmp_path) -> None:
     assert "SchemaRouter benchmark history" in html
     assert "75.00%" in html
     assert "80.00%" in html
+    assert "70.00%–84.00%" in html
+    assert "30.00%–70.00%" in html
     assert "abcdef123456" in html
     assert "1234567890ab" in html
     assert "first&lt;script&gt;" in html

@@ -43,6 +43,16 @@ def _joined(value: Any) -> str:
     return ", ".join(str(item) for item in value)
 
 
+def _interval(value: Any) -> str:
+    if (
+        not isinstance(value, (list, tuple))
+        or len(value) != 2
+        or not all(isinstance(item, (int, float)) for item in value)
+    ):
+        return "—"
+    return f"{float(value[0]) * 100:.2f}%–{float(value[1]) * 100:.2f}%"
+
+
 def render_history(reports: list[tuple[str, dict[str, Any]]]) -> str:
     if not reports:
         raise ValueError("at least one benchmark report is required")
@@ -72,11 +82,13 @@ def render_history(reports: list[tuple[str, dict[str, Any]]]) -> str:
                 backend,
                 _number(raw.get("cases")),
                 _pct(raw.get("accuracy")),
+                _interval(raw.get("accuracy_ci95")),
                 _pct(raw.get("invalid_plan_rate")),
                 _number(raw.get("errors")),
                 _pct(raw.get("backend_invocation_rate")),
                 _number(raw.get("mean_confidence")),
                 _pct(raw.get("expected_no_route_recall")),
+                _interval(raw.get("expected_no_route_recall_ci95")),
                 _pct(raw.get("abstention_rate")),
                 _number(raw.get("p50_latency_ms")),
                 _number(raw.get("p95_latency_ms")),
@@ -122,8 +134,9 @@ hardware, and measurement conditions are equivalent.
 <tr>
 <th>Run</th><th>Generated</th><th>SchemaRouter</th><th>Corpus</th><th>Revision</th>
 <th>Corpus SHA</th><th>Hardware</th><th>Backend</th><th>Cases</th><th>Accuracy</th>
-<th>Invalid</th><th>Errors</th>
-<th>Invoked</th><th>Mean confidence</th><th>No-route recall</th><th>Abstention</th><th>P50 ms</th>
+<th>Accuracy 95% CI</th><th>Invalid</th><th>Errors</th><th>Invoked</th>
+<th>Mean confidence</th><th>No-route recall</th><th>No-route 95% CI</th>
+<th>Abstention</th><th>P50 ms</th>
 <th>P95 ms</th><th>Cost</th><th>Models</th>
 <th>Actual device</th>
 </tr>
