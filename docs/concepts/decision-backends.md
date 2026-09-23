@@ -7,6 +7,25 @@ Decision backends are not plan generators. They receive a finite set of locally 
 IDs and may select only from that set. SchemaRouter still constructs the typed execution plan and
 retains policy, schema-validation, fingerprint, and execution authority.
 
+They are also **not agents or orchestrators**. A decision backend does not own a conversation loop,
+does not decide when to call tools, does not execute tools, does not manage memory, and does not
+construct arbitrary multi-step plans. It is closer to a replaceable classifier/ranker behind one
+bounded decision point in SchemaRouter.
+
+```text
+orchestrator
+    |
+SchemaRouter planner
+    |
+finite candidate set
+    |
+optional DecisionBackend
+    |
+validated candidate ID(s)
+    |
+SchemaRouter plan + policy + execution
+```
+
 ## Opt in
 
 ```python
