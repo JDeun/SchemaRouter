@@ -406,6 +406,22 @@ async def test_external_ref_supports_same_origin_schema_id_rebasing() -> None:
     endpoint = tool.endpoint("get_user")
 
     assert [field.name for field in endpoint.output_fields] == ["id", "profile"]
+    assert "$id" not in json.dumps(endpoint.output_schema)
+    assert "$anchor" not in json.dumps(endpoint.output_schema)
+
+    router.executor.bind(
+        "external_refs_api",
+        lambda endpoint_name, arguments: {
+            "id": "42",
+            "profile": {"name": "Ada"},
+        },
+    )
+    result = await router.ainvoke(PlanRequest(query="user id profile"))
+    assert result[0].data == {
+        "id": "42",
+        "profile": {"name": "Ada"},
+    }
+
     assert tool.metadata["external_ref_documents_resolved"] == 2
     assert tool.metadata["external_ref_schema_ids_resolved"] == 1
     assert tool.metadata["external_ref_anchors_resolved"] == 1
