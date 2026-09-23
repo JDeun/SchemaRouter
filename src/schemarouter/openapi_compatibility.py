@@ -188,8 +188,8 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                 message = (
                     f"{construct} is preserved for runtime validation. Object properties from "
                     "response variants are exposed as conditional planner-visible output fields. "
-                    "Variant request bodies are not flattened; a strictly tagged oneOf body may "
-                    "instead be exposed as one typed root body parameter."
+                    "Composed request bodies are preserved as one typed root body parameter when "
+                    "they cannot be safely flattened."
                 )
             add(
                 location,
@@ -335,27 +335,6 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                                         "safely represented as named planner parameters."
                                     ),
                                 )
-                            else:
-                                schema_type = schema.get("type")
-                                has_properties = isinstance(schema.get("properties"), dict)
-                                composed = any(
-                                    key in schema
-                                    for key in ("allOf", "oneOf", "anyOf")
-                                )
-                                if (
-                                    schema_type not in {None, "object"}
-                                    and not has_properties
-                                    and not composed
-                                ):
-                                    add(
-                                        f"{op_location}/requestBody/content/application~1json/schema",
-                                        "non_object_request_body",
-                                        "unsupported",
-                                        (
-                                            "Non-object JSON request bodies cannot be "
-                                            "represented as named parameters."
-                                        ),
-                                    )
 
                 responses = operation.get("responses")
                 if isinstance(responses, dict):

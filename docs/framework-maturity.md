@@ -18,7 +18,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Retry policy | Read-only gate + explicit non-retryable invocation marker + built-in OpenAPI/OPTIMADE HTTP classification | Extend protocol-specific classifiers only where recovery semantics are well-defined |
 | Python callable tools | Implemented | Improve docstring parameter descriptions |
 | Structured-source adapter registry | Implemented with explicit entry-point plugins | Expand certified third-party adapters |
-| OpenAPI ingestion | Common subset + operation-over-path parameter overrides + required typed JSON object-body presence + strict discriminated oneOf root bodies + schema-less body reporting + spec-ignored header filtering + collision-safe generated operation names + multi-2xx JSON/no-content response validation + local refs + opt-in bounded same-origin cross-document refs + static same-origin $id/$anchor resolution + allOf object flattening + oneOf/anyOf response-field discovery + compatibility report | Keep dynamic refs and arbitrary non-discriminated variant bodies fail-closed; expand variant ergonomics only behind typed contracts |
+| OpenAPI ingestion | Common subset + operation-over-path parameter overrides + flattened object bodies + generic typed JSON root bodies + discriminator-aware tagged oneOf bodies + schema-less body reporting + spec-ignored header filtering + collision-safe generated operation names + multi-2xx JSON/no-content response validation + local refs + opt-in bounded same-origin cross-document refs + static same-origin $id/$anchor resolution + allOf object flattening + oneOf/anyOf response-field discovery + compatibility report | Keep dynamic refs and automatic variant selection fail-closed; expand only behind typed contracts |
 | OPTIMADE ingestion and execution | Implemented in v0.2 | Add provider federation / index meta-database traversal |
 | MCP ingestion and execution | Implemented with authenticated/custom transport boundary | Expand OAuth/gateway examples |
 | Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
@@ -124,7 +124,7 @@ Still external or follow-up work:
 
 - upstream ecosystem listing/discussion requests;
 - broader live benchmark evidence;
-- dynamic OpenAPI/JSON-Schema reference semantics and explicit request/discriminator variant selection.
+- dynamic OpenAPI/JSON-Schema reference semantics and automatic planner-side schema-variant selection.
 
 ### Gate C — production operations
 

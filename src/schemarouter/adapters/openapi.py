@@ -709,29 +709,39 @@ def tool_from_openapi(
                         and "oneOf" not in body_schema
                         and "anyOf" not in body_schema
                     )
-                    request_body_required = (
-                        bool(request_body.get("required"))
-                        and body_is_supported_object
-                    )
                     if body_is_supported_object:
+                        request_body_required = bool(request_body.get("required"))
                         request_body_mode = "flattened_object"
-                    required_body = _schema_required(document, body_schema)
-                    for prop_name, prop_schema in body_properties.items():
+                        required_body = _schema_required(document, body_schema)
+                        for prop_name, prop_schema in body_properties.items():
+                            parameters.append(
+                                ParameterSpec(
+                                    name=prop_name,
+                                    description=(
+                                        prop_schema.get("description", "")
+                                        if isinstance(prop_schema, dict)
+                                        else ""
+                                    ),
+                                    required=prop_name in required_body,
+                                    location="body",
+                                    json_schema=(
+                                        prop_schema if isinstance(prop_schema, dict) else {}
+                                    ),
+                                )
+                            )
+                    elif isinstance(body_schema, dict) and bool(body_schema):
                         parameters.append(
                             ParameterSpec(
-                                name=prop_name,
-                                description=(
-                                    prop_schema.get("description", "")
-                                    if isinstance(prop_schema, dict)
-                                    else ""
-                                ),
-                                required=prop_name in required_body,
-                                location="body",
-                                json_schema=(
-                                    prop_schema if isinstance(prop_schema, dict) else {}
-                                ),
+                                name="body",
+                                description="OpenAPI JSON request body",
+                                required=bool(request_body.get("required")),
+                                location="body_root",
+                                json_schema=body_schema,
+                                aliases=["request body", "json body"],
                             )
                         )
+                        request_body_required = bool(request_body.get("required"))
+                        request_body_mode = "root_schema"
 
             parameters = _disambiguate_parameter_names(parameters)
 
@@ -938,6 +948,16 @@ class OpenAPIRemoteInvoker:
 
         headers.update(self.trusted_headers)
 
+        request_body_mode = endpoint_spec.metadata.get("request_body_mode")
+        if (
+            request_body_mode in {"root_schema", "discriminated_root"}
+            and bool(endpoint_spec.metadata.get("request_body_required"))
+            and not root_body_seen
+        ):
+            raise NonRetryableInvocationError(
+                f"required root request body missing for endpoint {endpoint_name!r}"
+            )
+
         # Concatenation is intentional: urljoin would normalize dot-segments or allow an
         # absolute path to replace the approved server path prefix.
         url = self.base_url + "/" + path.lstrip("/")
@@ -952,22 +972,38 @@ class OpenAPIRemoteInvoker:
             follow_redirects=False,
         )
         try:
-            request_json = (
-                root_body
-                if root_body_seen
-                else (
+            request_kwargs: dict[str, Any] = {
+                "params": query or None,
+                "headers": headers or None,
+                "follow_redirects": False,
+            }
+            if root_body_seen:
+                try:
+                    request_kwargs["content"] = json.dumps(
+                        root_body,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                except (TypeError, ValueError) as exc:
+                    raise NonRetryableInvocationError(
+                        f"root request body for endpoint {endpoint_name!r} is not JSON serializable"
+                    ) from exc
+                if not any(name.casefold() == "content-type" for name in headers):
+                    request_kwargs["headers"] = {
+                        **headers,
+                        "Content-Type": "application/json",
+                    }
+            else:
+                request_kwargs["json"] = (
                     body
                     if body or bool(endpoint_spec.metadata.get("request_body_required"))
                     else None
                 )
-            )
+
             async with client.stream(
                 endpoint_spec.method,
                 url,
-                params=query or None,
-                json=request_json,
-                headers=headers or None,
-                follow_redirects=False,
+                **request_kwargs,
             ) as response:
                 try:
                     response.raise_for_status()

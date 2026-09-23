@@ -825,6 +825,7 @@ async def test_openapi_required_schema_less_body_is_not_fabricated() -> None:
     endpoint = tool.endpoint("create_item")
 
     assert endpoint.metadata["request_body_required"] is False
+    assert endpoint.metadata["request_body_mode"] is None
     assert endpoint.parameters == []
     assert any(
         issue["construct"] == "schema_less_request_body"
@@ -845,7 +846,7 @@ async def test_openapi_required_schema_less_body_is_not_fabricated() -> None:
         await invoker("create_item", {})
 
 
-def test_openapi_required_unsupported_non_object_body_is_not_fabricated() -> None:
+def test_openapi_required_array_body_is_exposed_as_typed_root() -> None:
     document = {
         "openapi": "3.1.0",
         "info": {"title": "Array Body API"},
@@ -872,8 +873,12 @@ def test_openapi_required_unsupported_non_object_body_is_not_fabricated() -> Non
 
     endpoint = tool_from_openapi("array_body", document).endpoint("create_items")
 
-    assert endpoint.metadata["request_body_required"] is False
-    assert endpoint.parameters == []
+    assert endpoint.metadata["request_body_required"] is True
+    assert endpoint.metadata["request_body_mode"] == "root_schema"
+    assert len(endpoint.parameters) == 1
+    assert endpoint.parameters[0].name == "body"
+    assert endpoint.parameters[0].location == "body_root"
+    assert endpoint.parameters[0].json_schema["type"] == "array"
 
 
 class ChunkedBody(httpx.AsyncByteStream):
