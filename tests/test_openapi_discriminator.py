@@ -228,7 +228,7 @@ async def test_openapi_invoker_sends_discriminated_body_as_json_root() -> None:
     assert result == {"id": "pet-1"}
 
 
-def test_non_discriminated_oneof_request_body_remains_unflattened() -> None:
+def test_non_discriminated_oneof_request_body_falls_back_to_generic_root() -> None:
     document = discriminated_document()
     del document["paths"]["/pets"]["post"]["requestBody"]["content"]["application/json"]["schema"][
         "discriminator"
@@ -236,17 +236,22 @@ def test_non_discriminated_oneof_request_body_remains_unflattened() -> None:
 
     endpoint = tool_from_openapi("pets", document).endpoint("create_pet")
 
-    assert endpoint.parameters == []
-    assert endpoint.metadata["request_body_mode"] is None
-    assert endpoint.metadata["request_body_required"] is False
+    assert len(endpoint.parameters) == 1
+    assert endpoint.parameters[0].name == "body"
+    assert endpoint.parameters[0].location == "body_root"
+    assert endpoint.metadata["request_body_mode"] == "root_schema"
+    assert endpoint.metadata["request_body_required"] is True
+    assert endpoint.metadata["request_body_discriminator"] is None
 
 
-def test_unsafe_discriminator_without_required_unique_tag_remains_unflattened() -> None:
+def test_unsafe_discriminator_falls_back_without_trusting_discriminator() -> None:
     document = discriminated_document()
     dog = document["components"]["schemas"]["Dog"]
     dog["required"] = ["name", "breed"]
 
     endpoint = tool_from_openapi("pets", document).endpoint("create_pet")
 
-    assert endpoint.parameters == []
-    assert endpoint.metadata["request_body_mode"] is None
+    assert len(endpoint.parameters) == 1
+    assert endpoint.parameters[0].location == "body_root"
+    assert endpoint.metadata["request_body_mode"] == "root_schema"
+    assert endpoint.metadata["request_body_discriminator"] is None
