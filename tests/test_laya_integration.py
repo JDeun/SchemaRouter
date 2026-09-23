@@ -251,7 +251,7 @@ async def test_laya_async_mode_runs_local_inference_without_blocking_contract() 
     assert result.selections[0].score == 0.77
 
 
-def test_laya_sdk_router_is_lazy_and_keeps_token_out_of_state(
+def test_laya_sdk_router_keeps_token_out_of_state_and_preloads_explicit_model(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     captured: dict[str, Any] = {}
@@ -259,6 +259,9 @@ def test_laya_sdk_router_is_lazy_and_keeps_token_out_of_state(
     class SDKRouter:
         def __init__(self, **kwargs: Any) -> None:
             captured["router_kwargs"] = kwargs
+
+        def preload(self, names: list[str]) -> None:
+            captured["preload"] = names
 
         def predict(self, state: Any, questions: Any, **kwargs: Any) -> dict[str, Any]:
             captured["call"] = {
@@ -288,8 +291,9 @@ def test_laya_sdk_router_is_lazy_and_keeps_token_out_of_state(
         "device": "cpu",
         "token": "secret-hf-token",
         "max_loaded": 2,
-        "preload": True,
+        "preload": False,
     }
+    assert captured["preload"] == ["english"]
     assert captured["call"]["kwargs"] == {"model": "english"}
     assert "secret-hf-token" not in repr(captured["call"]["state"])
     assert "secret-hf-token" not in repr(captured["call"]["questions"])
