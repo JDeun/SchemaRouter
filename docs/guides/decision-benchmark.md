@@ -147,14 +147,30 @@ bounded request state. Optional controls include:
 - `--decision-recall-on-empty` to explicitly let an enabled bounded decision backend inspect the
   registered endpoint catalog when lexical candidate recall is empty.
 
-Laya rows record the routed checkpoint plus `requested_device` and, when Laya exposes the loaded
-agent device, `actual_device`. This matters because an unavailable CUDA/MPS target can fall back to
-CPU and should not be counted as an accelerator result.
+Laya rows record the routed checkpoint plus `requested_device`, decision confidence, and, when
+Laya exposes the loaded agent device, `actual_device`. This matters because an unavailable
+CUDA/MPS target can fall back to CPU and should not be counted as an accelerator result.
 
 Empty-candidate recall is deliberately off by default. When enabled, SchemaRouter does not invent a
 route: it exposes only endpoints already registered in the trusted local catalog. If the decision
 backend errors or abstains after this expansion, planning fails closed with no arbitrary
 deterministic route because there was no lexical candidate to fall back to.
+
+A zero-threshold run can be recalibrated offline without repeating model inference:
+
+```bash
+python scripts/calibrate_decision_threshold.py \
+  artifacts/laya/recall-on-empty/report.json \
+  --backend laya:auto \
+  --json-out artifacts/laya/calibration.json \
+  --csv-out artifacts/laya/calibration.csv \
+  --html-out artifacts/laya/calibration.html
+```
+
+The calibration replays low-confidence cases through the recorded deterministic fallback route and
+reports overall/category accuracy, confidence coverage, backend abstention, final no-route rate,
+expected no-route recall, and expanded-candidate selection rate for thresholds 0.00 through 0.95.
+This separates threshold tuning from model/runtime latency and avoids paying for repeated inference.
 
 Published results should record the exact Laya package version, checkpoint/routing policy, hardware,
 device, preload policy, confidence threshold, corpus revision, and repeated-run count. Do not compare
