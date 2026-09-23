@@ -15,6 +15,10 @@ from schemarouter.errors import NonRetryableInvocationError
 from schemarouter.models import ParameterSpec
 
 _TEXT = st.text(st.characters(blacklist_categories=("Cs",)), max_size=48)
+_HEADER_TEXT = st.text(
+    st.characters(blacklist_categories=("Cs",), blacklist_characters=",=\r\n"),
+    max_size=48,
+)
 _SCALARS = st.one_of(
     st.none(),
     st.booleans(),
@@ -93,7 +97,7 @@ def test_form_query_array_preserves_explode_shape(
         assert pairs[0][0] == "tag"
 
 
-@given(st.dictionaries(_TEXT.filter(bool), _SCALARS, max_size=10))
+@given(st.dictionaries(_HEADER_TEXT.filter(bool), _HEADER_TEXT, max_size=10))
 def test_simple_header_exploded_object_has_one_equals_per_pair(
     values: dict[str, object],
 ) -> None:
@@ -109,6 +113,17 @@ def test_simple_header_exploded_object_has_one_equals_per_pair(
 
     assert len(parts) == len(values)
     assert all(part.count("=") == 1 for part in parts)
+
+
+def test_simple_header_preserves_application_supplied_escaping() -> None:
+    parameter = ParameterSpec(
+        name="X-Value",
+        location="header",
+        style="simple",
+        explode=False,
+    )
+
+    assert _serialize_simple_header(parameter, 'W/"a,b=c"') == 'W/"a,b=c"'
 
 
 @pytest.mark.parametrize(
