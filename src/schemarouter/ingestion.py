@@ -228,6 +228,8 @@ class _OpenAPIRefBundler:
         self.resources: dict[str, _SchemaResourceLocation] = {}
         self.anchors: dict[tuple[str, str], _SchemaResourceLocation] = {}
         self.same_document_refs_normalized = 0
+        self.schema_ids_indexed = 0
+        self.anchors_indexed = 0
 
     async def resolve(self, document: dict[str, Any]) -> tuple[dict[str, Any], dict[str, int]]:
         if _contains_dynamic_schema_reference(document):
@@ -239,6 +241,8 @@ class _OpenAPIRefBundler:
                 "documents": 0,
                 "bytes": 0,
                 "same_document_refs": 0,
+                "schema_ids": 0,
+                "anchors": 0,
             }
         if _OPENAPI_EXTERNAL_REFS_KEY in document:
             raise SchemaSourceError(
@@ -271,6 +275,8 @@ class _OpenAPIRefBundler:
             "documents": len(self.bundle),
             "bytes": self.total_bytes,
             "same_document_refs": self.same_document_refs_normalized,
+            "schema_ids": self.schema_ids_indexed,
+            "anchors": self.anchors_indexed,
         }
 
     def _schema_base_uri(self, base_url: str, schema_id: Any) -> str:
@@ -343,9 +349,11 @@ class _OpenAPIRefBundler:
         if "$id" in value:
             effective_base = self._schema_base_uri(base_url, value["$id"])
             self._register_resource(effective_base, location)
+            self.schema_ids_indexed += 1
 
         if "$anchor" in value:
             self._register_anchor(effective_base, value["$anchor"], location)
+            self.anchors_indexed += 1
 
         for key, item in value.items():
             self._index_node(
@@ -598,7 +606,13 @@ class OpenAPISourceAdapter:
             timeout=context.timeout,
             follow_redirects=False,
         )
-        ref_stats = {"documents": 0, "bytes": 0, "same_document_refs": 0}
+        ref_stats = {
+            "documents": 0,
+            "bytes": 0,
+            "same_document_refs": 0,
+            "schema_ids": 0,
+            "anchors": 0,
+        }
         resolved_schema_url = context.url
         normalized_ref_count = 0
         try:
@@ -659,6 +673,8 @@ class OpenAPISourceAdapter:
                 "external_refs_enabled": context.openapi_external_refs,
                 "external_ref_documents_resolved": ref_stats["documents"],
                 "external_ref_bytes_fetched": ref_stats["bytes"],
+                "external_ref_schema_ids_resolved": ref_stats["schema_ids"],
+                "external_ref_anchors_resolved": ref_stats["anchors"],
                 "external_ref_limits": {
                     "max_depth": context.openapi_ref_max_depth,
                     "max_documents": context.openapi_ref_max_documents,
