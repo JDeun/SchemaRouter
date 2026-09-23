@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- strict OpenAPI discriminated `oneOf` JSON request-body support as one typed root `body`
+  parameter when every object branch requires a unique const/single-enum discriminator tag; the
+  full composed schema is validated locally and transmitted as the JSON root without flattening.
 - read-only operational inspection API and `schemarouter inspect` CLI for persisted SQLite
   registries and run traces, including tool/endpoint classification, schema fingerprints, parameter
   and output-field structure, trace completion/error summaries, human-readable output, and stable

@@ -187,9 +187,9 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
             else:
                 message = (
                     f"{construct} is preserved for runtime validation. Object properties from "
-                    "response variants are exposed as conditional planner-visible output fields, "
-                    "but SchemaRouter does not choose schema variants or flatten variant request "
-                    "bodies."
+                    "response variants are exposed as conditional planner-visible output fields. "
+                    "Variant request bodies are not flattened; a strictly tagged oneOf body may "
+                    "instead be exposed as one typed root body parameter."
                 )
             add(
                 location,
@@ -213,8 +213,9 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                 "discriminator",
                 "partial",
                 (
-                    "Discriminator metadata is preserved but not used for planner-side "
-                    "variant selection."
+                    "Discriminator metadata is not trusted as execution authority. A oneOf JSON "
+                    "request body is exposed as one typed root parameter only when every branch "
+                    "requires the discriminator and proves a unique const/single-enum tag."
                 ),
             )
 
