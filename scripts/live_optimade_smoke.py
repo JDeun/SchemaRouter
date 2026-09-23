@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+import argparse
 import asyncio
+import json
 import os
 
+from compatibility_report import new_report, write_report
 from schemarouter import PlanRequest, SchemaRouter
 
 DEFAULT_URL = "https://www.crystallography.net/cod/optimade"
 
 
-async def main() -> None:
-    url = os.environ.get("SCHEMAROUTER_LIVE_OPTIMADE_URL", DEFAULT_URL)
+async def run_smoke(url: str) -> dict[str, object]:
     router = await SchemaRouter.from_url(url, kind="optimade")
 
     keys = router.registry.keys()
@@ -46,6 +48,34 @@ async def main() -> None:
     assert first["type"] == "structures"
     assert "chemical_formula_descriptive" in first
     assert "nelements" in first
+
+    return {
+        "tool": tool_key,
+        "endpoint": plan.calls[0].endpoint,
+        "api_version": tool.metadata["api_version"],
+        "result_count": len(results[0].data),
+        "first_id": first["id"],
+    }
+
+
+async def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--json-out", default=None)
+    args = parser.parse_args()
+    url = os.environ.get("SCHEMAROUTER_LIVE_OPTIMADE_URL", DEFAULT_URL)
+    report = new_report(adapter="optimade", source=url)
+
+    try:
+        report["details"] = await run_smoke(url)
+        report["status"] = "success"
+    except Exception as exc:
+        report["status"] = "failure"
+        report["error_type"] = type(exc).__name__
+        write_report(args.json_out, report)
+        raise
+
+    write_report(args.json_out, report)
+    print(json.dumps(report, ensure_ascii=False, sort_keys=True))
 
 
 if __name__ == "__main__":
