@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from html import escape
 from pathlib import Path
-from typing import Sequence
 
 from .inspection import RegistryInspection, RouterInspection, TraceInspection
 
@@ -41,7 +41,7 @@ def render_dashboard(
         ("Mutating", registry.mutating_endpoints),
         ("Unclassified", registry.unclassified_endpoints),
         ("Runs", len(traces)),
-        ("Run errors", sum(trace.error_count for trace in traces)),
+        ("Error events", sum(trace.error_count for trace in traces)),
     )
     card_html = "".join(
         (
@@ -145,12 +145,21 @@ h1, h2 {{ letter-spacing: -0.025em; }}
 .card {{ border: 1px solid #8885; border-radius: 12px; padding: 16px; }}
 .metric {{ font-size: 1.8rem; font-weight: 700; }}
 .label {{ opacity: .7; }}
-.live-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }}
+.live-grid {{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}}
 .live-grid > div {{ border: 1px solid #8884; border-radius: 10px; padding: 12px; }}
 section {{ margin-top: 32px; }}
 .table-wrap {{ overflow-x: auto; }}
 table {{ width: 100%; border-collapse: collapse; font-size: .9rem; }}
-th, td {{ text-align: left; padding: 9px 8px; border-bottom: 1px solid #8884; vertical-align: top; }}
+th, td {{
+  text-align: left;
+  padding: 9px 8px;
+  border-bottom: 1px solid #8884;
+  vertical-align: top;
+}}
 th {{ white-space: nowrap; }}
 input {{
   width: min(560px, 100%);
@@ -173,7 +182,9 @@ No tool execution, credentials, arbitrary metadata, or trace payload values are 
 {live_html}
 <section>
 <h2>Capabilities</h2>
-<input id="filter" type="search" placeholder="Filter tool, endpoint, adapter, method, path…" autocomplete="off">
+<input id="filter" type="search"
+       placeholder="Filter tool, endpoint, adapter, method, path…"
+       autocomplete="off">
 <div class="table-wrap">
 <table id="capabilities">
 <thead><tr>
