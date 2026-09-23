@@ -1,0 +1,76 @@
+name: Research Benchmark
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/research-benchmark.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deterministic-full:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Run full deterministic benchmark
+        run: |
+          mkdir -p artifacts/deterministic
+          python scripts/benchmark_decision_routing.py \
+            --corpus benchmarks/decision-routing-v1.json \
+            --repeat 5 \
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+            --json-out artifacts/deterministic/report.json \
+            --csv-out artifacts/deterministic/rows.csv \
+            --html-out artifacts/deterministic/report.html
+          python scripts/render_benchmark_history.py \
+            artifacts/deterministic/report.json \
+            --output artifacts/deterministic/history.html
+      - uses: actions/upload-artifact@v7
+        with:
+          name: benchmark-deterministic-full-${{ github.run_id }}
+          path: artifacts/deterministic/
+          if-no-files-found: error
+          retention-days: 30
+
+  laya-full-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install -e ".[dev,laya]"
+      - name: Run full Laya CPU benchmark
+        run: |
+          mkdir -p artifacts/laya
+          python scripts/benchmark_decision_routing.py \
+            --corpus benchmarks/decision-routing-v1.json \
+            --laya \
+            --laya-device cpu \
+            --laya-max-loaded 1 \
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+            --json-out artifacts/laya/report.json \
+            --csv-out artifacts/laya/rows.csv \
+            --html-out artifacts/laya/report.html
+          python scripts/render_benchmark_history.py \
+            artifacts/laya/report.json \
+            --output artifacts/laya/history.html
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: benchmark-laya-full-cpu-${{ github.run_id }}
+          path: artifacts/laya/
+          if-no-files-found: warn
+          retention-days: 30
