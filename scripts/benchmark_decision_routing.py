@@ -598,7 +598,8 @@ model/runtime configuration, hardware, and measurement conditions are equivalent
 <thead>
 <tr>
 <th>Backend</th><th>Cases</th><th>Accuracy</th><th>Invalid</th><th>Errors</th>
-<th>Invoked</th><th>Mean confidence</th><th>Abstention</th><th>Mean ms</th><th>P50 ms</th><th>P95 ms</th><th>Cost</th>
+<th>Invoked</th><th>Mean confidence</th><th>Abstention</th><th>Mean ms</th>
+<th>P50 ms</th><th>P95 ms</th><th>Cost</th>
 <th>Models</th><th>Requested device</th><th>Actual device</th>
 </tr>
 </thead>
