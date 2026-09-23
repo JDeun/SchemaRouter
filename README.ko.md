@@ -108,8 +108,9 @@ print(result[0].data)
 
 **LangChain, LangGraph, LlamaIndex**는 framework bridge이고, **OpenTelemetry**는 선택형
 telemetry export입니다. **Jev / TypeSafe, Laya, Ollama는 optional decision backend**입니다.
-이들은 SchemaRouter가 이미 허용한 유한한 option ID 중에서만 선택할 수 있으며
-policy/schema validation/execution 경계를 우회하지 않습니다.
+기존 시스템이 사용하는 **GPT, Gemini, Claude 또는 다른 cloud model client**도
+provider-neutral `ModelQueryAnalyzer` 또는 `CallableDecisionBackend`로 주입할 수 있습니다.
+어떤 경로도 SchemaRouter의 policy/schema validation/execution 경계를 우회하지 않습니다.
 
 ## SchemaRouter가 구축한 구조 확인
 
