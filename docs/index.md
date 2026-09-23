@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.5.0</span>
+<span class="sr-kicker">SchemaRouter 0.6.0</span>
 
 # Put a typed execution boundary between agents and tools
 
@@ -136,15 +136,15 @@ flow and never becomes executable automatically.
 - OpenAPI compatibility gaps are reported instead of silently guessed;
 - event payloads remain redacted unless explicitly enabled.
 
-## 0.5 focus
+## 0.6 focus
 
-Version 0.5 tightens existing contracts rather than expanding into a broader agent framework. It
-adds transient-aware retry classification, budget-bounded backoff, elapsed-time enforcement across
-approval/hooks, and a concentrated OpenAPI fidelity pass covering parameter precedence, required
-JSON bodies, protocol-controlled headers, generated endpoint collisions, and multiple 2xx response
-variants.
+Version 0.6 keeps the same execution-boundary scope while adding bounded local/model-assisted
+decisions, operational inspection, and a broader fail-closed OpenAPI subset. It adds Laya as an
+optional local decision backend, provider-neutral hosted-model reuse, live/SQLite inspection and a
+static dashboard, composed-response field discovery, bounded static `$id`/`$anchor` resolution,
+typed JSON root bodies, nullable normalization, and spec-faithful default parameter serialization.
 
-[Read the 0.5.0 release notes →](releases/0.5.0.md)
+[Read the 0.6.0 release notes →](releases/0.6.0.md)
 
 ## Go deeper
 
