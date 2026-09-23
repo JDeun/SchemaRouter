@@ -117,6 +117,7 @@ README보다 framework manual을 기준 문서로 사용합니다.
 - [실행 모델 이해](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
 - [OpenAPI 가이드](https://jdeun.github.io/SchemaRouter/guides/openapi/)
 - [Runtime policy와 retry](https://jdeun.github.io/SchemaRouter/guides/execution-policy/)
+- [관측 CLI와 대시보드](https://jdeun.github.io/SchemaRouter/guides/observability/)
 - [Framework integration](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
 - [Architecture와 maturity](https://jdeun.github.io/SchemaRouter/architecture/)
