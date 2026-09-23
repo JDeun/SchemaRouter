@@ -49,6 +49,7 @@ The master `enabled` switch must be true. Individual surfaces are separately con
 - `endpoint_selection`
 - `field_selection`
 - `evidence_sufficiency`
+- `recall_on_empty`
 
 Bounded candidate selection is active when tool or endpoint selection is enabled. `field_selection`
 lets the backend choose only from declared non-identifier output fields while identifier fields are
@@ -56,6 +57,22 @@ preserved locally. `evidence_sufficiency` is also implemented as a conservative 
 SchemaRouter first proves the requested provenance/license/unit/source-type requirements from local
 schema metadata, then the backend may only keep that locally sufficient call or veto it as
 insufficient. A provider can never upgrade missing local evidence.
+
+### Empty lexical recall
+
+`recall_on_empty=True` is an additional opt-in for candidate selection. It matters when the
+deterministic lexical stage finds no endpoint at all, for example when a Korean query must be routed
+against an English-only schema catalog.
+
+When enabled together with `tool_selection` or `endpoint_selection`, SchemaRouter may expose the
+finite registered endpoint catalog to the bounded decision backend even though every deterministic
+schema score is zero. The backend still receives only local option IDs and cannot invent a tool or
+endpoint.
+
+The default remains `False`. If the backend errors or abstains after this catalog expansion,
+SchemaRouter returns no call rather than selecting an arbitrary endpoint: there was no deterministic
+candidate to fall back to. Use confidence gating and benchmark the workload before enabling this
+policy in production, especially for out-of-domain or adversarial requests.
 
 ## Bounded field selection
 
@@ -267,14 +284,14 @@ See [Jev / TypeSafe System One](../integrations/jev.md) for sync/async usage and
 
 ## Local Laya decision models
 
-The 0.6 development line includes an optional `LayaDecisionBackend` for local non-autoregressive
-bounded decisions:
+SchemaRouter includes an optional `LayaDecisionBackend` for local non-autoregressive bounded
+decisions:
 
 ```bash
 pip install -e ".[laya]"
 ```
 
-The packaged extra will be `schemarouter[laya]` after a release containing this integration.
+The packaged extra is `schemarouter[laya]`.
 
 ```python
 from schemarouter.integrations import LayaDecisionBackend
