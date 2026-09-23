@@ -4,6 +4,18 @@ SchemaRouter is a **schema-aware planning and execution layer**.
 
 Its job is narrower than a general agent framework and deeper than a semantic tool router.
 
+The ownership boundary is explicit:
+
+| Layer | Owns |
+| --- | --- |
+| Application / agent framework | conversation, agent loop, graph, model strategy, memory, checkpoints |
+| SchemaRouter | typed tool/endpoint planning, schema identity, validation, policy, execution boundary |
+| Optional decision backend | one bounded selection over finite locally authorized candidates |
+| Capability source | OpenAPI, MCP, OPTIMADE, Python callable, approved adapter/plugin |
+
+A decision backend such as Laya, Ollama, or Jev is therefore not a nested agent. It cannot decide
+to start another tool loop, invent a capability, or grant execution authority.
+
 ## The compilation model
 
 A conventional router often produces one decision:
