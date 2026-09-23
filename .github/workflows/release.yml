@@ -302,6 +302,8 @@ jobs:
                   )
                   subprocess.check_call([str(python), "examples/quickstart.py"])
           PY
+      - name: Prepare SBOM output directory
+        run: mkdir -p artifacts
       - name: Generate SPDX release SBOM
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
