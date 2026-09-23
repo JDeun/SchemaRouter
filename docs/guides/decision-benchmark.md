@@ -99,6 +99,36 @@ Optional controls include `--jev-model`, `--min-confidence`,
 
 Provider pricing is never hard-coded because it can change independently of SchemaRouter.
 
+## Laya
+
+Install the optional local decision runtime:
+
+```bash
+pip install -e ".[laya]"
+```
+
+Run Laya against the same checked-in corpus:
+
+```bash
+python scripts/benchmark_decision_routing.py \
+  --corpus benchmarks/decision-routing-v1.json \
+  --laya
+```
+
+By default, Laya uses its local router to choose an English or multilingual checkpoint from the
+bounded request state. Optional controls include:
+
+- `--laya-model english|multilingual|typed-decisions` to pin a checkpoint;
+- `--laya-device cpu|cuda|mps` to pin the trusted local device;
+- `--laya-preload` to preload checkpoints before measurement;
+- `--laya-max-loaded N` to control resident checkpoint count;
+- `--laya-min-confidence FLOAT` to measure confidence-gated abstention.
+
+Published results should record the exact Laya package version, checkpoint/routing policy, hardware,
+device, preload policy, confidence threshold, corpus revision, and repeated-run count. Do not compare
+upstream/provider benchmark numbers directly unless the prompts, options, corpus, and measurement
+conditions are equivalent.
+
 ## Ollama
 
 Run an already-installed local Ollama model against the same corpus:
