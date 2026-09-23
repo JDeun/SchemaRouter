@@ -167,6 +167,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
+      # Contract tests do not need CUDA. Satisfy Laya's torch dependency from the
+      # official CPU wheel index so CI does not download multi-gigabyte CUDA wheels.
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
       - run: pip install -e ".[dev,laya]"
       - run: pytest -q tests/test_laya_integration.py
 
