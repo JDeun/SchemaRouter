@@ -3,7 +3,8 @@ from __future__ import annotations
 from urllib.parse import unquote
 
 import pytest
-from hypothesis import given, strategies as st
+from hypothesis import given
+from hypothesis import strategies as st
 
 from schemarouter.adapters.openapi import (
     _path_atom,
