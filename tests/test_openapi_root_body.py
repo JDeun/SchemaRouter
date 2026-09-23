@@ -225,3 +225,59 @@ def test_schema_less_body_remains_unrepresented() -> None:
     assert endpoint.parameters == []
     assert endpoint.metadata["request_body_mode"] is None
     assert endpoint.metadata["request_body_required"] is False
+
+
+@pytest.mark.asyncio
+async def test_invoker_preserves_json_null_root_body() -> None:
+    tool = tool_from_openapi(
+        "root",
+        document_with_body({"type": ["null", "string"]}),
+    )
+    seen: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["content"] = request.content
+        seen["content_type"] = request.headers.get("content-type")
+        return httpx.Response(
+            200,
+            json={"ok": True},
+            headers={"content-type": "application/json"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        invoker = OpenAPIRemoteInvoker(
+            tool,
+            "https://api.example.test",
+            http_client=client,
+        )
+        result = await invoker("submit", {"body": None})
+
+    assert seen["content"] == b"null"
+    assert seen["content_type"] == "application/json"
+    assert result == {"ok": True}
+
+
+@pytest.mark.asyncio
+async def test_required_root_body_missing_fails_closed_even_for_direct_invoker() -> None:
+    tool = tool_from_openapi(
+        "root",
+        document_with_body(
+            {
+                "type": "array",
+                "items": {"type": "integer"},
+            }
+        ),
+    )
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            lambda request: pytest.fail("network request must not be attempted")
+        )
+    ) as client:
+        invoker = OpenAPIRemoteInvoker(
+            tool,
+            "https://api.example.test",
+            http_client=client,
+        )
+        with pytest.raises(Exception, match="required root request body missing"):
+            await invoker("submit", {})
