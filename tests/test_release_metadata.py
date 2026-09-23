@@ -156,6 +156,9 @@ def test_security_workflows_cover_dependency_and_code_scanning() -> None:
     assert "pip-audit --strict" in security
     assert "python -m pip check" in security
 
+    assert "pull_request:" in codeql
+    assert "branches: [main]" in codeql
+    assert "permissions:\n  contents: read" in codeql
     assert "security-events: write" in codeql
     assert (
         "github/codeql-action/init@1c5b675653bb5c22dbe9b12b556ec555138e09fd"
@@ -205,3 +208,17 @@ def test_all_external_workflow_actions_are_pinned_to_commit_shas() -> None:
                 unpinned.append(f"{path.name}: {reference}")
 
     assert unpinned == []
+
+
+
+def test_docs_workflow_uses_read_only_default_permissions() -> None:
+    workflow = (
+        ROOT / ".github" / "workflows" / "docs.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "permissions:\n  contents: read" in workflow
+    build_section = workflow.split("  deploy:", 1)[0]
+    assert "pages: write" not in build_section
+    deploy_section = workflow.split("  deploy:", 1)[1]
+    assert "pages: write" in deploy_section
+    assert "id-token: write" in deploy_section
