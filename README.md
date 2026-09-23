@@ -93,8 +93,8 @@ print(result[0].data)
 | **OPTIMADE** | materials data is exposed through OPTIMADE | `SchemaRouter.from_url(..., kind="optimade")` |
 | **Human-readable docs** | no machine-readable schema exists | inspect → proposal → explicit approval |
 
-Optional bridges are available for **LangChain, LangGraph, LlamaIndex, Jev / TypeSafe, Ollama, and
-OpenTelemetry**. They do not bypass SchemaRouter's policy or validation boundary.
+Optional bridges are available for **LangChain, LangGraph, LlamaIndex, Jev / TypeSafe, Laya, Ollama,
+and OpenTelemetry**. They do not bypass SchemaRouter's policy or validation boundary.
 
 ## What 0.5 adds
 
