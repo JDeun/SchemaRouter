@@ -112,12 +112,14 @@ jobs:
       - run: /tmp/schemarouter-wheel/bin/pip install dist/*.whl
       - run: /tmp/schemarouter-wheel/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
+      - run: /tmp/schemarouter-wheel/bin/schemarouter --help
       - run: /tmp/schemarouter-wheel/bin/python scripts/benchmark_decision_routing.py
       - run: python -m venv /tmp/schemarouter-sdist
       - run: /tmp/schemarouter-sdist/bin/python -m pip install --upgrade pip
       - run: /tmp/schemarouter-sdist/bin/pip install dist/*.tar.gz
       - run: /tmp/schemarouter-sdist/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
       - run: /tmp/schemarouter-sdist/bin/python examples/quickstart.py
+      - run: /tmp/schemarouter-sdist/bin/schemarouter --help
 
   langchain-integration:
     runs-on: ubuntu-latest

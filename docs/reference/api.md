@@ -62,3 +62,36 @@ The top-level `schemarouter` package exposes the stable public surface intended 
 ## AdapterPluginInfo
 
 ::: schemarouter.AdapterPluginInfo
+
+
+## RegistryInspection
+
+::: schemarouter.RegistryInspection
+
+## ToolInspection
+
+::: schemarouter.ToolInspection
+
+## EndpointInspection
+
+::: schemarouter.EndpointInspection
+
+## TraceInspection
+
+::: schemarouter.TraceInspection
+
+## inspect_registry
+
+::: schemarouter.inspect_registry
+
+## inspect_tool
+
+::: schemarouter.inspect_tool
+
+## inspect_trace
+
+::: schemarouter.inspect_trace
+
+## inspect_traces
+
+::: schemarouter.inspect_traces

@@ -95,6 +95,24 @@ print(result[0].data)
 **LangChain, LangGraph, LlamaIndex, Jev / TypeSafe, Laya, Ollama, OpenTelemetry**는 선택형 bridge로
 연결할 수 있으며 SchemaRouter의 policy/validation 경계를 우회하지 않습니다.
 
+## SchemaRouter가 구축한 구조 확인
+
+0.6 개발 브랜치에서는 저장된 registry와 run trace를 실제 도구 실행 없이 확인할 수 있습니다.
+
+```bash
+schemarouter inspect registry --db ./registry.sqlite3
+schemarouter inspect tool materials --db ./registry.sqlite3
+schemarouter inspect traces --db ./traces.sqlite3
+schemarouter inspect trace <RUN_ID> --db ./traces.sqlite3
+```
+
+`--json`을 붙이면 자동화나 대시보드에서 사용할 수 있는 구조화된 결과를 출력합니다.
+registry 화면에서는 tool/endpoint 구조, HTTP method/path, read-only/mutating 분류,
+parameter/output field 수, schema fingerprint를 확인할 수 있고, trace 화면에서는 저장된
+실행 이벤트와 오류/완료 상태를 확인할 수 있습니다.
+
+[Operational inspection 가이드](https://jdeun.github.io/SchemaRouter/guides/inspection/)
+
 ## 0.5에서 달라진 점
 
 0.5는 범위 확장보다 runtime 안정화에 집중한 릴리스입니다.

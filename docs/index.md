@@ -149,9 +149,9 @@ variants.
 
 -   **Runtime controls**
 
-    Retry, execution policy, approvals, hooks, events, and traces.
+    Retry, execution policy, approvals, hooks, events, traces, and operational inspection.
 
-    [Execution policy →](guides/execution-policy.md)
+    [Inspect registries and runs →](guides/inspection.md)
 
 -   **Framework integrations**
 
