@@ -41,9 +41,20 @@ def _render_registry(snapshot: RegistryInspection) -> str:
         )
     ]
     for tool in snapshot.tools:
+        source = (
+            tool.provenance.get("source_url")
+            or tool.provenance.get("resolved_schema_url")
+            or tool.provenance.get("versioned_base_url")
+        )
+        adapter = tool.provenance.get("adapter") or tool.source_type
+        origin = ""
+        if adapter:
+            origin += f" · {adapter}"
+        if source:
+            origin += f" · {source}"
         lines.append(
             f"- {tool.key}: {tool.endpoint_count} endpoints "
-            f"[{_short_fingerprint(tool.fingerprint)}]"
+            f"[{_short_fingerprint(tool.fingerprint)}]{origin}"
         )
         for endpoint in tool.endpoints:
             method = endpoint.method or "-"
@@ -72,6 +83,10 @@ def _render_tool(tool: ToolInspection, *, document: dict[str, Any]) -> str:
         f"license: {tool.license or '-'}",
         f"endpoints: {tool.endpoint_count}",
     ]
+    if tool.provenance:
+        lines.append("provenance:")
+        for key, value in tool.provenance.items():
+            lines.append(f"  - {key}: {value}")
     raw_endpoints = {
         str(endpoint.get("name")): endpoint
         for endpoint in document.get("endpoints", [])
