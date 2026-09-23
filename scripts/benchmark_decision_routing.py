@@ -55,6 +55,7 @@ class BenchmarkRow:
     invalid_plan: bool
     latency_ms: float
     backend_invoked: bool = False
+    recall_expanded: bool = False
     confidence: float | None = None
     abstained: bool = False
     fallback_used: bool = False
@@ -340,6 +341,10 @@ async def benchmark_planner(
             )
 
             result = recorder.last_result if recorder is not None else None
+            recall_expanded = any(
+                "expanded an empty lexical candidate set" in warning
+                for warning in plan.warnings
+            )
             metadata = getattr(result, "metadata", {}) if result is not None else {}
             input_tokens = metadata.get("input_tokens")
             output_tokens = metadata.get("output_tokens")
@@ -382,6 +387,7 @@ async def benchmark_planner(
                     invalid_plan=invalid_plan,
                     latency_ms=round(latency_ms, 3),
                     backend_invoked=bool(recorder and recorder.last_invoked),
+                    recall_expanded=recall_expanded,
                     confidence=confidence,
                     abstained=abstained,
                     fallback_used=abstained and predicted is not None,
