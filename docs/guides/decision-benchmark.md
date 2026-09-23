@@ -38,7 +38,8 @@ python scripts/benchmark_decision_routing.py \
   --corpus benchmarks/decision-routing-v1.json \
   --repeat 3 \
   --json-out artifacts/decision-benchmark.json \
-  --csv-out artifacts/decision-benchmark.csv
+  --csv-out artifacts/decision-benchmark.csv \
+  --html-out artifacts/decision-benchmark.html
 ```
 
 Useful controls:
@@ -46,7 +47,12 @@ Useful controls:
 - `--max-cases N` for a bounded local sample;
 - `--repeat N` for repeated latency measurements;
 - JSON output for aggregate/report automation;
-- CSV output for row-level analysis.
+- CSV output for row-level analysis;
+- self-contained HTML output for a portable backend/latency/abstention summary.
+
+The HTML file contains no remote assets or scripts and escapes report metadata before rendering.
+It is intended for sharing one reproducible run summary, not for combining measurements collected
+under different corpus, model, hardware, or runtime conditions.
 
 ## ModelQueryAnalyzer
 
