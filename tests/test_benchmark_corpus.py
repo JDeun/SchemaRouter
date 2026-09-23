@@ -158,3 +158,44 @@ def test_benchmark_summary_tracks_backend_invocation_coverage() -> None:
 
     assert summary["backend_invocations"] == 1
     assert summary["backend_invocation_rate"] == 0.5
+
+
+
+def test_benchmark_summary_tracks_explicit_and_final_no_route() -> None:
+    module = _benchmark_module()
+    rows = [
+        module.BenchmarkRow(
+            backend="bounded",
+            case_id="none",
+            category="adversarial",
+            query="out of domain",
+            expected=None,
+            predicted=None,
+            correct=True,
+            invalid_plan=False,
+            latency_ms=1.0,
+            backend_invoked=True,
+            recall_expanded=True,
+            explicit_no_route=True,
+            confidence=0.9,
+        ),
+        module.BenchmarkRow(
+            backend="bounded",
+            case_id="wrong",
+            category="adversarial",
+            query="another out of domain query",
+            expected=None,
+            predicted="weather.current",
+            correct=False,
+            invalid_plan=False,
+            latency_ms=1.0,
+            backend_invoked=True,
+            recall_expanded=True,
+            confidence=0.8,
+        ),
+    ]
+
+    summary = module.summarize(rows)
+
+    assert summary["explicit_no_routes"] == 1
+    assert summary["expected_no_route_recall"] == 0.5

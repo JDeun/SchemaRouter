@@ -20,7 +20,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - row-level decision confidence capture and offline threshold calibration that can replay either
   deterministic fallback or final no-route behavior without repeating model inference;
 - independently configurable candidate-abstention handling (`deterministic`, `no_route`, or
-  `error`) without changing provider-error fallback semantics.
+  `error`) without changing provider-error fallback semantics;
+- an explicit `none_of_the_above` bounded option for empty-lexical-recall catalog expansion so
+  model-assisted recall recovery can return no route instead of being forced to choose an endpoint.
 
 ### Changed
 
