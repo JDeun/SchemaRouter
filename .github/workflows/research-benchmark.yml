@@ -78,6 +78,12 @@ jobs:
             artifacts/laya/lexical/report.json \
             artifacts/laya/recall-on-empty/report.json \
             --output artifacts/laya/history.html
+          python scripts/calibrate_decision_threshold.py \
+            artifacts/laya/recall-on-empty/report.json \
+            --backend laya:auto \
+            --json-out artifacts/laya/calibration.json \
+            --csv-out artifacts/laya/calibration.csv \
+            --html-out artifacts/laya/calibration.html
       - uses: actions/upload-artifact@v7
         if: always()
         with:
