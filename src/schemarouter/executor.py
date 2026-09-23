@@ -197,6 +197,10 @@ class RegistryExecutor:
         self._invokers.pop(tool_key, None)
         self._binding_fingerprints.pop(tool_key, None)
 
+    def bound_keys(self) -> tuple[str, ...]:
+        """Return live trusted-invoker keys without exposing invoker objects."""
+        return tuple(sorted(self._invokers))
+
     def validate_call(self, call: ToolCall) -> None:
         try:
             endpoint = self.registry.endpoint(call.tool, call.endpoint)
