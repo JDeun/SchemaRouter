@@ -8,6 +8,7 @@ import csv
 import importlib
 import inspect
 import json
+import math
 import os
 import platform
 import statistics
@@ -54,6 +55,7 @@ class BenchmarkRow:
     invalid_plan: bool
     latency_ms: float
     backend_invoked: bool = False
+    confidence: float | None = None
     abstained: bool = False
     fallback_used: bool = False
     input_tokens: int | None = None
@@ -352,6 +354,14 @@ async def benchmark_planner(
                 if isinstance(metadata.get("actual_device"), str)
                 else None
             )
+            raw_confidence = metadata.get("confidence")
+            confidence = (
+                float(raw_confidence)
+                if isinstance(raw_confidence, (int, float))
+                and not isinstance(raw_confidence, bool)
+                and math.isfinite(float(raw_confidence))
+                else None
+            )
             abstained = bool(getattr(result, "abstained", False))
             invalid_plan = predicted is not None and predicted not in allowed_routes
             correct = (
@@ -372,6 +382,7 @@ async def benchmark_planner(
                     invalid_plan=invalid_plan,
                     latency_ms=round(latency_ms, 3),
                     backend_invoked=bool(recorder and recorder.last_invoked),
+                    confidence=confidence,
                     abstained=abstained,
                     fallback_used=abstained and predicted is not None,
                     input_tokens=input_tokens,
@@ -413,6 +424,7 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
     latencies = [row.latency_ms for row in successful]
     categories = sorted({row.category for row in rows})
     expected_abstentions = [row for row in rows if row.expected is None]
+    confidences = [row.confidence for row in rows if row.confidence is not None]
     return {
         "cases": total,
         "accuracy": sum(row.correct for row in rows) / total if total else 0.0,
@@ -424,6 +436,12 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
         "backend_invocation_rate": (
             sum(row.backend_invoked for row in rows) / total if total else 0.0
         ),
+        "confidence_count": len(confidences),
+        "mean_confidence": (
+            round(statistics.fmean(confidences), 6) if confidences else None
+        ),
+        "p10_confidence": _percentile(confidences, 0.10),
+        "p50_confidence": _percentile(confidences, 0.50),
         "abstentions": sum(row.abstained for row in rows),
         "abstention_rate": sum(row.abstained for row in rows) / total if total else 0.0,
         "expected_abstention_recall": (
@@ -508,6 +526,7 @@ def render_html_report(report: dict[str, Any]) -> str:
             escape(_metric(raw_metrics.get("invalid_plan_rate"), percent=True)),
             escape(_metric(raw_metrics.get("errors"))),
             escape(_metric(raw_metrics.get("backend_invocation_rate"), percent=True)),
+            escape(_metric(raw_metrics.get("mean_confidence"))),
             escape(_metric(raw_metrics.get("abstention_rate"), percent=True)),
             escape(_metric(raw_metrics.get("mean_latency_ms"))),
             escape(_metric(raw_metrics.get("p50_latency_ms"))),
@@ -579,7 +598,7 @@ model/runtime configuration, hardware, and measurement conditions are equivalent
 <thead>
 <tr>
 <th>Backend</th><th>Cases</th><th>Accuracy</th><th>Invalid</th><th>Errors</th>
-<th>Invoked</th><th>Abstention</th><th>Mean ms</th><th>P50 ms</th><th>P95 ms</th><th>Cost</th>
+<th>Invoked</th><th>Mean confidence</th><th>Abstention</th><th>Mean ms</th><th>P50 ms</th><th>P95 ms</th><th>Cost</th>
 <th>Models</th><th>Requested device</th><th>Actual device</th>
 </tr>
 </thead>
