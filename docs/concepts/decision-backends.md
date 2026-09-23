@@ -181,12 +181,14 @@ See [Jev / TypeSafe System One](../integrations/jev.md) for sync/async usage and
 
 ## Local Laya decision models
 
-SchemaRouter includes an optional `LayaDecisionBackend` for local non-autoregressive bounded
-decisions:
+The 0.6 development line includes an optional `LayaDecisionBackend` for local non-autoregressive
+bounded decisions:
 
 ```bash
-pip install "schemarouter[laya]"
+pip install -e ".[laya]"
 ```
+
+The packaged extra will be `schemarouter[laya]` after a release containing this integration.
 
 ```python
 from schemarouter.integrations import LayaDecisionBackend
