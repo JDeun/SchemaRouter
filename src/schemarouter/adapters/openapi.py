@@ -709,29 +709,39 @@ def tool_from_openapi(
                         and "oneOf" not in body_schema
                         and "anyOf" not in body_schema
                     )
-                    request_body_required = (
-                        bool(request_body.get("required"))
-                        and body_is_supported_object
-                    )
                     if body_is_supported_object:
+                        request_body_required = bool(request_body.get("required"))
                         request_body_mode = "flattened_object"
-                    required_body = _schema_required(document, body_schema)
-                    for prop_name, prop_schema in body_properties.items():
+                        required_body = _schema_required(document, body_schema)
+                        for prop_name, prop_schema in body_properties.items():
+                            parameters.append(
+                                ParameterSpec(
+                                    name=prop_name,
+                                    description=(
+                                        prop_schema.get("description", "")
+                                        if isinstance(prop_schema, dict)
+                                        else ""
+                                    ),
+                                    required=prop_name in required_body,
+                                    location="body",
+                                    json_schema=(
+                                        prop_schema if isinstance(prop_schema, dict) else {}
+                                    ),
+                                )
+                            )
+                    elif isinstance(body_schema, dict) and bool(body_schema):
                         parameters.append(
                             ParameterSpec(
-                                name=prop_name,
-                                description=(
-                                    prop_schema.get("description", "")
-                                    if isinstance(prop_schema, dict)
-                                    else ""
-                                ),
-                                required=prop_name in required_body,
-                                location="body",
-                                json_schema=(
-                                    prop_schema if isinstance(prop_schema, dict) else {}
-                                ),
+                                name="body",
+                                description="OpenAPI JSON request body",
+                                required=bool(request_body.get("required")),
+                                location="body_root",
+                                json_schema=body_schema,
+                                aliases=["request body", "json body"],
                             )
                         )
+                        request_body_required = bool(request_body.get("required"))
+                        request_body_mode = "root_schema"
 
             parameters = _disambiguate_parameter_names(parameters)
 
