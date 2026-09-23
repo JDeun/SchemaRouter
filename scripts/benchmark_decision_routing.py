@@ -335,6 +335,33 @@ def _percentile(values: list[float], percentile: float) -> float | None:
     return round(ordered[lower] * (1 - fraction) + ordered[upper] * fraction, 3)
 
 
+def _wilson_interval(successes: int, total: int) -> list[float] | None:
+    """Return the 95% Wilson score interval for a binomial proportion."""
+
+    if total <= 0:
+        return None
+    if successes < 0 or successes > total:
+        raise ValueError("successes must be between 0 and total")
+
+    z = 1.959963984540054
+    proportion = successes / total
+    z_squared = z * z
+    denominator = 1.0 + z_squared / total
+    center = (proportion + z_squared / (2.0 * total)) / denominator
+    margin = (
+        z
+        / denominator
+        * math.sqrt(
+            proportion * (1.0 - proportion) / total
+            + z_squared / (4.0 * total * total)
+        )
+    )
+    return [
+        round(max(0.0, center - margin), 6),
+        round(min(1.0, center + margin), 6),
+    ]
+
+
 async def benchmark_planner(
     name: str,
     planner: SchemaPlanner,
@@ -452,9 +479,24 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
     categories = sorted({row.category for row in rows})
     expected_abstentions = [row for row in rows if row.expected is None]
     confidences = [row.confidence for row in rows if row.confidence is not None]
+    correct_count = sum(row.correct for row in rows)
+    expected_no_route_count = sum(
+        row.predicted is None for row in expected_abstentions
+    )
+    category_counts = {
+        category: sum(row.category == category for row in rows)
+        for category in categories
+    }
+    category_correct = {
+        category: sum(
+            row.correct for row in rows if row.category == category
+        )
+        for category in categories
+    }
     return {
         "cases": total,
-        "accuracy": sum(row.correct for row in rows) / total if total else 0.0,
+        "accuracy": correct_count / total if total else 0.0,
+        "accuracy_ci95": _wilson_interval(correct_count, total),
         "invalid_plan_rate": (
             sum(row.invalid_plan for row in rows) / total if total else 0.0
         ),
@@ -464,10 +506,13 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
             sum(row.backend_invoked for row in rows) / total if total else 0.0
         ),
         "expected_no_route_recall": (
-            sum(row.predicted is None for row in expected_abstentions)
-            / len(expected_abstentions)
+            expected_no_route_count / len(expected_abstentions)
             if expected_abstentions
             else None
+        ),
+        "expected_no_route_recall_ci95": _wilson_interval(
+            expected_no_route_count,
+            len(expected_abstentions),
         ),
         "confidence_count": len(confidences),
         "mean_confidence": (
@@ -489,9 +534,13 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
         "p50_latency_ms": _percentile(latencies, 0.50),
         "p95_latency_ms": _percentile(latencies, 0.95),
         "category_accuracy": {
-            category: (
-                sum(row.correct for row in rows if row.category == category)
-                / sum(row.category == category for row in rows)
+            category: category_correct[category] / category_counts[category]
+            for category in categories
+        },
+        "category_accuracy_ci95": {
+            category: _wilson_interval(
+                category_correct[category],
+                category_counts[category],
             )
             for category in categories
         },
@@ -538,6 +587,16 @@ def _joined(value: Any) -> str:
     return ", ".join(str(item) for item in value)
 
 
+def _interval(value: Any) -> str:
+    if (
+        not isinstance(value, (list, tuple))
+        or len(value) != 2
+        or not all(isinstance(item, (int, float)) for item in value)
+    ):
+        return "—"
+    return f"{float(value[0]) * 100:.2f}%–{float(value[1]) * 100:.2f}%"
+
+
 def render_html_report(report: dict[str, Any]) -> str:
     """Render a self-contained, escaped benchmark summary dashboard."""
 
@@ -559,11 +618,13 @@ def render_html_report(report: dict[str, Any]) -> str:
             escape(str(backend)),
             escape(_metric(raw_metrics.get("cases"))),
             escape(_metric(raw_metrics.get("accuracy"), percent=True)),
+            escape(_interval(raw_metrics.get("accuracy_ci95"))),
             escape(_metric(raw_metrics.get("invalid_plan_rate"), percent=True)),
             escape(_metric(raw_metrics.get("errors"))),
             escape(_metric(raw_metrics.get("backend_invocation_rate"), percent=True)),
             escape(_metric(raw_metrics.get("mean_confidence"))),
             escape(_metric(raw_metrics.get("expected_no_route_recall"), percent=True)),
+            escape(_interval(raw_metrics.get("expected_no_route_recall_ci95"))),
             escape(_metric(raw_metrics.get("abstention_rate"), percent=True)),
             escape(_metric(raw_metrics.get("mean_latency_ms"))),
             escape(_metric(raw_metrics.get("p50_latency_ms"))),
@@ -638,8 +699,9 @@ model/runtime configuration, hardware, and measurement conditions are equivalent
 <table>
 <thead>
 <tr>
-<th>Backend</th><th>Cases</th><th>Accuracy</th><th>Invalid</th><th>Errors</th>
-<th>Invoked</th><th>Mean confidence</th><th>No-route recall</th><th>Abstention</th><th>Mean ms</th>
+<th>Backend</th><th>Cases</th><th>Accuracy</th><th>Accuracy 95% CI</th>
+<th>Invalid</th><th>Errors</th><th>Invoked</th><th>Mean confidence</th>
+<th>No-route recall</th><th>No-route 95% CI</th><th>Abstention</th><th>Mean ms</th>
 <th>P50 ms</th><th>P95 ms</th><th>Cost</th>
 <th>Models</th><th>Requested device</th><th>Actual device</th>
 </tr>

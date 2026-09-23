@@ -247,16 +247,17 @@ Each row records:
 
 The aggregate report includes:
 
-- final-plan routing accuracy (an abstention case is correct only when the final plan has no route);
+- final-plan routing accuracy (an abstention case is correct only when the final plan has no route)
+  with a 95% Wilson score interval;
 - invalid-plan rate;
 - error count;
 - bounded-backend invocation count/rate;
-- final expected no-route recall;
+- final expected no-route recall with a 95% Wilson score interval;
 - abstention rate;
 - expected-abstention recall for bounded backends, reported separately from final-plan accuracy;
 - fallback count;
 - mean, p50, and p95 latency;
-- category-level accuracy;
+- category-level accuracy with per-category 95% Wilson score intervals;
 - token totals and optional estimated cost.
 
 ## Offline versus live evidence
@@ -269,4 +270,7 @@ credentials, rate limits, provider-side changes, local accelerator availability,
 runtime placement are external variables. Publish live results
 with the exact date, model identifier, configuration, corpus revision, and repeated-run count.
 
-Do not infer provider superiority from the three-case smoke set or from a single live run.
+The reported 95% Wilson intervals quantify binomial sampling uncertainty for the checked-in corpus.
+They do not account for model/provider drift, correlated repeated cases, hardware variance, or
+distribution shift. Do not infer provider superiority from the three-case smoke set or from a
+single live run.
