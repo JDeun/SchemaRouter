@@ -66,3 +66,17 @@ def test_recall_on_empty_requires_enabled_candidate_selection() -> None:
     assert disabled.candidate_recall_on_empty_enabled is False
     assert master_off.candidate_recall_on_empty_enabled is False
     assert enabled.candidate_recall_on_empty_enabled is True
+
+
+
+def test_recall_on_empty_is_visible_in_policy_serialization() -> None:
+    policy = DecisionPolicy(
+        enabled=True,
+        endpoint_selection=True,
+        recall_on_empty=True,
+    )
+
+    document = policy.model_dump(mode="json")
+
+    assert document["recall_on_empty"] is True
+    assert policy.candidate_recall_on_empty_enabled is True
