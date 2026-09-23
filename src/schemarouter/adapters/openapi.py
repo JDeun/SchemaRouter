@@ -405,6 +405,23 @@ def _openapi_parameter_defaults(location: str) -> tuple[str | None, bool | None]
     return None, None
 
 
+def _with_openapi_parameter_defaults(parameter: ParameterSpec) -> ParameterSpec:
+    default_style, default_explode = _openapi_parameter_defaults(parameter.location)
+    if parameter.style is not None and parameter.explode is not None:
+        return parameter
+    return parameter.model_copy(
+        update={
+            "style": parameter.style or default_style,
+            "explode": (
+                parameter.explode
+                if parameter.explode is not None
+                else default_explode
+            ),
+        },
+        deep=True,
+    )
+
+
 def _parameter_atom(value: Any, *, context: str) -> str:
     if value is None:
         return ""
@@ -1184,27 +1201,25 @@ class OpenAPIRemoteInvoker:
                 continue
             value = arguments[parameter.name]
             wire_name = parameter.wire_name or parameter.name
+            effective_parameter = _with_openapi_parameter_defaults(parameter)
             if parameter.location == "path":
-                if parameter.style != "simple":
+                if effective_parameter.style != "simple":
                     raise NonRetryableInvocationError(
                         f"unsupported path parameter style {parameter.style!r} "
                         f"for {parameter.name!r}"
                     )
-                encoded = _serialize_simple_path(parameter, value)
+                encoded = _serialize_simple_path(effective_parameter, value)
                 path = path.replace("{" + wire_name + "}", encoded)
             elif parameter.location == "query":
-                if parameter.style != "form":
+                if effective_parameter.style != "form":
                     raise NonRetryableInvocationError(
                         f"unsupported query parameter style {parameter.style!r} "
                         f"for {parameter.name!r}"
                     )
-                query.extend(_serialize_form_query(parameter, wire_name, value))
+                query.extend(
+                    _serialize_form_query(effective_parameter, wire_name, value)
+                )
             elif parameter.location == "header":
-                if parameter.style != "simple":
-                    raise NonRetryableInvocationError(
-                        f"unsupported header parameter style {parameter.style!r} "
-                        f"for {parameter.name!r}"
-                    )
                 normalized_name = wire_name.casefold()
                 if not _HEADER_NAME_RE.fullmatch(wire_name):
                     raise NonRetryableInvocationError(
@@ -1218,7 +1233,15 @@ class OpenAPIRemoteInvoker:
                     raise NonRetryableInvocationError(
                         f"sensitive header {wire_name!r} must come from trusted runtime auth"
                     )
-                headers[wire_name] = _serialize_simple_header(parameter, value)
+                if effective_parameter.style != "simple":
+                    raise NonRetryableInvocationError(
+                        f"unsupported header parameter style {parameter.style!r} "
+                        f"for {parameter.name!r}"
+                    )
+                headers[wire_name] = _serialize_simple_header(
+                    effective_parameter,
+                    value,
+                )
             elif parameter.location == "body":
                 body[wire_name] = value
             elif parameter.location == "body_root":
