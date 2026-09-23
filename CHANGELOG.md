@@ -39,6 +39,8 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Security
 
+- added a pinned OpenSSF Scorecard workflow that publishes authenticated results, retains SARIF, and
+  uploads findings to GitHub Code Scanning on main and a weekly schedule;
 - release wheel and sdist artifacts now receive GitHub/Sigstore build-provenance attestations before
   publication.
 
