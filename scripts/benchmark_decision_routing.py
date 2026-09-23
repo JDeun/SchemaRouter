@@ -12,10 +12,10 @@ import os
 import platform
 import statistics
 import time
-from datetime import datetime, timezone
-from importlib.metadata import PackageNotFoundError, version
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from html import escape
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
 
