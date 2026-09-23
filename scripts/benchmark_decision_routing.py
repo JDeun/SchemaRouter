@@ -26,7 +26,7 @@ from schemarouter import (
     ToolSpec,
 )
 from schemarouter.analyzers import ModelQueryAnalyzer
-from schemarouter.integrations import JevDecisionBackend, OllamaDecisionBackend
+from schemarouter.integrations import JevDecisionBackend, LayaDecisionBackend, OllamaDecisionBackend
 
 
 @dataclass(frozen=True)
@@ -449,6 +449,41 @@ async def main() -> None:
     parser.add_argument("--jev-model", default=None)
     parser.add_argument("--min-confidence", type=float, default=0.0)
     parser.add_argument(
+        "--laya",
+        action="store_true",
+        help="Run the local Laya bounded-decision backend.",
+    )
+    parser.add_argument(
+        "--laya-model",
+        default=None,
+        help=(
+            "Optional Laya checkpoint override such as english, multilingual, "
+            "or typed-decisions. Omit to use Laya language routing."
+        ),
+    )
+    parser.add_argument(
+        "--laya-device",
+        default=None,
+        help="Optional trusted Laya device override such as cpu, cuda, or mps.",
+    )
+    parser.add_argument(
+        "--laya-preload",
+        action="store_true",
+        help="Preload Laya checkpoints instead of lazy loading.",
+    )
+    parser.add_argument(
+        "--laya-max-loaded",
+        type=int,
+        default=1,
+        help="Maximum number of Laya checkpoints kept resident.",
+    )
+    parser.add_argument(
+        "--laya-min-confidence",
+        type=float,
+        default=0.0,
+        help="Abstain when Laya confidence falls below this threshold.",
+    )
+    parser.add_argument(
         "--ollama-model",
         default=None,
         help="Run a local Ollama bounded-decision backend with this installed model.",
@@ -469,6 +504,10 @@ async def main() -> None:
         raise ValueError("--max-cases must be >= 1")
     if args.ollama_timeout <= 0:
         raise ValueError("--ollama-timeout must be > 0")
+    if args.laya_max_loaded < 1:
+        raise ValueError("--laya-max-loaded must be >= 1")
+    if not 0.0 <= args.laya_min_confidence <= 1.0:
+        raise ValueError("--laya-min-confidence must be between 0 and 1")
 
     registry = reference_registry()
     allowed_routes = {
@@ -553,6 +592,34 @@ async def main() -> None:
         planners.append(
             (
                 "jev",
+                SchemaPlanner(
+                    registry,
+                    decision_backend=recorder,
+                    decision_policy=DecisionPolicy(
+                        enabled=True,
+                        endpoint_selection=True,
+                        fallback="deterministic",
+                    ),
+                ),
+                recorder,
+            )
+        )
+
+    if args.laya:
+        recorder = RecordingDecisionBackend(
+            LayaDecisionBackend(
+                model=args.laya_model,
+                min_confidence=args.laya_min_confidence,
+                device=args.laya_device,
+                preload=args.laya_preload,
+                max_loaded=args.laya_max_loaded,
+                async_mode=True,
+            )
+        )
+        laya_name = args.laya_model or "auto"
+        planners.append(
+            (
+                f"laya:{laya_name}",
                 SchemaPlanner(
                     registry,
                     decision_backend=recorder,
