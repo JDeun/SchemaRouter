@@ -100,6 +100,50 @@ def test_openapi30_nullable_request_property_accepts_json_null() -> None:
     )
 
 
+def test_openapi30_nullable_object_request_body_stays_root_capable_of_null() -> None:
+    document = {
+        "openapi": "3.0.4",
+        "info": {"title": "Nullable Object Body"},
+        "paths": {
+            "/payload": {
+                "post": {
+                    "operationId": "submit_payload",
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "nullable": True,
+                                    "properties": {
+                                        "name": {"type": "string"}
+                                    },
+                                }
+                            }
+                        },
+                    },
+                    "responses": {"204": {"description": "ok"}},
+                }
+            }
+        },
+    }
+
+    endpoint = tool_from_openapi("nullable", document).endpoint("submit_payload")
+
+    assert len(endpoint.parameters) == 1
+    body = endpoint.parameters[0]
+    assert body.name == "body"
+    assert body.location == "body_root"
+    assert body.json_schema["type"] == ["object", "null"]
+    assert endpoint.metadata["request_body_mode"] == "root_schema"
+
+    validate_json_schema_value(
+        {"body": None},
+        endpoint.input_schema,
+        context="nullable object body",
+    )
+
+
 def test_openapi30_nullable_keeps_other_constraints_authoritative() -> None:
     document = {
         "openapi": "3.0.4",
