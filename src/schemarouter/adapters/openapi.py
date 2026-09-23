@@ -397,6 +397,137 @@ def normalize_same_document_refs(
     return visit(deepcopy(document)), normalized_count
 
 
+def _openapi_parameter_defaults(location: str) -> tuple[str | None, bool | None]:
+    if location == "query":
+        return "form", True
+    if location in {"path", "header"}:
+        return "simple", False
+    return None, None
+
+
+def _with_openapi_parameter_defaults(parameter: ParameterSpec) -> ParameterSpec:
+    default_style, default_explode = _openapi_parameter_defaults(parameter.location)
+    if parameter.style is not None and parameter.explode is not None:
+        return parameter
+    return parameter.model_copy(
+        update={
+            "style": parameter.style or default_style,
+            "explode": (
+                parameter.explode
+                if parameter.explode is not None
+                else default_explode
+            ),
+        },
+        deep=True,
+    )
+
+
+def _parameter_atom(value: Any, *, context: str) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (str, int, float)):
+        return str(value)
+    raise NonRetryableInvocationError(
+        f"{context} contains a nested non-scalar value that cannot be serialized safely"
+    )
+
+
+def _path_atom(value: Any, *, context: str) -> str:
+    return quote(_parameter_atom(value, context=context), safe="").replace(".", "%2E")
+
+
+def _serialize_simple_path(parameter: ParameterSpec, value: Any) -> str:
+    context = f"path parameter {parameter.name!r}"
+    if isinstance(value, list):
+        return ",".join(_path_atom(item, context=context) for item in value)
+    if isinstance(value, dict):
+        parts: list[str] = []
+        if parameter.explode:
+            for key, item in value.items():
+                parts.append(
+                    f"{_path_atom(key, context=context)}={_path_atom(item, context=context)}"
+                )
+        else:
+            for key, item in value.items():
+                parts.extend(
+                    (
+                        _path_atom(key, context=context),
+                        _path_atom(item, context=context),
+                    )
+                )
+        return ",".join(parts)
+    return _path_atom(value, context=context)
+
+
+def _serialize_form_query(
+    parameter: ParameterSpec,
+    wire_name: str,
+    value: Any,
+) -> list[tuple[str, str]]:
+    context = f"query parameter {parameter.name!r}"
+    if parameter.allow_reserved:
+        raise NonRetryableInvocationError(
+            f"allowReserved=true is not supported for query parameter {parameter.name!r}"
+        )
+    if isinstance(value, list):
+        if parameter.explode:
+            return [
+                (wire_name, _parameter_atom(item, context=context))
+                for item in value
+            ]
+        return [
+            (
+                wire_name,
+                ",".join(_parameter_atom(item, context=context) for item in value),
+            )
+        ]
+    if isinstance(value, dict):
+        if parameter.explode:
+            return [
+                (
+                    _parameter_atom(key, context=context),
+                    _parameter_atom(item, context=context),
+                )
+                for key, item in value.items()
+            ]
+        parts: list[str] = []
+        for key, item in value.items():
+            parts.extend(
+                (
+                    _parameter_atom(key, context=context),
+                    _parameter_atom(item, context=context),
+                )
+            )
+        return [(wire_name, ",".join(parts))]
+    return [(wire_name, _parameter_atom(value, context=context))]
+
+
+def _serialize_simple_header(parameter: ParameterSpec, value: Any) -> str:
+    context = f"header parameter {parameter.name!r}"
+    if isinstance(value, list):
+        return ",".join(_parameter_atom(item, context=context) for item in value)
+    if isinstance(value, dict):
+        parts: list[str] = []
+        if parameter.explode:
+            for key, item in value.items():
+                parts.append(
+                    f"{_parameter_atom(key, context=context)}="
+                    f"{_parameter_atom(item, context=context)}"
+                )
+        else:
+            for key, item in value.items():
+                parts.extend(
+                    (
+                        _parameter_atom(key, context=context),
+                        _parameter_atom(item, context=context),
+                    )
+                )
+        return ",".join(parts)
+    return _parameter_atom(value, context=context)
+
+
 def _disambiguate_parameter_names(
     parameters: list[ParameterSpec],
 ) -> list[ParameterSpec]:
@@ -799,12 +930,26 @@ def tool_from_openapi(
                         or normalized_parameter_name in _OPENAPI_IGNORED_HEADER_PARAMETERS
                     ):
                         continue
+                default_style, default_explode = _openapi_parameter_defaults(location)
+                raw_style = parameter.get("style")
+                raw_explode = parameter.get("explode")
                 parameters.append(
                     ParameterSpec(
                         name=parameter_name,
                         description=parameter.get("description", ""),
                         required=bool(parameter.get("required")) or location == "path",
                         location=location,
+                        style=raw_style if isinstance(raw_style, str) else default_style,
+                        explode=(
+                            raw_explode
+                            if isinstance(raw_explode, bool)
+                            else default_explode
+                        ),
+                        allow_reserved=(
+                            bool(parameter.get("allowReserved"))
+                            if location == "query"
+                            else False
+                        ),
                         json_schema=_resolve_local_ref(document, parameter.get("schema", {})),
                     )
                 )
@@ -1045,7 +1190,7 @@ class OpenAPIRemoteInvoker:
             ) from exc
 
         path = endpoint_spec.path
-        query: dict[str, Any] = {}
+        query: list[tuple[str, str]] = []
         body: dict[str, Any] = {}
         root_body: Any | None = None
         root_body_seen = False
@@ -1056,11 +1201,24 @@ class OpenAPIRemoteInvoker:
                 continue
             value = arguments[parameter.name]
             wire_name = parameter.wire_name or parameter.name
+            effective_parameter = _with_openapi_parameter_defaults(parameter)
             if parameter.location == "path":
-                encoded = quote(str(value), safe="").replace(".", "%2E")
+                if effective_parameter.style != "simple":
+                    raise NonRetryableInvocationError(
+                        f"unsupported path parameter style {parameter.style!r} "
+                        f"for {parameter.name!r}"
+                    )
+                encoded = _serialize_simple_path(effective_parameter, value)
                 path = path.replace("{" + wire_name + "}", encoded)
             elif parameter.location == "query":
-                query[wire_name] = value
+                if effective_parameter.style != "form":
+                    raise NonRetryableInvocationError(
+                        f"unsupported query parameter style {parameter.style!r} "
+                        f"for {parameter.name!r}"
+                    )
+                query.extend(
+                    _serialize_form_query(effective_parameter, wire_name, value)
+                )
             elif parameter.location == "header":
                 normalized_name = wire_name.casefold()
                 if not _HEADER_NAME_RE.fullmatch(wire_name):
@@ -1075,7 +1233,15 @@ class OpenAPIRemoteInvoker:
                     raise NonRetryableInvocationError(
                         f"sensitive header {wire_name!r} must come from trusted runtime auth"
                     )
-                headers[wire_name] = str(value)
+                if effective_parameter.style != "simple":
+                    raise NonRetryableInvocationError(
+                        f"unsupported header parameter style {parameter.style!r} "
+                        f"for {parameter.name!r}"
+                    )
+                headers[wire_name] = _serialize_simple_header(
+                    effective_parameter,
+                    value,
+                )
             elif parameter.location == "body":
                 body[wire_name] = value
             elif parameter.location == "body_root":
