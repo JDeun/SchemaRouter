@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- privacy-safe observability snapshots for live routers, persistent registries, and run traces,
+  plus a dependency-free `schemarouter inspect ...` CLI and self-contained HTML dashboard export
+  that omit arbitrary metadata and payload values by default.
 - optional local `LayaDecisionBackend` through `schemarouter[laya]`, with language-aware local
   checkpoint routing, confidence-based abstention, lazy/preloaded execution, fail-closed option-ID
   validation, trusted credential separation, and shared decision-benchmark support.
