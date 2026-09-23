@@ -13,9 +13,9 @@ a release-specific support window is announced.
 
 Do not include credentials, tokens, private endpoints, or exploit details in a public issue.
 
-Use GitHub private vulnerability reporting for this repository when it is available. If private
-reporting is not available, contact the repository owner privately through GitHub before publishing
-technical details.
+Use [GitHub private vulnerability reporting](https://github.com/JDeun/SchemaRouter/security/advisories/new)
+for this repository. If private reporting is unavailable, contact the repository owner privately
+through GitHub before publishing technical details.
 
 For non-sensitive correctness bugs, normal GitHub issues are appropriate.
 

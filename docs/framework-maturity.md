@@ -39,7 +39,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Pluggable registry boundary | `ToolRegistry` protocol + transactional `SQLiteRegistry` | Add distributed/remote implementations only when needed |
 | Release / compatibility policy | Implemented | Enforce during RC reviews |
 | Package artifact CI | Implemented with clean wheel/sdist smoke, provenance, and SPDX SBOM attestations | Keep artifact verification blocking |
-| Security automation | Weekly/PR dependency audit + scheduled CodeQL + OpenSSF Scorecard | Triage findings without weakening fail-closed runtime policy |
+| Security automation | Weekly/PR dependency audit + scheduled CodeQL + OpenSSF Scorecard + immutable Action pins | Triage findings without weakening fail-closed runtime policy |
 | Documentation site | Implemented with MkDocs Material | Keep strict docs build blocking |
 | Integration certification suite | Implemented baseline + retained machine-readable OpenAPI/OPTIMADE smoke artifacts | Extend the live compatibility matrix |
 
