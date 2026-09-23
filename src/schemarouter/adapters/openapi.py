@@ -33,6 +33,131 @@ _HEADER_NAME_RE = re.compile(r"^[!#$%&'*+.^_\x60|~0-9A-Za-z-]+$")
 _MAX_RUNTIME_RESPONSE_BYTES = 16 * 1024 * 1024
 _TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
 
+_SCHEMA_MAP_KEYWORDS = {
+    "$defs",
+    "definitions",
+    "dependentSchemas",
+    "patternProperties",
+    "properties",
+}
+_SCHEMA_SINGLE_KEYWORDS = {
+    "additionalProperties",
+    "contains",
+    "else",
+    "if",
+    "items",
+    "not",
+    "propertyNames",
+    "then",
+    "unevaluatedItems",
+    "unevaluatedProperties",
+}
+_SCHEMA_LIST_KEYWORDS = {
+    "allOf",
+    "anyOf",
+    "oneOf",
+    "prefixItems",
+}
+
+
+def _normalize_openapi30_schema(schema: dict[str, Any]) -> tuple[dict[str, Any], int]:
+    """Translate OAS 3.0 nullable semantics into ordinary JSON Schema type unions."""
+
+    normalized: dict[str, Any] = {}
+    converted = 0
+
+    for key, value in schema.items():
+        if key in _SCHEMA_MAP_KEYWORDS and isinstance(value, dict):
+            mapped: dict[str, Any] = {}
+            for child_name, child_schema in value.items():
+                if isinstance(child_schema, dict):
+                    child, child_count = _normalize_openapi30_schema(child_schema)
+                    mapped[str(child_name)] = child
+                    converted += child_count
+                else:
+                    mapped[str(child_name)] = deepcopy(child_schema)
+            normalized[key] = mapped
+            continue
+
+        if key in _SCHEMA_SINGLE_KEYWORDS and isinstance(value, dict):
+            child, child_count = _normalize_openapi30_schema(value)
+            normalized[key] = child
+            converted += child_count
+            continue
+
+        if key in _SCHEMA_LIST_KEYWORDS and isinstance(value, list):
+            items: list[Any] = []
+            for child_schema in value:
+                if isinstance(child_schema, dict):
+                    child, child_count = _normalize_openapi30_schema(child_schema)
+                    items.append(child)
+                    converted += child_count
+                else:
+                    items.append(deepcopy(child_schema))
+            normalized[key] = items
+            continue
+
+        normalized[key] = deepcopy(value)
+
+    if normalized.get("nullable") is True and "type" in normalized:
+        raw_type = normalized.get("type")
+        if isinstance(raw_type, str):
+            normalized["type"] = (
+                [raw_type, "null"]
+                if raw_type != "null"
+                else ["null"]
+            )
+            normalized.pop("nullable", None)
+            converted += 1
+        elif isinstance(raw_type, list) and all(
+            isinstance(item, str) for item in raw_type
+        ):
+            normalized["type"] = list(dict.fromkeys([*raw_type, "null"]))
+            normalized.pop("nullable", None)
+            converted += 1
+
+    return normalized, converted
+
+
+def _normalize_openapi30_document(
+    document: dict[str, Any],
+) -> tuple[dict[str, Any], int]:
+    """Normalize Schema Objects without rewriting examples or arbitrary extension payloads."""
+
+    result = deepcopy(document)
+    converted = 0
+
+    def visit(node: Any, path: tuple[str, ...] = ()) -> None:
+        nonlocal converted
+        if isinstance(node, list):
+            for index, item in enumerate(node):
+                visit(item, (*path, str(index)))
+            return
+        if not isinstance(node, dict):
+            return
+
+        if path == ("components", "schemas"):
+            for name, schema in list(node.items()):
+                if not isinstance(schema, dict):
+                    continue
+                normalized, count = _normalize_openapi30_schema(schema)
+                node[name] = normalized
+                converted += count
+            return
+
+        for key, value in list(node.items()):
+            if key in {"example", "examples"}:
+                continue
+            if key == "schema" and isinstance(value, dict):
+                normalized, count = _normalize_openapi30_schema(value)
+                node[key] = normalized
+                converted += count
+                continue
+            visit(value, (*path, str(key)))
+
+    visit(result)
+    return result, converted
+
 
 def _local_ref_target(document: dict[str, Any], ref: str) -> Any | None:
     if not ref.startswith("#/"):
@@ -609,6 +734,11 @@ def tool_from_openapi(
     The adapter intentionally supports a stable common subset and preserves unsupported constructs
     in metadata instead of guessing their runtime semantics.
     """
+    nullable_normalized = 0
+    version = document.get("openapi")
+    if isinstance(version, str) and version.startswith("3.0."):
+        document, nullable_normalized = _normalize_openapi30_document(document)
+
     endpoints: list[EndpointSpec] = []
     for path, path_item in document.get("paths", {}).items():
         if not isinstance(path, str) or not isinstance(path_item, dict):
@@ -809,6 +939,7 @@ def tool_from_openapi(
             "adapter": "openapi",
             "openapi": document.get("openapi"),
             "title": (document.get("info") or {}).get("title"),
+            "openapi_30_nullable_normalized": nullable_normalized,
             "compatibility": compatibility.model_dump(mode="json", by_alias=True),
         },
     )
