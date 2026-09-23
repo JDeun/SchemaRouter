@@ -110,6 +110,24 @@ and OpenTelemetry**. They do not bypass SchemaRouter's policy or validation boun
 
 See the [0.5.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.5.0/) for details.
 
+## Inspect what SchemaRouter built
+
+On the 0.6 development line, persisted registries and run traces can be inspected without executing
+tools:
+
+```bash
+schemarouter inspect registry --db ./registry.sqlite3
+schemarouter inspect tool materials --db ./registry.sqlite3
+schemarouter inspect traces --db ./traces.sqlite3
+schemarouter inspect trace <RUN_ID> --db ./traces.sqlite3
+```
+
+Add `--json` for automation or dashboard ingestion. The registry view exposes tool/endpoint
+topology, method/path, mutation classification, parameter/output-field counts, and schema
+fingerprints; trace views expose persisted run/event history.
+
+[Operational inspection guide](https://jdeun.github.io/SchemaRouter/guides/inspection/)
+
 ## Documentation
 
 Start with the manual rather than this README:
