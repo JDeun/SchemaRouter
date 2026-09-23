@@ -52,11 +52,16 @@ Install only the integrations you use.
     pip install "schemarouter[jev]"
     ```
 
-=== "Laya"
+=== "Laya (0.6 development)"
+
+    The current public `0.5.0` package does not contain the Laya extra yet.
 
     ```bash
-    pip install "schemarouter[laya]"
+    pip install -e ".[laya]"
     ```
+
+    The packaged `schemarouter[laya]` extra will become available in the first release that
+    includes the 0.6 development work.
 
 === "OpenTelemetry"
 
