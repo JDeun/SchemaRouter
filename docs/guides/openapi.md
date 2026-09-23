@@ -105,20 +105,32 @@ redirects per document     = 5
 These bounds can be reduced by trusted application code through the corresponding
 `SchemaRouter.from_url()` / `add_url()` keyword arguments.
 
-Referenced JSON/YAML documents are fetched completely, rewritten into a local in-memory bundle, and
-then consumed through the same local-ref parser and runtime JSON Schema validator. This avoids
-fragment-only parsing and keeps execution schemas self-contained.
+Referenced JSON/YAML documents are fetched completely, indexed as JSON Schema resources, rewritten
+into a local in-memory bundle, and then consumed through the same local-ref parser and runtime JSON
+Schema validator. This avoids fragment-only parsing and keeps execution schemas self-contained.
+
+With `openapi_external_refs=True`, the bounded resolver understands static JSON Schema resource
+scope:
+
+- same-origin absolute or relative `$id` values rebase descendant `$ref` resolution;
+- nested `$id` values are indexed as virtual resources inside the already loaded document;
+- static `$anchor` fragments such as `schema.json#User` resolve to their indexed subschema;
+- fetched/rebased resources remain confined to the entry document's origin;
+- resolved `$ref` values are rewritten to local JSON Pointers;
+- `$id` and `$anchor` are removed from the final runtime bundle after rewriting so validation
+  does not trigger a second external-resolution path.
 
 The current bounded resolver intentionally fails closed for:
 
-- cross-origin referenced documents;
-- non-JSON-Pointer URI fragments such as `schema.json#SomeAnchor`;
-- documents using JSON Schema `$id` base-URI rebasing;
+- cross-origin referenced documents or cross-origin `$id` base URIs;
+- `$id` values with fragments;
+- missing, duplicate, or invalid static anchors;
+- `$dynamicRef`, `$dynamicAnchor`, `$recursiveRef`, and `$recursiveAnchor`;
 - depth/document/byte limit exhaustion;
 - unstructured referenced content.
 
-This is deliberate. OpenAPI 3.1 permits `$id` to change schema base URIs, so silently treating those
-documents as retrieval-URL-relative would be incorrect.
+Dynamic JSON Schema scope is deliberately excluded because statically rewriting it as an ordinary
+anchor could change validation semantics.
 
 ## Current common subset
 
@@ -132,17 +144,18 @@ Supported paths include:
 - local component/path-item reference chains;
 - same-document URI-reference normalization;
 - explicitly enabled bounded same-origin cross-document `$ref` bundling;
+- bounded same-origin JSON Schema `$id` rebasing and static `$anchor` resolution;
 - planner-side object-property/required flattening through `allOf`;
 - planner-visible response-field discovery across `oneOf` / `anyOf` object variants while
   preserving composed runtime validation;
 - explicit cross-origin binding;
 - runtime origin confinement.
 
-JSON Schema `$id` rebasing, non-JSON-Pointer anchors, planner-side schema-variant selection,
-variant request-body flattening, and more ergonomic non-object request bodies remain follow-up
-work. Response variant fields may be selected for projection, but a field that is absent from the
-actual validated response variant is simply absent from the projected result. Unsupported
-constructs should not be guessed.
+Dynamic JSON Schema references/anchors, planner-side schema-variant selection, variant request-body
+flattening, and more ergonomic non-object request bodies remain follow-up work. Response variant
+fields may be selected for projection, but a field that is absent from the actual validated
+response variant is simply absent from the projected result. Unsupported constructs should not be
+guessed.
 
 
 ## Runtime response bound
