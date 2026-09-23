@@ -42,6 +42,29 @@ This is distinct from a bounded `DecisionBackend`:
 Neither surface turns the cloud model into an agent runtime. Tool execution, policy, schema
 fingerprints, and authority remain local to SchemaRouter.
 
+For a supported OpenAPI discriminated request body, the catalog contains one `body` parameter with
+the original composed schema. A hosted model can therefore return:
+
+```json
+{
+  "preferred_tools": ["pets"],
+  "preferred_endpoints": ["pets.create_pet"],
+  "arguments": {
+    "body": {
+      "kind": "dog",
+      "name": "Mong",
+      "breed": "retriever"
+    }
+  },
+  "fields": ["id"],
+  "concepts": [],
+  "evidence": {}
+}
+```
+
+SchemaRouter still validates that object locally against the endpoint input schema before any HTTP
+request is allowed.
+
 ## Model output is not executable
 
 The analyzer validates the response shape, then projects it back onto the current registry.
