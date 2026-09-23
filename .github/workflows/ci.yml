@@ -87,6 +87,10 @@ jobs:
       - run: python examples/quickstart.py
 
   package:
+    # "package" is a protected-main required check. Keeping Laya as a dependency
+    # makes the optional Laya contract release-blocking even when repository rules
+    # cannot yet require the newer laya-integration check directly.
+    needs: [laya-integration]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -113,7 +117,9 @@ jobs:
       - run: /tmp/schemarouter-wheel/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
       - run: /tmp/schemarouter-wheel/bin/schemarouter --help
-      - run: /tmp/schemarouter-wheel/bin/python scripts/benchmark_decision_routing.py
+      - run: /tmp/schemarouter-wheel/bin/python scripts/benchmark_decision_routing.py --json-out /tmp/decision-benchmark.json --html-out /tmp/decision-benchmark.html
+      - run: test -s /tmp/decision-benchmark.json
+      - run: test -s /tmp/decision-benchmark.html
       - run: /tmp/schemarouter-wheel/bin/python examples/inspection_dashboard.py --registry /tmp/inspection-registry.sqlite3 --traces /tmp/inspection-traces.sqlite3 --output /tmp/inspection-dashboard.html
       - run: test -s /tmp/inspection-dashboard.html
       - run: python -m venv /tmp/schemarouter-sdist
