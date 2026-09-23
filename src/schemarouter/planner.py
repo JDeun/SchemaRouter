@@ -306,7 +306,7 @@ class SchemaPlanner:
                 return candidates, [f"decision backend fallback: {type(exc).__name__}"]
             raise
         if result.abstained or not result.selections:
-            abstention = self.decision_policy.candidate_abstention
+            abstention = self.decision_policy.candidate_abstention_mode
             if abstention == "no_route":
                 message = (
                     "decision backend abstained after empty lexical recall; "
@@ -358,7 +358,7 @@ class SchemaPlanner:
                 return candidates, [f"decision backend fallback: {type(exc).__name__}"]
             raise
         if result.abstained or not result.selections:
-            abstention = self.decision_policy.candidate_abstention
+            abstention = self.decision_policy.candidate_abstention_mode
             if abstention == "no_route":
                 message = (
                     "decision backend abstained after empty lexical recall; "
