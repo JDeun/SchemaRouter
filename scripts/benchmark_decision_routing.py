@@ -732,8 +732,8 @@ async def main() -> None:
     )
     parser.add_argument(
         "--candidate-abstention",
-        choices=("deterministic", "no_route", "error"),
-        default="deterministic",
+        choices=("inherit", "deterministic", "no_route", "error"),
+        default="inherit",
         help=(
             "How candidate-selection abstention is handled. Provider errors remain governed "
             "by DecisionPolicy.fallback."
