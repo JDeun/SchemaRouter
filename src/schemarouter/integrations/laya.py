@@ -93,11 +93,16 @@ class LayaDecisionBackend:
                 return self.router
             try:
                 laya = import_module("laya")
-                router_type = getattr(laya, "Router")
-            except (ImportError, AttributeError) as exc:
+            except ImportError as exc:
                 raise ImportError(
                     'Laya integration requires: pip install "schemarouter[laya]"'
                 ) from exc
+
+            router_type = vars(laya).get("Router")
+            if not callable(router_type):
+                raise ImportError(
+                    'Laya integration requires a compatible package exposing laya.Router'
+                )
 
             self.router = router_type(
                 device=self.device,
