@@ -545,7 +545,12 @@ table {{
   border-collapse: collapse;
   font-size: .9rem;
 }}
-th, td {{ text-align: left; padding: 9px 8px; border-bottom: 1px solid #8884; vertical-align: top; }}
+th, td {{
+  text-align: left;
+  padding: 9px 8px;
+  border-bottom: 1px solid #8884;
+  vertical-align: top;
+}}
 th {{ white-space: nowrap; }}
 </style>
 </head>
