@@ -75,8 +75,10 @@ candidate to fall back to. Use confidence gating and benchmark the workload befo
 policy in production, especially for out-of-domain or adversarial requests.
 
 Candidate abstention is independently configurable with
-`candidate_abstention="deterministic" | "no_route" | "error"`. The default keeps the historical
-deterministic fallback for an existing lexical candidate. `"no_route"` suppresses the candidate
+`candidate_abstention="inherit" | "deterministic" | "no_route" | "error"`. The default
+`"inherit"` preserves historical behavior by following `fallback`: existing
+`fallback="deterministic"` and `fallback="error"` configurations therefore keep their prior
+abstention semantics. `"no_route"` suppresses the candidate
 route when the bounded backend explicitly abstains, which is useful for confidence-gated
 out-of-domain handling. Provider exceptions and malformed output remain governed by `fallback`;
 choosing `"no_route"` therefore does not silently convert provider outages into no-route results.
