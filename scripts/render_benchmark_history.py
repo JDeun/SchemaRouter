@@ -114,7 +114,8 @@ hardware, and measurement conditions are equivalent.
 <tr>
 <th>Run</th><th>Generated</th><th>SchemaRouter</th><th>Corpus</th><th>Hardware</th>
 <th>Backend</th><th>Cases</th><th>Accuracy</th><th>Invalid</th><th>Errors</th>
-<th>Invoked</th><th>Mean confidence</th><th>Abstention</th><th>P50 ms</th><th>P95 ms</th><th>Cost</th><th>Models</th>
+<th>Invoked</th><th>Mean confidence</th><th>Abstention</th><th>P50 ms</th>
+<th>P95 ms</th><th>Cost</th><th>Models</th>
 <th>Actual device</th>
 </tr>
 </thead>
