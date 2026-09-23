@@ -164,6 +164,16 @@ def test_laya_can_pin_a_specific_checkpoint() -> None:
     assert router.calls[0]["kwargs"] == {"model": "typed-decisions"}
 
 
+def test_laya_rejects_multi_selection_contract() -> None:
+    multi = request().model_copy(update={"max_selections": 2})
+    router = FakeRouter(response())
+
+    with pytest.raises(PlanningError, match="single-selection"):
+        choose_sync(LayaDecisionBackend(router=router), multi)
+
+    assert router.calls == []
+
+
 def test_laya_low_confidence_abstains() -> None:
     router = FakeRouter(response("candidate:0", 0.49))
     result = choose_sync(
