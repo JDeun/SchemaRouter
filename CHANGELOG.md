@@ -16,7 +16,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - Hypothesis-based property tests for supported OpenAPI path/query/header parameter serialization;
 - automated dependency vulnerability auditing and scheduled CodeQL Python analysis;
 - opt-in `DecisionPolicy.recall_on_empty` recovery for enabled bounded candidate-selection
-  backends when lexical schema recall is empty, with fail-closed abstention/error behavior.
+  backends when lexical schema recall is empty, with fail-closed abstention/error behavior;
+- row-level decision confidence capture and offline threshold calibration that replays deterministic
+  fallback behavior without repeating model inference.
 
 ### Changed
 
