@@ -42,7 +42,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - added a pinned OpenSSF Scorecard workflow that publishes authenticated results, retains SARIF, and
   uploads findings to GitHub Code Scanning on main and a weekly schedule;
 - release wheel and sdist artifacts now receive GitHub/Sigstore build-provenance attestations before
-  publication.
+  publication;
+- release builds now generate a pinned-tool SPDX JSON SBOM outside the PyPI distribution directory,
+  attest that SBOM against wheel/sdist artifacts, and attach the SBOM to the GitHub release.
 
 ## 0.6.0 - 2026-09-23
 

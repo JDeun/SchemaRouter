@@ -7,9 +7,9 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Core CI passes on every supported Python version.
 - [ ] Warnings are treated as failures.
 - [ ] Static type checking passes for the typed package surface.
-- [ ] The 82% branch-coverage floor passes.
+- [ ] The 84% branch-coverage floor passes.
 - [ ] Minimum declared runtime dependencies pass the core suite.
-- [ ] Optional integration CI passes, including LangChain, LlamaIndex, Jev, MCP, and OpenTelemetry.
+- [ ] Optional integration CI passes, including LangChain, LlamaIndex, Jev, Laya, MCP, and OpenTelemetry.
 - [ ] Linux core CI passes on Python 3.10 through 3.14.
 - [ ] The Windows + Python 3.14 smoke job passes.
 - [ ] The separate Python 3.15 preview workflow is reviewed for forward-compatibility signals,
@@ -33,7 +33,7 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] A recent public OPTIMADE live smoke is green.
 - [ ] The real MCP Streamable HTTP integration job is green when the MCP extra is part of the release.
 - [ ] Optional framework/provider integration jobs are green for every extra included in the release.
-- [ ] Dependency audit and the latest scheduled CodeQL analysis are green or any finding is explicitly triaged.
+- [ ] Dependency audit, latest scheduled CodeQL analysis, and latest OpenSSF Scorecard findings are green or explicitly triaged.
 - [ ] Property-based OpenAPI serialization tests pass on supported Python versions.
 - [ ] Cross-origin OpenAPI behavior is tested with explicit local approval.
 - [ ] Schema drift and stale binding tests pass.
@@ -64,11 +64,13 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Build wheel and sdist from the resolved release SHA in an unprivileged job.
 - [ ] Clean-install and smoke-test both built artifacts before publication.
 - [ ] Generate GitHub artifact provenance attestations for the wheel and sdist from the build job before upload.
+- [ ] Generate an SPDX JSON SBOM, attach it to the GitHub release, and create an SBOM attestation for the wheel and sdist.
 - [ ] Publish GitHub release assets and PyPI artifacts from separate jobs; only the PyPI job receives
   OIDC `id-token: write` permission.
 - [ ] Confirm the PyPI Trusted Publisher is configured for the `pypi` GitHub environment.
 - [ ] Publish to the package index only after all blocking gates are green.
 - [ ] Verify install/import in a clean environment.
+- [ ] Verify the release provenance and SPDX SBOM attestations with GitHub CLI for at least one published artifact.
 
 ## Post-release
 
