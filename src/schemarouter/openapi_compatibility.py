@@ -186,8 +186,10 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                 )
             else:
                 message = (
-                    f"{construct} is preserved for runtime validation but is not flattened "
-                    "for planner-side variant selection."
+                    f"{construct} is preserved for runtime validation. Object properties from "
+                    "response variants are exposed as conditional planner-visible output fields, "
+                    "but SchemaRouter does not choose schema variants or flatten variant request "
+                    "bodies."
                 )
             add(
                 location,
