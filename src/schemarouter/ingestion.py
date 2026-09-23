@@ -185,6 +185,16 @@ def _contains_external_ref(value: Any) -> bool:
     return False
 
 
+def _contains_schema_ref(value: Any) -> bool:
+    if isinstance(value, dict):
+        if isinstance(value.get("$ref"), str):
+            return True
+        return any(_contains_schema_ref(item) for item in value.values())
+    if isinstance(value, list):
+        return any(_contains_schema_ref(item) for item in value)
+    return False
+
+
 _STATIC_ANCHOR_RE = re.compile(r"^[A-Za-z][A-Za-z0-9._:-]*$")
 
 
@@ -214,59 +224,238 @@ class _OpenAPIRefBundler:
         self.total_bytes = 0
         self.documents: dict[str, str] = {}
         self.bundle: dict[str, Any] = {}
+        self.root_document: dict[str, Any] | None = None
+        self.resources: dict[str, _SchemaResourceLocation] = {}
+        self.anchors: dict[tuple[str, str], _SchemaResourceLocation] = {}
+        self.same_document_refs_normalized = 0
 
     async def resolve(self, document: dict[str, Any]) -> tuple[dict[str, Any], dict[str, int]]:
-        if not _contains_external_ref(document):
+        if _contains_dynamic_schema_reference(document):
+            raise SchemaSourceError(
+                "bounded external OpenAPI refs do not support dynamic or recursive schema refs"
+            )
+        if not _contains_schema_ref(document):
             return deepcopy(document), {
                 "documents": 0,
                 "bytes": 0,
+                "same_document_refs": 0,
             }
-        if _contains_schema_id(document):
-            raise SchemaSourceError(
-                "bounded external OpenAPI refs do not support $id-based base URI rebasing"
-            )
-
         if _OPENAPI_EXTERNAL_REFS_KEY in document:
             raise SchemaSourceError(
                 "OpenAPI document uses the reserved external-ref bundle key"
             )
 
         resolved = deepcopy(document)
+        self.root_document = resolved
+        root_location = _SchemaResourceLocation(document_key=None, path=())
+        self._register_resource(self.root_url, root_location)
+        self._index_node(
+            resolved,
+            base_url=self.root_url,
+            document_key=None,
+            path=(),
+        )
         await self._rewrite(
             resolved,
             base_url=self.root_url,
-            current_document=None,
             depth=0,
         )
+
+        self._strip_resolution_keywords(resolved)
+        for bundled in self.bundle.values():
+            self._strip_resolution_keywords(bundled)
         if self.bundle:
             resolved[_OPENAPI_EXTERNAL_REFS_KEY] = deepcopy(self.bundle)
+
         return resolved, {
             "documents": len(self.bundle),
             "bytes": self.total_bytes,
+            "same_document_refs": self.same_document_refs_normalized,
         }
 
-    @staticmethod
-    def _fragment_pointer(fragment: str) -> str:
-        decoded = unquote(fragment)
-        if not decoded:
-            return ""
-        if not decoded.startswith("/"):
+    def _schema_base_uri(self, base_url: str, schema_id: Any) -> str:
+        if not isinstance(schema_id, str) or not schema_id.strip():
+            raise SchemaSourceError("JSON Schema $id must be a non-empty URI string")
+
+        absolute = urljoin(base_url, schema_id)
+        resource_url, fragment = urldefrag(absolute)
+        if fragment:
             raise SchemaSourceError(
-                "bounded external OpenAPI refs require JSON-Pointer fragments"
+                "bounded external OpenAPI refs do not support $id values with fragments"
             )
-        return decoded
+        _validate_url(resource_url)
+        if not same_origin(self.root_url, resource_url):
+            raise SchemaSourceError(
+                "cross-origin JSON Schema $id base URIs are not allowed"
+            )
+        return resource_url
+
+    def _register_resource(
+        self,
+        resource_url: str,
+        location: _SchemaResourceLocation,
+    ) -> None:
+        existing = self.resources.get(resource_url)
+        if existing is not None and existing != location:
+            raise SchemaSourceError(
+                f"duplicate JSON Schema resource URI: {resource_url}"
+            )
+        self.resources[resource_url] = location
+
+    def _register_anchor(
+        self,
+        resource_url: str,
+        anchor: Any,
+        location: _SchemaResourceLocation,
+    ) -> None:
+        if not isinstance(anchor, str) or not _STATIC_ANCHOR_RE.fullmatch(anchor):
+            raise SchemaSourceError("JSON Schema $anchor has an invalid name")
+        key = (resource_url, anchor)
+        existing = self.anchors.get(key)
+        if existing is not None and existing != location:
+            raise SchemaSourceError(
+                f"duplicate JSON Schema $anchor {anchor!r} for {resource_url}"
+            )
+        self.anchors[key] = location
+
+    def _index_node(
+        self,
+        value: Any,
+        *,
+        base_url: str,
+        document_key: str | None,
+        path: tuple[str, ...],
+    ) -> None:
+        if isinstance(value, list):
+            for index, item in enumerate(value):
+                self._index_node(
+                    item,
+                    base_url=base_url,
+                    document_key=document_key,
+                    path=(*path, str(index)),
+                )
+            return
+        if not isinstance(value, dict):
+            return
+
+        location = _SchemaResourceLocation(document_key=document_key, path=path)
+        effective_base = base_url
+        if "$id" in value:
+            effective_base = self._schema_base_uri(base_url, value["$id"])
+            self._register_resource(effective_base, location)
+
+        if "$anchor" in value:
+            self._register_anchor(effective_base, value["$anchor"], location)
+
+        for key, item in value.items():
+            self._index_node(
+                item,
+                base_url=effective_base,
+                document_key=document_key,
+                path=(*path, str(key)),
+            )
+
+    def _document_root(self, document_key: str | None) -> Any:
+        if document_key is None:
+            if self.root_document is None:
+                raise SchemaSourceError("OpenAPI reference resolver has no root document")
+            return self.root_document
+        return self.bundle[document_key]
 
     @staticmethod
-    def _bundle_ref(document_key: str, fragment: str) -> str:
-        base = f"#/{_OPENAPI_EXTERNAL_REFS_KEY}/{document_key}"
-        return base + fragment
+    def _decode_pointer(fragment: str) -> list[str]:
+        if not fragment:
+            return []
+        if not fragment.startswith("/"):
+            raise SchemaSourceError("JSON Schema reference is not a JSON Pointer")
+        return [
+            part.replace("~1", "/").replace("~0", "~")
+            for part in fragment[1:].split("/")
+        ]
+
+    def _pointer_location(
+        self,
+        resource: _SchemaResourceLocation,
+        fragment: str,
+    ) -> _SchemaResourceLocation:
+        parts = self._decode_pointer(fragment)
+        node = self._document_root(resource.document_key)
+        for part in resource.path:
+            if isinstance(node, dict):
+                if part not in node:
+                    raise SchemaSourceError("JSON Schema resource path is invalid")
+                node = node[part]
+            elif isinstance(node, list) and part.isdigit():
+                index = int(part)
+                if index >= len(node):
+                    raise SchemaSourceError("JSON Schema resource path is invalid")
+                node = node[index]
+            else:
+                raise SchemaSourceError("JSON Schema resource path is invalid")
+
+        resolved_path = list(resource.path)
+        for part in parts:
+            if isinstance(node, dict):
+                if part not in node:
+                    raise SchemaSourceError("JSON Schema $ref pointer target does not exist")
+                node = node[part]
+            elif isinstance(node, list) and part.isdigit():
+                index = int(part)
+                if index >= len(node):
+                    raise SchemaSourceError("JSON Schema $ref pointer target does not exist")
+                node = node[index]
+            else:
+                raise SchemaSourceError("JSON Schema $ref pointer target does not exist")
+            resolved_path.append(part)
+
+        return _SchemaResourceLocation(
+            document_key=resource.document_key,
+            path=tuple(resolved_path),
+        )
+
+    def _resolve_fragment(
+        self,
+        resource_url: str,
+        fragment: str,
+    ) -> _SchemaResourceLocation:
+        resource = self.resources.get(resource_url)
+        if resource is None:
+            raise SchemaSourceError(
+                f"JSON Schema resource URI was not indexed: {resource_url}"
+            )
+
+        decoded = unquote(fragment)
+        if not decoded:
+            return resource
+        if decoded.startswith("/"):
+            return self._pointer_location(resource, decoded)
+
+        anchor = self.anchors.get((resource_url, decoded))
+        if anchor is None:
+            raise SchemaSourceError(
+                f"JSON Schema $anchor {decoded!r} was not found for {resource_url}"
+            )
+        return anchor
+
+    @staticmethod
+    def _pointer_ref(location: _SchemaResourceLocation) -> str:
+        parts: list[str] = []
+        if location.document_key is not None:
+            parts.extend((_OPENAPI_EXTERNAL_REFS_KEY, location.document_key))
+        parts.extend(location.path)
+        if not parts:
+            return "#"
+        encoded = [
+            part.replace("~", "~0").replace("/", "~1")
+            for part in parts
+        ]
+        return "#/" + "/".join(encoded)
 
     async def _rewrite(
         self,
         value: Any,
         *,
         base_url: str,
-        current_document: str | None,
         depth: int,
     ) -> None:
         if isinstance(value, list):
@@ -274,49 +463,45 @@ class _OpenAPIRefBundler:
                 await self._rewrite(
                     item,
                     base_url=base_url,
-                    current_document=current_document,
                     depth=depth,
                 )
             return
         if not isinstance(value, dict):
             return
 
+        effective_base = base_url
+        if "$id" in value:
+            effective_base = self._schema_base_uri(base_url, value["$id"])
+
         ref = value.get("$ref")
         if isinstance(ref, str):
-            if ref.startswith("#"):
-                if current_document is not None:
-                    _, fragment = urldefrag(ref)
-                    value["$ref"] = self._bundle_ref(
-                        current_document,
-                        self._fragment_pointer(fragment),
-                    )
-            else:
-                absolute = urljoin(base_url, ref)
-                resource_url, fragment = urldefrag(absolute)
-                _validate_url(resource_url)
-                if not same_origin(self.root_url, resource_url):
+            absolute = urljoin(effective_base, ref)
+            resource_url, fragment = urldefrag(absolute)
+            _validate_url(resource_url)
+            if not same_origin(self.root_url, resource_url):
+                raise SchemaSourceError(
+                    "cross-origin external OpenAPI $ref targets are not allowed"
+                )
+
+            if resource_url not in self.resources:
+                if depth + 1 > self.max_depth:
                     raise SchemaSourceError(
-                        "cross-origin external OpenAPI $ref targets are not allowed"
+                        "external OpenAPI $ref exceeded the configured depth limit"
                     )
-                pointer = self._fragment_pointer(fragment)
-                if resource_url == self.root_url:
-                    value["$ref"] = "#" + pointer
-                else:
-                    if depth + 1 > self.max_depth:
-                        raise SchemaSourceError(
-                            "external OpenAPI $ref exceeded the configured depth limit"
-                        )
-                    document_key = await self._load_document(
-                        resource_url,
-                        depth=depth + 1,
-                    )
-                    value["$ref"] = self._bundle_ref(document_key, pointer)
+                await self._load_document(
+                    resource_url,
+                    depth=depth + 1,
+                )
+
+            location = self._resolve_fragment(resource_url, fragment)
+            if not ref.startswith("#") and location.document_key is None:
+                self.same_document_refs_normalized += 1
+            value["$ref"] = self._pointer_ref(location)
 
         for item in list(value.values()):
             await self._rewrite(
                 item,
-                base_url=base_url,
-                current_document=current_document,
+                base_url=effective_base,
                 depth=depth,
             )
 
@@ -351,6 +536,10 @@ class _OpenAPIRefBundler:
         existing = self.documents.get(final_url)
         if existing is not None:
             self.documents[resource_url] = existing
+            location = self.resources.get(final_url)
+            if location is None:
+                raise SchemaSourceError("cached schema document is missing its resource index")
+            self._register_resource(resource_url, location)
             return existing
 
         parsed = _parse_reference_text(response.text)
@@ -358,9 +547,9 @@ class _OpenAPIRefBundler:
             raise SchemaSourceError(
                 "external OpenAPI $ref target is not structured JSON/YAML"
             )
-        if _contains_schema_id(parsed):
+        if _contains_dynamic_schema_reference(parsed):
             raise SchemaSourceError(
-                "bounded external OpenAPI refs do not support $id-based base URI rebasing"
+                "bounded external OpenAPI refs do not support dynamic or recursive schema refs"
             )
 
         document_key = f"doc{len(self.bundle)}"
@@ -368,13 +557,35 @@ class _OpenAPIRefBundler:
         self.documents[final_url] = document_key
         self.bundle[document_key] = deepcopy(parsed)
 
+        location = _SchemaResourceLocation(document_key=document_key, path=())
+        self._register_resource(resource_url, location)
+        self._register_resource(final_url, location)
+        self._index_node(
+            self.bundle[document_key],
+            base_url=final_url,
+            document_key=document_key,
+            path=(),
+        )
+
         await self._rewrite(
             self.bundle[document_key],
             base_url=final_url,
-            current_document=document_key,
             depth=depth,
         )
         return document_key
+
+    @classmethod
+    def _strip_resolution_keywords(cls, value: Any) -> None:
+        if isinstance(value, list):
+            for item in value:
+                cls._strip_resolution_keywords(item)
+            return
+        if not isinstance(value, dict):
+            return
+        value.pop("$id", None)
+        value.pop("$anchor", None)
+        for item in value.values():
+            cls._strip_resolution_keywords(item)
 
 
 class OpenAPISourceAdapter:
