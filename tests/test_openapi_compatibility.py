@@ -89,7 +89,7 @@ def test_openapi_compatibility_makes_unsupported_semantics_visible() -> None:
     assert constructs["external_ref"] == "unsupported"
     assert constructs["cookie_parameter"] == "unsupported"
     assert constructs["multiple_request_content_types"] == "partial"
-    assert constructs["non_object_request_body"] == "unsupported"
+    assert "non_object_request_body" not in constructs
     assert constructs["oneOf"] == "partial"
     assert constructs["multiple_response_content_types"] == "partial"
     assert constructs["security_requirements"] == "partial"
@@ -213,3 +213,36 @@ def test_openapi_import_attaches_machine_readable_compatibility_report() -> None
     assert report["status"] == "supported"
     assert report["operations_total"] == 1
     assert report["operations_importable"] == 1
+
+
+def test_openapi_compatibility_accepts_explicit_scalar_and_array_json_bodies() -> None:
+    for schema in (
+        {"type": "string"},
+        {"type": "array", "items": {"type": "integer"}},
+    ):
+        document = {
+            "openapi": "3.1.0",
+            "info": {"title": "Root Body"},
+            "paths": {
+                "/submit": {
+                    "post": {
+                        "requestBody": {
+                            "required": True,
+                            "content": {
+                                "application/json": {
+                                    "schema": schema,
+                                }
+                            },
+                        },
+                        "responses": {"204": {"description": "ok"}},
+                    }
+                }
+            },
+        }
+
+        report = analyze_openapi_compatibility(document)
+
+        assert not any(
+            issue.schema_construct == "non_object_request_body"
+            for issue in report.issues
+        )
