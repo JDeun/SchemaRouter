@@ -25,6 +25,12 @@ def sample_tool() -> ToolSpec:
         description="Weather API",
         source_type="openapi",
         license="MIT",
+        metadata={
+            "adapter": "openapi",
+            "source_url": "https://example.test/openapi.json",
+            "execution_bound": True,
+            "secretish_custom_metadata": "must-not-render",
+        },
         endpoints=[
             EndpointSpec(
                 name="current",
@@ -91,6 +97,11 @@ def test_inspect_registry_derives_operational_counts() -> None:
     assert snapshot.mutating_endpoints == 1
     assert snapshot.unclassified_endpoints == 1
     assert snapshot.tools[0].key == "demo.weather"
+    assert snapshot.tools[0].provenance == {
+        "adapter": "openapi",
+        "source_url": "https://example.test/openapi.json",
+        "execution_bound": True,
+    }
     assert len(snapshot.tools[0].fingerprint) == 64
     assert len(snapshot.tools[0].endpoints[0].fingerprint) == 64
 
@@ -141,6 +152,9 @@ def test_cli_registry_and_tool_json_are_read_only(tmp_path, capsys) -> None:
     output = capsys.readouterr().out
     assert "Registry v1: 1 tools, 3 endpoints" in output
     assert "demo.weather" in output
+    assert "openapi" in output
+    assert "https://example.test/openapi.json" in output
+    assert "secretish_custom_metadata" not in output
     assert "GET /weather/current" in output
     assert "mutating" in output
     assert "unclassified" in output
@@ -152,6 +166,8 @@ def test_cli_registry_and_tool_json_are_read_only(tmp_path, capsys) -> None:
     assert '"key": "demo.weather"' in output
     assert '"fingerprint"' in output
     assert '"wire_name": null' in output
+    assert '"source_url": "https://example.test/openapi.json"' in output
+    assert "secretish_custom_metadata" not in output
 
     with SQLiteRegistry(path) as reopened:
         assert reopened.version == version
