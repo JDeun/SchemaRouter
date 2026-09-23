@@ -69,6 +69,9 @@ dev = [
   "twine>=5",
 ]
 
+[project.scripts]
+schemarouter = "schemarouter.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/JDeun/SchemaRouter"
 Repository = "https://github.com/JDeun/SchemaRouter"
