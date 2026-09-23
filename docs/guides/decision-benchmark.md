@@ -167,10 +167,14 @@ python scripts/calibrate_decision_threshold.py \
   --html-out artifacts/laya/calibration.html
 ```
 
-The calibration replays low-confidence cases through the recorded deterministic fallback route and
-reports overall/category accuracy, confidence coverage, backend abstention, final no-route rate,
-expected no-route recall, and expanded-candidate selection rate for thresholds 0.00 through 0.95.
-This separates threshold tuning from model/runtime latency and avoids paying for repeated inference.
+The calibration can replay low-confidence cases either through the recorded deterministic fallback
+route or as a final no-route result with `--abstention-mode no_route`. It reports
+overall/category accuracy, confidence coverage, backend abstention, final no-route rate, expected
+no-route recall, and expanded-candidate selection rate for thresholds 0.00 through 0.95. This
+separates threshold tuning from model/runtime latency and avoids paying for repeated inference.
+
+Benchmark JSON also records the installed Laya, PyTorch, and Transformers package versions when
+Laya is enabled so dated results can be reproduced against the actual local runtime.
 
 Published results should record the exact Laya package version, checkpoint/routing policy, hardware,
 device, preload policy, confidence threshold, corpus revision, and repeated-run count. Do not compare
