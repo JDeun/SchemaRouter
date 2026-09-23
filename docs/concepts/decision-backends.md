@@ -147,6 +147,7 @@ The optional backends serve different deployment goals:
 | Backend | Best fit | Trade-off |
 | --- | --- | --- |
 | Deterministic / embedding | Zero provider dependency and predictable local behavior | Lower semantic flexibility on ambiguous language |
+| Hosted general LLM via `CallableDecisionBackend` | Reuse an existing GPT, Gemini, Claude, or other cloud-model client | Provider latency/cost; application owns structured-output prompting and credentials |
 | Laya | Fast local finite decisions, including Apple Silicon through PyTorch MPS/Metal | Single-selection adapter today; quality is checkpoint/domain dependent |
 | Ollama | Reuse a general local LLM that is already deployed for other application tasks | Autoregressive generation is heavier and slower than a purpose-built decision model |
 | Jev / TypeSafe | Hosted purpose-built bounded decisions without local model operations | External service/network dependency |
@@ -155,6 +156,56 @@ Ollama is therefore **not required** when Laya or a deterministic backend meets 
 remains useful as a broad compatibility path for teams that already operate local instruction
 models, for side-by-side benchmark evidence, and as a fallback when a task benefits from a general
 language model rather than a specialized System-One decision model.
+
+## Existing cloud LLM clients
+
+SchemaRouter does not require Ollama or Laya when the application already uses a hosted model API.
+The provider-neutral `CallableDecisionBackend` can wrap the same application-owned GPT, Gemini,
+Claude, or other structured-output client:
+
+```python
+from schemarouter import CallableDecisionBackend, DecisionPolicy, SchemaPlanner
+
+async def cloud_decider(request):
+    # Use the application's existing cloud-model client here.
+    # Return only finite option IDs that came from request.options.
+    payload = {
+        "query": request.query,
+        "options": [
+            {
+                "id": option.id,
+                "label": option.label,
+                "description": option.description,
+            }
+            for option in request.options
+        ],
+        "max_selections": request.max_selections,
+    }
+    raw = await existing_cloud_model_json_call(payload)
+    return raw
+
+backend = CallableDecisionBackend(cloud_decider)
+
+planner = SchemaPlanner(
+    registry,
+    decision_backend=backend,
+    decision_policy=DecisionPolicy(
+        enabled=True,
+        endpoint_selection=True,
+        fallback="deterministic",
+    ),
+)
+```
+
+The callable may internally use OpenAI, Google, Anthropic, or another provider. SchemaRouter does
+not automatically inherit the application's provider client or API key; the application injects
+that trusted client explicitly. This keeps vendor SDKs and credentials outside SchemaRouter core.
+
+The same fail-closed contract still applies: unknown IDs, duplicate IDs, or selections beyond
+`max_selections` are rejected before they can affect planning.
+
+There are intentionally no first-class OpenAI/Gemini/Anthropic SDK dependencies in core. The stable
+integration surface is the provider-neutral callable contract.
 
 ## Local embedding similarity
 
