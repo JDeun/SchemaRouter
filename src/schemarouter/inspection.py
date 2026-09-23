@@ -10,6 +10,35 @@ from .registry import ToolRegistry
 from .traces import RunTrace, RunTraceStore
 
 
+_PROVENANCE_KEYS = (
+    "adapter",
+    "source_url",
+    "resolved_schema_url",
+    "suggested_base_url",
+    "approved_base_url",
+    "versioned_base_url",
+    "api_version",
+    "protocol_version",
+    "remote",
+    "execution_bound",
+    "requires_explicit_base_url",
+    "external_refs_enabled",
+    "same_document_refs_normalized",
+    "external_ref_documents_resolved",
+    "external_ref_bytes_fetched",
+    "external_ref_limits",
+    "authenticated_transport",
+)
+
+
+def _provenance(tool: ToolSpec) -> dict[str, Any]:
+    return {
+        key: tool.metadata[key]
+        for key in _PROVENANCE_KEYS
+        if key in tool.metadata
+    }
+
+
 class EndpointInspection(StrictModel):
     """Derived operational view of one registered endpoint."""
 
@@ -35,6 +64,7 @@ class ToolInspection(StrictModel):
     license: str | None = None
     endpoint_count: int = Field(ge=0)
     fingerprint: str
+    provenance: dict[str, Any] = Field(default_factory=dict)
     endpoints: list[EndpointInspection] = Field(default_factory=list)
 
 
@@ -90,6 +120,7 @@ def inspect_tool_spec(tool: ToolSpec) -> ToolInspection:
         license=tool.license,
         endpoint_count=len(endpoints),
         fingerprint=tool.fingerprint,
+        provenance=_provenance(tool),
         endpoints=endpoints,
     )
 
@@ -165,16 +196,41 @@ def inspect_traces(
 
 
 def tool_spec_document(tool: ToolSpec) -> dict[str, Any]:
-    """Return a detached JSON-compatible document plus derived fingerprints."""
+    """Return a safe detached inspection document plus derived fingerprints.
 
-    document = tool.model_dump(mode="json")
-    document["key"] = tool.key
-    document["fingerprint"] = tool.fingerprint
-    document["endpoints"] = [
-        {
-            **endpoint.model_dump(mode="json"),
-            "fingerprint": endpoint.fingerprint,
-        }
-        for endpoint in tool.endpoints
-    ]
-    return document
+    Arbitrary ToolSpec/EndpointSpec metadata is intentionally omitted. Only the allowlisted
+    ingestion provenance above is surfaced at tool level.
+    """
+
+    return {
+        "key": tool.key,
+        "name": tool.name,
+        "namespace": tool.namespace,
+        "description": tool.description,
+        "source_type": tool.source_type,
+        "license": tool.license,
+        "fingerprint": tool.fingerprint,
+        "provenance": _provenance(tool),
+        "endpoints": [
+            {
+                "name": endpoint.name,
+                "description": endpoint.description,
+                "method": endpoint.method,
+                "path": endpoint.path,
+                "read_only": endpoint.read_only,
+                "destructive": endpoint.destructive,
+                "parameters": [
+                    parameter.model_dump(mode="json")
+                    for parameter in endpoint.parameters
+                ],
+                "output_fields": [
+                    field.model_dump(mode="json")
+                    for field in endpoint.output_fields
+                ],
+                "input_schema": endpoint.input_schema,
+                "output_schema": endpoint.output_schema,
+                "fingerprint": endpoint.fingerprint,
+            }
+            for endpoint in tool.endpoints
+        ],
+    }
