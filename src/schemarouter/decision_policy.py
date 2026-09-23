@@ -17,11 +17,16 @@ class DecisionPolicy(BaseModel):
     endpoint_selection: bool = False
     field_selection: bool = False
     evidence_sufficiency: bool = False
+    recall_on_empty: bool = False
     fallback: DecisionFallback = "deterministic"
 
     @property
     def candidate_selection_enabled(self) -> bool:
         return self.enabled and (self.tool_selection or self.endpoint_selection)
+
+    @property
+    def candidate_recall_on_empty_enabled(self) -> bool:
+        return self.candidate_selection_enabled and self.recall_on_empty
 
     @property
     def field_selection_enabled(self) -> bool:
