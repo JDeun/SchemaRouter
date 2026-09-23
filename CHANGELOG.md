@@ -17,8 +17,10 @@ The project is pre-1.0 and follows the compatibility rules in
 - automated dependency vulnerability auditing and scheduled CodeQL Python analysis;
 - opt-in `DecisionPolicy.recall_on_empty` recovery for enabled bounded candidate-selection
   backends when lexical schema recall is empty, with fail-closed abstention/error behavior;
-- row-level decision confidence capture and offline threshold calibration that replays deterministic
-  fallback behavior without repeating model inference.
+- row-level decision confidence capture and offline threshold calibration that can replay either
+  deterministic fallback or final no-route behavior without repeating model inference;
+- independently configurable candidate-abstention handling (`deterministic`, `no_route`, or
+  `error`) without changing provider-error fallback semantics.
 
 ### Changed
 
