@@ -208,6 +208,11 @@ class LayaDecisionBackend:
         return str(device) if device is not None else None
 
     def _decide_sync(self, request: DecisionRequest) -> DecisionResult:
+        if request.max_selections != 1:
+            raise PlanningError(
+                "LayaDecisionBackend supports only single-selection decision requests"
+            )
+
         router = self._get_router()
         kwargs: dict[str, Any] = {}
         if self.model is not None:
