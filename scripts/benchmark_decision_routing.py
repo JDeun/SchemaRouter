@@ -540,7 +540,11 @@ h1 {{ letter-spacing: -0.025em; }}
 .metric {{ font-size: 1.25rem; font-weight: 700; overflow-wrap: anywhere; }}
 .label {{ opacity: .7; }}
 .table-wrap {{ margin-top: 28px; overflow-x: auto; }}
-table {{ width: 100%; border-collapse: collapse; font-size: .9rem; }}
+table {{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .9rem;
+}}
 th, td {{ text-align: left; padding: 9px 8px; border-bottom: 1px solid #8884; vertical-align: top; }}
 th {{ white-space: nowrap; }}
 </style>
