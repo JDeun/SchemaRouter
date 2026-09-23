@@ -29,7 +29,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
 | Local Laya decision provider | Optional local choice adapter with auto language routing, confidence abstention, lazy/preloaded checkpoints, and shared benchmark support | Gather checkpoint/hardware-specific evidence before choosing defaults |
 | Local Ollama decision provider | Implemented over structured-output HTTP API | Benchmark specific local models/hardware before quality claims |
-| Decision benchmark harness | 144-case checked-in corpus + JSON/CSV metrics | Gather dated live-provider evidence |
+| Decision benchmark harness | 144-case checked-in corpus + JSON/CSV metrics + self-contained HTML summary | Gather dated live-provider evidence |
 | Framework callbacks / exporters | Typed redacted events + optional OpenTelemetry exporter | Add additional trusted sinks as needed |
 | Middleware interception | Trusted ordered before/after execution hooks with detached snapshots | Add organization-specific hook libraries only when needed |
 | Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
@@ -38,7 +38,8 @@ This document tracks framework-level maturity rather than research metrics.
 | HTTP serving layer | Not implemented | Consider optional server package |
 | Pluggable registry boundary | `ToolRegistry` protocol + transactional `SQLiteRegistry` | Add distributed/remote implementations only when needed |
 | Release / compatibility policy | Implemented | Enforce during RC reviews |
-| Package artifact CI | Implemented | Keep wheel/sdist metadata checks blocking |
+| Package artifact CI | Implemented with clean wheel/sdist smoke and release provenance attestations | Keep artifact verification blocking |
+| Security automation | Weekly/PR dependency audit + scheduled CodeQL Python analysis | Triage findings without weakening fail-closed runtime policy |
 | Documentation site | Implemented with MkDocs Material | Keep strict docs build blocking |
 | Integration certification suite | Implemented baseline | Extend the live compatibility matrix |
 
@@ -118,7 +119,9 @@ Completed locally:
 - authenticated MCP transport boundary;
 - per-call approval and per-run execution budgets;
 - privacy-preserving OpenTelemetry exporter;
-- explicit allowlisted third-party adapter plugins.
+- explicit allowlisted third-party adapter plugins;
+- property-based OpenAPI default-serialization coverage;
+- self-contained decision benchmark HTML reporting.
 
 Still external or follow-up work:
 
@@ -139,9 +142,11 @@ Implemented locally:
 - OpenAPI compatibility reports;
 - transactional SQLite tool registry persistence;
 - validated SQLite run-event trace persistence with non-executing replay;
-- trusted sync/async before/after execution hooks with snapshot-only, fail-closed semantics.
+- trusted sync/async before/after execution hooks with snapshot-only, fail-closed semantics;
+- dependency vulnerability auditing, CodeQL scanning, and signed release build provenance;
+- benchmark summary dashboard generated without remote assets.
 
 Remaining larger follow-up work:
 
-- benchmark and compatibility dashboard;
+- broader compatibility-history dashboard across dated live runs;
 - organization-specific policy/approval integrations.
