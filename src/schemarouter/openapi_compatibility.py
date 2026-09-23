@@ -278,14 +278,52 @@ def analyze_openapi_compatibility(document: dict[str, Any]) -> OpenAPICompatibil
                 ]
                 for index, parameter in enumerate(parameters):
                     resolved = _resolve_local_ref(document, parameter)
-                    if isinstance(resolved, dict) and resolved.get("in") == "cookie":
+                    if not isinstance(resolved, dict):
+                        continue
+
+                    parameter_location = resolved.get("in")
+                    parameter_pointer = f"{op_location}/parameters/{index}"
+                    if parameter_location == "cookie":
                         add(
-                            f"{op_location}/parameters/{index}",
+                            parameter_pointer,
                             "cookie_parameter",
                             "unsupported",
                             (
                                 "Cookie parameters are not model-selectable or emitted by the "
                                 "OpenAPI invoker."
+                            ),
+                        )
+                        continue
+
+                    default_styles = {
+                        "path": "simple",
+                        "query": "form",
+                        "header": "simple",
+                    }
+                    supported_style = default_styles.get(str(parameter_location))
+                    if supported_style is not None:
+                        raw_style = resolved.get("style")
+                        style = raw_style if isinstance(raw_style, str) else supported_style
+                        if style != supported_style:
+                            add(
+                                parameter_pointer,
+                                "parameter_style",
+                                "unsupported",
+                                (
+                                    f"{parameter_location} parameter style {style!r} is not "
+                                    f"currently serialized; supported style is "
+                                    f"{supported_style!r}."
+                                ),
+                            )
+
+                    if parameter_location == "query" and resolved.get("allowReserved") is True:
+                        add(
+                            parameter_pointer,
+                            "allow_reserved",
+                            "unsupported",
+                            (
+                                "allowReserved=true is not emitted because the HTTP client would "
+                                "otherwise silently change reserved-character semantics."
                             ),
                         )
 
