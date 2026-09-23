@@ -24,8 +24,6 @@ The project is pre-1.0 and follows the compatibility rules in
 - independently configurable candidate-abstention handling with compatibility-preserving
   `inherit`, plus explicit `deterministic`, `no_route`, and `error` modes, without changing
   provider-error fallback semantics;
-- an explicit `none_of_the_above` bounded option for empty-lexical-recall catalog expansion so
-  model-assisted recall recovery can return no route instead of being forced to choose an endpoint.
 
 ### Changed
 
