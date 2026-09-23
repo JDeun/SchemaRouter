@@ -289,6 +289,13 @@ def parse_json_mapping(value: str | None, *, option_name: str) -> dict[str, Any]
     return parsed
 
 
+def _installed_version(package: str) -> str | None:
+    try:
+        return version(package)
+    except PackageNotFoundError:
+        return None
+
+
 def estimate_cost(
     input_tokens: int | None,
     output_tokens: int | None,
@@ -723,6 +730,15 @@ async def main() -> None:
             "catalog when lexical candidate recall is empty."
         ),
     )
+    parser.add_argument(
+        "--candidate-abstention",
+        choices=("deterministic", "no_route", "error"),
+        default="deterministic",
+        help=(
+            "How candidate-selection abstention is handled. Provider errors remain governed "
+            "by DecisionPolicy.fallback."
+        ),
+    )
     args = parser.parse_args()
 
     if args.repeat < 1:
@@ -805,6 +821,7 @@ async def main() -> None:
                         enabled=True,
                         endpoint_selection=True,
                         recall_on_empty=args.decision_recall_on_empty,
+                        candidate_abstention=args.candidate_abstention,
                         fallback="deterministic",
                     ),
                 ),
@@ -831,6 +848,7 @@ async def main() -> None:
                         enabled=True,
                         endpoint_selection=True,
                         recall_on_empty=args.decision_recall_on_empty,
+                        candidate_abstention=args.candidate_abstention,
                         fallback="deterministic",
                     ),
                 ),
@@ -860,6 +878,7 @@ async def main() -> None:
                         enabled=True,
                         endpoint_selection=True,
                         recall_on_empty=args.decision_recall_on_empty,
+                        candidate_abstention=args.candidate_abstention,
                         fallback="deterministic",
                     ),
                 ),
@@ -887,6 +906,7 @@ async def main() -> None:
                         enabled=True,
                         endpoint_selection=True,
                         recall_on_empty=args.decision_recall_on_empty,
+                        candidate_abstention=args.candidate_abstention,
                         fallback="deterministic",
                     ),
                 ),
@@ -906,6 +926,7 @@ async def main() -> None:
         "corpus": args.corpus or "smoke",
         "case_count": len(cases),
         "decision_recall_on_empty": args.decision_recall_on_empty,
+        "candidate_abstention": args.candidate_abstention,
         "environment": {
             "system": platform.system(),
             "release": platform.release(),
@@ -922,6 +943,9 @@ async def main() -> None:
                     "preload": args.laya_preload,
                     "max_loaded": args.laya_max_loaded,
                     "min_confidence": args.laya_min_confidence,
+                    "package_version": _installed_version("laya"),
+                    "torch_version": _installed_version("torch"),
+                    "transformers_version": _installed_version("transformers"),
                 }
                 if args.laya
                 else {"enabled": False}
