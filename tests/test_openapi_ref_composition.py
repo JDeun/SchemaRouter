@@ -438,7 +438,7 @@ def test_oneof_response_conflicting_field_types_become_planner_anyof() -> None:
     }
 
 
-def test_oneof_request_body_remains_unflattened_and_non_executable_as_named_fields() -> None:
+def test_oneof_request_body_remains_unflattened_as_typed_root() -> None:
     document = {
         "openapi": "3.1.0",
         "info": {"title": "Variant Request API"},
@@ -479,9 +479,12 @@ def test_oneof_request_body_remains_unflattened_and_non_executable_as_named_fiel
 
     endpoint = tool_from_openapi("variant_request", document).endpoint("create_pet")
 
-    assert endpoint.parameters == []
-    assert endpoint.metadata["request_body_required"] is False
-    assert endpoint.input_schema["properties"] == {}
+    assert len(endpoint.parameters) == 1
+    assert endpoint.parameters[0].name == "body"
+    assert endpoint.parameters[0].location == "body_root"
+    assert endpoint.metadata["request_body_required"] is True
+    assert endpoint.metadata["request_body_mode"] == "root_schema"
+    assert "oneOf" in endpoint.input_schema["properties"]["body"]
 
 
 def test_planner_can_select_field_unique_to_oneof_response_variant() -> None:
