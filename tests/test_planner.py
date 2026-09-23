@@ -485,3 +485,62 @@ async def test_async_decision_backend_can_expand_empty_lexical_recall() -> None:
 
     assert plan.calls[0].tool == "materials"
     assert any("expanded an empty lexical candidate set" in item for item in plan.warnings)
+
+
+
+def test_candidate_abstention_can_suppress_existing_lexical_route() -> None:
+    reg = registry()
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(lambda _: {"abstained": True}),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            candidate_abstention="no_route",
+        ),
+    ).plan("band gap")
+
+    assert plan.calls == []
+    assert any("suppressed candidate route" in item for item in plan.warnings)
+
+
+def test_candidate_no_route_abstention_does_not_change_provider_error_fallback() -> None:
+    reg = registry()
+
+    def fail(_: object) -> dict[str, object]:
+        raise RuntimeError("offline")
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(fail),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            candidate_abstention="no_route",
+            fallback="deterministic",
+        ),
+    ).plan("band gap")
+
+    assert plan.calls[0].tool == "materials"
+    assert any("decision backend fallback: RuntimeError" in item for item in plan.warnings)
+
+
+@pytest.mark.asyncio
+async def test_async_candidate_abstention_can_suppress_route() -> None:
+    reg = registry()
+
+    async def abstain(_: object) -> dict[str, object]:
+        return {"abstained": True}
+
+    plan = await SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(abstain),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            candidate_abstention="no_route",
+        ),
+    ).aplan("band gap")
+
+    assert plan.calls == []
+    assert any("suppressed candidate route" in item for item in plan.warnings)
