@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 from copy import deepcopy
+from dataclasses import dataclass
 from typing import Any
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
 
@@ -157,6 +158,22 @@ def _contains_schema_id(value: Any) -> bool:
     return False
 
 
+def _contains_dynamic_schema_reference(value: Any) -> bool:
+    if isinstance(value, dict):
+        if any(
+            key in value
+            for key in ("$dynamicRef", "$dynamicAnchor", "$recursiveRef", "$recursiveAnchor")
+        ):
+            return True
+        return any(
+            _contains_dynamic_schema_reference(item)
+            for item in value.values()
+        )
+    if isinstance(value, list):
+        return any(_contains_dynamic_schema_reference(item) for item in value)
+    return False
+
+
 def _contains_external_ref(value: Any) -> bool:
     if isinstance(value, dict):
         ref = value.get("$ref")
@@ -166,6 +183,15 @@ def _contains_external_ref(value: Any) -> bool:
     if isinstance(value, list):
         return any(_contains_external_ref(item) for item in value)
     return False
+
+
+_STATIC_ANCHOR_RE = re.compile(r"^[A-Za-z][A-Za-z0-9._:-]*$")
+
+
+@dataclass(frozen=True)
+class _SchemaResourceLocation:
+    document_key: str | None
+    path: tuple[str, ...]
 
 
 class _OpenAPIRefBundler:
