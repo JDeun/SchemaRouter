@@ -92,10 +92,15 @@ def calibrate(
                 confidence_rows += 1
 
             fallback_predicted = fallback.get("predicted")
-            expanded = (
-                fallback_predicted is None
-                and bool(row.get("backend_invoked"))
-            )
+            if "recall_expanded" in row:
+                expanded = bool(row.get("recall_expanded"))
+            else:
+                # Backward compatibility for reports generated before recall_expanded
+                # became an explicit benchmark field.
+                expanded = (
+                    fallback_predicted is None
+                    and bool(row.get("backend_invoked"))
+                )
             if expanded:
                 expanded_total += 1
 
