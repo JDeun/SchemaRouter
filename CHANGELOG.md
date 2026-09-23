@@ -19,8 +19,9 @@ The project is pre-1.0 and follows the compatibility rules in
   backends when lexical schema recall is empty, with fail-closed abstention/error behavior;
 - row-level decision confidence capture and offline threshold calibration that can replay either
   deterministic fallback or final no-route behavior without repeating model inference;
-- independently configurable candidate-abstention handling (`deterministic`, `no_route`, or
-  `error`) without changing provider-error fallback semantics;
+- independently configurable candidate-abstention handling with compatibility-preserving
+  `inherit`, plus explicit `deterministic`, `no_route`, and `error` modes, without changing
+  provider-error fallback semantics;
 - an explicit `none_of_the_above` bounded option for empty-lexical-recall catalog expansion so
   model-assisted recall recovery can return no route instead of being forced to choose an endpoint.
 
