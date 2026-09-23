@@ -51,6 +51,46 @@ router = await SchemaRouter.from_url(
 `schema_headers` never become runtime API headers, and `trusted_headers` are never exposed as
 model-selectable arguments.
 
+## Discriminated JSON request bodies
+
+SchemaRouter does not flatten arbitrary `oneOf` / `anyOf` request bodies because fields from
+different variants could be combined into an invalid request.
+
+A strictly tagged `oneOf` body can instead be represented as one typed `body` parameter when:
+
+- the schema declares `discriminator.propertyName`;
+- every branch is object-like;
+- every branch requires that discriminator property;
+- every branch constrains it with a unique `const` or single-value `enum`.
+
+Example:
+
+```yaml
+schema:
+  oneOf:
+    - $ref: '#/components/schemas/Cat'
+    - $ref: '#/components/schemas/Dog'
+  discriminator:
+    propertyName: kind
+```
+
+The planner sees one parameter:
+
+```text
+body: <original oneOf schema>
+```
+
+The body remains a single object through planning and validation. SchemaRouter validates the whole
+object against the original composed JSON Schema, then the OpenAPI invoker sends that object as the
+JSON request root. It never rewrites the payload as `{"body": ...}`.
+
+This also works with a provider-neutral `ModelQueryAnalyzer`: an application-owned GPT, Gemini,
+Claude, or other structured-output client may propose the complete `body` object, but unknown
+arguments and schema-invalid variants are rejected locally before execution.
+
+A discriminator mapping by itself is not sufficient. SchemaRouter requires the branch schemas to
+prove their own unique tags so a stale or incorrect mapping cannot weaken the local contract.
+
 ## Parameter collisions
 
 OpenAPI identifies parameters by both name and location. If an operation defines the same wire name
@@ -148,6 +188,7 @@ Supported paths include:
 - planner-side object-property/required flattening through `allOf`;
 - planner-visible response-field discovery across `oneOf` / `anyOf` object variants while
   preserving composed runtime validation;
+- strictly tagged discriminated `oneOf` JSON request bodies as one typed root-body parameter;
 - explicit cross-origin binding;
 - runtime origin confinement.
 
