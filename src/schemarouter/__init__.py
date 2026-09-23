@@ -10,6 +10,7 @@ from .adapters.plugins import (
 )
 from .adapters.python import schema_tool, tool_from_callable
 from .analyzers import ModelCallable, ModelQueryAnalyzer
+from .dashboard import render_dashboard, write_dashboard
 from .decision_policy import DecisionFallback, DecisionPolicy
 from .decisions import (
     CallableDecisionBackend,
@@ -197,5 +198,7 @@ __all__ = [
     "load_adapter_plugins",
     "tool_spec_document",
     "record_run_events",
+    "render_dashboard",
     "replay_run_events",
+    "write_dashboard",
 ]
