@@ -537,7 +537,10 @@ def test_planner_can_select_field_unique_to_oneof_response_variant() -> None:
     )
 
     assert plan.calls[0].endpoint == "get_pet"
-    assert plan.calls[0].fields == ["breed"]
+    assert "breed" in plan.calls[0].fields
+    assert "dog_name" in plan.calls[0].fields
+    assert "cat_name" not in plan.calls[0].fields
+    assert "lives" not in plan.calls[0].fields
 
 
 @pytest.mark.asyncio
