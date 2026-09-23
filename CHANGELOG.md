@@ -13,6 +13,9 @@ The project is pre-1.0 and follows the compatibility rules in
   registries and run traces, including tool/endpoint classification, schema fingerprints, parameter
   and output-field structure, trace completion/error summaries, human-readable output, and stable
   JSON output for dashboards/automation.
+- live `SchemaRouter.inspect()` snapshots for analyzer, bounded-decision policy, execution
+  policy, and actual invoker binding keys, plus a self-contained read-only HTML dashboard export
+  backed by the same safe inspection models.
 - optional local `LayaDecisionBackend` through `schemarouter[laya]`, with language-aware local
   checkpoint routing, confidence-based abstention, lazy/preloaded execution, fail-closed option-ID
   validation, trusted credential separation, and shared decision-benchmark support.
