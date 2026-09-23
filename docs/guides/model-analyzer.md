@@ -28,6 +28,20 @@ router = SchemaRouter(
 
 The payload contains the current catalog and a response schema.
 
+The callable may be backed by the same hosted model client the application already uses. For
+example, an application can bridge GPT, Gemini, Claude, or another provider's structured-output API
+without adding that provider SDK to SchemaRouter itself.
+
+This is distinct from a bounded `DecisionBackend`:
+
+| Surface | Model sees | Model may return | SchemaRouter does next |
+| --- | --- | --- | --- |
+| `ModelQueryAnalyzer` | query + schema catalog + response contract | tool/endpoint preferences, declared arguments/fields, concepts, evidence request | sanitizes everything against the current registry, then runs deterministic planning |
+| `CallableDecisionBackend` | query + finite already-authorized option IDs | only bounded option selections | validates IDs/counts, then continues the existing planner |
+
+Neither surface turns the cloud model into an agent runtime. Tool execution, policy, schema
+fingerprints, and authority remain local to SchemaRouter.
+
 ## Model output is not executable
 
 The analyzer validates the response shape, then projects it back onto the current registry.
