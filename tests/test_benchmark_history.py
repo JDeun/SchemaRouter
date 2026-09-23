@@ -123,6 +123,11 @@ def test_compatibility_workflow_retains_json_artifacts() -> None:
 
     assert "--json-out artifacts/openapi-compatibility.json" in workflow
     assert "--json-out artifacts/optimade-compatibility.json" in workflow
-    assert workflow.count("actions/upload-artifact@v7") == 2
+    assert (
+        workflow.count(
+            "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
+        )
+        == 2
+    )
     assert workflow.count("if: always()") == 2
     assert workflow.count("retention-days: 30") == 2
