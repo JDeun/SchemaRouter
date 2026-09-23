@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict
 
 DecisionFallback = Literal["deterministic", "error"]
+CandidateAbstention = Literal["deterministic", "no_route", "error"]
 
 
 class DecisionPolicy(BaseModel):
@@ -18,6 +19,7 @@ class DecisionPolicy(BaseModel):
     field_selection: bool = False
     evidence_sufficiency: bool = False
     recall_on_empty: bool = False
+    candidate_abstention: CandidateAbstention = "deterministic"
     fallback: DecisionFallback = "deterministic"
 
     @property
