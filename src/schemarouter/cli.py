@@ -9,6 +9,7 @@ from typing import Sequence
 import yaml
 
 from .dashboard import write_dashboard
+from .errors import SchemaRouterError
 from .observability import (
     ObservabilitySnapshot,
     observe_registry,
@@ -191,7 +192,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(destination)
             return 0
 
-    except (OSError, ValueError, KeyError, RuntimeError) as exc:
+    except (OSError, ValueError, KeyError, RuntimeError, SchemaRouterError) as exc:
         print(f"schemarouter: {exc}", file=sys.stderr)
         return 2
 
