@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import datetime
-from typing import Any
-
 from pydantic import Field
 
 from .models import StrictModel, ToolSpec
@@ -31,7 +29,7 @@ _PROVENANCE_KEYS = (
 )
 
 
-def _provenance(tool: ToolSpec) -> dict[str, Any]:
+def _provenance(tool: ToolSpec) -> dict[str, object]:
     return {
         key: tool.metadata[key]
         for key in _PROVENANCE_KEYS
