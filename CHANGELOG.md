@@ -14,7 +14,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - multi-run benchmark history rendering with preserved run/version/corpus/hardware metadata;
 - machine-readable OpenAPI/OPTIMADE compatibility smoke artifacts retained from scheduled CI;
 - Hypothesis-based property tests for supported OpenAPI path/query/header parameter serialization;
-- automated dependency vulnerability auditing and scheduled CodeQL Python analysis.
+- automated dependency vulnerability auditing and scheduled CodeQL Python analysis;
+- opt-in `DecisionPolicy.recall_on_empty` recovery for enabled bounded candidate-selection
+  backends when lexical schema recall is empty, with fail-closed abstention/error behavior.
 
 ### Changed
 
@@ -22,6 +24,8 @@ The project is pre-1.0 and follows the compatibility rules in
 - made the protected `package` CI check depend on the Laya integration contract so Laya regressions
   cannot be merged solely because the repository ruleset predates that job;
 - package smoke now verifies benchmark JSON and HTML artifact generation;
+- research benchmarking now compares Laya's lexical-only path with explicit empty-candidate recall
+  on the same full corpus and hardware;
 - post-release development has resumed as `0.7.0.dev0`; published `0.6.0` artifacts remain immutable.
 
 ### Security
