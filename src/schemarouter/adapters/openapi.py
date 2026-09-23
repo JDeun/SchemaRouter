@@ -948,6 +948,16 @@ class OpenAPIRemoteInvoker:
 
         headers.update(self.trusted_headers)
 
+        request_body_mode = endpoint_spec.metadata.get("request_body_mode")
+        if (
+            request_body_mode in {"root_schema", "discriminated_root"}
+            and bool(endpoint_spec.metadata.get("request_body_required"))
+            and not root_body_seen
+        ):
+            raise NonRetryableInvocationError(
+                f"required root request body missing for endpoint {endpoint_name!r}"
+            )
+
         # Concatenation is intentional: urljoin would normalize dot-segments or allow an
         # absolute path to replace the approved server path prefix.
         url = self.base_url + "/" + path.lstrip("/")
@@ -962,22 +972,38 @@ class OpenAPIRemoteInvoker:
             follow_redirects=False,
         )
         try:
-            request_json = (
-                root_body
-                if root_body_seen
-                else (
+            request_kwargs: dict[str, Any] = {
+                "params": query or None,
+                "headers": headers or None,
+                "follow_redirects": False,
+            }
+            if root_body_seen:
+                try:
+                    request_kwargs["content"] = json.dumps(
+                        root_body,
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                except (TypeError, ValueError) as exc:
+                    raise NonRetryableInvocationError(
+                        f"root request body for endpoint {endpoint_name!r} is not JSON serializable"
+                    ) from exc
+                if not any(name.casefold() == "content-type" for name in headers):
+                    request_kwargs["headers"] = {
+                        **headers,
+                        "Content-Type": "application/json",
+                    }
+            else:
+                request_kwargs["json"] = (
                     body
                     if body or bool(endpoint_spec.metadata.get("request_body_required"))
                     else None
                 )
-            )
+
             async with client.stream(
                 endpoint_spec.method,
                 url,
-                params=query or None,
-                json=request_json,
-                headers=headers or None,
-                follow_redirects=False,
+                **request_kwargs,
             ) as response:
                 try:
                     response.raise_for_status()
