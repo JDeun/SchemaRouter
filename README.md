@@ -108,8 +108,10 @@ print(result[0].data)
 
 Framework bridges are available for **LangChain, LangGraph, and LlamaIndex**. **OpenTelemetry**
 provides optional telemetry export. **Jev / TypeSafe, Laya, and Ollama are optional decision
-backends**, not agent frameworks: they may choose only from finite option IDs already authorized by
-SchemaRouter and never bypass its policy, schema validation, or execution boundary.
+backends**, not agent frameworks. Existing **GPT, Gemini, Claude, or other hosted model clients**
+can also be injected through the provider-neutral `ModelQueryAnalyzer` or
+`CallableDecisionBackend` contracts. None of these paths bypass SchemaRouter's policy, schema
+validation, or execution boundary.
 
 ## What 0.5 adds
 
