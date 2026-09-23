@@ -6,6 +6,7 @@ import json
 import os
 
 from compatibility_report import new_report, write_report
+
 from schemarouter import PlanRequest, SchemaRouter
 
 DEFAULT_URL = "https://www.crystallography.net/cod/optimade"
