@@ -32,6 +32,7 @@ _OPENAPI_IGNORED_HEADER_PARAMETERS = {
 _HEADER_NAME_RE = re.compile(r"^[!#$%&'*+.^_\x60|~0-9A-Za-z-]+$")
 _MAX_RUNTIME_RESPONSE_BYTES = 16 * 1024 * 1024
 _TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
+_RAW_BODY_WIRE_NAME = "$body"
 
 
 def _local_ref_target(document: dict[str, Any], ref: str) -> Any | None:
@@ -609,6 +610,7 @@ def tool_from_openapi(
                 )
 
             request_body_required = False
+            raw_request_body = False
             request_body = _resolve_local_ref(document, operation.get("requestBody", {}))
             if isinstance(request_body, dict):
                 content = request_body.get("content", {})
@@ -618,38 +620,62 @@ def tool_from_openapi(
                     if isinstance(json_body, dict)
                     else {}
                 )
-                body_properties = _schema_properties(document, body_schema)
-                body_is_supported_object = (
-                    isinstance(body_schema, dict)
-                    and bool(body_schema)
-                    and (
+                if isinstance(body_schema, dict) and body_schema:
+                    body_properties = _schema_properties(document, body_schema)
+                    composed_variant = any(
+                        key in body_schema for key in ("oneOf", "anyOf")
+                    )
+                    object_like = (
                         body_schema.get("type") == "object"
                         or bool(body_properties)
                     )
-                    and "oneOf" not in body_schema
-                    and "anyOf" not in body_schema
-                )
-                request_body_required = (
-                    bool(request_body.get("required"))
-                    and body_is_supported_object
-                )
-                required_body = _schema_required(document, body_schema)
-                for prop_name, prop_schema in body_properties.items():
-                    parameters.append(
-                        ParameterSpec(
-                            name=prop_name,
-                            description=(
-                                prop_schema.get("description", "")
-                                if isinstance(prop_schema, dict)
-                                else ""
-                            ),
-                            required=prop_name in required_body,
-                            location="body",
-                            json_schema=prop_schema if isinstance(prop_schema, dict) else {},
+                    raw_request_body = composed_variant or not object_like
+                    request_body_required = bool(request_body.get("required"))
+
+                    if raw_request_body:
+                        parameters.append(
+                            ParameterSpec(
+                                name="body",
+                                wire_name=_RAW_BODY_WIRE_NAME,
+                                description=(
+                                    request_body.get("description")
+                                    or body_schema.get("description", "")
+                                ),
+                                required=request_body_required,
+                                location="body",
+                                json_schema=body_schema,
+                            )
                         )
-                    )
+                    else:
+                        required_body = _schema_required(document, body_schema)
+                        for prop_name, prop_schema in body_properties.items():
+                            parameters.append(
+                                ParameterSpec(
+                                    name=prop_name,
+                                    description=(
+                                        prop_schema.get("description", "")
+                                        if isinstance(prop_schema, dict)
+                                        else ""
+                                    ),
+                                    required=prop_name in required_body,
+                                    location="body",
+                                    json_schema=(
+                                        prop_schema
+                                        if isinstance(prop_schema, dict)
+                                        else {}
+                                    ),
+                                )
+                            )
 
             parameters = _disambiguate_parameter_names(parameters)
+            raw_body_parameter = next(
+                (
+                    parameter.name
+                    for parameter in parameters
+                    if parameter.wire_name == _RAW_BODY_WIRE_NAME
+                ),
+                None,
+            )
 
             response_schemas, response_validation_complete = _success_response_schemas(
                 document,
@@ -694,6 +720,8 @@ def tool_from_openapi(
                         "security": operation.get("security"),
                         "deprecated": bool(operation.get("deprecated", False)),
                         "request_body_required": request_body_required,
+                        "request_body_mode": "raw" if raw_request_body else "properties",
+                        "request_body_parameter": raw_body_parameter,
                         "operation_id_generated": not (
                             isinstance(explicit_operation_id, str)
                             and bool(explicit_operation_id)
@@ -802,6 +830,9 @@ class OpenAPIRemoteInvoker:
         query: dict[str, Any] = {}
         body: dict[str, Any] = {}
         headers: dict[str, str] = {}
+        raw_body_parameter = endpoint_spec.metadata.get("request_body_parameter")
+        raw_body_present = False
+        raw_body_value: Any = None
 
         for parameter in endpoint_spec.parameters:
             if parameter.name not in arguments:
@@ -829,7 +860,14 @@ class OpenAPIRemoteInvoker:
                     )
                 headers[wire_name] = str(value)
             elif parameter.location == "body":
-                body[wire_name] = value
+                if (
+                    endpoint_spec.metadata.get("request_body_mode") == "raw"
+                    and parameter.name == raw_body_parameter
+                ):
+                    raw_body_present = True
+                    raw_body_value = value
+                else:
+                    body[wire_name] = value
 
         if re.search(r"{[^{}]+}", path):
             raise NonRetryableInvocationError(
@@ -852,11 +890,21 @@ class OpenAPIRemoteInvoker:
             follow_redirects=False,
         )
         try:
-            request_json = (
-                body
-                if body or bool(endpoint_spec.metadata.get("request_body_required"))
-                else None
-            )
+            if endpoint_spec.metadata.get("request_body_mode") == "raw":
+                if (
+                    bool(endpoint_spec.metadata.get("request_body_required"))
+                    and not raw_body_present
+                ):
+                    raise NonRetryableInvocationError(
+                        f"required request body missing for endpoint {endpoint_name!r}"
+                    )
+                request_json = raw_body_value if raw_body_present else None
+            else:
+                request_json = (
+                    body
+                    if body or bool(endpoint_spec.metadata.get("request_body_required"))
+                    else None
+                )
             async with client.stream(
                 endpoint_spec.method,
                 url,
