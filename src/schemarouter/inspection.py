@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import datetime
+from dataclasses import asdict
+from typing import Any
 
 from pydantic import Field
 
@@ -78,6 +80,29 @@ class RegistryInspection(StrictModel):
     tools: list[ToolInspection] = Field(default_factory=list)
 
 
+class PlannerInspection(StrictModel):
+    """Privacy-safe view of the live planner configuration."""
+
+    analyzer: str
+    decision_backend: str | None = None
+    decision_policy: dict[str, object] = Field(default_factory=dict)
+
+
+class ExecutionInspection(StrictModel):
+    """Privacy-safe view of live execution authority and bindings."""
+
+    policy: dict[str, object] = Field(default_factory=dict)
+    bound_tools: list[str] = Field(default_factory=list)
+
+
+class RouterInspection(StrictModel):
+    """Live operational snapshot of one SchemaRouter instance."""
+
+    registry: RegistryInspection
+    planner: PlannerInspection
+    execution: ExecutionInspection
+
+
 class TraceInspection(StrictModel):
     """Compact operational summary of one persisted run trace."""
 
@@ -143,6 +168,25 @@ def inspect_registry(registry: ToolRegistry) -> RegistryInspection:
 
 def inspect_tool(registry: ToolRegistry, key: str) -> ToolInspection:
     return inspect_tool_spec(registry.get(key))
+
+
+def inspect_router(router: Any) -> RouterInspection:
+    """Inspect a live SchemaRouter without exposing invokers, credentials, or payload values."""
+
+    planner = router.planner
+    backend = planner.decision_backend
+    return RouterInspection(
+        registry=inspect_registry(router.registry),
+        planner=PlannerInspection(
+            analyzer=type(planner.analyzer).__name__,
+            decision_backend=type(backend).__name__ if backend is not None else None,
+            decision_policy=planner.decision_policy.model_dump(mode="json"),
+        ),
+        execution=ExecutionInspection(
+            policy=asdict(router.executor.policy),
+            bound_tools=list(router.executor.bound_keys()),
+        ),
+    )
 
 
 def inspect_run_trace(trace: RunTrace) -> TraceInspection:
