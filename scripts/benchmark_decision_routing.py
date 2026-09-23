@@ -9,6 +9,7 @@ import importlib
 import inspect
 import json
 import os
+import platform
 import statistics
 import time
 from dataclasses import asdict, dataclass
@@ -53,6 +54,9 @@ class BenchmarkRow:
     fallback_used: bool = False
     input_tokens: int | None = None
     output_tokens: int | None = None
+    model: str | None = None
+    requested_device: str | None = None
+    actual_device: str | None = None
     estimated_cost: float | None = None
     error: str | None = None
 
@@ -264,6 +268,18 @@ def load_callable(spec: str, *, option_name: str = "--model-callable") -> Any:
     return value
 
 
+def parse_json_mapping(value: str | None, *, option_name: str) -> dict[str, Any]:
+    if value is None:
+        return {}
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{option_name} must be valid JSON") from exc
+    if not isinstance(parsed, dict):
+        raise ValueError(f"{option_name} must decode to a JSON object")
+    return parsed
+
+
 def estimate_cost(
     input_tokens: int | None,
     output_tokens: int | None,
@@ -318,6 +334,17 @@ async def benchmark_planner(
             metadata = getattr(result, "metadata", {}) if result is not None else {}
             input_tokens = metadata.get("input_tokens")
             output_tokens = metadata.get("output_tokens")
+            model = metadata.get("model") if isinstance(metadata.get("model"), str) else None
+            requested_device = (
+                metadata.get("requested_device")
+                if isinstance(metadata.get("requested_device"), str)
+                else None
+            )
+            actual_device = (
+                metadata.get("actual_device")
+                if isinstance(metadata.get("actual_device"), str)
+                else None
+            )
             abstained = bool(getattr(result, "abstained", False))
             invalid_plan = predicted is not None and predicted not in allowed_routes
             correct = (
@@ -341,6 +368,9 @@ async def benchmark_planner(
                     fallback_used=abstained and predicted is not None,
                     input_tokens=input_tokens,
                     output_tokens=output_tokens,
+                    model=model,
+                    requested_device=requested_device,
+                    actual_device=actual_device,
                     estimated_cost=estimate_cost(
                         input_tokens,
                         output_tokens,
@@ -403,6 +433,13 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
         },
         "input_tokens": sum(row.input_tokens or 0 for row in rows),
         "output_tokens": sum(row.output_tokens or 0 for row in rows),
+        "models": sorted({row.model for row in rows if row.model is not None}),
+        "requested_devices": sorted(
+            {row.requested_device for row in rows if row.requested_device is not None}
+        ),
+        "actual_devices": sorted(
+            {row.actual_device for row in rows if row.actual_device is not None}
+        ),
         "estimated_cost": (
             sum(row.estimated_cost or 0.0 for row in rows)
             if any(row.estimated_cost is not None for row in rows)
@@ -494,6 +531,22 @@ async def main() -> None:
         help="Trusted Ollama API base URL.",
     )
     parser.add_argument("--ollama-timeout", type=float, default=60.0)
+    parser.add_argument(
+        "--ollama-options-json",
+        default=None,
+        help=(
+            "Optional trusted Ollama runtime options as a JSON object. "
+            "Keys are passed through to the Ollama API options object."
+        ),
+    )
+    parser.add_argument(
+        "--hardware-label",
+        default=None,
+        help=(
+            "Optional free-form hardware label recorded in JSON output, for example "
+            "'M4 16GB' or 'RTX 4070 8GB'."
+        ),
+    )
     parser.add_argument("--input-cost-per-million", type=float, default=None)
     parser.add_argument("--output-cost-per-million", type=float, default=None)
     args = parser.parse_args()
@@ -508,6 +561,10 @@ async def main() -> None:
         raise ValueError("--laya-max-loaded must be >= 1")
     if not 0.0 <= args.laya_min_confidence <= 1.0:
         raise ValueError("--laya-min-confidence must be between 0 and 1")
+    ollama_options = parse_json_mapping(
+        args.ollama_options_json,
+        option_name="--ollama-options-json",
+    )
 
     registry = reference_registry()
     allowed_routes = {
@@ -640,6 +697,7 @@ async def main() -> None:
                 base_url=args.ollama_base_url,
                 timeout=args.ollama_timeout,
                 async_mode=True,
+                options=ollama_options,
             )
         )
         planners.append(
@@ -661,6 +719,37 @@ async def main() -> None:
     report: dict[str, Any] = {
         "corpus": args.corpus or "smoke",
         "case_count": len(cases),
+        "environment": {
+            "system": platform.system(),
+            "release": platform.release(),
+            "machine": platform.machine(),
+            "python": platform.python_version(),
+            "hardware_label": args.hardware_label,
+        },
+        "local_runtime": {
+            "laya": (
+                {
+                    "enabled": True,
+                    "model": args.laya_model or "auto",
+                    "requested_device": args.laya_device or "auto",
+                    "preload": args.laya_preload,
+                    "max_loaded": args.laya_max_loaded,
+                    "min_confidence": args.laya_min_confidence,
+                }
+                if args.laya
+                else {"enabled": False}
+            ),
+            "ollama": (
+                {
+                    "enabled": True,
+                    "model": args.ollama_model,
+                    "base_url": args.ollama_base_url,
+                    "options": ollama_options,
+                }
+                if args.ollama_model
+                else {"enabled": False}
+            ),
+        },
         "allowed_routes": sorted(allowed_routes),
         "rows": [],
         "summary": {},
