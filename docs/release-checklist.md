@@ -33,6 +33,8 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] A recent public OPTIMADE live smoke is green.
 - [ ] The real MCP Streamable HTTP integration job is green when the MCP extra is part of the release.
 - [ ] Optional framework/provider integration jobs are green for every extra included in the release.
+- [ ] Dependency audit and the latest scheduled CodeQL analysis are green or any finding is explicitly triaged.
+- [ ] Property-based OpenAPI serialization tests pass on supported Python versions.
 - [ ] Cross-origin OpenAPI behavior is tested with explicit local approval.
 - [ ] Schema drift and stale binding tests pass.
 - [ ] Input/output JSON Schema validation tests pass.
@@ -61,6 +63,7 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
   tagged SHA only when it is an ancestor of the green current `main` and carries the same version.
 - [ ] Build wheel and sdist from the resolved release SHA in an unprivileged job.
 - [ ] Clean-install and smoke-test both built artifacts before publication.
+- [ ] Generate GitHub artifact provenance attestations for the wheel and sdist from the build job before upload.
 - [ ] Publish GitHub release assets and PyPI artifacts from separate jobs; only the PyPI job receives
   OIDC `id-token: write` permission.
 - [ ] Confirm the PyPI Trusted Publisher is configured for the `pypi` GitHub environment.

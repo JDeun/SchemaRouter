@@ -66,6 +66,10 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     ).read_text(encoding="utf-8")
 
     assert "id-token: write" in workflow
+    assert "attestations: write" in workflow
+    assert "artifact-metadata: write" in workflow
+    assert "actions/attest@v4" in workflow
+    assert "subject-path: dist/*" in workflow
     assert "environment:" in workflow
     assert "name: pypi" in workflow
     assert "pypa/gh-action-pypi-publish@release/v1" in workflow
@@ -89,6 +93,8 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     assert "minimum-dependencies:" in workflow
     assert "coverage:" in workflow
     assert "--cov-branch" in workflow
+    assert "needs: [laya-integration]" in workflow
+    assert "--html-out /tmp/decision-benchmark.html" in workflow
     assert 'dist/*.tar.gz' in workflow
 
 
@@ -111,3 +117,23 @@ def test_python_preview_is_separate_from_release_blocking_ci() -> None:
     ).read_text(encoding="utf-8")
     assert 'workflows: ["CI"]' in release
     assert 'workflows: ["Python Preview"]' not in release
+
+
+
+def test_security_workflows_cover_dependency_and_code_scanning() -> None:
+    security = (
+        ROOT / ".github" / "workflows" / "security.yml"
+    ).read_text(encoding="utf-8")
+    codeql = (
+        ROOT / ".github" / "workflows" / "codeql.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "pull_request:" in security
+    assert "schedule:" in security
+    assert "pip-audit --strict" in security
+    assert "python -m pip check" in security
+
+    assert "security-events: write" in codeql
+    assert "github/codeql-action/init@v4" in codeql
+    assert "github/codeql-action/analyze@v4" in codeql
+    assert "languages: python" in codeql

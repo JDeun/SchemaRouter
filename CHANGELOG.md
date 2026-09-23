@@ -7,9 +7,25 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+### Added
+
+- self-contained HTML summaries for the decision-routing benchmark, alongside the existing JSON/CSV
+  outputs, with escaped metadata and no remote assets;
+- Hypothesis-based property tests for supported OpenAPI path/query/header parameter serialization;
+- automated dependency vulnerability auditing and scheduled CodeQL Python analysis.
+
 ### Changed
 
+- raised the blocking branch-coverage floor from 82% to 84%;
+- made the protected `package` CI check depend on the Laya integration contract so Laya regressions
+  cannot be merged solely because the repository ruleset predates that job;
+- package smoke now verifies benchmark JSON and HTML artifact generation;
 - post-release development has resumed as `0.7.0.dev0`; published `0.6.0` artifacts remain immutable.
+
+### Security
+
+- release wheel and sdist artifacts now receive GitHub/Sigstore build-provenance attestations before
+  publication.
 
 ## 0.6.0 - 2026-09-23
 

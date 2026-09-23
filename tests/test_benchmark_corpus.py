@@ -67,3 +67,58 @@ def test_benchmark_keeps_final_route_accuracy_separate_from_abstention_recall() 
     assert summary["accuracy"] == 0.0
     assert summary["expected_abstention_recall"] == 1.0
     assert summary["fallbacks"] == 1
+
+
+
+def test_benchmark_html_report_is_self_contained_and_escapes_metadata(tmp_path) -> None:
+    module = _benchmark_module()
+    report = {
+        "corpus": "<corpus>",
+        "case_count": 2,
+        "environment": {
+            "system": "Darwin",
+            "machine": "arm64",
+            "python": "3.12",
+            "hardware_label": "<script>alert(1)</script>",
+        },
+        "summary": {
+            "keyword<script>": {
+                "cases": 2,
+                "accuracy": 0.5,
+                "invalid_plan_rate": 0.0,
+                "errors": 0,
+                "abstention_rate": 0.5,
+                "mean_latency_ms": 1.25,
+                "p50_latency_ms": 1.0,
+                "p95_latency_ms": 1.5,
+                "estimated_cost": None,
+                "models": [],
+                "requested_devices": ["cpu"],
+                "actual_devices": ["cpu"],
+            }
+        },
+    }
+
+    html = module.render_html_report(report)
+
+    assert "SchemaRouter decision benchmark" in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
+    assert "keyword&lt;script&gt;" in html
+    assert "<script>alert(1)</script>" not in html
+    assert "50.00%" in html
+    assert "https://" not in html
+
+    output = tmp_path / "benchmark.html"
+    module._write_html(output, report)
+    assert output.read_text(encoding="utf-8") == html
+
+
+def test_benchmark_html_report_rejects_malformed_summary() -> None:
+    module = _benchmark_module()
+
+    try:
+        module.render_html_report({"summary": []})
+    except ValueError as exc:
+        assert "summary must be an object" in str(exc)
+    else:
+        raise AssertionError("malformed benchmark summaries must fail closed")
