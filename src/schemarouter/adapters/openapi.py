@@ -330,7 +330,7 @@ def _discriminated_body_schema(
         if property_name not in properties or property_name not in required:
             return None
 
-        if branch.get("type") not in {None, "object"} and not properties:
+        if branch.get("type") not in {None, "object"}:
             return None
 
         tag_schema = properties[property_name]
