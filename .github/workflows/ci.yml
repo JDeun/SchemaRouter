@@ -114,6 +114,8 @@ jobs:
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
       - run: /tmp/schemarouter-wheel/bin/schemarouter --help
       - run: /tmp/schemarouter-wheel/bin/python scripts/benchmark_decision_routing.py
+      - run: /tmp/schemarouter-wheel/bin/python examples/inspection_dashboard.py --registry /tmp/inspection-registry.sqlite3 --traces /tmp/inspection-traces.sqlite3 --output /tmp/inspection-dashboard.html
+      - run: test -s /tmp/inspection-dashboard.html
       - run: python -m venv /tmp/schemarouter-sdist
       - run: /tmp/schemarouter-sdist/bin/python -m pip install --upgrade pip
       - run: /tmp/schemarouter-sdist/bin/pip install dist/*.tar.gz
