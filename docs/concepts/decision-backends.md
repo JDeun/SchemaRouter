@@ -121,6 +121,22 @@ A decision provider:
 The planner, execution policy, schema fingerprint checks, argument validation, and output validation
 remain unchanged.
 
+## Choosing a decision backend
+
+The optional backends serve different deployment goals:
+
+| Backend | Best fit | Trade-off |
+| --- | --- | --- |
+| Deterministic / embedding | Zero provider dependency and predictable local behavior | Lower semantic flexibility on ambiguous language |
+| Laya | Fast local finite decisions, including Apple Silicon through PyTorch MPS/Metal | Single-selection adapter today; quality is checkpoint/domain dependent |
+| Ollama | Reuse a general local LLM that is already deployed for other application tasks | Autoregressive generation is heavier and slower than a purpose-built decision model |
+| Jev / TypeSafe | Hosted purpose-built bounded decisions without local model operations | External service/network dependency |
+
+Ollama is therefore **not required** when Laya or a deterministic backend meets the workload. It
+remains useful as a broad compatibility path for teams that already operate local instruction
+models, for side-by-side benchmark evidence, and as a fallback when a task benefits from a general
+language model rather than a specialized System-One decision model.
+
 ## Local embedding similarity
 
 `EmbeddingDecisionBackend` provides a zero-provider-dependency path for local or hosted embedding
