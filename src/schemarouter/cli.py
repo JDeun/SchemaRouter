@@ -162,6 +162,14 @@ def _render_trace_detail(
     return "\n".join(lines)
 
 
+def _existing_db(path: Path) -> Path:
+    if not path.exists():
+        raise FileNotFoundError(f"database does not exist: {path}")
+    if not path.is_file():
+        raise ValueError(f"database path is not a file: {path}")
+    return path
+
+
 def _add_json_flag(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--json",
@@ -232,7 +240,7 @@ def _run(args: argparse.Namespace) -> str:
         raise ValueError(f"unsupported command: {args.command}")
 
     if args.surface == "registry":
-        with SQLiteRegistry(args.db) as registry:
+        with SQLiteRegistry(_existing_db(args.db)) as registry:
             snapshot = inspect_registry(registry)
         return _json_dump(snapshot) if args.json else _render_registry(snapshot)
 
@@ -252,7 +260,7 @@ def _run(args: argparse.Namespace) -> str:
             complete = True
         elif args.incomplete:
             complete = False
-        with SQLiteRunTraceStore(args.db) as store:
+        with SQLiteRunTraceStore(_existing_db(args.db)) as store:
             traces = inspect_traces(store, complete=complete)
         if args.json:
             return _json_dump(
