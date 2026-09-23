@@ -26,7 +26,14 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
       - run: pip install -e .
-      - run: python scripts/live_openapi_smoke.py
+      - run: python scripts/live_openapi_smoke.py --json-out artifacts/openapi-compatibility.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: compatibility-openapi-${{ github.run_id }}
+          path: artifacts/openapi-compatibility.json
+          if-no-files-found: warn
+          retention-days: 30
 
 
   public-optimade:
@@ -40,4 +47,11 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
       - run: pip install -e .
-      - run: python scripts/live_optimade_smoke.py
+      - run: python scripts/live_optimade_smoke.py --json-out artifacts/optimade-compatibility.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: compatibility-optimade-${{ github.run_id }}
+          path: artifacts/optimade-compatibility.json
+          if-no-files-found: warn
+          retention-days: 30
