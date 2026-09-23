@@ -55,6 +55,7 @@ execution boundary explicit:
 - separate credentials from model-visible arguments;
 - bound retries, elapsed time, remote calls, and response size;
 - surface OpenAPI compatibility gaps instead of silently guessing.
+- inspect capability topology, bindings, compatibility, and run traces without dumping payloads.
 
 ## Quickstart
 
@@ -118,6 +119,7 @@ Start with the manual rather than this README:
 - [Understand the execution model](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
 - [OpenAPI guide](https://jdeun.github.io/SchemaRouter/guides/openapi/)
 - [Runtime policy and retry](https://jdeun.github.io/SchemaRouter/guides/execution-policy/)
+- [Observability CLI and dashboard](https://jdeun.github.io/SchemaRouter/guides/observability/)
 - [Framework integrations](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
 - [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
 - [Architecture and maturity](https://jdeun.github.io/SchemaRouter/architecture/)
