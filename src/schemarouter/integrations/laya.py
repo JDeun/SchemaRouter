@@ -50,6 +50,9 @@ class LayaDecisionBackend:
         self.include_context = include_context
         self._router_lock = threading.Lock()
 
+        if self.preload and self.router is None:
+            self._get_router()
+
     def decide(self, request: DecisionRequest):
         if self.async_mode:
             return self._decide_async(request)
@@ -98,8 +101,15 @@ class LayaDecisionBackend:
                 device=self.device,
                 token=self.token,
                 max_loaded=self.max_loaded,
-                preload=self.preload,
+                preload=False,
             )
+            if self.preload:
+                preload_models = (
+                    [self.model]
+                    if self.model is not None
+                    else ["english", "multilingual"]
+                )
+                self.router.preload(preload_models)
             return self.router
 
     def _parse_response(
