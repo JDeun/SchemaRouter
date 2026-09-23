@@ -154,12 +154,11 @@ Laya exposes the loaded agent device, `actual_device`. This matters because an u
 CUDA/MPS target can fall back to CPU and should not be counted as an accelerator result.
 
 Empty-candidate recall is deliberately off by default. When enabled, SchemaRouter does not invent a
-route: it exposes only endpoints already registered in the trusted local catalog. The expanded
-bounded choice also includes an explicit `none_of_the_above` option so a decision backend is not
-forced to route an out-of-domain request merely because at least one endpoint was offered. Choosing
-that option produces no tool call. If the backend errors or abstains after this expansion, planning
-still fails closed with no arbitrary deterministic route because there was no lexical candidate to
-fall back to.
+route: it exposes only endpoints already registered in the trusted local catalog. If the backend
+errors or abstains after this expansion, planning fails closed with no arbitrary deterministic route
+because there was no lexical candidate to fall back to. For workloads that need model-driven
+no-route behavior, combine confidence gating with `candidate_abstention="no_route"` and calibrate
+the threshold on representative data.
 
 A zero-threshold run can be recalibrated offline without repeating model inference:
 
@@ -231,7 +230,6 @@ Each row records:
 - end-to-end planning latency;
 - whether the bounded decision backend was actually invoked;
 - whether empty lexical recall was explicitly expanded to the registered catalog;
-- whether the bounded backend explicitly selected the no-route option;
 - bounded-backend abstention and deterministic fallback state;
 - input/output tokens when reported;
 - optional cost estimate;
@@ -243,7 +241,7 @@ The aggregate report includes:
 - invalid-plan rate;
 - error count;
 - bounded-backend invocation count/rate;
-- final expected no-route recall and explicit no-route count;
+- final expected no-route recall;
 - abstention rate;
 - expected-abstention recall for bounded backends, reported separately from final-plan accuracy;
 - fallback count;
