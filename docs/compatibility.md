@@ -15,6 +15,7 @@ claim that every historical version inside the range is exhaustively tested.
 | LangGraph | `langgraph>=1.2,<2` | Real `StateGraph` sync/async contract tests + runnable example on Python 3.12 | Optional `schemarouter[langgraph]` extra |
 | LlamaIndex | `llama-index-core>=0.14,<1` | Dedicated contract tests + runnable example on Python 3.12 | Optional `schemarouter[llamaindex]` extra |
 | Jev / TypeSafe | `typesafe-sdk>=0.7,<1` | Dedicated adversarial contract tests on Python 3.12 | Optional `schemarouter[jev]` extra; no live API call in required CI |
+| Laya | `laya>=0.3.6,<1` | Dedicated adversarial adapter tests plus optional-extra install on Python 3.12 | Optional `schemarouter[laya]` extra; required CI does not download model weights |
 | Ollama decision backend | Ollama structured-output HTTP API | Mock-transport adversarial tests in the core suite | No SDK dependency; live model benchmark is explicit and non-blocking |
 | MCP | `mcp>=2,<3` | Real Streamable HTTP integration against a local server | Optional `schemarouter[mcp]` extra |
 | OpenTelemetry | `opentelemetry-api/sdk>=1.44,<2` | In-memory span hierarchy, error status, and privacy tests | Optional `schemarouter[otel]` extra; core has no OTel dependency |
@@ -43,6 +44,7 @@ Every pull request runs the blocking `CI` workflow with:
 - bounded candidate and field-selection planner tests, including identifier preservation,
   malformed/unknown IDs, abstention, sync/async paths, and deterministic fallback;
 - Jev adapter adversarial tests with the official SDK installed but no external API dependency;
+- Laya adapter adversarial tests with the official package installed but no model-weight download;
 - Ollama bounded-decision adversarial tests using a local mock HTTP transport;
 - real MCP Streamable HTTP integration using the official SDK and a local HTTP server;
 - OpenTelemetry integration tests using the SDK in-memory exporter;
@@ -61,7 +63,7 @@ release blockers without waiting on preview-only interpreter experiments.
 Optional ecosystem bridges remain thin adapters around SchemaRouter's existing trust boundary.
 
 - The core package must import and run without LangChain, LangGraph, LlamaIndex, Jev/TypeSafe,
-  MCP, or OpenTelemetry installed.
+  Laya, MCP, or OpenTelemetry installed.
 - Integration modules use lazy imports and bounded dependency ranges.
 - An integration may translate framework/provider metadata, but execution must still flow through
   SchemaRouter schema identity, policy, binding checks, and validation.
@@ -84,8 +86,9 @@ these becomes true:
 3. upstream maintainers require a dedicated distribution for discoverability or certification;
 4. the integration grows beyond a thin translation layer.
 
-The Jev provider follows the same principle: it remains an optional `schemarouter[jev]` extra and
-does not make TypeSafe a core dependency. OpenTelemetry likewise remains an optional
+The Jev and Laya providers follow the same principle: they remain optional `schemarouter[jev]` and
+`schemarouter[laya]` extras and do not make either provider runtime a core dependency. OpenTelemetry
+likewise remains an optional
 `schemarouter[otel]` exporter integration.
 
 ## External compatibility checks
@@ -97,8 +100,8 @@ External-service failures are compatibility signals, not pull-request blockers, 
 availability is outside SchemaRouter's control.
 
 Live decision-model benchmarking is intentionally excluded from required CI. Run Jev explicitly
-with `TYPESAFE_API_KEY` and `--jev`, or run a trusted local Ollama model with
-`--ollama-model <installed-model>`.
+with `TYPESAFE_API_KEY` and `--jev`, run local Laya with `--laya`, or run a trusted local Ollama
+model with `--ollama-model <installed-model>`.
 
 ## Live OpenAPI smoke
 
