@@ -16,7 +16,7 @@ class ParameterSpec(StrictModel):
     wire_name: str | None = None
     description: str = ""
     required: bool = False
-    location: Literal["path", "query", "header", "body", "argument"] = "argument"
+    location: Literal["path", "query", "header", "body", "body_root", "argument"] = "argument"
     json_schema: dict[str, Any] = Field(default_factory=dict)
     aliases: list[str] = Field(default_factory=list)
 
