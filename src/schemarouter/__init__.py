@@ -48,6 +48,19 @@ from .errors import (
 )
 from .executor import RegistryExecutor
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
+from .inspection import (
+    EndpointInspection,
+    RegistryInspection,
+    ToolInspection,
+    TraceInspection,
+    inspect_registry,
+    inspect_run_trace,
+    inspect_tool,
+    inspect_tool_spec,
+    inspect_trace,
+    inspect_traces,
+    tool_spec_document,
+)
 from .models import (
     EndpointSpec,
     EvidenceRequirements,
@@ -117,6 +130,10 @@ __all__ = [
     "FieldSpec",
     "FirstOptionDecisionBackend",
     "InMemoryRegistry",
+    "EndpointInspection",
+    "RegistryInspection",
+    "ToolInspection",
+    "TraceInspection",
     "KeywordAnalyzer",
     "MCPClientFactory",
     "ModelAnalysisError",
@@ -163,7 +180,14 @@ __all__ = [
     "choose_async",
     "choose_sync",
     "discover_adapter_plugins",
+    "inspect_registry",
+    "inspect_run_trace",
+    "inspect_tool",
+    "inspect_tool_spec",
+    "inspect_trace",
+    "inspect_traces",
     "load_adapter_plugins",
+    "tool_spec_document",
     "record_run_events",
     "replay_run_events",
 ]
