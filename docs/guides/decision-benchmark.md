@@ -221,6 +221,7 @@ Each row records:
 - invalid-plan state;
 - end-to-end planning latency;
 - whether the bounded decision backend was actually invoked;
+- whether empty lexical recall was explicitly expanded to the registered catalog;
 - bounded-backend abstention and deterministic fallback state;
 - input/output tokens when reported;
 - optional cost estimate;
