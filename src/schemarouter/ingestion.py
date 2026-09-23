@@ -34,6 +34,24 @@ _DEFAULT_OPENAPI_REF_MAX_BYTES = 10 * 1024 * 1024
 _OPENAPI_EXTERNAL_REFS_KEY = "x-schemarouter-external-refs"
 
 
+class _OpenAPIYAMLLoader(yaml.SafeLoader):
+    """Safe YAML loader that keeps timestamp-looking scalars JSON-compatible strings."""
+
+
+_OpenAPIYAMLLoader.yaml_implicit_resolvers = {
+    key: [
+        resolver
+        for resolver in resolvers
+        if resolver[0] != "tag:yaml.org,2002:timestamp"
+    ]
+    for key, resolvers in yaml.SafeLoader.yaml_implicit_resolvers.items()
+}
+
+
+def _safe_yaml_load(text: str) -> Any:
+    return yaml.load(text, Loader=_OpenAPIYAMLLoader)
+
+
 def _slug(value: str) -> str:
     slug = re.sub(r"[^A-Za-z0-9._-]+", "_", value.strip()).strip("_.-").lower()
     return slug or "remote_tool"
@@ -61,7 +79,7 @@ def _parse_openapi_text(text: str) -> dict[str, Any] | None:
         value = json.loads(text)
     except json.JSONDecodeError:
         try:
-            value = yaml.safe_load(text)
+            value = _safe_yaml_load(text)
         except yaml.YAMLError:
             return None
 
@@ -140,7 +158,7 @@ def _parse_reference_text(text: str) -> dict[str, Any] | None:
         value = json.loads(text)
     except json.JSONDecodeError:
         try:
-            value = yaml.safe_load(text)
+            value = _safe_yaml_load(text)
         except yaml.YAMLError:
             return None
     if isinstance(value, dict):
