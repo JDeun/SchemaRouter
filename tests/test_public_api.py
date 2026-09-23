@@ -41,7 +41,10 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "FirstOptionDecisionBackend",
         "InMemoryRegistry",
         "EndpointInspection",
+        "ExecutionInspection",
+        "PlannerInspection",
         "RegistryInspection",
+        "RouterInspection",
         "ToolInspection",
         "TraceInspection",
         "KeywordAnalyzer",
@@ -91,6 +94,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "choose_sync",
         "discover_adapter_plugins",
         "inspect_registry",
+        "inspect_router",
         "inspect_run_trace",
         "inspect_tool",
         "inspect_tool_spec",
@@ -99,7 +103,9 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "load_adapter_plugins",
         "tool_spec_document",
         "record_run_events",
+        "render_dashboard",
         "replay_run_events",
+        "write_dashboard",
     }
 
     assert set(schemarouter.__all__) == expected
