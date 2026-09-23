@@ -890,6 +890,8 @@ class OpenAPIRemoteInvoker:
             follow_redirects=False,
         )
         try:
+            request_content: bytes | None = None
+            request_json: Any = None
             if endpoint_spec.metadata.get("request_body_mode") == "raw":
                 if (
                     bool(endpoint_spec.metadata.get("request_body_required"))
@@ -898,7 +900,14 @@ class OpenAPIRemoteInvoker:
                     raise NonRetryableInvocationError(
                         f"required request body missing for endpoint {endpoint_name!r}"
                     )
-                request_json = raw_body_value if raw_body_present else None
+                if raw_body_present:
+                    request_content = json.dumps(
+                        raw_body_value,
+                        separators=(",", ":"),
+                        ensure_ascii=False,
+                    ).encode("utf-8")
+                    if not any(name.casefold() == "content-type" for name in headers):
+                        headers["Content-Type"] = "application/json"
             else:
                 request_json = (
                     body
@@ -909,6 +918,7 @@ class OpenAPIRemoteInvoker:
                 endpoint_spec.method,
                 url,
                 params=query or None,
+                content=request_content,
                 json=request_json,
                 headers=headers or None,
                 follow_redirects=False,
