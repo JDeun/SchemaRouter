@@ -30,8 +30,9 @@ The project is pre-1.0 and follows the compatibility rules in
 ### Changed
 
 - raised the blocking branch-coverage floor from 82% to 84%;
-- made the protected `package` CI check depend on the Laya integration contract so Laya regressions
-  cannot be merged solely because the repository ruleset predates that job;
+- made the protected `package` CI check depend on both the Laya integration contract and a
+  dependency vulnerability audit, so either regression blocks merge even when the repository
+  ruleset predates newer job names;
 - package smoke now verifies benchmark JSON and HTML artifact generation;
 - research benchmarking now compares Laya's lexical-only path with explicit empty-candidate recall
   on the same full corpus and hardware;
