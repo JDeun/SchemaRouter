@@ -69,6 +69,12 @@ Common Laya checkpoint names include `english`, `multilingual`, and
 `typed-decisions`. SchemaRouter intentionally does not select the benchmark-specific
 `typed-decisions` checkpoint automatically.
 
+`device` is an explicit performance control. Use `cpu`, `cuda`, or `mps` when the runtime
+should request a specific device. If Laya falls back to another device, SchemaRouter records both
+`requested_device` and, when the loaded agent exposes it, `actual_device` in non-authoritative
+decision metadata. This prevents a GPU-requested run that actually executed on CPU from being
+misreported as a GPU benchmark.
+
 ## Preload for a long-running process
 
 Laya can lazily load checkpoints, but switching between uncached checkpoints can dominate latency.
@@ -160,9 +166,12 @@ python scripts/benchmark_decision_routing.py \
   --laya \
   --laya-model multilingual \
   --laya-device mps \
-  --laya-min-confidence 0.65
+  --laya-min-confidence 0.65 \
+  --hardware-label "Apple M4 16GB"
 ```
 
 For a long-running benchmark on mixed languages, `--laya-preload` avoids repeated cold checkpoint
-loads. Record the exact Laya version, checkpoint, hardware/device, preload policy, and confidence
-threshold when publishing results.
+loads. JSON/CSV rows record the selected checkpoint plus requested/actual device when available.
+The report also records platform metadata and the optional `--hardware-label`. Record the exact
+Laya version, checkpoint, hardware/device, preload policy, and confidence threshold when publishing
+results.
