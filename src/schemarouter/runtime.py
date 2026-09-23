@@ -18,8 +18,8 @@ from .adapters.python import PythonCallableInvoker, callable_options, tool_from_
 from .errors import ProposalApprovalError, RegistrationError
 from .executor import ExecutionBudgetTracker, RegistryExecutor
 from .hooks import ExecutionHooks
-from .inspection import RouterInspection, inspect_router
 from .ingestion import SourceKind, URLSchemaLoader
+from .inspection import RouterInspection, inspect_router
 from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
