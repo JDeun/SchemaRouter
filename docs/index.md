@@ -155,7 +155,7 @@ variants.
 
 -   **Framework integrations**
 
-    LangChain, LangGraph, LlamaIndex, Jev, Ollama, and OpenTelemetry.
+    LangChain, LangGraph, LlamaIndex, Jev, Laya, Ollama, and OpenTelemetry.
 
     [Integrations →](integrations/langchain.md)
 

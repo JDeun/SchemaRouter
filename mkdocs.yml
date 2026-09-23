@@ -129,6 +129,7 @@ nav:
       - LangGraph: integrations/langgraph.md
       - LlamaIndex: integrations/llamaindex.md
       - Jev / TypeSafe: integrations/jev.md
+      - Laya decisions: integrations/laya.md
       - Ollama decisions: integrations/ollama.md
       - OpenTelemetry: integrations/opentelemetry.md
   - Reference:

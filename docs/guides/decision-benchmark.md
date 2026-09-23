@@ -99,6 +99,41 @@ Optional controls include `--jev-model`, `--min-confidence`,
 
 Provider pricing is never hard-coded because it can change independently of SchemaRouter.
 
+## Laya
+
+Install the optional local decision runtime:
+
+```bash
+pip install -e ".[laya]"
+```
+
+Run Laya against the same checked-in corpus:
+
+```bash
+python scripts/benchmark_decision_routing.py \
+  --corpus benchmarks/decision-routing-v1.json \
+  --laya
+```
+
+By default, Laya uses its local router to choose an English or multilingual checkpoint from the
+bounded request state. Optional controls include:
+
+- `--laya-model english|multilingual|typed-decisions` to pin a checkpoint;
+- `--laya-device cpu|cuda|mps` to pin the trusted local device;
+- `--laya-preload` to preload checkpoints before measurement;
+- `--laya-max-loaded N` to control resident checkpoint count;
+- `--laya-min-confidence FLOAT` to measure confidence-gated abstention;
+- `--hardware-label TEXT` to attach the concrete machine/GPU description to the report.
+
+Laya rows record the routed checkpoint plus `requested_device` and, when Laya exposes the loaded
+agent device, `actual_device`. This matters because an unavailable CUDA/MPS target can fall back to
+CPU and should not be counted as an accelerator result.
+
+Published results should record the exact Laya package version, checkpoint/routing policy, hardware,
+device, preload policy, confidence threshold, corpus revision, and repeated-run count. Do not compare
+upstream/provider benchmark numbers directly unless the prompts, options, corpus, and measurement
+conditions are equivalent.
+
 ## Ollama
 
 Run an already-installed local Ollama model against the same corpus:
@@ -110,7 +145,18 @@ python scripts/benchmark_decision_routing.py \
 ```
 
 The default API endpoint is `http://127.0.0.1:11434`. Use `--ollama-base-url` for another
-trusted endpoint and `--ollama-timeout` to adjust the per-request timeout.
+trusted endpoint and `--ollama-timeout` to adjust the per-request timeout. Server-supported local
+runtime options can be passed without hard-coding vendor/version-specific knobs:
+
+```bash
+python scripts/benchmark_decision_routing.py \
+  --ollama-model your-installed-model \
+  --ollama-options-json '{"your_runtime_option": 1}' \
+  --hardware-label "RTX workstation"
+```
+
+SchemaRouter records the options object in the benchmark report. It does not infer the actual
+Ollama CPU/GPU placement because that decision belongs to the Ollama server/runtime.
 
 The benchmark records Ollama prompt/evaluation token counters when the server reports them. A local
 model result should also record the exact model tag, quantization/runtime configuration, hardware,
@@ -125,6 +171,8 @@ a local cost model.
 Each row records:
 
 - case ID and category;
+- provider/model identifier when reported;
+- requested and actual local device when the backend can report them;
 - expected and predicted `tool.endpoint`;
 - correctness;
 - invalid-plan state;
@@ -152,7 +200,8 @@ The corpus and deterministic smoke path are suitable for CI because they require
 provider.
 
 A live provider benchmark is intentionally separate. Network availability, model revisions,
-credentials, rate limits, and provider-side changes are external variables. Publish live results
+credentials, rate limits, provider-side changes, local accelerator availability, memory, and
+runtime placement are external variables. Publish live results
 with the exact date, model identifier, configuration, corpus revision, and repeated-run count.
 
 Do not infer provider superiority from the three-case smoke set or from a single live run.

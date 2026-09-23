@@ -7,6 +7,12 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+### Added
+
+- optional local `LayaDecisionBackend` through `schemarouter[laya]`, with language-aware local
+  checkpoint routing, confidence-based abstention, lazy/preloaded execution, fail-closed option-ID
+  validation, trusted credential separation, and shared decision-benchmark support.
+
 ### Changed
 
 - post-release development has resumed as `0.6.0.dev0`; published `0.5.0` artifacts remain immutable.

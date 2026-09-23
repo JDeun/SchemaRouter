@@ -25,8 +25,9 @@ This document tracks framework-level maturity rather than research metrics.
 | Runtime policy | Implemented with per-call approval and execution budgets | Add richer organization policy adapters |
 | Runtime JSON Schema validation / projection | Full raw validation + explicit nested object projection paths | Add typed array-element projection only if needed |
 | LangChain / LangGraph / LlamaIndex integrations | Implemented optional adapters and native graph node | Expand ecosystem listings |
-| Bounded decision backends | Candidate + field + conservative evidence-sufficiency surfaces, provider-neutral callable/embedding + optional Jev/Ollama, all opt-in | Gather live decision evidence |
+| Bounded decision backends | Candidate + field + conservative evidence-sufficiency surfaces, provider-neutral callable/embedding + optional Jev/Laya/Ollama, all opt-in | Gather live decision evidence |
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
+| Local Laya decision provider | Optional local choice adapter with auto language routing, confidence abstention, lazy/preloaded checkpoints, and shared benchmark support | Gather checkpoint/hardware-specific evidence before choosing defaults |
 | Local Ollama decision provider | Implemented over structured-output HTTP API | Benchmark specific local models/hardware before quality claims |
 | Decision benchmark harness | 144-case checked-in corpus + JSON/CSV metrics | Gather dated live-provider evidence |
 | Framework callbacks / exporters | Typed redacted events + optional OpenTelemetry exporter | Add additional trusted sinks as needed |
@@ -103,6 +104,7 @@ Completed locally:
 - runnable LangChain, LangGraph, and LlamaIndex examples;
 - published ecosystem compatibility and maintenance policy;
 - optional Jev decision provider with adversarial contract tests;
+- optional local Laya decision provider with bounded choice validation and shared benchmark support;
 - provider-neutral embedding-similarity decision backend with threshold/margin abstention and
   malformed-vector fail-closed validation;
 - bounded field-selection contract with identifier preservation and deterministic fallback;
