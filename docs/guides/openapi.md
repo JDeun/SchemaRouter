@@ -156,6 +156,43 @@ the JSON root itself may legally be `null`.
 OpenAPI 3.1 documents are not rewritten: they should express nullability with JSON Schema types,
 for example `type: ["string", "null"]`.
 
+## Parameter serialization
+
+SchemaRouter compiles the OpenAPI default parameter styles into the endpoint contract and preserves
+them in the schema fingerprint:
+
+| Location | Supported style | Default explode | Supported values |
+| --- | --- | ---: | --- |
+| path | `simple` | `false` | scalar, array, object |
+| query | `form` | `true` | scalar, array, object |
+| header | `simple` | `false` | scalar, array, object |
+
+Examples:
+
+```text
+path simple array:
+  ["a", "b"] -> /a,b
+
+query form array, explode=true:
+  ["red", "blue"] -> ?tag=red&tag=blue
+
+query form object, explode=false:
+  {"role":"admin","active":true}
+  -> ?filter=role,admin,active,true
+
+header simple object, explode=true:
+  {"role":"admin","active":true}
+  -> X-Meta: role=admin,active=true
+```
+
+SchemaRouter deliberately fails closed for parameter serialization modes it does not yet emit
+exactly, including non-default styles such as `matrix`, `label`, `spaceDelimited`,
+`pipeDelimited`, and `deepObject`. Query parameters with `allowReserved: true` are also
+rejected rather than silently changing reserved-character semantics.
+
+The compatibility report exposes these cases before execution as `parameter_style` or
+`allow_reserved` findings.
+
 ## Parameter collisions
 
 OpenAPI identifies parameters by both name and location. If an operation defines the same wire name
@@ -243,7 +280,7 @@ Supported paths include:
 
 - OpenAPI 3.x JSON and YAML;
 - operations under `paths`;
-- path/query/header parameters;
+- path/query/header parameters with spec-faithful default `simple` / `form` serialization;
 - object-like JSON request bodies;
 - JSON responses;
 - local component/path-item reference chains;
