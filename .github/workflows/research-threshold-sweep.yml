@@ -1,0 +1,56 @@
+name: Laya Recall Threshold Sweep
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-threshold-sweep.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  laya-recall-threshold:
+    name: laya-recall-${{ matrix.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: "030"
+            threshold: "0.30"
+          - label: "050"
+            threshold: "0.50"
+          - label: "070"
+            threshold: "0.70"
+          - label: "085"
+            threshold: "0.85"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install -e ".[dev,laya]"
+      - name: Run recall-on-empty benchmark
+        run: |
+          mkdir -p artifacts
+          python scripts/benchmark_decision_routing.py \
+            --corpus benchmarks/decision-routing-v1.json \
+            --laya \
+            --laya-device cpu \
+            --laya-max-loaded 1 \
+            --laya-min-confidence ${{ matrix.threshold }} \
+            --decision-recall-on-empty \
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+            --json-out artifacts/report.json \
+            --csv-out artifacts/rows.csv \
+            --html-out artifacts/report.html
+      - uses: actions/upload-artifact@v7
+        with:
+          name: laya-recall-threshold-${{ matrix.label }}-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30
