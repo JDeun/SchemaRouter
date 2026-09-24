@@ -901,11 +901,32 @@ class SchemaRouter:
         budget_tracker = ExecutionBudgetTracker(run_config.budget)
         for primary_index, primary_call in enumerate(plan.calls):
             route = plan.fallback_route(primary_index)
-            chain = [
-                primary_call,
-                *(route.alternatives if route is not None else []),
-            ]
+            alternatives = route.alternatives if route is not None else []
+            chain = [primary_call, *alternatives]
             result: ToolResult | None = None
+
+            if alternatives:
+                try:
+                    self.executor.validate_fallback_chain(
+                        primary_call,
+                        alternatives,
+                    )
+                except Exception as exc:
+                    error_data: dict[str, Any] = {
+                        "error_type": type(exc).__name__,
+                        "stage": "execution",
+                        "phase": "fallback_preflight",
+                    }
+                    if run_config.include_payloads:
+                        error_data["message"] = str(exc)
+                    yield await emit(RunEvent.create(
+                        event="run.error",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        data=error_data,
+                    ))
+                    raise
 
             for candidate_index, call in enumerate(chain):
                 start_data: dict[str, Any] = {
