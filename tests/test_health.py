@@ -181,3 +181,35 @@ async def test_health_probe_becomes_stale_after_tool_contract_replacement() -> N
     assert called is False
     assert snapshots[0].status == "stale"
     assert snapshots[0].last_error_type == "ToolContractChanged"
+
+
+
+@pytest.mark.asyncio
+async def test_health_probe_result_is_discarded_if_contract_changes_while_awaiting() -> None:
+    router = _router(cooldown=60)
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    async def probe() -> bool:
+        started.set()
+        await release.wait()
+        return False
+
+    router.register_health_probe("provider_api", "read", probe)
+    task = asyncio.create_task(router.check_health_once())
+    await asyncio.wait_for(started.wait(), timeout=1)
+
+    replacement = ToolSpec(
+        name="provider_api",
+        provider="provider",
+        access_mode="new_transport",
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    router.registry.register(replacement, replace=True)
+    release.set()
+
+    snapshots = await asyncio.wait_for(task, timeout=1)
+
+    assert snapshots[0].status == "stale"
+    assert snapshots[0].last_error_type == "ToolContractChanged"
+    assert router.unavailable_access_paths() == ()
