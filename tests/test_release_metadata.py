@@ -144,8 +144,12 @@ def test_external_package_smokes_cover_lightweight_integration_extras() -> None:
     assert "--lightweight-extras" in compatibility
     assert "--framework-integrations --lightweight-extras" in release
     assert 'verification: ["wheel", "sdist", "integration-extras"]' in release
-    assert "from installed_extras_smoke import run_smoke as run_installed_extras_smoke" in published_smoke
+    assert (
+        "from installed_extras_smoke import run_smoke as run_installed_extras_smoke"
+        in published_smoke
+    )
     assert 'report["lightweight_extras"] = args.lightweight_extras' in published_smoke
+
 
 def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     workflow = (
