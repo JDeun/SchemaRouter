@@ -91,7 +91,7 @@ The project is pre-1.0 and follows the compatibility rules in
   metadata or survive a rebind under an old plan;
 - operational inspection now derives execution-critical provenance from the fingerprinted contract
   rather than ordinary metadata mirrors, preventing observability from reporting spoofed authority
-  state;
+  state, and redacts URL query strings/fragments from operator-facing inspection/dashboard output;
 
 - added a pinned OpenSSF Scorecard workflow that publishes authenticated results, retains SARIF, and
   uploads findings to GitHub Code Scanning on main and a weekly schedule;
