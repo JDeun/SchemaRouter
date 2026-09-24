@@ -214,3 +214,35 @@ def test_execution_metadata_changes_execution_fingerprints() -> None:
 
     assert old.endpoints[0].fingerprint != new.endpoints[0].fingerprint
     assert old.fingerprint != new.fingerprint
+
+
+
+def test_registry_revalidates_nested_endpoint_mutation_before_write() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="mutated",
+        endpoints=[EndpointSpec(name="run")],
+    )
+    tool.endpoints.append(EndpointSpec(name="run"))
+
+    with pytest.raises(RegistrationError, match="not a valid ToolSpec"):
+        registry.register(tool)
+
+    assert registry.keys() == ()
+    assert registry.version == 0
+
+
+def test_registry_revalidates_nested_parameter_mutation_in_batch() -> None:
+    registry = InMemoryRegistry()
+    endpoint = EndpointSpec(
+        name="run",
+        parameters=[ParameterSpec(name="value")],
+    )
+    tool = ToolSpec(name="mutated", endpoints=[endpoint])
+    tool.endpoints[0].parameters.append(ParameterSpec(name="value"))
+
+    with pytest.raises(RegistrationError, match="not a valid ToolSpec"):
+        registry.update_many([tool])
+
+    assert registry.keys() == ()
+    assert registry.version == 0
