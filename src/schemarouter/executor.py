@@ -203,10 +203,16 @@ class RegistryExecutor:
 
     def validate_call(self, call: ToolCall) -> None:
         try:
-            endpoint = self.registry.endpoint(call.tool, call.endpoint)
+            tool = self.registry.get(call.tool)
+            endpoint = tool.endpoint(call.endpoint)
         except KeyError as exc:
             message = f"unknown tool/endpoint: {call.tool}.{call.endpoint}"
             raise PlanValidationError(message) from exc
+
+        if call.tool_fingerprint is not None and tool.fingerprint != call.tool_fingerprint:
+            raise SchemaDriftError(
+                f"tool contract changed for {call.tool!r}; replan before execution"
+            )
 
         if endpoint.fingerprint != call.schema_fingerprint:
             raise SchemaDriftError(
@@ -238,7 +244,6 @@ class RegistryExecutor:
             context=f"arguments for {call.tool}.{call.endpoint}",
         )
 
-        tool = self.registry.get(call.tool)
         self.policy.validate(tool, endpoint, call)
 
         declared_fields = {field.name for field in endpoint.output_fields}
