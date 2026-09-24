@@ -61,6 +61,8 @@ def tool_from_callable(
     *,
     name: str | None = None,
     namespace: str | None = None,
+    provider: str | None = None,
+    access_mode: str | None = None,
     description: str | None = None,
     read_only: bool | None = None,
     destructive: bool | None = None,
