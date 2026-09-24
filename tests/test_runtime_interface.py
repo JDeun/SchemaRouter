@@ -81,6 +81,8 @@ def test_input_output_and_config_schemas_are_introspectable() -> None:
     assert router.input_schema["title"] == "PlanRequest"
     assert router.output_schema["type"] == "array"
     assert "max_concurrency" in router.config_schema["properties"]
+    assert "execution_mode" in router.config_schema["properties"]
+    assert "max_parallel_calls" in router.config_schema["properties"]
     assert "retry" in router.config_schema["properties"]
 
 
