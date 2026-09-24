@@ -261,6 +261,27 @@ backend selected the candidate.
 These are locally observable routing facts. SchemaRouter does not expose or attempt to reconstruct
 private model reasoning.
 
+### 28. Descriptive metadata must not become hidden execution authority
+
+Adversarial review found that adapter/runtime behavior can accidentally depend on values stored in
+ordinary `metadata`, while fingerprints intentionally exclude that bag. If execution or policy
+reads such a value, the runtime meaning can change without producing schema/binding drift.
+
+SchemaRouter therefore separates:
+
+- ordinary `metadata`: descriptive/inspection data only;
+- `EndpointSpec.execution_metadata`: fingerprinted endpoint runtime semantics;
+- `ToolSpec.execution_metadata`: fingerprinted transport/binding identity;
+- `ToolSpec.remote`: fingerprinted local/remote authority classification.
+
+Built-in adapters mirror some values into ordinary metadata for backward-compatible inspection, but
+runtime code reads the fingerprinted contract fields. Legacy persisted built-in metadata is migrated
+into those fields during model validation.
+
+Planner-generated `ToolCall` values also pin the current tool fingerprint, so changing transport
+origin or local/remote classification invalidates an already-compiled plan even after a trusted
+rebind.
+
 ### 27. Parallel execution must not become orchestration
 
 `parallel_read_only` is limited to flat plans whose calls all preflight successfully and have
@@ -316,6 +337,10 @@ outside the core and belong to surrounding orchestration frameworks.
     chain-of-thought.
 33. Parallel execution requires every call to preflight as explicitly read-only and shares one run
     budget across concurrent calls.
+34. Ordinary descriptive metadata cannot grant policy authority or alter built-in transport
+    semantics; execution-affecting values live in fingerprinted contract fields.
+35. Planner-generated calls pin both endpoint and tool fingerprints, and remote/runtime-sensitive
+    legacy calls without a tool fingerprint fail closed.
 
 ## Current extension backlog
 
