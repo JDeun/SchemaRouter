@@ -106,6 +106,15 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     assert 'verification: ["wheel", "sdist", "framework-extras"]' in workflow
     assert 'package="schemarouter==$RELEASE_VERSION"' in workflow
     assert 'package="schemarouter[langchain,langgraph,llamaindex]==$RELEASE_VERSION"' in workflow
+    assert "Verify published artifact digest matches release build" in workflow
+    assert "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c" in workflow
+    assert "--index-url https://pypi.org/simple" in workflow
+    assert (
+        'python -m pip download "${download_args[@]}" '
+        '"schemarouter==$RELEASE_VERSION"'
+    ) in workflow
+    assert "python scripts/verify_artifact_digest.py" in workflow
+    assert "--published-dir /tmp/pypi-artifact" in workflow
     assert '--expected-version "$RELEASE_VERSION"' in workflow
     assert "for attempt in {1..18}; do" in workflow
     assert "python -m pip check" in workflow
