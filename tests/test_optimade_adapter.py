@@ -3,7 +3,17 @@ import json
 import httpx
 import pytest
 
-from schemarouter import PlanRequest, SchemaRouter, SchemaSourceError
+from schemarouter import (
+    EndpointSpec,
+    FieldSpec,
+    PlanRequest,
+    SchemaRouter,
+    SchemaSourceError,
+    ServerProjectionSpec,
+    ToolCall,
+    ToolSpec,
+)
+from schemarouter.adapters import OPTIMADERemoteInvoker
 
 
 def base_info() -> dict:
