@@ -28,6 +28,7 @@ from .runs import ExecutionBudget, RetryPolicy
 from .validation import (
     effective_input_schema,
     effective_output_schema,
+    projected_output_schema,
     validate_json_schema_value,
 )
 
@@ -526,11 +527,27 @@ class RegistryExecutor:
                     )
                 tracker.after_attempt()
 
+                server_projected = (
+                    call_aware
+                    and endpoint.server_projection is not None
+                    and bool(call.fields)
+                )
                 validate_json_schema_value(
                     value,
-                    effective_output_schema(endpoint),
+                    (
+                        projected_output_schema(endpoint, call.fields)
+                        if server_projected
+                        else effective_output_schema(endpoint)
+                    ),
                     context=f"output from {call.tool}.{call.endpoint}",
                 )
+                if server_projected:
+                    self._validate_selected_fields_present(
+                        value,
+                        call.fields,
+                        endpoint,
+                        context=f"output from {call.tool}.{call.endpoint}",
+                    )
                 selected_field_specs = {
                     field.name: field
                     for field in endpoint.output_fields
@@ -740,6 +757,47 @@ class RegistryExecutor:
                 budget=budget,
                 _tracker=tracker,
             )
+
+    @staticmethod
+    def _validate_selected_fields_present(
+        value: Any,
+        fields: list[str],
+        endpoint: EndpointSpec,
+        *,
+        context: str,
+    ) -> None:
+        if not fields:
+            return
+
+        if isinstance(value, dict):
+            items = [value]
+        elif isinstance(value, list):
+            items = value
+        else:
+            return
+
+        field_map = {field.name: field for field in endpoint.output_fields}
+        for item_index, item in enumerate(items):
+            if not isinstance(item, dict):
+                continue
+            for field_name in fields:
+                field = field_map[field_name]
+                current: Any = item
+                missing = False
+                for part in field.projection_path:
+                    if not isinstance(current, dict) or part not in current:
+                        missing = True
+                        break
+                    current = current[part]
+                if missing:
+                    suffix = (
+                        f" item {item_index}"
+                        if isinstance(value, list)
+                        else ""
+                    )
+                    raise SchemaValidationError(
+                        f"{context}{suffix}: projected field {field_name!r} is missing"
+                    )
 
     @staticmethod
     def _project(value: Any, fields: list[str], endpoint: EndpointSpec) -> Any:
