@@ -22,6 +22,7 @@ claim that every historical version inside the range is exhaustively tested.
 | OpenAPI | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OpenAPI SDK dependency |
 | OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |
 | Published PyPI package | Latest stable wheel + sdist | Scheduled/manual external smoke | Installs from PyPI in a fresh runner, runs `pip check`, and executes a public API scenario outside the checkout |
+| Published framework extras | Latest stable `langchain` + `langgraph` + `llamaindex` extras | Scheduled/manual external smoke | Resolves the published extras from PyPI and executes all three bridges outside the checkout |
 
 Before widening an upper bound or lowering a minimum supported version, the relevant integration
 tests must pass against that target and the change must be documented in release notes.
@@ -97,7 +98,9 @@ likewise remains an optional
 The `Compatibility Smoke` workflow runs weekly and can also be triggered manually for public
 OpenAPI/OPTIMADE services and the latest stable SchemaRouter package published on PyPI. The PyPI
 smoke separately forces wheel and sdist installation, runs `pip check`, and executes a public API
-scenario from outside the repository checkout.
+scenario from outside the repository checkout. A companion published-extras smoke resolves
+`schemarouter[langchain,langgraph,llamaindex]` from PyPI and executes each bridge through the
+installed stable package rather than the source checkout.
 
 External-service failures are compatibility signals, not pull-request blockers, because third-party
 availability is outside SchemaRouter's control.
@@ -128,7 +131,8 @@ services. Both should be reviewed before a release candidate is promoted.
 
 ## Scheduled live-smoke artifacts
 
-The non-blocking public OpenAPI, OPTIMADE, and published-PyPI compatibility jobs emit one
+The non-blocking public OpenAPI, OPTIMADE, published-PyPI, and published-framework compatibility
+jobs emit one
 machine-readable JSON artifact per smoke job. Reports include a schema version, UTC generation time, SchemaRouter version,
 adapter/source identity, runtime environment, success/failure state, and bounded success details.
 On failure, only the exception type is recorded; exception messages are intentionally omitted.
