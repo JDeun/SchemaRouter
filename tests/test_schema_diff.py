@@ -197,3 +197,17 @@ def test_tool_endpoint_addition_is_compatible_but_never_reuses_fingerprint() -> 
     assert report.compatibility == "compatible"
     assert old.fingerprint != new.fingerprint
     assert report.old_fingerprint != report.new_fingerprint
+
+
+def test_http_method_escalation_requires_security_review_even_if_read_only_flag_is_stale() -> None:
+    old = endpoint(method="GET", read_only=True)
+    new = endpoint(method="POST", read_only=True)
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "security_review"
+    assert any(
+        change.kind == "method_changed"
+        and change.severity == "security"
+        for change in report.changes
+    )
