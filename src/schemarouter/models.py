@@ -122,6 +122,7 @@ class ServerProjectionSpec(StrictModel):
 
 class FieldSpec(StrictModel):
     name: str
+    semantic_id: str | None = None
     description: str = ""
     json_schema: dict[str, Any] = Field(default_factory=dict)
     aliases: list[str] = Field(default_factory=list)
@@ -133,6 +134,8 @@ class FieldSpec(StrictModel):
 
     @model_validator(mode="after")
     def validate_path(self) -> FieldSpec:
+        if self.semantic_id is not None and not self.semantic_id.strip():
+            raise ValueError("field semantic_id must be non-empty when provided")
         if any(not isinstance(part, str) or not part for part in self.path):
             raise ValueError("field path requires non-empty string segments")
         return self
