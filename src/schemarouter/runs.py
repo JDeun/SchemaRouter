@@ -55,6 +55,7 @@ class RunConfig(StrictModel):
     metadata: dict[str, Any] = Field(default_factory=dict)
     max_concurrency: int = Field(default=8, ge=1, le=128)
     execution_mode: ExecutionMode = "sequential"
+    max_parallel_calls: int = Field(default=8, ge=1, le=128)
     include_payloads: bool = False
     retry: RetryPolicy = Field(default_factory=RetryPolicy)
     budget: ExecutionBudget = Field(default_factory=ExecutionBudget)
