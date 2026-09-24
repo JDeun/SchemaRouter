@@ -101,7 +101,6 @@ class InMemoryRegistry:
             self._version += 1
 
 
-
 class SQLiteRegistry:
     """Persistent versioned tool catalog backed by SQLite.
 
