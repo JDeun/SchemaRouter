@@ -26,6 +26,7 @@ def current_weather(city: str) -> Weather:
 def run_smoke(
     *,
     framework_integrations: bool = False,
+    lightweight_extras: bool = False,
     expected_version: str | None = None,
 ) -> dict[str, object]:
     distribution_version = version("schemarouter")
@@ -104,6 +105,13 @@ def run_smoke(
             "llamaindex": version("llama-index-core"),
         }
 
+    if lightweight_extras:
+        from installed_extras_smoke import run_smoke as run_installed_extras_smoke
+
+        extra_report = run_installed_extras_smoke()
+        assert extra_report["status"] == "success"
+        details["lightweight_extras"] = extra_report["dependencies"]
+
     return details
 
 
@@ -117,6 +125,11 @@ def main() -> None:
         "--framework-integrations",
         action="store_true",
         help="Also exercise the published LangChain, LangGraph, and LlamaIndex extras.",
+    )
+    parser.add_argument(
+        "--lightweight-extras",
+        action="store_true",
+        help="Also validate the published MCP, Jev, and OpenTelemetry extras.",
     )
     parser.add_argument(
         "--expected-version",
@@ -137,14 +150,17 @@ def main() -> None:
     try:
         report["details"] = run_smoke(
             framework_integrations=args.framework_integrations,
+            lightweight_extras=args.lightweight_extras,
             expected_version=args.expected_version,
         )
         report["artifact_kind"] = args.artifact_kind
         report["framework_integrations"] = args.framework_integrations
+        report["lightweight_extras"] = args.lightweight_extras
         report["status"] = "success"
     except Exception as exc:
         report["artifact_kind"] = args.artifact_kind
         report["framework_integrations"] = args.framework_integrations
+        report["lightweight_extras"] = args.lightweight_extras
         report["status"] = "failure"
         report["error_type"] = type(exc).__name__
         write_report(args.json_out, report)
