@@ -659,3 +659,189 @@ def test_plan_explanation_marks_decision_backend_field_selection() -> None:
     reasons = {item.field: item.reason for item in explanation.field_selection}
     assert reasons["material_id"] == "identifier"
     assert reasons["density"] == "decision_backend"
+
+
+
+def _provider_tool(
+    name: str,
+    *,
+    provider: str,
+    access_mode: str,
+    field_name: str = "band_gap",
+    aliases: list[str] | None = None,
+    read_only: bool = True,
+) -> ToolSpec:
+    return ToolSpec(
+        name=name,
+        provider=provider,
+        access_mode=access_mode,
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                description="Search materials band gap properties",
+                read_only=read_only,
+                parameters=[ParameterSpec(name="formula", required=True)],
+                output_fields=[
+                    FieldSpec(name="material_id", identifier=True),
+                    FieldSpec(
+                        name=field_name,
+                        aliases=list(aliases or []),
+                        unit="eV",
+                    ),
+                ],
+            )
+        ],
+    )
+
+
+def test_planner_precompiles_same_provider_access_fallbacks() -> None:
+    reg = InMemoryRegistry()
+    api = _provider_tool(
+        "mp_api",
+        provider="materials_project",
+        access_mode="openapi",
+        aliases=["band gap"],
+    )
+    optimade = _provider_tool(
+        "mp_optimade",
+        provider="materials_project",
+        access_mode="optimade",
+        field_name="_mp_band_gap",
+        aliases=["band gap", "band_gap"],
+    )
+    reg.register(api)
+    reg.register(optimade)
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="Si band gap",
+            preferred_tools=["mp_api"],
+            arguments={"formula": "Si"},
+            fallback_scope="same_provider",
+            max_fallbacks=2,
+        )
+    )
+
+    assert plan.calls[0].tool == "mp_api"
+    route = plan.fallback_route(0)
+    assert route is not None
+    assert [call.tool for call in route.alternatives] == ["mp_optimade"]
+    assert route.alternatives[0].fields == ["material_id", "_mp_band_gap"]
+    assert route.alternatives[0].arguments == {"formula": "Si"}
+
+
+def test_cross_provider_fallback_orders_same_provider_before_other_provider() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        _provider_tool(
+            "mp_api",
+            provider="materials_project",
+            access_mode="openapi",
+            aliases=["band gap"],
+        )
+    )
+    reg.register(
+        _provider_tool(
+            "mp_optimade",
+            provider="materials_project",
+            access_mode="optimade",
+            field_name="_mp_band_gap",
+            aliases=["band gap", "band_gap"],
+        )
+    )
+    reg.register(
+        _provider_tool(
+            "oqmd_api",
+            provider="oqmd",
+            access_mode="openapi",
+            aliases=["band gap"],
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="Si band gap",
+            preferred_tools=["mp_api"],
+            arguments={"formula": "Si"},
+            fallback_scope="cross_provider",
+            max_fallbacks=2,
+        )
+    )
+
+    route = plan.fallback_route(0)
+    assert route is not None
+    assert [call.tool for call in route.alternatives] == [
+        "mp_optimade",
+        "oqmd_api",
+    ]
+
+
+def test_fallback_does_not_cross_semantically_incompatible_fields() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        _provider_tool(
+            "mp_api",
+            provider="materials_project",
+            access_mode="openapi",
+            aliases=["band gap"],
+        )
+    )
+    reg.register(
+        _provider_tool(
+            "mp_wrong_surface",
+            provider="materials_project",
+            access_mode="legacy",
+            field_name="density",
+            aliases=["mass density"],
+        ).model_copy(
+            update={
+                "description": "Band gap provider transport with incompatible output field",
+            },
+            deep=True,
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="Si band gap",
+            preferred_tools=["mp_api"],
+            arguments={"formula": "Si"},
+            fallback_scope="same_provider",
+        )
+    )
+
+    assert plan.fallback_route(0) is None
+
+
+def test_planner_never_builds_automatic_mutation_fallbacks() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        _provider_tool(
+            "primary_write",
+            provider="provider_a",
+            access_mode="openapi",
+            aliases=["band gap"],
+            read_only=False,
+        )
+    )
+    reg.register(
+        _provider_tool(
+            "secondary_write",
+            provider="provider_a",
+            access_mode="python",
+            aliases=["band gap"],
+            read_only=False,
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="write band gap",
+            preferred_tools=["primary_write"],
+            arguments={"formula": "Si"},
+            fallback_scope="same_provider",
+        )
+    )
+
+    assert plan.calls[0].tool == "primary_write"
+    assert plan.fallback_routes == []
