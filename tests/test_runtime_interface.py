@@ -9,7 +9,9 @@ from schemarouter import (
     ExecutionError,
     ExecutionPlan,
     ExecutionPolicy,
+    FallbackRoute,
     FieldSpec,
+    InvocationUnavailableError,
     ParameterSpec,
     PlanRequest,
     PlanValidationError,
@@ -627,3 +629,177 @@ async def test_tool_origin_drift_invalidates_planned_call_even_after_rebind() ->
 
     with pytest.raises(SchemaDriftError, match="tool contract changed"):
         await router.execute(plan)
+
+
+
+def make_provider_fallback_router() -> tuple[SchemaRouter, ExecutionPlan]:
+    router = SchemaRouter()
+    tools = [
+        ToolSpec(
+            name="mp_api",
+            provider="materials_project",
+            access_mode="openapi",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[FieldSpec(name="value")],
+                )
+            ],
+        ),
+        ToolSpec(
+            name="mp_optimade",
+            provider="materials_project",
+            access_mode="optimade",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[FieldSpec(name="value")],
+                )
+            ],
+        ),
+        ToolSpec(
+            name="oqmd_api",
+            provider="oqmd",
+            access_mode="openapi",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[FieldSpec(name="value")],
+                )
+            ],
+        ),
+    ]
+    for tool in tools:
+        router.add_tool(tool)
+
+    calls = []
+    for tool in tools:
+        endpoint = tool.endpoint("search")
+        calls.append(
+            ToolCall(
+                tool=tool.name,
+                endpoint="search",
+                fields=["value"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        )
+
+    plan = ExecutionPlan(
+        query="value",
+        registry_version=router.registry.version,
+        calls=[calls[0]],
+        fallback_routes=[
+            FallbackRoute(
+                primary_call_index=0,
+                alternatives=[calls[1], calls[2]],
+            )
+        ],
+    )
+    return router, plan
+
+
+@pytest.mark.asyncio
+async def test_fallback_event_stream_records_same_then_cross_provider() -> None:
+    router, plan = make_provider_fallback_router()
+
+    router.executor.bind(
+        "mp_api",
+        lambda endpoint, arguments: (_ for _ in ()).throw(
+            InvocationUnavailableError("mp api down")
+        ),
+    )
+    router.executor.bind(
+        "mp_optimade",
+        lambda endpoint, arguments: (_ for _ in ()).throw(
+            InvocationUnavailableError("mp optimade down")
+        ),
+    )
+    router.executor.bind(
+        "oqmd_api",
+        lambda endpoint, arguments: {"value": "from-oqmd"},
+    )
+
+    original_aplan = router.aplan
+
+    async def fixed_plan(request):
+        return plan
+
+    router.aplan = fixed_plan  # type: ignore[method-assign]
+    try:
+        events = [
+            event
+            async for event in router.astream_events("value")
+        ]
+    finally:
+        router.aplan = original_aplan  # type: ignore[method-assign]
+
+    assert [event.event for event in events] == [
+        "run.start",
+        "plan.end",
+        "tool.start",
+        "tool.error",
+        "tool.fallback",
+        "tool.start",
+        "tool.error",
+        "tool.fallback",
+        "tool.start",
+        "tool.end",
+        "run.end",
+    ]
+    fallbacks = [event for event in events if event.event == "tool.fallback"]
+    assert [event.data["scope"] for event in fallbacks] == [
+        "same_provider",
+        "cross_provider",
+    ]
+    assert fallbacks[0].data["access_mode"] == "optimade"
+    assert fallbacks[1].data["provider"] == "oqmd"
+    assert events[-1].data["fallback_count"] == 2
+
+
+@pytest.mark.asyncio
+async def test_parallel_event_stream_preserves_provider_fallback_trace() -> None:
+    router, plan = make_provider_fallback_router()
+    router.executor.bind(
+        "mp_api",
+        lambda endpoint, arguments: (_ for _ in ()).throw(
+            InvocationUnavailableError("mp api down")
+        ),
+    )
+    router.executor.bind(
+        "mp_optimade",
+        lambda endpoint, arguments: {"value": "from-optimade"},
+    )
+    router.executor.bind(
+        "oqmd_api",
+        lambda endpoint, arguments: {"value": "from-oqmd"},
+    )
+
+    original_aplan = router.aplan
+
+    async def fixed_plan(request):
+        return plan
+
+    router.aplan = fixed_plan  # type: ignore[method-assign]
+    try:
+        events = [
+            event
+            async for event in router.astream_events(
+                "value",
+                config=RunConfig(execution_mode="parallel_read_only"),
+            )
+        ]
+    finally:
+        router.aplan = original_aplan  # type: ignore[method-assign]
+
+    fallback = next(event for event in events if event.event == "tool.fallback")
+    assert fallback.data["scope"] == "same_provider"
+    assert fallback.tool == "mp_optimade"
+    end = next(event for event in events if event.event == "tool.end")
+    assert end.tool == "mp_optimade"
+    assert end.data["fallback_used"] is True
+    assert events[-1].event == "run.end"
+    assert events[-1].data["fallback_count"] == 1
