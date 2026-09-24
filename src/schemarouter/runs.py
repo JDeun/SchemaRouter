@@ -54,9 +54,13 @@ class RunConfig(StrictModel):
     tags: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
     max_concurrency: int = Field(default=8, ge=1, le=128)
+    execution_mode: ExecutionMode = "sequential"
     include_payloads: bool = False
     retry: RetryPolicy = Field(default_factory=RetryPolicy)
     budget: ExecutionBudget = Field(default_factory=ExecutionBudget)
+
+
+ExecutionMode = Literal["sequential", "parallel_read_only"]
 
 
 RunEventName = Literal[
