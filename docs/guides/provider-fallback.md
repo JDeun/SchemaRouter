@@ -83,9 +83,12 @@ plan = router.plan(request)
 The scopes are:
 
 - `disabled`: no automatic fallback;
-- `same_provider`: only precompiled alternatives with the same non-empty provider ID;
-- `cross_provider`: same-provider alternatives first, then schema-compatible candidates from
-  other providers.
+- `same_provider`: only precompiled alternatives with the same explicit non-empty provider ID;
+- `cross_provider`: same-provider alternatives first, then schema-compatible candidates with a
+  different explicit non-empty provider ID.
+
+Provider-aware fallback is not inferred for untagged tools. If the primary tool has no explicit
+`provider`, no provider fallback route is compiled.
 
 Fallback candidates are normal `ToolCall` values with their own endpoint/tool fingerprints,
 arguments, selected fields, evidence contract, and planning explanation. Runtime does not invent a
