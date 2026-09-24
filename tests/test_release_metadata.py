@@ -232,3 +232,13 @@ def test_docs_changelog_reuses_the_canonical_root_changelog() -> None:
 
     assert '--8<-- "CHANGELOG.md:8:"' in docs_changelog
     assert "## Unreleased" not in docs_changelog
+
+
+
+def test_docs_contributing_reuses_the_canonical_root_guide() -> None:
+    docs_contributing = (ROOT / "docs" / "contributing.md").read_text(encoding="utf-8")
+    root_contributing = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+
+    assert docs_contributing.strip() == '--8<-- "CONTRIBUTING.md"'
+    assert "82% branch-coverage" not in root_contributing
+    assert "84% branch-coverage" in root_contributing

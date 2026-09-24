@@ -14,14 +14,15 @@ pytest -q -m "not mcp_integration"
 python examples/quickstart.py
 
 # Check the complete typed surface and optional integrations.
-pip install -e ".[dev,mcp,langchain,llamaindex,jev,otel]"
+pip install -e ".[dev,mcp,langchain,langgraph,llamaindex,jev,otel]"
 pyright
 pytest -q --cov=schemarouter --cov-branch --cov-report=term-missing
 ```
 
 Optional integrations have separate extras and focused tests. The required CI exercises
-LangChain, LlamaIndex, Jev/TypeSafe, MCP, and OpenTelemetry independently in addition to the full
-coverage run.
+LangChain/LangGraph, LlamaIndex, Jev/TypeSafe, Laya, MCP, and OpenTelemetry independently in
+addition to the full coverage run. Laya has a separate CPU-only CI setup because its PyTorch
+dependency is intentionally not installed into the ordinary development environment.
 
 ## Design rules
 
@@ -41,7 +42,7 @@ Changes must preserve these principles:
 ## Adding an adapter
 
 Adapters should produce normal `ToolSpec` / `EndpointSpec` contracts and a trusted invoker.
-See [adapter authoring](docs/adapter-authoring.md).
+See [adapter authoring](https://jdeun.github.io/SchemaRouter/adapter-authoring/).
 
 Do not embed provider-specific authorization decisions into generic schema parsing.
 
@@ -61,7 +62,7 @@ Brand changes should preserve the brace + routing-hub concept, graphite/teal pal
 contrast, and compact-mark legibility. Do not replace production SVGs with raster-only generated
 artwork.
 
-See the [brand guide](docs/project/brand.md).
+See the [brand guide](https://jdeun.github.io/SchemaRouter/project/brand/).
 
 ## Pull requests
 
@@ -70,11 +71,12 @@ A change is not complete until:
 - tests cover its public behavior and adversarial failure cases;
 - warnings remain clean;
 - supported Python versions pass, including the Windows smoke surface;
-- Pyright and the 82% branch-coverage floor pass;
+- Pyright and the 84% branch-coverage floor pass;
 - minimum declared runtime dependencies remain usable;
 - wheel and sdist clean-install smokes pass;
 - public behavior is documented;
 - new optional dependencies are isolated behind extras;
 - breaking API changes include a changelog and migration note.
 
-See [versioning](docs/versioning.md) and the [release checklist](docs/release-checklist.md).
+See [versioning](https://jdeun.github.io/SchemaRouter/versioning/) and the
+[release checklist](https://jdeun.github.io/SchemaRouter/release-checklist/).
