@@ -1086,6 +1086,11 @@ def tool_from_openapi(
                         "tags": operation.get("tags", []),
                         "security": operation.get("security"),
                         "deprecated": bool(operation.get("deprecated", False)),
+                        # Kept as descriptive mirrors for backward-compatible inspection. Runtime
+                        # behavior reads the fingerprinted execution_metadata contract above.
+                        "request_body_required": request_body_required,
+                        "request_body_mode": request_body_mode,
+                        "request_body_discriminator": request_body_discriminator,
                         "operation_id_generated": not (
                             isinstance(explicit_operation_id, str)
                             and bool(explicit_operation_id)
