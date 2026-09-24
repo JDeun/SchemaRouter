@@ -395,6 +395,24 @@ class SchemaRouter:
     async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
         return await self.planner.aplan(request)
 
+    async def _execute_plan(
+        self,
+        plan: ExecutionPlan,
+        run_config: RunConfig,
+    ) -> list[ToolResult]:
+        if run_config.execution_mode == "parallel_read_only":
+            return await self.executor.execute_parallel_read_only(
+                plan,
+                retry=run_config.retry,
+                budget=run_config.budget,
+                max_concurrency=run_config.max_concurrency,
+            )
+        return await self.executor.execute(
+            plan,
+            retry=run_config.retry,
+            budget=run_config.budget,
+        )
+
     async def execute(
         self,
         plan: ExecutionPlan,
@@ -402,11 +420,7 @@ class SchemaRouter:
         config: RunConfig | dict[str, Any] | None = None,
     ) -> list[ToolResult]:
         run_config = _coerce_config(config)
-        return await self.executor.execute(
-            plan,
-            retry=run_config.retry,
-            budget=run_config.budget,
-        )
+        return await self._execute_plan(plan, run_config)
 
     async def ainvoke(
         self,
@@ -416,11 +430,7 @@ class SchemaRouter:
     ) -> list[ToolResult]:
         run_config = _coerce_config(config)
         plan = await self.aplan(request)
-        return await self.executor.execute(
-            plan,
-            retry=run_config.retry,
-            budget=run_config.budget,
-        )
+        return await self._execute_plan(plan, run_config)
 
     def invoke(
         self,
@@ -523,6 +533,16 @@ class SchemaRouter:
     ) -> AsyncIterator[ToolResult]:
         run_config = _coerce_config(config)
         plan = await self.aplan(request)
+        if run_config.execution_mode == "parallel_read_only":
+            async for _, result in self.executor.execute_parallel_read_only_iter(
+                plan,
+                retry=run_config.retry,
+                budget=run_config.budget,
+                max_concurrency=run_config.max_concurrency,
+            ):
+                yield result
+            return
+
         async for result in self.executor.execute_iter(
             plan,
             retry=run_config.retry,
