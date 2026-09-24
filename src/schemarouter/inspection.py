@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 from dataclasses import asdict
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import Field
 
@@ -23,6 +24,27 @@ _EXECUTION_PROVENANCE_KEYS = (
     "requires_explicit_base_url",
     "authenticated_transport",
 )
+_URL_PROVENANCE_KEYS = {
+    "approved_base_url",
+    "resolved_schema_url",
+    "source_url",
+    "suggested_base_url",
+    "versioned_base_url",
+}
+
+
+def _safe_provenance_value(key: str, value: object) -> object:
+    if key not in _URL_PROVENANCE_KEYS or not isinstance(value, str):
+        return value
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return value
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return value
+    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
+
+
 _DESCRIPTIVE_PROVENANCE_KEYS = (
     "external_refs_enabled",
     "same_document_refs_normalized",
@@ -34,13 +56,13 @@ _DESCRIPTIVE_PROVENANCE_KEYS = (
 
 def _provenance(tool: ToolSpec) -> dict[str, object]:
     provenance: dict[str, object] = {
-        key: tool.metadata[key]
+        key: _safe_provenance_value(key, tool.metadata[key])
         for key in _DESCRIPTIVE_PROVENANCE_KEYS
         if key in tool.metadata
     }
     provenance.update(
         {
-            key: tool.execution_metadata[key]
+            key: _safe_provenance_value(key, tool.execution_metadata[key])
             for key in _EXECUTION_PROVENANCE_KEYS
             if key in tool.execution_metadata
         }
