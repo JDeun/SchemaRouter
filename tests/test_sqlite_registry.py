@@ -253,9 +253,10 @@ def test_sqlite_registry_migrates_legacy_execution_metadata_on_read(tmp_path) ->
             }
         ],
         "metadata": {
-            "adapter": "mcp",
-            "source_url": "https://mcp.example.test/mcp",
-            "authenticated_transport": True,
+            "adapter": "openapi",
+            "source_url": "https://docs.example.test/openapi.json",
+            "approved_base_url": "https://api.example.test/v1",
+            "execution_bound": True,
         },
     }
 
@@ -283,8 +284,9 @@ def test_sqlite_registry_migrates_legacy_execution_metadata_on_read(tmp_path) ->
         tool = reopened.get("legacy_remote")
 
     assert tool.remote is True
-    assert tool.execution_metadata["adapter"] == "mcp"
-    assert tool.execution_metadata["source_url"] == "https://mcp.example.test/mcp"
-    assert tool.execution_metadata["authenticated_transport"] is True
+    assert tool.execution_metadata["adapter"] == "openapi"
+    assert tool.execution_metadata["source_url"] == "https://docs.example.test/openapi.json"
+    assert tool.execution_metadata["approved_base_url"] == "https://api.example.test/v1"
+    assert tool.execution_metadata["execution_bound"] is True
     assert tool.endpoints[0].execution_metadata["request_body_mode"] == "root_schema"
     assert tool.endpoints[0].execution_metadata["request_body_required"] is True
