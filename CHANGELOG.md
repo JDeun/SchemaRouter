@@ -29,6 +29,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - dependency-free public-surface consumer acceptance scenarios covering policy/approval gates,
   schema and binding drift, runtime output validation, retry/budget controls, persistence, traces,
   and dashboard generation;
+- scheduled/manual compatibility smokes that force-install the latest stable SchemaRouter wheel and
+  sdist from PyPI in fresh runners, run `pip check`, execute a public API scenario outside the
+  checkout, and retain machine-readable reports;
 
 ### Changed
 
