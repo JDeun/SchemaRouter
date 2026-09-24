@@ -7,16 +7,44 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 _REMOTE_ADAPTERS = {"mcp", "openapi", "optimade", "html_proposal"}
-_LEGACY_ENDPOINT_EXECUTION_METADATA_KEYS = {
-    "callable_module",
-    "callable_name",
-    "entry_type",
-    "field_projection",
-    "mode",
+_OPENAPI_ENDPOINT_RUNTIME_KEYS = {
     "request_body_discriminator",
     "request_body_mode",
     "request_body_required",
 }
+_OPTIMADE_ENDPOINT_RUNTIME_KEYS = {"entry_type", "field_projection", "mode"}
+_PYTHON_ENDPOINT_RUNTIME_KEYS = {"callable_module", "callable_name"}
+_TOOL_RUNTIME_KEYS_BY_ADAPTER = {
+    "openapi": {
+        "adapter",
+        "approved_base_url",
+        "execution_bound",
+        "requires_explicit_base_url",
+        "resolved_schema_url",
+        "source_url",
+        "suggested_base_url",
+    },
+    "mcp": {
+        "adapter",
+        "authenticated_transport",
+        "protocol_version",
+        "source_url",
+    },
+    "optimade": {
+        "adapter",
+        "api_version",
+        "versioned_base_url",
+    },
+    "html_proposal": {
+        "adapter",
+        "approved_base_url",
+        "executable",
+        "source_url",
+    },
+    "python": {"adapter"},
+}
+
+
 def _validate_execution_metadata(value: dict[str, Any]) -> None:
     try:
         json.dumps(
@@ -36,19 +64,26 @@ def _validate_execution_metadata(value: dict[str, Any]) -> None:
         ) from exc
 
 
-_LEGACY_TOOL_EXECUTION_METADATA_KEYS = {
-    "adapter",
-    "approved_base_url",
-    "authenticated_transport",
-    "execution_bound",
-    "executable",
-    "protocol_version",
-    "requires_explicit_base_url",
-    "resolved_schema_url",
-    "source_url",
-    "suggested_base_url",
-    "versioned_base_url",
-}
+def _legacy_endpoint_execution_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    keys: set[str] = set()
+    if any(key in metadata for key in _OPENAPI_ENDPOINT_RUNTIME_KEYS):
+        keys.update(_OPENAPI_ENDPOINT_RUNTIME_KEYS)
+    if "entry_type" in metadata or "field_projection" in metadata:
+        keys.update(_OPTIMADE_ENDPOINT_RUNTIME_KEYS)
+    if "callable_module" in metadata or "callable_name" in metadata:
+        keys.update(_PYTHON_ENDPOINT_RUNTIME_KEYS)
+    return {key: metadata[key] for key in keys if key in metadata}
+
+
+def _legacy_tool_execution_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
+    adapter = metadata.get("adapter")
+    if not isinstance(adapter, str):
+        return {}
+    keys = _TOOL_RUNTIME_KEYS_BY_ADAPTER.get(adapter)
+    if keys is None:
+        return {}
+    return {key: metadata[key] for key in keys if key in metadata}
+
 
 
 class StrictModel(BaseModel):
@@ -112,11 +147,7 @@ class EndpointSpec(StrictModel):
         metadata = value.get("metadata")
         if not isinstance(metadata, dict):
             return value
-        execution_metadata = {
-            key: metadata[key]
-            for key in _LEGACY_ENDPOINT_EXECUTION_METADATA_KEYS
-            if key in metadata
-        }
+        execution_metadata = _legacy_endpoint_execution_metadata(metadata)
         if not execution_metadata:
             return value
         migrated = dict(value)
@@ -176,11 +207,7 @@ class ToolSpec(StrictModel):
         metadata = value.get("metadata")
         if not isinstance(metadata, dict):
             return value
-        execution_metadata = {
-            key: metadata[key]
-            for key in _LEGACY_TOOL_EXECUTION_METADATA_KEYS
-            if key in metadata
-        }
+        execution_metadata = _legacy_tool_execution_metadata(metadata)
         if not execution_metadata:
             return value
         migrated = dict(value)
