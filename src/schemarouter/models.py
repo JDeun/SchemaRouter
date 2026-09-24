@@ -5,7 +5,7 @@ import json
 import math
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 _REMOTE_ADAPTERS = {"mcp", "openapi", "optimade", "html_proposal"}
@@ -111,12 +111,6 @@ class EndpointSpec(StrictModel):
     execution_metadata: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
-    @field_validator("execution_metadata")
-    @classmethod
-    def validate_execution_metadata(cls, value: dict[str, Any]) -> dict[str, Any]:
-        _require_json_safe(value)
-        return value
-
     @model_validator(mode="before")
     @classmethod
     def migrate_legacy_execution_metadata(cls, value: Any) -> Any:
@@ -138,6 +132,7 @@ class EndpointSpec(StrictModel):
 
     @model_validator(mode="after")
     def validate_unique_names(self) -> EndpointSpec:
+        _require_json_safe(self.execution_metadata)
         pnames = [p.name for p in self.parameters]
         fnames = [f.name for f in self.output_fields]
         if len(pnames) != len(set(pnames)):
@@ -180,12 +175,6 @@ class ToolSpec(StrictModel):
     execution_metadata: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
-    @field_validator("execution_metadata")
-    @classmethod
-    def validate_execution_metadata(cls, value: dict[str, Any]) -> dict[str, Any]:
-        _require_json_safe(value)
-        return value
-
     @model_validator(mode="before")
     @classmethod
     def migrate_legacy_execution_metadata(cls, value: Any) -> Any:
@@ -223,6 +212,7 @@ class ToolSpec(StrictModel):
 
     @model_validator(mode="after")
     def validate_endpoints(self) -> ToolSpec:
+        _require_json_safe(self.execution_metadata)
         names = [e.name for e in self.endpoints]
         if not names:
             raise ValueError("tool must define at least one endpoint")
