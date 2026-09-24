@@ -34,6 +34,9 @@ The project is pre-1.0 and follows the compatibility rules in
   checkout, and retain machine-readable reports;
 - a published-framework compatibility smoke that resolves the stable LangChain/LangGraph/LlamaIndex
   extras from PyPI and executes all three bridges outside the source checkout;
+- exact-version post-publish release verification that re-installs the newly published PyPI wheel,
+  forced sdist, and LangChain/LangGraph/LlamaIndex extras after publication, with bounded index-
+  propagation retries and public-surface execution outside the checkout;
 
 ### Changed
 
