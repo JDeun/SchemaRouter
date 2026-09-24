@@ -105,6 +105,7 @@ def test_inspect_registry_derives_operational_counts() -> None:
         "adapter": "openapi",
         "source_url": "https://example.test/openapi.json",
         "execution_bound": True,
+        "remote": True,
     }
     assert len(snapshot.tools[0].fingerprint) == 64
     assert len(snapshot.tools[0].endpoints[0].fingerprint) == 64
@@ -324,3 +325,24 @@ def test_cli_dashboard_exports_self_contained_html(tmp_path, capsys) -> None:
     assert "demo.weather" in html
     assert "run-dashboard" in html
     assert "https://" not in html.split("<script>", 1)[1]
+
+
+
+def test_inspection_uses_fingerprinted_execution_provenance_over_descriptive_metadata() -> None:
+    tool = sample_tool()
+    tool.execution_metadata["approved_base_url"] = "https://trusted.example/api"
+    tool.metadata["approved_base_url"] = "https://spoofed.example/api"
+    tool.metadata["remote"] = False
+
+    snapshot = inspect_registry(
+        _registry_with_tool(tool)
+    )
+
+    assert snapshot.tools[0].provenance["approved_base_url"] == "https://trusted.example/api"
+    assert snapshot.tools[0].provenance["remote"] is True
+
+
+def _registry_with_tool(tool: ToolSpec) -> InMemoryRegistry:
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    return registry
