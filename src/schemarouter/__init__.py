@@ -89,6 +89,14 @@ from .proposals import SchemaProposal
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 from .runs import ExecutionBudget, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
+from .schema_diff import (
+    SchemaChange,
+    SchemaChangeSeverity,
+    SchemaCompatibility,
+    SchemaDiffReport,
+    compare_endpoint_specs,
+    compare_tool_specs,
+)
 from .traces import (
     RunTrace,
     RunTraceStore,
@@ -167,6 +175,10 @@ __all__ = [
     "RunTraceStore",
     "SQLiteRunTraceStore",
     "SchemaDriftError",
+    "SchemaChange",
+    "SchemaChangeSeverity",
+    "SchemaCompatibility",
+    "SchemaDiffReport",
     "SchemaPlanner",
     "SchemaProposal",
     "SchemaRouter",
@@ -187,6 +199,8 @@ __all__ = [
     "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
+    "compare_endpoint_specs",
+    "compare_tool_specs",
     "discover_adapter_plugins",
     "inspect_registry",
     "inspect_router",
