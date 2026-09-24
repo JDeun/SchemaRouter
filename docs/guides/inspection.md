@@ -139,7 +139,9 @@ The live view adds:
 - configured decision-backend class;
 - bounded decision policy;
 - execution policy;
-- actual bound tool keys from the current executor.
+- actual bound tool keys from the current executor;
+- access paths currently inside an availability cooldown;
+- registered health-probe status and whether the background health monitor is running.
 
 Invoker objects, credentials, arbitrary metadata values, arguments, results, and payload values are
 not included.
@@ -175,12 +177,17 @@ Representative `router.inspect()` JSON:
       "allow_unclassified_remote": false,
       "approval_mode": "never"
     },
-    "bound_tools": ["current_weather"]
+    "bound_tools": ["current_weather"],
+    "unavailable_access_paths": [],
+    "health_monitor_running": false,
+    "health_probes": []
   }
 }
 ```
 
 The full registry section also contains the safe tool/endpoint inspection records and fingerprints.
+Health probe callables themselves are never serialized into inspection output. Availability state
+is live process state and is not reconstructed from a persisted registry alone.
 
 ## Export a dashboard
 
