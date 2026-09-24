@@ -291,3 +291,13 @@ def test_policy_rule_can_exclude_unclassified_operations() -> None:
 
     assert decision.effect == "allow"
     assert decision.source == "default"
+
+
+def test_policy_rule_rejects_contradictory_unclassified_and_read_only_predicates() -> None:
+    with pytest.raises(ValueError, match="unclassified=True"):
+        PolicyRule(
+            operation="remote.*",
+            effect="allow",
+            read_only=True,
+            unclassified=True,
+        )
