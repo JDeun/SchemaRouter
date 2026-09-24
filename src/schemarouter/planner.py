@@ -846,10 +846,13 @@ class SchemaPlanner:
             )
         ]
         provider = primary.tool.provider
+        if provider is None:
+            return []
+
         same_provider = [
             candidate
             for candidate in distinct
-            if provider is not None and candidate.tool.provider == provider
+            if candidate.tool.provider == provider
         ]
         if scope == "same_provider":
             return same_provider
@@ -857,7 +860,10 @@ class SchemaPlanner:
         other_provider = [
             candidate
             for candidate in distinct
-            if candidate not in same_provider
+            if (
+                candidate.tool.provider is not None
+                and candidate.tool.provider != provider
+            )
         ]
         return [*same_provider, *other_provider]
 
