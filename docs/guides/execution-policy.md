@@ -62,7 +62,7 @@ router = SchemaRouter(
 ```
 
 The operation string is matched against `tool.endpoint` with shell-style wildcards. Optional
-`remote`, `read_only`, and `destructive` predicates can narrow a rule further.
+`remote`, `read_only`, `destructive`, and `unclassified` predicates can narrow a rule further. `unclassified=True` explicitly matches endpoints whose side-effect classification is unknown; `read_only=None` remains the default wildcard rather than overloading that meaning.
 
 A scoped `allow` rule is trusted local authority for that operation only. A scoped `deny` rule can
 narrow a globally enabled category. `require_approval` grants no model authority: the call still
