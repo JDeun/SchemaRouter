@@ -3,10 +3,10 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import platform
-import time
 from pathlib import Path
+import platform
 from tempfile import TemporaryDirectory
+import time
 from typing import Awaitable, Callable
 
 from pydantic import BaseModel
@@ -371,7 +371,10 @@ async def run_all() -> dict[str, object]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Run dependency-free consumer acceptance scenarios against an installed SchemaRouter."
+        description=(
+            "Run dependency-free consumer acceptance scenarios against an installed "
+            "SchemaRouter."
+        )
     )
     parser.add_argument("--json-out", type=Path, default=None)
     args = parser.parse_args()
