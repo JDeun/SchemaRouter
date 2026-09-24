@@ -740,3 +740,116 @@ async def test_fallback_chain_rejects_non_read_only_alternative() -> None:
 
     with pytest.raises(PlanValidationError, match="explicitly read-only"):
         await executor.execute(plan)
+
+
+
+@pytest.mark.asyncio
+async def test_known_unavailable_primary_is_skipped_during_cooldown() -> None:
+    registry = InMemoryRegistry()
+    for tool in (
+        _fallback_tool("mp_api", provider="materials_project", access_mode="openapi"),
+        _fallback_tool("mp_optimade", provider="materials_project", access_mode="optimade"),
+        _fallback_tool("oqmd_api", provider="oqmd", access_mode="openapi"),
+    ):
+        registry.register(tool)
+
+    plan = _provider_fallback_plan(registry)
+    executor = RegistryExecutor(registry, unavailable_cooldown_seconds=60)
+    seen = []
+
+    def primary(endpoint, arguments):
+        seen.append("mp_api")
+        return {"material_id": "mp-149", "band_gap": 1.0}
+
+    def optimade(endpoint, arguments):
+        seen.append("mp_optimade")
+        return {"material_id": "mp-149", "band_gap": 1.1}
+
+    def oqmd(endpoint, arguments):
+        seen.append("oqmd_api")
+        return {"material_id": "oqmd-1", "band_gap": 1.2}
+
+    executor.bind("mp_api", primary)
+    executor.bind("mp_optimade", optimade)
+    executor.bind("oqmd_api", oqmd)
+    executor.mark_access_unavailable("mp_api", "search")
+
+    result = (await executor.execute(plan))[0]
+
+    assert result.tool == "mp_optimade"
+    assert seen == ["mp_optimade"]
+
+
+@pytest.mark.asyncio
+async def test_operator_reopen_restores_primary_access_path() -> None:
+    registry = InMemoryRegistry()
+    for tool in (
+        _fallback_tool("mp_api", provider="materials_project", access_mode="openapi"),
+        _fallback_tool("mp_optimade", provider="materials_project", access_mode="optimade"),
+        _fallback_tool("oqmd_api", provider="oqmd", access_mode="openapi"),
+    ):
+        registry.register(tool)
+
+    plan = _provider_fallback_plan(registry)
+    executor = RegistryExecutor(registry, unavailable_cooldown_seconds=60)
+    seen = []
+
+    executor.bind(
+        "mp_api",
+        lambda endpoint, arguments: (
+            seen.append("mp_api")
+            or {"material_id": "mp-149", "band_gap": 1.0}
+        ),
+    )
+    executor.bind(
+        "mp_optimade",
+        lambda endpoint, arguments: (
+            seen.append("mp_optimade")
+            or {"material_id": "mp-149", "band_gap": 1.1}
+        ),
+    )
+    executor.bind(
+        "oqmd_api",
+        lambda endpoint, arguments: (
+            seen.append("oqmd_api")
+            or {"material_id": "oqmd-1", "band_gap": 1.2}
+        ),
+    )
+
+    executor.mark_access_unavailable("mp_api", "search")
+    executor.mark_access_available("mp_api", "search")
+
+    result = (await executor.execute(plan))[0]
+
+    assert result.tool == "mp_api"
+    assert seen == ["mp_api"]
+
+
+@pytest.mark.asyncio
+async def test_all_precompiled_paths_in_cooldown_fail_without_network_invocation() -> None:
+    registry = InMemoryRegistry()
+    for tool in (
+        _fallback_tool("mp_api", provider="materials_project", access_mode="openapi"),
+        _fallback_tool("mp_optimade", provider="materials_project", access_mode="optimade"),
+        _fallback_tool("oqmd_api", provider="oqmd", access_mode="openapi"),
+    ):
+        registry.register(tool)
+
+    plan = _provider_fallback_plan(registry)
+    executor = RegistryExecutor(registry, unavailable_cooldown_seconds=60)
+    invoked = []
+
+    def invoker(name):
+        def call(endpoint, arguments):
+            invoked.append(name)
+            return {"material_id": name, "band_gap": 1.0}
+        return call
+
+    for name in ("mp_api", "mp_optimade", "oqmd_api"):
+        executor.bind(name, invoker(name))
+        executor.mark_access_unavailable(name, "search")
+
+    with pytest.raises(InvocationUnavailableError, match="all precompiled access paths"):
+        await executor.execute(plan)
+
+    assert invoked == []
