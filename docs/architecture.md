@@ -13,16 +13,18 @@ The core is designed around one principle:
 ```text
 request
   -> QueryAnalyzer
-  -> schema-constrained intent
-  -> candidate tool / endpoint
-  -> parameter + field plan
-  -> schema fingerprint
-  -> execution policy
+  -> semantic data need
+  -> required logical fields
+  -> candidate provider / access path / endpoint
+  -> parameter + field plan + bounded fallbacks
+  -> schema/tool fingerprints
+  -> availability + execution policy
   -> JSON Schema input validation
+  -> server-side field projection when explicitly supported
   -> trusted invoker
   -> JSON Schema output validation
-  -> field projection
-  -> ToolResult
+  -> final local field projection
+  -> minimal ToolResult
 ```
 
 ## Module boundaries
@@ -37,7 +39,8 @@ schemarouter.policy        trusted local side-effect + approval authority
 schemarouter.runs          run configuration, retry policy, budgets, typed lifecycle events
 schemarouter.traces        validated append-only run-event persistence + non-executing replay
 schemarouter.hooks         trusted snapshot-only before/after execution middleware
-schemarouter.executor      plan, binding, schema, policy and hook enforcement
+schemarouter.health        explicit read-only health probes + bounded background monitoring
+schemarouter.executor      plan, binding, schema, policy, availability and hook enforcement
 schemarouter.adapters      adapter contracts + OpenAPI/MCP/OPTIMADE/Python implementations
 schemarouter.ingestion     AdapterRegistry dispatch, safe source loading, registry binding
 schemarouter.proposals     evidence-grounded HTML documentation proposals
@@ -67,12 +70,24 @@ produce a positive deterministic score under the current scorer and still runs t
 scoring function on the resulting candidates. The index is cached by registry version and can be
 disabled for exhaustive parity checks.
 
-### 4. Aggressive field minimization harms recall
+### 4. Field-first execution must minimize confidently without fabricating certainty
 
-The research results showed that minimizing field count can remove answer-critical information.
-The planner keeps identifiers, keeps confidently matched fields, and falls back to the full
-declared field set when output intent is ambiguous. `FieldSpec.path` can map a bounded logical
-field ID onto a nested object path without exposing arbitrary JSONPath syntax to planning.
+SchemaRouter is field-first, not merely tool-first. The planner should first identify the smallest
+declared logical data surface that can answer the request, then choose a route capable of supplying
+that surface. This reduces upstream bytes/latency and keeps unrelated values out of downstream LLM
+context.
+
+The research results also showed that over-aggressive projection can remove answer-critical
+information. The boundary is therefore explicit:
+
+- clear query-to-field match -> select the matched fields plus required identifiers;
+- explicit server projection support -> push only those planned fields into the upstream request;
+- raw response -> validate before projection;
+- downstream result -> retain only planned logical fields;
+- ambiguous field intent -> preserve declared fields rather than pretending one field is sufficient.
+
+`FieldSpec.path` can map a bounded logical field ID onto a nested object path without exposing
+arbitrary JSONPath syntax to planning.
 
 ### 5. Remote schemas drift independently
 
@@ -316,6 +331,30 @@ Field aliases are the local semantic bridge when access paths expose different n
 compatibility cannot be proven from local contracts, SchemaRouter omits the fallback instead of
 asking a model to guess.
 
+### 30. Availability memory must recover instead of becoming a permanent blacklist
+
+Passive transport failures can make a route temporarily unattractive, but one outage must not
+permanently remove a capability. SchemaRouter therefore uses bounded cooldown state: after timeout,
+connection failure, HTTP 429, or transient 5xx exhaustion, an access path can be skipped for a
+finite interval and automatically becomes eligible again when the cooldown expires.
+
+Applications that need faster recovery can register trusted local health probes for explicitly
+read-only access paths. The optional background `AccessHealthMonitor` runs only those registered
+callbacks, marks failed probes temporarily unavailable, and immediately reopens a route when a
+probe succeeds. It never invents health requests from remote metadata and never turns arbitrary
+data retrieval into an implicit probe.
+
+### 31. Upstream field projection must be explicit, not guessed
+
+Local result projection alone protects LLM context, but it does not reduce provider bandwidth or
+latency if the upstream API still returns a full record. `ServerProjectionSpec` therefore makes
+server-side field selection a fingerprinted endpoint contract.
+
+A trusted adapter may map planned logical fields to a declared query selector such as
+`fields=...` or OPTIMADE `response_fields=...`. Generic OpenAPI support does not infer this
+semantics from a parameter name. If no trusted projection contract exists, SchemaRouter still
+performs raw-output validation and final local projection.
+
 ## Core invariants
 
 1. A plan cannot call an unregistered tool or endpoint.
@@ -370,9 +409,15 @@ asking a model to guess.
     by an explicit invocation-unavailable marker; it never bypasses validation/policy/approval.
 37. Same-provider access paths precede cross-provider fallbacks, and every fallback retains its own
     schema/tool fingerprint and evidence contract.
-36. Inspection/dashboard provenance never exposes URL userinfo, query strings, or fragments.
+38. Inspection/dashboard provenance never exposes URL userinfo, query strings, or fragments.
     Runtime target identity remains fingerprinted; schema/document provenance is sanitized before
     model-visible or persisted descriptive state retains it.
+39. Availability cooldown is finite; registered trusted read-only health probes may reopen a path
+    early, but no model/remote schema can set health state or define a probe.
+40. Server-side field projection is used only when declared by a trusted fingerprinted
+    `ServerProjectionSpec`; final local projection remains enforced after raw validation.
+41. Availability fallback may change provider/access path but must not broaden the logical field
+    need that the plan was compiled to answer.
 
 ## Current extension backlog
 
