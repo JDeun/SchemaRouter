@@ -17,9 +17,9 @@ from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
 from .errors import InvocationUnavailableError, ProposalApprovalError, RegistrationError
 from .executor import ExecutionBudgetTracker, RegistryExecutor
+from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
 from .ingestion import SourceKind, URLSchemaLoader
-from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .inspection import RouterInspection, inspect_router
 from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
 from .planner import QueryAnalyzer, SchemaPlanner
@@ -1013,7 +1013,7 @@ class SchemaRouter:
                         raise RuntimeError("invalid parallel execution result")
                     end_data: dict[str, Any] = {
                         "projected_fields": list(result.projected_fields),
-                        "fallback_used": original_candidate_index > 0,
+                        "fallback_used": candidate_index > 0,
                     }
                     if run_config.include_payloads:
                         end_data["result"] = result.model_dump(mode="json")
