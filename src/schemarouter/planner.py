@@ -838,6 +838,7 @@ class SchemaPlanner:
                     fields=fields,
                     evidence=evidence,
                     schema_fingerprint=endpoint.fingerprint,
+                    tool_fingerprint=candidate.tool.fingerprint,
                     missing_required_arguments=missing,
                     score=candidate.score,
                     explanation=self._build_explanation(
@@ -930,6 +931,7 @@ class SchemaPlanner:
                     fields=fields,
                     evidence=evidence,
                     schema_fingerprint=endpoint.fingerprint,
+                    tool_fingerprint=candidate.tool.fingerprint,
                     missing_required_arguments=missing,
                     score=candidate.score,
                     explanation=self._build_explanation(
