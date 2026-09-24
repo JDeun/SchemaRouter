@@ -10,7 +10,7 @@ from urllib.parse import quote, unquote, urldefrag, urljoin, urlparse
 import httpx
 
 from ..errors import InvocationUnavailableError, NonRetryableInvocationError
-from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
+from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
 from ..openapi_compatibility import analyze_openapi_compatibility
 
 _HTTP_METHODS = {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
@@ -1183,6 +1183,22 @@ class OpenAPIRemoteInvoker:
         self.http_client = http_client
 
     async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
+        return await self._invoke(endpoint, arguments, selected_fields=None)
+
+    async def invoke_call(self, call: ToolCall) -> Any:
+        return await self._invoke(
+            call.endpoint,
+            dict(call.arguments),
+            selected_fields=list(call.fields),
+        )
+
+    async def _invoke(
+        self,
+        endpoint: str,
+        arguments: dict[str, Any],
+        *,
+        selected_fields: list[str] | None,
+    ) -> Any:
         endpoint_name = endpoint
         endpoint_spec = self.tool.endpoint(endpoint_name)
         if not endpoint_spec.method or not endpoint_spec.path:
@@ -1269,6 +1285,27 @@ class OpenAPIRemoteInvoker:
             raise NonRetryableInvocationError(
                 f"unresolved path parameter in endpoint {endpoint_name!r}"
             )
+
+        if endpoint_spec.server_projection is not None and selected_fields:
+            field_map = {field.name: field for field in endpoint_spec.output_fields}
+            selectors = [
+                endpoint_spec.server_projection.selector_for(field_map[name])
+                for name in selected_fields
+                if name in field_map
+            ]
+            if selectors:
+                parameter_name = endpoint_spec.server_projection.parameter
+                query = [
+                    (name, value)
+                    for name, value in query
+                    if name != parameter_name
+                ]
+                query.append(
+                    (
+                        parameter_name,
+                        endpoint_spec.server_projection.separator.join(selectors),
+                    )
+                )
 
         headers.update(self.trusted_headers)
 
