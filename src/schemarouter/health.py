@@ -4,7 +4,7 @@ import asyncio
 import inspect
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Literal
 
 from .errors import PlanValidationError
@@ -123,7 +123,7 @@ class AccessHealthMonitor:
                 )
 
             record.status = status
-            record.last_checked_at = datetime.now(UTC)
+            record.last_checked_at = datetime.now(timezone.utc)
             record.last_error_type = error_type
 
     async def run_once(
