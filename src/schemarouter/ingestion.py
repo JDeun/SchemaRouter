@@ -824,6 +824,8 @@ class URLSchemaLoader:
         kind: SourceKind = "auto",
         name: str | None = None,
         namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
         replace: bool = False,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
@@ -851,6 +853,8 @@ class URLSchemaLoader:
             url=url,
             name=name,
             namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
             base_url=base_url,
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
@@ -890,6 +894,11 @@ class URLSchemaLoader:
                 raise UnsupportedSchemaSourceError(
                     f"URL did not yield a supported {normalized_kind} source"
                 )
+            result = self._with_identity(
+                result,
+                context,
+                adapter_kind=adapter.kind,
+            )
             return self._commit(result, replace=replace)
 
         for adapter in self.adapters.ordered():
@@ -899,6 +908,11 @@ class URLSchemaLoader:
                 diagnostics.append(f"{adapter.kind}: {exc}")
                 continue
             if result is not None:
+                result = self._with_identity(
+                    result,
+                    context,
+                    adapter_kind=adapter.kind,
+                )
                 return self._commit(result, replace=replace)
 
         detail = "; ".join(diagnostics) or "no registered adapter recognized the source"
@@ -907,6 +921,22 @@ class URLSchemaLoader:
             "Human-readable documentation is intentionally not inferred in the safe path. "
             + detail
         )
+
+    @staticmethod
+    def _with_identity(
+        result: AdapterLoadResult,
+        context: AdapterContext,
+        *,
+        adapter_kind: str,
+    ) -> AdapterLoadResult:
+        tool = result.tool.model_copy(deep=True)
+        if context.provider is not None:
+            tool.provider = context.provider
+        if context.access_mode is not None:
+            tool.access_mode = context.access_mode
+        elif tool.access_mode is None:
+            tool.access_mode = adapter_kind
+        return AdapterLoadResult(tool=tool, invoker=result.invoker)
 
     def _commit(self, result: AdapterLoadResult, *, replace: bool) -> ToolSpec:
         key = self.registry.register(result.tool, replace=replace)
