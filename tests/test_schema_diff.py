@@ -308,3 +308,44 @@ def test_typed_output_field_addition_is_conservatively_breaking() -> None:
         and change.severity == "breaking"
         for change in report.changes
     )
+
+
+
+def test_execution_metadata_drift_is_breaking() -> None:
+    old = endpoint(
+        execution_metadata={"request_body_mode": "root_schema"}
+    )
+    new = endpoint(
+        execution_metadata={"request_body_mode": "flattened_object"}
+    )
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "breaking"
+    assert any(
+        change.kind == "execution_metadata_changed"
+        and change.severity == "breaking"
+        for change in report.changes
+    )
+
+
+def test_execution_origin_drift_requires_security_review() -> None:
+    old = ToolSpec(
+        name="materials",
+        endpoints=[endpoint()],
+        remote=False,
+    )
+    new = ToolSpec(
+        name="materials",
+        endpoints=[endpoint()],
+        remote=True,
+    )
+
+    report = compare_tool_specs(old, new)
+
+    assert report.compatibility == "security_review"
+    assert any(
+        change.kind == "execution_origin_changed"
+        and change.severity == "security"
+        for change in report.changes
+    )
