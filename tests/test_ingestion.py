@@ -8,6 +8,7 @@ from schemarouter import (
     PlanRequest,
     SchemaDriftError,
     SchemaRouter,
+    SchemaSourceError,
     UnsupportedSchemaSourceError,
 )
 
@@ -340,3 +341,26 @@ async def test_openapi_query_secret_is_fetched_but_not_persisted_in_tool_state()
     assert "source_url" not in tool.execution_metadata
     assert "resolved_schema_url" not in tool.execution_metadata
     assert "top-secret" not in tool.model_dump_json()
+
+
+
+@pytest.mark.asyncio
+async def test_adapter_error_redacts_source_query_secret() -> None:
+    class ExplodingAdapter:
+        kind = "explode"
+        priority = 1
+
+        async def load(self, context):
+            raise RuntimeError("adapter failure")
+
+    router = SchemaRouter()
+    router.register_adapter(ExplodingAdapter())
+    source = "https://docs.example.com/schema?token=top-secret"
+
+    with pytest.raises(SchemaSourceError) as exc_info:
+        await router.add_url(source, kind="explode")
+
+    message = str(exc_info.value)
+    assert "https://docs.example.com/schema" in message
+    assert "top-secret" not in message
+    assert "token=" not in message
