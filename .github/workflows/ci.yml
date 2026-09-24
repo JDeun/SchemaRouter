@@ -160,9 +160,17 @@ jobs:
           PY
           /tmp/schemarouter-wheel/bin/schemarouter dashboard --registry /tmp/inspection-registry.sqlite3 --traces /tmp/inspection-traces.sqlite3 --output /tmp/inspection-cli-dashboard.html
           test -s /tmp/inspection-cli-dashboard.html
+      - run: python -m venv /tmp/schemarouter-wheel-lightweight
+      - run: /tmp/schemarouter-wheel-lightweight/bin/python -m pip install --upgrade pip
+      - name: Install wheel with isolated lightweight extras
+        run: |
+          WHEEL="$(pwd)/$(ls dist/*.whl)"
+          /tmp/schemarouter-wheel-lightweight/bin/pip install "schemarouter[mcp,jev,otel] @ file://${WHEEL}"
+          /tmp/schemarouter-wheel-lightweight/bin/pip check
+      - run: /tmp/schemarouter-wheel-lightweight/bin/python scripts/installed_extras_smoke.py
       - run: python -m venv /tmp/schemarouter-wheel-integrations
       - run: /tmp/schemarouter-wheel-integrations/bin/python -m pip install --upgrade pip
-      - name: Install wheel with supported lightweight extras
+      - name: Install wheel with combined integration extras
         run: |
           WHEEL="$(pwd)/$(ls dist/*.whl)"
           /tmp/schemarouter-wheel-integrations/bin/pip install "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel] @ file://${WHEEL}"
