@@ -1,6 +1,6 @@
 import pytest
 
-from schemarouter import EndpointSpec, InMemoryRegistry, RegistrationError, ToolSpec
+from schemarouter import EndpointSpec, InMemoryRegistry, ParameterSpec, RegistrationError, ToolSpec
 
 
 def test_registry_rejects_collisions_without_replace() -> None:
