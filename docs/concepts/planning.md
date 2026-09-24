@@ -95,3 +95,24 @@ print(plan.executable)  # False when a required user_id is missing
 
 The executor recomputes required arguments again immediately before invocation, so a forged or stale
 `missing_required_arguments` list cannot bypass the contract.
+
+
+## Precompiled provider/access fallbacks
+
+A `PlanRequest` can opt into bounded read-only fallback planning:
+
+```python
+request = PlanRequest(
+    query="Si band gap",
+    preferred_tools=["mp_api"],
+    fallback_scope="cross_provider",
+    max_fallbacks=3,
+)
+```
+
+Each fallback is a complete `ToolCall` compiled against its own schema and tool fingerprint.
+Same-provider access paths are ordered before candidates from another provider. Field aliases are
+used to prove semantic compatibility when access paths expose different field names.
+
+Fallback is not model-driven replanning and remains disabled by default. See
+[Provider-aware fallback](../guides/provider-fallback.md).
