@@ -19,6 +19,7 @@ from .errors import InvocationUnavailableError, ProposalApprovalError, Registrat
 from .executor import ExecutionBudgetTracker, RegistryExecutor
 from .hooks import ExecutionHooks
 from .ingestion import SourceKind, URLSchemaLoader
+from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .inspection import RouterInspection, inspect_router
 from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
 from .planner import QueryAnalyzer, SchemaPlanner
@@ -110,6 +111,7 @@ class SchemaRouter:
             hooks=execution_hooks,
             unavailable_cooldown_seconds=unavailable_cooldown_seconds,
         )
+        self.health_monitor = AccessHealthMonitor(self.executor)
         self.loader = URLSchemaLoader(
             self.registry,
             self.executor,
@@ -157,6 +159,41 @@ class SchemaRouter:
         """Return access paths currently held in the bounded cooldown window."""
 
         return self.executor.unavailable_access_paths()
+
+    def register_health_probe(
+        self,
+        tool_key: str,
+        endpoint: str,
+        probe: HealthProbe,
+    ) -> None:
+        """Register a trusted local health probe for one read-only access path."""
+
+        self.health_monitor.register(tool_key, endpoint, probe)
+
+    def unregister_health_probe(self, tool_key: str, endpoint: str) -> None:
+        self.health_monitor.unregister(tool_key, endpoint)
+
+    def health_snapshots(self) -> tuple[HealthProbeSnapshot, ...]:
+        return self.health_monitor.snapshots()
+
+    async def check_health_once(self) -> tuple[HealthProbeSnapshot, ...]:
+        return await self.health_monitor.run_once()
+
+    async def start_health_monitor(
+        self,
+        *,
+        interval_seconds: float = 30.0,
+        probe_timeout_seconds: float = 5.0,
+        max_concurrency: int = 4,
+    ) -> None:
+        await self.health_monitor.start(
+            interval_seconds=interval_seconds,
+            probe_timeout_seconds=probe_timeout_seconds,
+            max_concurrency=max_concurrency,
+        )
+
+    async def stop_health_monitor(self) -> None:
+        await self.health_monitor.stop()
 
     def with_config(
         self,
