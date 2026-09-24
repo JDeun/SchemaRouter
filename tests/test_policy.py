@@ -5,6 +5,7 @@ from schemarouter import (
     ExecutionPlan,
     ExecutionPolicy,
     InMemoryRegistry,
+    PolicyRule,
     PolicyViolationError,
     RegistryExecutor,
     ToolCall,
@@ -159,3 +160,107 @@ async def test_manual_local_contract_keeps_existing_default_behavior() -> None:
 
     result = await executor.execute(plan_for(registry, "local", "custom"))
     assert result[0].data == {"ok": True}
+
+
+@pytest.mark.asyncio
+async def test_scoped_allow_rule_grants_one_mutation_without_global_mutation_access() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="jobs",
+            endpoints=[
+                EndpointSpec(name="create", read_only=False, destructive=False),
+                EndpointSpec(name="update", read_only=False, destructive=False),
+            ],
+            metadata={"adapter": "openapi"},
+        )
+    )
+    executor = RegistryExecutor(
+        registry,
+        policy=ExecutionPolicy(
+            rules=(
+                PolicyRule(
+                    name="allow-create",
+                    operation="jobs.create",
+                    effect="allow",
+                ),
+            ),
+        ),
+    )
+    executor.bind("jobs", lambda endpoint, arguments: {"endpoint": endpoint})
+
+    allowed = await executor.execute(plan_for(registry, "jobs", "create"))
+    assert allowed[0].data == {"endpoint": "create"}
+
+    with pytest.raises(PolicyViolationError, match="allow_mutations"):
+        await executor.execute(plan_for(registry, "jobs", "update"))
+
+
+@pytest.mark.asyncio
+async def test_explicit_deny_rule_can_narrow_globally_allowed_mutations() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="jobs",
+            endpoints=[EndpointSpec(name="delete", read_only=False, destructive=False)],
+            metadata={"adapter": "openapi"},
+        )
+    )
+    executor = RegistryExecutor(
+        registry,
+        policy=ExecutionPolicy(
+            allow_mutations=True,
+            rules=(PolicyRule(operation="jobs.delete", effect="deny", name="protect-delete"),),
+        ),
+    )
+    executor.bind("jobs", lambda endpoint, arguments: {"ok": True})
+
+    with pytest.raises(PolicyViolationError, match="protect-delete"):
+        await executor.execute(plan_for(registry, "jobs", "delete"))
+
+
+def test_policy_rules_are_first_match_wins() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="jobs",
+        endpoints=[EndpointSpec(name="create", read_only=False, destructive=False)],
+        metadata={"adapter": "openapi"},
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("jobs", "create")
+    call = plan_for(registry, "jobs", "create").calls[0]
+    policy = ExecutionPolicy(
+        rules=(
+            PolicyRule(operation="jobs.*", effect="deny", name="broad-deny"),
+            PolicyRule(operation="jobs.create", effect="allow", name="later-allow"),
+        )
+    )
+
+    decision = policy.evaluate(tool, endpoint, call)
+
+    assert decision.effect == "deny"
+    assert decision.rule_name == "broad-deny"
+
+
+def test_policy_rule_can_match_side_effect_classification() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="remote",
+        endpoints=[EndpointSpec(name="mystery", read_only=None)],
+        metadata={"adapter": "mcp"},
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("remote", "mystery")
+    call = plan_for(registry, "remote", "mystery").calls[0]
+    policy = ExecutionPolicy(
+        rules=(
+            PolicyRule(
+                operation="remote.*",
+                effect="allow",
+                remote=True,
+                read_only=None,
+            ),
+        )
+    )
+
+    assert policy.evaluate(tool, endpoint, call).effect == "allow"
