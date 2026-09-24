@@ -577,14 +577,14 @@ def test_plan_explanation_records_deterministic_score_and_field_reasons() -> Non
     assert explanation.candidate_selection == "deterministic"
     assert explanation.ignored_arguments == ["unknown"]
     assert any(
-        component.kind == "field_exact"
+        component.kind == "field_lexical"
         and component.matched == "band_gap"
-        and component.value == 6.0
+        and component.value == 3.0
         for component in explanation.score_components
     )
     reasons = {item.field: item.reason for item in explanation.field_selection}
     assert reasons["material_id"] == "identifier"
-    assert reasons["band_gap"] == "field_exact"
+    assert reasons["band_gap"] == "field_lexical"
 
 
 def test_plan_explanation_marks_recall_fallback_projection() -> None:
