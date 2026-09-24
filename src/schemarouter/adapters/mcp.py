@@ -5,7 +5,7 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any, Protocol
 from urllib.parse import urlparse
 
-from ..errors import SchemaSourceError
+from ..errors import InvocationUnavailableError, SchemaSourceError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 
 _PROTECTED_MCP_HEADERS = {
@@ -268,25 +268,31 @@ class MCPRemoteInvoker:
         self.client_factory = client_factory or _DEFAULT_CLIENT_FACTORY
 
     async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
-        async with self.client_factory(
-            self.url,
-            headers=self._trusted_headers,
-            timeout=self.timeout,
-        ) as client:
-            result = await client.call_tool(endpoint, arguments)
-            if getattr(result, "is_error", False):
-                raise RuntimeError(f"MCP tool {endpoint!r} returned an error")
+        try:
+            async with self.client_factory(
+                self.url,
+                headers=self._trusted_headers,
+                timeout=self.timeout,
+            ) as client:
+                result = await client.call_tool(endpoint, arguments)
+        except (TimeoutError, ConnectionError, OSError) as exc:
+            raise InvocationUnavailableError(
+                "MCP access path is temporarily unavailable"
+            ) from exc
 
-            structured = getattr(result, "structured_content", None)
-            if structured is not None:
-                return structured
+        if getattr(result, "is_error", False):
+            raise RuntimeError(f"MCP tool {endpoint!r} returned an error")
 
-            content = getattr(result, "content", None)
-            if content is None:
-                return None
-            return [
-                block.model_dump(mode="json", by_alias=True, exclude_none=True)
-                if hasattr(block, "model_dump")
-                else str(block)
-                for block in content
-            ]
+        structured = getattr(result, "structured_content", None)
+        if structured is not None:
+            return structured
+
+        content = getattr(result, "content", None)
+        if content is None:
+            return None
+        return [
+            block.model_dump(mode="json", by_alias=True, exclude_none=True)
+            if hasattr(block, "model_dump")
+            else str(block)
+            for block in content
+        ]
