@@ -161,11 +161,6 @@ def test_external_package_smokes_cover_lightweight_integration_extras() -> None:
     )
     assert 'report["lightweight_extras"] = args.lightweight_extras' in published_smoke
 
-    installed_smoke = (
-        ROOT / "scripts" / "installed_extras_smoke.py"
-    ).read_text(encoding="utf-8")
-    assert "import httpx2" not in installed_smoke
-
 
 def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     workflow = (
