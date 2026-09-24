@@ -378,7 +378,7 @@ def _tool_from_discovery(
                     path=f"/{safe_entry_type}",
                     read_only=True,
                     destructive=False,
-                    metadata={
+                    execution_metadata={
                         "entry_type": entry_type,
                         "mode": "search",
                         "field_projection": "response_fields",
@@ -403,7 +403,7 @@ def _tool_from_discovery(
                     path=f"/{safe_entry_type}/{{id}}",
                     read_only=True,
                     destructive=False,
-                    metadata={
+                    execution_metadata={
                         "entry_type": entry_type,
                         "mode": "get",
                         "field_projection": "response_fields",
@@ -568,8 +568,10 @@ class OPTIMADERemoteInvoker:
 
     async def invoke_call(self, call: ToolCall) -> Any:
         endpoint = self.tool.endpoint(call.endpoint)
-        entry_type = _validate_entry_type(str(endpoint.metadata["entry_type"]))
-        mode = str(endpoint.metadata["mode"])
+        entry_type = _validate_entry_type(
+            str(endpoint.execution_metadata["entry_type"])
+        )
+        mode = str(endpoint.execution_metadata["mode"])
 
         arguments = dict(call.arguments)
         query = {
