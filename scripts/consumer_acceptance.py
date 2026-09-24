@@ -5,13 +5,14 @@ import asyncio
 import json
 import platform
 import time
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Awaitable, Callable
 
 from pydantic import BaseModel
 
 from schemarouter import (
+    __version__,
     ApprovalDeniedError,
     BindingDriftError,
     ExecutionBudget,
@@ -21,12 +22,11 @@ from schemarouter import (
     PolicyViolationError,
     RetryPolicy,
     RunConfig,
-    SQLiteRegistry,
-    SQLiteRunTraceStore,
     SchemaDriftError,
     SchemaRouter,
     SchemaValidationError,
-    __version__,
+    SQLiteRegistry,
+    SQLiteRunTraceStore,
     inspect_registry,
     inspect_traces,
     schema_tool,
