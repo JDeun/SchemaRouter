@@ -184,7 +184,6 @@ async def test_optimade_discovery_planning_and_execution_use_response_fields() -
     assert results[0].data == [
         {
             "id": "s-1",
-            "type": "structures",
             "chemical_formula_descriptive": "O2Si",
         }
     ]
@@ -243,7 +242,6 @@ async def test_optimade_single_entry_uses_encoded_id_and_field_projection() -> N
 
     assert results[0].data == {
         "id": "db/42",
-        "type": "structures",
         "nelements": 2,
     }
     assert "%2F" in requested_urls[0]
@@ -407,3 +405,86 @@ def test_optimade_attribute_names_ending_in_id_are_not_forced_identifiers() -> N
 
     assert immutable.identifier is False
     assert provider_specific.identifier is False
+
+
+
+@pytest.mark.asyncio
+async def test_optimade_projection_maps_provider_wire_field_to_canonical_name() -> None:
+    seen_queries: list[dict[str, str]] = []
+
+    tool = ToolSpec(
+        name="provider_b",
+        provider="provider_b",
+        access_mode="optimade",
+        endpoints=[
+            EndpointSpec(
+                name="search_structures",
+                method="GET",
+                path="/structures",
+                read_only=True,
+                output_fields=[
+                    FieldSpec(
+                        name="elastic_modulus",
+                        aliases=["탄성계수"],
+                    )
+                ],
+                output_schema={
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "elastic_modulus": {"type": "number"}
+                        },
+                        "required": ["elastic_modulus"],
+                    },
+                },
+                server_projection=ServerProjectionSpec(
+                    parameter="response_fields",
+                    field_map={"elastic_modulus": "_provider_b_elasticity"},
+                ),
+                execution_metadata={
+                    "entry_type": "structures",
+                    "mode": "search",
+                    "field_projection": "response_fields",
+                },
+            )
+        ],
+    )
+    endpoint = tool.endpoint("search_structures")
+    call = ToolCall(
+        tool=tool.key,
+        endpoint=endpoint.name,
+        fields=["elastic_modulus"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_queries.append(dict(request.url.params))
+        return httpx.Response(
+            200,
+            json={
+                "data": [
+                    {
+                        "id": "b-1",
+                        "type": "structures",
+                        "attributes": {
+                            "_provider_b_elasticity": 145.0,
+                            "density": 2.5,
+                        },
+                    }
+                ]
+            },
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        invoker = OPTIMADERemoteInvoker(
+            tool,
+            "https://provider-b.example/v1",
+            http_client=client,
+        )
+        result = await invoker.invoke_call(call)
+
+    assert seen_queries == [{"response_fields": "_provider_b_elasticity", "page_limit": "20"}]
+    assert result == [{"elastic_modulus": 145.0}]
