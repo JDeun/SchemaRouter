@@ -54,10 +54,12 @@ side-effect classification, evidence metadata, JSON Schemas, `ToolSpec.remote`, 
 `execution_metadata`.
 
 `execution_metadata` is reserved for trusted adapter/runtime values that can change what gets
-executed, such as an approved OpenAPI base URL, MCP/OPTIMADE transport identity, request-body mode,
-or built-in callable identity. Custom adapters must put execution-affecting values there rather than
-reading them from ordinary `metadata` at invocation time. Ordinary `metadata` remains
-descriptive/observability data and must not grant authority or alter transport semantics.
+executed, such as an approved OpenAPI base URL, the actual MCP/OPTIMADE runtime target,
+request-body mode, or built-in callable identity. Schema-document provenance such as an OpenAPI
+source URL remains descriptive metadata unless that URL is itself the invocation target. Custom
+adapters must put execution-affecting values in `execution_metadata` rather than reading them from
+ordinary `metadata` at invocation time. Ordinary `metadata` remains descriptive/observability
+data and must not grant authority or alter transport semantics.
 
 A plan compiled against an older endpoint or tool execution contract fails closed:
 
