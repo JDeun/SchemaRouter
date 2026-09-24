@@ -48,7 +48,7 @@ from schemarouter import RunConfig
 
 config = RunConfig(
     execution_mode="parallel_read_only",
-    max_concurrency=4,
+    max_parallel_calls=4,
 )
 
 results = await router.ainvoke(request, config=config)
@@ -59,8 +59,9 @@ schema, binding, and execution-policy validation and requires `endpoint.read_onl
 calls. Mutating or unclassified calls fail the parallel run before invocation.
 
 `ainvoke()` returns results in plan order. `astream()` and `astream_events()` can expose
-completion order so a fast read-only call is not held behind a slower sibling. All parallel calls
-share the same per-run execution budget and concurrency cap.
+completion order so a fast read-only call is not held behind a slower sibling. All parallel calls share the same per-run execution budget. `max_parallel_calls` limits
+in-plan fan-out independently from `max_concurrency`, which continues to bound concurrent
+inputs in batch APIs.
 
 This is flat fan-out, not a DAG/workflow runtime. Dependencies, branching, checkpoints, and
 multi-step orchestration remain the responsibility of LangGraph or another surrounding framework.
