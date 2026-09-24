@@ -13,6 +13,7 @@ from schemarouter import (
     ExecutionPlan,
     ExecutionPolicy,
     InMemoryRegistry,
+    PolicyRule,
     RegistryExecutor,
     RetryPolicy,
     ToolCall,
@@ -456,4 +457,47 @@ async def test_registry_drift_during_async_approval_fails_closed() -> None:
     executor.bind("demo", lambda endpoint_name, arguments: {"ok": True})
 
     with pytest.raises(BindingDriftError):
+        await executor.execute(plan)
+
+
+@pytest.mark.asyncio
+async def test_scoped_rule_can_require_approval_without_global_approval_mode() -> None:
+    seen = []
+
+    def approve(tool, endpoint, call):
+        seen.append(f"{call.tool}.{call.endpoint}")
+        return True
+
+    _, executor, _, plan = _setup(
+        read_only=False,
+        policy=ExecutionPolicy(
+            rules=(
+                PolicyRule(
+                    operation="demo.run",
+                    effect="require_approval",
+                    name="review-demo-run",
+                ),
+            ),
+        ),
+        approval_callback=approve,
+    )
+    executor.bind("demo", lambda endpoint, arguments: {"ok": True})
+
+    result = await executor.execute(plan)
+
+    assert result[0].data == {"ok": True}
+    assert seen == ["demo.run"]
+
+
+@pytest.mark.asyncio
+async def test_scoped_approval_rule_fails_closed_without_callback() -> None:
+    _, executor, _, plan = _setup(
+        read_only=False,
+        policy=ExecutionPolicy(
+            rules=(PolicyRule(operation="demo.run", effect="require_approval"),),
+        ),
+    )
+    executor.bind("demo", lambda endpoint, arguments: {"ok": True})
+
+    with pytest.raises(ApprovalDeniedError, match="requires trusted local approval"):
         await executor.execute(plan)
