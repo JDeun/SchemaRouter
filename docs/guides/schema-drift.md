@@ -39,6 +39,31 @@ report = compare_tool_specs(previous_tool, current_tool)
 Tool comparison includes endpoint additions/removals, endpoint contract changes, evidence metadata
 such as source type/license, and ordering changes that can explain a fingerprint change.
 
+## CLI inspection across persisted registries
+
+When old and current registry snapshots are available as SQLite registries, compare them without
+executing any tool:
+
+```bash
+schemarouter inspect diff materials \
+  --old-db registry-before.sqlite3 \
+  --new-db registry-current.sqlite3
+```
+
+Compare one endpoint or emit machine-readable JSON:
+
+```bash
+schemarouter inspect diff materials \
+  --endpoint search \
+  --old-db registry-before.sqlite3 \
+  --new-db registry-current.sqlite3 \
+  --json
+```
+
+The CLI opens the registries read-only from SchemaRouter's perspective, loads validated `ToolSpec`
+snapshots, and runs the same conservative comparison functions used by the Python API. It does not
+bind or invoke tools.
+
 ## Security-semantic drift
 
 Changes such as:
