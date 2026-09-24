@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
+from math import isfinite
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -39,7 +39,7 @@ def _require_json_safe(value: Any, *, path: str = "execution_metadata") -> None:
     if value is None or isinstance(value, (str, bool, int)):
         return
     if isinstance(value, float):
-        if not math.isfinite(value):
+        if not isfinite(value):
             raise ValueError(f"{path} requires finite JSON numbers")
         return
     if isinstance(value, list):
