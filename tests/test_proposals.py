@@ -373,3 +373,24 @@ async def test_documentation_query_secret_is_not_model_visible_or_persisted() ->
     assert proposal.tool is not None
     assert proposal.tool.metadata["source_url"] == "https://docs.example.com/users"
     assert "top-secret" not in proposal.model_dump_json()
+
+
+
+@pytest.mark.asyncio
+async def test_documentation_fetch_error_redacts_query_secret() -> None:
+    async def model(payload: dict) -> dict:
+        raise AssertionError("model must not run after fetch failure")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise RuntimeError("network failed")
+
+    source = "https://docs.example.com/api?token=top-secret"
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(SchemaSourceError) as exc_info:
+            await router.inspect_url(source, model=model)
+
+    message = str(exc_info.value)
+    assert "https://docs.example.com/api" in message
+    assert "top-secret" not in message
+    assert "token=" not in message
