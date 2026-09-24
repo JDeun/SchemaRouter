@@ -50,6 +50,15 @@ class ExecutionError(SchemaRouterError):
     """Raised when tool invocation fails."""
 
 
+class InvocationUnavailableError(ExecutionError, RuntimeError):
+    """Raised when an otherwise valid access path is temporarily unavailable.
+
+    Executors may retry the same read-only route and a precompiled fallback route may use this
+    marker to move to another trusted access path. Policy/schema/authorization failures must never
+    be translated to this error.
+    """
+
+
 class NonRetryableInvocationError(ExecutionError, RuntimeError):
     """Raised when repeating the same invocation cannot safely recover.
 
