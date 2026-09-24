@@ -469,43 +469,10 @@ jobs:
             exit 1
           fi
 
-          python - <<'PY'
-          import hashlib
-          import os
-          from pathlib import Path
-
-          kind = os.environ["VERIFY_KIND"]
-          suffix = ".whl" if kind == "wheel" else ".tar.gz"
-          built = sorted(Path("dist").glob(f"schemarouter-*{suffix}"))
-          published = sorted(Path("/tmp/pypi-artifact").glob(f"schemarouter-*{suffix}"))
-
-          if len(built) != 1 or len(published) != 1:
-              raise SystemExit(
-                  "expected exactly one built and one published "
-                  f"{kind} artifact; built={built}, published={published}"
-              )
-          if built[0].name != published[0].name:
-              raise SystemExit(
-                  f"artifact filename mismatch: built={built[0].name!r}, "
-                  f"published={published[0].name!r}"
-              )
-
-          def sha256(path: Path) -> str:
-              digest = hashlib.sha256()
-              with path.open("rb") as handle:
-                  for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                      digest.update(chunk)
-              return digest.hexdigest()
-
-          built_digest = sha256(built[0])
-          published_digest = sha256(published[0])
-          if built_digest != published_digest:
-              raise SystemExit(
-                  f"artifact SHA-256 mismatch for {built[0].name}: "
-                  f"built={built_digest}, published={published_digest}"
-              )
-          print(f"Verified PyPI artifact SHA-256: {built[0].name} {built_digest}")
-          PY
+          python scripts/verify_artifact_digest.py \
+            --built-dir dist \
+            --published-dir /tmp/pypi-artifact \
+            --artifact-kind "$VERIFY_KIND"
       - name: Install exact published release from PyPI
         env:
           RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
