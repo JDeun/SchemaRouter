@@ -159,7 +159,9 @@ A budget refusal is not retried.
 A remote server controls its own descriptions and annotations. Allowing those fields to set local
 execution authority would let the capability provider authorize itself.
 
-SchemaRouter therefore keeps remote metadata descriptive and local policy authoritative.
+SchemaRouter therefore keeps ordinary remote metadata descriptive and local policy authoritative.
+The local/remote classification used by policy is the fingerprinted `ToolSpec.remote` contract,
+not a model-visible metadata flag. Built-in remote adapters set that field locally during import.
 
 ## Approval versus documentation proposal approval
 
