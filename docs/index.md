@@ -9,8 +9,9 @@
 
 # Put a typed execution boundary between agents and tools
 
-SchemaRouter compiles a natural-language request into a **schema-constrained tool call**, then
-validates policy, schema identity, arguments, and raw output before execution is accepted.
+SchemaRouter compiles a natural-language request into the **smallest declared data-field plan it can
+justify**, chooses a trusted provider/access path that can supply those fields, and validates policy,
+schema identity, arguments, availability, and raw output before execution is accepted.
 
 ```bash
 pip install schemarouter
@@ -24,10 +25,15 @@ pip install schemarouter
 
 <div class="grid cards" markdown>
 
+-   **Minimize**
+
+    Resolve the semantic data need first. Request only the planned fields upstream when the endpoint
+    explicitly supports server-side projection, then keep only those fields downstream.
+
 -   **Compile**
 
     Turn OpenAPI, MCP, OPTIMADE, Python callables, or approved documentation into one typed
-    Tool / Endpoint / Parameter / Field model.
+    Provider / Access path / Tool / Endpoint / Parameter / Field model.
 
 -   **Validate**
 
@@ -134,7 +140,10 @@ flow and never becomes executable automatically.
 - credentials remain outside model-visible planner arguments;
 - retries, wall-clock time, remote calls, response size, and optional cost units can be bounded;
 - OpenAPI compatibility gaps are reported instead of silently guessed;
-- event payloads remain redacted unless explicitly enabled.
+- event payloads remain redacted unless explicitly enabled;
+- temporary access failures use finite cooldowns and optional trusted health probes rather than
+  permanent blacklists;
+- provider/access fallback never broadens the logical field need compiled from the query.
 
 ## 0.6 focus
 
