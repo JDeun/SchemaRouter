@@ -132,3 +132,39 @@ def test_mcp_invoker_rejects_credentials_embedded_in_url() -> None:
             "https://user:password@mcp.example.com/mcp",
             client_factory=RecordingFactory(),
         )
+
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://mcp.example.com/mcp?token=secret",
+        "https://mcp.example.com/mcp#fragment",
+    ],
+)
+@pytest.mark.asyncio
+async def test_mcp_rejects_query_or_fragment_runtime_urls(url: str) -> None:
+    factory = RecordingFactory()
+
+    with pytest.raises(ValueError, match="query or fragment"):
+        await inspect_mcp_url(
+            url,
+            client_factory=factory,
+        )
+
+    assert factory.calls == []
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://mcp.example.com/mcp?token=secret",
+        "https://mcp.example.com/mcp#fragment",
+    ],
+)
+def test_mcp_invoker_rejects_query_or_fragment_runtime_urls(url: str) -> None:
+    with pytest.raises(ValueError, match="query or fragment"):
+        MCPRemoteInvoker(
+            url,
+            client_factory=RecordingFactory(),
+        )
