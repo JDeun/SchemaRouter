@@ -6,6 +6,7 @@ from schemarouter import (
     FieldSpec,
     InMemoryRegistry,
     RegistryExecutor,
+    SchemaValidationError,
     ServerProjectionSpec,
     ToolCall,
     ToolSpec,
@@ -254,5 +255,5 @@ async def test_server_projected_response_must_include_every_selected_field() -> 
                 http_client=client,
             ),
         )
-        with pytest.raises(Exception, match="projected field 'elastic_modulus' is missing"):
+        with pytest.raises(SchemaValidationError, match="projected field 'elastic_modulus' is missing"):
             await executor.execute_call(call)
