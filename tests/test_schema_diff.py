@@ -349,3 +349,80 @@ def test_execution_origin_drift_requires_security_review() -> None:
         and change.severity == "security"
         for change in report.changes
     )
+
+
+
+def test_read_only_endpoint_addition_is_compatible() -> None:
+    old = ToolSpec(
+        name="demo",
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    new = ToolSpec(
+        name="demo",
+        endpoints=[
+            EndpointSpec(name="read", read_only=True),
+            EndpointSpec(name="extra_read", read_only=True, method="GET"),
+        ],
+    )
+
+    report = compare_tool_specs(old, new)
+
+    assert report.compatibility == "compatible"
+    assert any(
+        change.kind == "endpoint_added"
+        and change.severity == "compatible"
+        for change in report.changes
+    )
+
+
+@pytest.mark.parametrize(
+    "endpoint",
+    [
+        EndpointSpec(name="write", read_only=False),
+        EndpointSpec(name="delete", read_only=True, destructive=True),
+        EndpointSpec(name="post", read_only=True, method="POST"),
+    ],
+)
+def test_side_effect_endpoint_addition_requires_security_review(
+    endpoint: EndpointSpec,
+) -> None:
+    old = ToolSpec(
+        name="demo",
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    new = ToolSpec(
+        name="demo",
+        endpoints=[
+            EndpointSpec(name="read", read_only=True),
+            endpoint,
+        ],
+    )
+
+    report = compare_tool_specs(old, new)
+
+    assert report.compatibility == "security_review"
+    assert any(
+        change.kind == "endpoint_added"
+        and change.severity == "security"
+        for change in report.changes
+    )
+
+
+def test_unclassified_remote_endpoint_addition_requires_security_review() -> None:
+    old = ToolSpec(
+        name="demo",
+        remote=True,
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    new = ToolSpec(
+        name="demo",
+        remote=True,
+        endpoints=[
+            EndpointSpec(name="read", read_only=True),
+            EndpointSpec(name="mystery", read_only=None),
+        ],
+    )
+
+    report = compare_tool_specs(old, new)
+
+    assert report.compatibility == "security_review"
