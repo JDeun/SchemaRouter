@@ -370,3 +370,23 @@ def test_inspection_redacts_url_query_and_fragment_from_provenance() -> None:
     assert "token=secret" not in serialized
     assert "should-not-render" not in serialized
     assert "fragment" not in serialized
+
+
+
+def test_inspection_fail_closes_on_malformed_or_non_http_provenance_urls() -> None:
+    tool = sample_tool()
+    tool.execution_metadata.update(
+        {
+            "source_url": "https://user:password@example.test:notaport/path?token=secret",
+            "approved_base_url": "ftp://user:password@example.test/private?token=secret",
+        }
+    )
+
+    snapshot = inspect_registry(_registry_with_tool(tool))
+    provenance = snapshot.tools[0].provenance
+
+    assert provenance["source_url"] == "<redacted-invalid-url>"
+    assert provenance["approved_base_url"] == "<redacted-invalid-url>"
+    serialized = snapshot.model_dump_json()
+    assert "user:password" not in serialized
+    assert "token=secret" not in serialized
