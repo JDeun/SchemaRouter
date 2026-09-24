@@ -4,10 +4,10 @@ import json
 from importlib.metadata import version
 
 import httpx2
+import typesafe_sdk
 from mcp import Client
 from mcp.client.streamable_http import streamable_http_client
 from opentelemetry.sdk.trace import TracerProvider
-import typesafe_sdk
 
 from schemarouter import DefaultMCPClientFactory
 from schemarouter.integrations import JevDecisionBackend, OpenTelemetryRunExporter
