@@ -882,8 +882,9 @@ class URLSchemaLoader:
                     ) from exc
                 raise
             except Exception as exc:  # noqa: BLE001
+                safe_url = safe_provenance_url(url)
                 raise SchemaSourceError(
-                    f"{normalized_kind} adapter failed for {url!r}"
+                    f"{normalized_kind} adapter failed for {safe_url!r}"
                 ) from exc
             if result is None:
                 raise UnsupportedSchemaSourceError(
