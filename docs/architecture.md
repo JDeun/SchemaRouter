@@ -276,7 +276,9 @@ SchemaRouter therefore separates:
 
 Built-in adapters mirror some values into ordinary metadata for backward-compatible inspection, but
 runtime code reads the fingerprinted contract fields. Legacy persisted built-in metadata is migrated
-into those fields during model validation.
+into those fields during model validation. Schema/discovery provenance URLs remain descriptive when
+they do not determine invocation; only actual runtime targets belong in the execution contract.
+Credential-bearing runtime URLs are rejected rather than persisted.
 
 Planner-generated `ToolCall` values also pin the current tool fingerprint, so changing transport
 origin or local/remote classification invalidates an already-compiled plan even after a trusted
@@ -341,7 +343,7 @@ outside the core and belong to surrounding orchestration frameworks.
     semantics; execution-affecting values live in fingerprinted contract fields.
 35. Planner-generated calls pin both endpoint and tool fingerprints, and remote/runtime-sensitive
     legacy calls without a tool fingerprint fail closed.
-36. Inspection/dashboard provenance never exposes URL query strings or fragments; transport
+36. Inspection/dashboard provenance never exposes URL userinfo, query strings, or fragments;
     identity remains fingerprinted internally while operator-facing views show only origin/path.
 
 ## Current extension backlog
