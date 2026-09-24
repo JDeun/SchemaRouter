@@ -91,6 +91,8 @@ class ToolInspection(StrictModel):
     description: str = ""
     source_type: str | None = None
     license: str | None = None
+    provider: str | None = None
+    access_mode: str | None = None
     endpoint_count: int = Field(ge=0)
     fingerprint: str
     provenance: dict[str, object] = Field(default_factory=dict)
@@ -170,6 +172,8 @@ def inspect_tool_spec(tool: ToolSpec) -> ToolInspection:
         description=tool.description,
         source_type=tool.source_type,
         license=tool.license,
+        provider=tool.provider,
+        access_mode=tool.access_mode,
         endpoint_count=len(endpoints),
         fingerprint=tool.fingerprint,
         provenance=_provenance(tool),
@@ -280,6 +284,8 @@ def tool_spec_document(tool: ToolSpec) -> dict[str, object]:
         "description": tool.description,
         "source_type": tool.source_type,
         "license": tool.license,
+        "provider": tool.provider,
+        "access_mode": tool.access_mode,
         "fingerprint": tool.fingerprint,
         "provenance": _provenance(tool),
         "endpoints": [
