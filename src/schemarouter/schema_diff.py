@@ -356,10 +356,13 @@ def compare_endpoint_specs(old: EndpointSpec, new: EndpointSpec) -> SchemaDiffRe
             changes,
             path="execution_metadata",
             kind="execution_metadata_changed",
-            severity="breaking",
+            severity="security",
             old=old.execution_metadata,
             new=new.execution_metadata,
-            message="Runtime adapter semantics changed; replan and rebind before execution.",
+            message=(
+                "Runtime adapter semantics changed and require execution review; "
+                "replan and rebind before execution."
+            ),
         )
 
     old_parameters = {parameter.name: parameter for parameter in old.parameters}
