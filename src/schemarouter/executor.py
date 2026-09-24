@@ -210,6 +210,15 @@ class RegistryExecutor:
         tool.endpoint(endpoint)
         return tool_key, endpoint, tool.fingerprint
 
+    def _purge_access_cooldowns(self, tool_key: str, endpoint: str) -> None:
+        stale = [
+            key
+            for key in self._unavailable_until
+            if key[0] == tool_key and key[1] == endpoint
+        ]
+        for key in stale:
+            self._unavailable_until.pop(key, None)
+
     def mark_access_unavailable(
         self,
         tool_key: str,
@@ -225,11 +234,12 @@ class RegistryExecutor:
         if not math.isfinite(cooldown) or cooldown < 0:
             raise ValueError("cooldown_seconds must be a finite non-negative number")
         key = self._current_access_key(tool_key, endpoint)
+        self._purge_access_cooldowns(tool_key, endpoint)
         self._unavailable_until[key] = time.monotonic() + cooldown
 
     def mark_access_available(self, tool_key: str, endpoint: str) -> None:
-        key = self._current_access_key(tool_key, endpoint)
-        self._unavailable_until.pop(key, None)
+        self._current_access_key(tool_key, endpoint)
+        self._purge_access_cooldowns(tool_key, endpoint)
 
     def is_access_available(self, tool_key: str, endpoint: str) -> bool:
         key = self._current_access_key(tool_key, endpoint)
