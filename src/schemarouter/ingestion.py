@@ -10,6 +10,7 @@ from urllib.parse import unquote, urldefrag, urljoin, urlparse
 import httpx
 import yaml
 
+from ._url_safety import safe_provenance_url
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
 from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
 from .adapters.openapi import (
@@ -685,8 +686,8 @@ class OpenAPISourceAdapter:
         tool.execution_metadata.update({"adapter": "openapi"})
         tool.metadata.update(
             {
-                "source_url": context.url,
-                "resolved_schema_url": resolved_schema_url,
+                "source_url": safe_provenance_url(context.url),
+                "resolved_schema_url": safe_provenance_url(resolved_schema_url),
                 "suggested_base_url": suggested_base_url,
                 "same_document_refs_normalized": normalized_ref_count,
                 "external_refs_enabled": context.openapi_external_refs,
