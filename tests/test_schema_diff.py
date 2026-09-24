@@ -428,3 +428,36 @@ def test_unclassified_remote_endpoint_addition_requires_security_review() -> Non
     report = compare_tool_specs(old, new)
 
     assert report.compatibility == "security_review"
+
+
+
+@pytest.mark.parametrize(
+    ("field", "old_value", "new_value", "kind"),
+    [
+        ("provider", "materials_project", "oqmd", "information_provider_changed"),
+        ("access_mode", "openapi", "optimade", "access_mode_changed"),
+    ],
+)
+def test_provider_route_identity_drift_requires_security_review(
+    field: str,
+    old_value: str,
+    new_value: str,
+    kind: str,
+) -> None:
+    old = ToolSpec(
+        name="materials",
+        provider="materials_project",
+        access_mode="openapi",
+        endpoints=[endpoint()],
+    )
+    new = old.model_copy(update={field: new_value}, deep=True)
+
+    report = compare_tool_specs(old, new)
+
+    assert report.compatibility == "security_review"
+    assert report.old_fingerprint != report.new_fingerprint
+    assert any(
+        change.kind == kind
+        and change.severity == "security"
+        for change in report.changes
+    )
