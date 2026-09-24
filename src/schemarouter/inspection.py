@@ -38,11 +38,16 @@ def _safe_provenance_value(key: str, value: object) -> object:
         return value
     try:
         parsed = urlsplit(value)
+        hostname = parsed.hostname
+        port = parsed.port
     except ValueError:
         return value
-    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+    if parsed.scheme not in {"http", "https"} or not hostname:
         return value
-    return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
+
+    safe_host = f"[{hostname}]" if ":" in hostname else hostname
+    safe_netloc = f"{safe_host}:{port}" if port is not None else safe_host
+    return urlunsplit((parsed.scheme, safe_netloc, parsed.path, "", ""))
 
 
 _DESCRIPTIVE_PROVENANCE_KEYS = (
