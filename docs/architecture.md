@@ -343,8 +343,9 @@ outside the core and belong to surrounding orchestration frameworks.
     semantics; execution-affecting values live in fingerprinted contract fields.
 35. Planner-generated calls pin both endpoint and tool fingerprints, and remote/runtime-sensitive
     legacy calls without a tool fingerprint fail closed.
-36. Inspection/dashboard provenance never exposes URL userinfo, query strings, or fragments;
-    identity remains fingerprinted internally while operator-facing views show only origin/path.
+36. Inspection/dashboard provenance never exposes URL userinfo, query strings, or fragments.
+    Runtime target identity remains fingerprinted; schema/document provenance is sanitized before
+    model-visible or persisted descriptive state retains it.
 
 ## Current extension backlog
 
