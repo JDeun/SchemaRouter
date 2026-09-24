@@ -412,7 +412,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        verification: ["wheel", "sdist", "framework-extras"]
+        verification: ["wheel", "sdist", "integration-extras"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -421,13 +421,13 @@ jobs:
         with:
           python-version: "3.12"
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        if: matrix.verification != 'framework-extras'
+        if: matrix.verification != 'integration-extras'
         with:
           name: python-dist
           path: dist
       - run: python -m pip install --upgrade pip
       - name: Verify published artifact digest matches release build
-        if: matrix.verification != 'framework-extras'
+        if: matrix.verification != 'integration-extras'
         env:
           RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
           VERIFY_KIND: ${{ matrix.verification }}
@@ -490,8 +490,8 @@ jobs:
               --index-url https://pypi.org/simple
               --no-binary=schemarouter
             )
-          elif [[ "$VERIFY_KIND" == "framework-extras" ]]; then
-            package="schemarouter[langchain,langgraph,llamaindex]==$RELEASE_VERSION"
+          elif [[ "$VERIFY_KIND" == "integration-extras" ]]; then
+            package="schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]==$RELEASE_VERSION"
           fi
 
           installed=false
@@ -519,9 +519,9 @@ jobs:
         run: |
           artifact_kind="$VERIFY_KIND"
           framework_args=()
-          if [[ "$VERIFY_KIND" == "framework-extras" ]]; then
+          if [[ "$VERIFY_KIND" == "integration-extras" ]]; then
             artifact_kind="wheel"
-            framework_args+=(--framework-integrations)
+            framework_args+=(--framework-integrations --lightweight-extras)
           fi
 
           cd /tmp
