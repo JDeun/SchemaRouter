@@ -20,7 +20,8 @@ claim that every historical version inside the range is exhaustively tested.
 | MCP | `mcp>=2,<3` | Real Streamable HTTP integration against a local server | Optional `schemarouter[mcp]` extra |
 | OpenTelemetry | `opentelemetry-api/sdk>=1.44,<2` | In-memory span hierarchy, error status, and privacy tests | Optional `schemarouter[otel]` extra; core has no OTel dependency |
 | OpenAPI | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OpenAPI SDK dependency |
-| OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |\n| Published PyPI package | Latest stable wheel + sdist | Scheduled/manual external smoke | Installs from PyPI in a fresh runner, runs `pip check`, and executes a public API scenario outside the checkout |
+| OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |
+| Published PyPI package | Latest stable wheel + sdist | Scheduled/manual external smoke | Installs from PyPI in a fresh runner, runs `pip check`, and executes a public API scenario outside the checkout |
 
 Before widening an upper bound or lowering a minimum supported version, the relevant integration
 tests must pass against that target and the change must be documented in release notes.
@@ -94,7 +95,9 @@ likewise remains an optional
 ## External compatibility checks
 
 The `Compatibility Smoke` workflow runs weekly and can also be triggered manually for public
-OpenAPI/OPTIMADE services.
+OpenAPI/OPTIMADE services and the latest stable SchemaRouter package published on PyPI. The PyPI
+smoke separately forces wheel and sdist installation, runs `pip check`, and executes a public API
+scenario from outside the repository checkout.
 
 External-service failures are compatibility signals, not pull-request blockers, because third-party
 availability is outside SchemaRouter's control.
@@ -105,12 +108,12 @@ model with `--ollama-model <installed-model>`.
 
 ## Live OpenAPI smoke
 
-The public OpenAPI smoke imports and executes against Swagger Petstore.
+The public OpenAPI smoke imports and executes against APIs.guru.
 
 The default source is:
 
 ```text
-https://petstore3.swagger.io/api/v3/openapi.json
+https://api.apis.guru/v2/openapi.yaml
 ```
 
 Set `SCHEMAROUTER_LIVE_OPENAPI_URL` when running the smoke script locally to use another compatible
@@ -125,8 +128,8 @@ services. Both should be reviewed before a release candidate is promoted.
 
 ## Scheduled live-smoke artifacts
 
-The non-blocking public OpenAPI and OPTIMADE compatibility workflow emits one machine-readable JSON
-artifact per smoke job. Reports include a schema version, UTC generation time, SchemaRouter version,
+The non-blocking public OpenAPI, OPTIMADE, and published-PyPI compatibility jobs emit one
+machine-readable JSON artifact per smoke job. Reports include a schema version, UTC generation time, SchemaRouter version,
 adapter/source identity, runtime environment, success/failure state, and bounded success details.
 On failure, only the exception type is recorded; exception messages are intentionally omitted.
 
