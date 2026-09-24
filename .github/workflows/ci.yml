@@ -142,6 +142,24 @@ jobs:
       - run: test -s /tmp/decision-benchmark-history.html
       - run: /tmp/schemarouter-wheel/bin/python examples/inspection_dashboard.py --registry /tmp/inspection-registry.sqlite3 --traces /tmp/inspection-traces.sqlite3 --output /tmp/inspection-dashboard.html
       - run: test -s /tmp/inspection-dashboard.html
+      - name: Exercise installed inspection CLI
+        run: |
+          /tmp/schemarouter-wheel/bin/schemarouter inspect registry --db /tmp/inspection-registry.sqlite3 --json > /tmp/inspection-registry.json
+          /tmp/schemarouter-wheel/bin/schemarouter inspect traces --db /tmp/inspection-traces.sqlite3 --complete --json > /tmp/inspection-traces.json
+          /tmp/schemarouter-wheel/bin/python - <<'PY'
+          import json
+          from pathlib import Path
+
+          registry = json.loads(Path("/tmp/inspection-registry.json").read_text())
+          traces = json.loads(Path("/tmp/inspection-traces.json").read_text())
+          assert registry["tool_count"] == 1, registry
+          assert registry["endpoint_count"] == 1, registry
+          assert len(traces) == 1, traces
+          assert traces[0]["complete"] is True, traces
+          assert traces[0]["terminal_event"] == "run.end", traces
+          PY
+          /tmp/schemarouter-wheel/bin/schemarouter dashboard --registry /tmp/inspection-registry.sqlite3 --traces /tmp/inspection-traces.sqlite3 --output /tmp/inspection-cli-dashboard.html
+          test -s /tmp/inspection-cli-dashboard.html
       - run: python -m venv /tmp/schemarouter-wheel-integrations
       - run: /tmp/schemarouter-wheel-integrations/bin/python -m pip install --upgrade pip
       - name: Install wheel with framework extras
@@ -159,6 +177,8 @@ jobs:
       - run: /tmp/schemarouter-sdist/bin/python examples/quickstart.py
       - run: /tmp/schemarouter-sdist/bin/python scripts/consumer_acceptance.py --json-out artifacts/consumer-acceptance-sdist.json
       - run: /tmp/schemarouter-sdist/bin/schemarouter --help
+      - run: /tmp/schemarouter-sdist/bin/schemarouter inspect registry --db /tmp/inspection-registry.sqlite3 --json > /tmp/inspection-registry-sdist.json
+      - run: /tmp/schemarouter-sdist/bin/python -c "import json; data=json.load(open('/tmp/inspection-registry-sdist.json')); assert data['tool_count'] == 1"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: consumer-acceptance-${{ github.run_id }}
