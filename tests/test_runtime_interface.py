@@ -15,6 +15,7 @@ from schemarouter import (
     PlanValidationError,
     RetryPolicy,
     RunConfig,
+    SchemaDriftError,
     SchemaRouter,
     ToolCall,
     ToolSpec,
@@ -593,3 +594,36 @@ async def test_parallel_event_tool_start_tracks_actual_concurrency_slot() -> Non
         "tool.start",
         "tool.end",
     ]
+
+
+
+@pytest.mark.asyncio
+async def test_tool_origin_drift_invalidates_planned_call_even_after_rebind() -> None:
+    router = SchemaRouter(
+        policy=ExecutionPolicy(allow_unclassified_remote=True)
+    )
+    remote_tool = ToolSpec(
+        name="origin",
+        endpoints=[EndpointSpec(name="run", read_only=None)],
+        metadata={"adapter": "mcp"},
+    )
+    router.add_tool(remote_tool)
+    router.executor.bind("origin", lambda endpoint, arguments: {"ok": True})
+
+    plan = await router.aplan(
+        PlanRequest(
+            query="origin run",
+            preferred_tools=["origin"],
+        )
+    )
+    assert plan.calls[0].tool_fingerprint == remote_tool.fingerprint
+
+    local_tool = ToolSpec(
+        name="origin",
+        endpoints=[EndpointSpec(name="run", read_only=None)],
+    )
+    router.registry.register(local_tool, replace=True)
+    router.executor.bind("origin", lambda endpoint, arguments: {"ok": True})
+
+    with pytest.raises(SchemaDriftError, match="tool contract changed"):
+        await router.execute(plan)
