@@ -181,13 +181,89 @@ class RegistryExecutor:
         policy: ExecutionPolicy | None = None,
         approval_callback: ApprovalCallback | None = None,
         hooks: ExecutionHooks | None = None,
+        unavailable_cooldown_seconds: float = 30.0,
     ) -> None:
+        if (
+            not isinstance(unavailable_cooldown_seconds, (int, float))
+            or isinstance(unavailable_cooldown_seconds, bool)
+            or not math.isfinite(float(unavailable_cooldown_seconds))
+            or unavailable_cooldown_seconds < 0
+        ):
+            raise ValueError("unavailable_cooldown_seconds must be a finite non-negative number")
         self.registry = registry
         self.policy = policy or ExecutionPolicy()
         self.approval_callback = approval_callback
         self.hooks = hooks or ExecutionHooks()
+        self.unavailable_cooldown_seconds = float(unavailable_cooldown_seconds)
         self._invokers: dict[str, EndpointInvoker] = {}
         self._binding_fingerprints: dict[str, str] = {}
+        self._unavailable_until: dict[tuple[str, str], float] = {}
+
+    @staticmethod
+    def _access_key(call: ToolCall) -> tuple[str, str]:
+        return call.tool, call.endpoint
+
+    def mark_access_unavailable(
+        self,
+        tool_key: str,
+        endpoint: str,
+        *,
+        cooldown_seconds: float | None = None,
+    ) -> None:
+        cooldown = (
+            self.unavailable_cooldown_seconds
+            if cooldown_seconds is None
+            else float(cooldown_seconds)
+        )
+        if not math.isfinite(cooldown) or cooldown < 0:
+            raise ValueError("cooldown_seconds must be a finite non-negative number")
+        # Validate the local capability identity before accepting operator health state.
+        self.registry.endpoint(tool_key, endpoint)
+        self._unavailable_until[(tool_key, endpoint)] = time.monotonic() + cooldown
+
+    def mark_access_available(self, tool_key: str, endpoint: str) -> None:
+        self.registry.endpoint(tool_key, endpoint)
+        self._unavailable_until.pop((tool_key, endpoint), None)
+
+    def is_access_available(self, tool_key: str, endpoint: str) -> bool:
+        self.registry.endpoint(tool_key, endpoint)
+        key = (tool_key, endpoint)
+        until = self._unavailable_until.get(key)
+        if until is None:
+            return True
+        if time.monotonic() >= until:
+            self._unavailable_until.pop(key, None)
+            return True
+        return False
+
+    def unavailable_access_paths(self) -> tuple[tuple[str, str], ...]:
+        now = time.monotonic()
+        expired = [
+            key
+            for key, until in self._unavailable_until.items()
+            if now >= until
+        ]
+        for key in expired:
+            self._unavailable_until.pop(key, None)
+        return tuple(sorted(self._unavailable_until))
+
+    def ordered_available_fallback_chain(
+        self,
+        call: ToolCall,
+        alternatives: list[ToolCall] | tuple[ToolCall, ...],
+    ) -> list[ToolCall]:
+        self.validate_fallback_chain(call, alternatives)
+        chain = [call, *alternatives]
+        available = [
+            candidate
+            for candidate in chain
+            if self.is_access_available(candidate.tool, candidate.endpoint)
+        ]
+        if available:
+            return available
+        raise InvocationUnavailableError(
+            "all precompiled access paths are temporarily unavailable"
+        )
 
     def bind(self, tool_key: str, invoker: EndpointInvoker) -> None:
         tool = self.registry.get(tool_key)
@@ -481,6 +557,7 @@ class RegistryExecutor:
                 )
                 await self._run_after_hooks(tool, endpoint, call, result, tracker)
                 tracker.after_attempt()
+                self.mark_access_available(call.tool, call.endpoint)
                 return result
             except (
                 SchemaValidationError,
@@ -501,6 +578,7 @@ class RegistryExecutor:
                     )
 
         if isinstance(last_error, InvocationUnavailableError):
+            self.mark_access_unavailable(call.tool, call.endpoint)
             raise last_error
         raise ExecutionError(
             f"invocation failed for {call.tool}.{call.endpoint} after {max_attempts} attempt(s)"
@@ -531,13 +609,13 @@ class RegistryExecutor:
         _tracker: ExecutionBudgetTracker | None = None,
     ) -> ToolResult:
         tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
-        chain = [call, *alternatives]
         last_unavailable: InvocationUnavailableError | None = None
 
         # Validate the entire bounded chain before invoking the primary. This prevents a malformed,
         # stale, unbound, policy-denied, or mutating fallback from being discovered only after an
-        # earlier route has already executed.
-        self.validate_fallback_chain(call, alternatives)
+        # earlier route has already executed. Known-unavailable paths are skipped for a bounded
+        # cooldown rather than incurring the same failed network wait on every request.
+        chain = self.ordered_available_fallback_chain(call, alternatives)
 
         for candidate in chain:
             try:
