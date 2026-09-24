@@ -88,10 +88,14 @@ run.start
 plan.end
 tool.start
 tool.end | tool.error
+tool.fallback  # only after an explicitly unavailable precompiled read-only route
 run.end  | run.error
 ```
 
 All events in one invocation share a `run_id` and monotonic `sequence`.
+
+Provider/access fallback uses the same event stream and never performs open-ended replanning. See
+[Provider-aware fallback](provider-fallback.md).
 
 ## Payload redaction
 
