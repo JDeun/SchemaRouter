@@ -75,6 +75,21 @@ class AccessHealthMonitor:
     def unregister(self, tool_key: str, endpoint: str) -> None:
         self._probes.pop((tool_key, endpoint), None)
 
+    def _contract_status(
+        self,
+        tool_key: str,
+        endpoint: str,
+        record: _ProbeRecord,
+    ) -> tuple[bool, str | None]:
+        try:
+            current_tool = self.executor.registry.get(tool_key)
+            current_tool.endpoint(endpoint)
+        except KeyError:
+            return False, "CapabilityRemoved"
+        if current_tool.fingerprint != record.tool_fingerprint:
+            return False, "ToolContractChanged"
+        return True, None
+
     def snapshots(self) -> tuple[HealthProbeSnapshot, ...]:
         return tuple(
             HealthProbeSnapshot(
@@ -101,19 +116,15 @@ class AccessHealthMonitor:
             status: HealthStatus = "unhealthy"
             error_type: str | None = None
 
-            try:
-                current_tool = self.executor.registry.get(tool_key)
-                current_tool.endpoint(endpoint)
-            except KeyError:
+            current, stale_reason = self._contract_status(
+                tool_key,
+                endpoint,
+                record,
+            )
+            if not current:
                 record.status = "stale"
                 record.last_checked_at = datetime.now(timezone.utc)
-                record.last_error_type = "CapabilityRemoved"
-                return
-
-            if current_tool.fingerprint != record.tool_fingerprint:
-                record.status = "stale"
-                record.last_checked_at = datetime.now(timezone.utc)
-                record.last_error_type = "ToolContractChanged"
+                record.last_error_type = stale_reason
                 return
 
             try:
@@ -123,6 +134,18 @@ class AccessHealthMonitor:
                         outcome,
                         timeout=probe_timeout_seconds,
                     )
+
+                current, stale_reason = self._contract_status(
+                    tool_key,
+                    endpoint,
+                    record,
+                )
+                if not current:
+                    record.status = "stale"
+                    record.last_checked_at = datetime.now(timezone.utc)
+                    record.last_error_type = stale_reason
+                    return
+
                 healthy = outcome is True
                 if healthy:
                     self.executor.mark_access_available(tool_key, endpoint)
@@ -137,6 +160,16 @@ class AccessHealthMonitor:
                 raise
             except Exception as exc:
                 error_type = type(exc).__name__
+                current, stale_reason = self._contract_status(
+                    tool_key,
+                    endpoint,
+                    record,
+                )
+                if not current:
+                    record.status = "stale"
+                    record.last_checked_at = datetime.now(timezone.utc)
+                    record.last_error_type = stale_reason
+                    return
                 self.executor.mark_access_unavailable(
                     tool_key,
                     endpoint,
