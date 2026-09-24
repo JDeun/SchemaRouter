@@ -41,9 +41,9 @@ def _safe_provenance_value(key: str, value: object) -> object:
         hostname = parsed.hostname
         port = parsed.port
     except ValueError:
-        return value
+        return "<redacted-invalid-url>"
     if parsed.scheme not in {"http", "https"} or not hostname:
-        return value
+        return "<redacted-invalid-url>"
 
     safe_host = f"[{hostname}]" if ":" in hostname else hostname
     safe_netloc = f"{safe_host}:{port}" if port is not None else safe_host
