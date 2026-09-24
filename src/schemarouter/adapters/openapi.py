@@ -9,7 +9,7 @@ from urllib.parse import quote, unquote, urldefrag, urljoin, urlparse
 
 import httpx
 
-from ..errors import NonRetryableInvocationError
+from ..errors import InvocationUnavailableError, NonRetryableInvocationError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 from ..openapi_compatibility import analyze_openapi_compatibility
 
@@ -1337,7 +1337,10 @@ class OpenAPIRemoteInvoker:
                             "OpenAPI request failed with non-retryable HTTP status "
                             f"{response.status_code}"
                         ) from exc
-                    raise
+                    raise InvocationUnavailableError(
+                        "OpenAPI access path is temporarily unavailable with HTTP status "
+                        f"{response.status_code}"
+                    ) from exc
 
                 content_length = response.headers.get("content-length")
                 if content_length is not None:
@@ -1368,6 +1371,10 @@ class OpenAPIRemoteInvoker:
                 content = b"".join(chunks)
                 content_type = response.headers.get("content-type", "").lower()
                 encoding = response.encoding or "utf-8"
+        except (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError) as exc:
+            raise InvocationUnavailableError(
+                "OpenAPI access path is temporarily unavailable"
+            ) from exc
         finally:
             if owns_client:
                 await client.aclose()
