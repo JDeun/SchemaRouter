@@ -5,6 +5,7 @@ import pytest
 from schemarouter import (
     EndpointSpec,
     ExecutionBudget,
+    ExecutionBudgetExceededError,
     ExecutionError,
     ExecutionPlan,
     ExecutionPolicy,
@@ -438,7 +439,7 @@ async def test_parallel_read_only_shares_execution_budget() -> None:
 
     router.executor.bind("fanout", invoker)
 
-    with pytest.raises(Exception, match="max_tool_calls=1"):
+    with pytest.raises(ExecutionBudgetExceededError, match="max_tool_calls=1"):
         await router.execute(
             plan,
             config=RunConfig(
