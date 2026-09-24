@@ -715,10 +715,33 @@ class SchemaRouter:
             ) -> None:
                 async with semaphore:
                     route = plan.fallback_route(index)
-                    chain = [
-                        primary_call,
-                        *(route.alternatives if route is not None else []),
-                    ]
+                    alternatives = route.alternatives if route is not None else []
+                    original_chain = [primary_call, *alternatives]
+                    try:
+                        chain = (
+                            self.executor.ordered_available_fallback_chain(
+                                primary_call,
+                                alternatives,
+                            )
+                            if alternatives
+                            else [primary_call]
+                        )
+                    except Exception as exc:
+                        await event_queue.put(
+                            ("preflight_error", index, primary_call, exc)
+                        )
+                        return
+
+                    if chain and chain[0] is not primary_call:
+                        await event_queue.put(
+                            (
+                                "cooldown_fallback",
+                                index,
+                                primary_call,
+                                (chain[0], original_chain, chain),
+                            )
+                        )
+
                     for candidate_index, call in enumerate(chain):
                         await event_queue.put(
                             ("start", index, call, candidate_index)
@@ -767,6 +790,63 @@ class SchemaRouter:
             try:
                 while terminal_count < len(tasks):
                     kind, index, call, payload = await event_queue.get()
+
+                    if kind == "preflight_error":
+                        terminal_count += 1
+                        assert isinstance(payload, Exception)
+                        error_data: dict[str, Any] = {
+                            "error_type": type(payload).__name__,
+                            "stage": "execution",
+                            "phase": "fallback_preflight",
+                        }
+                        if run_config.include_payloads:
+                            error_data["message"] = str(payload)
+                        yield await emit(RunEvent.create(
+                            event="run.error",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            data=error_data,
+                        ))
+                        raise payload
+
+                    if kind == "cooldown_fallback":
+                        next_call, original_chain, available_chain = payload
+                        current_tool = self.registry.get(call.tool)
+                        next_tool = self.registry.get(next_call.tool)
+                        scope = (
+                            "same_provider"
+                            if current_tool.provider is not None
+                            and current_tool.provider == next_tool.provider
+                            else "cross_provider"
+                        )
+                        skipped = [
+                            f"{candidate.tool}.{candidate.endpoint}"
+                            for candidate in original_chain
+                            if candidate not in available_chain
+                        ]
+                        yield await emit(RunEvent.create(
+                            event="tool.fallback",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            tool=next_call.tool,
+                            endpoint=next_call.endpoint,
+                            data={
+                                "from_tool": call.tool,
+                                "from_endpoint": call.endpoint,
+                                "to_tool": next_call.tool,
+                                "to_endpoint": next_call.endpoint,
+                                "scope": scope,
+                                "provider": next_tool.provider,
+                                "access_mode": next_tool.access_mode,
+                                "reason": "cooldown",
+                                "skipped_unavailable": skipped,
+                            },
+                        ))
+                        sequence += 1
+                        fallback_count += 1
+                        continue
 
                     if kind == "start":
                         candidate_index = int(payload)
@@ -931,31 +1011,71 @@ class SchemaRouter:
         for primary_index, primary_call in enumerate(plan.calls):
             route = plan.fallback_route(primary_index)
             alternatives = route.alternatives if route is not None else []
-            chain = [primary_call, *alternatives]
+            original_chain = [primary_call, *alternatives]
             result: ToolResult | None = None
 
-            if alternatives:
-                try:
-                    self.executor.validate_fallback_chain(
+            try:
+                chain = (
+                    self.executor.ordered_available_fallback_chain(
                         primary_call,
                         alternatives,
                     )
-                except Exception as exc:
-                    error_data: dict[str, Any] = {
-                        "error_type": type(exc).__name__,
-                        "stage": "execution",
-                        "phase": "fallback_preflight",
-                    }
-                    if run_config.include_payloads:
-                        error_data["message"] = str(exc)
-                    yield await emit(RunEvent.create(
-                        event="run.error",
-                        run_id=run_id,
-                        sequence=sequence,
-                        config=run_config,
-                        data=error_data,
-                    ))
-                    raise
+                    if alternatives
+                    else [primary_call]
+                )
+            except Exception as exc:
+                error_data: dict[str, Any] = {
+                    "error_type": type(exc).__name__,
+                    "stage": "execution",
+                    "phase": "fallback_preflight",
+                }
+                if run_config.include_payloads:
+                    error_data["message"] = str(exc)
+                yield await emit(RunEvent.create(
+                    event="run.error",
+                    run_id=run_id,
+                    sequence=sequence,
+                    config=run_config,
+                    data=error_data,
+                ))
+                raise
+
+            if chain and chain[0] is not primary_call:
+                next_call = chain[0]
+                next_tool = self.registry.get(next_call.tool)
+                current_tool = self.registry.get(primary_call.tool)
+                scope = (
+                    "same_provider"
+                    if current_tool.provider is not None
+                    and current_tool.provider == next_tool.provider
+                    else "cross_provider"
+                )
+                skipped = [
+                    f"{call.tool}.{call.endpoint}"
+                    for call in original_chain
+                    if call not in chain
+                ]
+                yield await emit(RunEvent.create(
+                    event="tool.fallback",
+                    run_id=run_id,
+                    sequence=sequence,
+                    config=run_config,
+                    tool=next_call.tool,
+                    endpoint=next_call.endpoint,
+                    data={
+                        "from_tool": primary_call.tool,
+                        "from_endpoint": primary_call.endpoint,
+                        "to_tool": next_call.tool,
+                        "to_endpoint": next_call.endpoint,
+                        "scope": scope,
+                        "provider": next_tool.provider,
+                        "access_mode": next_tool.access_mode,
+                        "reason": "cooldown",
+                        "skipped_unavailable": skipped,
+                    },
+                ))
+                sequence += 1
+                fallback_count += 1
 
             for candidate_index, call in enumerate(chain):
                 start_data: dict[str, Any] = {
