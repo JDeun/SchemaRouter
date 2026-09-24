@@ -39,8 +39,31 @@ async for result in router.astream(request):
     print(result.tool, result.endpoint)
 ```
 
-In v0.1, tool calls in one plan execute sequentially. Streaming exposes each `ToolResult` as soon as
-that call finishes.
+The default execution mode is sequential, preserving plan order.
+
+For an independent read-only fan-out, opt into `parallel_read_only`:
+
+```python
+from schemarouter import RunConfig
+
+config = RunConfig(
+    execution_mode="parallel_read_only",
+    max_concurrency=4,
+)
+
+results = await router.ainvoke(request, config=config)
+```
+
+Before any parallel task is launched, SchemaRouter preflights every planned call through current
+schema, binding, and execution-policy validation and requires `endpoint.read_only is True` for all
+calls. Mutating or unclassified calls fail the parallel run before invocation.
+
+`ainvoke()` returns results in plan order. `astream()` and `astream_events()` can expose
+completion order so a fast read-only call is not held behind a slower sibling. All parallel calls
+share the same per-run execution budget and concurrency cap.
+
+This is flat fan-out, not a DAG/workflow runtime. Dependencies, branching, checkpoints, and
+multi-step orchestration remain the responsibility of LangGraph or another surrounding framework.
 
 ## Typed lifecycle events
 
