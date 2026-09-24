@@ -8,7 +8,7 @@ from urllib.parse import quote, urljoin, urlparse
 import httpx
 
 from ..errors import InvocationUnavailableError, NonRetryableInvocationError, SchemaSourceError
-from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
+from ..models import EndpointSpec, FieldSpec, ParameterSpec, ServerProjectionSpec, ToolCall, ToolSpec
 from .base import AdapterContext, AdapterLoadResult
 
 _MAX_DISCOVERY_BYTES = 2 * 1024 * 1024
@@ -378,6 +378,9 @@ def _tool_from_discovery(
                     path=f"/{safe_entry_type}",
                     read_only=True,
                     destructive=False,
+                    server_projection=ServerProjectionSpec(
+                        parameter="response_fields",
+                    ),
                     execution_metadata={
                         "entry_type": entry_type,
                         "mode": "search",
@@ -408,6 +411,9 @@ def _tool_from_discovery(
                     path=f"/{safe_entry_type}/{{id}}",
                     read_only=True,
                     destructive=False,
+                    server_projection=ServerProjectionSpec(
+                        parameter="response_fields",
+                    ),
                     execution_metadata={
                         "entry_type": entry_type,
                         "mode": "get",
