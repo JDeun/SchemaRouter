@@ -434,6 +434,11 @@ def _tool_from_discovery(
         description="OPTIMADE interoperable materials database",
         endpoints=endpoints,
         source_type="optimade",
+        execution_metadata={
+            "adapter": "optimade",
+            "versioned_base_url": versioned_base_url,
+            "api_version": base_info.get("api_version"),
+        },
         metadata={
             "adapter": "optimade",
             "remote": True,
