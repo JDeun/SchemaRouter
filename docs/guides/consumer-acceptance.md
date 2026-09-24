@@ -14,7 +14,8 @@ The suite exercises the following production boundaries:
 - read-only retry behavior and elapsed-time execution budgets;
 - SQLite registry persistence;
 - redacted run-trace persistence;
-- read-only inspection/dashboard generation.
+- read-only inspection/dashboard generation;
+- installed `schemarouter inspect` and `schemarouter dashboard` CLI execution against persisted SQLite artifacts.
 
 Run it locally with:
 
@@ -35,8 +36,10 @@ minimum-dependency job, and again from clean wheel and sdist virtual environment
 
 The package job also installs the built wheel through its declared
 `langchain`, `langgraph`, and `llamaindex` extras and executes the corresponding runnable
-examples. This catches packaging-metadata or optional-dependency regressions that editable installs
-cannot detect.
+examples. It then exercises the installed inspection CLI against the SQLite registry/trace artifacts
+created by the end-to-end example, validates the emitted JSON, and exports a dashboard through the
+installed console script. This catches packaging-metadata, optional-dependency, and CLI-entry-point
+regressions that editable installs cannot detect.
 
 Public OpenAPI and OPTIMADE compatibility smokes remain separate because they depend on external
 services. Those scheduled checks produce retained machine-readable artifacts but are intentionally
