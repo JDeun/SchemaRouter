@@ -13,7 +13,7 @@ from schemarouter import DefaultMCPClientFactory
 from schemarouter.integrations import JevDecisionBackend, OpenTelemetryRunExporter
 
 
-def main() -> None:
+def run_smoke() -> dict[str, object]:
     tracer = TracerProvider().get_tracer("schemarouter-installed-extras-smoke")
     exporter = OpenTelemetryRunExporter(tracer)
     mcp_factory = DefaultMCPClientFactory()
@@ -27,7 +27,7 @@ def main() -> None:
     assert mcp_factory is not None
     assert jev.client is not None
 
-    report = {
+    return {
         "status": "success",
         "dependencies": {
             "mcp": version("mcp"),
@@ -40,7 +40,10 @@ def main() -> None:
             "opentelemetry",
         ],
     }
-    print(json.dumps(report, sort_keys=True))
+
+
+def main() -> None:
+    print(json.dumps(run_smoke(), sort_keys=True))
 
 
 if __name__ == "__main__":
