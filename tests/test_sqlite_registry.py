@@ -215,3 +215,19 @@ def test_schema_router_can_plan_and_execute_with_reopened_sqlite_registry(tmp_pa
 
         assert result[0].tool == "weather"
         assert result[0].data == {"value": "result:seoul"}
+
+
+
+def test_sqlite_registry_revalidates_nested_mutation_before_transaction(tmp_path) -> None:
+    path = tmp_path / "registry.sqlite3"
+    mutated = tool("mutated")
+    mutated.endpoints[0].parameters.append(
+        ParameterSpec(name="id", required=False)
+    )
+
+    with SQLiteRegistry(path) as registry:
+        with pytest.raises(RegistrationError, match="not a valid ToolSpec"):
+            registry.register(mutated)
+
+        assert registry.version == 0
+        assert registry.keys() == ()
