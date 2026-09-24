@@ -1019,8 +1019,11 @@ class SchemaPlanner:
         async_decision: bool,
     ) -> ExecutionPlan:
         del async_decision
-        candidates = self._candidates(request, intent)
-        candidates, decision_warnings = self._select_candidates_sync(request, candidates)
+        all_candidates = self._candidates(request, intent)
+        candidates, decision_warnings = self._select_candidates_sync(
+            request,
+            all_candidates,
+        )
 
         warnings: list[str] = list(decision_warnings)
         if not candidates:
@@ -1053,7 +1056,7 @@ class SchemaPlanner:
                 alternatives: list[ToolCall] = []
                 for candidate in self._ordered_fallback_candidates(
                     primary_candidate,
-                    candidates,
+                    all_candidates,
                     scope=request.fallback_scope,
                 ):
                     if len(alternatives) >= request.max_fallbacks:
@@ -1098,8 +1101,11 @@ class SchemaPlanner:
         request: PlanRequest,
         intent: QueryIntent,
     ) -> ExecutionPlan:
-        candidates = self._candidates(request, intent)
-        candidates, decision_warnings = await self._select_candidates_async(request, candidates)
+        all_candidates = self._candidates(request, intent)
+        candidates, decision_warnings = await self._select_candidates_async(
+            request,
+            all_candidates,
+        )
         warnings = list(decision_warnings)
         if not candidates:
             return ExecutionPlan(
@@ -1131,7 +1137,7 @@ class SchemaPlanner:
                 alternatives: list[ToolCall] = []
                 for candidate in self._ordered_fallback_candidates(
                     primary_candidate,
-                    candidates,
+                    all_candidates,
                     scope=request.fallback_scope,
                 ):
                     if len(alternatives) >= request.max_fallbacks:
