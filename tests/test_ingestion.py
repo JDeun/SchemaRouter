@@ -6,6 +6,7 @@ import pytest
 from schemarouter import (
     ExecutionError,
     PlanRequest,
+    SchemaDriftError,
     SchemaRouter,
     UnsupportedSchemaSourceError,
 )
@@ -101,6 +102,19 @@ async def test_cross_origin_openapi_is_ingested_but_not_auto_bound() -> None:
     rebound = router.registry.get("users_api")
     assert rebound.metadata["execution_bound"] is True
     assert rebound.metadata["approved_base_url"] == "https://service.example.com/api/"
+    assert rebound.execution_metadata["approved_base_url"] == "https://service.example.com/api/"
+    assert rebound.remote is True
+
+    with pytest.raises(SchemaDriftError, match="tool contract changed"):
+        await router.execute(plan)
+
+    replanned = router.plan(
+        PlanRequest(
+            query="get user name",
+            arguments={"user_id": "42"},
+        )
+    )
+    assert replanned.calls[0].tool_fingerprint == rebound.fingerprint
 
 
 @pytest.mark.asyncio
@@ -122,6 +136,9 @@ async def test_explicit_base_url_can_approve_cross_origin_openapi() -> None:
     tool = router.registry.get("users_api")
     assert tool.metadata["execution_bound"] is True
     assert tool.metadata["approved_base_url"] == "https://service.example.com/api/"
+    assert tool.execution_metadata["execution_bound"] is True
+    assert tool.execution_metadata["approved_base_url"] == "https://service.example.com/api/"
+    assert tool.remote is True
 
 
 @pytest.mark.asyncio
