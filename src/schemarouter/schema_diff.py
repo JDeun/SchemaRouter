@@ -512,6 +512,26 @@ def compare_tool_specs(old: ToolSpec, new: ToolSpec) -> SchemaDiffReport:
             old=old.description,
             new=new.description,
         )
+    if old.provider != new.provider:
+        _change(
+            changes,
+            path="provider",
+            kind="information_provider_changed",
+            severity="security",
+            old=old.provider,
+            new=new.provider,
+            message="Logical information provider changed and requires provenance review.",
+        )
+    if old.access_mode != new.access_mode:
+        _change(
+            changes,
+            path="access_mode",
+            kind="access_mode_changed",
+            severity="security",
+            old=old.access_mode,
+            new=new.access_mode,
+            message="Provider access mode changed and requires execution review.",
+        )
     if old.remote != new.remote:
         _change(
             changes,
