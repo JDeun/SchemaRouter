@@ -261,7 +261,7 @@ backend selected the candidate.
 These are locally observable routing facts. SchemaRouter does not expose or attempt to reconstruct
 private model reasoning.
 
-### 28. Descriptive metadata must not become hidden execution authority
+### 27. Descriptive metadata must not become hidden execution authority
 
 Adversarial review found that adapter/runtime behavior can accidentally depend on values stored in
 ordinary `metadata`, while fingerprints intentionally exclude that bag. If execution or policy
@@ -282,7 +282,7 @@ Planner-generated `ToolCall` values also pin the current tool fingerprint, so ch
 origin or local/remote classification invalidates an already-compiled plan even after a trusted
 rebind.
 
-### 27. Parallel execution must not become orchestration
+### 28. Parallel execution must not become orchestration
 
 `parallel_read_only` is limited to flat plans whose calls all preflight successfully and have
 `read_only is True`. Schema, binding, and policy validation happen before tasks are launched, and
