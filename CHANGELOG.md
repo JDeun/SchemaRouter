@@ -26,6 +26,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - independently configurable candidate-abstention handling with compatibility-preserving
   `inherit`, plus explicit `deterministic`, `no_route`, and `error` modes, without changing
   provider-error fallback semantics;
+- dependency-free public-surface consumer acceptance scenarios covering policy/approval gates,
+  schema and binding drift, runtime output validation, retry/budget controls, persistence, traces,
+  and dashboard generation;
 
 ### Changed
 
@@ -34,6 +37,9 @@ The project is pre-1.0 and follows the compatibility rules in
   dependency vulnerability audit, so either regression blocks merge even when the repository
   ruleset predates newer job names;
 - package smoke now verifies benchmark JSON and HTML artifact generation;
+- package validation now executes consumer acceptance scenarios from clean wheel and sdist
+  environments and installs the built wheel through its LangChain/LangGraph/LlamaIndex extras
+  before running each framework example;
 - research benchmarking now compares Laya's lexical-only path with explicit empty-candidate recall
   on the same full corpus and hardware;
 - post-release development has resumed as `0.7.0.dev0`; published `0.6.0` artifacts remain immutable.

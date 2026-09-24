@@ -125,6 +125,7 @@ nav:
       - Candidate indexing: guides/candidate-indexing.md
       - Model-assisted analysis: guides/model-analyzer.md
       - Decision routing benchmark: guides/decision-benchmark.md
+      - Consumer acceptance validation: guides/consumer-acceptance.md
   - Integrations:
       - LangChain: integrations/langchain.md
       - LangGraph: integrations/langgraph.md
