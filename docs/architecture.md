@@ -293,6 +293,29 @@ all tasks share the same run budget and concurrency bound.
 Dependencies, branching, checkpointing, write coordination, compensation, and DAG semantics remain
 outside the core and belong to surrounding orchestration frameworks.
 
+### 29. Provider redundancy must not become autonomous replanning
+
+One logical provider can expose multiple transport/access contracts, and a request may also have a
+semantically compatible alternative provider. Availability fallback is useful, but open-ended
+runtime search would reintroduce agent/workflow semantics and can silently change provenance.
+
+SchemaRouter therefore treats provider redundancy as a bounded execution contract:
+
+- `ToolSpec.provider` identifies the logical information provider;
+- `ToolSpec.access_mode` identifies one access path;
+- planning may precompile `FallbackRoute` alternatives only when explicitly requested;
+- same-provider paths are ordered before cross-provider candidates;
+- every alternative has its own schema/tool fingerprint, arguments, field projection and evidence;
+- automatic fallback is limited to explicitly read-only calls;
+- runtime fallback occurs only after `InvocationUnavailableError`, after normal same-route retry;
+- validation, policy, approval, stale-state and deterministic 4xx/application failures never cause
+  fallback;
+- the complete fallback chain is preflighted before the primary invocation.
+
+Field aliases are the local semantic bridge when access paths expose different names. If semantic
+compatibility cannot be proven from local contracts, SchemaRouter omits the fallback instead of
+asking a model to guess.
+
 ## Core invariants
 
 1. A plan cannot call an unregistered tool or endpoint.
@@ -343,6 +366,10 @@ outside the core and belong to surrounding orchestration frameworks.
     semantics; execution-affecting values live in fingerprinted contract fields.
 35. Planner-generated calls pin both endpoint and tool fingerprints, and remote/runtime-sensitive
     legacy calls without a tool fingerprint fail closed.
+36. Automatic provider/access fallback is precompiled, read-only, budgeted, and triggered only
+    by an explicit invocation-unavailable marker; it never bypasses validation/policy/approval.
+37. Same-provider access paths precede cross-provider fallbacks, and every fallback retains its own
+    schema/tool fingerprint and evidence contract.
 36. Inspection/dashboard provenance never exposes URL userinfo, query strings, or fragments.
     Runtime target identity remains fingerprinted; schema/document provenance is sanitized before
     model-visible or persisted descriptive state retains it.
