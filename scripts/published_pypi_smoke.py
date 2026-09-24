@@ -5,9 +5,8 @@ import json
 from importlib.metadata import version
 from pathlib import Path
 
-from pydantic import BaseModel
-
 from compatibility_report import new_report, write_report
+from pydantic import BaseModel
 from schemarouter import PlanRequest, SchemaRouter, __version__, schema_tool
 
 
