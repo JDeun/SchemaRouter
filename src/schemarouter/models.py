@@ -20,13 +20,16 @@ _LEGACY_ENDPOINT_EXECUTION_METADATA_KEYS = {
 }
 _LEGACY_TOOL_EXECUTION_METADATA_KEYS = {
     "adapter",
+    "api_version",
     "approved_base_url",
     "authenticated_transport",
     "execution_bound",
     "executable",
     "protocol_version",
     "requires_explicit_base_url",
+    "resolved_schema_url",
     "source_url",
+    "suggested_base_url",
     "versioned_base_url",
 }
 
