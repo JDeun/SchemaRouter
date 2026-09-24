@@ -197,7 +197,13 @@ class ToolSpec(StrictModel):
 
     @property
     def fingerprint(self) -> str:
-        payload = self.model_dump(mode="json", exclude={"metadata"})
+        payload = self.model_dump(
+            mode="json",
+            exclude={
+                "metadata": True,
+                "endpoints": {"__all__": {"metadata": True}},
+            },
+        )
         canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
