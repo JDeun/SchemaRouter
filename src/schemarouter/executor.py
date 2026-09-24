@@ -241,6 +241,21 @@ class RegistryExecutor:
         self._current_access_key(tool_key, endpoint)
         self._purge_access_cooldowns(tool_key, endpoint)
 
+    def is_access_available_for_contract(
+        self,
+        tool_key: str,
+        endpoint: str,
+        tool_fingerprint: str,
+    ) -> bool:
+        key = (tool_key, endpoint, tool_fingerprint)
+        until = self._unavailable_until.get(key)
+        if until is None:
+            return True
+        if time.monotonic() >= until:
+            self._unavailable_until.pop(key, None)
+            return True
+        return False
+
     def is_access_available(self, tool_key: str, endpoint: str) -> bool:
         key = self._current_access_key(tool_key, endpoint)
         until = self._unavailable_until.get(key)
