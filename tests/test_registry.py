@@ -246,3 +246,33 @@ def test_registry_revalidates_nested_parameter_mutation_in_batch() -> None:
 
     assert registry.keys() == ()
     assert registry.version == 0
+
+
+
+def test_execution_metadata_requires_canonical_json_safe_values() -> None:
+    with pytest.raises(ValueError, match="JSON-safe"):
+        ToolSpec(
+            name="invalid_execution_metadata",
+            endpoints=[EndpointSpec(name="run")],
+            execution_metadata={"opaque": object()},
+        )
+
+    with pytest.raises(ValueError, match="finite JSON numbers"):
+        EndpointSpec(
+            name="run",
+            execution_metadata={"weight": float("nan")},
+        )
+
+
+def test_descriptive_metadata_can_remain_non_json_for_in_memory_use() -> None:
+    opaque = object()
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="descriptive",
+            endpoints=[EndpointSpec(name="run")],
+            metadata={"opaque": opaque},
+        )
+    )
+
+    assert registry.get("descriptive").metadata["opaque"] is not None
