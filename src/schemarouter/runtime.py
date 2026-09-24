@@ -780,8 +780,13 @@ class SchemaRouter:
                         )
 
                     for candidate_index, call in enumerate(chain):
+                        original_candidate_index = next(
+                            position
+                            for position, candidate in enumerate(original_chain)
+                            if candidate is call
+                        )
                         await event_queue.put(
-                            ("start", index, call, candidate_index)
+                            ("start", index, call, original_candidate_index)
                         )
                         try:
                             result = await self.executor.execute_call(
@@ -802,7 +807,7 @@ class SchemaRouter:
                                     "unavailable",
                                     index,
                                     call,
-                                    (exc, next_call, candidate_index),
+                                    (exc, next_call, original_candidate_index),
                                 )
                             )
                             if has_next:
@@ -812,7 +817,7 @@ class SchemaRouter:
                             await event_queue.put(("error", index, call, exc))
                             return
                         await event_queue.put(
-                            ("end", index, call, (result, candidate_index))
+                            ("end", index, call, (result, original_candidate_index))
                         )
                         return
 
@@ -1008,7 +1013,7 @@ class SchemaRouter:
                         raise RuntimeError("invalid parallel execution result")
                     end_data: dict[str, Any] = {
                         "projected_fields": list(result.projected_fields),
-                        "fallback_used": candidate_index > 0,
+                        "fallback_used": original_candidate_index > 0,
                     }
                     if run_config.include_payloads:
                         end_data["result"] = result.model_dump(mode="json")
@@ -1115,10 +1120,15 @@ class SchemaRouter:
                 fallback_count += 1
 
             for candidate_index, call in enumerate(chain):
+                original_candidate_index = next(
+                    index
+                    for index, candidate in enumerate(original_chain)
+                    if candidate is call
+                )
                 start_data: dict[str, Any] = {
                     "argument_names": sorted(call.arguments),
                     "fields": list(call.fields),
-                    "fallback_candidate_index": candidate_index,
+                    "fallback_candidate_index": original_candidate_index,
                 }
                 if run_config.include_payloads:
                     start_data["arguments"] = dict(call.arguments)
