@@ -20,9 +20,6 @@ _TOOL_RUNTIME_KEYS_BY_ADAPTER = {
         "approved_base_url",
         "execution_bound",
         "requires_explicit_base_url",
-        "resolved_schema_url",
-        "source_url",
-        "suggested_base_url",
     },
     "mcp": {
         "adapter",
@@ -39,7 +36,6 @@ _TOOL_RUNTIME_KEYS_BY_ADAPTER = {
         "adapter",
         "approved_base_url",
         "executable",
-        "source_url",
     },
     "python": {"adapter"},
 }
