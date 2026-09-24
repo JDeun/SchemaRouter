@@ -319,3 +319,57 @@ async def test_documentation_response_size_is_bounded() -> None:
                 "https://docs.example.com/api",
                 model=model,
             )
+
+
+
+@pytest.mark.asyncio
+async def test_documentation_query_secret_is_not_model_visible_or_persisted() -> None:
+    html = """
+    <html><body>
+      <h1>Users API</h1>
+      <p>GET /users lists users.</p>
+    </body></html>
+    """
+    captured = {}
+
+    async def model(payload: dict) -> dict:
+        captured.update(payload)
+        return {
+            "tool_name": "Users",
+            "description": "",
+            "endpoints": [
+                {
+                    "name": "list_users",
+                    "method": "GET",
+                    "path": "/users",
+                    "parameters": [],
+                    "fields": [],
+                    "evidence_quotes": ["GET /users lists users."],
+                    "confidence": 1.0,
+                }
+            ],
+            "uncertainties": [],
+        }
+
+    requested: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requested.append(str(request.url))
+        return httpx.Response(
+            200,
+            text=html,
+            headers={"content-type": "text/html"},
+        )
+
+    source = "https://docs.example.com/users?token=top-secret#section"
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        proposal = await router.inspect_url(source, model=model)
+
+    assert requested == ["https://docs.example.com/users?token=top-secret"]
+    assert captured["source_url"] == "https://docs.example.com/users"
+    assert "top-secret" not in repr(captured)
+    assert proposal.source_url == "https://docs.example.com/users"
+    assert proposal.tool is not None
+    assert proposal.tool.metadata["source_url"] == "https://docs.example.com/users"
+    assert "top-secret" not in proposal.model_dump_json()
