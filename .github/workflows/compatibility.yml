@@ -25,7 +25,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
-      - run: pip install -e .
+      - run: pip install .
+      - run: python -m pip check
       - run: python scripts/live_openapi_smoke.py --json-out artifacts/openapi-compatibility.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
@@ -46,7 +47,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
-      - run: pip install -e .
+      - run: pip install .
+      - run: python -m pip check
       - run: python scripts/live_optimade_smoke.py --json-out artifacts/optimade-compatibility.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
