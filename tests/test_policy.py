@@ -7,6 +7,7 @@ from schemarouter import (
     InMemoryRegistry,
     PolicyRule,
     PolicyViolationError,
+    PlanValidationError,
     RegistryExecutor,
     ToolCall,
     ToolSpec,
@@ -23,6 +24,7 @@ def plan_for(registry: InMemoryRegistry, tool_key: str, endpoint_name: str) -> E
                 tool=tool_key,
                 endpoint=endpoint_name,
                 schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=registry.get(tool_key).fingerprint,
             )
         ],
     )
@@ -301,3 +303,70 @@ def test_policy_rule_rejects_contradictory_unclassified_and_read_only_predicates
             read_only=True,
             unclassified=True,
         )
+
+
+
+def test_legacy_adapter_metadata_is_migrated_to_fingerprinted_remote_contract() -> None:
+    remote = ToolSpec(
+        name="legacy",
+        endpoints=[EndpointSpec(name="run")],
+        metadata={"adapter": "mcp"},
+    )
+    local = ToolSpec(
+        name="legacy",
+        endpoints=[EndpointSpec(name="run")],
+    )
+
+    assert remote.remote is True
+    assert local.remote is False
+    assert remote.fingerprint != local.fingerprint
+
+
+def test_legacy_runtime_metadata_is_migrated_into_endpoint_fingerprint() -> None:
+    legacy = EndpointSpec(
+        name="run",
+        metadata={
+            "request_body_mode": "root_schema",
+            "request_body_required": True,
+        },
+    )
+    changed = EndpointSpec(
+        name="run",
+        metadata={
+            "request_body_mode": "flattened_object",
+            "request_body_required": True,
+        },
+    )
+
+    assert legacy.execution_metadata["request_body_mode"] == "root_schema"
+    assert changed.execution_metadata["request_body_mode"] == "flattened_object"
+    assert legacy.fingerprint != changed.fingerprint
+
+
+@pytest.mark.asyncio
+async def test_remote_plan_without_tool_fingerprint_fails_closed() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="remote",
+            endpoints=[EndpointSpec(name="run", read_only=True)],
+            metadata={"adapter": "mcp"},
+        )
+    )
+    executor = RegistryExecutor(registry)
+    executor.bind("remote", lambda endpoint, arguments: {"ok": True})
+    endpoint = registry.endpoint("remote", "run")
+    legacy_plan = ExecutionPlan(
+        query="legacy",
+        registry_version=registry.version,
+        calls=[
+            ToolCall(
+                tool="remote",
+                endpoint="run",
+                schema_fingerprint=endpoint.fingerprint,
+            )
+        ],
+    )
+
+    with pytest.raises(PlanValidationError, match="tool_fingerprint is required"):
+        await executor.execute(legacy_plan)
