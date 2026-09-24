@@ -60,6 +60,13 @@ class KeywordAnalyzer:
 
 
 @dataclass(frozen=True)
+class _FieldSemantic:
+    names: frozenset[str]
+    semantic_id: str | None
+    unit: str | None
+
+
+@dataclass(frozen=True)
 class _Candidate:
     tool: ToolSpec
     endpoint: EndpointSpec
@@ -114,6 +121,7 @@ class _CandidateIndex:
                 for field in endpoint.output_fields:
                     names = [
                         field.name,
+                        field.semantic_id or "",
                         *field.aliases,
                         ".".join(field.projection_path),
                     ]
@@ -778,24 +786,39 @@ class SchemaPlanner:
         raise PlanningError(f"{prefix}: unsupported evidence decision {option_id!r}")
 
     @staticmethod
-    def _field_semantic_groups(
+    def _field_semantics(
         endpoint: EndpointSpec,
         field_names: list[str] | tuple[str, ...],
-    ) -> tuple[set[str], ...]:
+    ) -> tuple[_FieldSemantic, ...]:
         by_name = {field.name: field for field in endpoint.output_fields}
-        groups: list[set[str]] = []
+        semantics: list[_FieldSemantic] = []
         for name in field_names:
             field = by_name.get(name)
             if field is None or field.identifier:
                 continue
             values = {
                 _normalize(value)
-                for value in [field.name, *field.aliases]
+                for value in [
+                    field.name,
+                    field.semantic_id or "",
+                    *field.aliases,
+                ]
                 if value and _normalize(value)
             }
-            if values:
-                groups.append(values)
-        return tuple(groups)
+            if not values:
+                continue
+            semantics.append(
+                _FieldSemantic(
+                    names=frozenset(values),
+                    semantic_id=(
+                        _normalize(field.semantic_id)
+                        if field.semantic_id
+                        else None
+                    ),
+                    unit=_normalize(field.unit) if field.unit else None,
+                )
+            )
+        return tuple(semantics)
 
     @classmethod
     def _fallback_semantics_compatible(
@@ -805,7 +828,7 @@ class SchemaPlanner:
         alternative_candidate: _Candidate,
         alternative_call: ToolCall,
     ) -> bool:
-        required = cls._field_semantic_groups(
+        required = cls._field_semantics(
             primary_candidate.endpoint,
             tuple(
                 name
@@ -816,7 +839,7 @@ class SchemaPlanner:
         if not required:
             return alternative_candidate.score > 0
 
-        available = cls._field_semantic_groups(
+        available = cls._field_semantics(
             alternative_candidate.endpoint,
             alternative_call.fields,
         )
@@ -824,14 +847,27 @@ class SchemaPlanner:
             return False
 
         for requirement in required:
-            matched = any(
-                any(
-                    left == right or left in right or right in left
-                    for left in requirement
-                    for right in candidate_group
-                )
-                for candidate_group in available
-            )
+            matched = False
+            for candidate_field in available:
+                if requirement.semantic_id is not None:
+                    names_match = (
+                        candidate_field.semantic_id == requirement.semantic_id
+                    )
+                else:
+                    names_match = any(
+                        left == right or left in right or right in left
+                        for left in requirement.names
+                        for right in candidate_field.names
+                    )
+                if not names_match:
+                    continue
+
+                if requirement.unit is not None:
+                    if candidate_field.unit != requirement.unit:
+                        continue
+                matched = True
+                break
+
             if not matched:
                 return False
         return True
@@ -1275,6 +1311,7 @@ class SchemaPlanner:
         for field in endpoint.output_fields:
             names = [
                 field.name,
+                field.semantic_id or "",
                 *field.aliases,
                 ".".join(field.projection_path),
             ]
