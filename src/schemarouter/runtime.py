@@ -677,26 +677,55 @@ class SchemaRouter:
             budget_tracker = ExecutionBudgetTracker(run_config.budget)
             semaphore = asyncio.Semaphore(run_config.max_parallel_calls)
             event_queue: asyncio.Queue[
-                tuple[str, int, ToolResult | Exception | None]
+                tuple[str, int, Any, Any]
             ] = asyncio.Queue()
 
             async def run_parallel_call(
                 index: int,
-                call: Any,
+                primary_call: Any,
             ) -> None:
                 async with semaphore:
-                    await event_queue.put(("start", index, None))
-                    try:
-                        result = await self.executor.execute_call(
-                            call,
-                            retry=run_config.retry,
-                            budget=run_config.budget,
-                            _tracker=budget_tracker,
+                    route = plan.fallback_route(index)
+                    chain = [
+                        primary_call,
+                        *(route.alternatives if route is not None else []),
+                    ]
+                    for candidate_index, call in enumerate(chain):
+                        await event_queue.put(
+                            ("start", index, call, candidate_index)
                         )
-                    except Exception as exc:
-                        await event_queue.put(("error", index, exc))
+                        try:
+                            result = await self.executor.execute_call(
+                                call,
+                                retry=run_config.retry,
+                                budget=run_config.budget,
+                                _tracker=budget_tracker,
+                            )
+                        except InvocationUnavailableError as exc:
+                            has_next = candidate_index + 1 < len(chain)
+                            next_call = (
+                                chain[candidate_index + 1]
+                                if has_next
+                                else None
+                            )
+                            await event_queue.put(
+                                (
+                                    "unavailable",
+                                    index,
+                                    call,
+                                    (exc, next_call, candidate_index),
+                                )
+                            )
+                            if has_next:
+                                continue
+                            return
+                        except Exception as exc:
+                            await event_queue.put(("error", index, call, exc))
+                            return
+                        await event_queue.put(
+                            ("end", index, call, (result, candidate_index))
+                        )
                         return
-                    await event_queue.put(("end", index, result))
 
             tasks = [
                 asyncio.create_task(run_parallel_call(index, call))
@@ -704,16 +733,18 @@ class SchemaRouter:
             ]
 
             result_count = 0
+            fallback_count = 0
             terminal_count = 0
             try:
                 while terminal_count < len(tasks):
-                    kind, index, payload = await event_queue.get()
-                    call = plan.calls[index]
+                    kind, index, call, payload = await event_queue.get()
 
                     if kind == "start":
+                        candidate_index = int(payload)
                         start_data: dict[str, Any] = {
                             "argument_names": sorted(call.arguments),
                             "fields": list(call.fields),
+                            "fallback_candidate_index": candidate_index,
                         }
                         if run_config.include_payloads:
                             start_data["arguments"] = dict(call.arguments)
@@ -729,8 +760,73 @@ class SchemaRouter:
                         sequence += 1
                         continue
 
-                    terminal_count += 1
+                    if kind == "unavailable":
+                        exc, next_call, candidate_index = payload
+                        assert isinstance(exc, InvocationUnavailableError)
+                        has_next = next_call is not None
+                        error_data: dict[str, Any] = {
+                            "error_type": type(exc).__name__,
+                            "fallback_eligible": has_next,
+                        }
+                        if run_config.include_payloads:
+                            error_data["message"] = str(exc)
+                        yield await emit(RunEvent.create(
+                            event="tool.error",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            tool=call.tool,
+                            endpoint=call.endpoint,
+                            data=error_data,
+                        ))
+                        sequence += 1
+
+                        if not has_next:
+                            terminal_count += 1
+                            yield await emit(RunEvent.create(
+                                event="run.error",
+                                run_id=run_id,
+                                sequence=sequence,
+                                config=run_config,
+                                data={
+                                    "error_type": type(exc).__name__,
+                                    "stage": "execution",
+                                },
+                            ))
+                            raise exc
+
+                        current_tool = self.registry.get(call.tool)
+                        next_tool = self.registry.get(next_call.tool)
+                        scope = (
+                            "same_provider"
+                            if current_tool.provider is not None
+                            and current_tool.provider == next_tool.provider
+                            else "cross_provider"
+                        )
+                        yield await emit(RunEvent.create(
+                            event="tool.fallback",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            tool=next_call.tool,
+                            endpoint=next_call.endpoint,
+                            data={
+                                "from_tool": call.tool,
+                                "from_endpoint": call.endpoint,
+                                "to_tool": next_call.tool,
+                                "to_endpoint": next_call.endpoint,
+                                "scope": scope,
+                                "provider": next_tool.provider,
+                                "access_mode": next_tool.access_mode,
+                                "fallback_candidate_index": candidate_index + 1,
+                            },
+                        ))
+                        sequence += 1
+                        fallback_count += 1
+                        continue
+
                     if kind == "error":
+                        terminal_count += 1
                         assert isinstance(payload, Exception)
                         error_data = {"error_type": type(payload).__name__}
                         if run_config.include_payloads:
@@ -757,21 +853,26 @@ class SchemaRouter:
                         ))
                         raise payload
 
-                    if kind != "end" or not isinstance(payload, ToolResult):
+                    if kind != "end":
                         raise RuntimeError("invalid parallel execution event")
 
+                    terminal_count += 1
+                    result, candidate_index = payload
+                    if not isinstance(result, ToolResult):
+                        raise RuntimeError("invalid parallel execution result")
                     end_data: dict[str, Any] = {
-                        "projected_fields": list(payload.projected_fields),
+                        "projected_fields": list(result.projected_fields),
+                        "fallback_used": candidate_index > 0,
                     }
                     if run_config.include_payloads:
-                        end_data["result"] = payload.model_dump(mode="json")
+                        end_data["result"] = result.model_dump(mode="json")
                     yield await emit(RunEvent.create(
                         event="tool.end",
                         run_id=run_id,
                         sequence=sequence,
                         config=run_config,
-                        tool=payload.tool,
-                        endpoint=payload.endpoint,
+                        tool=result.tool,
+                        endpoint=result.endpoint,
                         data=end_data,
                     ))
                     sequence += 1
@@ -788,7 +889,10 @@ class SchemaRouter:
                 run_id=run_id,
                 sequence=sequence,
                 config=run_config,
-                data={"result_count": result_count},
+                data={
+                    "result_count": result_count,
+                    "fallback_count": fallback_count,
+                },
             ))
             return
 
