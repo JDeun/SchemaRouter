@@ -29,6 +29,48 @@ router = SchemaRouter(
 
 Only trusted application code should construct this policy.
 
+## Operation-scoped rules
+
+Use `PolicyRule` when a category-wide switch would grant more authority than the application needs.
+Rules are evaluated in declaration order and the first match wins.
+
+```python
+from schemarouter import ExecutionPolicy, PolicyRule, SchemaRouter
+
+router = SchemaRouter(
+    policy=ExecutionPolicy(
+        rules=(
+            PolicyRule(
+                name="allow-job-create",
+                operation="jobs.create",
+                effect="allow",
+            ),
+            PolicyRule(
+                name="protect-delete",
+                operation="jobs.delete*",
+                effect="deny",
+            ),
+            PolicyRule(
+                name="review-refunds",
+                operation="payments.refund",
+                effect="require_approval",
+            ),
+        ),
+    ),
+    approval_callback=approve,
+)
+```
+
+The operation string is matched against `tool.endpoint` with shell-style wildcards. Optional
+`remote`, `read_only`, and `destructive` predicates can narrow a rule further.
+
+A scoped `allow` rule is trusted local authority for that operation only. A scoped `deny` rule can
+narrow a globally enabled category. `require_approval` grants no model authority: the call still
+passes schema, binding, and policy validation and then requires the trusted approval callback.
+
+If no rule matches, the existing `allow_mutations`, `allow_destructive`, and
+`allow_unclassified_remote` behavior is unchanged.
+
 ## Per-call approval
 
 Policy permission and human/application approval are separate gates.
