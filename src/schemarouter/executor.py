@@ -199,11 +199,16 @@ class RegistryExecutor:
         self.unavailable_cooldown_seconds = float(unavailable_cooldown_seconds)
         self._invokers: dict[str, EndpointInvoker] = {}
         self._binding_fingerprints: dict[str, str] = {}
-        self._unavailable_until: dict[tuple[str, str], float] = {}
+        self._unavailable_until: dict[tuple[str, str, str], float] = {}
 
-    @staticmethod
-    def _access_key(call: ToolCall) -> tuple[str, str]:
-        return call.tool, call.endpoint
+    def _current_access_key(
+        self,
+        tool_key: str,
+        endpoint: str,
+    ) -> tuple[str, str, str]:
+        tool = self.registry.get(tool_key)
+        tool.endpoint(endpoint)
+        return tool_key, endpoint, tool.fingerprint
 
     def mark_access_unavailable(
         self,
@@ -219,17 +224,15 @@ class RegistryExecutor:
         )
         if not math.isfinite(cooldown) or cooldown < 0:
             raise ValueError("cooldown_seconds must be a finite non-negative number")
-        # Validate the local capability identity before accepting operator health state.
-        self.registry.endpoint(tool_key, endpoint)
-        self._unavailable_until[(tool_key, endpoint)] = time.monotonic() + cooldown
+        key = self._current_access_key(tool_key, endpoint)
+        self._unavailable_until[key] = time.monotonic() + cooldown
 
     def mark_access_available(self, tool_key: str, endpoint: str) -> None:
-        self.registry.endpoint(tool_key, endpoint)
-        self._unavailable_until.pop((tool_key, endpoint), None)
+        key = self._current_access_key(tool_key, endpoint)
+        self._unavailable_until.pop(key, None)
 
     def is_access_available(self, tool_key: str, endpoint: str) -> bool:
-        self.registry.endpoint(tool_key, endpoint)
-        key = (tool_key, endpoint)
+        key = self._current_access_key(tool_key, endpoint)
         until = self._unavailable_until.get(key)
         if until is None:
             return True
@@ -240,14 +243,28 @@ class RegistryExecutor:
 
     def unavailable_access_paths(self) -> tuple[tuple[str, str], ...]:
         now = time.monotonic()
-        expired = [
-            key
-            for key, until in self._unavailable_until.items()
-            if now >= until
-        ]
-        for key in expired:
+        active: list[tuple[str, str]] = []
+        stale_keys: list[tuple[str, str, str]] = []
+
+        for key, until in self._unavailable_until.items():
+            tool_key, endpoint, fingerprint = key
+            if now >= until:
+                stale_keys.append(key)
+                continue
+            try:
+                current = self.registry.get(tool_key)
+                current.endpoint(endpoint)
+            except KeyError:
+                stale_keys.append(key)
+                continue
+            if current.fingerprint != fingerprint:
+                stale_keys.append(key)
+                continue
+            active.append((tool_key, endpoint))
+
+        for key in stale_keys:
             self._unavailable_until.pop(key, None)
-        return tuple(sorted(self._unavailable_until))
+        return tuple(sorted(active))
 
     def ordered_available_fallback_chain(
         self,
