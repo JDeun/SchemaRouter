@@ -18,6 +18,25 @@ _LEGACY_ENDPOINT_EXECUTION_METADATA_KEYS = {
     "request_body_mode",
     "request_body_required",
 }
+def _validate_execution_metadata(value: dict[str, Any]) -> None:
+    try:
+        json.dumps(
+            value,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+            allow_nan=False,
+        )
+    except ValueError as exc:
+        raise ValueError(
+            "execution_metadata must contain only finite JSON numbers"
+        ) from exc
+    except TypeError as exc:
+        raise ValueError(
+            "execution_metadata must contain only JSON-safe values"
+        ) from exc
+
+
 _LEGACY_TOOL_EXECUTION_METADATA_KEYS = {
     "adapter",
     "approved_base_url",
@@ -107,6 +126,7 @@ class EndpointSpec(StrictModel):
 
     @model_validator(mode="after")
     def validate_unique_names(self) -> EndpointSpec:
+        _validate_execution_metadata(self.execution_metadata)
         pnames = [p.name for p in self.parameters]
         fnames = [f.name for f in self.output_fields]
         if len(pnames) != len(set(pnames)):
@@ -185,6 +205,7 @@ class ToolSpec(StrictModel):
 
     @model_validator(mode="after")
     def validate_endpoints(self) -> ToolSpec:
+        _validate_execution_metadata(self.execution_metadata)
         names = [e.name for e in self.endpoints]
         if not names:
             raise ValueError("tool must define at least one endpoint")
