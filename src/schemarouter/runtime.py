@@ -271,7 +271,7 @@ class SchemaRouter:
         timeout: float = 20.0,
     ) -> None:
         tool = self.registry.get(tool_key)
-        if tool.metadata.get("adapter") != "openapi":
+        if tool.execution_metadata.get("adapter") != "openapi":
             raise RegistrationError(
                 f"tool {tool_key!r} was not imported from OpenAPI"
             )
@@ -285,6 +285,13 @@ class SchemaRouter:
         except ValueError as exc:
             raise RegistrationError("invalid OpenAPI execution binding") from exc
         updated = tool.model_copy(deep=True)
+        updated.execution_metadata.update(
+            {
+                "execution_bound": True,
+                "approved_base_url": base_url,
+                "requires_explicit_base_url": False,
+            }
+        )
         updated.metadata.update(
             {
                 "execution_bound": True,
@@ -333,6 +340,12 @@ class SchemaRouter:
             )
 
         tool = proposal.tool.model_copy(deep=True)
+        tool.execution_metadata.update(
+            {
+                "executable": True,
+                "approved_base_url": base_url,
+            }
+        )
         tool.metadata.update(
             {
                 "approved_from_proposal": True,
