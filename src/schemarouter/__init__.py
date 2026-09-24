@@ -84,7 +84,13 @@ from .openapi_compatibility import (
     analyze_openapi_compatibility,
 )
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
-from .policy import ApprovalCallback, ExecutionPolicy
+from .policy import (
+    ApprovalCallback,
+    ExecutionPolicy,
+    PolicyDecision,
+    PolicyEffect,
+    PolicyRule,
+)
 from .proposals import SchemaProposal
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
 from .runs import ExecutionBudget, RetryPolicy, RunConfig, RunEvent
@@ -163,6 +169,9 @@ __all__ = [
     "PlanValidationError",
     "PlanningError",
     "PolicyViolationError",
+    "PolicyDecision",
+    "PolicyEffect",
+    "PolicyRule",
     "ProposalApprovalError",
     "QueryAnalyzer",
     "QueryIntent",
