@@ -48,6 +48,9 @@ class ExecutionBudget(StrictModel):
         return self
 
 
+ExecutionMode = Literal["sequential", "parallel_read_only"]
+
+
 class RunConfig(StrictModel):
     """Per-run metadata and execution controls."""
 
@@ -59,9 +62,6 @@ class RunConfig(StrictModel):
     include_payloads: bool = False
     retry: RetryPolicy = Field(default_factory=RetryPolicy)
     budget: ExecutionBudget = Field(default_factory=ExecutionBudget)
-
-
-ExecutionMode = Literal["sequential", "parallel_read_only"]
 
 
 RunEventName = Literal[
