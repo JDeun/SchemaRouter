@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any, Literal
 
 from pydantic import Field
@@ -70,6 +71,10 @@ def _change(
     )
 
 
+def _canonical_json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
+
+
 def _schema_change_severity(old: dict[str, Any], new: dict[str, Any]) -> SchemaChangeSeverity:
     """Return compatible only for a few schema widenings that are safe to prove locally."""
 
@@ -86,8 +91,8 @@ def _schema_change_severity(old: dict[str, Any], new: dict[str, Any]) -> SchemaC
     old_enum = old.get("enum")
     new_enum = new.get("enum")
     if isinstance(old_enum, list) and isinstance(new_enum, list):
-        old_values = {repr(value) for value in old_enum}
-        new_values = {repr(value) for value in new_enum}
+        old_values = {_canonical_json(value) for value in old_enum}
+        new_values = {_canonical_json(value) for value in new_enum}
         if old_values <= new_values:
             return "compatible"
         return "breaking"
@@ -267,18 +272,38 @@ def compare_endpoint_specs(old: EndpointSpec, new: EndpointSpec) -> SchemaDiffRe
             old=old.description,
             new=new.description,
         )
-    for attribute in ("method", "path"):
-        old_value = getattr(old, attribute)
-        new_value = getattr(new, attribute)
-        if old_value != new_value:
-            _change(
-                changes,
-                path=attribute,
-                kind=f"{attribute}_changed",
-                severity="breaking",
-                old=old_value,
-                new=new_value,
-            )
+    if old.method != new.method:
+        old_method = old.method.upper() if isinstance(old.method, str) else None
+        new_method = new.method.upper() if isinstance(new.method, str) else None
+        mutating_methods = {"POST", "PUT", "PATCH", "DELETE"}
+        severity: SchemaChangeSeverity = (
+            "security"
+            if new_method in mutating_methods and old_method != new_method
+            else "breaking"
+        )
+        _change(
+            changes,
+            path="method",
+            kind="method_changed",
+            severity=severity,
+            old=old.method,
+            new=new.method,
+            message=(
+                "HTTP method changed to a mutating method and requires local policy review."
+                if severity == "security"
+                else ""
+            ),
+        )
+
+    if old.path != new.path:
+        _change(
+            changes,
+            path="path",
+            kind="path_changed",
+            severity="breaking",
+            old=old.path,
+            new=new.path,
+        )
 
     if old.read_only != new.read_only:
         if old.read_only is True and new.read_only is not True:
