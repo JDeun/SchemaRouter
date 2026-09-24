@@ -15,6 +15,7 @@ from .models import (
     ExecutionPlan,
     FieldSelectionExplanation,
     FieldSpec,
+    PlanExplanation,
     PlanRequest,
     QueryIntent,
     ScoreComponent,
