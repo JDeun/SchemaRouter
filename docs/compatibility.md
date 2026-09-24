@@ -58,7 +58,11 @@ visible as forward-compatibility signals but cannot stall release publication.
 
 The top-level Release workflow consumes a successful current-`main` `CI` result before it
 resolves the release tag and builds artifacts. This keeps publication coupled to deterministic
-release blockers without waiting on preview-only interpreter experiments.
+release blockers without waiting on preview-only interpreter experiments. After GitHub Release and
+PyPI publication both succeed, the workflow re-installs that exact release version from PyPI as a
+wheel, forced sdist, and framework-extras environment, then executes the published-package smoke
+outside the checkout. PyPI index propagation is handled by a bounded retry window rather than by
+accepting a different version.
 
 ## Integration maintenance policy
 
