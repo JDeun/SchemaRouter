@@ -101,6 +101,14 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     assert "GH_REPO: ${{ github.repository }}" in workflow
     assert 'glob.glob("dist/*.tar.gz")[0]' in workflow
     assert 'subprocess.check_call([str(python), "examples/quickstart.py"])' in workflow
+    assert "post-publish:" in workflow
+    assert "needs: [prepare, github-release, pypi]" in workflow
+    assert 'verification: ["wheel", "sdist", "framework-extras"]' in workflow
+    assert 'package="schemarouter==$RELEASE_VERSION"' in workflow
+    assert 'package="schemarouter[langchain,langgraph,llamaindex]==$RELEASE_VERSION"' in workflow
+    assert '--expected-version "$RELEASE_VERSION"' in workflow
+    assert "for attempt in {1..18}; do" in workflow
+    assert "python -m pip check" in workflow
     assert "uses: ./.github/workflows/ci.yml" not in workflow
 
 
