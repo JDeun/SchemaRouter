@@ -10,7 +10,7 @@ from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry
 from .traces import RunTrace, RunTraceStore
 
-_PROVENANCE_KEYS = (
+_EXECUTION_PROVENANCE_KEYS = (
     "adapter",
     "source_url",
     "resolved_schema_url",
@@ -19,24 +19,34 @@ _PROVENANCE_KEYS = (
     "versioned_base_url",
     "api_version",
     "protocol_version",
-    "remote",
     "execution_bound",
     "requires_explicit_base_url",
+    "authenticated_transport",
+)
+_DESCRIPTIVE_PROVENANCE_KEYS = (
     "external_refs_enabled",
     "same_document_refs_normalized",
     "external_ref_documents_resolved",
     "external_ref_bytes_fetched",
     "external_ref_limits",
-    "authenticated_transport",
 )
 
 
 def _provenance(tool: ToolSpec) -> dict[str, object]:
-    return {
+    provenance: dict[str, object] = {
         key: tool.metadata[key]
-        for key in _PROVENANCE_KEYS
+        for key in _DESCRIPTIVE_PROVENANCE_KEYS
         if key in tool.metadata
     }
+    provenance.update(
+        {
+            key: tool.execution_metadata[key]
+            for key in _EXECUTION_PROVENANCE_KEYS
+            if key in tool.execution_metadata
+        }
+    )
+    provenance["remote"] = tool.remote
+    return provenance
 
 
 class EndpointInspection(StrictModel):
