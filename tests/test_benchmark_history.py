@@ -124,6 +124,7 @@ def test_compatibility_workflow_retains_json_artifacts() -> None:
     assert "--json-out artifacts/openapi-compatibility.json" in workflow
     assert "--json-out artifacts/optimade-compatibility.json" in workflow
     assert "pypi-${{ matrix.artifact-kind }}-compatibility.json" in workflow
+    assert "pypi-lightweight-compatibility.json" in workflow
     assert "pypi-integrations-compatibility.json" in workflow
     assert '"schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]"' in workflow
     assert "--framework-integrations" in workflow
@@ -132,7 +133,7 @@ def test_compatibility_workflow_retains_json_artifacts() -> None:
         workflow.count(
             "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a"
         )
-        == 4
+        == 5
     )
-    assert workflow.count("if: always()") == 4
-    assert workflow.count("retention-days: 30") == 4
+    assert workflow.count("if: always()") == 5
+    assert workflow.count("retention-days: 30") == 5

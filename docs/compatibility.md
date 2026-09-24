@@ -22,7 +22,8 @@ claim that every historical version inside the range is exhaustively tested.
 | OpenAPI | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OpenAPI SDK dependency |
 | OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |
 | Published PyPI package | Latest stable wheel + sdist | Scheduled/manual external smoke | Installs from PyPI in a fresh runner, runs `pip check`, and executes a public API scenario outside the checkout |
-| Published integration extras | Latest stable `mcp` + `langchain` + `langgraph` + `llamaindex` + `jev` + `otel` extras | Scheduled/manual external smoke | Resolves the published extras from PyPI, validates MCP/Jev/OpenTelemetry SDK integration imports, and executes the three framework bridges outside the checkout |
+| Published lightweight extras | Latest stable `mcp` + `jev` + `otel` extras | Scheduled/manual external smoke | Installs only those three extras from PyPI and validates their SDK integration surface without relying on framework transitive dependencies |
+| Published integration extras | Latest stable `mcp` + `langchain` + `langgraph` + `llamaindex` + `jev` + `otel` extras | Scheduled/manual external smoke | Resolves the combined published extras from PyPI, validates MCP/Jev/OpenTelemetry SDK integration imports, and executes the three framework bridges outside the checkout |
 
 Before widening an upper bound or lowering a minimum supported version, the relevant integration
 tests must pass against that target and the change must be documented in release notes.
@@ -60,8 +61,8 @@ The top-level Release workflow consumes a successful current-`main` `CI` result 
 resolves the release tag and builds artifacts. This keeps publication coupled to deterministic
 release blockers without waiting on preview-only interpreter experiments. After GitHub Release and
 PyPI publication both succeed, the workflow re-installs that exact release version from PyPI as a
-wheel, forced sdist, and lightweight integration-extras environment, then executes the
-published-package smoke outside the checkout. PyPI index propagation is handled by a bounded retry window rather than by
+wheel, forced sdist, isolated `mcp,jev,otel` environment, and combined integration-extras
+environment, then executes the published-package smoke outside the checkout. PyPI index propagation is handled by a bounded retry window rather than by
 accepting a different version.
 
 ## Integration maintenance policy
@@ -102,10 +103,11 @@ likewise remains an optional
 The `Compatibility Smoke` workflow runs weekly and can also be triggered manually for public
 OpenAPI/OPTIMADE services and the latest stable SchemaRouter package published on PyPI. The PyPI
 smoke separately forces wheel and sdist installation, runs `pip check`, and executes a public API
-scenario from outside the repository checkout. A companion published-extras smoke resolves
-`schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]` from PyPI, validates the MCP/Jev/OTel
-SDK integration surface, and executes each framework bridge through the installed stable package
-rather than the source checkout.
+scenario from outside the repository checkout. A dedicated isolated smoke installs only
+`schemarouter[mcp,jev,otel]` so those integrations cannot accidentally rely on framework
+transitive dependencies. A companion combined published-extras smoke resolves
+`schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]` from PyPI and executes each framework
+bridge through the installed stable package rather than the source checkout.
 
 External-service failures are compatibility signals, not pull-request blockers, because third-party
 availability is outside SchemaRouter's control.

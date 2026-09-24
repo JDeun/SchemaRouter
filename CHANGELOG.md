@@ -32,13 +32,15 @@ The project is pre-1.0 and follows the compatibility rules in
 - scheduled/manual compatibility smokes that force-install the latest stable SchemaRouter wheel and
   sdist from PyPI in fresh runners, run `pip check`, execute a public API scenario outside the
   checkout, and retain machine-readable reports;
-- a published-integration compatibility smoke that resolves stable
-  MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras from PyPI, validates the
-  MCP/Jev/OpenTelemetry SDK integration surface, and executes all three framework bridges outside
-  the source checkout;
+- published extras compatibility smokes that verify MCP/Jev/OpenTelemetry in an isolated
+  environment and separately resolve the combined
+  MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras from PyPI, preventing framework
+  transitive dependencies from masking lightweight-extra packaging regressions while still testing
+  full co-installation;
 - exact-version post-publish release verification that re-installs the newly published PyPI wheel,
-  forced sdist, and MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras after publication,
-  with bounded index-propagation retries and public-surface execution outside the checkout;
+  forced sdist, isolated MCP/Jev/OpenTelemetry extras, and the combined
+  MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras after publication, with bounded
+  index-propagation retries and public-surface execution outside the checkout;
 
 ### Changed
 
@@ -48,10 +50,10 @@ The project is pre-1.0 and follows the compatibility rules in
   ruleset predates newer job names;
 - package smoke now verifies benchmark JSON and HTML artifact generation;
 - package validation now executes consumer acceptance scenarios from clean wheel and sdist
-  environments, resolves the built wheel through MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry
-  extras, runs no-network MCP/Jev/OpenTelemetry SDK smoke checks, executes each framework example,
-  and exercises the installed inspection/dashboard CLI against real persisted registry/trace
-  artifacts;
+  environments, verifies MCP/Jev/OpenTelemetry from an isolated built-wheel environment, separately
+  resolves the combined MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras, runs
+  no-network SDK smoke checks, executes each framework example, and exercises the installed
+  inspection/dashboard CLI against real persisted registry/trace artifacts;
 - current-source public OpenAPI/OPTIMADE compatibility jobs now use non-editable installation plus
   `pip check` before live service calls, reducing the gap between source CI and downstream package
   behavior;
