@@ -191,6 +191,8 @@ class ToolSpec(StrictModel):
     endpoints: list[EndpointSpec]
     source_type: str | None = None
     license: str | None = None
+    provider: str | None = None
+    access_mode: str | None = None
     remote: bool = False
     execution_metadata: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -274,6 +276,9 @@ class QueryIntent(StrictModel):
     evidence: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
 
 
+FallbackScope = Literal["disabled", "same_provider", "cross_provider"]
+
+
 class PlanRequest(StrictModel):
     query: str
     concepts: list[str] = Field(default_factory=list)
@@ -281,6 +286,8 @@ class PlanRequest(StrictModel):
     arguments: dict[str, Any] = Field(default_factory=dict)
     evidence: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
     max_calls: int = Field(default=1, ge=1, le=32)
+    fallback_scope: FallbackScope = "disabled"
+    max_fallbacks: int = Field(default=2, ge=0, le=8)
 
 
 class ScoreComponent(StrictModel):
@@ -342,15 +349,44 @@ class ToolCall(StrictModel):
         return not self.missing_required_arguments
 
 
+class FallbackRoute(StrictModel):
+    """Precompiled alternatives for one primary call in an ExecutionPlan."""
+
+    primary_call_index: int = Field(ge=0)
+    alternatives: list[ToolCall] = Field(default_factory=list)
+
+
 class ExecutionPlan(StrictModel):
     query: str
     registry_version: int
     calls: list[ToolCall] = Field(default_factory=list)
+    fallback_routes: list[FallbackRoute] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_fallback_routes(self) -> ExecutionPlan:
+        seen: set[int] = set()
+        for route in self.fallback_routes:
+            if route.primary_call_index >= len(self.calls):
+                raise ValueError("fallback route primary_call_index is outside plan.calls")
+            if route.primary_call_index in seen:
+                raise ValueError("duplicate fallback route for primary call index")
+            seen.add(route.primary_call_index)
+        return self
 
     @property
     def executable(self) -> bool:
         return bool(self.calls) and all(call.executable for call in self.calls)
+
+    def fallback_route(self, primary_call_index: int) -> FallbackRoute | None:
+        return next(
+            (
+                route
+                for route in self.fallback_routes
+                if route.primary_call_index == primary_call_index
+            ),
+            None,
+        )
 
 
 class ToolResult(StrictModel):
