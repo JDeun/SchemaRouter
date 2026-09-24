@@ -132,3 +132,47 @@ async def test_invalid_model_output_fails_closed() -> None:
     router = make_router(model)
     with pytest.raises(ModelAnalysisError):
         await router.aplan("get a user")
+
+
+
+@pytest.mark.asyncio
+async def test_model_analyzer_never_receives_execution_metadata() -> None:
+    captured = {}
+
+    async def model(payload: dict) -> dict:
+        captured.update(payload)
+        return {
+            "preferred_tools": ["secure"],
+            "preferred_endpoints": ["secure.run"],
+            "arguments": {},
+            "fields": [],
+            "concepts": [],
+            "evidence": {},
+        }
+
+    router = SchemaRouter(analyzer=ModelQueryAnalyzer(model))
+    router.add_tool(
+        ToolSpec(
+            name="secure",
+            remote=True,
+            execution_metadata={
+                "approved_base_url": "https://internal.example/api",
+                "transport_identity": "private-runtime-route",
+            },
+            endpoints=[
+                EndpointSpec(
+                    name="run",
+                    read_only=True,
+                    execution_metadata={"request_mode": "trusted-runtime-only"},
+                )
+            ],
+        )
+    )
+
+    await router.aplan("run secure")
+
+    serialized = repr(captured)
+    assert "internal.example" not in serialized
+    assert "private-runtime-route" not in serialized
+    assert "trusted-runtime-only" not in serialized
+    assert "execution_metadata" not in serialized
