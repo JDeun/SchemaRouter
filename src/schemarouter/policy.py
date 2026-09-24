@@ -55,7 +55,7 @@ class PolicyRule:
         operation = f"{call.tool}.{call.endpoint}"
         if not fnmatchcase(operation, self.operation):
             return False
-        if self.remote is not None and is_remote_tool(tool) is not self.remote:
+        if self.remote is not None and is_remote_tool(tool) != self.remote:
             return False
         if self.read_only is not None and endpoint.read_only is not self.read_only:
             return False
