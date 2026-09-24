@@ -625,7 +625,25 @@ class SchemaRouter:
         sequence += 1
 
         if run_config.execution_mode == "parallel_read_only":
-            self.executor.validate_parallel_read_only(plan)
+            try:
+                self.executor.validate_parallel_read_only(plan)
+            except Exception as exc:
+                error_data: dict[str, Any] = {
+                    "error_type": type(exc).__name__,
+                    "stage": "execution",
+                    "phase": "parallel_preflight",
+                }
+                if run_config.include_payloads:
+                    error_data["message"] = str(exc)
+                yield await emit(RunEvent.create(
+                    event="run.error",
+                    run_id=run_id,
+                    sequence=sequence,
+                    config=run_config,
+                    data=error_data,
+                ))
+                raise
+
             budget_tracker = ExecutionBudgetTracker(run_config.budget)
             semaphore = asyncio.Semaphore(run_config.max_parallel_calls)
 
