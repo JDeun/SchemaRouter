@@ -117,6 +117,7 @@ nav:
   - Runtime:
       - Batch, streaming, and events: guides/runtime.md
       - Execution policy: guides/execution-policy.md
+      - Schema drift analysis: guides/schema-drift.md
       - Retry policy: guides/retry.md
       - Trusted execution hooks: guides/execution-hooks.md
       - Persistent run traces: guides/run-traces.md
