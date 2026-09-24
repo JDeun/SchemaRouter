@@ -96,7 +96,7 @@ from .policy import (
 )
 from .proposals import SchemaProposal
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
-from .runs import ExecutionBudget, RetryPolicy, RunConfig, RunEvent
+from .runs import ExecutionBudget, ExecutionMode, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
 from .schema_diff import (
     SchemaChange,
@@ -146,6 +146,7 @@ __all__ = [
     "ExecutionBudgetExceededError",
     "ExecutionError",
     "ExecutionHookError",
+    "ExecutionMode",
     "ExecutionHooks",
     "ExecutionPlan",
     "ExecutionPolicy",
