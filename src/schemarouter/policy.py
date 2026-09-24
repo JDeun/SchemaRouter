@@ -46,6 +46,10 @@ class PolicyRule:
             raise ValueError("policy rule effect must be allow, deny, or require_approval")
         if not self.operation.strip():
             raise ValueError("policy rule operation pattern must be non-empty")
+        if self.unclassified is True and self.read_only is not None:
+            raise ValueError(
+                "unclassified=True cannot be combined with a read_only predicate"
+            )
 
     def matches(
         self,
