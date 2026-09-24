@@ -506,6 +506,21 @@ class RegistryExecutor:
             f"invocation failed for {call.tool}.{call.endpoint} after {max_attempts} attempt(s)"
         ) from last_error
 
+    def validate_fallback_chain(
+        self,
+        call: ToolCall,
+        alternatives: list[ToolCall] | tuple[ToolCall, ...],
+    ) -> None:
+        chain = [call, *alternatives]
+        for candidate in chain:
+            tool, endpoint, _ = self._execution_state(candidate)
+            if endpoint.read_only is not True:
+                raise PlanValidationError(
+                    "automatic fallback requires every candidate to be explicitly read-only; "
+                    f"got {candidate.tool}.{candidate.endpoint}"
+                )
+            del tool
+
     async def execute_call_with_fallback(
         self,
         call: ToolCall,
@@ -522,14 +537,7 @@ class RegistryExecutor:
         # Validate the entire bounded chain before invoking the primary. This prevents a malformed,
         # stale, unbound, policy-denied, or mutating fallback from being discovered only after an
         # earlier route has already executed.
-        for candidate in chain:
-            tool, endpoint, _ = self._execution_state(candidate)
-            if endpoint.read_only is not True:
-                raise PlanValidationError(
-                    "automatic fallback requires every candidate to be explicitly read-only; "
-                    f"got {candidate.tool}.{candidate.endpoint}"
-                )
-            del tool
+        self.validate_fallback_chain(call, alternatives)
 
         for candidate in chain:
             try:
