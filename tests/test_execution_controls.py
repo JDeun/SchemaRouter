@@ -5,7 +5,7 @@ import pytest
 
 from schemarouter import (
     ApprovalDeniedError,
-    BindingDriftError,
+    SchemaDriftError,
     EndpointSpec,
     ExecutionBudget,
     ExecutionBudgetExceededError,
@@ -46,6 +46,7 @@ def _setup(
         tool="demo",
         endpoint="run",
         schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=registry.get("demo").fingerprint,
     )
     plan = ExecutionPlan(
         query="run",
@@ -428,6 +429,7 @@ async def test_registry_drift_during_async_approval_fails_closed() -> None:
         tool="demo",
         endpoint="run",
         schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=original.fingerprint,
     )
     plan = ExecutionPlan(
         query="run",
@@ -441,8 +443,8 @@ async def test_registry_drift_during_async_approval_fails_closed() -> None:
             endpoints=[
                 EndpointSpec(
                     name="run",
+                    description="changed during approval",
                     read_only=True,
-                    metadata={"revision": 2},
                 )
             ],
         )
@@ -456,7 +458,7 @@ async def test_registry_drift_during_async_approval_fails_closed() -> None:
     )
     executor.bind("demo", lambda endpoint_name, arguments: {"ok": True})
 
-    with pytest.raises(BindingDriftError):
+    with pytest.raises(SchemaDriftError, match="tool contract changed"):
         await executor.execute(plan)
 
 
