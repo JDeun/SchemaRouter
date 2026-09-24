@@ -523,6 +523,10 @@ async def test_max_parallel_calls_is_independent_from_batch_concurrency() -> Non
 @pytest.mark.asyncio
 async def test_parallel_preflight_failure_emits_terminal_run_error() -> None:
     router, plan = make_parallel_plan_router(second_read_only=False)
+    router.executor.bind(
+        "fanout",
+        lambda endpoint, arguments: {"value": endpoint},
+    )
     original_aplan = router.aplan
 
     async def fixed_plan(request):
