@@ -125,6 +125,10 @@ def tool_from_callable(
         output_schema=output_schema,
         read_only=read_only,
         destructive=destructive,
+        execution_metadata={
+            "callable_name": function.__qualname__,
+            "callable_module": function.__module__,
+        },
         metadata={
             "adapter": "python",
             "callable_name": function.__qualname__,
@@ -136,6 +140,7 @@ def tool_from_callable(
         namespace=namespace,
         description=description or inspect.getdoc(function) or "",
         endpoints=[endpoint],
+        execution_metadata={"adapter": "python"},
         metadata={"adapter": "python"},
     )
 
