@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 import re
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
 from typing import Protocol
 
@@ -184,12 +184,14 @@ class SchemaPlanner:
         decision_backend: DecisionBackend | None = None,
         decision_policy: DecisionPolicy | None = None,
         candidate_index: bool = True,
+        availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> None:
         self.registry = registry
         self.analyzer = analyzer or KeywordAnalyzer()
         self.decision_backend = decision_backend
         self.decision_policy = decision_policy or DecisionPolicy()
         self.candidate_index = candidate_index
+        self.availability_predicate = availability_predicate
         self._candidate_index: _CandidateIndex | None = None
         if self.decision_policy.enabled and self.decision_backend is None:
             raise PlanningError("decision policy is enabled but no decision backend is configured")
@@ -249,6 +251,13 @@ class SchemaPlanner:
                 for endpoint in tool.endpoints
             )
 
+        if self.availability_predicate is not None:
+            endpoint_pairs = tuple(
+                (tool, endpoint)
+                for tool, endpoint in endpoint_pairs
+                if self.availability_predicate(tool, endpoint)
+            )
+
         candidates = [
             self._score_endpoint(tool, endpoint, request.query, intent)
             for tool, endpoint in endpoint_pairs
@@ -262,6 +271,10 @@ class SchemaPlanner:
                 _Candidate(tool, endpoint, 0.0, ())
                 for tool in self.registry.tools()
                 for endpoint in tool.endpoints
+                if (
+                    self.availability_predicate is None
+                    or self.availability_predicate(tool, endpoint)
+                )
             ]
         candidates.sort(
             key=lambda candidate: (
