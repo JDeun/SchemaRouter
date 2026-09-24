@@ -9,6 +9,20 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- conservative schema-drift analysis for trusted `EndpointSpec` / `ToolSpec` snapshots, including
+  additive/breaking/security-review classification, security-sensitive HTTP method and side-effect
+  changes, and `schemarouter inspect diff` for persisted SQLite registries; compatibility reports
+  remain diagnostic and never bypass exact fingerprint rejection;
+- ordered operation-scoped `PolicyRule` controls with explicit `allow`, `deny`, and
+  `require_approval` effects plus remote/read-only/destructive/unclassified predicates, while the
+  existing category-level policy remains the fallback when no rule matches;
+- structured `PlanExplanation` output with deterministic score components, projected-field
+  retention reasons, ignored undeclared argument names, and bounded decision-selection source,
+  without exposing model chain-of-thought;
+- explicit `parallel_read_only` in-plan fan-out with full preflight schema/binding/policy checks,
+  completion-order streaming/events, one shared execution budget, and an independent
+  `max_parallel_calls` bound so batch concurrency does not multiply implicitly;
+
 - self-contained HTML summaries for the decision-routing benchmark, alongside the existing JSON/CSV
   outputs, with escaped metadata and no remote assets;
 - multi-run benchmark history rendering with preserved run/version/corpus/hardware metadata;
