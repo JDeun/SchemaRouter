@@ -538,7 +538,7 @@ class SchemaRouter:
                 plan,
                 retry=run_config.retry,
                 budget=run_config.budget,
-                max_concurrency=run_config.max_concurrency,
+                max_concurrency=run_config.max_parallel_calls,
             ):
                 yield result
             return
