@@ -114,9 +114,10 @@ class SchemaRouter:
             self.registry,
             analyzer=analyzer,
             availability_predicate=(
-                lambda tool, endpoint: self.executor.is_access_available(
+                lambda tool, endpoint: self.executor.is_access_available_for_contract(
                     tool.key,
                     endpoint.name,
+                    tool.fingerprint,
                 )
             ),
         )
