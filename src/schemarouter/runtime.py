@@ -611,6 +611,7 @@ class SchemaRouter:
         plan_data: dict[str, Any] = {
             "call_count": len(plan.calls),
             "warnings": list(plan.warnings),
+            "execution_mode": run_config.execution_mode,
         }
         if run_config.include_payloads:
             plan_data["plan"] = plan.model_dump(mode="json")
@@ -622,6 +623,110 @@ class SchemaRouter:
             data=plan_data,
         ))
         sequence += 1
+
+        if run_config.execution_mode == "parallel_read_only":
+            self.executor.validate_parallel_read_only(plan)
+            budget_tracker = ExecutionBudgetTracker(run_config.budget)
+            semaphore = asyncio.Semaphore(run_config.max_concurrency)
+
+            async def run_parallel_call(
+                index: int,
+                call: Any,
+            ) -> tuple[int, ToolResult | Exception]:
+                try:
+                    async with semaphore:
+                        result = await self.executor.execute_call(
+                            call,
+                            retry=run_config.retry,
+                            budget=run_config.budget,
+                            _tracker=budget_tracker,
+                        )
+                    return index, result
+                except Exception as exc:
+                    return index, exc
+
+            tasks: list[asyncio.Task[tuple[int, ToolResult | Exception]]] = []
+            for index, call in enumerate(plan.calls):
+                start_data: dict[str, Any] = {
+                    "argument_names": sorted(call.arguments),
+                    "fields": list(call.fields),
+                }
+                if run_config.include_payloads:
+                    start_data["arguments"] = dict(call.arguments)
+                yield await emit(RunEvent.create(
+                    event="tool.start",
+                    run_id=run_id,
+                    sequence=sequence,
+                    config=run_config,
+                    tool=call.tool,
+                    endpoint=call.endpoint,
+                    data=start_data,
+                ))
+                sequence += 1
+                tasks.append(asyncio.create_task(run_parallel_call(index, call)))
+
+            result_count = 0
+            try:
+                for completed in asyncio.as_completed(tasks):
+                    index, outcome = await completed
+                    call = plan.calls[index]
+                    if isinstance(outcome, Exception):
+                        error_data = {"error_type": type(outcome).__name__}
+                        if run_config.include_payloads:
+                            error_data["message"] = str(outcome)
+                        yield await emit(RunEvent.create(
+                            event="tool.error",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            tool=call.tool,
+                            endpoint=call.endpoint,
+                            data=error_data,
+                        ))
+                        sequence += 1
+                        yield await emit(RunEvent.create(
+                            event="run.error",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            data={
+                                "error_type": type(outcome).__name__,
+                                "stage": "execution",
+                            },
+                        ))
+                        raise outcome
+
+                    end_data: dict[str, Any] = {
+                        "projected_fields": list(outcome.projected_fields),
+                    }
+                    if run_config.include_payloads:
+                        end_data["result"] = outcome.model_dump(mode="json")
+                    yield await emit(RunEvent.create(
+                        event="tool.end",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        tool=outcome.tool,
+                        endpoint=outcome.endpoint,
+                        data=end_data,
+                    ))
+                    sequence += 1
+                    result_count += 1
+            finally:
+                for task in tasks:
+                    if not task.done():
+                        task.cancel()
+                if tasks:
+                    await asyncio.gather(*tasks, return_exceptions=True)
+
+            yield await emit(RunEvent.create(
+                event="run.end",
+                run_id=run_id,
+                sequence=sequence,
+                config=run_config,
+                data={"result_count": result_count},
+            ))
+            return
 
         result_count = 0
         budget_tracker = ExecutionBudgetTracker(run_config.budget)
