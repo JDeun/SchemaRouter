@@ -4,14 +4,18 @@ import pytest
 
 from schemarouter import (
     EndpointSpec,
+    ExecutionBudget,
     ExecutionError,
+    ExecutionPlan,
     ExecutionPolicy,
     FieldSpec,
     ParameterSpec,
     PlanRequest,
+    PlanValidationError,
     RetryPolicy,
     RunConfig,
     SchemaRouter,
+    ToolCall,
     ToolSpec,
 )
 
@@ -306,3 +310,177 @@ def test_batch_as_completed_has_sync_surface() -> None:
     )
 
     assert sorted(index for index, _ in completed) == [0, 1]
+
+
+
+def make_parallel_plan_router(*, second_read_only: bool | None = True):
+    router = SchemaRouter(
+        policy=ExecutionPolicy(
+            allow_mutations=True,
+            allow_unclassified_remote=True,
+        )
+    )
+    tool = ToolSpec(
+        name="fanout",
+        endpoints=[
+            EndpointSpec(
+                name="slow",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            ),
+            EndpointSpec(
+                name="fast",
+                read_only=second_read_only,
+                output_fields=[FieldSpec(name="value")],
+            ),
+        ],
+    )
+    router.add_tool(tool)
+    calls = [
+        ToolCall(
+            tool="fanout",
+            endpoint=name,
+            fields=["value"],
+            schema_fingerprint=router.registry.endpoint("fanout", name).fingerprint,
+        )
+        for name in ("slow", "fast")
+    ]
+    return router, ExecutionPlan(
+        query="fan out",
+        registry_version=router.registry.version,
+        calls=calls,
+    )
+
+
+@pytest.mark.asyncio
+async def test_parallel_read_only_execute_preserves_plan_order() -> None:
+    router, plan = make_parallel_plan_router()
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        if endpoint == "slow":
+            await asyncio.sleep(0.03)
+        return {"value": endpoint}
+
+    router.executor.bind("fanout", invoker)
+
+    results = await router.execute(
+        plan,
+        config=RunConfig(
+            execution_mode="parallel_read_only",
+            max_concurrency=2,
+        ),
+    )
+
+    assert [result.data["value"] for result in results] == ["slow", "fast"]
+
+
+@pytest.mark.asyncio
+async def test_parallel_read_only_stream_yields_completion_order() -> None:
+    router, plan = make_parallel_plan_router()
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        if endpoint == "slow":
+            await asyncio.sleep(0.03)
+        return {"value": endpoint}
+
+    router.executor.bind("fanout", invoker)
+
+    original_aplan = router.aplan
+
+    async def fixed_plan(request):
+        return plan
+
+    router.aplan = fixed_plan  # type: ignore[method-assign]
+    try:
+        results = [
+            result
+            async for result in router.astream(
+                "fan out",
+                config=RunConfig(
+                    execution_mode="parallel_read_only",
+                    max_concurrency=2,
+                ),
+            )
+        ]
+    finally:
+        router.aplan = original_aplan  # type: ignore[method-assign]
+
+    assert [result.data["value"] for result in results] == ["fast", "slow"]
+
+
+@pytest.mark.asyncio
+async def test_parallel_read_only_fails_before_invocation_for_mutating_call() -> None:
+    router, plan = make_parallel_plan_router(second_read_only=False)
+    invoked = []
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        invoked.append(endpoint)
+        return {"value": endpoint}
+
+    router.executor.bind("fanout", invoker)
+
+    with pytest.raises(PlanValidationError, match="explicitly read-only"):
+        await router.execute(
+            plan,
+            config=RunConfig(execution_mode="parallel_read_only"),
+        )
+
+    assert invoked == []
+
+
+@pytest.mark.asyncio
+async def test_parallel_read_only_shares_execution_budget() -> None:
+    router, plan = make_parallel_plan_router()
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        await asyncio.sleep(0)
+        return {"value": endpoint}
+
+    router.executor.bind("fanout", invoker)
+
+    with pytest.raises(Exception, match="max_tool_calls=1"):
+        await router.execute(
+            plan,
+            config=RunConfig(
+                execution_mode="parallel_read_only",
+                max_concurrency=2,
+                budget=ExecutionBudget(max_tool_calls=1),
+            ),
+        )
+
+
+@pytest.mark.asyncio
+async def test_parallel_read_only_event_stream_reports_completion_order() -> None:
+    router, plan = make_parallel_plan_router()
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        if endpoint == "slow":
+            await asyncio.sleep(0.03)
+        return {"value": endpoint}
+
+    router.executor.bind("fanout", invoker)
+    original_aplan = router.aplan
+
+    async def fixed_plan(request):
+        return plan
+
+    router.aplan = fixed_plan  # type: ignore[method-assign]
+    try:
+        events = [
+            event
+            async for event in router.astream_events(
+                "fan out",
+                config=RunConfig(
+                    execution_mode="parallel_read_only",
+                    max_concurrency=2,
+                ),
+            )
+        ]
+    finally:
+        router.aplan = original_aplan  # type: ignore[method-assign]
+
+    starts = [event.endpoint for event in events if event.event == "tool.start"]
+    ends = [event.endpoint for event in events if event.event == "tool.end"]
+    assert starts == ["slow", "fast"]
+    assert ends == ["fast", "slow"]
+    assert events[-1].event == "run.end"
