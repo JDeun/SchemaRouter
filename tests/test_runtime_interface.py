@@ -545,3 +545,45 @@ async def test_parallel_preflight_failure_emits_terminal_run_error() -> None:
     ]
     assert events[-1].data["stage"] == "execution"
     assert events[-1].data["phase"] == "parallel_preflight"
+
+
+@pytest.mark.asyncio
+async def test_parallel_event_tool_start_tracks_actual_concurrency_slot() -> None:
+    router, plan = make_parallel_plan_router()
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        await asyncio.sleep(0.01)
+        return {"value": endpoint}
+
+    router.executor.bind("fanout", invoker)
+    original_aplan = router.aplan
+
+    async def fixed_plan(request):
+        return plan
+
+    router.aplan = fixed_plan  # type: ignore[method-assign]
+    try:
+        events = [
+            event
+            async for event in router.astream_events(
+                "fan out",
+                config=RunConfig(
+                    execution_mode="parallel_read_only",
+                    max_parallel_calls=1,
+                ),
+            )
+        ]
+    finally:
+        router.aplan = original_aplan  # type: ignore[method-assign]
+
+    tool_events = [
+        event.event
+        for event in events
+        if event.event.startswith("tool.")
+    ]
+    assert tool_events == [
+        "tool.start",
+        "tool.end",
+        "tool.start",
+        "tool.end",
+    ]
