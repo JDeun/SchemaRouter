@@ -16,6 +16,18 @@
 
 ::: schemarouter.NonRetryableInvocationError
 
+## InvocationUnavailableError
+
+::: schemarouter.InvocationUnavailableError
+
+## AccessHealthMonitor
+
+::: schemarouter.AccessHealthMonitor
+
+## HealthProbeSnapshot
+
+::: schemarouter.HealthProbeSnapshot
+
 ## RunEvent
 
 ::: schemarouter.RunEvent
