@@ -1,3 +1,5 @@
+import pytest
+
 from schemarouter import (
     EndpointSpec,
     FieldSpec,
