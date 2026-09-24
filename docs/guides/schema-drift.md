@@ -60,15 +60,17 @@ schemarouter inspect diff materials \
   --json
 ```
 
-The CLI opens the registries read-only from SchemaRouter's perspective, loads validated `ToolSpec`
-snapshots, and runs the same conservative comparison functions used by the Python API. It does not
-bind or invoke tools.
+The CLI loads validated `ToolSpec` snapshots and runs the same conservative comparison functions
+used by the Python API. It does not register, bind, or invoke tools. The underlying SQLite registry
+connection uses the normal registry implementation, so this is an execution-safe inspection path
+rather than a claim of filesystem-level read-only access.
 
 ## Security-semantic drift
 
 Changes such as:
 
 ```text
+GET -> POST / PUT / PATCH / DELETE
 read_only: True -> False
 destructive: False -> True
 ```
