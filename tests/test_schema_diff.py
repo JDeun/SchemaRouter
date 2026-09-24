@@ -321,10 +321,10 @@ def test_execution_metadata_drift_is_breaking() -> None:
 
     report = compare_endpoint_specs(old, new)
 
-    assert report.compatibility == "breaking"
+    assert report.compatibility == "security_review"
     assert any(
         change.kind == "execution_metadata_changed"
-        and change.severity == "breaking"
+        and change.severity == "security"
         for change in report.changes
     )
 
