@@ -10,10 +10,12 @@ from .decision_policy import DecisionPolicy
 from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
 from .errors import PlanningError
 from .models import (
+    CandidateSelectionSource,
     EndpointSpec,
     EvidenceRequirements,
     ExecutionPlan,
     FieldSelectionExplanation,
+    FieldSelectionReason,
     FieldSpec,
     PlanExplanation,
     PlanRequest,
@@ -63,8 +65,8 @@ class _Candidate:
     score: float
     matched_fields: tuple[str, ...]
     score_components: tuple[ScoreComponent, ...] = ()
-    field_reasons: tuple[tuple[str, str], ...] = ()
-    selection_source: str = "deterministic"
+    field_reasons: tuple[tuple[str, FieldSelectionReason], ...] = ()
+    selection_source: CandidateSelectionSource = "deterministic"
 
 
 @dataclass(frozen=True, order=True)
@@ -976,16 +978,8 @@ class SchemaPlanner:
                 )
             )
 
-        candidate_source = candidate.selection_source
-        if candidate_source not in {
-            "deterministic",
-            "decision_backend",
-            "decision_recall",
-        }:
-            candidate_source = "deterministic"
-
         return PlanExplanation(
-            candidate_selection=candidate_source,
+            candidate_selection=candidate.selection_source,
             score_components=list(candidate.score_components),
             field_selection=selections,
             ignored_arguments=list(ignored_arguments),
@@ -1005,7 +999,7 @@ class SchemaPlanner:
 
         score = 0.0
         components: list[ScoreComponent] = []
-        field_reasons: dict[str, str] = {}
+        field_reasons: dict[str, FieldSelectionReason] = {}
 
         if tool.key in preferred_tools or tool.name in preferred_tools:
             score += 100.0
