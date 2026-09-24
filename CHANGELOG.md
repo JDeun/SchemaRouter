@@ -58,6 +58,15 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
+- split descriptive `metadata` from fingerprinted execution-contract metadata: built-in adapters
+  now place transport/runtime semantics in `ToolSpec.execution_metadata` /
+  `EndpointSpec.execution_metadata`, while `ToolSpec.remote` is the fingerprinted execution-origin
+  classification. Legacy built-in registry JSON is migrated on validation;
+- planner-generated calls and LangChain/LlamaIndex bridges now include `tool_fingerprint` in
+  addition to endpoint fingerprints. Manually constructed remote or runtime-sensitive `ToolCall`
+  values must provide the current tool fingerprint; replan/recreate the call instead of reusing an
+  older serialized call;
+
 - raised the blocking branch-coverage floor from 82% to 84%;
 - made the protected `package` CI check depend on both the Laya integration contract and a
   dependency vulnerability audit, so either regression blocks merge even when the repository
@@ -76,6 +85,13 @@ The project is pre-1.0 and follows the compatibility rules in
 - post-release development has resumed as `0.7.0.dev0`; published `0.6.0` artifacts remain immutable.
 
 ### Security
+
+- hardened stale-plan authority boundaries so local/remote classification, approved transport
+  origin, and built-in runtime adapter semantics cannot change through unfingerprinted descriptive
+  metadata or survive a rebind under an old plan;
+- operational inspection now derives execution-critical provenance from the fingerprinted contract
+  rather than ordinary metadata mirrors, preventing observability from reporting spoofed authority
+  state;
 
 - added a pinned OpenSSF Scorecard workflow that publishes authenticated results, retains SARIF, and
   uploads findings to GitHub Code Scanning on main and a weekly schedule;
