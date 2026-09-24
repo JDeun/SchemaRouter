@@ -881,3 +881,160 @@ def test_provider_fallback_requires_explicit_primary_provider_identity() -> None
 
     assert plan.calls[0].tool == "untagged_primary"
     assert plan.fallback_routes == []
+
+
+
+def _semantic_provider_tool(
+    name: str,
+    *,
+    provider: str,
+    access_mode: str,
+    field_name: str,
+    semantic_id: str,
+    unit: str | None,
+) -> ToolSpec:
+    return ToolSpec(
+        name=name,
+        provider=provider,
+        access_mode=access_mode,
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                read_only=True,
+                output_fields=[
+                    FieldSpec(name="material_id", identifier=True),
+                    FieldSpec(
+                        name=field_name,
+                        semantic_id=semantic_id,
+                        unit=unit,
+                    ),
+                ],
+            )
+        ],
+    )
+
+
+def test_semantic_id_bridges_provider_specific_field_names() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        _semantic_provider_tool(
+            "provider_a",
+            provider="a",
+            access_mode="openapi",
+            field_name="elasticity_value",
+            semantic_id="elastic_modulus",
+            unit="GPa",
+        )
+    )
+    reg.register(
+        _semantic_provider_tool(
+            "provider_b",
+            provider="b",
+            access_mode="optimade",
+            field_name="_b_emod",
+            semantic_id="elastic_modulus",
+            unit="gpa",
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="elastic modulus",
+            preferred_tools=["provider_a"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.calls[0].fields == ["material_id", "elasticity_value"]
+    route = plan.fallback_route(0)
+    assert route is not None
+    assert route.alternatives[0].tool == "provider_b"
+    assert route.alternatives[0].fields == ["material_id", "_b_emod"]
+
+
+def test_fallback_rejects_semantically_matching_field_with_incompatible_unit() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        _semantic_provider_tool(
+            "provider_a",
+            provider="a",
+            access_mode="openapi",
+            field_name="elasticity_value",
+            semantic_id="elastic_modulus",
+            unit="GPa",
+        )
+    )
+    reg.register(
+        _semantic_provider_tool(
+            "provider_b",
+            provider="b",
+            access_mode="optimade",
+            field_name="_b_emod",
+            semantic_id="elastic_modulus",
+            unit="Pa",
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="elastic modulus",
+            preferred_tools=["provider_a"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.fallback_routes == []
+
+
+def test_semantic_id_takes_precedence_over_lexical_alias_overlap() -> None:
+    primary = ToolSpec(
+        name="primary",
+        provider="a",
+        access_mode="openapi",
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                read_only=True,
+                output_fields=[
+                    FieldSpec(
+                        name="modulus",
+                        semantic_id="elastic_modulus",
+                        aliases=["modulus"],
+                        unit="GPa",
+                    )
+                ],
+            )
+        ],
+    )
+    misleading = ToolSpec(
+        name="misleading",
+        provider="b",
+        access_mode="openapi",
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                read_only=True,
+                output_fields=[
+                    FieldSpec(
+                        name="modulus",
+                        semantic_id="bulk_modulus",
+                        aliases=["modulus", "elastic modulus"],
+                        unit="GPa",
+                    )
+                ],
+            )
+        ],
+    )
+    reg = InMemoryRegistry()
+    reg.register(primary)
+    reg.register(misleading)
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="elastic modulus",
+            preferred_tools=["primary"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.fallback_routes == []
