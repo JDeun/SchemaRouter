@@ -103,9 +103,13 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     assert 'subprocess.check_call([str(python), "examples/quickstart.py"])' in workflow
     assert "post-publish:" in workflow
     assert "needs: [prepare, github-release, pypi]" in workflow
-    assert 'verification: ["wheel", "sdist", "framework-extras"]' in workflow
+    assert 'verification: ["wheel", "sdist", "integration-extras"]' in workflow
     assert 'package="schemarouter==$RELEASE_VERSION"' in workflow
-    assert 'package="schemarouter[langchain,langgraph,llamaindex]==$RELEASE_VERSION"' in workflow
+    assert (
+        'package="schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]==$RELEASE_VERSION"'
+        in workflow
+    )
+    assert "--lightweight-extras" in workflow
     assert "Verify published artifact digest matches release build" in workflow
     assert "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c" in workflow
     assert "--index-url https://pypi.org/simple" in workflow
@@ -120,6 +124,31 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     assert "python -m pip check" in workflow
     assert "uses: ./.github/workflows/ci.yml" not in workflow
 
+
+
+def test_external_package_smokes_cover_lightweight_integration_extras() -> None:
+    compatibility = (
+        ROOT / ".github" / "workflows" / "compatibility.yml"
+    ).read_text(encoding="utf-8")
+    release = (
+        ROOT / ".github" / "workflows" / "release.yml"
+    ).read_text(encoding="utf-8")
+    published_smoke = (
+        ROOT / "scripts" / "published_pypi_smoke.py"
+    ).read_text(encoding="utf-8")
+
+    extras = "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]"
+    assert extras in compatibility
+    assert extras in release
+    assert "--framework-integrations" in compatibility
+    assert "--lightweight-extras" in compatibility
+    assert "--framework-integrations --lightweight-extras" in release
+    assert 'verification: ["wheel", "sdist", "integration-extras"]' in release
+    assert (
+        "from installed_extras_smoke import run_smoke as run_installed_extras_smoke"
+        in published_smoke
+    )
+    assert 'report["lightweight_extras"] = args.lightweight_extras' in published_smoke
 
 
 def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
