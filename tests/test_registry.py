@@ -161,3 +161,56 @@ def test_registry_empty_update_many_is_a_noop() -> None:
     reg.update_many([])
 
     assert reg.version == version
+
+
+
+def test_descriptive_metadata_does_not_change_execution_fingerprints() -> None:
+    old = ToolSpec(
+        name="demo",
+        endpoints=[
+            EndpointSpec(
+                name="run",
+                metadata={"note": "old"},
+            )
+        ],
+        metadata={"catalog_note": "old"},
+    )
+    new = ToolSpec(
+        name="demo",
+        endpoints=[
+            EndpointSpec(
+                name="run",
+                metadata={"note": "new"},
+            )
+        ],
+        metadata={"catalog_note": "new"},
+    )
+
+    assert old.endpoints[0].fingerprint == new.endpoints[0].fingerprint
+    assert old.fingerprint == new.fingerprint
+
+
+def test_execution_metadata_changes_execution_fingerprints() -> None:
+    old = ToolSpec(
+        name="demo",
+        endpoints=[
+            EndpointSpec(
+                name="run",
+                execution_metadata={"mode": "search"},
+            )
+        ],
+        execution_metadata={"approved_base_url": "https://a.example/api"},
+    )
+    new = ToolSpec(
+        name="demo",
+        endpoints=[
+            EndpointSpec(
+                name="run",
+                execution_metadata={"mode": "get"},
+            )
+        ],
+        execution_metadata={"approved_base_url": "https://b.example/api"},
+    )
+
+    assert old.endpoints[0].fingerprint != new.endpoints[0].fingerprint
+    assert old.fingerprint != new.fingerprint
