@@ -7,7 +7,7 @@ from urllib.parse import quote, urljoin, urlparse
 
 import httpx
 
-from ..errors import NonRetryableInvocationError, SchemaSourceError
+from ..errors import InvocationUnavailableError, NonRetryableInvocationError, SchemaSourceError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
 from .base import AdapterContext, AdapterLoadResult
 
@@ -634,7 +634,14 @@ class OPTIMADERemoteInvoker:
                         "OPTIMADE request failed with non-retryable HTTP status "
                         f"{exc.response.status_code}"
                     ) from exc
-                raise
+                raise InvocationUnavailableError(
+                    "OPTIMADE access path is temporarily unavailable with HTTP status "
+                    f"{exc.response.status_code}"
+                ) from exc
+            except (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError) as exc:
+                raise InvocationUnavailableError(
+                    "OPTIMADE access path is temporarily unavailable"
+                ) from exc
             except SchemaSourceError as exc:
                 raise NonRetryableInvocationError(
                     "OPTIMADE runtime response violated the transport safety contract"
