@@ -144,6 +144,8 @@ def test_executor_rejects_invalid_discriminated_body_before_invocation() -> None
         },
         fields=["id"],
         schema_fingerprint=endpoint.fingerprint,
+
+        tool_fingerprint=tool.fingerprint,
     )
 
     with pytest.raises(SchemaValidationError):
