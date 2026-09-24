@@ -103,13 +103,22 @@ class SchemaRouter:
         unavailable_cooldown_seconds: float = 30.0,
     ) -> None:
         self.registry = registry if registry is not None else InMemoryRegistry()
-        self.planner = SchemaPlanner(self.registry, analyzer=analyzer)
         self.executor = RegistryExecutor(
             self.registry,
             policy=policy,
             approval_callback=approval_callback,
             hooks=execution_hooks,
             unavailable_cooldown_seconds=unavailable_cooldown_seconds,
+        )
+        self.planner = SchemaPlanner(
+            self.registry,
+            analyzer=analyzer,
+            availability_predicate=(
+                lambda tool, endpoint: self.executor.is_access_available(
+                    tool.key,
+                    endpoint.name,
+                )
+            ),
         )
         self.health_monitor = AccessHealthMonitor(self.executor)
         self.loader = URLSchemaLoader(
