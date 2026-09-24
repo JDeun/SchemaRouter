@@ -41,6 +41,11 @@ assert "local_change" not in registry.get("weather").metadata
 Custom `ToolRegistry` implementations must provide the same semantic guarantee, either through
 detached snapshots or immutable values.
 
+The built-in registries also revalidate the complete `ToolSpec` at every write boundary. This is
+necessary because nested Pydantic collections can be mutated after initial model construction
+without triggering assignment validation. A tool whose endpoint/parameter/field collections were
+made invalid after construction is rejected atomically rather than snapshotted or persisted.
+
 ## Schema fingerprints
 
 Fingerprinting excludes arbitrary descriptive `metadata`, but it intentionally includes the
@@ -111,5 +116,5 @@ Applications can still inject any structural registry implementation:
 router = SchemaRouter(registry=MyPersistentRegistry(...))
 ```
 
-Custom persistent implementations are responsible for atomic writes, snapshot semantics, and
-concurrency control.
+Custom persistent implementations are responsible for atomic writes, snapshot semantics,
+write-time contract revalidation, and concurrency control.
