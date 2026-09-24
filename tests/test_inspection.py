@@ -390,3 +390,31 @@ def test_inspection_fail_closes_on_malformed_or_non_http_provenance_urls() -> No
     serialized = snapshot.model_dump_json()
     assert "user:password" not in serialized
     assert "token=secret" not in serialized
+
+
+
+def test_live_inspection_reports_access_health_without_probe_callable() -> None:
+    router = SchemaRouter(unavailable_cooldown_seconds=60)
+    router.add_tool(
+        ToolSpec(
+            name="materials_api",
+            provider="materials",
+            access_mode="openapi",
+            endpoints=[EndpointSpec(name="read", read_only=True)],
+        )
+    )
+    router.register_health_probe("materials_api", "read", lambda: True)
+    router.mark_access_unavailable("materials_api", "read")
+
+    snapshot = router.inspect()
+
+    assert snapshot.execution.unavailable_access_paths == ["materials_api.read"]
+    assert snapshot.execution.health_monitor_running is False
+    assert len(snapshot.execution.health_probes) == 1
+    probe = snapshot.execution.health_probes[0]
+    assert probe.tool == "materials_api"
+    assert probe.endpoint == "read"
+    assert probe.status == "unknown"
+
+    serialized = snapshot.model_dump_json()
+    assert "<lambda>" not in serialized
