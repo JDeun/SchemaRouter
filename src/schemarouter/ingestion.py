@@ -781,6 +781,7 @@ class MCPSourceAdapter:
         except Exception:  # noqa: BLE001
             return None
 
+        tool.remote = True
         tool.metadata["remote"] = True
         return AdapterLoadResult(
             tool=tool,
