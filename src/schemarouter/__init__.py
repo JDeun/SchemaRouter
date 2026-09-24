@@ -54,6 +54,7 @@ from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
 from .inspection import (
     EndpointInspection,
     ExecutionInspection,
+    HealthProbeInspection,
     PlannerInspection,
     RegistryInspection,
     RouterInspection,
@@ -168,6 +169,7 @@ __all__ = [
     "InMemoryRegistry",
     "EndpointInspection",
     "ExecutionInspection",
+    "HealthProbeInspection",
     "PlannerInspection",
     "RegistryInspection",
     "RouterInspection",
