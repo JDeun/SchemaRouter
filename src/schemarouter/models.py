@@ -248,6 +248,7 @@ class ToolCall(StrictModel):
     fields: list[str] = Field(default_factory=list)
     evidence: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
     schema_fingerprint: str
+    tool_fingerprint: str | None = None
     missing_required_arguments: list[str] = Field(default_factory=list)
     score: float = 0.0
     explanation: PlanExplanation | None = None
