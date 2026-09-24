@@ -103,8 +103,12 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     assert 'subprocess.check_call([str(python), "examples/quickstart.py"])' in workflow
     assert "post-publish:" in workflow
     assert "needs: [prepare, github-release, pypi]" in workflow
-    assert 'verification: ["wheel", "sdist", "integration-extras"]' in workflow
+    assert (
+        'verification: ["wheel", "sdist", "lightweight-extras", "integration-extras"]'
+        in workflow
+    )
     assert 'package="schemarouter==$RELEASE_VERSION"' in workflow
+    assert 'package="schemarouter[mcp,jev,otel]==$RELEASE_VERSION"' in workflow
     assert (
         'package="schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]==$RELEASE_VERSION"'
         in workflow
@@ -137,18 +141,30 @@ def test_external_package_smokes_cover_lightweight_integration_extras() -> None:
         ROOT / "scripts" / "published_pypi_smoke.py"
     ).read_text(encoding="utf-8")
 
-    extras = "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]"
-    assert extras in compatibility
-    assert extras in release
+    lightweight_extras = "schemarouter[mcp,jev,otel]"
+    combined_extras = "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]"
+    assert "published-pypi-lightweight:" in compatibility
+    assert lightweight_extras in compatibility
+    assert lightweight_extras in release
+    assert combined_extras in compatibility
+    assert combined_extras in release
     assert "--framework-integrations" in compatibility
     assert "--lightweight-extras" in compatibility
     assert "--framework-integrations --lightweight-extras" in release
-    assert 'verification: ["wheel", "sdist", "integration-extras"]' in release
+    assert (
+        'verification: ["wheel", "sdist", "lightweight-extras", "integration-extras"]'
+        in release
+    )
     assert (
         "from installed_extras_smoke import run_smoke as run_installed_extras_smoke"
         in published_smoke
     )
     assert 'report["lightweight_extras"] = args.lightweight_extras' in published_smoke
+
+    installed_smoke = (
+        ROOT / "scripts" / "installed_extras_smoke.py"
+    ).read_text(encoding="utf-8")
+    assert "import httpx2" not in installed_smoke
 
 
 def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
@@ -173,6 +189,7 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     ) in workflow
     assert "schemarouter dashboard --registry /tmp/inspection-registry.sqlite3" in workflow
     assert 'dist/*.tar.gz' in workflow
+    assert "schemarouter[mcp,jev,otel] @ file://" in workflow
 
 
 def test_python_preview_is_separate_from_release_blocking_ci() -> None:
