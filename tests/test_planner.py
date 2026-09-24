@@ -845,3 +845,39 @@ def test_planner_never_builds_automatic_mutation_fallbacks() -> None:
 
     assert plan.calls[0].tool == "primary_write"
     assert plan.fallback_routes == []
+
+
+
+def test_provider_fallback_requires_explicit_primary_provider_identity() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="untagged_primary",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[FieldSpec(name="band_gap", aliases=["band gap"])],
+                )
+            ],
+        )
+    )
+    reg.register(
+        _provider_tool(
+            "tagged_alternative",
+            provider="provider_b",
+            access_mode="openapi",
+            aliases=["band gap"],
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="band gap",
+            preferred_tools=["untagged_primary"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.calls[0].tool == "untagged_primary"
+    assert plan.fallback_routes == []
