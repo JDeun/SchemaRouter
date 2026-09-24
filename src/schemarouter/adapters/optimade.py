@@ -383,6 +383,11 @@ def _tool_from_discovery(
                         "mode": "search",
                         "field_projection": "response_fields",
                     },
+                    metadata={
+                        "entry_type": entry_type,
+                        "mode": "search",
+                        "field_projection": "response_fields",
+                    },
                 ),
                 EndpointSpec(
                     name=f"get_{token}",
@@ -404,6 +409,11 @@ def _tool_from_discovery(
                     read_only=True,
                     destructive=False,
                     execution_metadata={
+                        "entry_type": entry_type,
+                        "mode": "get",
+                        "field_projection": "response_fields",
+                    },
+                    metadata={
                         "entry_type": entry_type,
                         "mode": "get",
                         "field_projection": "response_fields",
