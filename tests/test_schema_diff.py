@@ -211,3 +211,58 @@ def test_http_method_escalation_requires_security_review_even_if_read_only_flag_
         and change.severity == "security"
         for change in report.changes
     )
+
+
+def test_type_widening_with_simultaneous_new_constraint_is_not_false_compatible() -> None:
+    old = endpoint(
+        parameters=[
+            ParameterSpec(
+                name="value",
+                location="query",
+                json_schema={"type": "integer"},
+            )
+        ]
+    )
+    new = endpoint(
+        parameters=[
+            ParameterSpec(
+                name="value",
+                location="query",
+                json_schema={"type": "number", "maximum": 10},
+            )
+        ]
+    )
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "breaking"
+    assert any(
+        change.kind == "json_schema_changed"
+        and change.severity == "breaking"
+        for change in report.changes
+    )
+
+
+def test_enum_expansion_with_simultaneous_new_constraint_is_not_false_compatible() -> None:
+    old = endpoint(
+        parameters=[
+            ParameterSpec(
+                name="value",
+                location="query",
+                json_schema={"type": "string", "enum": ["a"]},
+            )
+        ]
+    )
+    new = endpoint(
+        parameters=[
+            ParameterSpec(
+                name="value",
+                location="query",
+                json_schema={"type": "string", "enum": ["a", "b"], "maxLength": 1},
+            )
+        ]
+    )
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "breaking"
