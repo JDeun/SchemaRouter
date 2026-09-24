@@ -445,3 +445,23 @@ async def test_execution_uses_same_registry_snapshot_that_was_validated() -> Non
     assert result.data == {"ok": True}
     assert registry.get_calls == 1
     assert registry.endpoint_calls == 0
+
+
+
+def test_legacy_local_runtime_sensitive_call_requires_tool_fingerprint() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="local_adapter",
+        endpoints=[EndpointSpec(name="run", read_only=True)],
+        execution_metadata={"adapter": "custom_local", "target": "worker-a"},
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("local_adapter", "run")
+    call = ToolCall(
+        tool="local_adapter",
+        endpoint="run",
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    with pytest.raises(PlanValidationError, match="tool_fingerprint is required"):
+        RegistryExecutor(registry).validate_call(call)
