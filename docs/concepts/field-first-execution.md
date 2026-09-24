@@ -42,8 +42,14 @@ elastic modulus
   -> provider C / Python     -> youngs_modulus
 ```
 
-Local `FieldSpec.aliases` declare known semantic equivalence. The planner first determines the
-logical answer surface, then accepts only candidates that can provide that surface.
+Local `FieldSpec` contracts declare known semantic equivalence. Prefer one canonical local
+`FieldSpec.name` for the concept and keep provider-specific wire names in
+`ServerProjectionSpec.field_map` (and bounded response paths where needed). `aliases` help the
+planner recognize user phrasing and legacy/provider terminology.
+
+For example, all three access paths can expose the local field `elastic_modulus` while mapping it
+to `elastic_modulus`, `_b_elasticity`, or `youngs_modulus` on the wire. The planner and final
+`ToolResult` then stay provider-neutral.
 
 The model does not get to invent field mappings.
 
@@ -103,16 +109,19 @@ The requested field surface remains stable while access paths can change:
 need: elastic modulus
 
 provider A / REST
-  healthy -> use it
+  healthy -> eligible for planning
 
 provider B / OPTIMADE
-  temporarily unavailable -> skip it
+  known unavailable -> excluded from the current planner candidate surface
 
 provider C / API
   fallback -> use only if it can provide elastic modulus
 ```
 
 Fallback does not broaden the requested fields merely because the preferred route failed.
+A newly observed outage is handled by the precompiled fallback chain; once that route enters the
+bounded cooldown, later plans exclude it until the cooldown expires or a trusted health signal
+reopens it.
 
 See [Provider-aware fallback](../guides/provider-fallback.md).
 
