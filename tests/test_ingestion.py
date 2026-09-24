@@ -312,3 +312,31 @@ async def test_openapi_document_size_is_bounded() -> None:
                 "https://docs.example.com/openapi.json",
                 kind="openapi",
             )
+
+
+
+@pytest.mark.asyncio
+async def test_openapi_query_secret_is_fetched_but_not_persisted_in_tool_state() -> None:
+    source = "https://docs.example.com/openapi.json?token=top-secret"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == source
+        return httpx.Response(
+            200,
+            content=json.dumps(openapi_document()),
+            headers={"content-type": "application/json"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            source,
+            kind="openapi",
+            http_client=client,
+        )
+
+    tool = router.registry.get("users_api")
+    assert tool.metadata["source_url"] == "https://docs.example.com/openapi.json"
+    assert tool.metadata["resolved_schema_url"] == "https://docs.example.com/openapi.json"
+    assert "source_url" not in tool.execution_metadata
+    assert "resolved_schema_url" not in tool.execution_metadata
+    assert "top-secret" not in tool.model_dump_json()
