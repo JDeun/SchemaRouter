@@ -137,3 +137,47 @@ def test_health_monitor_can_be_used_directly_with_executor() -> None:
     monitor.register("provider_api", "read", lambda: True)
 
     assert monitor.snapshots()[0].status == "unknown"
+
+
+
+def test_cooldown_does_not_leak_across_tool_contract_replacement() -> None:
+    router = _router(cooldown=60)
+    router.mark_access_unavailable("provider_api", "read")
+    assert router.unavailable_access_paths() == (("provider_api", "read"),)
+
+    replacement = ToolSpec(
+        name="provider_api",
+        provider="provider",
+        access_mode="new_transport",
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    router.registry.register(replacement, replace=True)
+
+    assert router.unavailable_access_paths() == ()
+    assert router.executor.is_access_available("provider_api", "read") is True
+
+
+@pytest.mark.asyncio
+async def test_health_probe_becomes_stale_after_tool_contract_replacement() -> None:
+    router = _router(cooldown=60)
+    called = False
+
+    def probe() -> bool:
+        nonlocal called
+        called = True
+        return True
+
+    router.register_health_probe("provider_api", "read", probe)
+    replacement = ToolSpec(
+        name="provider_api",
+        provider="provider",
+        access_mode="new_transport",
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    router.registry.register(replacement, replace=True)
+
+    snapshots = await router.check_health_once()
+
+    assert called is False
+    assert snapshots[0].status == "stale"
+    assert snapshots[0].last_error_type == "ToolContractChanged"
