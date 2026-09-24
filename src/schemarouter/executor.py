@@ -213,7 +213,9 @@ class RegistryExecutor:
             raise PlanValidationError(message) from exc
 
         if call.tool_fingerprint is None and (
-            tool.remote or bool(endpoint.execution_metadata)
+            tool.remote
+            or bool(tool.execution_metadata)
+            or bool(endpoint.execution_metadata)
         ):
             raise PlanValidationError(
                 "tool_fingerprint is required for remote or runtime-sensitive "
