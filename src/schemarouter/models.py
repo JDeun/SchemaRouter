@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 _REMOTE_ADAPTERS = {"mcp", "openapi", "optimade", "html_proposal"}
@@ -32,6 +33,29 @@ _LEGACY_TOOL_EXECUTION_METADATA_KEYS = {
     "suggested_base_url",
     "versioned_base_url",
 }
+
+
+def _require_json_safe(value: Any, *, path: str = "execution_metadata") -> None:
+    if value is None or isinstance(value, (str, bool, int)):
+        return
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError(f"{path} requires finite JSON numbers")
+        return
+    if isinstance(value, list):
+        for index, item in enumerate(value):
+            _require_json_safe(item, path=f"{path}[{index}]")
+        return
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise ValueError(f"{path} requires string object keys")
+            _require_json_safe(item, path=f"{path}.{key}")
+        return
+    raise ValueError(
+        f"{path} must contain only JSON-safe scalar/list/object values; "
+        f"got {type(value).__name__}"
+    )
 
 
 class StrictModel(BaseModel):
@@ -86,6 +110,12 @@ class EndpointSpec(StrictModel):
     destructive: bool | None = None
     execution_metadata: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("execution_metadata")
+    @classmethod
+    def validate_execution_metadata(cls, value: dict[str, Any]) -> dict[str, Any]:
+        _require_json_safe(value)
+        return value
 
     @model_validator(mode="before")
     @classmethod
@@ -149,6 +179,12 @@ class ToolSpec(StrictModel):
     remote: bool = False
     execution_metadata: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("execution_metadata")
+    @classmethod
+    def validate_execution_metadata(cls, value: dict[str, Any]) -> dict[str, Any]:
+        _require_json_safe(value)
+        return value
 
     @model_validator(mode="before")
     @classmethod
