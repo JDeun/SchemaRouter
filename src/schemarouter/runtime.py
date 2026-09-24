@@ -145,6 +145,8 @@ class SchemaRouter:
         kind: SourceKind = "auto",
         name: str | None = None,
         namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
@@ -175,6 +177,8 @@ class SchemaRouter:
             kind=kind,
             name=name,
             namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
             base_url=base_url,
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
@@ -219,6 +223,8 @@ class SchemaRouter:
         *,
         name: str | None = None,
         namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
         description: str | None = None,
         read_only: bool | None = None,
         destructive: bool | None = None,
@@ -230,6 +236,12 @@ class SchemaRouter:
             name=name if name is not None else decorated.get("name"),
             namespace=(
                 namespace if namespace is not None else decorated.get("namespace")
+            ),
+            provider=(
+                provider if provider is not None else decorated.get("provider")
+            ),
+            access_mode=(
+                access_mode if access_mode is not None else decorated.get("access_mode")
             ),
             description=(
                 description if description is not None else decorated.get("description")
@@ -374,6 +386,8 @@ class SchemaRouter:
         kind: SourceKind = "auto",
         name: str | None = None,
         namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
         replace: bool = False,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
@@ -390,6 +404,8 @@ class SchemaRouter:
             kind=kind,
             name=name,
             namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
             replace=replace,
             base_url=base_url,
             schema_headers=schema_headers,
