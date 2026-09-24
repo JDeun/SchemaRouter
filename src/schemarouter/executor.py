@@ -488,7 +488,7 @@ class RegistryExecutor:
             async for result in self.execute_iter(plan, retry=retry, budget=budget)
         ]
 
-    def _preflight_parallel_read_only(self, plan: ExecutionPlan) -> None:
+    def validate_parallel_read_only(self, plan: ExecutionPlan) -> None:
         """Fail before launching tasks unless every call is currently trusted read-only."""
 
         for call in plan.calls:
@@ -533,7 +533,7 @@ class RegistryExecutor:
         if max_concurrency < 1:
             raise ValueError("max_concurrency must be >= 1")
 
-        self._preflight_parallel_read_only(plan)
+        self.validate_parallel_read_only(plan)
         tracker = ExecutionBudgetTracker(budget or ExecutionBudget())
         semaphore = asyncio.Semaphore(max_concurrency)
 
