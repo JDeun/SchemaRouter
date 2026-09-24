@@ -353,7 +353,9 @@ def test_inspection_redacts_url_query_and_fragment_from_provenance() -> None:
     tool = sample_tool()
     tool.execution_metadata.update(
         {
-            "source_url": "https://example.test/openapi.json?token=secret#fragment",
+            "source_url": (
+                "https://user:password@example.test/openapi.json?token=secret#fragment"
+            ),
             "approved_base_url": "https://api.example.test/v1?should-not-render=yes",
         }
     )
@@ -364,6 +366,7 @@ def test_inspection_redacts_url_query_and_fragment_from_provenance() -> None:
     assert provenance["source_url"] == "https://example.test/openapi.json"
     assert provenance["approved_base_url"] == "https://api.example.test/v1"
     serialized = snapshot.model_dump_json()
+    assert "user:password" not in serialized
     assert "token=secret" not in serialized
     assert "should-not-render" not in serialized
     assert "fragment" not in serialized
