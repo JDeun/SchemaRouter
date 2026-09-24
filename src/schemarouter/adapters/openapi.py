@@ -1077,13 +1077,15 @@ def tool_from_openapi(
                     path=path,
                     read_only=method.lower() in {"get", "head", "options"},
                     destructive=method.lower() == "delete",
+                    execution_metadata={
+                        "request_body_required": request_body_required,
+                        "request_body_mode": request_body_mode,
+                        "request_body_discriminator": request_body_discriminator,
+                    },
                     metadata={
                         "tags": operation.get("tags", []),
                         "security": operation.get("security"),
                         "deprecated": bool(operation.get("deprecated", False)),
-                        "request_body_required": request_body_required,
-                        "request_body_mode": request_body_mode,
-                        "request_body_discriminator": request_body_discriminator,
                         "operation_id_generated": not (
                             isinstance(explicit_operation_id, str)
                             and bool(explicit_operation_id)
@@ -1264,10 +1266,10 @@ class OpenAPIRemoteInvoker:
 
         headers.update(self.trusted_headers)
 
-        request_body_mode = endpoint_spec.metadata.get("request_body_mode")
+        request_body_mode = endpoint_spec.execution_metadata.get("request_body_mode")
         if (
             request_body_mode in {"root_schema", "discriminated_root"}
-            and bool(endpoint_spec.metadata.get("request_body_required"))
+            and bool(endpoint_spec.execution_metadata.get("request_body_required"))
             and not root_body_seen
         ):
             raise NonRetryableInvocationError(
@@ -1312,7 +1314,7 @@ class OpenAPIRemoteInvoker:
             else:
                 request_kwargs["json"] = (
                     body
-                    if body or bool(endpoint_spec.metadata.get("request_body_required"))
+                    if body or bool(endpoint_spec.execution_metadata.get("request_body_required"))
                     else None
                 )
 
