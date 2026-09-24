@@ -266,3 +266,45 @@ def test_enum_expansion_with_simultaneous_new_constraint_is_not_false_compatible
     report = compare_endpoint_specs(old, new)
 
     assert report.compatibility == "breaking"
+
+
+def test_untyped_optional_output_field_addition_is_compatible() -> None:
+    old = endpoint(
+        output_fields=[FieldSpec(name="material_id", identifier=True)]
+    )
+    new = endpoint(
+        output_fields=[
+            FieldSpec(name="material_id", identifier=True),
+            FieldSpec(name="note"),
+        ]
+    )
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "compatible"
+    assert any(
+        change.kind == "output_field_added"
+        and change.severity == "compatible"
+        for change in report.changes
+    )
+
+
+def test_typed_output_field_addition_is_conservatively_breaking() -> None:
+    old = endpoint(
+        output_fields=[FieldSpec(name="material_id", identifier=True)]
+    )
+    new = endpoint(
+        output_fields=[
+            FieldSpec(name="material_id", identifier=True),
+            FieldSpec(name="band_gap", json_schema={"type": "number"}),
+        ]
+    )
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "breaking"
+    assert any(
+        change.kind == "output_field_added"
+        and change.severity == "breaking"
+        for change in report.changes
+    )
