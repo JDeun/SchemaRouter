@@ -14,6 +14,7 @@ from .models import (
     EndpointSpec,
     EvidenceRequirements,
     ExecutionPlan,
+    FallbackRoute,
     FieldSelectionExplanation,
     FieldSelectionReason,
     FieldSpec,
@@ -763,6 +764,253 @@ class SchemaPlanner:
             return False, [f"{prefix}: evidence decision marked evidence insufficient"]
         raise PlanningError(f"{prefix}: unsupported evidence decision {option_id!r}")
 
+    @staticmethod
+    def _field_semantic_groups(
+        endpoint: EndpointSpec,
+        field_names: list[str] | tuple[str, ...],
+    ) -> tuple[set[str], ...]:
+        by_name = {field.name: field for field in endpoint.output_fields}
+        groups: list[set[str]] = []
+        for name in field_names:
+            field = by_name.get(name)
+            if field is None or field.identifier:
+                continue
+            values = {
+                _normalize(value)
+                for value in [field.name, *field.aliases]
+                if value and _normalize(value)
+            }
+            if values:
+                groups.append(values)
+        return tuple(groups)
+
+    @classmethod
+    def _fallback_semantics_compatible(
+        cls,
+        primary_candidate: _Candidate,
+        primary_call: ToolCall,
+        alternative_candidate: _Candidate,
+        alternative_call: ToolCall,
+    ) -> bool:
+        required = cls._field_semantic_groups(
+            primary_candidate.endpoint,
+            tuple(
+                name
+                for name in primary_call.fields
+                if name in primary_candidate.matched_fields
+            ),
+        )
+        if not required:
+            return alternative_candidate.score > 0
+
+        available = cls._field_semantic_groups(
+            alternative_candidate.endpoint,
+            alternative_call.fields,
+        )
+        if not available:
+            return False
+
+        for requirement in required:
+            matched = any(
+                any(
+                    left == right or left in right or right in left
+                    for left in requirement
+                    for right in candidate_group
+                )
+                for candidate_group in available
+            )
+            if not matched:
+                return False
+        return True
+
+    @staticmethod
+    def _ordered_fallback_candidates(
+        primary: _Candidate,
+        candidates: list[_Candidate],
+        *,
+        scope: str,
+    ) -> list[_Candidate]:
+        if scope == "disabled":
+            return []
+
+        distinct = [
+            candidate
+            for candidate in candidates
+            if (
+                candidate.tool.key,
+                candidate.endpoint.name,
+            )
+            != (
+                primary.tool.key,
+                primary.endpoint.name,
+            )
+        ]
+        provider = primary.tool.provider
+        same_provider = [
+            candidate
+            for candidate in distinct
+            if provider is not None and candidate.tool.provider == provider
+        ]
+        if scope == "same_provider":
+            return same_provider
+
+        other_provider = [
+            candidate
+            for candidate in distinct
+            if candidate not in same_provider
+        ]
+        return [*same_provider, *other_provider]
+
+    def _compile_candidate_sync(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        candidate: _Candidate,
+        warnings: list[str],
+        *,
+        warn_ignored_arguments: bool = True,
+    ) -> ToolCall | None:
+        endpoint = candidate.endpoint
+        declared = {parameter.name: parameter for parameter in endpoint.parameters}
+        arguments = {
+            name: value
+            for name, value in intent.arguments.items()
+            if name in declared
+        }
+        dropped = sorted(set(intent.arguments) - set(arguments))
+        if dropped and warn_ignored_arguments:
+            warnings.append(
+                f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
+                + ", ".join(dropped)
+            )
+        missing = [
+            parameter.name
+            for parameter in endpoint.parameters
+            if parameter.required and parameter.name not in arguments
+        ]
+        deterministic_fields = self._project_fields(
+            endpoint,
+            intent,
+            candidate.matched_fields,
+        )
+        fields, field_warnings = self._select_fields_sync(
+            request,
+            candidate,
+            deterministic_fields,
+        )
+        warnings.extend(field_warnings)
+        evidence = self._evidence(
+            candidate.tool,
+            endpoint,
+            fields,
+            intent.evidence,
+        )
+        evidence_ok, evidence_warnings = self._assess_evidence_sync(
+            request,
+            candidate,
+            fields,
+            intent.evidence,
+        )
+        warnings.extend(evidence_warnings)
+        if not evidence_ok:
+            return None
+
+        return ToolCall(
+            tool=candidate.tool.key,
+            endpoint=endpoint.name,
+            arguments=arguments,
+            fields=fields,
+            evidence=evidence,
+            schema_fingerprint=endpoint.fingerprint,
+            tool_fingerprint=candidate.tool.fingerprint,
+            missing_required_arguments=missing,
+            score=candidate.score,
+            explanation=self._build_explanation(
+                candidate,
+                fields,
+                dropped,
+                field_decision_used=(
+                    self.decision_policy.field_selection_enabled
+                    and not field_warnings
+                ),
+            ),
+        )
+
+    async def _compile_candidate_async(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        candidate: _Candidate,
+        warnings: list[str],
+        *,
+        warn_ignored_arguments: bool = True,
+    ) -> ToolCall | None:
+        endpoint = candidate.endpoint
+        declared = {parameter.name: parameter for parameter in endpoint.parameters}
+        arguments = {
+            name: value
+            for name, value in intent.arguments.items()
+            if name in declared
+        }
+        dropped = sorted(set(intent.arguments) - set(arguments))
+        if dropped and warn_ignored_arguments:
+            warnings.append(
+                f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
+                + ", ".join(dropped)
+            )
+        missing = [
+            parameter.name
+            for parameter in endpoint.parameters
+            if parameter.required and parameter.name not in arguments
+        ]
+        deterministic_fields = self._project_fields(
+            endpoint,
+            intent,
+            candidate.matched_fields,
+        )
+        fields, field_warnings = await self._select_fields_async(
+            request,
+            candidate,
+            deterministic_fields,
+        )
+        warnings.extend(field_warnings)
+        evidence = self._evidence(
+            candidate.tool,
+            endpoint,
+            fields,
+            intent.evidence,
+        )
+        evidence_ok, evidence_warnings = await self._assess_evidence_async(
+            request,
+            candidate,
+            fields,
+            intent.evidence,
+        )
+        warnings.extend(evidence_warnings)
+        if not evidence_ok:
+            return None
+
+        return ToolCall(
+            tool=candidate.tool.key,
+            endpoint=endpoint.name,
+            arguments=arguments,
+            fields=fields,
+            evidence=evidence,
+            schema_fingerprint=endpoint.fingerprint,
+            tool_fingerprint=candidate.tool.fingerprint,
+            missing_required_arguments=missing,
+            score=candidate.score,
+            explanation=self._build_explanation(
+                candidate,
+                fields,
+                dropped,
+                field_decision_used=(
+                    self.decision_policy.field_selection_enabled
+                    and not field_warnings
+                ),
+            ),
+        )
+
     def _build_plan(
         self,
         request: PlanRequest,
@@ -783,80 +1031,61 @@ class SchemaPlanner:
                 warnings=[*warnings, "no schema candidate matched the request"],
             )
 
-        calls: list[ToolCall] = []
-        for candidate in candidates[: request.max_calls]:
-            endpoint = candidate.endpoint
-            declared = {parameter.name: parameter for parameter in endpoint.parameters}
-            arguments = {
-                name: value
-                for name, value in intent.arguments.items()
-                if name in declared
-            }
-            dropped = sorted(set(intent.arguments) - set(arguments))
-            if dropped:
-                warnings.append(
-                    f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
-                    + ", ".join(dropped)
-                )
-            missing = [
-                parameter.name
-                for parameter in endpoint.parameters
-                if parameter.required and parameter.name not in arguments
-            ]
-            deterministic_fields = self._project_fields(
-                endpoint,
+        primary_pairs: list[tuple[_Candidate, ToolCall]] = []
+        for candidate in candidates:
+            if len(primary_pairs) >= request.max_calls:
+                break
+            call = self._compile_candidate_sync(
+                request,
                 intent,
-                candidate.matched_fields,
-            )
-            fields, field_warnings = self._select_fields_sync(
-                request,
                 candidate,
-                deterministic_fields,
+                warnings,
             )
-            warnings.extend(field_warnings)
-            evidence = self._evidence(
-                candidate.tool,
-                endpoint,
-                fields,
-                intent.evidence,
-            )
-            evidence_ok, evidence_warnings = self._assess_evidence_sync(
-                request,
-                candidate,
-                fields,
-                intent.evidence,
-            )
-            warnings.extend(evidence_warnings)
-            if not evidence_ok:
-                continue
+            if call is not None:
+                primary_pairs.append((candidate, call))
 
-            calls.append(
-                ToolCall(
-                    tool=candidate.tool.key,
-                    endpoint=endpoint.name,
-                    arguments=arguments,
-                    fields=fields,
-                    evidence=evidence,
-                    schema_fingerprint=endpoint.fingerprint,
-                    tool_fingerprint=candidate.tool.fingerprint,
-                    missing_required_arguments=missing,
-                    score=candidate.score,
-                    explanation=self._build_explanation(
+        calls = [call for _, call in primary_pairs]
+        fallback_routes: list[FallbackRoute] = []
+        if request.fallback_scope != "disabled" and request.max_fallbacks > 0:
+            for index, (primary_candidate, primary_call) in enumerate(primary_pairs):
+                alternatives: list[ToolCall] = []
+                for candidate in self._ordered_fallback_candidates(
+                    primary_candidate,
+                    candidates,
+                    scope=request.fallback_scope,
+                ):
+                    if len(alternatives) >= request.max_fallbacks:
+                        break
+                    alternative = self._compile_candidate_sync(
+                        request,
+                        intent,
                         candidate,
-                        fields,
-                        dropped,
-                        field_decision_used=(
-                            self.decision_policy.field_selection_enabled
-                            and not field_warnings
-                        ),
-                    ),
-                )
-            )
+                        warnings,
+                        warn_ignored_arguments=False,
+                    )
+                    if alternative is None or not alternative.executable:
+                        continue
+                    if not self._fallback_semantics_compatible(
+                        primary_candidate,
+                        primary_call,
+                        candidate,
+                        alternative,
+                    ):
+                        continue
+                    alternatives.append(alternative)
+                if alternatives:
+                    fallback_routes.append(
+                        FallbackRoute(
+                            primary_call_index=index,
+                            alternatives=alternatives,
+                        )
+                    )
 
         return ExecutionPlan(
             query=request.query,
             registry_version=self.registry.version,
             calls=calls,
+            fallback_routes=fallback_routes,
             warnings=warnings,
         )
 
@@ -867,88 +1096,70 @@ class SchemaPlanner:
     ) -> ExecutionPlan:
         candidates = self._candidates(request, intent)
         candidates, decision_warnings = await self._select_candidates_async(request, candidates)
+        warnings = list(decision_warnings)
         if not candidates:
             return ExecutionPlan(
                 query=request.query,
                 registry_version=self.registry.version,
                 calls=[],
-                warnings=[*decision_warnings, "no schema candidate matched the request"],
+                warnings=[*warnings, "no schema candidate matched the request"],
             )
 
-        calls: list[ToolCall] = []
-        warnings = list(decision_warnings)
-        for candidate in candidates[: request.max_calls]:
-            endpoint = candidate.endpoint
-            declared = {parameter.name: parameter for parameter in endpoint.parameters}
-            arguments = {
-                name: value
-                for name, value in intent.arguments.items()
-                if name in declared
-            }
-            dropped = sorted(set(intent.arguments) - set(arguments))
-            if dropped:
-                warnings.append(
-                    f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
-                    + ", ".join(dropped)
-                )
-            missing = [
-                parameter.name
-                for parameter in endpoint.parameters
-                if parameter.required and parameter.name not in arguments
-            ]
-            deterministic_fields = self._project_fields(
-                endpoint,
+        primary_pairs: list[tuple[_Candidate, ToolCall]] = []
+        for candidate in candidates:
+            if len(primary_pairs) >= request.max_calls:
+                break
+            call = await self._compile_candidate_async(
+                request,
                 intent,
-                candidate.matched_fields,
-            )
-            fields, field_warnings = await self._select_fields_async(
-                request,
                 candidate,
-                deterministic_fields,
+                warnings,
             )
-            warnings.extend(field_warnings)
-            evidence = self._evidence(
-                candidate.tool,
-                endpoint,
-                fields,
-                intent.evidence,
-            )
-            evidence_ok, evidence_warnings = await self._assess_evidence_async(
-                request,
-                candidate,
-                fields,
-                intent.evidence,
-            )
-            warnings.extend(evidence_warnings)
-            if not evidence_ok:
-                continue
+            if call is not None:
+                primary_pairs.append((candidate, call))
 
-            calls.append(
-                ToolCall(
-                    tool=candidate.tool.key,
-                    endpoint=endpoint.name,
-                    arguments=arguments,
-                    fields=fields,
-                    evidence=evidence,
-                    schema_fingerprint=endpoint.fingerprint,
-                    tool_fingerprint=candidate.tool.fingerprint,
-                    missing_required_arguments=missing,
-                    score=candidate.score,
-                    explanation=self._build_explanation(
+        calls = [call for _, call in primary_pairs]
+        fallback_routes: list[FallbackRoute] = []
+        if request.fallback_scope != "disabled" and request.max_fallbacks > 0:
+            for index, (primary_candidate, primary_call) in enumerate(primary_pairs):
+                alternatives: list[ToolCall] = []
+                for candidate in self._ordered_fallback_candidates(
+                    primary_candidate,
+                    candidates,
+                    scope=request.fallback_scope,
+                ):
+                    if len(alternatives) >= request.max_fallbacks:
+                        break
+                    alternative = await self._compile_candidate_async(
+                        request,
+                        intent,
                         candidate,
-                        fields,
-                        dropped,
-                        field_decision_used=(
-                            self.decision_policy.field_selection_enabled
-                            and not field_warnings
-                        ),
-                    ),
-                )
-            )
+                        warnings,
+                        warn_ignored_arguments=False,
+                    )
+                    if alternative is None or not alternative.executable:
+                        continue
+                    if not self._fallback_semantics_compatible(
+                        primary_candidate,
+                        primary_call,
+                        candidate,
+                        alternative,
+                    ):
+                        continue
+                    alternatives.append(alternative)
+                if alternatives:
+                    fallback_routes.append(
+                        FallbackRoute(
+                            primary_call_index=index,
+                            alternatives=alternatives,
+                        )
+                    )
+
         return ExecutionPlan(
             query=request.query,
             registry_version=self.registry.version,
             calls=calls,
+            fallback_routes=fallback_routes,
             warnings=warnings,
         )
 
