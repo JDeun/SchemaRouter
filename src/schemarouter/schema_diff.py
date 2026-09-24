@@ -473,6 +473,23 @@ def compare_endpoint_specs(old: EndpointSpec, new: EndpointSpec) -> SchemaDiffRe
     )
 
 
+def _added_endpoint_severity(
+    endpoint: EndpointSpec,
+    *,
+    tool_remote: bool,
+) -> SchemaChangeSeverity:
+    method = endpoint.method.upper() if isinstance(endpoint.method, str) else None
+    if endpoint.destructive is True:
+        return "security"
+    if endpoint.read_only is False:
+        return "security"
+    if method in {"POST", "PUT", "PATCH", "DELETE"}:
+        return "security"
+    if tool_remote and endpoint.read_only is None:
+        return "security"
+    return "compatible"
+
+
 def compare_tool_specs(old: ToolSpec, new: ToolSpec) -> SchemaDiffReport:
     """Explain why two tool fingerprints differ without weakening drift checks."""
 
@@ -542,12 +559,22 @@ def compare_tool_specs(old: ToolSpec, new: ToolSpec) -> SchemaDiffReport:
             old=old_endpoints[name].model_dump(mode="json"),
         )
     for name in new_endpoints.keys() - old_endpoints.keys():
+        endpoint = new_endpoints[name]
+        severity = _added_endpoint_severity(
+            endpoint,
+            tool_remote=new.remote,
+        )
         _change(
             changes,
             path=f"endpoints.{name}",
             kind="endpoint_added",
-            severity="compatible",
-            new=new_endpoints[name].model_dump(mode="json"),
+            severity=severity,
+            new=endpoint.model_dump(mode="json"),
+            message=(
+                "New endpoint increases the side-effect or remote-unclassified authority surface."
+                if severity == "security"
+                else "New explicitly read-only endpoint is additive."
+            ),
         )
     for name in old_endpoints.keys() & new_endpoints.keys():
         endpoint_report = compare_endpoint_specs(old_endpoints[name], new_endpoints[name])
