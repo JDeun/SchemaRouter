@@ -120,6 +120,9 @@ def test_ci_is_reusable_and_contains_release_quality_gates() -> None:
     assert "pip-audit --strict ." in workflow
     assert "needs: [laya-integration, dependency-audit]" in workflow
     assert "--html-out /tmp/decision-benchmark.html" in workflow
+    assert "schemarouter inspect registry --db /tmp/inspection-registry.sqlite3 --json" in workflow
+    assert "schemarouter inspect traces --db /tmp/inspection-traces.sqlite3 --complete --json" in workflow
+    assert "schemarouter dashboard --registry /tmp/inspection-registry.sqlite3" in workflow
     assert 'dist/*.tar.gz' in workflow
 
 
