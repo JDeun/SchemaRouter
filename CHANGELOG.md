@@ -22,6 +22,10 @@ The project is pre-1.0 and follows the compatibility rules in
 - explicit `parallel_read_only` in-plan fan-out with full preflight schema/binding/policy checks,
   completion-order streaming/events, one shared execution budget, and an independent
   `max_parallel_calls` bound so batch concurrency does not multiply implicitly;
+- opt-in provider-aware read-only fallback routes with explicit `provider` / `access_mode`
+  identities, same-provider-before-cross-provider ordering, per-alternative schema/evidence
+  compilation, semantic field-alias compatibility checks, explicit `InvocationUnavailableError`
+  triggers, and typed `tool.fallback` observability;
 
 - self-contained HTML summaries for the decision-routing benchmark, alongside the existing JSON/CSV
   outputs, with escaped metadata and no remote assets;
@@ -89,6 +93,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - hardened stale-plan authority boundaries so local/remote classification, approved transport
   origin, and built-in runtime adapter semantics cannot change through unfingerprinted descriptive
   metadata or survive a rebind under an old plan;
+- automatic fallback never treats schema, policy, approval, stale-state, deterministic 4xx, or
+  mutation failures as availability signals; complete fallback chains are preflighted and only
+  explicitly read-only candidates can participate;
 - operational inspection now derives execution-critical provenance from the fingerprinted contract
   rather than ordinary metadata mirrors, preventing observability from reporting spoofed authority
   state; URL userinfo/query/fragment values are stripped from inspection/dashboard output, and
