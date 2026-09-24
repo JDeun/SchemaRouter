@@ -32,11 +32,13 @@ The project is pre-1.0 and follows the compatibility rules in
 - scheduled/manual compatibility smokes that force-install the latest stable SchemaRouter wheel and
   sdist from PyPI in fresh runners, run `pip check`, execute a public API scenario outside the
   checkout, and retain machine-readable reports;
-- a published-framework compatibility smoke that resolves the stable LangChain/LangGraph/LlamaIndex
-  extras from PyPI and executes all three bridges outside the source checkout;
+- a published-integration compatibility smoke that resolves stable
+  MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras from PyPI, validates the
+  MCP/Jev/OpenTelemetry SDK integration surface, and executes all three framework bridges outside
+  the source checkout;
 - exact-version post-publish release verification that re-installs the newly published PyPI wheel,
-  forced sdist, and LangChain/LangGraph/LlamaIndex extras after publication, with bounded index-
-  propagation retries and public-surface execution outside the checkout;
+  forced sdist, and MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras after publication,
+  with bounded index-propagation retries and public-surface execution outside the checkout;
 
 ### Changed
 
