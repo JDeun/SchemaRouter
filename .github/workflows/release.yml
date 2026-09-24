@@ -401,3 +401,72 @@ jobs:
         with:
           packages-dir: dist/
           skip-existing: true
+
+  post-publish:
+    needs: [prepare, github-release, pypi]
+    if: needs.prepare.outputs.should_release == 'true'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        verification: ["wheel", "sdist", "framework-extras"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.prepare.outputs.release_sha }}
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - name: Install exact published release from PyPI
+        env:
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          VERIFY_KIND: ${{ matrix.verification }}
+        run: |
+          install_args=(--no-cache-dir --only-binary=schemarouter)
+          package="schemarouter==$RELEASE_VERSION"
+          if [[ "$VERIFY_KIND" == "sdist" ]]; then
+            install_args=(--no-cache-dir --no-binary=schemarouter)
+          elif [[ "$VERIFY_KIND" == "framework-extras" ]]; then
+            package="schemarouter[langchain,langgraph,llamaindex]==$RELEASE_VERSION"
+          fi
+
+          installed=false
+          for attempt in {1..18}; do
+            if python -m pip install "${install_args[@]}" "$package"; then
+              installed=true
+              break
+            fi
+            if [[ "$attempt" -eq 18 ]]; then
+              break
+            fi
+            echo "PyPI release not installable yet (attempt $attempt/18); retrying in 10s."
+            sleep 10
+          done
+
+          if [[ "$installed" != "true" ]]; then
+            echo "Failed to install exact PyPI release $RELEASE_VERSION as $VERIFY_KIND."
+            exit 1
+          fi
+          python -m pip check
+      - name: Verify exact published release outside the checkout
+        env:
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          VERIFY_KIND: ${{ matrix.verification }}
+        run: |
+          artifact_kind="$VERIFY_KIND"
+          framework_args=()
+          if [[ "$VERIFY_KIND" == "framework-extras" ]]; then
+            artifact_kind="wheel"
+            framework_args+=(--framework-integrations)
+          fi
+
+          cd /tmp
+          python "$GITHUB_WORKSPACE/scripts/published_pypi_smoke.py" \
+            --artifact-kind "$artifact_kind" \
+            --expected-version "$RELEASE_VERSION" \
+            "${framework_args[@]}"
+
