@@ -159,18 +159,26 @@ class ScoreComponent(StrictModel):
     matched: str | None = None
 
 
+FieldSelectionReason = Literal[
+    "identifier",
+    "field_exact",
+    "field_lexical",
+    "field_substring",
+    "recall_fallback",
+    "decision_backend",
+]
+CandidateSelectionSource = Literal[
+    "deterministic",
+    "decision_backend",
+    "decision_recall",
+]
+
+
 class FieldSelectionExplanation(StrictModel):
     """Machine-readable reason a declared output field is retained."""
 
     field: str
-    reason: Literal[
-        "identifier",
-        "field_exact",
-        "field_lexical",
-        "field_substring",
-        "recall_fallback",
-        "decision_backend",
-    ]
+    reason: FieldSelectionReason
 
 
 class PlanExplanation(StrictModel):
@@ -179,11 +187,7 @@ class PlanExplanation(StrictModel):
     This records locally observable routing signals, not model chain-of-thought.
     """
 
-    candidate_selection: Literal[
-        "deterministic",
-        "decision_backend",
-        "decision_recall",
-    ] = "deterministic"
+    candidate_selection: CandidateSelectionSource = "deterministic"
     score_components: list[ScoreComponent] = Field(default_factory=list)
     field_selection: list[FieldSelectionExplanation] = Field(default_factory=list)
     ignored_arguments: list[str] = Field(default_factory=list)
