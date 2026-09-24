@@ -7,6 +7,17 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+_REMOTE_ADAPTERS = {"mcp", "openapi", "optimade", "html_proposal"}
+_LEGACY_ENDPOINT_EXECUTION_METADATA_KEYS = {
+    "entry_type",
+    "field_projection",
+    "mode",
+    "request_body_discriminator",
+    "request_body_mode",
+    "request_body_required",
+}
+
+
 class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
@@ -57,7 +68,27 @@ class EndpointSpec(StrictModel):
     path: str | None = None
     read_only: bool | None = None
     destructive: bool | None = None
+    execution_metadata: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_legacy_execution_metadata(cls, value: Any) -> Any:
+        if not isinstance(value, dict) or "execution_metadata" in value:
+            return value
+        metadata = value.get("metadata")
+        if not isinstance(metadata, dict):
+            return value
+        execution_metadata = {
+            key: metadata[key]
+            for key in _LEGACY_ENDPOINT_EXECUTION_METADATA_KEYS
+            if key in metadata
+        }
+        if not execution_metadata:
+            return value
+        migrated = dict(value)
+        migrated["execution_metadata"] = execution_metadata
+        return migrated
 
     @model_validator(mode="after")
     def validate_unique_names(self) -> EndpointSpec:
@@ -99,7 +130,24 @@ class ToolSpec(StrictModel):
     endpoints: list[EndpointSpec]
     source_type: str | None = None
     license: str | None = None
+    remote: bool = False
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_legacy_remote_classification(cls, value: Any) -> Any:
+        if not isinstance(value, dict) or "remote" in value:
+            return value
+        metadata = value.get("metadata")
+        if not isinstance(metadata, dict):
+            return value
+        adapter = metadata.get("adapter")
+        inferred_remote = bool(metadata.get("remote")) or adapter in _REMOTE_ADAPTERS
+        if not inferred_remote:
+            return value
+        migrated = dict(value)
+        migrated["remote"] = True
+        return migrated
 
     @model_validator(mode="after")
     def validate_endpoints(self) -> ToolSpec:
