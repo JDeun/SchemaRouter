@@ -682,14 +682,7 @@ class OpenAPISourceAdapter:
                 ) from exc
             suggested_base_url = None
 
-        tool.execution_metadata.update(
-            {
-                "adapter": "openapi",
-                "source_url": context.url,
-                "resolved_schema_url": resolved_schema_url,
-                "suggested_base_url": suggested_base_url,
-            }
-        )
+        tool.execution_metadata.update({"adapter": "openapi"})
         tool.metadata.update(
             {
                 "source_url": context.url,
