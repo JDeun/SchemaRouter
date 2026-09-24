@@ -598,6 +598,8 @@ async def test_oneof_runtime_validation_remains_authoritative_before_projection(
         endpoint="get_pet",
         fields=["breed"],
         schema_fingerprint=endpoint.fingerprint,
+
+        tool_fingerprint=tool.fingerprint,
     )
 
     executor.bind(
