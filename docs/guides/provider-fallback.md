@@ -91,6 +91,19 @@ Fallback candidates are normal `ToolCall` values with their own endpoint/tool fi
 arguments, selected fields, evidence contract, and planning explanation. Runtime does not invent a
 new route after the plan was compiled.
 
+## Field need stays fixed across fallback
+
+Fallback changes **where** SchemaRouter obtains the data, not **what** data the question requires.
+A primary call and every accepted fallback are independently compiled against the same semantic
+need. If the query needs elastic modulus, a fallback that cannot expose a compatible elastic-modulus
+field is omitted.
+
+When an endpoint declares `ServerProjectionSpec`, the planned fields are also pushed upstream so a
+fallback does not fetch a full record merely because it uses a different transport. Final local
+projection remains in force after raw schema validation.
+
+See [Field-first execution](../concepts/field-first-execution.md).
+
 ## Different field names across access paths
 
 Access paths often expose slightly different schemas. Use `FieldSpec.aliases` to declare semantic
@@ -131,6 +144,49 @@ Automatic fallback does **not** occur for:
 
 All candidates in an automatic fallback chain must be explicitly `read_only=True`, and the entire
 chain is preflighted before the primary is invoked.
+
+## Passive cooldown and active health recovery
+
+A route that repeatedly times out, cannot connect, returns HTTP 429, or returns transient 5xx
+responses is temporarily marked unavailable after its normal retry policy is exhausted.
+
+That state is **not permanent**. Every unavailable mark has a finite cooldown. When the cooldown
+expires, the route automatically becomes eligible again.
+
+Applications can also reopen routes earlier with trusted health probes:
+
+```python
+async def mp_optimade_health() -> bool:
+    # Use a cheap, trusted health/version check owned by the application.
+    return await check_mp_optimade_health()
+
+router.register_health_probe(
+    "mp_optimade",
+    "search_structures",
+    mp_optimade_health,
+)
+
+await router.start_health_monitor(
+    interval_seconds=30,
+    probe_timeout_seconds=5,
+)
+```
+
+A successful probe clears the cooldown immediately. A failed probe only extends the bounded
+cooldown; it does not permanently blacklist the route.
+
+The health monitor has strict boundaries:
+
+- only explicitly registered trusted local callbacks run;
+- probes can be attached only to `read_only=True` access paths;
+- SchemaRouter never invents a health request from remote metadata;
+- arbitrary data queries are not silently converted into probes;
+- model output cannot mark routes healthy/unhealthy;
+- health failures affect availability only, not schema/policy authority.
+
+Applications that already have external service health information can call
+`mark_access_unavailable(...)` and `mark_access_available(...)` directly instead of starting the
+background monitor.
 
 ## Same provider first, then another provider
 
