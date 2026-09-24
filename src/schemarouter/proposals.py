@@ -376,7 +376,6 @@ async def inspect_documentation_url(
         endpoints=accepted_endpoints,
         execution_metadata={
             "adapter": "html_proposal",
-            "source_url": url,
             "executable": False,
         },
         metadata={
