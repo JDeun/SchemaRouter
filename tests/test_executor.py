@@ -4,8 +4,11 @@ from schemarouter import (
     BindingDriftError,
     EndpointSpec,
     ExecutionPlan,
+    FallbackRoute,
     FieldSpec,
     InMemoryRegistry,
+    InvocationUnavailableError,
+    NonRetryableInvocationError,
     ParameterSpec,
     PlanRequest,
     PlanValidationError,
@@ -465,3 +468,275 @@ def test_legacy_local_runtime_sensitive_call_requires_tool_fingerprint() -> None
 
     with pytest.raises(PlanValidationError, match="tool_fingerprint is required"):
         RegistryExecutor(registry).validate_call(call)
+
+
+
+def _fallback_tool(
+    name: str,
+    *,
+    provider: str,
+    access_mode: str,
+    read_only: bool = True,
+) -> ToolSpec:
+    return ToolSpec(
+        name=name,
+        provider=provider,
+        access_mode=access_mode,
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                read_only=read_only,
+                parameters=[ParameterSpec(name="formula", required=True)],
+                output_fields=[
+                    FieldSpec(name="material_id", identifier=True),
+                    FieldSpec(name="band_gap", aliases=["band gap"]),
+                ],
+                output_schema={
+                    "type": "object",
+                    "properties": {
+                        "material_id": {"type": "string"},
+                        "band_gap": {"type": "number"},
+                    },
+                    "required": ["material_id", "band_gap"],
+                },
+            )
+        ],
+    )
+
+
+def _provider_fallback_plan(registry: InMemoryRegistry) -> ExecutionPlan:
+    calls = []
+    for key in ("mp_api", "mp_optimade", "oqmd_api"):
+        tool = registry.get(key)
+        endpoint = tool.endpoint("search")
+        calls.append(
+            ToolCall(
+                tool=key,
+                endpoint="search",
+                arguments={"formula": "Si"},
+                fields=["material_id", "band_gap"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        )
+    return ExecutionPlan(
+        query="Si band gap",
+        registry_version=registry.version,
+        calls=[calls[0]],
+        fallback_routes=[
+            FallbackRoute(
+                primary_call_index=0,
+                alternatives=[calls[1], calls[2]],
+            )
+        ],
+    )
+
+
+@pytest.mark.asyncio
+async def test_executor_falls_back_same_provider_before_cross_provider() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        _fallback_tool(
+            "mp_api",
+            provider="materials_project",
+            access_mode="openapi",
+        )
+    )
+    registry.register(
+        _fallback_tool(
+            "mp_optimade",
+            provider="materials_project",
+            access_mode="optimade",
+        )
+    )
+    registry.register(
+        _fallback_tool(
+            "oqmd_api",
+            provider="oqmd",
+            access_mode="openapi",
+        )
+    )
+    plan = _provider_fallback_plan(registry)
+    executor = RegistryExecutor(registry)
+    seen = []
+
+    def unavailable(endpoint, arguments):
+        seen.append("mp_api")
+        raise InvocationUnavailableError("temporary outage")
+
+    def optimade(endpoint, arguments):
+        seen.append("mp_optimade")
+        return {"material_id": "mp-149", "band_gap": 1.1}
+
+    def oqmd(endpoint, arguments):
+        seen.append("oqmd_api")
+        return {"material_id": "oqmd-1", "band_gap": 1.2}
+
+    executor.bind("mp_api", unavailable)
+    executor.bind("mp_optimade", optimade)
+    executor.bind("oqmd_api", oqmd)
+
+    result = (await executor.execute(plan))[0]
+
+    assert result.tool == "mp_optimade"
+    assert result.data == {"material_id": "mp-149", "band_gap": 1.1}
+    assert seen == ["mp_api", "mp_optimade"]
+
+
+@pytest.mark.asyncio
+async def test_executor_crosses_provider_only_after_same_provider_paths_are_unavailable() -> None:
+    registry = InMemoryRegistry()
+    for tool in (
+        _fallback_tool("mp_api", provider="materials_project", access_mode="openapi"),
+        _fallback_tool("mp_optimade", provider="materials_project", access_mode="optimade"),
+        _fallback_tool("oqmd_api", provider="oqmd", access_mode="openapi"),
+    ):
+        registry.register(tool)
+    plan = _provider_fallback_plan(registry)
+    executor = RegistryExecutor(registry)
+    seen = []
+
+    def unavailable(name):
+        def invoke(endpoint, arguments):
+            seen.append(name)
+            raise InvocationUnavailableError(f"{name} unavailable")
+        return invoke
+
+    executor.bind("mp_api", unavailable("mp_api"))
+    executor.bind("mp_optimade", unavailable("mp_optimade"))
+
+    def oqmd(endpoint, arguments):
+        seen.append("oqmd_api")
+        return {"material_id": "oqmd-1", "band_gap": 1.2}
+
+    executor.bind("oqmd_api", oqmd)
+
+    result = (await executor.execute(plan))[0]
+
+    assert result.tool == "oqmd_api"
+    assert seen == ["mp_api", "mp_optimade", "oqmd_api"]
+
+
+@pytest.mark.asyncio
+async def test_non_retryable_failure_never_uses_provider_fallback() -> None:
+    registry = InMemoryRegistry()
+    for tool in (
+        _fallback_tool("mp_api", provider="materials_project", access_mode="openapi"),
+        _fallback_tool("mp_optimade", provider="materials_project", access_mode="optimade"),
+        _fallback_tool("oqmd_api", provider="oqmd", access_mode="openapi"),
+    ):
+        registry.register(tool)
+    plan = _provider_fallback_plan(registry)
+    executor = RegistryExecutor(registry)
+    fallback_called = False
+
+    def primary(endpoint, arguments):
+        raise NonRetryableInvocationError("HTTP 403")
+
+    def fallback(endpoint, arguments):
+        nonlocal fallback_called
+        fallback_called = True
+        return {"material_id": "mp-149", "band_gap": 1.1}
+
+    executor.bind("mp_api", primary)
+    executor.bind("mp_optimade", fallback)
+    executor.bind("oqmd_api", fallback)
+
+    with pytest.raises(NonRetryableInvocationError, match="403"):
+        await executor.execute(plan)
+
+    assert fallback_called is False
+
+
+@pytest.mark.asyncio
+async def test_output_schema_failure_never_uses_provider_fallback() -> None:
+    registry = InMemoryRegistry()
+    for tool in (
+        _fallback_tool("mp_api", provider="materials_project", access_mode="openapi"),
+        _fallback_tool("mp_optimade", provider="materials_project", access_mode="optimade"),
+        _fallback_tool("oqmd_api", provider="oqmd", access_mode="openapi"),
+    ):
+        registry.register(tool)
+    plan = _provider_fallback_plan(registry)
+    executor = RegistryExecutor(registry)
+    fallback_called = False
+
+    executor.bind(
+        "mp_api",
+        lambda endpoint, arguments: {
+            "material_id": "mp-149",
+            "band_gap": "not-a-number",
+        },
+    )
+
+    def fallback(endpoint, arguments):
+        nonlocal fallback_called
+        fallback_called = True
+        return {"material_id": "mp-149", "band_gap": 1.1}
+
+    executor.bind("mp_optimade", fallback)
+    executor.bind("oqmd_api", fallback)
+
+    with pytest.raises(SchemaValidationError):
+        await executor.execute(plan)
+
+    assert fallback_called is False
+
+
+@pytest.mark.asyncio
+async def test_fallback_chain_rejects_non_read_only_alternative() -> None:
+    registry = InMemoryRegistry()
+    primary = _fallback_tool(
+        "primary",
+        provider="provider",
+        access_mode="openapi",
+    )
+    mutation = _fallback_tool(
+        "mutation",
+        provider="provider",
+        access_mode="python",
+        read_only=False,
+    )
+    registry.register(primary)
+    registry.register(mutation)
+
+    primary_endpoint = primary.endpoint("search")
+    mutation_endpoint = mutation.endpoint("search")
+    plan = ExecutionPlan(
+        query="read",
+        registry_version=registry.version,
+        calls=[
+            ToolCall(
+                tool="primary",
+                endpoint="search",
+                arguments={"formula": "Si"},
+                schema_fingerprint=primary_endpoint.fingerprint,
+                tool_fingerprint=primary.fingerprint,
+            )
+        ],
+        fallback_routes=[
+            FallbackRoute(
+                primary_call_index=0,
+                alternatives=[
+                    ToolCall(
+                        tool="mutation",
+                        endpoint="search",
+                        arguments={"formula": "Si"},
+                        schema_fingerprint=mutation_endpoint.fingerprint,
+                        tool_fingerprint=mutation.fingerprint,
+                    )
+                ],
+            )
+        ],
+    )
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "primary",
+        lambda endpoint, arguments: (_ for _ in ()).throw(
+            InvocationUnavailableError("down")
+        ),
+    )
+    executor.bind("mutation", lambda endpoint, arguments: {"ok": True})
+
+    with pytest.raises(PlanValidationError, match="explicitly read-only"):
+        await executor.execute(plan)
