@@ -23,10 +23,16 @@ def current_weather(city: str) -> Weather:
     return Weather(city=city, temperature=20.5)
 
 
-def run_smoke(*, framework_integrations: bool = False) -> dict[str, object]:
+def run_smoke(
+    *,
+    framework_integrations: bool = False,
+    expected_version: str | None = None,
+) -> dict[str, object]:
     distribution_version = version("schemarouter")
     assert distribution_version == __version__
     assert ".dev" not in distribution_version
+    if expected_version is not None:
+        assert distribution_version == expected_version
 
     router = SchemaRouter()
     key = router.add_callable(current_weather)
@@ -112,6 +118,11 @@ def main() -> None:
         action="store_true",
         help="Also exercise the published LangChain, LangGraph, and LlamaIndex extras.",
     )
+    parser.add_argument(
+        "--expected-version",
+        default=None,
+        help="Require the installed distribution to match this exact release version.",
+    )
     args = parser.parse_args()
 
     report = new_report(
@@ -121,6 +132,7 @@ def main() -> None:
     try:
         report["details"] = run_smoke(
             framework_integrations=args.framework_integrations,
+            expected_version=args.expected_version,
         )
         report["artifact_kind"] = args.artifact_kind
         report["framework_integrations"] = args.framework_integrations
