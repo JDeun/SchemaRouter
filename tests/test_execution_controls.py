@@ -5,7 +5,6 @@ import pytest
 
 from schemarouter import (
     ApprovalDeniedError,
-    SchemaDriftError,
     EndpointSpec,
     ExecutionBudget,
     ExecutionBudgetExceededError,
@@ -16,6 +15,7 @@ from schemarouter import (
     PolicyRule,
     RegistryExecutor,
     RetryPolicy,
+    SchemaDriftError,
     ToolCall,
     ToolSpec,
 )
