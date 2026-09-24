@@ -39,6 +39,7 @@ class PolicyRule:
     remote: bool | None = None
     read_only: bool | None = None
     destructive: bool | None = None
+    unclassified: bool | None = None
 
     def __post_init__(self) -> None:
         if self.effect not in {"allow", "deny", "require_approval"}:
@@ -61,6 +62,10 @@ class PolicyRule:
             return False
         if self.destructive is not None and endpoint.destructive is not self.destructive:
             return False
+        if self.unclassified is not None:
+            is_unclassified = endpoint.read_only is None
+            if is_unclassified is not self.unclassified:
+                return False
         return True
 
 
