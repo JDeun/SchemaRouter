@@ -31,3 +31,16 @@
 ## ExecutionPlan
 
 ::: schemarouter.ExecutionPlan
+
+
+## ScoreComponent
+
+::: schemarouter.ScoreComponent
+
+## FieldSelectionExplanation
+
+::: schemarouter.FieldSelectionExplanation
+
+## PlanExplanation
+
+::: schemarouter.PlanExplanation
