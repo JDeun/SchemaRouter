@@ -20,7 +20,7 @@ claim that every historical version inside the range is exhaustively tested.
 | MCP | `mcp>=2,<3` | Real Streamable HTTP integration against a local server | Optional `schemarouter[mcp]` extra |
 | OpenTelemetry | `opentelemetry-api/sdk>=1.44,<2` | In-memory span hierarchy, error status, and privacy tests | Optional `schemarouter[otel]` extra; core has no OTel dependency |
 | OpenAPI | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OpenAPI SDK dependency |
-| OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |
+| OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |\n| Published PyPI package | Latest stable wheel + sdist | Scheduled/manual external smoke | Installs from PyPI in a fresh runner, runs `pip check`, and executes a public API scenario outside the checkout |
 
 Before widening an upper bound or lowering a minimum supported version, the relevant integration
 tests must pass against that target and the change must be documented in release notes.
@@ -33,7 +33,7 @@ Every pull request runs the blocking `CI` workflow with:
 - a Windows + Python 3.14 core smoke test;
 - warnings-as-errors;
 - Pyright static type checking across the packaged surface;
-- full-suite branch coverage with an 82% blocking floor and a retained XML artifact;
+- full-suite branch coverage with an 84% blocking floor and a retained XML artifact;
 - a minimum-runtime-dependency job that exercises the declared lower bounds;
 - executable core quickstart;
 - wheel and sdist build + metadata checks;
