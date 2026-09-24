@@ -10,6 +10,7 @@ from urllib.parse import urljoin, urlparse
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from ._url_safety import safe_provenance_url
 from .adapters.openapi import same_origin
 from .errors import ModelAnalysisError, SchemaSourceError
 from .models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
@@ -255,6 +256,8 @@ async def inspect_documentation_url(
     if len(normalized_document) < 20:
         raise SchemaSourceError("documentation page did not contain enough readable text")
 
+    safe_source_url = safe_provenance_url(url)
+
     payload = {
         "task": "Propose an API schema from the supplied documentation.",
         "rules": [
@@ -265,7 +268,7 @@ async def inspect_documentation_url(
             "Use relative endpoint paths beginning with '/'.",
             "Return only JSON matching response_schema.",
         ],
-        "source_url": url,
+        "source_url": safe_source_url,
         "document_text": text,
         "response_schema": SchemaProposalDraft.model_json_schema(),
     }
@@ -363,7 +366,7 @@ async def inspect_documentation_url(
 
     if not accepted_endpoints:
         return SchemaProposal(
-            source_url=url,
+            source_url=safe_source_url,
             status="insufficient_evidence",
             grounding_score=grounding_score,
             uncertainties=draft.uncertainties,
@@ -380,13 +383,13 @@ async def inspect_documentation_url(
         },
         metadata={
             "adapter": "html_proposal",
-            "source_url": url,
+            "source_url": safe_source_url,
             "inferred": True,
             "executable": False,
         },
     )
     return SchemaProposal(
-        source_url=url,
+        source_url=safe_source_url,
         status="grounded",
         tool=tool,
         grounding_score=grounding_score,
