@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from urllib.parse import urlsplit, urlunsplit
 
-
 _REDACTED_INVALID_URL = "<redacted-invalid-url>"
 
 
