@@ -85,21 +85,38 @@ def _schema_change_severity(old: dict[str, Any], new: dict[str, Any]) -> SchemaC
     new_type = new.get("type")
     if old_type != new_type:
         if old_type == "integer" and new_type == "number":
-            return "compatible"
+            widened = dict(old)
+            widened["type"] = "number"
+            if widened == new:
+                return "compatible"
         return "breaking"
 
     old_enum = old.get("enum")
     new_enum = new.get("enum")
-    if isinstance(old_enum, list) and isinstance(new_enum, list):
-        old_values = {_canonical_json(value) for value in old_enum}
-        new_values = {_canonical_json(value) for value in new_enum}
-        if old_values <= new_values:
-            return "compatible"
+    if old_enum != new_enum:
+        if isinstance(old_enum, list) and isinstance(new_enum, list):
+            old_values = {_canonical_json(value) for value in old_enum}
+            new_values = {_canonical_json(value) for value in new_enum}
+            if old_values <= new_values:
+                widened = dict(old)
+                widened["enum"] = new_enum
+                if widened == new:
+                    return "compatible"
         return "breaking"
 
-    old_required = set(old.get("required", [])) if isinstance(old.get("required"), list) else set()
-    new_required = set(new.get("required", [])) if isinstance(new.get("required"), list) else set()
-    if new_required - old_required:
+    old_required_raw = old.get("required")
+    new_required_raw = new.get("required")
+    old_required = set(old_required_raw) if isinstance(old_required_raw, list) else set()
+    new_required = set(new_required_raw) if isinstance(new_required_raw, list) else set()
+    if old_required != new_required:
+        if new_required <= old_required:
+            widened = dict(old)
+            if isinstance(new_required_raw, list):
+                widened["required"] = new_required_raw
+            else:
+                widened.pop("required", None)
+            if widened == new:
+                return "compatible"
         return "breaking"
 
     for keyword in ("minimum", "exclusiveMinimum", "minLength", "minItems"):
