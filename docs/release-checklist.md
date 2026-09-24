@@ -70,6 +70,8 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
   OIDC `id-token: write` permission.
 - [ ] Confirm the PyPI Trusted Publisher is configured for the `pypi` GitHub environment.
 - [ ] Publish to the package index only after all blocking gates are green.
+- [ ] Let the release workflow download the exact published wheel and sdist from public PyPI and
+  verify their SHA-256 digests match the trusted build artifacts byte-for-byte.
 - [ ] Let the release workflow re-install the exact published version from PyPI as wheel, sdist,
   and framework extras after both GitHub Release and PyPI publication succeed.
 - [ ] Verify install/import in a clean environment.
