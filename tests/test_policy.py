@@ -258,9 +258,36 @@ def test_policy_rule_can_match_side_effect_classification() -> None:
                 operation="remote.*",
                 effect="allow",
                 remote=True,
-                read_only=None,
+                unclassified=True,
             ),
         )
     )
 
     assert policy.evaluate(tool, endpoint, call).effect == "allow"
+
+
+def test_policy_rule_can_exclude_unclassified_operations() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="remote",
+        endpoints=[EndpointSpec(name="known", read_only=True)],
+        metadata={"adapter": "mcp"},
+    )
+    registry.register(tool)
+    endpoint = registry.endpoint("remote", "known")
+    call = plan_for(registry, "remote", "known").calls[0]
+    policy = ExecutionPolicy(
+        rules=(
+            PolicyRule(
+                operation="remote.*",
+                effect="deny",
+                unclassified=True,
+                name="deny-unclassified",
+            ),
+        )
+    )
+
+    decision = policy.evaluate(tool, endpoint, call)
+
+    assert decision.effect == "allow"
+    assert decision.source == "default"
