@@ -405,7 +405,7 @@ class SchemaRouter:
                 plan,
                 retry=run_config.retry,
                 budget=run_config.budget,
-                max_concurrency=run_config.max_concurrency,
+                max_concurrency=run_config.max_parallel_calls,
             )
         return await self.executor.execute(
             plan,
@@ -627,7 +627,7 @@ class SchemaRouter:
         if run_config.execution_mode == "parallel_read_only":
             self.executor.validate_parallel_read_only(plan)
             budget_tracker = ExecutionBudgetTracker(run_config.budget)
-            semaphore = asyncio.Semaphore(run_config.max_concurrency)
+            semaphore = asyncio.Semaphore(run_config.max_parallel_calls)
 
             async def run_parallel_call(
                 index: int,
