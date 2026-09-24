@@ -519,8 +519,11 @@ class RegistryExecutor:
         chain = [call, *alternatives]
         last_unavailable: InvocationUnavailableError | None = None
 
+        # Validate the entire bounded chain before invoking the primary. This prevents a malformed,
+        # stale, unbound, policy-denied, or mutating fallback from being discovered only after an
+        # earlier route has already executed.
         for candidate in chain:
-            tool, endpoint = self._validated_call_contract(candidate)
+            tool, endpoint, _ = self._execution_state(candidate)
             if endpoint.read_only is not True:
                 raise PlanValidationError(
                     "automatic fallback requires every candidate to be explicitly read-only; "
@@ -528,6 +531,7 @@ class RegistryExecutor:
                 )
             del tool
 
+        for candidate in chain:
             try:
                 return await self.execute_call(
                     candidate,
