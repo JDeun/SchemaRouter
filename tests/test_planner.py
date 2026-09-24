@@ -561,3 +561,101 @@ def test_inherited_candidate_abstention_preserves_fallback_error_behavior() -> N
 
     with pytest.raises(PlanningError, match="decision backend abstained"):
         planner.plan("band gap")
+
+
+def test_plan_explanation_records_deterministic_score_and_field_reasons() -> None:
+    reg = registry()
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="LiFePO4 band gap",
+            arguments={"formula": "LiFePO4", "unknown": 1},
+        )
+    )
+
+    explanation = plan.calls[0].explanation
+    assert explanation is not None
+    assert explanation.candidate_selection == "deterministic"
+    assert explanation.ignored_arguments == ["unknown"]
+    assert any(
+        component.kind == "field_exact"
+        and component.matched == "band_gap"
+        and component.value == 6.0
+        for component in explanation.score_components
+    )
+    reasons = {item.field: item.reason for item in explanation.field_selection}
+    assert reasons["material_id"] == "identifier"
+    assert reasons["band_gap"] == "field_exact"
+
+
+def test_plan_explanation_marks_recall_fallback_projection() -> None:
+    reg = registry()
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(query="tell me about this material", arguments={"formula": "Si"})
+    )
+
+    explanation = plan.calls[0].explanation
+    assert explanation is not None
+    reasons = {item.field: item.reason for item in explanation.field_selection}
+    assert reasons["material_id"] == "identifier"
+    assert reasons["band_gap"] == "recall_fallback"
+    assert reasons["formation_energy_per_atom"] == "recall_fallback"
+    assert reasons["density"] == "recall_fallback"
+
+
+def test_plan_explanation_marks_decision_backend_candidate_selection() -> None:
+    reg = registry()
+    reg.register(
+        ToolSpec(
+            name="secondary",
+            endpoints=[
+                EndpointSpec(
+                    name="lookup",
+                    description="band gap lookup",
+                    output_fields=[FieldSpec(name="band_gap")],
+                )
+            ],
+        )
+    )
+
+    def choose_secondary(request):
+        option = next(
+            option
+            for option in request.options
+            if option.label == "secondary.lookup"
+        )
+        return {"selections": [{"option_id": option.id}]}
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(choose_secondary),
+        decision_policy=DecisionPolicy(enabled=True, endpoint_selection=True),
+    ).plan("band gap")
+
+    explanation = plan.calls[0].explanation
+    assert explanation is not None
+    assert explanation.candidate_selection == "decision_backend"
+
+
+def test_plan_explanation_marks_decision_backend_field_selection() -> None:
+    reg = registry()
+
+    def choose_density(request):
+        density = next(option for option in request.options if option.label == "density")
+        return {"selections": [{"option_id": density.id}]}
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(choose_density),
+        decision_policy=DecisionPolicy(enabled=True, field_selection=True),
+    ).plan(
+        PlanRequest(
+            query="tell me about this material",
+            arguments={"formula": "Si"},
+        )
+    )
+
+    explanation = plan.calls[0].explanation
+    assert explanation is not None
+    reasons = {item.field: item.reason for item in explanation.field_selection}
+    assert reasons["material_id"] == "identifier"
+    assert reasons["density"] == "decision_backend"
