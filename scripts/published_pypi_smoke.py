@@ -125,9 +125,14 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    source = (
+        f"PyPI exact {args.expected_version} {args.artifact_kind}"
+        if args.expected_version is not None
+        else f"PyPI latest stable {args.artifact_kind}"
+    )
     report = new_report(
         adapter="published-package",
-        source=f"PyPI latest stable {args.artifact_kind}",
+        source=source,
     )
     try:
         report["details"] = run_smoke(
