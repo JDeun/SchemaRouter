@@ -3,10 +3,9 @@ from __future__ import annotations
 import datetime
 from dataclasses import asdict
 from typing import Any
-from urllib.parse import urlsplit, urlunsplit
-
 from pydantic import Field
 
+from ._url_safety import safe_provenance_url
 from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry
 from .traces import RunTrace, RunTraceStore
@@ -36,18 +35,7 @@ _URL_PROVENANCE_KEYS = {
 def _safe_provenance_value(key: str, value: object) -> object:
     if key not in _URL_PROVENANCE_KEYS or not isinstance(value, str):
         return value
-    try:
-        parsed = urlsplit(value)
-        hostname = parsed.hostname
-        port = parsed.port
-    except ValueError:
-        return "<redacted-invalid-url>"
-    if parsed.scheme not in {"http", "https"} or not hostname:
-        return "<redacted-invalid-url>"
-
-    safe_host = f"[{hostname}]" if ":" in hostname else hostname
-    safe_netloc = f"{safe_host}:{port}" if port is not None else safe_host
-    return urlunsplit((parsed.scheme, safe_netloc, parsed.path, "", ""))
+    return safe_provenance_url(value)
 
 
 _DESCRIPTIVE_PROVENANCE_KEYS = (
