@@ -127,6 +127,18 @@ surfaces, and a broader fail-closed OpenAPI subset:
 
 See the [0.6.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.6.0/) for details.
 
+## On main: 0.7 boundary hardening
+
+The current `0.7.0.dev0` line strengthens the same narrow execution boundary rather than adding
+agent orchestration:
+
+- conservative schema-drift explanations while exact fingerprints still fail closed;
+- operation-scoped local allow/deny/approval policy rules;
+- structured, auditable plan explanations based on SchemaRouter-visible signals;
+- explicit flat parallel fan-out only when every planned call is currently trusted read-only.
+
+Workflow/DAG semantics, memory, prompt systems, and autonomous tool loops remain out of scope.
+
 ## Inspect what SchemaRouter built
 
 Persisted registries and run traces can be inspected without executing tools:
@@ -134,6 +146,9 @@ Persisted registries and run traces can be inspected without executing tools:
 ```bash
 schemarouter inspect registry --db ./registry.sqlite3
 schemarouter inspect tool materials --db ./registry.sqlite3
+schemarouter inspect diff materials \
+  --old-db ./registry-before.sqlite3 \
+  --new-db ./registry-current.sqlite3
 schemarouter inspect traces --db ./traces.sqlite3
 schemarouter inspect trace <RUN_ID> --db ./traces.sqlite3
 schemarouter dashboard \

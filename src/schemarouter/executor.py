@@ -264,7 +264,7 @@ class RegistryExecutor:
         call: ToolCall,
         tracker: ExecutionBudgetTracker,
     ) -> None:
-        if not self.policy.requires_approval(endpoint):
+        if not self.policy.requires_approval(endpoint, tool=tool, call=call):
             return
         if self.approval_callback is None:
             raise ApprovalDeniedError(
@@ -487,6 +487,79 @@ class RegistryExecutor:
             result
             async for result in self.execute_iter(plan, retry=retry, budget=budget)
         ]
+
+    def validate_parallel_read_only(self, plan: ExecutionPlan) -> None:
+        """Fail before launching tasks unless every call is currently trusted read-only."""
+
+        for call in plan.calls:
+            tool, endpoint, _ = self._execution_state(call)
+            if endpoint.read_only is not True:
+                raise PlanValidationError(
+                    "parallel_read_only execution requires every call to be explicitly "
+                    f"read-only; got {call.tool}.{call.endpoint}"
+                )
+            # Keep the local tool snapshot read so policy/binding validation happens for every
+            # call before any parallel task is launched.
+            del tool
+
+    async def execute_parallel_read_only(
+        self,
+        plan: ExecutionPlan,
+        *,
+        retry: RetryPolicy | None = None,
+        budget: ExecutionBudget | None = None,
+        max_concurrency: int = 8,
+    ) -> list[ToolResult]:
+        completed = [
+            item
+            async for item in self.execute_parallel_read_only_iter(
+                plan,
+                retry=retry,
+                budget=budget,
+                max_concurrency=max_concurrency,
+            )
+        ]
+        completed.sort(key=lambda item: item[0])
+        return [result for _, result in completed]
+
+    async def execute_parallel_read_only_iter(
+        self,
+        plan: ExecutionPlan,
+        *,
+        retry: RetryPolicy | None = None,
+        budget: ExecutionBudget | None = None,
+        max_concurrency: int = 8,
+    ) -> AsyncIterator[tuple[int, ToolResult]]:
+        if max_concurrency < 1:
+            raise ValueError("max_concurrency must be >= 1")
+
+        self.validate_parallel_read_only(plan)
+        tracker = ExecutionBudgetTracker(budget or ExecutionBudget())
+        semaphore = asyncio.Semaphore(max_concurrency)
+
+        async def run_one(index: int, call: ToolCall) -> tuple[int, ToolResult]:
+            async with semaphore:
+                result = await self.execute_call(
+                    call,
+                    retry=retry,
+                    budget=budget,
+                    _tracker=tracker,
+                )
+                return index, result
+
+        tasks = [
+            asyncio.create_task(run_one(index, call))
+            for index, call in enumerate(plan.calls)
+        ]
+        try:
+            for completed in asyncio.as_completed(tasks):
+                yield await completed
+        finally:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
 
     async def execute_iter(
         self,

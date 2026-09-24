@@ -38,6 +38,36 @@ The planner favors:
 
 The score is a selection heuristic, not execution authority.
 
+## Structured plan explanations
+
+Every planned call can carry a `PlanExplanation` with locally observable routing facts:
+
+- deterministic score components;
+- why each projected field was retained;
+- undeclared argument names that were ignored;
+- whether a bounded decision backend selected the candidate.
+
+```python
+plan = router.plan(
+    PlanRequest(
+        query="LiFePO4 band gap",
+        arguments={"formula": "LiFePO4", "unknown": 1},
+    )
+)
+
+explanation = plan.calls[0].explanation
+for component in explanation.score_components:
+    print(component.kind, component.value, component.matched)
+
+for field in explanation.field_selection:
+    print(field.field, field.reason)
+```
+
+This is not model chain-of-thought. It contains deterministic/runtime-visible facts that
+SchemaRouter itself can verify. If a model-assisted analyzer or bounded decision backend is used,
+the explanation records only the resulting bounded selection surface—not the provider's hidden
+reasoning.
+
 ## Field projection
 
 When an endpoint declares projectable output fields, the planner chooses fields using a recall-first

@@ -70,10 +70,13 @@ from .models import (
     EndpointSpec,
     EvidenceRequirements,
     ExecutionPlan,
+    FieldSelectionExplanation,
     FieldSpec,
     ParameterSpec,
+    PlanExplanation,
     PlanRequest,
     QueryIntent,
+    ScoreComponent,
     ToolCall,
     ToolResult,
     ToolSpec,
@@ -84,11 +87,25 @@ from .openapi_compatibility import (
     analyze_openapi_compatibility,
 )
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
-from .policy import ApprovalCallback, ExecutionPolicy
+from .policy import (
+    ApprovalCallback,
+    ExecutionPolicy,
+    PolicyDecision,
+    PolicyEffect,
+    PolicyRule,
+)
 from .proposals import SchemaProposal
 from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
-from .runs import ExecutionBudget, RetryPolicy, RunConfig, RunEvent
+from .runs import ExecutionBudget, ExecutionMode, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
+from .schema_diff import (
+    SchemaChange,
+    SchemaChangeSeverity,
+    SchemaCompatibility,
+    SchemaDiffReport,
+    compare_endpoint_specs,
+    compare_tool_specs,
+)
 from .traces import (
     RunTrace,
     RunTraceStore,
@@ -129,9 +146,11 @@ __all__ = [
     "ExecutionBudgetExceededError",
     "ExecutionError",
     "ExecutionHookError",
+    "ExecutionMode",
     "ExecutionHooks",
     "ExecutionPlan",
     "ExecutionPolicy",
+    "FieldSelectionExplanation",
     "FieldSpec",
     "FirstOptionDecisionBackend",
     "InMemoryRegistry",
@@ -151,10 +170,14 @@ __all__ = [
     "OpenAPICompatibilityIssue",
     "OpenAPICompatibilityReport",
     "ParameterSpec",
+    "PlanExplanation",
     "PlanRequest",
     "PlanValidationError",
     "PlanningError",
     "PolicyViolationError",
+    "PolicyDecision",
+    "PolicyEffect",
+    "PolicyRule",
     "ProposalApprovalError",
     "QueryAnalyzer",
     "QueryIntent",
@@ -167,6 +190,10 @@ __all__ = [
     "RunTraceStore",
     "SQLiteRunTraceStore",
     "SchemaDriftError",
+    "SchemaChange",
+    "SchemaChangeSeverity",
+    "SchemaCompatibility",
+    "SchemaDiffReport",
     "SchemaPlanner",
     "SchemaProposal",
     "SchemaRouter",
@@ -174,6 +201,7 @@ __all__ = [
     "SchemaSourceError",
     "SQLiteRegistry",
     "SchemaValidationError",
+    "ScoreComponent",
     "SourceAdapter",
     "OPTIMADESourceAdapter",
     "ToolCall",
@@ -187,6 +215,8 @@ __all__ = [
     "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
+    "compare_endpoint_specs",
+    "compare_tool_specs",
     "discover_adapter_plugins",
     "inspect_registry",
     "inspect_router",

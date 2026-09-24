@@ -151,6 +151,48 @@ class PlanRequest(StrictModel):
     max_calls: int = Field(default=1, ge=1, le=32)
 
 
+class ScoreComponent(StrictModel):
+    """One deterministic contribution to candidate ranking."""
+
+    kind: str
+    value: float
+    matched: str | None = None
+
+
+FieldSelectionReason = Literal[
+    "identifier",
+    "field_exact",
+    "field_lexical",
+    "field_substring",
+    "recall_fallback",
+    "decision_backend",
+]
+CandidateSelectionSource = Literal[
+    "deterministic",
+    "decision_backend",
+    "decision_recall",
+]
+
+
+class FieldSelectionExplanation(StrictModel):
+    """Machine-readable reason a declared output field is retained."""
+
+    field: str
+    reason: FieldSelectionReason
+
+
+class PlanExplanation(StrictModel):
+    """Auditable structural explanation for one planned call.
+
+    This records locally observable routing signals, not model chain-of-thought.
+    """
+
+    candidate_selection: CandidateSelectionSource = "deterministic"
+    score_components: list[ScoreComponent] = Field(default_factory=list)
+    field_selection: list[FieldSelectionExplanation] = Field(default_factory=list)
+    ignored_arguments: list[str] = Field(default_factory=list)
+
+
 class ToolCall(StrictModel):
     tool: str
     endpoint: str
@@ -160,6 +202,7 @@ class ToolCall(StrictModel):
     schema_fingerprint: str
     missing_required_arguments: list[str] = Field(default_factory=list)
     score: float = 0.0
+    explanation: PlanExplanation | None = None
 
     @property
     def executable(self) -> bool:

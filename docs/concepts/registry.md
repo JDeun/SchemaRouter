@@ -41,7 +41,9 @@ detached snapshots or immutable values.
 
 ## Schema fingerprints
 
-Fingerprinting covers executable schema structure rather than descriptive metadata.
+Fingerprinting excludes arbitrary `metadata`, but it intentionally includes the declared
+planner/execution contract: endpoint descriptions, aliases, parameters, fields, side-effect
+classification, evidence metadata, and JSON Schemas can all affect planning or execution behavior.
 
 A plan compiled against an older endpoint fingerprint fails closed:
 
@@ -52,6 +54,11 @@ plan fingerprint != current endpoint fingerprint
 
 Invoker bindings also carry the tool fingerprint that existed at bind time. Replacing a tool
 contract without rebinding its transport yields `BindingDriftError`.
+
+For operational diagnosis, `compare_endpoint_specs()` and `compare_tool_specs()` explain why two
+trusted snapshots differ and classify the change conservatively. A compatible report never bypasses
+the fingerprint gate; callers still replan/rebind against the current contract. See
+[Schema drift analysis](../guides/schema-drift.md).
 
 ## Persistent SQLite registry
 

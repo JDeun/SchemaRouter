@@ -119,6 +119,9 @@ provider-neutral `ModelQueryAnalyzer` 또는 `CallableDecisionBackend`로 주입
 ```bash
 schemarouter inspect registry --db ./registry.sqlite3
 schemarouter inspect tool materials --db ./registry.sqlite3
+schemarouter inspect diff materials \
+  --old-db ./registry-before.sqlite3 \
+  --new-db ./registry-current.sqlite3
 schemarouter inspect traces --db ./traces.sqlite3
 schemarouter inspect trace <RUN_ID> --db ./traces.sqlite3
 schemarouter dashboard \
@@ -146,6 +149,18 @@ parameter/output field 수, schema fingerprint를 확인할 수 있고, trace �
 - typed JSON root request body, OpenAPI 3.0 nullable normalization, default parameter style 직렬화.
 
 자세한 내용은 [0.6.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.6.0/)를 참고하세요.
+
+## main의 0.7 개발 라인
+
+현재 `0.7.0.dev0`은 agent orchestration을 확장하는 대신 기존 실행 경계를 더 단단하게
+만드는 방향입니다.
+
+- exact fingerprint 차단은 유지하면서 변경 원인을 설명하는 보수적 schema diff;
+- operation 단위의 로컬 allow/deny/approval policy rule;
+- SchemaRouter가 직접 관측 가능한 신호만 기록하는 구조화된 plan explanation;
+- 모든 call이 현재 시점에서 명시적 read-only일 때만 허용되는 flat parallel fan-out.
+
+DAG/workflow, memory, prompt system, autonomous tool loop는 계속 범위 밖에 둡니다.
 
 ## 문서
 

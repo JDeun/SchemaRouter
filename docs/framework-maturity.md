@@ -12,7 +12,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Natural-language planning | Deterministic scoring + exact-recall candidate index cached by registry version | Add approximate/remote retrieval only behind an explicit contract if future scale requires it |
 | Sync / async invocation | Implemented | Stable public surface |
 | Batch execution | Implemented, including completion-order APIs | Stable public surface |
-| Result streaming | Implemented | Add parallel-call streaming later |
+| Result streaming | Sequential by default + explicit read-only parallel completion streaming | Keep dependency/DAG semantics out of core |
 | Typed event streaming | Implemented | Extend exporter ecosystem without exposing payloads |
 | Input / output / config schema introspection | Implemented | Keep machine-readable |
 | Retry policy | Read-only gate + explicit non-retryable invocation marker + built-in OpenAPI/OPTIMADE HTTP classification | Extend protocol-specific classifiers only where recovery semantics are well-defined |
@@ -22,8 +22,11 @@ This document tracks framework-level maturity rather than research metrics.
 | OPTIMADE ingestion and execution | Implemented in v0.2 | Add provider federation / index meta-database traversal |
 | MCP ingestion and execution | Implemented with authenticated/custom transport boundary | Expand OAuth/gateway examples |
 | Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
-| Runtime policy | Implemented with per-call approval and execution budgets | Add richer organization policy adapters |
+| Runtime policy | Category defaults + ordered operation-scoped allow/deny/approval rules + execution budgets | Add external organization policy adapters only behind the trusted local boundary |
 | Runtime JSON Schema validation / projection | Full raw validation + explicit nested object projection paths | Add typed array-element projection only if needed |
+| Schema drift analysis | Conservative endpoint/tool compatibility reports; exact fingerprints still gate execution | Add CI/reporting integrations without weakening drift rejection |
+| Planning explanations | Structured score components, field-selection reasons, ignored-argument records, and decision-selection source | Keep explanations structural; never expose model chain-of-thought |
+| In-plan concurrency | Explicit flat `parallel_read_only` fan-out with preflight validation, completion streaming, and shared budgets | Keep DAG/dependency/write orchestration out of core |
 | LangChain / LangGraph / LlamaIndex integrations | Implemented optional adapters and native graph node | Expand ecosystem listings |
 | Bounded decision backends | Candidate + field + conservative evidence-sufficiency surfaces, provider-neutral callable/embedding + optional Jev/Laya/Ollama, all opt-in | Gather live decision evidence |
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
@@ -118,6 +121,10 @@ Completed locally:
 - opt-in bounded same-origin cross-document OpenAPI reference bundling;
 - authenticated MCP transport boundary;
 - per-call approval and per-run execution budgets;
+- operation-scoped local policy rules with explicit allow/deny/approval effects;
+- conservative endpoint/tool schema diff reports that never bypass fingerprint checks;
+- structured planning explanations derived from deterministic/runtime-visible signals;
+- flat read-only parallel fan-out with preflight validation and shared run budgets;
 - privacy-preserving OpenTelemetry exporter;
 - explicit allowlisted third-party adapter plugins;
 - property-based OpenAPI default-serialization coverage;

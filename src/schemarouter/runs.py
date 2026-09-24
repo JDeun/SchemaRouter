@@ -48,12 +48,17 @@ class ExecutionBudget(StrictModel):
         return self
 
 
+ExecutionMode = Literal["sequential", "parallel_read_only"]
+
+
 class RunConfig(StrictModel):
     """Per-run metadata and execution controls."""
 
     tags: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
     max_concurrency: int = Field(default=8, ge=1, le=128)
+    execution_mode: ExecutionMode = "sequential"
+    max_parallel_calls: int = Field(default=8, ge=1, le=128)
     include_payloads: bool = False
     retry: RetryPolicy = Field(default_factory=RetryPolicy)
     budget: ExecutionBudget = Field(default_factory=ExecutionBudget)

@@ -3,19 +3,24 @@ from __future__ import annotations
 import inspect
 import re
 from collections.abc import Awaitable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Protocol
 
 from .decision_policy import DecisionPolicy
 from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
 from .errors import PlanningError
 from .models import (
+    CandidateSelectionSource,
     EndpointSpec,
     EvidenceRequirements,
     ExecutionPlan,
+    FieldSelectionExplanation,
+    FieldSelectionReason,
     FieldSpec,
+    PlanExplanation,
     PlanRequest,
     QueryIntent,
+    ScoreComponent,
     ToolCall,
     ToolSpec,
 )
@@ -59,6 +64,9 @@ class _Candidate:
     endpoint: EndpointSpec
     score: float
     matched_fields: tuple[str, ...]
+    score_components: tuple[ScoreComponent, ...] = ()
+    field_reasons: tuple[tuple[str, FieldSelectionReason], ...] = ()
+    selection_source: CandidateSelectionSource = "deterministic"
 
 
 @dataclass(frozen=True, order=True)
@@ -323,8 +331,12 @@ class SchemaPlanner:
                     "no deterministic candidate available"
                 ]
             return candidates, ["decision backend abstained; used deterministic ranking"]
+        selection_source = "decision_recall" if recall_expanded else "decision_backend"
         selected = [
-            candidates[int(item.option_id.split(":", 1)[1])]
+            replace(
+                candidates[int(item.option_id.split(":", 1)[1])],
+                selection_source=selection_source,
+            )
             for item in result.selections
         ]
         warnings = (
@@ -375,8 +387,12 @@ class SchemaPlanner:
                     "no deterministic candidate available"
                 ]
             return candidates, ["decision backend abstained; used deterministic ranking"]
+        selection_source = "decision_recall" if recall_expanded else "decision_backend"
         selected = [
-            candidates[int(item.option_id.split(":", 1)[1])]
+            replace(
+                candidates[int(item.option_id.split(":", 1)[1])],
+                selection_source=selection_source,
+            )
             for item in result.selections
         ]
         warnings = (
@@ -824,6 +840,15 @@ class SchemaPlanner:
                     schema_fingerprint=endpoint.fingerprint,
                     missing_required_arguments=missing,
                     score=candidate.score,
+                    explanation=self._build_explanation(
+                        candidate,
+                        fields,
+                        dropped,
+                        field_decision_used=(
+                            self.decision_policy.field_selection_enabled
+                            and not field_warnings
+                        ),
+                    ),
                 )
             )
 
@@ -907,6 +932,15 @@ class SchemaPlanner:
                     schema_fingerprint=endpoint.fingerprint,
                     missing_required_arguments=missing,
                     score=candidate.score,
+                    explanation=self._build_explanation(
+                        candidate,
+                        fields,
+                        dropped,
+                        field_decision_used=(
+                            self.decision_policy.field_selection_enabled
+                            and not field_warnings
+                        ),
+                    ),
                 )
             )
         return ExecutionPlan(
@@ -914,6 +948,41 @@ class SchemaPlanner:
             registry_version=self.registry.version,
             calls=calls,
             warnings=warnings,
+        )
+
+    @staticmethod
+    def _build_explanation(
+        candidate: _Candidate,
+        fields: list[str],
+        ignored_arguments: list[str],
+        *,
+        field_decision_used: bool,
+    ) -> PlanExplanation:
+        reasons = dict(candidate.field_reasons)
+        field_map = {field.name: field for field in candidate.endpoint.output_fields}
+        selections: list[FieldSelectionExplanation] = []
+        for name in fields:
+            field = field_map.get(name)
+            if field is None:
+                continue
+            if field.identifier:
+                reason = "identifier"
+            elif field_decision_used:
+                reason = "decision_backend"
+            else:
+                reason = reasons.get(name, "recall_fallback")
+            selections.append(
+                FieldSelectionExplanation(
+                    field=name,
+                    reason=reason,
+                )
+            )
+
+        return PlanExplanation(
+            candidate_selection=candidate.selection_source,
+            score_components=list(candidate.score_components),
+            field_selection=selections,
+            ignored_arguments=list(ignored_arguments),
         )
 
     def _score_endpoint(
@@ -929,15 +998,32 @@ class SchemaPlanner:
         preferred_endpoints = set(intent.preferred_endpoints)
 
         score = 0.0
+        components: list[ScoreComponent] = []
+        field_reasons: dict[str, FieldSelectionReason] = {}
+
         if tool.key in preferred_tools or tool.name in preferred_tools:
             score += 100.0
+            components.append(
+                ScoreComponent(kind="preferred_tool", value=100.0, matched=tool.key)
+            )
 
         endpoint_key = f"{tool.key}.{endpoint.name}"
         if endpoint_key in preferred_endpoints:
             score += 250.0
+            components.append(
+                ScoreComponent(
+                    kind="preferred_endpoint",
+                    value=250.0,
+                    matched=endpoint_key,
+                )
+            )
 
         tool_text = " ".join([tool.name, tool.description, endpoint.name, endpoint.description])
-        score += 1.5 * len(query_tokens & _tokens(tool_text))
+        for token in sorted(query_tokens & _tokens(tool_text)):
+            score += 1.5
+            components.append(
+                ScoreComponent(kind="tool_token", value=1.5, matched=token)
+            )
 
         matched_fields: list[str] = []
         for field in endpoint.output_fields:
@@ -957,22 +1043,43 @@ class SchemaPlanner:
             if exact:
                 score += 6.0
                 matched_fields.append(field.name)
+                field_reasons[field.name] = "field_exact"
+                components.append(
+                    ScoreComponent(kind="field_exact", value=6.0, matched=field.name)
+                )
             elif lexical:
                 score += 3.0
                 matched_fields.append(field.name)
+                field_reasons[field.name] = "field_lexical"
+                components.append(
+                    ScoreComponent(kind="field_lexical", value=3.0, matched=field.name)
+                )
             elif substring:
                 score += 1.0
                 matched_fields.append(field.name)
+                field_reasons[field.name] = "field_substring"
+                components.append(
+                    ScoreComponent(kind="field_substring", value=1.0, matched=field.name)
+                )
 
         for parameter in endpoint.parameters:
             if parameter.name in intent.arguments:
                 score += 2.0
+                components.append(
+                    ScoreComponent(
+                        kind="argument_match",
+                        value=2.0,
+                        matched=parameter.name,
+                    )
+                )
 
         return _Candidate(
-            tool,
-            endpoint,
-            score,
-            tuple(dict.fromkeys(matched_fields)),
+            tool=tool,
+            endpoint=endpoint,
+            score=score,
+            matched_fields=tuple(dict.fromkeys(matched_fields)),
+            score_components=tuple(components),
+            field_reasons=tuple(field_reasons.items()),
         )
 
     @staticmethod
