@@ -286,9 +286,9 @@ class RegistryExecutor:
         endpoint: EndpointSpec,
         call: ToolCall,
         tracker: ExecutionBudgetTracker,
-    ) -> None:
+    ) -> bool:
         if not self.policy.requires_approval(endpoint, tool=tool, call=call):
-            return
+            return False
         if self.approval_callback is None:
             raise ApprovalDeniedError(
                 f"operation {call.tool}.{call.endpoint} requires trusted local approval"
@@ -316,6 +316,7 @@ class RegistryExecutor:
             raise ApprovalDeniedError(
                 f"operation {call.tool}.{call.endpoint} was not approved"
             )
+        return True
 
     def _execution_state(
         self,
@@ -339,8 +340,10 @@ class RegistryExecutor:
         endpoint: EndpointSpec,
         call: ToolCall,
         tracker: ExecutionBudgetTracker,
-    ) -> None:
+    ) -> bool:
+        ran = False
         for hook in self.hooks.before_call:
+            ran = True
             try:
                 outcome = hook(
                     tool.model_copy(deep=True),
@@ -364,6 +367,7 @@ class RegistryExecutor:
                 raise ExecutionHookError(
                     "before execution hooks must return None"
                 )
+        return ran
 
     async def _run_after_hooks(
         self,
@@ -410,16 +414,18 @@ class RegistryExecutor:
         tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
         tool, endpoint, invoker = self._execution_state(call)
 
-        await self._approve(tool, endpoint, call, tracker)
+        approval_ran = await self._approve(tool, endpoint, call, tracker)
 
-        # Trusted callbacks may await while schema or bindings change. Refresh all executable state
-        # after approval and again after before-hooks so stale local references cannot execute.
-        tool, endpoint, invoker = self._execution_state(call)
+        # Trusted callbacks may mutate or await while schema/bindings change. Refresh only when
+        # such a callback actually ran; otherwise keep the validated registry snapshot coherent.
+        if approval_ran:
+            tool, endpoint, invoker = self._execution_state(call)
 
         tracker.before_call(call)
 
-        await self._run_before_hooks(tool, endpoint, call, tracker)
-        tool, endpoint, invoker = self._execution_state(call)
+        before_hooks_ran = await self._run_before_hooks(tool, endpoint, call, tracker)
+        if before_hooks_ran:
+            tool, endpoint, invoker = self._execution_state(call)
 
         retry = retry or RetryPolicy()
         can_retry = endpoint.read_only is True or retry.retry_non_read_only
