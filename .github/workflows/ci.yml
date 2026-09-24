@@ -30,6 +30,7 @@ jobs:
       - run: ruff check .
       - run: pytest -q -m "not mcp_integration"
       - run: python examples/quickstart.py
+      - run: python scripts/consumer_acceptance.py
 
   windows-smoke:
     runs-on: windows-latest
@@ -43,6 +44,7 @@ jobs:
       - run: ruff check .
       - run: pytest -q -m "not mcp_integration"
       - run: python examples/quickstart.py
+      - run: python scripts/consumer_acceptance.py
 
   typecheck:
     runs-on: ubuntu-latest
@@ -85,6 +87,7 @@ jobs:
       - run: pip install -e . --no-deps
       - run: pytest -q -m "not mcp_integration"
       - run: python examples/quickstart.py
+      - run: python scripts/consumer_acceptance.py
 
   dependency-audit:
     runs-on: ubuntu-latest
@@ -130,6 +133,7 @@ jobs:
       - run: /tmp/schemarouter-wheel/bin/pip install dist/*.whl
       - run: /tmp/schemarouter-wheel/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
+      - run: /tmp/schemarouter-wheel/bin/python scripts/consumer_acceptance.py --json-out artifacts/consumer-acceptance-wheel.json
       - run: /tmp/schemarouter-wheel/bin/schemarouter --help
       - run: /tmp/schemarouter-wheel/bin/python scripts/benchmark_decision_routing.py --json-out /tmp/decision-benchmark.json --html-out /tmp/decision-benchmark.html
       - run: test -s /tmp/decision-benchmark.json
@@ -138,12 +142,29 @@ jobs:
       - run: test -s /tmp/decision-benchmark-history.html
       - run: /tmp/schemarouter-wheel/bin/python examples/inspection_dashboard.py --registry /tmp/inspection-registry.sqlite3 --traces /tmp/inspection-traces.sqlite3 --output /tmp/inspection-dashboard.html
       - run: test -s /tmp/inspection-dashboard.html
+      - run: python -m venv /tmp/schemarouter-wheel-integrations
+      - run: /tmp/schemarouter-wheel-integrations/bin/python -m pip install --upgrade pip
+      - name: Install wheel with framework extras
+        run: |
+          WHEEL="$(pwd)/$(ls dist/*.whl)"
+          /tmp/schemarouter-wheel-integrations/bin/pip install "schemarouter[langchain,langgraph,llamaindex] @ file://${WHEEL}"
+          /tmp/schemarouter-wheel-integrations/bin/pip check
+      - run: /tmp/schemarouter-wheel-integrations/bin/python examples/langchain_quickstart.py
+      - run: /tmp/schemarouter-wheel-integrations/bin/python examples/langgraph_quickstart.py
+      - run: /tmp/schemarouter-wheel-integrations/bin/python examples/llamaindex_quickstart.py
       - run: python -m venv /tmp/schemarouter-sdist
       - run: /tmp/schemarouter-sdist/bin/python -m pip install --upgrade pip
       - run: /tmp/schemarouter-sdist/bin/pip install dist/*.tar.gz
       - run: /tmp/schemarouter-sdist/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
       - run: /tmp/schemarouter-sdist/bin/python examples/quickstart.py
+      - run: /tmp/schemarouter-sdist/bin/python scripts/consumer_acceptance.py --json-out artifacts/consumer-acceptance-sdist.json
       - run: /tmp/schemarouter-sdist/bin/schemarouter --help
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: consumer-acceptance-${{ github.run_id }}
+          path: artifacts/consumer-acceptance-*.json
+          if-no-files-found: error
+          retention-days: 30
 
   langchain-integration:
     runs-on: ubuntu-latest
