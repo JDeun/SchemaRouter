@@ -134,6 +134,9 @@ tool = ToolSpec(
 ```
 
 Do not place credentials in either metadata bag. Secrets remain only in the trusted invoker object.
+A discovery/schema URL is provenance, not automatically runtime identity; keep it descriptive unless
+the invoker actually calls that URL. If a URL is part of `execution_metadata`, require a stable,
+credential-free form and keep query/fragment authentication in trusted transport configuration.
 
 ## Schema fidelity
 
