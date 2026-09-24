@@ -40,6 +40,18 @@ It is **not** another general agent framework. LangChain, LangGraph, LlamaIndex,
 orchestrator can stay above it; OpenAPI, MCP, OPTIMADE, Python callables, and adapter plugins stay
 below it.
 
+### Field-first, route-second
+
+SchemaRouter first asks **which declared data fields are actually needed to answer the request**,
+then chooses a provider/access path that can supply those fields. When an endpoint explicitly
+supports server-side projection, only the planned fields are requested upstream; after raw schema
+validation, final local projection keeps the downstream LLM context narrow even if a provider sends
+extra data.
+
+Availability may change the route, but it does not broaden the data need. Precompiled read-only
+fallbacks can move from one access mode to another—and, when explicitly enabled, to another
+provider—without turning runtime into an autonomous agent loop.
+
 ```text
 Agent / graph / application orchestrator
                  |
@@ -135,7 +147,9 @@ agent orchestration:
 - conservative schema-drift explanations while exact fingerprints still fail closed;
 - operation-scoped local allow/deny/approval policy rules;
 - structured, auditable plan explanations based on SchemaRouter-visible signals;
-- explicit flat parallel fan-out only when every planned call is currently trusted read-only.
+- explicit flat parallel fan-out only when every planned call is currently trusted read-only;
+- provider/access identity, bounded read-only fallback, server-side field projection contracts,
+  and recoverable access-path health state.
 
 Workflow/DAG semantics, memory, prompt systems, and autonomous tool loops remain out of scope.
 
