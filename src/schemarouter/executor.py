@@ -209,6 +209,14 @@ class RegistryExecutor:
             message = f"unknown tool/endpoint: {call.tool}.{call.endpoint}"
             raise PlanValidationError(message) from exc
 
+        if call.tool_fingerprint is None and (
+            tool.remote or bool(endpoint.execution_metadata)
+        ):
+            raise PlanValidationError(
+                "tool_fingerprint is required for remote or runtime-sensitive "
+                f"operation {call.tool}.{call.endpoint}; replan before execution"
+            )
+
         if call.tool_fingerprint is not None and tool.fingerprint != call.tool_fingerprint:
             raise SchemaDriftError(
                 f"tool contract changed for {call.tool!r}; replan before execution"
