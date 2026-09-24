@@ -26,6 +26,14 @@ The project is pre-1.0 and follows the compatibility rules in
   identities, same-provider-before-cross-provider ordering, per-alternative schema/evidence
   compilation, semantic field-alias compatibility checks, explicit `InvocationUnavailableError`
   triggers, and typed `tool.fallback` observability;
+- explicit `ServerProjectionSpec` contracts that push planned logical fields into upstream
+  selectors such as OpenAPI `fields=...` and OPTIMADE `response_fields=...`, while preserving
+  raw-response validation and final local projection;
+- bounded passive access-path cooldown plus optional trusted `AccessHealthMonitor` probes that
+  reopen recovered read-only routes without permanent blacklisting or model-controlled health state;
+- field-first execution documentation that formalizes query -> required logical fields ->
+  provider/access selection -> upstream projection -> validated minimal `ToolResult` as a core
+  architectural principle;
 
 - self-contained HTML summaries for the decision-routing benchmark, alongside the existing JSON/CSV
   outputs, with escaped metadata and no remote assets;
