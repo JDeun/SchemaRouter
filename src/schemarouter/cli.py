@@ -18,6 +18,7 @@ from .inspection import (
     tool_spec_document,
 )
 from .registry import SQLiteRegistry
+from .schema_diff import SchemaDiffReport, compare_endpoint_specs, compare_tool_specs
 from .traces import SQLiteRunTraceStore
 
 
@@ -138,6 +139,29 @@ def _render_tool(tool: ToolInspection, *, document: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _render_schema_diff(
+    report: SchemaDiffReport,
+    *,
+    label: str,
+) -> str:
+    lines = [
+        f"Schema diff {label}",
+        f"compatibility: {report.compatibility}",
+        (
+            "fingerprint: "
+            f"{_short_fingerprint(report.old_fingerprint)} -> "
+            f"{_short_fingerprint(report.new_fingerprint)}"
+        ),
+        f"changes: {len(report.changes)}",
+    ]
+    for change in report.changes:
+        detail = f"{change.severity} {change.path}: {change.kind}"
+        if change.message:
+            detail += f" · {change.message}"
+        lines.append(f"- {detail}")
+    return "\n".join(lines)
+
+
 def _render_traces(traces: Sequence[TraceInspection]) -> str:
     if not traces:
         return "No run traces."
@@ -221,6 +245,20 @@ def build_parser() -> argparse.ArgumentParser:
     tool.add_argument("key", help="Registry tool key, including namespace when present.")
     tool.add_argument("--db", required=True, type=Path, help="SQLite registry path.")
     _add_json_flag(tool)
+
+    diff = inspect_subparsers.add_parser(
+        "diff",
+        help="Compare one tool or endpoint across two persisted SQLite registries.",
+    )
+    diff.add_argument("key", help="Registry tool key, including namespace when present.")
+    diff.add_argument("--old-db", required=True, type=Path, help="Previous SQLite registry path.")
+    diff.add_argument("--new-db", required=True, type=Path, help="Current SQLite registry path.")
+    diff.add_argument(
+        "--endpoint",
+        default=None,
+        help="Optional endpoint name. Omit to compare the complete ToolSpec.",
+    )
+    _add_json_flag(diff)
 
     traces = inspect_subparsers.add_parser(
         "traces",
@@ -306,6 +344,23 @@ def _run(args: argparse.Namespace) -> str:
             if args.json
             else _render_tool(tool, document=document)
         )
+
+    if args.surface == "diff":
+        with SQLiteRegistry(_existing_db(args.old_db)) as old_registry:
+            old_tool = old_registry.get(args.key)
+        with SQLiteRegistry(_existing_db(args.new_db)) as new_registry:
+            new_tool = new_registry.get(args.key)
+
+        if args.endpoint is not None:
+            report = compare_endpoint_specs(
+                old_tool.endpoint(args.endpoint),
+                new_tool.endpoint(args.endpoint),
+            )
+            label = f"{args.key}.{args.endpoint}"
+        else:
+            report = compare_tool_specs(old_tool, new_tool)
+            label = args.key
+        return _json_dump(report) if args.json else _render_schema_diff(report, label=label)
 
     if args.surface == "traces":
         complete: bool | None = None
