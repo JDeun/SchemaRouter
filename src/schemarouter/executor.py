@@ -201,7 +201,10 @@ class RegistryExecutor:
         """Return live trusted-invoker keys without exposing invoker objects."""
         return tuple(sorted(self._invokers))
 
-    def validate_call(self, call: ToolCall) -> None:
+    def _validated_call_contract(
+        self,
+        call: ToolCall,
+    ) -> tuple[ToolSpec, EndpointSpec]:
         try:
             tool = self.registry.get(call.tool)
             endpoint = tool.endpoint(call.endpoint)
@@ -270,6 +273,11 @@ class RegistryExecutor:
                 f"explicit output projection required for {call.tool}.{call.endpoint}"
             )
 
+        return tool, endpoint
+
+    def validate_call(self, call: ToolCall) -> None:
+        self._validated_call_contract(call)
+
     async def _approve(
         self,
         tool: ToolSpec,
@@ -311,9 +319,7 @@ class RegistryExecutor:
         self,
         call: ToolCall,
     ) -> tuple[ToolSpec, EndpointSpec, EndpointInvoker]:
-        self.validate_call(call)
-        endpoint = self.registry.endpoint(call.tool, call.endpoint)
-        tool = self.registry.get(call.tool)
+        tool, endpoint = self._validated_call_contract(call)
         invoker = self._invokers.get(call.tool)
         if invoker is None:
             raise ExecutionError(f"no invoker bound for tool {call.tool!r}")
