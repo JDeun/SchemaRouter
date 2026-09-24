@@ -99,6 +99,7 @@ class SchemaRouter:
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
+        unavailable_cooldown_seconds: float = 30.0,
     ) -> None:
         self.registry = registry if registry is not None else InMemoryRegistry()
         self.planner = SchemaPlanner(self.registry, analyzer=analyzer)
@@ -107,6 +108,7 @@ class SchemaRouter:
             policy=policy,
             approval_callback=approval_callback,
             hooks=execution_hooks,
+            unavailable_cooldown_seconds=unavailable_cooldown_seconds,
         )
         self.loader = URLSchemaLoader(
             self.registry,
@@ -131,6 +133,31 @@ class SchemaRouter:
         """Return a privacy-safe live operational snapshot."""
         return inspect_router(self)
 
+    def mark_access_unavailable(
+        self,
+        tool_key: str,
+        endpoint: str,
+        *,
+        cooldown_seconds: float | None = None,
+    ) -> None:
+        """Mark one trusted access path temporarily unavailable."""
+
+        self.executor.mark_access_unavailable(
+            tool_key,
+            endpoint,
+            cooldown_seconds=cooldown_seconds,
+        )
+
+    def mark_access_available(self, tool_key: str, endpoint: str) -> None:
+        """Clear temporary unavailability for one trusted access path."""
+
+        self.executor.mark_access_available(tool_key, endpoint)
+
+    def unavailable_access_paths(self) -> tuple[tuple[str, str], ...]:
+        """Return access paths currently held in the bounded cooldown window."""
+
+        return self.executor.unavailable_access_paths()
+
     def with_config(
         self,
         config: RunConfig | dict[str, Any],
@@ -154,6 +181,7 @@ class SchemaRouter:
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
+        unavailable_cooldown_seconds: float = 30.0,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
@@ -171,6 +199,7 @@ class SchemaRouter:
             execution_hooks=execution_hooks,
             registry=registry,
             adapter_registry=adapter_registry,
+            unavailable_cooldown_seconds=unavailable_cooldown_seconds,
         )
         await router.add_url(
             url,
