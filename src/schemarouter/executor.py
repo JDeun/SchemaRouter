@@ -264,7 +264,7 @@ class RegistryExecutor:
         call: ToolCall,
         tracker: ExecutionBudgetTracker,
     ) -> None:
-        if not self.policy.requires_approval(endpoint):
+        if not self.policy.requires_approval(endpoint, tool=tool, call=call):
             return
         if self.approval_callback is None:
             raise ApprovalDeniedError(
