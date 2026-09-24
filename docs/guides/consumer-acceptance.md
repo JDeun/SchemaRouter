@@ -33,11 +33,14 @@ python scripts/consumer_acceptance.py --json-out artifacts/consumer-acceptance.j
 The same script runs on the supported Linux Python matrix, the Windows smoke job, the
 minimum-dependency job, and again from clean wheel and sdist virtual environments.
 
-The package job also installs the built wheel through its declared
-`langchain`, `langgraph`, and `llamaindex` extras and executes the corresponding runnable
-examples. This catches packaging-metadata or optional-dependency regressions that editable installs
-cannot detect.
+The package job also installs the built wheel through its lightweight optional extras:
+`mcp`, `langchain`, `langgraph`, `llamaindex`, `jev`, and `otel`. It runs a no-network
+SDK/import smoke for MCP, Jev, and OpenTelemetry and executes the LangChain, LangGraph, and
+LlamaIndex runnable examples. This catches packaging-metadata or optional-dependency regressions
+that editable installs cannot detect. Laya remains in its dedicated CPU integration job because its
+PyTorch dependency is intentionally handled separately.
 
 Public OpenAPI and OPTIMADE compatibility smokes remain separate because they depend on external
-services. Those scheduled checks produce retained machine-readable artifacts but are intentionally
-not treated as deterministic package acceptance gates.
+services. Those checks install SchemaRouter non-editably before calling the public services and
+produce retained machine-readable artifacts, but they are intentionally not treated as
+deterministic package acceptance gates.
