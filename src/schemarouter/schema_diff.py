@@ -403,12 +403,21 @@ def compare_endpoint_specs(old: EndpointSpec, new: EndpointSpec) -> SchemaDiffRe
             old=old_fields[name].model_dump(mode="json"),
         )
     for name in new_fields.keys() - old_fields.keys():
+        field = new_fields[name]
         _change(
             changes,
             path=f"output_fields.{name}",
             kind="output_field_added",
-            severity="compatible",
-            new=new_fields[name].model_dump(mode="json"),
+            severity="compatible" if not field.json_schema else "breaking",
+            new=field.model_dump(mode="json"),
+            message=(
+                "Untyped optional output field is additive."
+                if not field.json_schema
+                else (
+                    "Typed output field adds raw-response validation for that key and is "
+                    "conservatively treated as breaking."
+                )
+            ),
         )
     for name in old_fields.keys() & new_fields.keys():
         _compare_field(
