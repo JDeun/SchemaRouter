@@ -109,20 +109,30 @@ See [Field-first execution](../concepts/field-first-execution.md).
 
 ## Different field names across access paths
 
-Access paths often expose slightly different schemas. Use `FieldSpec.aliases` to declare semantic
-equivalence where it is locally known:
+Access paths often expose slightly different schemas. Keep a stable canonical local field name and
+map provider-specific wire names explicitly:
 
 ```python
 FieldSpec(
-    name="_mp_band_gap",
-    aliases=["band gap", "band_gap"],
-    unit="eV",
+    name="elastic_modulus",
+    aliases=["탄성계수", "elastic modulus", "youngs modulus"],
+)
+
+ServerProjectionSpec(
+    parameter="response_fields",
+    field_map={
+        "elastic_modulus": "_provider_b_elasticity",
+    },
 )
 ```
 
+The planner reasons about the canonical `elastic_modulus` field. The adapter sends
+`_provider_b_elasticity` upstream and normalizes the response back to `elastic_modulus` before
+the result leaves SchemaRouter.
+
 The fallback planner independently projects fields for every candidate. When the primary matched a
 specific answer field, a fallback is accepted only when the alternative exposes a compatible
-field name/alias surface. If SchemaRouter cannot prove that compatibility, it does not silently
+field/alias surface. If SchemaRouter cannot prove that compatibility, it does not silently
 substitute the route.
 
 This is intentionally conservative. Provider-specific semantic mappings can be added by the local
@@ -150,8 +160,10 @@ chain is preflighted before the primary is invoked.
 
 ## Passive cooldown and active health recovery
 
-A route that repeatedly times out, cannot connect, returns HTTP 429, or returns transient 5xx
-responses is temporarily marked unavailable after its normal retry policy is exhausted.
+A route that times out, cannot connect, returns HTTP 429, or returns transient 5xx responses is
+temporarily marked unavailable after its normal retry policy is exhausted. Known-unavailable paths
+are excluded from later planner candidate surfaces, so the router can choose a healthy alternative
+as the primary path instead of paying the same failed network wait on every question.
 
 That state is **not permanent**. Every unavailable mark has a finite cooldown. When the cooldown
 expires, the route automatically becomes eligible again.
