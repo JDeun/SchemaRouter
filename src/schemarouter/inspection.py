@@ -51,6 +51,9 @@ def _safe_provenance_value(key: str, value: object) -> object:
 
 
 _DESCRIPTIVE_PROVENANCE_KEYS = (
+    "source_url",
+    "resolved_schema_url",
+    "suggested_base_url",
     "external_refs_enabled",
     "same_document_refs_normalized",
     "external_ref_documents_resolved",
