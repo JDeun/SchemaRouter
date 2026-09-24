@@ -289,6 +289,16 @@ def compare_endpoint_specs(old: EndpointSpec, new: EndpointSpec) -> SchemaDiffRe
             old=old.description,
             new=new.description,
         )
+    if old.remote != new.remote:
+        _change(
+            changes,
+            path="remote",
+            kind="execution_origin_changed",
+            severity="security",
+            old=old.remote,
+            new=new.remote,
+            message="Local/remote execution-origin classification changed and requires policy review.",
+        )
     if old.method != new.method:
         old_method = old.method.upper() if isinstance(old.method, str) else None
         new_method = new.method.upper() if isinstance(new.method, str) else None
@@ -349,6 +359,17 @@ def compare_endpoint_specs(old: EndpointSpec, new: EndpointSpec) -> SchemaDiffRe
             old=old.destructive,
             new=new.destructive,
             message="Destructive classification changed and requires local policy review.",
+        )
+
+    if old.execution_metadata != new.execution_metadata:
+        _change(
+            changes,
+            path="execution_metadata",
+            kind="execution_metadata_changed",
+            severity="breaking",
+            old=old.execution_metadata,
+            new=new.execution_metadata,
+            message="Runtime adapter semantics changed; replan and rebind before execution.",
         )
 
     old_parameters = {parameter.name: parameter for parameter in old.parameters}
