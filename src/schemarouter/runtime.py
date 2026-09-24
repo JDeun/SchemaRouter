@@ -15,7 +15,7 @@ from .adapters.mcp import MCPClientFactory
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
-from .errors import ProposalApprovalError, RegistrationError
+from .errors import InvocationUnavailableError, ProposalApprovalError, RegistrationError
 from .executor import ExecutionBudgetTracker, RegistryExecutor
 from .hooks import ExecutionHooks
 from .ingestion import SourceKind, URLSchemaLoader
@@ -639,6 +639,7 @@ class SchemaRouter:
 
         plan_data: dict[str, Any] = {
             "call_count": len(plan.calls),
+            "fallback_route_count": len(plan.fallback_routes),
             "warnings": list(plan.warnings),
             "execution_mode": run_config.execution_mode,
         }
@@ -792,81 +793,160 @@ class SchemaRouter:
             return
 
         result_count = 0
+        fallback_count = 0
         budget_tracker = ExecutionBudgetTracker(run_config.budget)
-        for call in plan.calls:
-            start_data: dict[str, Any] = {
-                "argument_names": sorted(call.arguments),
-                "fields": list(call.fields),
-            }
-            if run_config.include_payloads:
-                start_data["arguments"] = dict(call.arguments)
-            yield await emit(RunEvent.create(
-                event="tool.start",
-                run_id=run_id,
-                sequence=sequence,
-                config=run_config,
-                tool=call.tool,
-                endpoint=call.endpoint,
-                data=start_data,
-            ))
-            sequence += 1
+        for primary_index, primary_call in enumerate(plan.calls):
+            route = plan.fallback_route(primary_index)
+            chain = [
+                primary_call,
+                *(route.alternatives if route is not None else []),
+            ]
+            result: ToolResult | None = None
 
-            try:
-                result = await self.executor.execute_call(
-                    call,
-                    retry=run_config.retry,
-                    budget=run_config.budget,
-                    _tracker=budget_tracker,
-                )
-            except Exception as exc:
-                error_data = {"error_type": type(exc).__name__}
+            for candidate_index, call in enumerate(chain):
+                start_data: dict[str, Any] = {
+                    "argument_names": sorted(call.arguments),
+                    "fields": list(call.fields),
+                    "fallback_candidate_index": candidate_index,
+                }
                 if run_config.include_payloads:
-                    error_data["message"] = str(exc)
+                    start_data["arguments"] = dict(call.arguments)
                 yield await emit(RunEvent.create(
-                    event="tool.error",
+                    event="tool.start",
                     run_id=run_id,
                     sequence=sequence,
                     config=run_config,
                     tool=call.tool,
                     endpoint=call.endpoint,
-                    data=error_data,
+                    data=start_data,
                 ))
                 sequence += 1
+
+                try:
+                    result = await self.executor.execute_call(
+                        call,
+                        retry=run_config.retry,
+                        budget=run_config.budget,
+                        _tracker=budget_tracker,
+                    )
+                except InvocationUnavailableError as exc:
+                    has_next = candidate_index + 1 < len(chain)
+                    error_data: dict[str, Any] = {
+                        "error_type": type(exc).__name__,
+                        "fallback_eligible": has_next,
+                    }
+                    if run_config.include_payloads:
+                        error_data["message"] = str(exc)
+                    yield await emit(RunEvent.create(
+                        event="tool.error",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        tool=call.tool,
+                        endpoint=call.endpoint,
+                        data=error_data,
+                    ))
+                    sequence += 1
+
+                    if not has_next:
+                        yield await emit(RunEvent.create(
+                            event="run.error",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            data={
+                                "error_type": type(exc).__name__,
+                                "stage": "execution",
+                            },
+                        ))
+                        raise
+
+                    next_call = chain[candidate_index + 1]
+                    current_tool = self.registry.get(call.tool)
+                    next_tool = self.registry.get(next_call.tool)
+                    scope = (
+                        "same_provider"
+                        if current_tool.provider is not None
+                        and current_tool.provider == next_tool.provider
+                        else "cross_provider"
+                    )
+                    yield await emit(RunEvent.create(
+                        event="tool.fallback",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        tool=next_call.tool,
+                        endpoint=next_call.endpoint,
+                        data={
+                            "from_tool": call.tool,
+                            "from_endpoint": call.endpoint,
+                            "to_tool": next_call.tool,
+                            "to_endpoint": next_call.endpoint,
+                            "scope": scope,
+                            "provider": next_tool.provider,
+                            "access_mode": next_tool.access_mode,
+                        },
+                    ))
+                    sequence += 1
+                    fallback_count += 1
+                    continue
+                except Exception as exc:
+                    error_data = {"error_type": type(exc).__name__}
+                    if run_config.include_payloads:
+                        error_data["message"] = str(exc)
+                    yield await emit(RunEvent.create(
+                        event="tool.error",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        tool=call.tool,
+                        endpoint=call.endpoint,
+                        data=error_data,
+                    ))
+                    sequence += 1
+                    yield await emit(RunEvent.create(
+                        event="run.error",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        data={
+                            "error_type": type(exc).__name__,
+                            "stage": "execution",
+                        },
+                    ))
+                    raise
+
+                end_data: dict[str, Any] = {
+                    "projected_fields": list(result.projected_fields),
+                    "fallback_used": candidate_index > 0,
+                }
+                if run_config.include_payloads:
+                    end_data["result"] = result.model_dump(mode="json")
                 yield await emit(RunEvent.create(
-                    event="run.error",
+                    event="tool.end",
                     run_id=run_id,
                     sequence=sequence,
                     config=run_config,
-                    data={
-                        "error_type": type(exc).__name__,
-                        "stage": "execution",
-                    },
+                    tool=result.tool,
+                    endpoint=result.endpoint,
+                    data=end_data,
                 ))
-                raise
+                sequence += 1
+                result_count += 1
+                break
 
-            end_data: dict[str, Any] = {
-                "projected_fields": list(result.projected_fields),
-            }
-            if run_config.include_payloads:
-                end_data["result"] = result.model_dump(mode="json")
-            yield await emit(RunEvent.create(
-                event="tool.end",
-                run_id=run_id,
-                sequence=sequence,
-                config=run_config,
-                tool=result.tool,
-                endpoint=result.endpoint,
-                data=end_data,
-            ))
-            sequence += 1
-            result_count += 1
+            if result is None:
+                raise RuntimeError("fallback chain produced no terminal result")
 
         yield await emit(RunEvent.create(
             event="run.end",
             run_id=run_id,
             sequence=sequence,
             config=run_config,
-            data={"result_count": result_count},
+            data={
+                "result_count": result_count,
+                "fallback_count": fallback_count,
+            },
         ))
 
     async def run(
