@@ -233,6 +233,43 @@ The trace database preserves the privacy level of the source event stream: defau
 remain structural, while an explicit `include_payloads=True` choice persists payload-bearing data
 and therefore creates an application-managed sensitive-data store.
 
+### 24. Schema drift needs explanation without compatibility bypass
+
+Exact fingerprints remain the execution boundary, but a bare mismatch is operationally opaque.
+`compare_endpoint_specs()` and `compare_tool_specs()` therefore classify trusted snapshot changes
+as identical, compatible, breaking, or security-review changes. The classifier is deliberately
+conservative for JSON Schema.
+
+Compatibility reports are diagnostic only. They never permit a stale `ToolCall` or invoker binding
+to execute without replanning/rebinding against the current fingerprint.
+
+### 25. Category-wide permission can be too broad
+
+The original `allow_mutations` / `allow_destructive` switches remain safe defaults, but production
+applications may need narrower authority. Ordered local `PolicyRule` values can allow, deny, or
+require approval for a bounded `tool.endpoint` pattern and optional side-effect predicates.
+
+Rules are trusted application configuration. Remote schemas, descriptions, decision backends, and
+model output cannot create or alter them.
+
+### 26. Planning explanations must be auditable, not chain-of-thought
+
+Each planned call may carry a structured `PlanExplanation` containing deterministic score
+components, field-retention reasons, ignored undeclared arguments, and whether a bounded decision
+backend selected the candidate.
+
+These are locally observable routing facts. SchemaRouter does not expose or attempt to reconstruct
+private model reasoning.
+
+### 27. Parallel execution must not become orchestration
+
+`parallel_read_only` is limited to flat plans whose calls all preflight successfully and have
+`read_only is True`. Schema, binding, and policy validation happen before tasks are launched, and
+all tasks share the same run budget and concurrency bound.
+
+Dependencies, branching, checkpointing, write coordination, compensation, and DAG semantics remain
+outside the core and belong to surrounding orchestration frameworks.
+
 ## Core invariants
 
 1. A plan cannot call an unregistered tool or endpoint.
@@ -272,6 +309,13 @@ and therefore creates an application-managed sensitive-data store.
 27. Candidate indexing may reduce scorer work but must preserve exhaustive deterministic planner recall.
 28. Execution hooks receive detached snapshots and cannot transform calls or results.
 29. Hook failures fail closed and never create additional tool invocation attempts.
+30. Schema compatibility analysis never bypasses exact plan/binding fingerprint validation.
+31. Fine-grained policy rules exist only in trusted local configuration and cannot be supplied by
+    models or remote capability metadata.
+32. Structured planning explanations contain deterministic/runtime-visible signals only, not model
+    chain-of-thought.
+33. Parallel execution requires every call to preflight as explicitly read-only and shares one run
+    budget across concurrent calls.
 
 ## Current extension backlog
 
