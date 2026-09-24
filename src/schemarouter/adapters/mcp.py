@@ -184,6 +184,7 @@ def tool_from_mcp(
         namespace=namespace,
         description=f"MCP server: {server_name}",
         endpoints=endpoints,
+        execution_metadata={"adapter": "mcp"},
         metadata={"adapter": "mcp", "remote_metadata_untrusted": True},
     )
 
@@ -223,6 +224,13 @@ async def inspect_mcp_url(
 
     name = server_name or discovered_name or "mcp_server"
     tool = tool_from_mcp(name, raw_tools, namespace=namespace)
+    tool.execution_metadata.update(
+        {
+            "source_url": url,
+            "protocol_version": protocol_version,
+            "authenticated_transport": bool(headers),
+        }
+    )
     tool.metadata.update(
         {
             "source_url": url,
