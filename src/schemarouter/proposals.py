@@ -245,7 +245,10 @@ async def inspect_documentation_url(
     except SchemaSourceError:
         raise
     except Exception as exc:  # noqa: BLE001
-        raise SchemaSourceError(f"failed to fetch documentation URL {url!r}") from exc
+        safe_url = safe_provenance_url(url)
+        raise SchemaSourceError(
+            f"failed to fetch documentation URL {safe_url!r}"
+        ) from exc
 
     text = _document_text(
         response.text,
