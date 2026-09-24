@@ -72,7 +72,10 @@ A schema adapter should return:
 - declared `ParameterSpec` objects;
 - declared `FieldSpec` objects when fields are projectable;
 - input/output JSON Schema where the source provides it;
-- descriptive metadata marked as untrusted when it originates remotely.
+- descriptive metadata marked as untrusted when it originates remotely;
+- `tool.remote=True` for capabilities whose invoker crosses a remote trust boundary;
+- `ToolSpec.execution_metadata` / `EndpointSpec.execution_metadata` for JSON-safe values that
+  alter transport/runtime behavior and therefore must participate in fingerprints.
 
 A normal transport adapter can provide an invoker compatible with:
 
@@ -104,8 +107,33 @@ Adapters must not:
 - skip SchemaRouter input/output validation;
 - call a remote service directly from planning.
 
-Remote adapters should set `tool.metadata["remote"] = True` so unclassified side effects remain
-policy-gated.
+Remote adapters must set `tool.remote = True` (or construct `ToolSpec(remote=True, ...)`) so
+unclassified side effects remain policy-gated. Ordinary `metadata` is descriptive only and must
+not be read by an invoker to decide execution origin, transport target, request encoding, or other
+runtime semantics.
+
+If an invoker needs adapter-specific runtime values, put them in fingerprinted
+`execution_metadata`. For example:
+
+```python
+tool = ToolSpec(
+    name="graphql",
+    remote=True,
+    execution_metadata={
+        "adapter": "graphql",
+        "approved_base_url": approved_base_url,
+    },
+    endpoints=[
+        EndpointSpec(
+            name="query",
+            execution_metadata={"selection_mode": "typed"},
+            # ...
+        )
+    ],
+)
+```
+
+Do not place credentials in either metadata bag. Secrets remain only in the trusted invoker object.
 
 ## Schema fidelity
 
@@ -141,6 +169,8 @@ New adapters should test:
 - invalid input values;
 - invalid raw output values;
 - stale invoker bindings;
+- stale plans after tool-level origin/transport changes;
+- ordinary metadata changes not altering execution semantics;
 - credential separation;
 - mutation/destructive policy;
 - selected-field propagation when the protocol supports server-side projection;
