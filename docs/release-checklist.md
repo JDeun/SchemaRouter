@@ -73,14 +73,16 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Let the release workflow download the exact published wheel and sdist from public PyPI and
   verify their SHA-256 digests match the trusted build artifacts byte-for-byte.
 - [ ] Let the release workflow re-install the exact published version from PyPI as wheel, sdist,
-  and lightweight integration extras (MCP, LangChain, LangGraph, LlamaIndex, Jev, OpenTelemetry)
-  after both GitHub Release and PyPI publication succeed.
+  isolated lightweight extras (MCP, Jev, OpenTelemetry), and the combined
+  MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras after both GitHub Release and PyPI
+  publication succeed.
 - [ ] Verify install/import in a clean environment.
 - [ ] Verify the release provenance and SPDX SBOM attestations with GitHub CLI for at least one published artifact.
 
 ## Post-release
 
-- [ ] Confirm the exact-version post-publish PyPI verification job is green for wheel, sdist, and
+- [ ] Confirm the exact-version post-publish PyPI verification job is green for wheel, sdist,
+  isolated MCP/Jev/OpenTelemetry extras, and the combined
   MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras.
 - [ ] Confirm documentation examples match the released package.
 - [ ] Record any compatibility regressions as release blockers for the next patch.
