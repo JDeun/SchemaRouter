@@ -11,7 +11,7 @@ from .errors import PlanValidationError
 from .executor import RegistryExecutor
 
 HealthProbe = Callable[[], bool | Awaitable[bool]]
-HealthStatus = Literal["unknown", "healthy", "unhealthy"]
+HealthStatus = Literal["unknown", "healthy", "unhealthy", "stale"]
 
 
 @dataclass(frozen=True)
@@ -26,6 +26,7 @@ class HealthProbeSnapshot:
 @dataclass
 class _ProbeRecord:
     probe: HealthProbe
+    tool_fingerprint: str
     status: HealthStatus = "unknown"
     last_checked_at: datetime | None = None
     last_error_type: str | None = None
@@ -57,7 +58,8 @@ class AccessHealthMonitor:
         endpoint: str,
         probe: HealthProbe,
     ) -> None:
-        endpoint_spec = self.executor.registry.endpoint(tool_key, endpoint)
+        tool = self.executor.registry.get(tool_key)
+        endpoint_spec = tool.endpoint(endpoint)
         if endpoint_spec.read_only is not True:
             raise PlanValidationError(
                 "background health probes may be attached only to explicitly read-only "
@@ -65,7 +67,10 @@ class AccessHealthMonitor:
             )
         if not callable(probe):
             raise TypeError("health probe must be callable")
-        self._probes[(tool_key, endpoint)] = _ProbeRecord(probe=probe)
+        self._probes[(tool_key, endpoint)] = _ProbeRecord(
+            probe=probe,
+            tool_fingerprint=tool.fingerprint,
+        )
 
     def unregister(self, tool_key: str, endpoint: str) -> None:
         self._probes.pop((tool_key, endpoint), None)
@@ -95,6 +100,22 @@ class AccessHealthMonitor:
         async with semaphore:
             status: HealthStatus = "unhealthy"
             error_type: str | None = None
+
+            try:
+                current_tool = self.executor.registry.get(tool_key)
+                current_tool.endpoint(endpoint)
+            except KeyError:
+                record.status = "stale"
+                record.last_checked_at = datetime.now(timezone.utc)
+                record.last_error_type = "CapabilityRemoved"
+                return
+
+            if current_tool.fingerprint != record.tool_fingerprint:
+                record.status = "stale"
+                record.last_checked_at = datetime.now(timezone.utc)
+                record.last_error_type = "ToolContractChanged"
+                return
+
             try:
                 outcome = record.probe()
                 if inspect.isawaitable(outcome):
