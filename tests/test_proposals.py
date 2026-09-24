@@ -366,7 +366,7 @@ async def test_documentation_query_secret_is_not_model_visible_or_persisted() ->
         router = SchemaRouter(http_client=client)
         proposal = await router.inspect_url(source, model=model)
 
-    assert requested == ["https://docs.example.com/users?token=top-secret"]
+    assert requested == [source]
     assert captured["source_url"] == "https://docs.example.com/users"
     assert "top-secret" not in repr(captured)
     assert proposal.source_url == "https://docs.example.com/users"
