@@ -516,3 +516,32 @@ async def test_max_parallel_calls_is_independent_from_batch_concurrency() -> Non
 
     assert [result.data["value"] for result in results] == ["slow", "fast"]
     assert max_active == 1
+
+
+@pytest.mark.asyncio
+async def test_parallel_preflight_failure_emits_terminal_run_error() -> None:
+    router, plan = make_parallel_plan_router(second_read_only=False)
+    original_aplan = router.aplan
+
+    async def fixed_plan(request):
+        return plan
+
+    router.aplan = fixed_plan  # type: ignore[method-assign]
+    events = []
+    try:
+        with pytest.raises(PlanValidationError, match="explicitly read-only"):
+            async for event in router.astream_events(
+                "fan out",
+                config=RunConfig(execution_mode="parallel_read_only"),
+            ):
+                events.append(event)
+    finally:
+        router.aplan = original_aplan  # type: ignore[method-assign]
+
+    assert [event.event for event in events] == [
+        "run.start",
+        "plan.end",
+        "run.error",
+    ]
+    assert events[-1].data["stage"] == "execution"
+    assert events[-1].data["phase"] == "parallel_preflight"
