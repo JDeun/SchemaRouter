@@ -1106,6 +1106,7 @@ def tool_from_openapi(
         namespace=namespace,
         description=(document.get("info") or {}).get("description", ""),
         endpoints=endpoints,
+        execution_metadata={"adapter": "openapi"},
         metadata={
             "adapter": "openapi",
             "openapi": document.get("openapi"),
