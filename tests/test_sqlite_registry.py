@@ -1,3 +1,4 @@
+import json
 import sqlite3
 
 import pytest
@@ -231,3 +232,59 @@ def test_sqlite_registry_revalidates_nested_mutation_before_transaction(tmp_path
 
         assert registry.version == 0
         assert registry.keys() == ()
+
+
+
+def test_sqlite_registry_migrates_legacy_execution_metadata_on_read(tmp_path) -> None:
+    path = tmp_path / "legacy.sqlite3"
+    registry = SQLiteRegistry(path)
+    registry.close()
+
+    legacy_document = {
+        "name": "legacy_remote",
+        "endpoints": [
+            {
+                "name": "run",
+                "read_only": None,
+                "metadata": {
+                    "request_body_mode": "root_schema",
+                    "request_body_required": True,
+                },
+            }
+        ],
+        "metadata": {
+            "adapter": "mcp",
+            "source_url": "https://mcp.example.test/mcp",
+            "authenticated_transport": True,
+        },
+    }
+
+    connection = sqlite3.connect(path)
+    try:
+        connection.execute(
+            """
+            INSERT INTO schemarouter_registry_tools (key, position, document)
+            VALUES (?, ?, ?)
+            """,
+            (
+                "legacy_remote",
+                0,
+                json.dumps(legacy_document),
+            ),
+        )
+        connection.execute(
+            "UPDATE schemarouter_registry_meta SET value = 1 WHERE key = 'version'"
+        )
+        connection.commit()
+    finally:
+        connection.close()
+
+    with SQLiteRegistry(path) as reopened:
+        tool = reopened.get("legacy_remote")
+
+    assert tool.remote is True
+    assert tool.execution_metadata["adapter"] == "mcp"
+    assert tool.execution_metadata["source_url"] == "https://mcp.example.test/mcp"
+    assert tool.execution_metadata["authenticated_transport"] is True
+    assert tool.endpoints[0].execution_metadata["request_body_mode"] == "root_schema"
+    assert tool.endpoints[0].execution_metadata["request_body_required"] is True
