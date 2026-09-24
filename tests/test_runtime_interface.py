@@ -485,3 +485,34 @@ async def test_parallel_read_only_event_stream_reports_completion_order() -> Non
     assert starts == ["slow", "fast"]
     assert ends == ["fast", "slow"]
     assert events[-1].event == "run.end"
+
+
+@pytest.mark.asyncio
+async def test_max_parallel_calls_is_independent_from_batch_concurrency() -> None:
+    router, plan = make_parallel_plan_router()
+    active = 0
+    max_active = 0
+
+    async def invoker(endpoint: str, arguments: dict) -> dict:
+        nonlocal active, max_active
+        active += 1
+        max_active = max(max_active, active)
+        try:
+            await asyncio.sleep(0.02)
+            return {"value": endpoint}
+        finally:
+            active -= 1
+
+    router.executor.bind("fanout", invoker)
+
+    results = await router.execute(
+        plan,
+        config=RunConfig(
+            execution_mode="parallel_read_only",
+            max_concurrency=32,
+            max_parallel_calls=1,
+        ),
+    )
+
+    assert [result.data["value"] for result in results] == ["slow", "fast"]
+    assert max_active == 1
