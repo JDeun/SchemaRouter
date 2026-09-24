@@ -12,7 +12,6 @@ from tempfile import TemporaryDirectory
 from pydantic import BaseModel
 
 from schemarouter import (
-    __version__,
     ApprovalDeniedError,
     BindingDriftError,
     ExecutionBudget,
@@ -27,6 +26,7 @@ from schemarouter import (
     SchemaValidationError,
     SQLiteRegistry,
     SQLiteRunTraceStore,
+    __version__,
     inspect_registry,
     inspect_traces,
     schema_tool,
@@ -300,8 +300,7 @@ async def scenario_persistence_traces_and_dashboard() -> dict[str, object]:
                 ]
                 snapshots = inspect_traces(traces, complete=True)
                 assert len(snapshots) == 1
-                assert snapshots[0].terminal_event is not None
-                assert snapshots[0].terminal_event.event == "run.end"
+                assert snapshots[0].terminal_event == "run.end"
                 trace_json = snapshots[0].model_dump_json()
                 assert "Seoul" not in trace_json
 
