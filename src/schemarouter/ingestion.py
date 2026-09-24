@@ -682,6 +682,14 @@ class OpenAPISourceAdapter:
                 ) from exc
             suggested_base_url = None
 
+        tool.execution_metadata.update(
+            {
+                "adapter": "openapi",
+                "source_url": context.url,
+                "resolved_schema_url": resolved_schema_url,
+                "suggested_base_url": suggested_base_url,
+            }
+        )
         tool.metadata.update(
             {
                 "source_url": context.url,
@@ -724,6 +732,13 @@ class OpenAPISourceAdapter:
                 ) from exc
 
         if invoker is not None:
+            tool.execution_metadata.update(
+                {
+                    "execution_bound": True,
+                    "approved_base_url": selected_base_url,
+                    "requires_explicit_base_url": False,
+                }
+            )
             tool.metadata.update(
                 {
                     "execution_bound": True,
@@ -731,6 +746,12 @@ class OpenAPISourceAdapter:
                 }
             )
         else:
+            tool.execution_metadata.update(
+                {
+                    "execution_bound": False,
+                    "requires_explicit_base_url": True,
+                }
+            )
             tool.metadata.update(
                 {
                     "execution_bound": False,
