@@ -49,6 +49,7 @@ from .errors import (
     UnsupportedSchemaSourceError,
 )
 from .executor import RegistryExecutor
+from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot, HealthStatus
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
 from .inspection import (
     EndpointInspection,
@@ -126,6 +127,7 @@ __all__ = [
     "AdapterPluginInfo",
     "AdapterRegistry",
     "ApprovalCallback",
+    "AccessHealthMonitor",
     "AfterExecutionHook",
     "ApprovalDeniedError",
     "BeforeExecutionHook",
@@ -153,6 +155,9 @@ __all__ = [
     "InvocationUnavailableError",
     "ExecutionMode",
     "ExecutionHooks",
+    "HealthProbe",
+    "HealthProbeSnapshot",
+    "HealthStatus",
     "ExecutionPlan",
     "FallbackRoute",
     "FallbackScope",
