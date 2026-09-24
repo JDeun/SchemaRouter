@@ -299,6 +299,16 @@ def compare_endpoint_specs(old: EndpointSpec, new: EndpointSpec) -> SchemaDiffRe
             new=new.remote,
             message="Local/remote execution-origin classification changed and requires policy review.",
         )
+    if old.execution_metadata != new.execution_metadata:
+        _change(
+            changes,
+            path="execution_metadata",
+            kind="tool_execution_metadata_changed",
+            severity="security",
+            old=old.execution_metadata,
+            new=new.execution_metadata,
+            message="Transport or binding identity changed and requires execution review.",
+        )
     if old.method != new.method:
         old_method = old.method.upper() if isinstance(old.method, str) else None
         new_method = new.method.upper() if isinstance(new.method, str) else None
