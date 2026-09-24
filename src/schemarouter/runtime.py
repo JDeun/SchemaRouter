@@ -646,52 +646,65 @@ class SchemaRouter:
 
             budget_tracker = ExecutionBudgetTracker(run_config.budget)
             semaphore = asyncio.Semaphore(run_config.max_parallel_calls)
+            event_queue: asyncio.Queue[
+                tuple[str, int, ToolResult | Exception | None]
+            ] = asyncio.Queue()
 
             async def run_parallel_call(
                 index: int,
                 call: Any,
-            ) -> tuple[int, ToolResult | Exception]:
-                try:
-                    async with semaphore:
+            ) -> None:
+                async with semaphore:
+                    await event_queue.put(("start", index, None))
+                    try:
                         result = await self.executor.execute_call(
                             call,
                             retry=run_config.retry,
                             budget=run_config.budget,
                             _tracker=budget_tracker,
                         )
-                    return index, result
-                except Exception as exc:
-                    return index, exc
+                    except Exception as exc:
+                        await event_queue.put(("error", index, exc))
+                        return
+                    await event_queue.put(("end", index, result))
 
-            tasks: list[asyncio.Task[tuple[int, ToolResult | Exception]]] = []
-            for index, call in enumerate(plan.calls):
-                start_data: dict[str, Any] = {
-                    "argument_names": sorted(call.arguments),
-                    "fields": list(call.fields),
-                }
-                if run_config.include_payloads:
-                    start_data["arguments"] = dict(call.arguments)
-                yield await emit(RunEvent.create(
-                    event="tool.start",
-                    run_id=run_id,
-                    sequence=sequence,
-                    config=run_config,
-                    tool=call.tool,
-                    endpoint=call.endpoint,
-                    data=start_data,
-                ))
-                sequence += 1
-                tasks.append(asyncio.create_task(run_parallel_call(index, call)))
+            tasks = [
+                asyncio.create_task(run_parallel_call(index, call))
+                for index, call in enumerate(plan.calls)
+            ]
 
             result_count = 0
+            terminal_count = 0
             try:
-                for completed in asyncio.as_completed(tasks):
-                    index, outcome = await completed
+                while terminal_count < len(tasks):
+                    kind, index, payload = await event_queue.get()
                     call = plan.calls[index]
-                    if isinstance(outcome, Exception):
-                        error_data = {"error_type": type(outcome).__name__}
+
+                    if kind == "start":
+                        start_data: dict[str, Any] = {
+                            "argument_names": sorted(call.arguments),
+                            "fields": list(call.fields),
+                        }
                         if run_config.include_payloads:
-                            error_data["message"] = str(outcome)
+                            start_data["arguments"] = dict(call.arguments)
+                        yield await emit(RunEvent.create(
+                            event="tool.start",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            tool=call.tool,
+                            endpoint=call.endpoint,
+                            data=start_data,
+                        ))
+                        sequence += 1
+                        continue
+
+                    terminal_count += 1
+                    if kind == "error":
+                        assert isinstance(payload, Exception)
+                        error_data = {"error_type": type(payload).__name__}
+                        if run_config.include_payloads:
+                            error_data["message"] = str(payload)
                         yield await emit(RunEvent.create(
                             event="tool.error",
                             run_id=run_id,
@@ -708,24 +721,27 @@ class SchemaRouter:
                             sequence=sequence,
                             config=run_config,
                             data={
-                                "error_type": type(outcome).__name__,
+                                "error_type": type(payload).__name__,
                                 "stage": "execution",
                             },
                         ))
-                        raise outcome
+                        raise payload
+
+                    if kind != "end" or not isinstance(payload, ToolResult):
+                        raise RuntimeError("invalid parallel execution event")
 
                     end_data: dict[str, Any] = {
-                        "projected_fields": list(outcome.projected_fields),
+                        "projected_fields": list(payload.projected_fields),
                     }
                     if run_config.include_payloads:
-                        end_data["result"] = outcome.model_dump(mode="json")
+                        end_data["result"] = payload.model_dump(mode="json")
                     yield await emit(RunEvent.create(
                         event="tool.end",
                         run_id=run_id,
                         sequence=sequence,
                         config=run_config,
-                        tool=outcome.tool,
-                        endpoint=outcome.endpoint,
+                        tool=payload.tool,
+                        endpoint=payload.endpoint,
                         data=end_data,
                     ))
                     sequence += 1
