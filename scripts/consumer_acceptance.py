@@ -18,6 +18,7 @@ from schemarouter import (
     ExecutionBudgetExceededError,
     ExecutionPolicy,
     PlanRequest,
+    PolicyRule,
     PolicyViolationError,
     RetryPolicy,
     RunConfig,
@@ -27,6 +28,7 @@ from schemarouter import (
     SQLiteRegistry,
     SQLiteRunTraceStore,
     __version__,
+    compare_endpoint_specs,
     inspect_registry,
     inspect_traces,
     schema_tool,
@@ -78,13 +80,17 @@ async def scenario_happy_path() -> dict[str, object]:
     router = SchemaRouter()
     key = router.add_callable(current_weather)
 
-    results = await router.ainvoke(
-        PlanRequest(
-            query="city temperature",
-            preferred_tools=[key],
-            arguments={"city": "Seoul"},
-        )
+    request = PlanRequest(
+        query="city temperature",
+        preferred_tools=[key],
+        arguments={"city": "Seoul"},
     )
+    plan = await router.aplan(request)
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "deterministic"
+    assert plan.calls[0].explanation.score_components
+
+    results = await router.execute(plan)
 
     assert len(results) == 1
     assert results[0].tool == key
@@ -149,6 +155,40 @@ async def scenario_policy_and_approval() -> dict[str, object]:
     }
 
 
+async def scenario_scoped_policy_rule() -> dict[str, object]:
+    approvals: list[str] = []
+
+    def approve(tool, endpoint, call) -> bool:
+        approvals.append(f"{tool.key}.{endpoint.name}")
+        return True
+
+    router = SchemaRouter(
+        policy=ExecutionPolicy(
+            rules=(
+                PolicyRule(
+                    operation="update_profile.call",
+                    effect="require_approval",
+                    name="review-profile-update",
+                ),
+            ),
+        ),
+        approval_callback=approve,
+    )
+    key = router.add_callable(update_profile)
+    assert key == "update_profile"
+
+    result = await router.ainvoke(
+        PlanRequest(
+            query="update profile value",
+            preferred_tools=[key],
+            arguments={"value": 10},
+        )
+    )
+    assert result[0].data == 11
+    assert approvals == ["update_profile.call"]
+    return {"scoped_rule": "approved_and_executed"}
+
+
 async def scenario_schema_drift() -> dict[str, object]:
     router = SchemaRouter()
     key = router.add_callable(lookup_value)
@@ -170,10 +210,17 @@ async def scenario_schema_drift() -> dict[str, object]:
         update={"endpoints": [changed_endpoint]},
         deep=True,
     )
+    report = compare_endpoint_specs(original.endpoints[0], changed_endpoint)
+    assert report.compatibility == "compatible"
+    assert report.changed
+
     router.registry.register(changed, replace=True)
 
     await _expect(SchemaDriftError, router.execute(plan))
-    return {"stale_plan": "blocked"}
+    return {
+        "stale_plan": "blocked",
+        "diagnostic_compatibility": report.compatibility,
+    }
 
 
 async def scenario_binding_drift() -> dict[str, object]:
@@ -267,6 +314,54 @@ async def scenario_retry_and_budget() -> dict[str, object]:
     return {"retry_attempts": attempts, "elapsed_budget": "enforced"}
 
 
+async def scenario_parallel_read_only() -> dict[str, object]:
+    active = 0
+    peak = 0
+
+    @schema_tool(read_only=True)
+    async def first(value: int) -> int:
+        nonlocal active, peak
+        active += 1
+        peak = max(peak, active)
+        try:
+            await asyncio.sleep(0.01)
+            return value + 1
+        finally:
+            active -= 1
+
+    @schema_tool(read_only=True)
+    async def second(value: int) -> int:
+        nonlocal active, peak
+        active += 1
+        peak = max(peak, active)
+        try:
+            await asyncio.sleep(0.01)
+            return value + 2
+        finally:
+            active -= 1
+
+    router = SchemaRouter()
+    first_key = router.add_callable(first)
+    second_key = router.add_callable(second)
+
+    results = await router.ainvoke(
+        PlanRequest(
+            query="first second value",
+            preferred_tools=[first_key, second_key],
+            arguments={"value": 5},
+            max_calls=2,
+        ),
+        config=RunConfig(
+            execution_mode="parallel_read_only",
+            max_parallel_calls=2,
+        ),
+    )
+
+    assert {result.data for result in results} == {6, 7}
+    assert peak == 2
+    return {"result_count": len(results), "peak_concurrency": peak}
+
+
 async def scenario_persistence_traces_and_dashboard() -> dict[str, object]:
     with TemporaryDirectory(prefix="schemarouter-acceptance-") as temp:
         root = Path(temp)
@@ -332,10 +427,12 @@ Scenario = Callable[[], Awaitable[dict[str, object]]]
 SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("happy_path", scenario_happy_path),
     ("policy_and_approval", scenario_policy_and_approval),
+    ("scoped_policy_rule", scenario_scoped_policy_rule),
     ("schema_drift", scenario_schema_drift),
     ("binding_drift", scenario_binding_drift),
     ("output_validation", scenario_output_validation),
     ("retry_and_budget", scenario_retry_and_budget),
+    ("parallel_read_only", scenario_parallel_read_only),
     ("persistence_traces_dashboard", scenario_persistence_traces_and_dashboard),
 )
 
