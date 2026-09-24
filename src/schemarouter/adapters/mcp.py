@@ -93,6 +93,11 @@ def _validate_mcp_url(url: str) -> None:
         raise ValueError(
             "MCP URL must not contain credentials; use trusted transport authentication"
         )
+    if parsed.query or parsed.fragment:
+        raise ValueError(
+            "MCP URL must not contain query or fragment; use trusted transport authentication "
+            "or a stable endpoint path"
+        )
 
 
 def _properties(schema: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
