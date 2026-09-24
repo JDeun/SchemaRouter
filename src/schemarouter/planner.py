@@ -1048,6 +1048,8 @@ class SchemaPlanner:
         fallback_routes: list[FallbackRoute] = []
         if request.fallback_scope != "disabled" and request.max_fallbacks > 0:
             for index, (primary_candidate, primary_call) in enumerate(primary_pairs):
+                if primary_candidate.endpoint.read_only is not True:
+                    continue
                 alternatives: list[ToolCall] = []
                 for candidate in self._ordered_fallback_candidates(
                     primary_candidate,
@@ -1056,6 +1058,8 @@ class SchemaPlanner:
                 ):
                     if len(alternatives) >= request.max_fallbacks:
                         break
+                    if candidate.endpoint.read_only is not True:
+                        continue
                     alternative = self._compile_candidate_sync(
                         request,
                         intent,
@@ -1122,6 +1126,8 @@ class SchemaPlanner:
         fallback_routes: list[FallbackRoute] = []
         if request.fallback_scope != "disabled" and request.max_fallbacks > 0:
             for index, (primary_candidate, primary_call) in enumerate(primary_pairs):
+                if primary_candidate.endpoint.read_only is not True:
+                    continue
                 alternatives: list[ToolCall] = []
                 for candidate in self._ordered_fallback_candidates(
                     primary_candidate,
@@ -1130,6 +1136,8 @@ class SchemaPlanner:
                 ):
                     if len(alternatives) >= request.max_fallbacks:
                         break
+                    if candidate.endpoint.read_only is not True:
+                        continue
                     alternative = await self._compile_candidate_async(
                         request,
                         intent,
