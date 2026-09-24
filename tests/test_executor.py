@@ -383,3 +383,65 @@ async def test_output_schema_violation_is_never_retried() -> None:
         )
 
     assert attempts == 1
+
+
+
+@pytest.mark.asyncio
+async def test_execution_uses_same_registry_snapshot_that_was_validated() -> None:
+    stable = ToolSpec(
+        name="snapshot",
+        endpoints=[EndpointSpec(name="run", read_only=True)],
+    )
+    drifted = stable.model_copy(
+        update={"description": "changed between reads"},
+        deep=True,
+    )
+
+    class AdversarialRegistry:
+        def __init__(self) -> None:
+            self.version = 1
+            self.get_calls = 0
+            self.endpoint_calls = 0
+
+        def register(self, tool: ToolSpec, *, replace: bool = False) -> str:
+            del tool, replace
+            raise AssertionError("registration is not expected")
+
+        def get(self, key: str) -> ToolSpec:
+            assert key == "snapshot"
+            self.get_calls += 1
+            selected = stable if self.get_calls == 1 else drifted
+            return selected.model_copy(deep=True)
+
+        def tools(self) -> tuple[ToolSpec, ...]:
+            return (stable.model_copy(deep=True),)
+
+        def keys(self) -> tuple[str, ...]:
+            return ("snapshot",)
+
+        def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec:
+            self.endpoint_calls += 1
+            assert tool_key == "snapshot"
+            assert endpoint_name == "run"
+            return drifted.endpoint("run").model_copy(deep=True)
+
+    registry = AdversarialRegistry()
+    executor = RegistryExecutor(registry)
+    executor.bind("snapshot", lambda endpoint, arguments: {"ok": True})
+
+    # Reset the adversarial read counter after binding. Execution should need exactly one
+    # ToolSpec snapshot and must not perform a second registry endpoint/tool read.
+    registry.get_calls = 0
+    call = ToolCall(
+        tool="snapshot",
+        endpoint="run",
+        fields=[],
+        schema_fingerprint=stable.endpoint("run").fingerprint,
+        tool_fingerprint=stable.fingerprint,
+    )
+
+    result = await executor.execute_call(call)
+
+    assert result.data == {"ok": True}
+    assert registry.get_calls == 1
+    assert registry.endpoint_calls == 0
