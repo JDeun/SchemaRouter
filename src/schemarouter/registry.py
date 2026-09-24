@@ -12,6 +12,17 @@ from .errors import RegistrationError
 from .models import EndpointSpec, ToolSpec
 
 
+def _validated_tool_snapshot(tool: ToolSpec) -> ToolSpec:
+    """Revalidate mutable nested model state at the registry write boundary."""
+
+    try:
+        return ToolSpec.model_validate(tool.model_dump(mode="python"))
+    except (ValidationError, ValueError, TypeError) as exc:
+        raise RegistrationError(
+            f"tool {tool.key!r} is not a valid ToolSpec at registration time"
+        ) from exc
+
+
 class ToolRegistry(Protocol):
     """Structural contract for pluggable tool registries.
 
@@ -49,10 +60,11 @@ class InMemoryRegistry:
         return tool.model_copy(deep=True)
 
     def register(self, tool: ToolSpec, *, replace: bool = False) -> str:
-        key = tool.key
+        validated = _validated_tool_snapshot(tool)
+        key = validated.key
         if key in self._tools and not replace:
             raise RegistrationError(f"tool {key!r} is already registered")
-        self._tools[key] = self._snapshot(tool)
+        self._tools[key] = self._snapshot(validated)
         self._version += 1
         return key
 
@@ -75,7 +87,7 @@ class InMemoryRegistry:
         return self.get(tool_key).endpoint(endpoint_name)
 
     def update_many(self, tools: Iterable[ToolSpec], *, replace: bool = False) -> None:
-        staged = list(tools)
+        staged = [_validated_tool_snapshot(tool) for tool in tools]
         staged_keys = [tool.key for tool in staged]
         if len(staged_keys) != len(set(staged_keys)):
             raise RegistrationError("duplicate tool keys in batch")
@@ -207,23 +219,24 @@ class SQLiteRegistry:
             return int(row["value"])
 
     def register(self, tool: ToolSpec, *, replace: bool = False) -> str:
-        document = self._serialize(tool)
+        validated = _validated_tool_snapshot(tool)
+        document = self._serialize(validated)
         with self._lock:
             self._begin_write()
             try:
                 existing = self._connection.execute(
                     "SELECT position FROM schemarouter_registry_tools WHERE key = ?",
-                    (tool.key,),
+                    (validated.key,),
                 ).fetchone()
                 if existing is not None and not replace:
-                    raise RegistrationError(f"tool {tool.key!r} is already registered")
+                    raise RegistrationError(f"tool {validated.key!r} is already registered")
                 if existing is None:
                     self._connection.execute(
                         """
                         INSERT INTO schemarouter_registry_tools (key, position, document)
                         VALUES (?, ?, ?)
                         """,
-                        (tool.key, self._next_position(), document),
+                        (validated.key, self._next_position(), document),
                     )
                 else:
                     self._connection.execute(
@@ -232,7 +245,7 @@ class SQLiteRegistry:
                         SET document = ?
                         WHERE key = ?
                         """,
-                        (document, tool.key),
+                        (document, validated.key),
                     )
                 self._bump_version()
             except Exception:
@@ -240,7 +253,7 @@ class SQLiteRegistry:
                 raise
             else:
                 self._connection.commit()
-        return tool.key
+        return validated.key
 
     def unregister(self, key: str) -> None:
         with self._lock:
@@ -297,7 +310,7 @@ class SQLiteRegistry:
         return self.get(tool_key).endpoint(endpoint_name)
 
     def update_many(self, tools: Iterable[ToolSpec], *, replace: bool = False) -> None:
-        staged = list(tools)
+        staged = [_validated_tool_snapshot(tool) for tool in tools]
         staged_keys = [tool.key for tool in staged]
         if len(staged_keys) != len(set(staged_keys)):
             raise RegistrationError("duplicate tool keys in batch")
