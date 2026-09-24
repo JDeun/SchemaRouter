@@ -402,6 +402,34 @@ async def scenario_parallel_read_only() -> dict[str, object]:
     return {"result_count": len(results), "peak_concurrency": peak}
 
 
+async def scenario_inspection_redaction() -> dict[str, object]:
+    router = SchemaRouter()
+    tool = ToolSpec(
+        name="redaction_probe",
+        remote=True,
+        execution_metadata={
+            "adapter": "openapi",
+            "source_url": (
+                "https://user:password@example.test/openapi.json"
+                "?token=secret#fragment"
+            ),
+            "approved_base_url": "https://api.example.test/v1?tenant=secret",
+        },
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    router.add_tool(tool)
+
+    snapshot = inspect_registry(router.registry)
+    provenance = snapshot.tools[0].provenance
+    assert provenance["source_url"] == "https://example.test/openapi.json"
+    assert provenance["approved_base_url"] == "https://api.example.test/v1"
+    serialized = snapshot.model_dump_json()
+    assert "user:password" not in serialized
+    assert "token=secret" not in serialized
+    assert "tenant=secret" not in serialized
+    return {"inspection_url_secrets": "redacted"}
+
+
 async def scenario_persistence_traces_and_dashboard() -> dict[str, object]:
     with TemporaryDirectory(prefix="schemarouter-acceptance-") as temp:
         root = Path(temp)
@@ -474,6 +502,7 @@ SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("output_validation", scenario_output_validation),
     ("retry_and_budget", scenario_retry_and_budget),
     ("parallel_read_only", scenario_parallel_read_only),
+    ("inspection_redaction", scenario_inspection_redaction),
     ("persistence_traces_dashboard", scenario_persistence_traces_and_dashboard),
 )
 
