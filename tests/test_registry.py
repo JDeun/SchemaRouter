@@ -276,3 +276,53 @@ def test_descriptive_metadata_can_remain_non_json_for_in_memory_use() -> None:
     )
 
     assert registry.get("descriptive").metadata["opaque"] is not None
+
+
+
+def test_generic_descriptive_metadata_is_not_legacy_migrated_by_key_name_alone() -> None:
+    endpoint = EndpointSpec(
+        name="run",
+        metadata={"mode": "documentation-only"},
+    )
+    tool = ToolSpec(
+        name="local",
+        endpoints=[endpoint],
+        metadata={"source_url": "https://docs.example.test/local"},
+    )
+
+    assert endpoint.execution_metadata == {}
+    assert tool.execution_metadata == {}
+    assert tool.remote is False
+
+
+def test_legacy_optimade_tool_metadata_migrates_adapter_specific_identity() -> None:
+    tool = ToolSpec(
+        name="materials",
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                metadata={
+                    "entry_type": "structures",
+                    "mode": "search",
+                    "field_projection": "response_fields",
+                },
+            )
+        ],
+        metadata={
+            "adapter": "optimade",
+            "api_version": "1.3.0",
+            "versioned_base_url": "https://optimade.example/v1",
+            "source_url": "descriptive-only-for-this-adapter",
+        },
+    )
+
+    assert tool.execution_metadata == {
+        "adapter": "optimade",
+        "api_version": "1.3.0",
+        "versioned_base_url": "https://optimade.example/v1",
+    }
+    assert tool.endpoints[0].execution_metadata == {
+        "entry_type": "structures",
+        "field_projection": "response_fields",
+        "mode": "search",
+    }
