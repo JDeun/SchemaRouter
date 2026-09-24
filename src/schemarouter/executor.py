@@ -14,6 +14,7 @@ from .errors import (
     ExecutionBudgetExceededError,
     ExecutionError,
     ExecutionHookError,
+    InvocationUnavailableError,
     NonRetryableInvocationError,
     PlanValidationError,
     SchemaDriftError,
@@ -499,9 +500,48 @@ class RegistryExecutor:
                         delay * retry.backoff_multiplier,
                     )
 
+        if isinstance(last_error, InvocationUnavailableError):
+            raise last_error
         raise ExecutionError(
             f"invocation failed for {call.tool}.{call.endpoint} after {max_attempts} attempt(s)"
         ) from last_error
+
+    async def execute_call_with_fallback(
+        self,
+        call: ToolCall,
+        alternatives: list[ToolCall] | tuple[ToolCall, ...],
+        *,
+        retry: RetryPolicy | None = None,
+        budget: ExecutionBudget | None = None,
+        _tracker: ExecutionBudgetTracker | None = None,
+    ) -> ToolResult:
+        tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
+        chain = [call, *alternatives]
+        last_unavailable: InvocationUnavailableError | None = None
+
+        for candidate in chain:
+            tool, endpoint = self._validated_call_contract(candidate)
+            if endpoint.read_only is not True:
+                raise PlanValidationError(
+                    "automatic fallback requires every candidate to be explicitly read-only; "
+                    f"got {candidate.tool}.{candidate.endpoint}"
+                )
+            del tool
+
+            try:
+                return await self.execute_call(
+                    candidate,
+                    retry=retry,
+                    budget=budget,
+                    _tracker=tracker,
+                )
+            except InvocationUnavailableError as exc:
+                last_unavailable = exc
+                continue
+
+        if last_unavailable is not None:
+            raise last_unavailable
+        raise ExecutionError("fallback chain contained no executable candidates")
 
     async def execute(
         self,
@@ -518,16 +558,19 @@ class RegistryExecutor:
     def validate_parallel_read_only(self, plan: ExecutionPlan) -> None:
         """Fail before launching tasks unless every call is currently trusted read-only."""
 
-        for call in plan.calls:
-            tool, endpoint, _ = self._execution_state(call)
-            if endpoint.read_only is not True:
-                raise PlanValidationError(
-                    "parallel_read_only execution requires every call to be explicitly "
-                    f"read-only; got {call.tool}.{call.endpoint}"
-                )
-            # Keep the local tool snapshot read so policy/binding validation happens for every
-            # call before any parallel task is launched.
-            del tool
+        for index, call in enumerate(plan.calls):
+            route = plan.fallback_route(index)
+            candidates = [call, *(route.alternatives if route is not None else [])]
+            for candidate in candidates:
+                tool, endpoint, _ = self._execution_state(candidate)
+                if endpoint.read_only is not True:
+                    raise PlanValidationError(
+                        "parallel_read_only execution requires every primary/fallback call to be "
+                        f"explicitly read-only; got {candidate.tool}.{candidate.endpoint}"
+                    )
+                # Keep the local tool snapshot read so policy/binding validation happens for every
+                # call before any parallel task is launched.
+                del tool
 
     async def execute_parallel_read_only(
         self,
@@ -566,8 +609,10 @@ class RegistryExecutor:
 
         async def run_one(index: int, call: ToolCall) -> tuple[int, ToolResult]:
             async with semaphore:
-                result = await self.execute_call(
+                route = plan.fallback_route(index)
+                result = await self.execute_call_with_fallback(
                     call,
+                    route.alternatives if route is not None else [],
                     retry=retry,
                     budget=budget,
                     _tracker=tracker,
@@ -596,9 +641,11 @@ class RegistryExecutor:
         budget: ExecutionBudget | None = None,
     ) -> AsyncIterator[ToolResult]:
         tracker = ExecutionBudgetTracker(budget or ExecutionBudget())
-        for call in plan.calls:
-            yield await self.execute_call(
+        for index, call in enumerate(plan.calls):
+            route = plan.fallback_route(index)
+            yield await self.execute_call_with_fallback(
                 call,
+                route.alternatives if route is not None else [],
                 retry=retry,
                 budget=budget,
                 _tracker=tracker,
