@@ -9,12 +9,25 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 _REMOTE_ADAPTERS = {"mcp", "openapi", "optimade", "html_proposal"}
 _LEGACY_ENDPOINT_EXECUTION_METADATA_KEYS = {
+    "callable_module",
+    "callable_name",
     "entry_type",
     "field_projection",
     "mode",
     "request_body_discriminator",
     "request_body_mode",
     "request_body_required",
+}
+_LEGACY_TOOL_EXECUTION_METADATA_KEYS = {
+    "adapter",
+    "approved_base_url",
+    "authenticated_transport",
+    "execution_bound",
+    "executable",
+    "protocol_version",
+    "requires_explicit_base_url",
+    "source_url",
+    "versioned_base_url",
 }
 
 
@@ -131,7 +144,27 @@ class ToolSpec(StrictModel):
     source_type: str | None = None
     license: str | None = None
     remote: bool = False
+    execution_metadata: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_legacy_execution_metadata(cls, value: Any) -> Any:
+        if not isinstance(value, dict) or "execution_metadata" in value:
+            return value
+        metadata = value.get("metadata")
+        if not isinstance(metadata, dict):
+            return value
+        execution_metadata = {
+            key: metadata[key]
+            for key in _LEGACY_TOOL_EXECUTION_METADATA_KEYS
+            if key in metadata
+        }
+        if not execution_metadata:
+            return value
+        migrated = dict(value)
+        migrated["execution_metadata"] = execution_metadata
+        return migrated
 
     @model_validator(mode="before")
     @classmethod
