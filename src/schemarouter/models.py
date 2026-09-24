@@ -99,6 +99,27 @@ class ParameterSpec(StrictModel):
     aliases: list[str] = Field(default_factory=list)
 
 
+class ServerProjectionSpec(StrictModel):
+    """Trusted contract for server-side response-field selection."""
+
+    parameter: str
+    separator: str = ","
+    field_map: dict[str, str] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_projection(self) -> ServerProjectionSpec:
+        if not self.parameter.strip():
+            raise ValueError("server projection parameter must be non-empty")
+        if not self.separator:
+            raise ValueError("server projection separator must be non-empty")
+        if any(not key or not value for key, value in self.field_map.items()):
+            raise ValueError("server projection field_map requires non-empty keys and values")
+        return self
+
+    def selector_for(self, field: FieldSpec) -> str:
+        return self.field_map.get(field.name, field.name)
+
+
 class FieldSpec(StrictModel):
     name: str
     description: str = ""
@@ -132,6 +153,7 @@ class EndpointSpec(StrictModel):
     path: str | None = None
     read_only: bool | None = None
     destructive: bool | None = None
+    server_projection: ServerProjectionSpec | None = None
     execution_metadata: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
