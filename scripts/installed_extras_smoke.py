@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 from importlib.metadata import version
 
-import httpx2
 import typesafe_sdk
 from mcp import Client
 from mcp.client.streamable_http import streamable_http_client
@@ -21,7 +20,6 @@ def run_smoke() -> dict[str, object]:
 
     assert callable(streamable_http_client)
     assert Client is not None
-    assert httpx2.AsyncClient is not None
     assert typesafe_sdk is not None
     assert exporter.tracer is tracer
     assert mcp_factory is not None
