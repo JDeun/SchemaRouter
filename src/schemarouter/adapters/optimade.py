@@ -8,7 +8,14 @@ from urllib.parse import quote, urljoin, urlparse
 import httpx
 
 from ..errors import InvocationUnavailableError, NonRetryableInvocationError, SchemaSourceError
-from ..models import EndpointSpec, FieldSpec, ParameterSpec, ServerProjectionSpec, ToolCall, ToolSpec
+from ..models import (
+    EndpointSpec,
+    FieldSpec,
+    ParameterSpec,
+    ServerProjectionSpec,
+    ToolCall,
+    ToolSpec,
+)
 from .base import AdapterContext, AdapterLoadResult
 
 _MAX_DISCOVERY_BYTES = 2 * 1024 * 1024
