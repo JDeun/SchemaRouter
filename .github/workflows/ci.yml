@@ -144,11 +144,12 @@ jobs:
       - run: test -s /tmp/inspection-dashboard.html
       - run: python -m venv /tmp/schemarouter-wheel-integrations
       - run: /tmp/schemarouter-wheel-integrations/bin/python -m pip install --upgrade pip
-      - name: Install wheel with framework extras
+      - name: Install wheel with supported lightweight extras
         run: |
           WHEEL="$(pwd)/$(ls dist/*.whl)"
-          /tmp/schemarouter-wheel-integrations/bin/pip install "schemarouter[langchain,langgraph,llamaindex] @ file://${WHEEL}"
+          /tmp/schemarouter-wheel-integrations/bin/pip install "schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel] @ file://${WHEEL}"
           /tmp/schemarouter-wheel-integrations/bin/pip check
+      - run: /tmp/schemarouter-wheel-integrations/bin/python scripts/installed_extras_smoke.py
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/langchain_quickstart.py
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/langgraph_quickstart.py
       - run: /tmp/schemarouter-wheel-integrations/bin/python examples/llamaindex_quickstart.py
