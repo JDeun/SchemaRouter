@@ -38,7 +38,7 @@ This document tracks framework-level maturity rather than research metrics.
 | HTTP serving layer | Not implemented | Consider optional server package |
 | Pluggable registry boundary | `ToolRegistry` protocol + transactional `SQLiteRegistry` | Add distributed/remote implementations only when needed |
 | Release / compatibility policy | Implemented | Enforce during RC reviews |
-| Package artifact CI | Implemented with clean wheel/sdist smoke, public-surface consumer acceptance scenarios, installed-wheel framework-extra execution, provenance, and SPDX SBOM attestations | Keep artifact verification blocking |
+| Package artifact CI | Implemented with clean wheel/sdist smoke, public-surface consumer acceptance scenarios, built-wheel optional-extra resolution/import smoke, framework-example execution, provenance, and SPDX SBOM attestations | Keep artifact verification blocking |
 | Security automation | Weekly/PR dependency audit + push/PR/scheduled CodeQL + OpenSSF Scorecard + immutable Action pins | Triage findings without weakening fail-closed runtime policy |
 | Documentation site | Implemented with MkDocs Material | Keep strict docs build blocking |
 | Integration certification suite | Implemented baseline + retained machine-readable OpenAPI/OPTIMADE smoke artifacts | Extend the live compatibility matrix |
@@ -124,8 +124,8 @@ Completed locally:
 - self-contained decision benchmark HTML reporting and multi-run history rendering;
 - retained machine-readable public OpenAPI/OPTIMADE compatibility smoke artifacts;
 - public-surface consumer acceptance validation across supported Python versions, Windows,
-  minimum dependencies, wheel, and sdist installs, with built-wheel LangChain/LangGraph/LlamaIndex
-  extra installation and runnable examples.
+  minimum dependencies, wheel, and sdist installs, with built-wheel MCP/Jev/OpenTelemetry
+  import/initialization smoke plus LangChain/LangGraph/LlamaIndex runnable examples.
 
 Still external or follow-up work:
 

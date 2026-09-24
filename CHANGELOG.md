@@ -46,9 +46,13 @@ The project is pre-1.0 and follows the compatibility rules in
   ruleset predates newer job names;
 - package smoke now verifies benchmark JSON and HTML artifact generation;
 - package validation now executes consumer acceptance scenarios from clean wheel and sdist
-  environments, installs the built wheel through its LangChain/LangGraph/LlamaIndex extras
-  before running each framework example, and exercises the installed inspection/dashboard CLI
-  against real persisted registry/trace artifacts;
+  environments, resolves the built wheel through MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry
+  extras, runs no-network MCP/Jev/OpenTelemetry SDK smoke checks, executes each framework example,
+  and exercises the installed inspection/dashboard CLI against real persisted registry/trace
+  artifacts;
+- current-source public OpenAPI/OPTIMADE compatibility jobs now use non-editable installation plus
+  `pip check` before live service calls, reducing the gap between source CI and downstream package
+  behavior;
 - research benchmarking now compares Laya's lexical-only path with explicit empty-candidate recall
   on the same full corpus and hardware;
 - post-release development has resumed as `0.7.0.dev0`; published `0.6.0` artifacts remain immutable.
