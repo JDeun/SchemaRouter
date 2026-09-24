@@ -67,7 +67,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - release wheel and sdist artifacts now receive GitHub/Sigstore build-provenance attestations before
   publication;
 - release builds now generate a pinned-tool SPDX JSON SBOM outside the PyPI distribution directory,
-  attest that SBOM against wheel/sdist artifacts, and attach the SBOM to the GitHub release.
+  attest that SBOM against wheel/sdist artifacts, and attach the SBOM to the GitHub release;
+- post-publish release verification now downloads the exact wheel and sdist from public PyPI and
+  requires their SHA-256 digests to match the trusted build artifacts before accepting the release.
 
 ## 0.6.0 - 2026-09-23
 
