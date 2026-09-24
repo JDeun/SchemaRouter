@@ -420,16 +420,109 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        if: matrix.verification != 'framework-extras'
+        with:
+          name: python-dist
+          path: dist
       - run: python -m pip install --upgrade pip
+      - name: Verify published artifact digest matches release build
+        if: matrix.verification != 'framework-extras'
+        env:
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          VERIFY_KIND: ${{ matrix.verification }}
+        run: |
+          mkdir -p /tmp/pypi-artifact
+          download_args=(
+            --no-deps
+            --no-cache-dir
+            --index-url https://pypi.org/simple
+            --dest /tmp/pypi-artifact
+            --only-binary=schemarouter
+          )
+          if [[ "$VERIFY_KIND" == "sdist" ]]; then
+            download_args=(
+              --no-deps
+              --no-cache-dir
+              --index-url https://pypi.org/simple
+              --dest /tmp/pypi-artifact
+              --no-binary=schemarouter
+            )
+          fi
+
+          downloaded=false
+          for attempt in {1..18}; do
+            rm -f /tmp/pypi-artifact/*
+            if python -m pip download "${download_args[@]}" "schemarouter==$RELEASE_VERSION"; then
+              downloaded=true
+              break
+            fi
+            if [[ "$attempt" -eq 18 ]]; then
+              break
+            fi
+            echo "PyPI artifact not downloadable yet (attempt $attempt/18); retrying in 10s."
+            sleep 10
+          done
+
+          if [[ "$downloaded" != "true" ]]; then
+            echo "Failed to download exact PyPI release $RELEASE_VERSION as $VERIFY_KIND."
+            exit 1
+          fi
+
+          python - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+
+          kind = os.environ["VERIFY_KIND"]
+          suffix = ".whl" if kind == "wheel" else ".tar.gz"
+          built = sorted(Path("dist").glob(f"schemarouter-*{suffix}"))
+          published = sorted(Path("/tmp/pypi-artifact").glob(f"schemarouter-*{suffix}"))
+
+          if len(built) != 1 or len(published) != 1:
+              raise SystemExit(
+                  "expected exactly one built and one published "
+                  f"{kind} artifact; built={built}, published={published}"
+              )
+          if built[0].name != published[0].name:
+              raise SystemExit(
+                  f"artifact filename mismatch: built={built[0].name!r}, "
+                  f"published={published[0].name!r}"
+              )
+
+          def sha256(path: Path) -> str:
+              digest = hashlib.sha256()
+              with path.open("rb") as handle:
+                  for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                      digest.update(chunk)
+              return digest.hexdigest()
+
+          built_digest = sha256(built[0])
+          published_digest = sha256(published[0])
+          if built_digest != published_digest:
+              raise SystemExit(
+                  f"artifact SHA-256 mismatch for {built[0].name}: "
+                  f"built={built_digest}, published={published_digest}"
+              )
+          print(f"Verified PyPI artifact SHA-256: {built[0].name} {built_digest}")
+          PY
       - name: Install exact published release from PyPI
         env:
           RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
           VERIFY_KIND: ${{ matrix.verification }}
         run: |
-          install_args=(--no-cache-dir --only-binary=schemarouter)
+          install_args=(
+            --no-cache-dir
+            --index-url https://pypi.org/simple
+            --only-binary=schemarouter
+          )
           package="schemarouter==$RELEASE_VERSION"
           if [[ "$VERIFY_KIND" == "sdist" ]]; then
-            install_args=(--no-cache-dir --no-binary=schemarouter)
+            install_args=(
+              --no-cache-dir
+              --index-url https://pypi.org/simple
+              --no-binary=schemarouter
+            )
           elif [[ "$VERIFY_KIND" == "framework-extras" ]]; then
             package="schemarouter[langchain,langgraph,llamaindex]==$RELEASE_VERSION"
           fi
