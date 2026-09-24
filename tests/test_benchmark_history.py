@@ -135,5 +135,5 @@ def test_compatibility_workflow_retains_json_artifacts() -> None:
         )
         == 5
     )
-    assert workflow.count("if: always()") == 4
-    assert workflow.count("retention-days: 30") == 4
+    assert workflow.count("if: always()") == 5
+    assert workflow.count("retention-days: 30") == 5
