@@ -34,6 +34,23 @@ def _normalize(text: str) -> str:
     return "".join(ch.lower() for ch in text if ch.isalnum())
 
 
+def _semantic_substring_match(left: str, right: str) -> bool:
+    """Conservative containment for compound non-ASCII semantic labels.
+
+    Short ASCII tokens such as chemical symbols ("Si") must never match unrelated
+    field names such as "density" merely because the same letters occur inside them.
+    ASCII semantic matching is already handled by exact normalization and token overlap.
+    """
+
+    if not left or not right:
+        return False
+    if len(left) < 3 or len(right) < 3:
+        return False
+    if left.isascii() and right.isascii():
+        return False
+    return left in right or right in left
+
+
 _KOREAN_PARTICLE_SUFFIXES = (
     "에서",
     "에게",
@@ -204,7 +221,7 @@ class _CandidateIndex:
         if concept_norms:
             for norm, norm_refs in self._field_norm_refs.items():
                 if any(
-                    concept in norm or norm in concept
+                    _semantic_substring_match(concept, norm)
                     for concept in concept_norms
                 ):
                     refs.update(norm_refs)
@@ -1345,7 +1362,7 @@ class SchemaPlanner:
             exact = bool(norms & concept_norms)
             lexical = any(query_tokens & _tokens(name) for name in names)
             substring = any(
-                concept and norm and (concept in norm or norm in concept)
+                _semantic_substring_match(concept, norm)
                 for concept in concept_norms
                 for norm in norms
             )
