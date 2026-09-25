@@ -127,6 +127,7 @@ class FieldSpec(StrictModel):
     json_schema: dict[str, Any] = Field(default_factory=dict)
     aliases: list[str] = Field(default_factory=list)
     path: list[str] = Field(default_factory=list)
+    result_path: list[str] = Field(default_factory=list)
     unit: str | None = None
     identifier: bool = False
     source_type: str | None = None
@@ -138,11 +139,17 @@ class FieldSpec(StrictModel):
             raise ValueError("field semantic_id must be non-empty when provided")
         if any(not isinstance(part, str) or not part for part in self.path):
             raise ValueError("field path requires non-empty string segments")
+        if any(not isinstance(part, str) or not part for part in self.result_path):
+            raise ValueError("field result_path requires non-empty string segments")
         return self
 
     @property
     def projection_path(self) -> tuple[str, ...]:
         return tuple(self.path or [self.name])
+
+    @property
+    def result_projection_path(self) -> tuple[str, ...]:
+        return tuple(self.result_path or self.projection_path)
 
 
 class EndpointSpec(StrictModel):
@@ -221,6 +228,25 @@ class EndpointSpec(StrictModel):
                 if longer[: len(shorter)] == shorter:
                     raise ValueError(
                         "overlapping output field paths in endpoint "
+                        f"{self.name!r}: {left_name!r} and {right_name!r}"
+                    )
+
+        result_paths = [
+            (field.name, field.result_projection_path)
+            for field in self.output_fields
+        ]
+        if len({path for _, path in result_paths}) != len(result_paths):
+            raise ValueError(f"duplicate output result path in endpoint {self.name!r}")
+        for index, (left_name, left_path) in enumerate(result_paths):
+            for right_name, right_path in result_paths[index + 1 :]:
+                shorter, longer = (
+                    (left_path, right_path)
+                    if len(left_path) <= len(right_path)
+                    else (right_path, left_path)
+                )
+                if longer[: len(shorter)] == shorter:
+                    raise ValueError(
+                        "overlapping output result paths in endpoint "
                         f"{self.name!r}: {left_name!r} and {right_name!r}"
                     )
         return self
