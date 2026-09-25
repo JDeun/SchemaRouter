@@ -14,7 +14,7 @@ from schemarouter import (
     compare_endpoint_specs,
 )
 from schemarouter.dashboard import render_dashboard
-from schemarouter.inspection import inspect_tool_spec
+from schemarouter.inspection import inspect_registry, inspect_tool_spec
 
 
 def _qualified_tool(
@@ -253,18 +253,9 @@ def test_inspection_and_dashboard_expose_field_qualifiers() -> None:
         "orientation": "[100]",
     }
 
-    html = render_dashboard(
-        registry=type(
-            "Snapshot",
-            (),
-            {
-                "model_dump_json": lambda self: "{}",
-                "tools": [inspection],
-                "tool_count": 1,
-                "endpoint_count": 1,
-            },
-        )()
-    )
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    html = render_dashboard(inspect_registry(registry))
     assert "temperature=300 K" in html
     assert "orientation=[100]" in html
 
