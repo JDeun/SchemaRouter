@@ -156,6 +156,7 @@ def tool_from_mcp(
                 required=name in required,
                 location="argument",
                 json_schema=spec if isinstance(spec, dict) else {},
+                unit=_schema_unit(spec),
             )
             for name, spec in _properties(input_schema).items()
         ]
