@@ -855,7 +855,10 @@ async def test_all_precompiled_paths_in_cooldown_fail_without_network_invocation
         executor.bind(name, invoker(name))
         executor.mark_access_unavailable(name, "search")
 
-    with pytest.raises(InvocationUnavailableError, match="all precompiled access paths"):
+    with pytest.raises(
+        InvocationUnavailableError,
+        match="all executable precompiled access paths",
+    ):
         await executor.execute(plan)
 
     assert invoked == []
