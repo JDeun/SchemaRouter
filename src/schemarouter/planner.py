@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import inspect
+import math
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
-from typing import Protocol
+from typing import Any, Protocol
 
 from .decision_policy import DecisionPolicy
 from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
-from .errors import PlanningError
+from .errors import PlanningError, SchemaValidationError
 from .models import (
     CandidateSelectionSource,
     EndpointSpec,
@@ -18,8 +19,10 @@ from .models import (
     FieldSelectionExplanation,
     FieldSelectionReason,
     FieldSpec,
+    ParameterSpec,
     PlanExplanation,
     PlanRequest,
+    QuantityArgument,
     QueryIntent,
     ScoreComponent,
     ToolCall,
@@ -30,6 +33,7 @@ from .validation import (
     canonical_field_value_schema,
     json_schema_types,
     json_schemas_compatible,
+    validate_json_schema_value,
 )
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[가-힣]+")
@@ -1107,6 +1111,113 @@ class SchemaPlanner:
         ]
         return [*same_provider, *other_provider]
 
+    @staticmethod
+    def _normalize_quantity_argument(
+        parameter: ParameterSpec,
+        value: Any,
+    ) -> tuple[bool, Any, str | None]:
+        quantity: QuantityArgument | None = None
+
+        if isinstance(value, QuantityArgument):
+            quantity = value
+        elif (
+            parameter.unit is not None
+            and isinstance(value, dict)
+            and "value" in value
+            and "unit" in value
+        ):
+            try:
+                quantity = QuantityArgument.model_validate(value)
+            except (TypeError, ValueError) as exc:
+                return False, None, f"invalid quantity argument: {exc}"
+
+        if quantity is None:
+            return True, value, None
+
+        if parameter.unit is None:
+            return False, None, "parameter has no declared unit contract"
+
+        normalization = parameter.unit_normalization
+        if quantity.unit == parameter.unit:
+            provider_value = quantity.value
+        elif (
+            normalization is not None
+            and quantity.unit == normalization.canonical_unit
+        ):
+            def to_provider(item: Any) -> Any:
+                if isinstance(item, list):
+                    return [to_provider(child) for child in item]
+                if isinstance(item, bool) or not isinstance(item, (int, float)):
+                    raise ValueError("quantity value must remain numeric")
+                converted = (item - normalization.offset) / normalization.scale
+                if isinstance(converted, float) and not math.isfinite(converted):
+                    raise ValueError("converted provider value is non-finite")
+                return converted
+
+            try:
+                provider_value = to_provider(quantity.value)
+            except (OverflowError, ValueError) as exc:
+                return False, None, f"unit conversion failed: {exc}"
+        else:
+            accepted = [parameter.unit]
+            if normalization is not None:
+                accepted.append(normalization.canonical_unit)
+            return (
+                False,
+                None,
+                "quantity unit "
+                f"{quantity.unit!r} is incompatible; expected one of {accepted!r}",
+            )
+
+        if parameter.json_schema:
+            try:
+                validate_json_schema_value(
+                    provider_value,
+                    parameter.json_schema,
+                    context=f"argument {parameter.name!r}",
+                )
+            except SchemaValidationError as exc:
+                return False, None, str(exc)
+
+        return True, provider_value, None
+
+    @classmethod
+    def _compile_arguments(
+        cls,
+        candidate: _Candidate,
+        intent: QueryIntent,
+        warnings: list[str],
+        *,
+        warn_ignored_arguments: bool,
+    ) -> tuple[dict[str, Any] | None, list[str]]:
+        endpoint = candidate.endpoint
+        declared = {parameter.name: parameter for parameter in endpoint.parameters}
+        dropped = sorted(set(intent.arguments) - set(declared))
+        if dropped and warn_ignored_arguments:
+            warnings.append(
+                f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
+                + ", ".join(dropped)
+            )
+
+        arguments: dict[str, Any] = {}
+        for name, value in intent.arguments.items():
+            parameter = declared.get(name)
+            if parameter is None:
+                continue
+            compatible, provider_value, reason = cls._normalize_quantity_argument(
+                parameter,
+                value,
+            )
+            if not compatible:
+                warnings.append(
+                    f"{candidate.tool.key}.{endpoint.name}: incompatible argument "
+                    f"{name!r}: {reason}"
+                )
+                return None, dropped
+            arguments[name] = provider_value
+
+        return arguments, dropped
+
     def _compile_candidate_sync(
         self,
         request: PlanRequest,
@@ -1117,18 +1228,14 @@ class SchemaPlanner:
         warn_ignored_arguments: bool = True,
     ) -> ToolCall | None:
         endpoint = candidate.endpoint
-        declared = {parameter.name: parameter for parameter in endpoint.parameters}
-        arguments = {
-            name: value
-            for name, value in intent.arguments.items()
-            if name in declared
-        }
-        dropped = sorted(set(intent.arguments) - set(arguments))
-        if dropped and warn_ignored_arguments:
-            warnings.append(
-                f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
-                + ", ".join(dropped)
-            )
+        arguments, dropped = self._compile_arguments(
+            candidate,
+            intent,
+            warnings,
+            warn_ignored_arguments=warn_ignored_arguments,
+        )
+        if arguments is None:
+            return None
         missing = [
             parameter.name
             for parameter in endpoint.parameters
@@ -1192,18 +1299,14 @@ class SchemaPlanner:
         warn_ignored_arguments: bool = True,
     ) -> ToolCall | None:
         endpoint = candidate.endpoint
-        declared = {parameter.name: parameter for parameter in endpoint.parameters}
-        arguments = {
-            name: value
-            for name, value in intent.arguments.items()
-            if name in declared
-        }
-        dropped = sorted(set(intent.arguments) - set(arguments))
-        if dropped and warn_ignored_arguments:
-            warnings.append(
-                f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
-                + ", ".join(dropped)
-            )
+        arguments, dropped = self._compile_arguments(
+            candidate,
+            intent,
+            warnings,
+            warn_ignored_arguments=warn_ignored_arguments,
+        )
+        if arguments is None:
+            return None
         missing = [
             parameter.name
             for parameter in endpoint.parameters
