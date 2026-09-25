@@ -36,6 +36,7 @@ from .runs import ExecutionBudget, RetryPolicy
 from .validation import (
     effective_input_schema,
     effective_output_schema,
+    canonical_field_value_schema,
     field_value_schema,
     json_schema_types,
     projected_output_schema,
@@ -1109,26 +1110,11 @@ class RegistryExecutor:
             field = field_map.get(field_name)
             if field is None:
                 continue
-            raw_schema = field_value_schema(endpoint, field_name)
-            output_schema = RegistryExecutor._minimal_type_schema(raw_schema)
-            if field.unit_normalization is not None:
-                # Affine conversion can turn integer source values into non-integer results.
-                def normalize_integer_type(schema: dict[str, Any]) -> None:
-                    declared = schema.get("type")
-                    if declared == "integer":
-                        schema["type"] = "number"
-                    elif isinstance(declared, list):
-                        schema["type"] = list(
-                            dict.fromkeys(
-                                "number" if value == "integer" else value
-                                for value in declared
-                            )
-                        )
-                    items = schema.get("items")
-                    if isinstance(items, dict):
-                        normalize_integer_type(items)
-
-                normalize_integer_type(output_schema)
+            canonical_schema = canonical_field_value_schema(
+                endpoint,
+                field_name,
+            )
+            output_schema = RegistryExecutor._minimal_type_schema(canonical_schema)
 
             contracts[field_name] = ResultFieldContract(
                 semantic_id=field.semantic_id,
