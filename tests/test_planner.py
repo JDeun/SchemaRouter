@@ -893,6 +893,7 @@ def _semantic_provider_tool(
     field_name: str,
     semantic_id: str,
     unit: str | None,
+    json_schema: dict | None = None,
 ) -> ToolSpec:
     return ToolSpec(
         name=name,
@@ -907,6 +908,7 @@ def _semantic_provider_tool(
                     FieldSpec(
                         name=field_name,
                         semantic_id=semantic_id,
+                        json_schema=json_schema or {"type": "number"},
                         unit=unit,
                     ),
                 ],
@@ -916,6 +918,44 @@ def _semantic_provider_tool(
 
 
 def test_semantic_id_bridges_provider_specific_field_names() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        _semantic_provider_tool(
+            "provider_a",
+            provider="a",
+            access_mode="openapi",
+            field_name="elasticity_value",
+            semantic_id="elastic_modulus",
+            unit="GPa",
+        )
+    )
+    reg.register(
+        _semantic_provider_tool(
+            "provider_b",
+            provider="b",
+            access_mode="optimade",
+            field_name="_b_emod",
+            semantic_id="elastic_modulus",
+            unit="GPa",
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="elastic modulus",
+            preferred_tools=["provider_a"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.calls[0].fields == ["material_id", "elasticity_value"]
+    route = plan.fallback_route(0)
+    assert route is not None
+    assert route.alternatives[0].tool == "provider_b"
+    assert route.alternatives[0].fields == ["material_id", "_b_emod"]
+
+
+def test_fallback_rejects_case_changed_scientific_unit() -> None:
     reg = InMemoryRegistry()
     reg.register(
         _semantic_provider_tool(
@@ -946,11 +986,7 @@ def test_semantic_id_bridges_provider_specific_field_names() -> None:
         )
     )
 
-    assert plan.calls[0].fields == ["material_id", "elasticity_value"]
-    route = plan.fallback_route(0)
-    assert route is not None
-    assert route.alternatives[0].tool == "provider_b"
-    assert route.alternatives[0].fields == ["material_id", "_b_emod"]
+    assert plan.fallback_routes == []
 
 
 def test_fallback_rejects_semantically_matching_field_with_incompatible_unit() -> None:
@@ -1185,3 +1221,188 @@ def test_equal_relevance_prefers_explicit_server_projection() -> None:
     plan = SchemaPlanner(reg).plan("elastic modulus")
 
     assert plan.calls[0].tool == "z_projecting"
+
+
+
+def test_fallback_rejects_semantically_matching_field_with_incompatible_type() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        _semantic_provider_tool(
+            "provider_a",
+            provider="a",
+            access_mode="openapi",
+            field_name="elasticity_value",
+            semantic_id="elastic_modulus",
+            unit="GPa",
+            json_schema={"type": "number"},
+        )
+    )
+    reg.register(
+        _semantic_provider_tool(
+            "provider_b",
+            provider="b",
+            access_mode="optimade",
+            field_name="_b_emod",
+            semantic_id="elastic_modulus",
+            unit="GPa",
+            json_schema={"type": "string"},
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="elastic modulus",
+            preferred_tools=["provider_a"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.fallback_routes == []
+
+
+def test_fallback_accepts_integer_for_number_contract() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        _semantic_provider_tool(
+            "provider_a",
+            provider="a",
+            access_mode="openapi",
+            field_name="sample_count",
+            semantic_id="sample_count",
+            unit=None,
+            json_schema={"type": "number"},
+        )
+    )
+    reg.register(
+        _semantic_provider_tool(
+            "provider_b",
+            provider="b",
+            access_mode="optimade",
+            field_name="_b_sample_count",
+            semantic_id="sample_count",
+            unit=None,
+            json_schema={"type": "integer"},
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="sample count",
+            preferred_tools=["provider_a"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    route = plan.fallback_route(0)
+    assert route is not None
+    assert route.alternatives[0].tool == "provider_b"
+
+
+def test_fallback_rejects_number_for_integer_contract() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        _semantic_provider_tool(
+            "provider_a",
+            provider="a",
+            access_mode="openapi",
+            field_name="sample_count",
+            semantic_id="sample_count",
+            unit=None,
+            json_schema={"type": "integer"},
+        )
+    )
+    reg.register(
+        _semantic_provider_tool(
+            "provider_b",
+            provider="b",
+            access_mode="optimade",
+            field_name="_b_sample_count",
+            semantic_id="sample_count",
+            unit=None,
+            json_schema={"type": "number"},
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="sample count",
+            preferred_tools=["provider_a"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.fallback_routes == []
+
+
+def test_text_field_fallback_requires_no_unit_and_string_type() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        _semantic_provider_tool(
+            "arxiv_text",
+            provider="arxiv",
+            access_mode="api",
+            field_name="abstract",
+            semantic_id="abstract_text",
+            unit=None,
+            json_schema={"type": "string"},
+        )
+    )
+    reg.register(
+        _semantic_provider_tool(
+            "web_text",
+            provider="web",
+            access_mode="search",
+            field_name="snippet",
+            semantic_id="abstract_text",
+            unit=None,
+            json_schema={"type": "string"},
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="abstract text",
+            preferred_tools=["arxiv_text"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    route = plan.fallback_route(0)
+    assert route is not None
+    assert route.alternatives[0].tool == "web_text"
+
+
+def test_explicit_primary_type_rejects_unknown_fallback_type() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        _semantic_provider_tool(
+            "provider_a",
+            provider="a",
+            access_mode="openapi",
+            field_name="elasticity_value",
+            semantic_id="elastic_modulus",
+            unit="GPa",
+            json_schema={"type": "number"},
+        )
+    )
+    reg.register(
+        _semantic_provider_tool(
+            "provider_b",
+            provider="b",
+            access_mode="legacy",
+            field_name="_b_emod",
+            semantic_id="elastic_modulus",
+            unit="GPa",
+            json_schema={},
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="elastic modulus",
+            preferred_tools=["provider_a"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.fallback_routes == []
