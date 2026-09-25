@@ -191,3 +191,31 @@ with SQLiteRunTraceStore("traces.sqlite3") as store:
 
 Replay reads historical events only and never re-executes tools. See
 [Persistent run traces](run-traces.md) for privacy, corruption handling, and lifecycle details.
+
+
+## Schema planning vs execution-ready planning
+
+`SchemaRouter.plan()` and `aplan()` remain schema-oriented. They answer which registered
+contracts can satisfy the request while respecting the configured access-health predicate, but they
+do not require a trusted invoker to be bound at that moment. This is useful for inspection,
+authoring, and pre-binding planning workflows.
+
+Execution-facing APIs use a stricter route set:
+
+```python
+schema_plan = router.plan(request)
+execution_plan = router.plan_executable(request)
+
+results = router.invoke(request)
+```
+
+`plan_executable()` / `aplan_executable()` apply one additional local constraint: the tool must
+have a trusted invoker bound to the current tool fingerprint. `invoke`, `ainvoke`, `stream`,
+`astream`, batches, and typed event streams use this execution-ready planning path automatically.
+
+Therefore a schema-valid but currently unbound preferred route can remain visible in
+`router.plan()`, while the live execution path chooses another healthy, bound route that can
+provide the same requested fields.
+
+Explicit `execute(plan)` does not replan. It validates and executes the supplied plan under the
+normal fail-closed binding/schema/policy rules and any precompiled fallback routes.
