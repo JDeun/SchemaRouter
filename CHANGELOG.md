@@ -5,6 +5,12 @@ All notable changes to SchemaRouter are documented here.
 The project is pre-1.0 and follows the compatibility rules in
 [`docs/versioning.md`](docs/versioning.md).
 
+## Unreleased
+
+### Changed
+
+- post-release development has resumed as `0.8.0.dev0`; published `0.7.0` artifacts remain immutable.
+
 ## 0.7.0 - 2026-09-25
 
 ### Added
