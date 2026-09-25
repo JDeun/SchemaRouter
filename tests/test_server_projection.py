@@ -309,3 +309,99 @@ def test_server_projection_allows_declared_query_parameter_collision() -> None:
 
     assert endpoint.server_projection is not None
     assert endpoint.server_projection.parameter == "fields"
+
+
+
+@pytest.mark.asyncio
+async def test_server_projection_normalizes_provider_wire_field_to_canonical_result() -> None:
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["response_fields"] = request.url.params.get("response_fields")
+        return httpx.Response(
+            200,
+            json={
+                "_provider_b_elasticity": 130.0,
+                "density": 2.33,
+            },
+            request=request,
+            headers={"content-type": "application/json"},
+        )
+
+    endpoint = EndpointSpec(
+        name="search",
+        method="GET",
+        path="/materials",
+        read_only=True,
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                semantic_id="elastic_modulus",
+                aliases=["탄성계수", "elastic modulus"],
+                path=["_provider_b_elasticity"],
+                result_path=["elastic_modulus"],
+                unit="GPa",
+            ),
+            FieldSpec(name="density"),
+        ],
+        output_schema={
+            "type": "object",
+            "properties": {
+                "_provider_b_elasticity": {"type": "number"},
+                "density": {"type": "number"},
+            },
+        },
+        server_projection=ServerProjectionSpec(
+            parameter="response_fields",
+            field_map={
+                "elastic_modulus": "_provider_b_elasticity",
+            },
+        ),
+    )
+    tool = ToolSpec(
+        name="provider_b",
+        provider="provider_b",
+        access_mode="openapi",
+        remote=True,
+        execution_metadata={"adapter": "openapi"},
+        endpoints=[endpoint],
+    )
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool="provider_b",
+        endpoint="search",
+        fields=["elastic_modulus"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        executor = RegistryExecutor(registry)
+        executor.bind(
+            "provider_b",
+            OpenAPIRemoteInvoker(
+                tool,
+                "https://provider-b.example",
+                http_client=client,
+            ),
+        )
+        result = await executor.execute_call(call)
+
+    assert seen["response_fields"] == "_provider_b_elasticity"
+    assert result.data == {"elastic_modulus": 130.0}
+
+
+def test_field_result_path_defaults_to_existing_projection_shape() -> None:
+    nested = FieldSpec(
+        name="display_name",
+        path=["user", "profile", "name"],
+    )
+    canonical = FieldSpec(
+        name="elastic_modulus",
+        path=["_provider_b_elasticity"],
+        result_path=["elastic_modulus"],
+    )
+
+    assert nested.result_projection_path == ("user", "profile", "name")
+    assert canonical.result_projection_path == ("elastic_modulus",)
