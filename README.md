@@ -192,6 +192,7 @@ Start with the manual rather than this README:
 
 - [Install and quickstart](https://jdeun.github.io/SchemaRouter/getting-started/installation/)
 - [Understand the execution model](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
+- [Read the design principles](https://jdeun.github.io/SchemaRouter/concepts/design-principles/)
 - [OpenAPI guide](https://jdeun.github.io/SchemaRouter/guides/openapi/)
 - [Runtime policy and retry](https://jdeun.github.io/SchemaRouter/guides/execution-policy/)
 - [Framework integrations](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
