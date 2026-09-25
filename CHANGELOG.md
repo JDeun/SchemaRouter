@@ -29,6 +29,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - explicit `ServerProjectionSpec` contracts that push planned logical fields into upstream
   selectors such as OpenAPI `fields=...` and OPTIMADE `response_fields=...`, while preserving
   raw-response validation and final local projection;
+- conservative nested-object projected-schema validation for trusted server-side field projection,
+  including root arrays of objects; selected paths that require unsupported array traversal,
+  refs/unions, or otherwise unprovable shapes retain the full schema and fail closed;
 - bounded passive access-path cooldown plus optional trusted `AccessHealthMonitor` probes that
   reopen recovered read-only routes without permanent blacklisting or model-controlled health state;
 - field-first execution documentation that formalizes query -> required logical fields ->
