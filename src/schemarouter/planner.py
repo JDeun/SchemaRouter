@@ -1041,7 +1041,10 @@ class SchemaPlanner:
                 "units": available.units,
                 "source_type": (
                     requested_source_type is None
-                    or available.source_type == requested_source_type
+                    or not any(
+                        item.startswith("source_type=")
+                        for item in missing
+                    )
                 ),
             },
         }
