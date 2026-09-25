@@ -76,6 +76,7 @@ class EndpointInspection(StrictModel):
     path: str | None = None
     read_only: bool | None = None
     destructive: bool | None = None
+    planning_priority: int = 0
     parameter_count: int = Field(ge=0)
     required_parameter_count: int = Field(ge=0)
     output_field_count: int = Field(ge=0)
@@ -170,6 +171,7 @@ def inspect_tool_spec(tool: ToolSpec) -> ToolInspection:
             path=endpoint.path,
             read_only=endpoint.read_only,
             destructive=endpoint.destructive,
+            planning_priority=endpoint.planning_priority,
             parameter_count=len(endpoint.parameters),
             required_parameter_count=sum(
                 parameter.required for parameter in endpoint.parameters
