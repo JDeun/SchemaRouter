@@ -407,6 +407,18 @@ class RegistryExecutor:
         """Return live trusted-invoker keys without exposing invoker objects."""
         return tuple(sorted(self._invokers))
 
+    def binding_states(self) -> dict[str, str]:
+        """Return privacy-safe binding readiness for every registered tool."""
+
+        states: dict[str, str] = {}
+        for key in self.registry.keys():
+            tool = self.registry.get(key)
+            states[key] = self.binding_status_for_contract(
+                key,
+                tool.fingerprint,
+            )
+        return states
+
     def _validated_call_contract(
         self,
         call: ToolCall,
