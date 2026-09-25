@@ -281,3 +281,26 @@ FieldSpec(
 
 A unit should be declared only when the field represents a physical/numeric quantity and the source
 contract actually defines that unit. If the unit is unknown, leave it unset rather than guessing.
+
+
+### Dynamic per-record units
+
+The current field contract assumes one declared source unit for a `FieldSpec`. If a provider can
+return different unit labels for the same field on different records, do not let SchemaRouter infer
+conversion behavior from those runtime strings.
+
+Prefer one of these approaches:
+
+- normalize the provider response inside a trusted adapter into one stable source/canonical unit
+  before it reaches SchemaRouter; or
+- expose separate locally declared field/access contracts whose unit semantics are stable.
+
+For example, a payload shaped like:
+
+```json
+{"value": 130, "unit": "GPa"}
+```
+
+must not be converted merely because the runtime string says `GPa`. The conversion relationship
+remains trusted local configuration. Until an explicit dynamic-unit contract exists, row-dependent
+unit interpretation should remain outside the generic SchemaRouter execution core.
