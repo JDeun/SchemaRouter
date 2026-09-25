@@ -115,6 +115,7 @@ class KeywordAnalyzer:
 class _FieldSemantic:
     names: frozenset[str]
     semantic_id: str | None
+    json_types: frozenset[str]
     unit: str | None
 
 
@@ -569,6 +570,8 @@ class SchemaPlanner:
             detail_parts = [field.description.strip()]
             if field.aliases:
                 detail_parts.append("aliases: " + ", ".join(field.aliases))
+            if field.declared_json_types:
+                detail_parts.append("type: " + " | ".join(field.declared_json_types))
             if field.unit:
                 detail_parts.append(f"unit: {field.unit}")
             description = "; ".join(part for part in detail_parts if part)
@@ -936,10 +939,30 @@ class SchemaPlanner:
                         if field.semantic_id
                         else None
                     ),
-                    unit=_normalize(field.unit) if field.unit else None,
+                    json_types=frozenset(field.declared_json_types),
+                    unit=field.normalized_unit,
                 )
             )
         return tuple(semantics)
+
+    @staticmethod
+    def _field_types_compatible(
+        required: frozenset[str],
+        candidate: frozenset[str],
+    ) -> bool:
+        if not required:
+            return True
+        if not candidate:
+            return False
+
+        def accepted(candidate_type: str) -> bool:
+            if candidate_type in required:
+                return True
+            # JSON Schema number accepts integral JSON numbers, but integer does not
+            # accept arbitrary non-integral numbers.
+            return candidate_type == "integer" and "number" in required
+
+        return all(accepted(value) for value in candidate)
 
     @classmethod
     def _fallback_semantics_compatible(
@@ -977,9 +1000,15 @@ class SchemaPlanner:
                 if not names_match:
                     continue
 
-                if requirement.unit is not None:
-                    if candidate_field.unit != requirement.unit:
-                        continue
+                if not cls._field_types_compatible(
+                    requirement.json_types,
+                    candidate_field.json_types,
+                ):
+                    continue
+
+                if candidate_field.unit != requirement.unit:
+                    continue
+
                 matched = True
                 break
 
