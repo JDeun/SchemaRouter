@@ -815,8 +815,6 @@ class SchemaPlanner:
         selected_fields: list[str],
         requested: EvidenceRequirements,
     ) -> tuple[bool, list[str]]:
-        if not self.decision_policy.evidence_sufficiency_enabled:
-            return True, []
         if not self._evidence_request_active(requested):
             return True, []
 
@@ -830,9 +828,18 @@ class SchemaPlanner:
             message = (
                 f"{prefix}: local evidence insufficient: " + ", ".join(missing)
             )
-            if self.decision_policy.fallback == "error":
+            if (
+                self.decision_policy.evidence_sufficiency_enabled
+                and self.decision_policy.fallback == "error"
+            ):
                 raise PlanningError(message)
             return False, [message]
+
+        # EvidenceRequirements are deterministic local constraints even when no model-backed
+        # evidence judge is enabled. A decision backend may veto locally sufficient evidence,
+        # but it can never upgrade a locally missing unit/provenance/license/source-type contract.
+        if not self.decision_policy.evidence_sufficiency_enabled:
+            return True, []
 
         assert self.decision_backend is not None
         try:
@@ -869,8 +876,6 @@ class SchemaPlanner:
         selected_fields: list[str],
         requested: EvidenceRequirements,
     ) -> tuple[bool, list[str]]:
-        if not self.decision_policy.evidence_sufficiency_enabled:
-            return True, []
         if not self._evidence_request_active(requested):
             return True, []
 
@@ -884,9 +889,15 @@ class SchemaPlanner:
             message = (
                 f"{prefix}: local evidence insufficient: " + ", ".join(missing)
             )
-            if self.decision_policy.fallback == "error":
+            if (
+                self.decision_policy.evidence_sufficiency_enabled
+                and self.decision_policy.fallback == "error"
+            ):
                 raise PlanningError(message)
             return False, [message]
+
+        if not self.decision_policy.evidence_sufficiency_enabled:
+            return True, []
 
         assert self.decision_backend is not None
         try:

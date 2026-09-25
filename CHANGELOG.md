@@ -82,6 +82,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
+- explicit `EvidenceRequirements` are now deterministic local planning constraints even when no
+  model-backed evidence judge is enabled: missing requested units/provenance/license/source-type
+  evidence removes that candidate locally, while an enabled decision backend may only veto already
+  sufficient local evidence and cannot upgrade missing evidence;
 - execution-facing router APIs now plan across access paths that are both health-eligible and
   currently bound to the same tool fingerprint, while `plan()` / `aplan()` remain schema-planning
   surfaces and explicit `execute(plan)` never replans; `plan_executable()` /

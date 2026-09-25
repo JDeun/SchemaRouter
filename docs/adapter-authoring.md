@@ -251,5 +251,75 @@ Fallback requires semantic compatibility plus compatible result datatype and eit
 - the same exact source unit; or
 - explicit matching physical `dimension` and `canonical_unit` normalization contracts.
 
-Text/document fields normally use `unit=None`; no unit metadata is required for strings such as
+Units are optional. Text/document/search fields normally use `unit=None`; no unit metadata is required for strings such as
 abstracts, snippets, titles, or prose.
+
+
+### When to omit units
+
+Do **not** attach a unit merely because a field comes from a scientific source. The unit belongs to
+the value contract, not to the provider category.
+
+Typical unitless fields include:
+
+- paper titles, abstracts, and full text;
+- web-search snippets and URLs;
+- material names and identifiers;
+- categorical labels, symmetry symbols, and free-form notes;
+- provenance/license/source strings.
+
+For example:
+
+```python
+FieldSpec(
+    name="abstract",
+    semantic_id="document_text",
+    json_schema={"type": "string"},
+    unit=None,  # optional; this is also the default
+)
+```
+
+A unit should be declared only when the field represents a physical/numeric quantity and the source
+contract actually defines that unit. If the unit is unknown, leave it unset rather than guessing.
+
+
+### Dynamic per-record units
+
+The current field contract assumes one declared source unit for a `FieldSpec`. If a provider can
+return different unit labels for the same field on different records, do not let SchemaRouter infer
+conversion behavior from those runtime strings.
+
+Prefer one of these approaches:
+
+- normalize the provider response inside a trusted adapter into one stable source/canonical unit
+  before it reaches SchemaRouter; or
+- expose separate locally declared field/access contracts whose unit semantics are stable.
+
+For example, a payload shaped like:
+
+```json
+{"value": 130, "unit": "GPa"}
+```
+
+must not be converted merely because the runtime string says `GPa`. The conversion relationship
+remains trusted local configuration. Until an explicit dynamic-unit contract exists, row-dependent
+unit interpretation should remain outside the generic SchemaRouter execution core.
+
+
+### Dimensionless numeric quantities
+
+Numeric scientific data can also be unitless. Do not invent a unit for dimensionless quantities
+such as a Poisson ratio, probability, normalized score, or other dimensionless coefficient.
+
+```python
+FieldSpec(
+    name="poisson_ratio",
+    semantic_id="poisson_ratio",
+    json_schema={"type": "number"},
+    unit=None,
+)
+```
+
+This remains a typed numeric contract even though the unit is absent. Cross-provider fallback may
+match another compatible unitless numeric field, but it will not silently substitute a unit-bearing
+quantity for a unitless one (or vice versa).

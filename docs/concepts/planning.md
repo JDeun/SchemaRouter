@@ -116,3 +116,26 @@ used to prove semantic compatibility when access paths expose different field na
 
 Fallback is not model-driven replanning and remains disabled by default. See
 [Provider-aware fallback](../guides/provider-fallback.md).
+
+
+## Evidence requirements are local constraints
+
+`PlanRequest.evidence` is enforced from trusted local contracts even when no model-backed
+decision backend is configured.
+
+For example:
+
+```python
+PlanRequest(
+    query="elastic modulus",
+    evidence=EvidenceRequirements(units=True),
+)
+```
+
+requires the selected answer fields to declare units. A unitless arXiv abstract or web snippet is
+still a perfectly valid field in ordinary planning; it is excluded only when the request explicitly
+requires unit evidence.
+
+The same rule applies to requested provenance, license, and source type. An optional decision backend
+may reject locally sufficient evidence, but it cannot manufacture evidence that the registry does
+not declare.
