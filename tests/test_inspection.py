@@ -12,6 +12,7 @@ from schemarouter import (
     SQLiteRegistry,
     SQLiteRunTraceStore,
     ToolSpec,
+    UnitTransformSpec,
     inspect_registry,
     inspect_router,
     inspect_trace,
@@ -50,7 +51,16 @@ def sample_tool() -> ToolSpec:
                 ],
                 output_fields=[
                     FieldSpec(name="city", identifier=True),
-                    FieldSpec(name="temperature", unit="celsius"),
+                    FieldSpec(
+                        name="temperature",
+                        semantic_id="temperature",
+                        json_schema={"type": "number"},
+                        unit="celsius",
+                        unit_transform=UnitTransformSpec(
+                            target_unit="kelvin",
+                            offset=273.15,
+                        ),
+                    ),
                 ],
             ),
             EndpointSpec(
@@ -109,6 +119,14 @@ def test_inspect_registry_derives_operational_counts() -> None:
     }
     assert len(snapshot.tools[0].fingerprint) == 64
     assert len(snapshot.tools[0].endpoints[0].fingerprint) == 64
+
+    current = snapshot.tools[0].endpoints[0]
+    field_contracts = {field.name: field for field in current.fields}
+    assert field_contracts["city"].identifier is True
+    assert field_contracts["temperature"].semantic_id == "temperature"
+    assert field_contracts["temperature"].data_type == "number"
+    assert field_contracts["temperature"].source_unit == "celsius"
+    assert field_contracts["temperature"].effective_unit == "kelvin"
 
 
 def test_inspect_trace_summarizes_targets_and_errors(tmp_path) -> None:
