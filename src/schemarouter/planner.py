@@ -26,6 +26,7 @@ from .models import (
     ToolSpec,
 )
 from .registry import ToolRegistry
+from .validation import field_value_schema, json_schema_types, json_types_compatible
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[가-힣]+")
 
@@ -115,7 +116,10 @@ class KeywordAnalyzer:
 class _FieldSemantic:
     names: frozenset[str]
     semantic_id: str | None
+    json_types: frozenset[str]
     unit: str | None
+    unit_dimension: str | None
+    canonical_unit: str | None
 
 
 @dataclass(frozen=True)
@@ -928,6 +932,7 @@ class SchemaPlanner:
             }
             if not values:
                 continue
+            unit_normalization = field.unit_normalization
             semantics.append(
                 _FieldSemantic(
                     names=frozenset(values),
@@ -936,7 +941,20 @@ class SchemaPlanner:
                         if field.semantic_id
                         else None
                     ),
+                    json_types=json_schema_types(
+                        field_value_schema(endpoint, field.name)
+                    ),
                     unit=_normalize(field.unit) if field.unit else None,
+                    unit_dimension=(
+                        _normalize(unit_normalization.dimension)
+                        if unit_normalization is not None
+                        else None
+                    ),
+                    canonical_unit=(
+                        _normalize(unit_normalization.canonical_unit)
+                        if unit_normalization is not None
+                        else None
+                    ),
                 )
             )
         return tuple(semantics)
@@ -977,8 +995,29 @@ class SchemaPlanner:
                 if not names_match:
                     continue
 
+                if not json_types_compatible(
+                    requirement.json_types,
+                    candidate_field.json_types,
+                ):
+                    continue
+
                 if requirement.unit is not None:
-                    if candidate_field.unit != requirement.unit:
+                    if (
+                        requirement.unit_dimension is not None
+                        or candidate_field.unit_dimension is not None
+                    ):
+                        if (
+                            requirement.unit_dimension is None
+                            or candidate_field.unit_dimension is None
+                            or requirement.canonical_unit is None
+                            or candidate_field.canonical_unit is None
+                            or requirement.unit_dimension
+                            != candidate_field.unit_dimension
+                            or requirement.canonical_unit
+                            != candidate_field.canonical_unit
+                        ):
+                            continue
+                    elif candidate_field.unit != requirement.unit:
                         continue
                 matched = True
                 break
