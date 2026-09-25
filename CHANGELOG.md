@@ -5,7 +5,7 @@ All notable changes to SchemaRouter are documented here.
 The project is pre-1.0 and follows the compatibility rules in
 [`docs/versioning.md`](docs/versioning.md).
 
-## Unreleased
+## 0.7.0 - 2026-09-25
 
 ### Added
 
@@ -124,7 +124,7 @@ The project is pre-1.0 and follows the compatibility rules in
   behavior;
 - research benchmarking now compares Laya's lexical-only path with explicit empty-candidate recall
   on the same full corpus and hardware;
-- post-release development has resumed as `0.7.0.dev0`; published `0.6.0` artifacts remain immutable.
+- promoted the 0.7 development line to the non-prerelease `0.7.0` release after the field-first routing, fallback/health, scientific-contract, policy, observability, packaging, and supply-chain gates passed.
 
 ### Security
 
@@ -163,6 +163,13 @@ The project is pre-1.0 and follows the compatibility rules in
   attest that SBOM against wheel/sdist artifacts, and attach the SBOM to the GitHub release;
 - post-publish release verification now downloads the exact wheel and sdist from public PyPI and
   requires their SHA-256 digests to match the trusted build artifacts before accepting the release.
+
+### Compatibility
+
+- no intentional public API removals are introduced relative to `0.6.0`;
+- new fallback, health, policy, scientific-field, qualifier, parameter-alias, schema-diff, parallel-read, and planning-explanation surfaces are additive, with behavior-changing paths remaining explicit or fail-closed;
+- scientific datatype/unit/qualifier compatibility is stricter for automatic fallback, so ambiguous or under-specified cross-provider substitutions that cannot be proven safe are rejected rather than guessed;
+- the project remains pre-1.0, so later 0.x minor releases may still include deliberate documented compatibility changes.
 
 ## 0.6.0 - 2026-09-23
 
