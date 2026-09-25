@@ -313,7 +313,7 @@ qualifier value is visibly present in the user query. For example, between two
 `elastic modulus at 500 K` receives a deterministic score boost only for the `500 K` field.
 
 This is exact lexical routing, not scientific inference. SchemaRouter does not convert temperatures,
-expand synonyms, or infer unstated experimental conditions. Very short ASCII qualifier values are not
-matched by value alone to avoid accidental substring collisions. Bounded field-selection backends also
+expand synonyms, or infer unstated experimental conditions. ASCII and numeric qualifier values are matched on token boundaries, so `300 K` does not match
+`1300 K`. Very short ASCII qualifier values are not matched by value alone. Bounded field-selection backends also
 receive the trusted qualifier tags in their option descriptions, while execution metadata remains
 outside the decision surface.
