@@ -26,7 +26,7 @@ from .models import (
     ToolSpec,
 )
 from .registry import ToolRegistry
-from .validation import field_value_schema, json_schema_types, json_types_compatible
+from .validation import field_value_schema, json_schema_types, json_schemas_compatible
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[가-힣]+")
 
@@ -116,7 +116,7 @@ class KeywordAnalyzer:
 class _FieldSemantic:
     names: frozenset[str]
     semantic_id: str | None
-    json_types: frozenset[str]
+    json_schema: dict[str, object]
     unit: str | None
     unit_dimension: str | None
     canonical_unit: str | None
@@ -941,9 +941,7 @@ class SchemaPlanner:
                         if field.semantic_id
                         else None
                     ),
-                    json_types=json_schema_types(
-                        field_value_schema(endpoint, field.name)
-                    ),
+                    json_schema=field_value_schema(endpoint, field.name),
                     unit=_normalize(field.unit) if field.unit else None,
                     unit_dimension=(
                         _normalize(unit_normalization.dimension)
@@ -995,9 +993,9 @@ class SchemaPlanner:
                 if not names_match:
                     continue
 
-                if not json_types_compatible(
-                    requirement.json_types,
-                    candidate_field.json_types,
+                if not json_schemas_compatible(
+                    requirement.json_schema,
+                    candidate_field.json_schema,
                 ):
                     continue
 
