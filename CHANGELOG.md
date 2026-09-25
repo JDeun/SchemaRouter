@@ -9,6 +9,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- runtime evidence revalidation with separate `ToolCall.required_evidence` and route-available
+  `ToolCall.evidence`, shared planner/executor evidence checks, fail-closed rejection of forged
+  evidence overclaims, unmet global/per-field requirements, unselected field requirements, and
+  conflicting source-type contracts;
 - trusted semantic `PlanRequest.field_evidence` constraints so heterogeneous requests can require
   units, provenance, license, or source type for one logical field without imposing that requirement
   on unrelated unitless/text fields; compiled calls expose the matched local field requirements and
