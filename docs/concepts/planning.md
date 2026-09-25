@@ -204,6 +204,21 @@ records which local provider field received each explicit field-specific require
 Per-field evidence is caller-controlled. `ModelQueryAnalyzer` preserves it but does not expose it to
 the model or let model output introduce, remove, or broaden those trusted constraints.
 
+### Required vs available evidence on a compiled call
+
+A compiled `ToolCall` keeps requirement and availability separate:
+
+- `required_evidence` is the trusted global requirement inherited from the request;
+- `field_evidence` contains trusted requirements mapped onto selected provider-local fields;
+- `evidence` (also exposed as `available_evidence`) is only a summary of evidence actually
+  declared by the selected route.
+
+The executor does not trust any of these values merely because they are present in a plan. Immediately
+before execution it recomputes route availability from the current registered `ToolSpec` /
+`EndpointSpec`, verifies the available-evidence summary, and rechecks every global and per-field
+requirement. Forged evidence claims, requirements targeting unselected fields, or requirements no
+longer satisfied by the current contract fail closed with `PlanValidationError`.
+
 
 ## Parameter aliases are bounded argument routing
 
