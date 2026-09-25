@@ -163,6 +163,7 @@ class EndpointSpec(StrictModel):
     path: str | None = None
     read_only: bool | None = None
     destructive: bool | None = None
+    planning_priority: int = Field(default=0, ge=-1000, le=1000)
     server_projection: ServerProjectionSpec | None = None
     execution_metadata: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -265,7 +266,10 @@ class EndpointSpec(StrictModel):
 
     @property
     def fingerprint(self) -> str:
-        payload = self.model_dump(mode="json", exclude={"metadata"})
+        payload = self.model_dump(
+            mode="json",
+            exclude={"metadata", "planning_priority"},
+        )
         canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
@@ -338,7 +342,10 @@ class ToolSpec(StrictModel):
             exclude={"metadata", "endpoints"},
         )
         payload["endpoints"] = [
-            endpoint.model_dump(mode="json", exclude={"metadata"})
+            endpoint.model_dump(
+                mode="json",
+                exclude={"metadata", "planning_priority"},
+            )
             for endpoint in self.endpoints
         ]
         canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
