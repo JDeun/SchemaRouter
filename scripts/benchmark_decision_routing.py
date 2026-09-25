@@ -51,14 +51,14 @@ class BenchmarkRow:
     backend: str
     case_id: str
     category: str
-    split: str
-    language: str
     query: str
     expected: str | None
     predicted: str | None
     correct: bool
     invalid_plan: bool
     latency_ms: float
+    split: str = "unspecified"
+    language: str = "unspecified"
     backend_invoked: bool = False
     recall_expanded: bool = False
     confidence: float | None = None
