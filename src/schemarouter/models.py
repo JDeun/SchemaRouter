@@ -87,6 +87,30 @@ class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
 
+def _normalized_numeric_type_signature(schema: dict[str, Any]) -> str | None:
+    raw_type = schema.get("type")
+    if isinstance(raw_type, str):
+        normalized = "number" if raw_type == "integer" else raw_type
+        if normalized == "array":
+            items = schema.get("items")
+            if isinstance(items, dict):
+                item_type = _normalized_numeric_type_signature(items)
+                if item_type is not None:
+                    return f"array[{item_type}]"
+        return normalized
+    if isinstance(raw_type, list):
+        values = sorted(
+            {
+                "number" if item == "integer" else item
+                for item in raw_type
+                if isinstance(item, str)
+            }
+        )
+        if values:
+            return "|".join(values)
+    return None
+
+
 def _schema_type_signature(schema: dict[str, Any]) -> str | None:
     raw_type = schema.get("type")
     if isinstance(raw_type, str):
@@ -213,6 +237,12 @@ class FieldSpec(StrictModel):
     @property
     def data_type(self) -> str | None:
         return _schema_type_signature(self.json_schema)
+
+    @property
+    def effective_data_type(self) -> str | None:
+        if self.unit_transform is not None:
+            return _normalized_numeric_type_signature(self.json_schema)
+        return self.data_type
 
     @property
     def effective_unit(self) -> str | None:
