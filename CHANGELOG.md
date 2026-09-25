@@ -11,8 +11,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 - optional exact `FieldSpec.qualifiers` for scientific measurement/material context such as
   temperature, phase, orientation, or method; qualifiers participate in fingerprinting, exact
-  cross-provider fallback compatibility, ToolResult field contracts, inspection/dashboard views,
-  model analyzer semantic catalogs, and schema-diff drift classification;
+  cross-provider fallback compatibility, qualifier-aware deterministic ranking and bounded field
+  selection, ToolResult field contracts, inspection/dashboard views, model analyzer semantic
+  catalogs, and schema-diff drift classification;
 - trusted `ParameterSpec.aliases` routing that copies argument values unchanged across provider-specific
   local parameter names, with exact-name precedence, ambiguity fail-closed behavior, candidate-index
   support, and independent fallback compilation per access contract;
