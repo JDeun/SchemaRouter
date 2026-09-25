@@ -65,7 +65,7 @@ Optional decision backends (Laya / Ollama / Jev) plug into SchemaRouter's bounde
 They do not become agents, do not run tool loops, and do not receive execution authority.
 ```
 
-> **Current stable release: 0.6.0** · `pip install schemarouter` · pre-1.0
+> **Current stable release: 0.7.0** · `pip install schemarouter` · pre-1.0
 
 ## Why SchemaRouter
 
@@ -139,10 +139,9 @@ surfaces, and a broader fail-closed OpenAPI subset:
 
 See the [0.6.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.6.0/) for details.
 
-## On main: 0.7 boundary hardening
+## What 0.7 adds
 
-The current `0.7.0.dev0` line strengthens the same narrow execution boundary rather than adding
-agent orchestration:
+Version `0.7.0` strengthens the same narrow execution boundary rather than adding agent orchestration:
 
 - conservative schema-drift explanations while exact fingerprints still fail closed;
 - operation-scoped local allow/deny/approval policy rules;
@@ -159,6 +158,8 @@ agent orchestration:
   parameter names without model-authored remapping.
 
 Workflow/DAG semantics, memory, prompt systems, and autonomous tool loops remain out of scope.
+
+See the [0.7.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.7.0/) for details.
 
 ## Inspect what SchemaRouter built
 

@@ -65,7 +65,7 @@ optional decision backend일 뿐입니다.
 에이전트가 되지 않으며, tool loop를 실행하지 않고, 실행 권한도 받지 않습니다.
 ```
 
-> **현재 안정판: 0.6.0** · `pip install schemarouter` · pre-1.0
+> **현재 안정판: 0.7.0** · `pip install schemarouter` · pre-1.0
 
 ## 왜 필요한가
 
@@ -162,10 +162,9 @@ parameter/output field 수, schema fingerprint를 확인할 수 있고, trace �
 
 자세한 내용은 [0.6.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.6.0/)를 참고하세요.
 
-## main의 0.7 개발 라인
+## 0.7에서 달라진 점
 
-현재 `0.7.0.dev0`은 agent orchestration을 확장하는 대신 기존 실행 경계를 더 단단하게
-만드는 방향입니다.
+`0.7.0`은 agent orchestration을 확장하는 대신 기존 실행 경계를 더 단단하게 만든 릴리스입니다.
 
 - exact fingerprint 차단은 유지하면서 변경 원인을 설명하는 보수적 schema diff;
 - operation 단위의 로컬 allow/deny/approval policy rule;
@@ -181,6 +180,8 @@ parameter/output field 수, schema fingerprint를 확인할 수 있고, trace �
   parameter alias.
 
 DAG/workflow, memory, prompt system, autonomous tool loop는 계속 범위 밖에 둡니다.
+
+자세한 내용은 [0.7.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.7.0/)를 참고하세요.
 
 ## 문서
 

@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.6.0</span>
+<span class="sr-kicker">SchemaRouter 0.7.0</span>
 
 # Put a typed execution boundary between agents and tools
 
@@ -155,9 +155,9 @@ typed JSON root bodies, nullable normalization, and spec-faithful default parame
 
 [Read the 0.6.0 release notes →](releases/0.6.0.md)
 
-## On main: 0.7 boundary hardening
+## 0.7 focus
 
-The current `0.7.0.dev0` line keeps SchemaRouter focused on the execution boundary while adding
+Version `0.7.0` keeps SchemaRouter focused on the execution boundary while adding
 provider/access fallback, recoverable health state, trusted parameter aliases, and stricter
 field-first contracts. Scientific result fields can now carry explicit datatypes, optional unit
 metadata and canonical normalization, plus exact trusted qualifiers such as temperature, phase,
@@ -168,6 +168,8 @@ in the query. They also gate cross-provider fallback exactly. SchemaRouter does 
 equivalence, convert qualifier values, or synthesize measurement context.
 
 [Field-first execution and scientific contracts →](concepts/field-first-execution.md)
+
+[Read the 0.7.0 release notes →](releases/0.7.0.md)
 
 ## Go deeper
 
