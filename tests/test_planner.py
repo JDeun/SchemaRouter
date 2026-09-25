@@ -123,12 +123,87 @@ def test_multi_call_planner_prefers_complementary_semantic_field_coverage() -> N
         )
     )
 
-    assert [call.tool for call in plan.calls] == [
+    assert {call.tool for call in plan.calls} == {
         "a_materials_openapi",
         "z_arxiv",
-    ]
-    assert plan.calls[0].fields == ["material_id", "band_gap"]
-    assert plan.calls[1].fields == ["paper_id", "abstract"]
+    }
+    calls_by_tool = {call.tool: call for call in plan.calls}
+    assert calls_by_tool["a_materials_openapi"].fields == ["material_id", "band_gap"]
+    assert calls_by_tool["z_arxiv"].fields == ["paper_id", "abstract"]
+
+
+def test_multi_call_planner_stops_when_one_route_covers_all_fields() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="combined",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="band_gap",
+                            semantic_id="band_gap",
+                            aliases=["band gap"],
+                        ),
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_abstract",
+                            aliases=["paper abstract"],
+                        ),
+                    ],
+                )
+            ],
+        )
+    )
+    reg.register(
+        ToolSpec(
+            name="materials_only",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="band_gap",
+                            semantic_id="band_gap",
+                            aliases=["band gap"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    reg.register(
+        ToolSpec(
+            name="papers_only",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_abstract",
+                            aliases=["paper abstract"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="band gap and paper abstract",
+            max_calls=3,
+        )
+    )
+
+    assert len(plan.calls) == 1
+    assert plan.calls[0].tool == "combined"
+    assert plan.calls[0].fields == ["band_gap", "abstract"]
 
 
 def test_multi_call_field_coverage_respects_explicit_qualifiers() -> None:
