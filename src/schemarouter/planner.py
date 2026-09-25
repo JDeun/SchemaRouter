@@ -4,7 +4,7 @@ import inspect
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
-from typing import Protocol
+from typing import Any, Protocol
 
 from .decision_policy import DecisionPolicy
 from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
@@ -32,6 +32,47 @@ _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[가-힣]+")
 
 def _normalize(text: str) -> str:
     return "".join(ch.lower() for ch in text if ch.isalnum())
+
+
+def _json_schema_types(schema: dict[str, Any]) -> frozenset[str] | None:
+    raw_type = schema.get("type")
+    if isinstance(raw_type, str):
+        return frozenset({raw_type})
+    if isinstance(raw_type, list):
+        values = frozenset(item for item in raw_type if isinstance(item, str))
+        return values or None
+    return None
+
+
+def _schema_value_compatible(
+    required: dict[str, Any],
+    candidate: dict[str, Any],
+) -> bool:
+    required_types = _json_schema_types(required)
+    if required_types is None:
+        return True
+
+    candidate_types = _json_schema_types(candidate)
+    if candidate_types is None:
+        return False
+
+    for candidate_type in candidate_types:
+        if candidate_type in required_types:
+            continue
+        if candidate_type == "integer" and "number" in required_types:
+            continue
+        return False
+
+    if "array" in candidate_types:
+        required_items = required.get("items")
+        candidate_items = candidate.get("items")
+        if isinstance(required_items, dict):
+            if not isinstance(candidate_items, dict):
+                return False
+            if not _schema_value_compatible(required_items, candidate_items):
+                return False
+
+    return True
 
 
 def _semantic_substring_match(left: str, right: str) -> bool:
@@ -115,6 +156,7 @@ class KeywordAnalyzer:
 class _FieldSemantic:
     names: frozenset[str]
     semantic_id: str | None
+    json_schema: dict[str, Any]
     unit: str | None
 
 
@@ -936,7 +978,12 @@ class SchemaPlanner:
                         if field.semantic_id
                         else None
                     ),
-                    unit=_normalize(field.unit) if field.unit else None,
+                    json_schema=field.json_schema,
+                    unit=(
+                        _normalize(field.effective_unit)
+                        if field.effective_unit
+                        else None
+                    ),
                 )
             )
         return tuple(semantics)
@@ -975,6 +1022,12 @@ class SchemaPlanner:
                         candidate_field.names
                     )
                 if not names_match:
+                    continue
+
+                if not _schema_value_compatible(
+                    requirement.json_schema,
+                    candidate_field.json_schema,
+                ):
                     continue
 
                 if requirement.unit is not None:
