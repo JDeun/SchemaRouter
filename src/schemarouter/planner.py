@@ -26,7 +26,11 @@ from .models import (
     ToolSpec,
 )
 from .registry import ToolRegistry
-from .validation import field_value_schema, json_schemas_compatible
+from .validation import (
+    canonical_field_value_schema,
+    json_schema_types,
+    json_schemas_compatible,
+)
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[가-힣]+")
 
@@ -941,7 +945,7 @@ class SchemaPlanner:
                         if field.semantic_id
                         else None
                     ),
-                    json_schema=field_value_schema(endpoint, field.name),
+                    json_schema=canonical_field_value_schema(endpoint, field.name),
                     unit=field.unit.strip() if field.unit else None,
                     unit_dimension=(
                         _normalize(unit_normalization.dimension)
@@ -993,6 +997,17 @@ class SchemaPlanner:
                 if not names_match:
                     continue
 
+                requirement_types = json_schema_types(requirement.json_schema)
+                candidate_types = json_schema_types(candidate_field.json_schema)
+                if bool(requirement_types) != bool(candidate_types):
+                    continue
+                if (
+                    (requirement.unit is not None or candidate_field.unit is not None)
+                    and (not requirement_types or not candidate_types)
+                ):
+                    # Unit-bearing cross-provider fallback must carry an explicit datatype
+                    # contract on both sides.
+                    continue
                 if not json_schemas_compatible(
                     requirement.json_schema,
                     candidate_field.json_schema,
