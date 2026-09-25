@@ -644,3 +644,76 @@ async def test_nested_server_projection_supports_root_array_of_objects() -> None
         {"elastic_modulus": 130.0},
         {"elastic_modulus": 75.0},
     ]
+
+
+
+@pytest.mark.asyncio
+async def test_nested_array_source_path_remains_fail_closed() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "records": [
+                    {"elastic_modulus": 130.0},
+                ]
+            },
+            request=request,
+        )
+
+    endpoint = EndpointSpec(
+        name="search",
+        method="GET",
+        path="/materials",
+        read_only=True,
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                path=["records", "elastic_modulus"],
+            ),
+        ],
+        output_schema={
+            "type": "object",
+            "properties": {
+                "records": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "elastic_modulus": {"type": "number"},
+                        },
+                    },
+                },
+                "provider_metadata": {"type": "object"},
+            },
+            "required": ["records", "provider_metadata"],
+        },
+        server_projection=ServerProjectionSpec(
+            parameter="fields",
+            field_map={
+                "elastic_modulus": "records.elastic_modulus",
+            },
+        ),
+    )
+    tool = ToolSpec(name="nested_array_path", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool="nested_array_path",
+        endpoint="search",
+        fields=["elastic_modulus"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        executor = RegistryExecutor(registry)
+        executor.bind(
+            "nested_array_path",
+            OpenAPIRemoteInvoker(
+                tool,
+                "https://api.example.test",
+                http_client=client,
+            ),
+        )
+        with pytest.raises(SchemaValidationError, match="provider_metadata"):
+            await executor.execute_call(call)
