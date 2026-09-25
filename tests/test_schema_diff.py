@@ -461,3 +461,96 @@ def test_provider_route_identity_drift_requires_security_review(
         and change.severity == "security"
         for change in report.changes
     )
+
+
+
+def test_field_unit_change_is_breaking() -> None:
+    old = endpoint(
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                semantic_id="elastic_modulus",
+                json_schema={"type": "number"},
+                unit="GPa",
+            )
+        ]
+    )
+    new = endpoint(
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                semantic_id="elastic_modulus",
+                json_schema={"type": "number"},
+                unit="Pa",
+            )
+        ]
+    )
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "breaking"
+    assert any(
+        change.kind == "unit_changed"
+        and change.severity == "breaking"
+        for change in report.changes
+    )
+
+
+def test_field_semantic_id_change_is_breaking() -> None:
+    old = endpoint(
+        output_fields=[
+            FieldSpec(
+                name="modulus",
+                semantic_id="elastic_modulus",
+                json_schema={"type": "number"},
+            )
+        ]
+    )
+    new = endpoint(
+        output_fields=[
+            FieldSpec(
+                name="modulus",
+                semantic_id="bulk_modulus",
+                json_schema={"type": "number"},
+            )
+        ]
+    )
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "breaking"
+    assert any(
+        change.kind == "semantic_id_changed"
+        and change.severity == "breaking"
+        for change in report.changes
+    )
+
+
+def test_field_result_path_change_is_breaking() -> None:
+    old = endpoint(
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                json_schema={"type": "number"},
+                result_path=["elastic_modulus"],
+            )
+        ]
+    )
+    new = endpoint(
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                json_schema={"type": "number"},
+                result_path=["mechanical", "elastic_modulus"],
+            )
+        ]
+    )
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "breaking"
+    assert any(
+        change.kind == "result_projection_path_changed"
+        and change.severity == "breaking"
+        for change in report.changes
+    )
