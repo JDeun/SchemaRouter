@@ -259,3 +259,47 @@ valid fallback.
 Unit symbols remain exact and case-/punctuation-sensitive. Surrounding whitespace is rejected.
 Nonlinear/logarithmic conversions are not inferred or synthesized. Non-finite/overflowed normalized
 values fail closed.
+
+
+## Scientific field qualifiers
+
+A semantic field name, datatype, and unit are not always sufficient to prove that two scientific
+values are interchangeable. The value may depend on a fixed measurement/material context such as:
+
+- temperature;
+- pressure;
+- phase;
+- crystal orientation;
+- measurement method;
+- sample state.
+
+`FieldSpec.qualifiers` is an optional trusted exact-string map for this context:
+
+```python
+FieldSpec(
+    name="elastic_modulus",
+    semantic_id="elastic_modulus",
+    json_schema={"type": "number"},
+    unit="GPa",
+    qualifiers={
+        "temperature": "300 K",
+        "phase": "alpha",
+        "orientation": "[100]",
+    },
+)
+```
+
+Qualifiers are optional. Text/document/search fields and scientific fields with no fixed contextual
+constraint normally keep `qualifiers={}`.
+
+Automatic provider fallback requires exact qualifier equality after semantic/type/unit checks. A
+300 K field is therefore not silently substituted with a 500 K field, and a qualified field is not
+silently substituted with an unqualified field.
+
+Qualifier values are deliberately opaque and case-sensitive. SchemaRouter does not infer that
+`300 K` equals `26.85 degC`, normalize phase names, parse crystallographic notation, or derive a
+measurement condition from natural language. If multiple provider representations are known to mean
+the same condition, trusted adapter/application code should canonicalize them before registration.
+
+Selected qualifiers are preserved in `ToolResult.field_contracts`, so downstream answer generation
+can consume the minimal value together with the context that gives the value its meaning.
