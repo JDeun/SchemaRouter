@@ -98,6 +98,11 @@ The materials route must then provide unit metadata for `band_gap`, while a unit
 provider-specific field names can still satisfy the same semantic requirement without model-authored
 mapping.
 
+At execution time, evidence is checked again rather than trusted from the planner. A compiled call
+therefore separates the **required** evidence contract from the **available** route evidence. This
+keeps a forged or manually edited `ToolCall` from turning a declared requirement into execution
+authority merely by setting an evidence flag.
+
 ## Heterogeneous multi-source field requirements
 
 One user question can require fields that no single endpoint provides. SchemaRouter can compile a

@@ -2122,3 +2122,91 @@ def test_candidate_index_discovers_endpoint_from_parameter_alias() -> None:
     assert plan.calls
     assert plan.calls[0].tool == "provider"
     assert plan.calls[0].arguments == {"chemical_formula": "Si"}
+
+
+def test_compiled_call_separates_required_from_available_evidence() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="materials_evidence",
+            source_type="calculated",
+            license="CC BY 4.0",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="band_gap",
+                            semantic_id="band_gap",
+                            aliases=["band gap"],
+                            json_schema={"type": "number"},
+                            unit="eV",
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="band gap",
+            evidence=EvidenceRequirements(provenance=True),
+        )
+    )
+
+    call = plan.calls[0]
+    assert call.required_evidence == EvidenceRequirements(provenance=True)
+    assert call.evidence == EvidenceRequirements(
+        provenance=True,
+        license=True,
+        units=True,
+        source_type="calculated",
+    )
+
+
+def test_compiled_call_records_only_matching_local_field_requirements() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="mixed",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="gap_ev",
+                            semantic_id="band_gap",
+                            aliases=["band gap"],
+                            json_schema={"type": "number"},
+                            unit="eV",
+                        ),
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_abstract",
+                            aliases=["paper abstract"],
+                            json_schema={"type": "string"},
+                        ),
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="band gap and paper abstract",
+            field_evidence={
+                "band_gap": EvidenceRequirements(units=True),
+            },
+        )
+    )
+
+    call = plan.calls[0]
+    assert call.required_evidence == EvidenceRequirements()
+    assert call.field_evidence == {
+        "gap_ev": EvidenceRequirements(units=True),
+    }
+    assert call.evidence.units is False

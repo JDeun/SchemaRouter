@@ -672,7 +672,11 @@ class ToolCall(StrictModel):
     endpoint: str
     arguments: dict[str, Any] = Field(default_factory=dict)
     fields: list[str] = Field(default_factory=list)
+    # Evidence declared as available by the selected trusted route surface.
     evidence: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
+    # Global evidence explicitly required by the caller for this compiled call.
+    required_evidence: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
+    # Per-local-field evidence explicitly required by the caller.
     field_evidence: dict[str, EvidenceRequirements] = Field(default_factory=dict)
     schema_fingerprint: str
     tool_fingerprint: str | None = None
