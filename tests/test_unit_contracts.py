@@ -60,7 +60,7 @@ def _quantity_tool(
 
 
 def test_field_unit_requires_numeric_explicit_schema_type() -> None:
-    with pytest.raises(ValueError, match="numeric json_schema type"):
+    with pytest.raises(ValueError, match="numeric scalar or numeric-array"):
         FieldSpec(
             name="paper_title",
             json_schema={"type": "string"},
