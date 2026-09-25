@@ -1129,3 +1129,117 @@ async def test_parallel_read_only_uses_bound_fallback_when_primary_is_unbound() 
 
     assert result[0].tool == "mp_optimade"
     assert seen == ["mp_optimade"]
+
+
+
+@pytest.mark.asyncio
+async def test_removed_optional_fallback_does_not_block_valid_primary() -> None:
+    registry = InMemoryRegistry()
+    for tool in (
+        _fallback_tool("mp_api", provider="materials_project", access_mode="openapi"),
+        _fallback_tool("mp_optimade", provider="materials_project", access_mode="optimade"),
+        _fallback_tool("oqmd_api", provider="oqmd", access_mode="openapi"),
+    ):
+        registry.register(tool)
+
+    plan = _provider_fallback_plan(registry)
+    registry.unregister("mp_optimade")
+
+    executor = RegistryExecutor(registry)
+    seen = []
+    executor.bind(
+        "mp_api",
+        lambda endpoint, arguments: (
+            seen.append("mp_api")
+            or {"material_id": "mp-149", "band_gap": 1.0}
+        ),
+    )
+    executor.bind(
+        "oqmd_api",
+        lambda endpoint, arguments: (
+            seen.append("oqmd_api")
+            or {"material_id": "oqmd-1", "band_gap": 1.2}
+        ),
+    )
+
+    result = (await executor.execute(plan))[0]
+
+    assert result.tool == "mp_api"
+    assert seen == ["mp_api"]
+
+
+@pytest.mark.asyncio
+async def test_drifted_optional_fallback_that_became_mutating_is_pruned() -> None:
+    registry = InMemoryRegistry()
+    primary = _fallback_tool(
+        "mp_api",
+        provider="materials_project",
+        access_mode="openapi",
+    )
+    alternative = _fallback_tool(
+        "mp_optimade",
+        provider="materials_project",
+        access_mode="optimade",
+    )
+    registry.register(primary)
+    registry.register(alternative)
+
+    primary_endpoint = primary.endpoint("search")
+    alternative_endpoint = alternative.endpoint("search")
+    plan = ExecutionPlan(
+        query="Si band gap",
+        registry_version=registry.version,
+        calls=[
+            ToolCall(
+                tool="mp_api",
+                endpoint="search",
+                arguments={"formula": "Si"},
+                fields=["material_id", "band_gap"],
+                schema_fingerprint=primary_endpoint.fingerprint,
+                tool_fingerprint=primary.fingerprint,
+            )
+        ],
+        fallback_routes=[
+            FallbackRoute(
+                primary_call_index=0,
+                alternatives=[
+                    ToolCall(
+                        tool="mp_optimade",
+                        endpoint="search",
+                        arguments={"formula": "Si"},
+                        fields=["material_id", "band_gap"],
+                        schema_fingerprint=alternative_endpoint.fingerprint,
+                        tool_fingerprint=alternative.fingerprint,
+                    )
+                ],
+            )
+        ],
+    )
+
+    replacement = alternative.model_copy(
+        update={
+            "endpoints": [
+                alternative_endpoint.model_copy(
+                    update={"read_only": False},
+                    deep=True,
+                )
+            ]
+        },
+        deep=True,
+    )
+    registry.register(replacement, replace=True)
+
+    executor = RegistryExecutor(registry)
+    seen = []
+    executor.bind(
+        "mp_api",
+        lambda endpoint, arguments: (
+            seen.append("mp_api")
+            or {"material_id": "mp-149", "band_gap": 1.0}
+        ),
+    )
+
+    result = (await executor.execute(plan))[0]
+
+    assert result.tool == "mp_api"
+    assert seen == ["mp_api"]
