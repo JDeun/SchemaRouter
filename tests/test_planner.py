@@ -82,6 +82,23 @@ def test_call_separates_required_from_available_evidence() -> None:
     assert call.evidence.license is True
 
 
+@pytest.mark.asyncio
+async def test_async_call_separates_required_from_available_evidence() -> None:
+    reg = registry()
+    plan = await SchemaPlanner(reg).aplan(
+        PlanRequest(
+            query="band gap",
+            arguments={"formula": "Si"},
+            evidence=EvidenceRequirements(units=True),
+        )
+    )
+
+    call = plan.calls[0]
+    assert call.required_evidence.units is True
+    assert call.evidence.units is True
+    assert call.available_evidence == call.evidence
+
+
 def test_multi_call_planner_prefers_complementary_semantic_field_coverage() -> None:
     reg = InMemoryRegistry()
     for name, access_mode in (
