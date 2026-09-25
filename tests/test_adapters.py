@@ -1114,3 +1114,86 @@ def test_mcp_adapter_preserves_field_type_and_unit_annotations() -> None:
     assert fields["particle_size"].json_schema["type"] == "number"
     assert fields["particle_size"].unit == "nm"
     assert fields["particle_size"].unit_normalization is None
+
+
+
+def test_openapi_adapter_preserves_input_unit_label_without_conversion_authority() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Particle API"},
+        "paths": {
+            "/particles": {
+                "get": {
+                    "operationId": "search_particles",
+                    "parameters": [
+                        {
+                            "name": "max_size",
+                            "in": "query",
+                            "schema": {
+                                "type": "number",
+                                "x-ucum-unit": "nm",
+                            },
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "ok",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "particle_size": {"type": "number"},
+                                        },
+                                    }
+                                }
+                            },
+                        }
+                    },
+                }
+            }
+        },
+    }
+
+    tool = tool_from_openapi("particles", document)
+    parameter = tool.endpoint("search_particles").parameters[0]
+
+    assert parameter.name == "max_size"
+    assert parameter.json_schema["type"] == "number"
+    assert parameter.unit == "nm"
+    assert parameter.unit_normalization is None
+
+
+def test_mcp_adapter_preserves_input_unit_label_without_conversion_authority() -> None:
+    tool = tool_from_mcp(
+        "particle-server",
+        {
+            "tools": [
+                {
+                    "name": "search_particles",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "max_size": {
+                                "type": "number",
+                                "x-unit": "nm",
+                            }
+                        },
+                    },
+                    "outputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "particle_size": {"type": "number"},
+                        },
+                    },
+                    "annotations": {"readOnlyHint": True},
+                }
+            ]
+        },
+    )
+
+    parameter = tool.endpoint("search_particles").parameters[0]
+
+    assert parameter.name == "max_size"
+    assert parameter.unit == "nm"
+    assert parameter.unit_normalization is None
