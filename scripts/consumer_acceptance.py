@@ -406,6 +406,58 @@ async def scenario_parallel_read_only() -> dict[str, object]:
     return {"result_count": len(results), "peak_concurrency": peak}
 
 
+async def scenario_execution_ready_planning() -> dict[str, object]:
+    router = SchemaRouter()
+    unbound = ToolSpec(
+        name="preferred_unbound",
+        provider="provider_a",
+        access_mode="openapi",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    bound = ToolSpec(
+        name="bound_route",
+        provider="provider_b",
+        access_mode="python",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    router.add_tool(unbound)
+    router.add_tool(bound)
+    router.executor.bind(
+        "bound_route",
+        lambda endpoint, arguments: {"value": "bound"},
+    )
+
+    request = PlanRequest(
+        query="value",
+        preferred_tools=["preferred_unbound"],
+    )
+    schema_plan = router.plan(request)
+    executable_plan = router.plan_executable(request)
+    result = await router.ainvoke(request)
+
+    assert schema_plan.calls[0].tool == "preferred_unbound"
+    assert executable_plan.calls[0].tool == "bound_route"
+    assert result[0].tool == "bound_route"
+    assert result[0].data == {"value": "bound"}
+    return {
+        "schema_plan": schema_plan.calls[0].tool,
+        "execution_plan": executable_plan.calls[0].tool,
+        "executed": result[0].tool,
+    }
+
+
 async def scenario_binding_aware_fallback() -> dict[str, object]:
     router = SchemaRouter()
     primary = ToolSpec(
@@ -582,6 +634,7 @@ SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("output_validation", scenario_output_validation),
     ("retry_and_budget", scenario_retry_and_budget),
     ("parallel_read_only", scenario_parallel_read_only),
+    ("execution_ready_planning", scenario_execution_ready_planning),
     ("binding_aware_fallback", scenario_binding_aware_fallback),
     ("inspection_redaction", scenario_inspection_redaction),
     ("persistence_traces_dashboard", scenario_persistence_traces_and_dashboard),
