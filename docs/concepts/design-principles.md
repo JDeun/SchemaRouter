@@ -84,7 +84,8 @@ When the application explicitly permits multiple calls with `PlanRequest.max_cal
 SchemaRouter prefers complementary semantic-field coverage over spending limited call slots on
 equivalent routes for an already-covered field.
 
-The bound is still explicit. SchemaRouter never silently raises `max_calls`.
+The bound is still explicit. SchemaRouter never silently raises `max_calls`, and it may stop below
+the bound as soon as the currently matched semantic field requirements are covered.
 
 ## 6. Health belongs to an access path, not to a semantic field
 
