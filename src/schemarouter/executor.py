@@ -9,6 +9,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from .evidence import available_evidence, missing_global_evidence, missing_local_field_evidence
 from .errors import (
     ApprovalDeniedError,
     BindingDriftError,
@@ -434,6 +435,50 @@ class RegistryExecutor:
             )
         return states
 
+    @staticmethod
+    def _validate_evidence_contract(
+        tool: ToolSpec,
+        endpoint: EndpointSpec,
+        call: ToolCall,
+    ) -> None:
+        selected = set(call.fields)
+        unselected = sorted(set(call.field_evidence) - selected)
+        if unselected:
+            raise PlanValidationError(
+                f"field evidence targets unselected fields for {call.tool}.{call.endpoint}: "
+                + ", ".join(unselected)
+            )
+
+        available = available_evidence(tool, endpoint, call.fields)
+        if call.evidence != available:
+            raise PlanValidationError(
+                f"available evidence summary does not match the current contract for "
+                f"{call.tool}.{call.endpoint}; replan before execution"
+            )
+
+        missing_global = missing_global_evidence(
+            tool,
+            endpoint,
+            call.fields,
+            call.required_evidence,
+        )
+        if missing_global:
+            raise PlanValidationError(
+                f"required evidence unavailable for {call.tool}.{call.endpoint}: "
+                + ", ".join(missing_global)
+            )
+
+        missing_fields = missing_local_field_evidence(
+            tool,
+            endpoint,
+            call.field_evidence,
+        )
+        if missing_fields:
+            raise PlanValidationError(
+                f"required field evidence unavailable for {call.tool}.{call.endpoint}: "
+                + ", ".join(missing_fields)
+            )
+
     def _validated_call_contract(
         self,
         call: ToolCall,
@@ -507,6 +552,8 @@ class RegistryExecutor:
             raise PlanValidationError(
                 f"explicit output projection required for {call.tool}.{call.endpoint}"
             )
+
+        self._validate_evidence_contract(tool, endpoint, call)
 
         return tool, endpoint
 
