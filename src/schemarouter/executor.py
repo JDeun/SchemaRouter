@@ -1182,6 +1182,7 @@ class RegistryExecutor:
                     if field.unit_normalization is not None
                     else None
                 ),
+                dimensionless=field.dimensionless,
             )
         return contracts
 
