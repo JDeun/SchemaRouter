@@ -1038,3 +1038,105 @@ def test_semantic_id_takes_precedence_over_lexical_alias_overlap() -> None:
     )
 
     assert plan.fallback_routes == []
+
+
+
+def test_fallback_does_not_treat_substring_overlap_as_semantic_equivalence() -> None:
+    primary = ToolSpec(
+        name="primary",
+        provider="a",
+        access_mode="openapi",
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                description="material modulus lookup",
+                read_only=True,
+                output_fields=[
+                    FieldSpec(
+                        name="elastic_modulus",
+                        aliases=["elastic modulus"],
+                    )
+                ],
+            )
+        ],
+    )
+    misleading = ToolSpec(
+        name="misleading",
+        provider="b",
+        access_mode="openapi",
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                description="material modulus lookup",
+                read_only=True,
+                output_fields=[
+                    FieldSpec(
+                        name="bulk_modulus",
+                        aliases=["modulus"],
+                    )
+                ],
+            )
+        ],
+    )
+    reg = InMemoryRegistry()
+    reg.register(primary)
+    reg.register(misleading)
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="elastic modulus",
+            preferred_tools=["primary"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.calls[0].tool == "primary"
+    assert plan.fallback_routes == []
+
+
+def test_ambiguous_recall_first_plan_requires_full_fallback_field_coverage() -> None:
+    primary = ToolSpec(
+        name="primary",
+        provider="a",
+        access_mode="openapi",
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                description="material overview",
+                read_only=True,
+                output_fields=[
+                    FieldSpec(name="elastic_modulus", aliases=["elastic modulus"]),
+                    FieldSpec(name="density", aliases=["density"]),
+                ],
+            )
+        ],
+    )
+    incomplete = ToolSpec(
+        name="incomplete",
+        provider="b",
+        access_mode="openapi",
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                description="material overview",
+                read_only=True,
+                output_fields=[
+                    FieldSpec(name="elastic_modulus", aliases=["elastic modulus"]),
+                ],
+            )
+        ],
+    )
+    reg = InMemoryRegistry()
+    reg.register(primary)
+    reg.register(incomplete)
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="material overview",
+            preferred_tools=["primary"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.calls[0].fields == ["elastic_modulus", "density"]
+    assert plan.fallback_routes == []
