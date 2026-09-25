@@ -628,7 +628,9 @@ class RegistryExecutor:
                     if field.name in call.fields
                 }
                 has_explicit_paths = any(
-                    field.path for field in selected_field_specs.values()
+                    field.path
+                    or field.result_projection_path != field.projection_path
+                    for field in selected_field_specs.values()
                 )
                 adapter_projected = (
                     call_aware
@@ -918,18 +920,18 @@ class RegistryExecutor:
                 continue
 
             target = projected
-            path = field.projection_path
-            for part in path[:-1]:
+            result_path = field.result_projection_path
+            for part in result_path[:-1]:
                 child = target.get(part)
                 if child is None:
                     child = {}
                     target[part] = child
                 if not isinstance(child, dict):
                     raise PlanValidationError(
-                        "nested projection path collision for "
+                        "nested projection result-path collision for "
                         f"{field_name!r} in {endpoint.name!r}"
                     )
                 target = child
-            target[path[-1]] = deepcopy(current)
+            target[result_path[-1]] = deepcopy(current)
 
         return projected
