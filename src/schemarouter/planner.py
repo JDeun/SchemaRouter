@@ -18,10 +18,12 @@ from .models import (
     FieldSelectionExplanation,
     FieldSelectionReason,
     FieldSpec,
+    PlanCoverage,
     PlanExplanation,
     PlanRequest,
     QueryIntent,
     ScoreComponent,
+    SemanticFieldRequirement,
     ToolCall,
     ToolSpec,
 )
@@ -535,18 +537,34 @@ class SchemaPlanner:
                 ]
             return candidates, ["decision backend abstained; used deterministic ranking"]
         selection_source = "decision_recall" if recall_expanded else "decision_backend"
+        selected_indexes = [
+            int(item.option_id.split(":", 1)[1])
+            for item in result.selections
+        ]
         selected = [
             replace(
-                candidates[int(item.option_id.split(":", 1)[1])],
+                candidates[index],
                 selection_source=selection_source,
             )
-            for item in result.selections
+            for index in selected_indexes
         ]
         warnings = (
             ["decision backend expanded an empty lexical candidate set to the registered catalog"]
             if recall_expanded
             else []
         )
+        if request.max_calls > 1 and not recall_expanded:
+            selected_index_set = set(selected_indexes)
+            remaining = [
+                candidate
+                for index, candidate in enumerate(candidates)
+                if index not in selected_index_set
+            ]
+            warnings.append(
+                "decision backend prioritized candidates; retained deterministic "
+                "candidate recall for multi-call field coverage"
+            )
+            return [*selected, *remaining], warnings
         return selected, warnings
 
     async def _select_candidates_async(
@@ -591,18 +609,34 @@ class SchemaPlanner:
                 ]
             return candidates, ["decision backend abstained; used deterministic ranking"]
         selection_source = "decision_recall" if recall_expanded else "decision_backend"
+        selected_indexes = [
+            int(item.option_id.split(":", 1)[1])
+            for item in result.selections
+        ]
         selected = [
             replace(
-                candidates[int(item.option_id.split(":", 1)[1])],
+                candidates[index],
                 selection_source=selection_source,
             )
-            for item in result.selections
+            for index in selected_indexes
         ]
         warnings = (
             ["decision backend expanded an empty lexical candidate set to the registered catalog"]
             if recall_expanded
             else []
         )
+        if request.max_calls > 1 and not recall_expanded:
+            selected_index_set = set(selected_indexes)
+            remaining = [
+                candidate
+                for index, candidate in enumerate(candidates)
+                if index not in selected_index_set
+            ]
+            warnings.append(
+                "decision backend prioritized candidates; retained deterministic "
+                "candidate recall for multi-call field coverage"
+            )
+            return [*selected, *remaining], warnings
         return selected, warnings
 
 
@@ -667,6 +701,70 @@ class SchemaPlanner:
             for requirement in requirements
         )
         return coverage, universe
+
+    @classmethod
+    def _plan_coverage(
+        cls,
+        required: frozenset[tuple[str, tuple[str, ...]]],
+        covered: set[tuple[str, tuple[str, ...]]],
+        candidates: list[_Candidate],
+    ) -> PlanCoverage | None:
+        """Convert internal coverage keys into a stable public plan contract."""
+
+        if not required:
+            return None
+
+        semantic_labels: dict[str, str] = {}
+        for candidate in candidates:
+            for field in candidate.endpoint.output_fields:
+                if field.identifier:
+                    continue
+                semantic_key = _normalize(field.semantic_id or field.name)
+                if semantic_key and semantic_key not in semantic_labels:
+                    semantic_labels[semantic_key] = field.semantic_id or field.name
+
+        def public(
+            requirement: tuple[str, tuple[str, ...]],
+        ) -> SemanticFieldRequirement:
+            semantic, qualifiers = requirement
+            return SemanticFieldRequirement(
+                semantic_id=semantic_labels.get(semantic, semantic),
+                qualifiers=list(qualifiers),
+            )
+
+        def ordered(
+            requirements: set[tuple[str, tuple[str, ...]]]
+            | frozenset[tuple[str, tuple[str, ...]]],
+        ) -> list[SemanticFieldRequirement]:
+            return [
+                public(requirement)
+                for requirement in sorted(
+                    requirements,
+                    key=lambda item: (item[0], item[1]),
+                )
+            ]
+
+        covered_required = set(required) & covered
+        uncovered = set(required) - covered_required
+        return PlanCoverage(
+            required=ordered(required),
+            covered=ordered(covered_required),
+            uncovered=ordered(uncovered),
+            complete=not uncovered,
+        )
+
+    @staticmethod
+    def _coverage_warning(coverage: PlanCoverage | None) -> str | None:
+        if coverage is None or coverage.complete:
+            return None
+
+        labels = []
+        for requirement in coverage.uncovered:
+            label = requirement.semantic_id
+            if requirement.qualifiers:
+                label += "[" + ", ".join(requirement.qualifiers) + "]"
+            labels.append(label)
+        return "uncovered semantic field requirements: " + ", ".join(labels)
 
     @classmethod
     def _order_candidates_for_field_coverage(
@@ -1532,6 +1630,7 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
         )
+        _, required_coverage = self._field_coverage_matrix(request, all_candidates)
         candidates, decision_warnings = self._select_candidates_sync(
             request,
             all_candidates,
@@ -1540,11 +1639,22 @@ class SchemaPlanner:
 
         warnings: list[str] = list(decision_warnings)
         if not candidates:
+            coverage = self._plan_coverage(
+                required_coverage,
+                set(),
+                all_candidates,
+            )
+            coverage_warning = self._coverage_warning(coverage)
             return ExecutionPlan(
                 query=request.query,
                 registry_version=self.registry.version,
                 calls=[],
-                warnings=[*warnings, "no schema candidate matched the request"],
+                warnings=[
+                    *warnings,
+                    "no schema candidate matched the request",
+                    *([coverage_warning] if coverage_warning else []),
+                ],
+                coverage=coverage,
             )
 
         primary_pairs: list[tuple[_Candidate, ToolCall]] = []
@@ -1638,12 +1748,32 @@ class SchemaPlanner:
                         )
                     )
 
+        covered_coverage: set[tuple[str, tuple[str, ...]]] = set()
+        for candidate, call in primary_pairs:
+            covered_coverage.update(
+                self._coverage_requirements_for_candidate(
+                    candidate,
+                    request.query,
+                    field_names=set(call.fields),
+                )
+                & required_coverage
+            )
+        coverage = self._plan_coverage(
+            required_coverage,
+            covered_coverage,
+            all_candidates,
+        )
+        coverage_warning = self._coverage_warning(coverage)
+        if coverage_warning:
+            warnings.append(coverage_warning)
+
         return ExecutionPlan(
             query=request.query,
             registry_version=self.registry.version,
             calls=calls,
             fallback_routes=fallback_routes,
             warnings=warnings,
+            coverage=coverage,
         )
 
     async def _abuild_plan(
@@ -1662,6 +1792,7 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
         )
+        _, required_coverage = self._field_coverage_matrix(request, all_candidates)
         candidates, decision_warnings = await self._select_candidates_async(
             request,
             all_candidates,
@@ -1669,11 +1800,22 @@ class SchemaPlanner:
         candidates = self._order_candidates_for_field_coverage(request, candidates)
         warnings = list(decision_warnings)
         if not candidates:
+            coverage = self._plan_coverage(
+                required_coverage,
+                set(),
+                all_candidates,
+            )
+            coverage_warning = self._coverage_warning(coverage)
             return ExecutionPlan(
                 query=request.query,
                 registry_version=self.registry.version,
                 calls=[],
-                warnings=[*warnings, "no schema candidate matched the request"],
+                warnings=[
+                    *warnings,
+                    "no schema candidate matched the request",
+                    *([coverage_warning] if coverage_warning else []),
+                ],
+                coverage=coverage,
             )
 
         primary_pairs: list[tuple[_Candidate, ToolCall]] = []
@@ -1767,12 +1909,32 @@ class SchemaPlanner:
                         )
                     )
 
+        covered_coverage: set[tuple[str, tuple[str, ...]]] = set()
+        for candidate, call in primary_pairs:
+            covered_coverage.update(
+                self._coverage_requirements_for_candidate(
+                    candidate,
+                    request.query,
+                    field_names=set(call.fields),
+                )
+                & required_coverage
+            )
+        coverage = self._plan_coverage(
+            required_coverage,
+            covered_coverage,
+            all_candidates,
+        )
+        coverage_warning = self._coverage_warning(coverage)
+        if coverage_warning:
+            warnings.append(coverage_warning)
+
         return ExecutionPlan(
             query=request.query,
             registry_version=self.registry.version,
             calls=calls,
             fallback_routes=fallback_routes,
             warnings=warnings,
+            coverage=coverage,
         )
 
     @staticmethod

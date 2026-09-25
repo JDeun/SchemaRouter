@@ -130,6 +130,13 @@ def test_multi_call_planner_prefers_complementary_semantic_field_coverage() -> N
     calls_by_tool = {call.tool: call for call in plan.calls}
     assert calls_by_tool["a_materials_openapi"].fields == ["material_id", "band_gap"]
     assert calls_by_tool["z_arxiv"].fields == ["paper_id", "abstract"]
+    assert plan.coverage is not None
+    assert plan.coverage.complete is True
+    assert {item.semantic_id for item in plan.coverage.required} == {
+        "band_gap",
+        "document_abstract",
+    }
+    assert plan.coverage.uncovered == []
 
 
 def test_multi_call_planner_stops_when_one_route_covers_all_fields() -> None:
@@ -268,6 +275,229 @@ def test_multi_call_field_coverage_respects_explicit_qualifiers() -> None:
         "a_elastic_300k",
         "z_arxiv",
     ]
+
+
+def test_plan_coverage_reports_uncovered_requirements_at_call_bound() -> None:
+    reg = InMemoryRegistry()
+    for name, semantic_id, alias in (
+        ("a_materials", "band_gap", "band gap"),
+        ("b_papers", "document_abstract", "paper abstract"),
+        ("c_density", "density", "density"),
+    ):
+        reg.register(
+            ToolSpec(
+                name=name,
+                endpoints=[
+                    EndpointSpec(
+                        name="search",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(
+                                name=semantic_id,
+                                semantic_id=semantic_id,
+                                aliases=[alias],
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="band gap paper abstract density",
+            max_calls=2,
+        )
+    )
+
+    assert len(plan.calls) == 2
+    assert plan.coverage is not None
+    assert plan.coverage.complete is False
+    assert {item.semantic_id for item in plan.coverage.required} == {
+        "band_gap",
+        "document_abstract",
+        "density",
+    }
+    assert len(plan.coverage.covered) == 2
+    assert len(plan.coverage.uncovered) == 1
+    assert any(
+        warning.startswith("uncovered semantic field requirements:")
+        for warning in plan.warnings
+    )
+
+
+def test_multi_call_decision_backend_cannot_prune_complementary_coverage() -> None:
+    reg = InMemoryRegistry()
+    for name, access_mode in (
+        ("a_materials_openapi", "openapi"),
+        ("b_materials_optimade", "optimade"),
+    ):
+        reg.register(
+            ToolSpec(
+                name=name,
+                provider="materials_project",
+                access_mode=access_mode,
+                endpoints=[
+                    EndpointSpec(
+                        name="search",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(
+                                name="band_gap",
+                                semantic_id="band_gap",
+                                aliases=["band gap"],
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+    reg.register(
+        ToolSpec(
+            name="z_arxiv",
+            provider="arxiv",
+            access_mode="api",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_abstract",
+                            aliases=["paper abstract"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    def choose_redundant_material_routes(request):
+        selections = [
+            option
+            for option in request.options
+            if option.label.startswith(("a_materials_", "b_materials_"))
+        ]
+        assert len(selections) == 2
+        return {
+            "selections": [
+                {"option_id": option.id, "score": 0.9}
+                for option in selections
+            ]
+        }
+
+    plan = SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(choose_redundant_material_routes),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+        ),
+    ).plan(
+        PlanRequest(
+            query="band gap and paper abstract",
+            max_calls=2,
+        )
+    )
+
+    assert {call.tool for call in plan.calls} == {
+        "a_materials_openapi",
+        "z_arxiv",
+    }
+    assert plan.coverage is not None
+    assert plan.coverage.complete is True
+    assert plan.coverage.uncovered == []
+    assert any(
+        "retained deterministic candidate recall for multi-call field coverage"
+        in warning
+        for warning in plan.warnings
+    )
+
+
+@pytest.mark.asyncio
+async def test_async_multi_call_decision_backend_preserves_complementary_coverage() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="a_band",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="band_gap",
+                            semantic_id="band_gap",
+                            aliases=["band gap"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    reg.register(
+        ToolSpec(
+            name="b_band_duplicate",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="band_gap_duplicate",
+                            semantic_id="band_gap",
+                            aliases=["band gap"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    reg.register(
+        ToolSpec(
+            name="z_abstract",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_abstract",
+                            aliases=["paper abstract"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    async def choose_redundant(request):
+        selected = [
+            option
+            for option in request.options
+            if option.label.startswith(("a_band.", "b_band_duplicate."))
+        ]
+        return {"selections": [{"option_id": option.id} for option in selected]}
+
+    plan = await SchemaPlanner(
+        reg,
+        decision_backend=CallableDecisionBackend(choose_redundant),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+        ),
+    ).aplan(
+        PlanRequest(
+            query="band gap and paper abstract",
+            max_calls=2,
+        )
+    )
+
+    assert {call.tool for call in plan.calls} == {"a_band", "z_abstract"}
+    assert plan.coverage is not None
+    assert plan.coverage.complete is True
 
 
 def test_planner_favors_recall_when_field_intent_is_ambiguous() -> None:

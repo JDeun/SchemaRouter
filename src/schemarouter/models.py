@@ -652,12 +652,29 @@ class FallbackRoute(StrictModel):
     alternatives: list[ToolCall] = Field(default_factory=list)
 
 
+class SemanticFieldRequirement(StrictModel):
+    """One query-matched semantic field requirement used for plan coverage."""
+
+    semantic_id: str
+    qualifiers: list[str] = Field(default_factory=list)
+
+
+class PlanCoverage(StrictModel):
+    """Structured semantic-field coverage for one execution plan."""
+
+    required: list[SemanticFieldRequirement] = Field(default_factory=list)
+    covered: list[SemanticFieldRequirement] = Field(default_factory=list)
+    uncovered: list[SemanticFieldRequirement] = Field(default_factory=list)
+    complete: bool = False
+
+
 class ExecutionPlan(StrictModel):
     query: str
     registry_version: int
     calls: list[ToolCall] = Field(default_factory=list)
     fallback_routes: list[FallbackRoute] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    coverage: PlanCoverage | None = None
 
     @model_validator(mode="after")
     def validate_fallback_routes(self) -> ExecutionPlan:
