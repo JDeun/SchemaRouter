@@ -201,3 +201,40 @@ used as the output shape.
 
 This lets multiple provider/access contracts expose different wire schemas while keeping the
 downstream context provider-neutral.
+
+
+## Field types and units
+
+Adapters should preserve the provider's field-level type contract whenever it is available:
+
+```python
+FieldSpec(
+    name="particle_size",
+    semantic_id="particle_size",
+    json_schema={"type": "number"},
+    unit="nm",
+)
+```
+
+Use `json_schema` rather than a second ad-hoc type string. It can represent primitive JSON types,
+nullable fields, enums, array/object shapes, ranges, and other provider constraints.
+
+`unit` is optional. Leave it as `None` for unitless or non-quantitative fields:
+
+```python
+FieldSpec(
+    name="paper_abstract",
+    semantic_id="abstract_text",
+    json_schema={"type": "string"},
+    unit=None,
+)
+```
+
+Do not lowercase, translate, or otherwise natural-language-normalize scientific unit symbols.
+If two providers return the same semantic quantity in different units, declare their native units
+accurately. SchemaRouter currently refuses automatic fallback across different units unless an
+explicit conversion layer is supplied by trusted local code.
+
+When both `FieldSpec.json_schema` and a directly resolvable endpoint `output_schema` describe the
+same source path, their declared JSON types must agree. This prevents fallback decisions from using a
+field-level type that contradicts raw-response validation.
