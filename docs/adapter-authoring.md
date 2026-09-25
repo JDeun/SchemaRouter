@@ -304,3 +304,22 @@ For example, a payload shaped like:
 must not be converted merely because the runtime string says `GPa`. The conversion relationship
 remains trusted local configuration. Until an explicit dynamic-unit contract exists, row-dependent
 unit interpretation should remain outside the generic SchemaRouter execution core.
+
+
+### Dimensionless numeric quantities
+
+Numeric scientific data can also be unitless. Do not invent a unit for dimensionless quantities
+such as a Poisson ratio, probability, normalized score, or other dimensionless coefficient.
+
+```python
+FieldSpec(
+    name="poisson_ratio",
+    semantic_id="poisson_ratio",
+    json_schema={"type": "number"},
+    unit=None,
+)
+```
+
+This remains a typed numeric contract even though the unit is absent. Cross-provider fallback may
+match another compatible unitless numeric field, but it will not silently substitute a unit-bearing
+quantity for a unitless one (or vice versa).
