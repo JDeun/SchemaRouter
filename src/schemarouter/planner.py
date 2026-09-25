@@ -63,36 +63,49 @@ def _semantic_substring_match(left: str, right: str) -> bool:
 def _matched_field_qualifiers(query: str, field: FieldSpec) -> tuple[str, ...]:
     """Return trusted qualifier tags that are visibly present in the query.
 
-    This is deliberately lexical, not scientific inference. Short ASCII tags such as
-    single-letter symbols are ignored unless the combined key/value text is present,
-    which avoids accidental matches such as a K inside an unrelated word.
+    Matching is token-bounded for ASCII/numeric values so 300 K cannot match
+    1300 K. Very short ASCII values such as K are ignored by themselves
+    unless the query also contains their qualifier key. Non-ASCII values fall back
+    to normalized literal containment because the lightweight tokenizer intentionally
+    covers only ASCII words/numbers and Korean text.
     """
 
     if not field.qualifiers:
         return ()
 
+    query_tokens = _tokens(query)
     query_norm = _normalize(query)
-    if not query_norm:
+    if not query_tokens and not query_norm:
         return ()
 
     matches: list[str] = []
     for key, value in sorted(field.qualifiers.items()):
+        value_tokens = _tokens(value)
         value_norm = _normalize(value)
-        keyed_norm = _normalize(f"{key}{value}")
-        value_match = bool(
+
+        token_value_match = bool(
+            value_tokens
+            and value_tokens.issubset(query_tokens)
+            and (
+                len(value_tokens) > 1
+                or any(len(token) >= 3 for token in value_tokens)
+            )
+        )
+        non_ascii_value_match = bool(
             value_norm
+            and not value_norm.isascii()
             and value_norm in query_norm
-            and (len(value_norm) >= 3 or not value_norm.isascii())
         )
+
+        keyed_tokens = _tokens(f"{key} {value}")
         keyed_match = bool(
-            keyed_norm
-            and len(keyed_norm) >= 4
-            and keyed_norm in query_norm
+            len(keyed_tokens) > 1
+            and keyed_tokens.issubset(query_tokens)
         )
-        if value_match or keyed_match:
+
+        if token_value_match or non_ascii_value_match or keyed_match:
             matches.append(f"{key}={value}")
     return tuple(matches)
-
 
 _KOREAN_PARTICLE_SUFFIXES = (
     "에서",
