@@ -124,6 +124,8 @@ class _FieldSemantic:
     unit: str | None
     unit_dimension: str | None
     canonical_unit: str | None
+    unit_scale: float | None
+    unit_offset: float | None
 
 
 @dataclass(frozen=True)
@@ -953,7 +955,17 @@ class SchemaPlanner:
                         else None
                     ),
                     canonical_unit=(
-                        unit_normalization.canonical_unit.strip()
+                        unit_normalization.canonical_unit
+                        if unit_normalization is not None
+                        else None
+                    ),
+                    unit_scale=(
+                        unit_normalization.scale
+                        if unit_normalization is not None
+                        else None
+                    ),
+                    unit_offset=(
+                        unit_normalization.offset
                         if unit_normalization is not None
                         else None
                     ),
@@ -1031,6 +1043,16 @@ class SchemaPlanner:
                             or requirement.canonical_unit
                             != candidate_field.canonical_unit
                         ):
+                            continue
+                        if (
+                            requirement.unit == candidate_field.unit
+                            and (
+                                requirement.unit_scale != candidate_field.unit_scale
+                                or requirement.unit_offset != candidate_field.unit_offset
+                            )
+                        ):
+                            # Identical source-unit labels cannot legitimately use different
+                            # affine transforms to the same canonical unit.
                             continue
                     elif candidate_field.unit != requirement.unit:
                         continue
