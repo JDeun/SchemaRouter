@@ -908,6 +908,7 @@ def _semantic_provider_tool(
                     FieldSpec(
                         name=field_name,
                         semantic_id=semantic_id,
+                        json_schema={"type": "number"} if unit is not None else {},
                         unit=unit,
                     ),
                 ],
