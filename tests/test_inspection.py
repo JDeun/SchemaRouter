@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from schemarouter import (
+    CallableDecisionBackend,
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
@@ -558,3 +559,21 @@ def test_dashboard_renders_typed_unit_contracts() -> None:
     assert "Field contracts" in html
     assert "abstract:string" in html
     assert "elastic_modulus:number [GPa→Pa; pressure]" in html
+
+
+def test_live_inspection_reports_semantic_candidate_recall_configuration() -> None:
+    router = SchemaRouter()
+    router.planner.candidate_recall_backend = CallableDecisionBackend(
+        lambda request: {"selections": [{"option_id": request.options[0].id}]}
+    )
+    router.planner.candidate_recall_limit = 3
+
+    snapshot = inspect_router(router)
+
+    assert snapshot.planner.candidate_recall_backend == "CallableDecisionBackend"
+    assert snapshot.planner.candidate_recall_limit == 3
+
+    html = render_dashboard(snapshot.registry, live=snapshot)
+    assert "Candidate recall" in html
+    assert "CallableDecisionBackend" in html
+    assert "(top 3)" in html
