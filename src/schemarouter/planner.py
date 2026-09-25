@@ -198,6 +198,8 @@ class _CandidateIndex:
 
                 for parameter in endpoint.parameters:
                     self._add(self._parameter_refs, parameter.name, ref)
+                    for alias in parameter.aliases:
+                        self._add(self._parameter_refs, alias, ref)
 
     @staticmethod
     def _add(
@@ -1118,6 +1120,64 @@ class SchemaPlanner:
         ]
         return [*same_provider, *other_provider]
 
+    @staticmethod
+    def _bind_arguments(
+        endpoint: EndpointSpec,
+        provided: dict[str, Any],
+    ) -> tuple[dict[str, Any], dict[str, str], list[str]]:
+        """Bind exact parameter names first, then unambiguous trusted aliases.
+
+        Alias routing only renames keys. Values are copied unchanged. If one supplied alias could
+        target multiple parameters, or multiple supplied aliases compete for one parameter, the
+        ambiguous inputs are left unbound and reported as ignored.
+        """
+
+        parameters = {parameter.name: parameter for parameter in endpoint.parameters}
+        arguments: dict[str, Any] = {
+            name: value
+            for name, value in provided.items()
+            if name in parameters
+        }
+        source_by_parameter: dict[str, str] = {
+            name: name
+            for name in arguments
+        }
+        consumed = set(arguments)
+
+        unmatched_inputs = [
+            name
+            for name in provided
+            if name not in consumed
+        ]
+        source_targets: dict[str, list[str]] = {}
+        target_sources: dict[str, list[str]] = {}
+
+        for source_name in unmatched_inputs:
+            targets = [
+                parameter.name
+                for parameter in endpoint.parameters
+                if parameter.name not in arguments
+                and source_name in parameter.aliases
+            ]
+            if not targets:
+                continue
+            source_targets[source_name] = targets
+            for target in targets:
+                target_sources.setdefault(target, []).append(source_name)
+
+        for source_name, targets in source_targets.items():
+            if len(targets) != 1:
+                continue
+            target = targets[0]
+            if len(target_sources.get(target, ())) != 1:
+                continue
+            arguments[target] = provided[source_name]
+            source_by_parameter[target] = source_name
+            consumed.add(source_name)
+
+        ignored = sorted(set(provided) - consumed)
+        return arguments, source_by_parameter, ignored
+
     def _compile_candidate_sync(
         self,
         request: PlanRequest,
@@ -1128,13 +1188,10 @@ class SchemaPlanner:
         warn_ignored_arguments: bool = True,
     ) -> ToolCall | None:
         endpoint = candidate.endpoint
-        declared = {parameter.name: parameter for parameter in endpoint.parameters}
-        arguments = {
-            name: value
-            for name, value in intent.arguments.items()
-            if name in declared
-        }
-        dropped = sorted(set(intent.arguments) - set(arguments))
+        arguments, _, dropped = self._bind_arguments(
+            endpoint,
+            intent.arguments,
+        )
         if dropped and warn_ignored_arguments:
             warnings.append(
                 f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
@@ -1203,13 +1260,10 @@ class SchemaPlanner:
         warn_ignored_arguments: bool = True,
     ) -> ToolCall | None:
         endpoint = candidate.endpoint
-        declared = {parameter.name: parameter for parameter in endpoint.parameters}
-        arguments = {
-            name: value
-            for name, value in intent.arguments.items()
-            if name in declared
-        }
-        dropped = sorted(set(intent.arguments) - set(arguments))
+        arguments, _, dropped = self._bind_arguments(
+            endpoint,
+            intent.arguments,
+        )
         if dropped and warn_ignored_arguments:
             warnings.append(
                 f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
@@ -1566,16 +1620,27 @@ class SchemaPlanner:
                     ScoreComponent(kind="field_substring", value=1.0, matched=field.name)
                 )
 
-        for parameter in endpoint.parameters:
-            if parameter.name in intent.arguments:
-                score += 2.0
-                components.append(
-                    ScoreComponent(
-                        kind="argument_match",
-                        value=2.0,
-                        matched=parameter.name,
-                    )
+        _, argument_sources, _ = self._bind_arguments(
+            endpoint,
+            intent.arguments,
+        )
+        for parameter_name, source_name in argument_sources.items():
+            score += 2.0
+            components.append(
+                ScoreComponent(
+                    kind=(
+                        "argument_match"
+                        if source_name == parameter_name
+                        else "argument_alias_match"
+                    ),
+                    value=2.0,
+                    matched=(
+                        parameter_name
+                        if source_name == parameter_name
+                        else f"{source_name}->{parameter_name}"
+                    ),
                 )
+            )
 
         return _Candidate(
             tool=tool,
