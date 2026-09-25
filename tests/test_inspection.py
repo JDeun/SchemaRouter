@@ -501,3 +501,37 @@ def test_registry_inspection_exposes_field_types_and_optional_units() -> None:
     assert fields["abstract"].unit is None
     assert fields["elastic_modulus"].json_types == ["number"]
     assert fields["elastic_modulus"].unit == "GPa"
+
+
+
+def test_dashboard_renders_field_type_and_unit_contracts() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="scientific",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            json_schema={"type": "string"},
+                            unit=None,
+                        ),
+                        FieldSpec(
+                            name="elastic_modulus",
+                            json_schema={"type": "number"},
+                            unit="GPa",
+                        ),
+                    ],
+                )
+            ],
+        )
+    )
+
+    html = render_dashboard(inspect_registry(registry))
+
+    assert "Field contracts" in html
+    assert "abstract:string" in html
+    assert "elastic_modulus:number [GPa]" in html
