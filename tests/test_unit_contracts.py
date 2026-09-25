@@ -1233,10 +1233,12 @@ def test_dimensionless_numeric_field_does_not_require_unit() -> None:
         semantic_id="poisson_ratio",
         json_schema={"type": "number"},
         aliases=["Poisson ratio", "포아송비"],
+        dimensionless=True,
     )
 
     assert field.unit is None
     assert field.unit_normalization is None
+    assert field.dimensionless is True
     assert field.json_schema == {"type": "number"}
 
 
@@ -1260,6 +1262,7 @@ def test_dimensionless_numeric_fields_can_fallback_across_providers() -> None:
                                 semantic_id="poisson_ratio",
                                 json_schema={"type": "number"},
                                 aliases=["Poisson ratio", "포아송비"],
+                                dimensionless=True,
                             )
                         ],
                     )
@@ -1296,6 +1299,7 @@ def test_dimensionless_numeric_field_does_not_fallback_to_unit_bearing_quantity(
                             name="ratio",
                             semantic_id="ratio",
                             json_schema={"type": "number"},
+                            dimensionless=True,
                         )
                     ],
                 )
@@ -1333,3 +1337,170 @@ def test_dimensionless_numeric_field_does_not_fallback_to_unit_bearing_quantity(
 
     assert plan.calls[0].tool == "dimensionless"
     assert plan.fallback_route(0) is None
+
+
+
+def test_dimensionless_field_rejects_declared_unit() -> None:
+    with pytest.raises(ValueError, match="dimensionless fields must not declare a unit"):
+        FieldSpec(
+            name="poisson_ratio",
+            semantic_id="poisson_ratio",
+            json_schema={"type": "number"},
+            unit="1",
+            dimensionless=True,
+        )
+
+
+def test_dimensionless_field_requires_numeric_contract() -> None:
+    with pytest.raises(ValueError, match="dimensionless fields must declare a numeric"):
+        FieldSpec(
+            name="abstract",
+            semantic_id="document_text",
+            json_schema={"type": "string"},
+            dimensionless=True,
+        )
+
+
+def test_endpoint_dimensionless_field_can_use_numeric_raw_schema() -> None:
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[
+            FieldSpec(
+                name="poisson_ratio",
+                semantic_id="poisson_ratio",
+                dimensionless=True,
+            )
+        ],
+        output_schema={
+            "type": "object",
+            "properties": {
+                "poisson_ratio": {"type": "number"},
+            },
+        },
+    )
+
+    assert endpoint.output_fields[0].dimensionless is True
+
+
+def test_endpoint_dimensionless_field_requires_declared_numeric_schema() -> None:
+    with pytest.raises(ValueError, match="dimensionless fields require a declared numeric"):
+        EndpointSpec(
+            name="read",
+            read_only=True,
+            output_fields=[
+                FieldSpec(
+                    name="poisson_ratio",
+                    semantic_id="poisson_ratio",
+                    dimensionless=True,
+                )
+            ],
+        )
+
+
+def test_unknown_unit_numeric_fields_do_not_auto_fallback_across_providers() -> None:
+    registry = InMemoryRegistry()
+    for name in ("provider_a", "provider_b"):
+        registry.register(
+            ToolSpec(
+                name=name,
+                provider=name,
+                endpoints=[
+                    EndpointSpec(
+                        name="read",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(
+                                name="elastic_modulus",
+                                semantic_id="elastic_modulus",
+                                json_schema={"type": "number"},
+                                aliases=["탄성계수", "elastic modulus"],
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="탄성계수",
+            preferred_tools=["provider_a"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.calls[0].tool == "provider_a"
+    assert plan.fallback_route(0) is None
+
+
+def test_explicit_dimensionless_quantity_satisfies_unit_evidence_requirement() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="materials",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="poisson_ratio",
+                            semantic_id="poisson_ratio",
+                            json_schema={"type": "number"},
+                            aliases=["포아송비", "Poisson ratio"],
+                            dimensionless=True,
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="포아송비",
+            evidence=EvidenceRequirements(units=True),
+        )
+    )
+
+    assert plan.calls
+    assert plan.calls[0].fields == ["poisson_ratio"]
+
+
+@pytest.mark.asyncio
+async def test_result_contract_marks_dimensionless_quantity_explicitly() -> None:
+    field = FieldSpec(
+        name="poisson_ratio",
+        semantic_id="poisson_ratio",
+        json_schema={"type": "number"},
+        dimensionless=True,
+    )
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[field],
+        output_schema={
+            "type": "object",
+            "properties": {"poisson_ratio": {"type": "number"}},
+        },
+    )
+    tool = ToolSpec(name="materials", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    executor = RegistryExecutor(registry)
+    executor.bind("materials", lambda endpoint_name, arguments: {"poisson_ratio": 0.28})
+    call = ToolCall(
+        tool="materials",
+        endpoint="read",
+        fields=["poisson_ratio"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    result = await executor.execute_call(call)
+
+    contract = result.field_contracts["poisson_ratio"]
+    assert contract.json_schema == {"type": "number"}
+    assert contract.unit is None
+    assert contract.dimensionless is True
