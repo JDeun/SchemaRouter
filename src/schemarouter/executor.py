@@ -22,13 +22,22 @@ from .errors import (
     SchemaValidationError,
 )
 from .hooks import ExecutionHooks
-from .models import EndpointSpec, ExecutionPlan, ToolCall, ToolResult, ToolSpec
+from .models import (
+    EndpointSpec,
+    ExecutionPlan,
+    ResultFieldContract,
+    ToolCall,
+    ToolResult,
+    ToolSpec,
+)
 from .policy import ApprovalCallback, ExecutionPolicy, is_remote_tool
 from .registry import ToolRegistry
 from .runs import ExecutionBudget, RetryPolicy
 from .validation import (
     effective_input_schema,
     effective_output_schema,
+    field_value_schema,
+    json_schema_types,
     projected_output_schema,
     validate_json_schema_value,
 )
@@ -714,11 +723,20 @@ class RegistryExecutor:
                     if adapter_projected
                     else self._project(value, call.fields, endpoint)
                 )
+                projected = self._normalize_projected_units(
+                    projected,
+                    call.fields,
+                    endpoint,
+                )
                 result = ToolResult(
                     tool=call.tool,
                     endpoint=call.endpoint,
                     data=projected,
                     projected_fields=call.fields,
+                    field_contracts=self._result_field_contracts(
+                        call.fields,
+                        endpoint,
+                    ),
                 )
                 await self._run_after_hooks(tool, endpoint, call, result, tracker)
                 tracker.after_attempt()
@@ -993,6 +1011,99 @@ class RegistryExecutor:
                     raise SchemaValidationError(
                         f"{context}{suffix}: projected field {field_name!r} is missing"
                     )
+
+    @staticmethod
+    def _normalize_projected_units(
+        value: Any,
+        fields: list[str],
+        endpoint: EndpointSpec,
+    ) -> Any:
+        if not fields:
+            return value
+        if isinstance(value, list):
+            return [
+                RegistryExecutor._normalize_projected_units(item, fields, endpoint)
+                if isinstance(item, dict)
+                else deepcopy(item)
+                for item in value
+            ]
+        if not isinstance(value, dict):
+            return value
+
+        normalized = deepcopy(value)
+        field_map = {field.name: field for field in endpoint.output_fields}
+        for field_name in fields:
+            field = field_map.get(field_name)
+            if field is None or field.unit_normalization is None:
+                continue
+
+            current: Any = normalized
+            path = field.result_projection_path
+            missing = False
+            for part in path[:-1]:
+                if not isinstance(current, dict) or part not in current:
+                    missing = True
+                    break
+                current = current[part]
+            if missing or not isinstance(current, dict) or path[-1] not in current:
+                continue
+
+            raw_value = current[path[-1]]
+            if isinstance(raw_value, bool) or not isinstance(raw_value, (int, float)):
+                raise SchemaValidationError(
+                    f"projected field {field_name!r} requires a numeric value for unit normalization"
+                )
+            spec = field.unit_normalization
+            current[path[-1]] = raw_value * spec.scale + spec.offset
+
+        return normalized
+
+    @staticmethod
+    def _result_field_contracts(
+        fields: list[str],
+        endpoint: EndpointSpec,
+    ) -> dict[str, ResultFieldContract]:
+        field_map = {field.name: field for field in endpoint.output_fields}
+        contracts: dict[str, ResultFieldContract] = {}
+        for field_name in fields:
+            field = field_map.get(field_name)
+            if field is None:
+                continue
+            raw_schema = field_value_schema(endpoint, field_name)
+            declared_types = sorted(json_schema_types(raw_schema))
+            output_schema: dict[str, Any] = {}
+            if declared_types:
+                output_schema["type"] = (
+                    declared_types[0]
+                    if len(declared_types) == 1
+                    else declared_types
+                )
+            if field.unit_normalization is not None:
+                # Affine conversion can turn an integer source into a non-integer result.
+                if output_schema.get("type") == "integer":
+                    output_schema["type"] = "number"
+                elif isinstance(output_schema.get("type"), list):
+                    output_schema["type"] = [
+                        "number" if value == "integer" else value
+                        for value in output_schema["type"]
+                    ]
+
+            contracts[field_name] = ResultFieldContract(
+                semantic_id=field.semantic_id,
+                json_schema=output_schema,
+                source_unit=field.unit,
+                unit=(
+                    field.unit_normalization.canonical_unit
+                    if field.unit_normalization is not None
+                    else field.unit
+                ),
+                dimension=(
+                    field.unit_normalization.dimension
+                    if field.unit_normalization is not None
+                    else None
+                ),
+            )
+        return contracts
 
     @staticmethod
     def _project(value: Any, fields: list[str], endpoint: EndpointSpec) -> Any:
