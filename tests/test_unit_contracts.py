@@ -139,13 +139,11 @@ def test_fallback_rejects_same_semantic_field_with_incompatible_datatype() -> No
     registry.register(
         _quantity_tool(
             "numeric_provider",
-            _quantity_field(
-                "elastic_modulus",
+            FieldSpec(
+                name="elastic_modulus",
                 semantic_id="elastic_modulus",
-                unit="GPa",
-                dimension="pressure",
-                canonical_unit="Pa",
-                scale=1e9,
+                aliases=["elastic modulus", "탄성계수"],
+                json_schema={"type": "number"},
             ),
             provider="provider_a",
         )
@@ -153,17 +151,11 @@ def test_fallback_rejects_same_semantic_field_with_incompatible_datatype() -> No
     registry.register(
         _quantity_tool(
             "string_provider",
-            _quantity_field(
-                "elastic_modulus_text",
+            FieldSpec(
+                name="elastic_modulus_text",
                 semantic_id="elastic_modulus",
-                unit="GPa",
-                dimension="pressure",
-                canonical_unit="Pa",
-                scale=1e9,
-                json_type="string",
-            ).model_copy(
-                update={"unit": None, "unit_normalization": None},
-                deep=True,
+                aliases=["elastic modulus", "탄성계수"],
+                json_schema={"type": "string"},
             ),
             provider="provider_b",
         )
@@ -313,3 +305,57 @@ async def test_raw_type_failure_happens_before_unit_normalization() -> None:
 
     with pytest.raises(SchemaValidationError):
         await executor.execute_call(call)
+
+
+
+@pytest.mark.asyncio
+async def test_executor_normalizes_numeric_array_units() -> None:
+    field = FieldSpec(
+        name="wavelengths",
+        semantic_id="wavelength",
+        json_schema={
+            "type": "array",
+            "items": {"type": "number"},
+        },
+        unit="nm",
+        unit_normalization=UnitNormalizationSpec(
+            dimension="length",
+            canonical_unit="m",
+            scale=1e-9,
+        ),
+    )
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[field],
+    )
+    tool = ToolSpec(name="spectra", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool="spectra",
+        endpoint="read",
+        fields=["wavelengths"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "spectra",
+        lambda endpoint_name, arguments: {"wavelengths": [400.0, 500.0]},
+    )
+
+    result = await executor.execute_call(call)
+
+    assert result.data == {
+        "wavelengths": [pytest.approx(4e-7), pytest.approx(5e-7)]
+    }
+    contract = result.field_contracts["wavelengths"]
+    assert contract.json_schema == {
+        "type": "array",
+        "items": {"type": "number"},
+    }
+    assert contract.source_unit == "nm"
+    assert contract.unit == "m"
+    assert contract.dimension == "length"
