@@ -9,6 +9,7 @@ from pydantic import Field
 from ._url_safety import safe_provenance_url
 from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry
+from .validation import canonical_field_value_schema, json_schema_types
 from .traces import RunTrace, RunTraceStore
 
 _EXECUTION_PROVENANCE_KEYS = (
@@ -68,6 +69,49 @@ def _provenance(tool: ToolSpec) -> dict[str, object]:
     return provenance
 
 
+def _type_signature(schema: dict[str, Any]) -> str:
+    types = sorted(json_schema_types(schema))
+    non_null = [value for value in types if value != "null"]
+    nullable = "null" in types
+
+    if len(non_null) == 1 and non_null[0] == "array":
+        items = schema.get("items")
+        item_signature = (
+            _type_signature(items)
+            if isinstance(items, dict)
+            else "?"
+        )
+        base = f"array<{item_signature}>"
+    elif non_null:
+        base = "|".join(non_null)
+    elif nullable:
+        base = "null"
+    else:
+        base = "?"
+
+    if nullable and base != "null":
+        return f"{base}|null"
+    return base
+
+
+class FieldInspection(StrictModel):
+    """Derived semantic/type/unit view of one declared output field."""
+
+    name: str
+    semantic_id: str | None = None
+    type_signature: str = "?"
+    json_types: list[str] = Field(default_factory=list)
+    source_unit: str | None = None
+    unit: str | None = None
+    dimension: str | None = None
+    normalized: bool = False
+    normalization_scale: float | None = None
+    normalization_offset: float | None = None
+    identifier: bool = False
+    source_path: list[str] = Field(default_factory=list)
+    result_path: list[str] = Field(default_factory=list)
+
+
 class EndpointInspection(StrictModel):
     """Derived operational view of one registered endpoint."""
 
@@ -79,6 +123,7 @@ class EndpointInspection(StrictModel):
     parameter_count: int = Field(ge=0)
     required_parameter_count: int = Field(ge=0)
     output_field_count: int = Field(ge=0)
+    fields: list[FieldInspection] = Field(default_factory=list)
     fingerprint: str
 
 
@@ -175,6 +220,46 @@ def inspect_tool_spec(tool: ToolSpec) -> ToolInspection:
                 parameter.required for parameter in endpoint.parameters
             ),
             output_field_count=len(endpoint.output_fields),
+            fields=[
+                FieldInspection(
+                    name=field.name,
+                    semantic_id=field.semantic_id,
+                    type_signature=_type_signature(
+                        canonical_field_value_schema(endpoint, field.name)
+                    ),
+                    json_types=sorted(
+                        json_schema_types(
+                            canonical_field_value_schema(endpoint, field.name)
+                        )
+                    ),
+                    source_unit=field.unit,
+                    unit=(
+                        field.unit_normalization.canonical_unit
+                        if field.unit_normalization is not None
+                        else field.unit
+                    ),
+                    dimension=(
+                        field.unit_normalization.dimension
+                        if field.unit_normalization is not None
+                        else None
+                    ),
+                    normalized=field.unit_normalization is not None,
+                    normalization_scale=(
+                        field.unit_normalization.scale
+                        if field.unit_normalization is not None
+                        else None
+                    ),
+                    normalization_offset=(
+                        field.unit_normalization.offset
+                        if field.unit_normalization is not None
+                        else None
+                    ),
+                    identifier=field.identifier,
+                    source_path=list(field.projection_path),
+                    result_path=list(field.result_projection_path),
+                )
+                for field in endpoint.output_fields
+            ],
             fingerprint=endpoint.fingerprint,
         )
         for endpoint in tool.endpoints
