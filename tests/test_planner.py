@@ -65,6 +65,23 @@ def test_planner_projects_matched_fields_and_identifier() -> None:
     assert "made_up" in plan.warnings[0]
 
 
+def test_call_separates_required_from_available_evidence() -> None:
+    reg = registry()
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="band gap",
+            arguments={"formula": "Si"},
+        )
+    )
+
+    call = plan.calls[0]
+    assert call.required_evidence == EvidenceRequirements()
+    assert call.evidence.units is True
+    assert call.available_evidence == call.evidence
+    assert call.evidence.provenance is True
+    assert call.evidence.license is True
+
+
 def test_multi_call_planner_prefers_complementary_semantic_field_coverage() -> None:
     reg = InMemoryRegistry()
     for name, access_mode in (
@@ -199,7 +216,11 @@ def test_per_field_units_allow_mixed_numeric_and_unitless_text() -> None:
     assert {call.tool for call in plan.calls} == {"materials", "papers"}
     calls = {call.tool: call for call in plan.calls}
     assert calls["materials"].field_evidence["band_gap"].units is True
+    assert calls["materials"].required_evidence.units is False
+    assert calls["materials"].evidence.units is True
     assert calls["papers"].field_evidence == {}
+    assert calls["papers"].required_evidence.units is False
+    assert calls["papers"].evidence.units is False
     assert plan.coverage is not None
     assert plan.coverage.complete is True
 
