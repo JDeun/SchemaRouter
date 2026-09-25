@@ -9,6 +9,12 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- typed scientific input quantities via `QuantityArgument(value, unit)`, with explicit trusted
+  `ParameterSpec.unit_normalization` contracts compiling canonical values into provider-native
+  arguments per route while preserving raw numeric arguments as backward-compatible provider-native
+  values;
+- input parameter type/unit observability in registry inspection and the HTML dashboard, including
+  provider unit, canonical unit, physical dimension, and affine normalization metadata;
 - conservative schema-drift analysis for trusted `EndpointSpec` / `ToolSpec` snapshots, including
   additive/breaking/security-review classification, security-sensitive HTTP method and side-effect
   changes, and `schemarouter inspect diff` for persisted SQLite registries; compatibility reports
@@ -116,6 +122,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Security
 
+- model analyzers and remote OpenAPI/MCP schemas may supply/preserve exact quantity unit labels but
+  cannot supply conversion factors, offsets, or physical-dimension authority; incompatible typed
+  quantity units prune only the affected candidate and never authorize inferred conversion;
 - scientific fallback now rejects known datatype mismatches, missing/asymmetric unit contracts,
   incompatible physical dimensions/canonical units, non-numeric unit-bearing fields, and
   non-finite/overflowing unit normalization results;
