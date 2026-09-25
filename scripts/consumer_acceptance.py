@@ -482,6 +482,98 @@ async def scenario_binding_aware_fallback() -> dict[str, object]:
     }
 
 
+async def scenario_required_field_fallback() -> dict[str, object]:
+    router = SchemaRouter()
+    tools = []
+    for name, provider, access_mode in (
+        ("provider_a", "a", "openapi"),
+        ("provider_b", "b", "optimade"),
+    ):
+        tool = ToolSpec(
+            name=name,
+            provider=provider,
+            access_mode=access_mode,
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="elastic_modulus",
+                            semantic_id="elastic_modulus",
+                            aliases=["elastic modulus"],
+                        ),
+                        FieldSpec(name="density"),
+                    ],
+                    output_schema={
+                        "type": "object",
+                        "properties": {
+                            "elastic_modulus": {"type": "number"},
+                            "density": {"type": "number"},
+                        },
+                        "additionalProperties": False,
+                    },
+                )
+            ],
+        )
+        router.add_tool(tool)
+        tools.append(tool)
+
+    calls = []
+    for tool in tools:
+        endpoint = tool.endpoint("search")
+        calls.append(
+            ToolCall(
+                tool=tool.name,
+                endpoint="search",
+                fields=["elastic_modulus"],
+                required_fields=["elastic_modulus"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        )
+    plan = ExecutionPlan(
+        query="elastic modulus",
+        registry_version=router.registry.version,
+        calls=[calls[0]],
+        fallback_routes=[
+            FallbackRoute(
+                primary_call_index=0,
+                alternatives=[calls[1]],
+            )
+        ],
+    )
+
+    router.executor.bind(
+        "provider_a",
+        lambda endpoint, arguments: {"density": 2.33},
+    )
+    router.executor.bind(
+        "provider_b",
+        lambda endpoint, arguments: {
+            "elastic_modulus": 130.0,
+            "density": 2.30,
+        },
+    )
+
+    result = (await router.execute(plan))[0]
+    assert result.tool == "provider_b"
+    assert result.data == {"elastic_modulus": 130.0}
+    assert router.unavailable_access_paths() == ()
+
+    missing_only = plan.model_copy(
+        update={"fallback_routes": []},
+        deep=True,
+    )
+    await _expect(RequiredFieldUnavailableError, router.execute(missing_only))
+    assert router.unavailable_access_paths() == ()
+
+    return {
+        "required_field_fallback": result.tool,
+        "health_poisoning": False,
+    }
+
+
 async def scenario_inspection_redaction() -> dict[str, object]:
     router = SchemaRouter()
     tool = ToolSpec(
@@ -583,6 +675,7 @@ SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("retry_and_budget", scenario_retry_and_budget),
     ("parallel_read_only", scenario_parallel_read_only),
     ("binding_aware_fallback", scenario_binding_aware_fallback),
+    ("required_field_fallback", scenario_required_field_fallback),
     ("inspection_redaction", scenario_inspection_redaction),
     ("persistence_traces_dashboard", scenario_persistence_traces_and_dashboard),
 )
