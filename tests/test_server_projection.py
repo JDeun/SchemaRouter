@@ -405,3 +405,25 @@ def test_field_result_path_defaults_to_existing_projection_shape() -> None:
 
     assert nested.result_projection_path == ("user", "profile", "name")
     assert canonical.result_projection_path == ("elastic_modulus",)
+
+
+
+def test_server_projection_remapped_source_requires_explicit_raw_output_schema() -> None:
+    with pytest.raises(ValueError, match="requires an explicit output_schema"):
+        EndpointSpec(
+            name="search",
+            read_only=True,
+            output_fields=[
+                FieldSpec(
+                    name="elastic_modulus",
+                    path=["_provider_b_elasticity"],
+                    result_path=["elastic_modulus"],
+                )
+            ],
+            server_projection=ServerProjectionSpec(
+                parameter="response_fields",
+                field_map={
+                    "elastic_modulus": "_provider_b_elasticity",
+                },
+            ),
+        )
