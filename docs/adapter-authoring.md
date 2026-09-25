@@ -205,39 +205,8 @@ downstream context provider-neutral.
 
 ## Scientific datatype and unit contracts
 
-Adapters that expose scientific quantities should preserve both the raw value schema and source
-unit on each projectable field.
-
-```python
-FieldSpec(
-    name="wavelength",
-    semantic_id="wavelength",
-    json_schema={"type": "number"},
-    unit="nm",
-    unit_normalization=UnitNormalizationSpec(
-        dimension="length",
-        canonical_unit="m",
-        scale=1e-9,
-    ),
-)
-```
-
-Do not guess unit conversion from a remote label. Only populate `unit_normalization` when the
-adapter/application has a trusted, exact conversion contract. `unit` is the provider source unit;
-the canonical unit is the unit returned after SchemaRouter projection/normalization.
-
-A unit-bearing field must resolve to a numeric scalar or numeric-array schema. Adapters should
-populate `FieldSpec.json_schema` directly where possible; if the type is only present in the
-endpoint output schema, SchemaRouter validates the declared field path against that raw schema.
-
-For cross-provider fallback, type and unit metadata are part of semantic compatibility, so adapter
-quality directly affects safe route substitution.
-
-
-## Scientific datatype and unit contracts
-
-For scientific quantities, adapters should declare both the value shape and source unit whenever
-the source schema makes them known:
+Adapters that expose scientific quantities should preserve both the raw value schema and the exact
+provider source unit whenever the source contract makes them known.
 
 ```python
 FieldSpec(
@@ -253,14 +222,34 @@ FieldSpec(
 )
 ```
 
-Do not attach a unit to a textual/categorical field. Unit normalization requires a numeric scalar
-or recursively numeric-array schema, supplied either by the field contract or by the endpoint raw
-output schema.
+`FieldSpec.unit` is the provider/source unit. `unit_normalization` is optional and must only be
+populated when trusted local code has an exact affine conversion contract:
 
-If both `FieldSpec.json_schema` and the endpoint raw `output_schema` describe the same field,
-their datatype shapes must be compatible. Field-level schemas are also enforced at execution time,
-so a loose provider response schema cannot silently bypass a stronger local field contract.
+```text
+canonical_value = source_value * scale + offset
+```
 
-Automatic cross-provider fallback for unit-bearing fields requires an explicit datatype contract on
-both routes. Unit strings are exact identifiers, not a unit parser: SchemaRouter never derives
-conversion factors from prefixes or spelling. Conversions remain trusted local affine contracts.
+SchemaRouter never infers a conversion factor from a unit label, SI prefix, spelling, or model
+output. Unit symbols remain case- and punctuation-sensitive. A remote label such as `nm`, `GPa`,
+or `degC` is descriptive until a trusted adapter/application declares the conversion.
+
+The built-in OpenAPI and MCP adapters preserve recognized schema annotations
+`x-ucum-unit`, `x-unit`, and `unit` as the source-unit label. They do **not** create a
+`UnitNormalizationSpec` from those strings. OPTIMADE continues to preserve provider-declared
+units through its schema adapter.
+
+Unit normalization requires a numeric scalar or recursively numeric-array schema, supplied either
+by `FieldSpec.json_schema` or by the endpoint raw `output_schema`. If both field-level and raw
+endpoint schemas describe the value, their datatype shapes must be compatible. Field-level schemas
+are enforced at execution time, so a loose provider response schema cannot bypass a stronger local
+field contract.
+
+For automatic cross-provider fallback, unit-bearing fields require an explicit datatype contract on
+both routes. Unknown datatype + known unit is insufficient evidence for automatic substitution.
+Fallback requires semantic compatibility plus compatible result datatype and either:
+
+- the same exact source unit; or
+- explicit matching physical `dimension` and `canonical_unit` normalization contracts.
+
+Text/document fields normally use `unit=None`; no unit metadata is required for strings such as
+abstracts, snippets, titles, or prose.
