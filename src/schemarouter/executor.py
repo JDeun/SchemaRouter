@@ -1052,6 +1052,8 @@ class RegistryExecutor:
             spec = field.unit_normalization
 
             def convert_numeric(item: Any) -> Any:
+                if item is None:
+                    return None
                 if isinstance(item, list):
                     return [convert_numeric(child) for child in item]
                 if isinstance(item, bool) or not isinstance(item, (int, float)):
