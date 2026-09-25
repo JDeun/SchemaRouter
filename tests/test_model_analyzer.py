@@ -2,6 +2,7 @@ import pytest
 
 from schemarouter import (
     EndpointSpec,
+    EvidenceRequirements,
     FieldSpec,
     ModelAnalysisError,
     ModelQueryAnalyzer,
@@ -237,3 +238,57 @@ async def test_model_analyzer_catalog_exposes_qualifiers_without_execution_metad
         "temperature": "300 K",
         "phase": "alpha",
     }
+
+
+@pytest.mark.asyncio
+async def test_model_analyzer_preserves_caller_field_evidence_without_model_authority() -> None:
+    captured = {}
+
+    async def model(payload: dict) -> dict:
+        captured.update(payload)
+        return {
+            "preferred_tools": ["directory"],
+            "preferred_endpoints": ["directory.get_user"],
+            "arguments": {"user_id": "42"},
+            "fields": ["name"],
+            "concepts": ["name"],
+            "evidence": {},
+        }
+
+    router = SchemaRouter(analyzer=ModelQueryAnalyzer(model))
+    router.add_tool(
+        ToolSpec(
+            name="directory",
+            endpoints=[
+                EndpointSpec(
+                    name="get_user",
+                    read_only=True,
+                    parameters=[ParameterSpec(name="user_id", required=True)],
+                    output_fields=[
+                        FieldSpec(name="user_id", identifier=True),
+                        FieldSpec(
+                            name="display_name",
+                            semantic_id="name",
+                            aliases=["name"],
+                            source_type="directory",
+                        ),
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = await router.aplan(
+        PlanRequest(
+            query="42번 사용자의 이름",
+            arguments={"user_id": "42"},
+            field_evidence={
+                "name": EvidenceRequirements(source_type="directory"),
+            },
+        )
+    )
+
+    assert plan.executable
+    assert plan.calls[0].fields == ["user_id", "display_name"]
+    assert plan.calls[0].field_evidence["display_name"].source_type == "directory"
+    assert "field_evidence" not in captured
