@@ -220,3 +220,37 @@ def test_candidate_index_empty_lookup_matches_exhaustive_no_candidate_plan() -> 
 
     assert indexed.model_dump() == exhaustive.model_dump()
     assert indexed.calls == []
+
+
+
+def test_candidate_index_covers_parameter_alias_matches() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="materials",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    parameters=[
+                        ParameterSpec(
+                            name="chemical_formula",
+                            aliases=["formula"],
+                            required=True,
+                        )
+                    ],
+                    output_fields=[FieldSpec(name="value")],
+                )
+            ],
+        )
+    )
+    request = PlanRequest(
+        query="unrelated",
+        arguments={"formula": "Si"},
+    )
+
+    indexed = SchemaPlanner(registry, candidate_index=True).plan(request)
+    exhaustive = SchemaPlanner(registry, candidate_index=False).plan(request)
+
+    assert indexed.model_dump() == exhaustive.model_dump()
+    assert indexed.calls[0].arguments == {"chemical_formula": "Si"}
