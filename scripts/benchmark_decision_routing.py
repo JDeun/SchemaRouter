@@ -42,6 +42,8 @@ class BenchmarkCase:
     expected: str | None
     category: str = "smoke"
     expect_abstain: bool = False
+    split: str = "unspecified"
+    language: str = "unspecified"
 
 
 @dataclass
@@ -49,6 +51,8 @@ class BenchmarkRow:
     backend: str
     case_id: str
     category: str
+    split: str
+    language: str
     query: str
     expected: str | None
     predicted: str | None
@@ -231,6 +235,8 @@ def load_corpus(path: str | os.PathLike[str], *, allowed_routes: set[str]) -> li
             expected=raw.get("expected"),
             category=str(raw.get("category", "uncategorized")).strip() or "uncategorized",
             expect_abstain=bool(raw.get("expect_abstain", False)),
+            split=str(raw.get("split", "unspecified")).strip() or "unspecified",
+            language=str(raw.get("language", "unspecified")).strip() or "unspecified",
         )
         if not case.id or case.id in seen_ids:
             raise ValueError(f"corpus item {index} has a missing or duplicate id")
@@ -428,6 +434,8 @@ async def benchmark_planner(
                     backend=name,
                     case_id=case.id,
                     category=case.category,
+                    split=case.split,
+                    language=case.language,
                     query=case.query,
                     expected=case.expected,
                     predicted=predicted,
@@ -459,6 +467,8 @@ async def benchmark_planner(
                     backend=name,
                     case_id=case.id,
                     category=case.category,
+                    split=case.split,
+                    language=case.language,
                     query=case.query,
                     expected=case.expected,
                     predicted=None,
@@ -487,11 +497,29 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
         category: sum(row.category == category for row in rows)
         for category in categories
     }
+    splits = sorted({row.split for row in rows})
+    languages = sorted({row.language for row in rows})
+    split_counts = {
+        split: sum(row.split == split for row in rows)
+        for split in splits
+    }
+    language_counts = {
+        language: sum(row.language == language for row in rows)
+        for language in languages
+    }
     category_correct = {
         category: sum(
             row.correct for row in rows if row.category == category
         )
         for category in categories
+    }
+    split_correct = {
+        split: sum(row.correct for row in rows if row.split == split)
+        for split in splits
+    }
+    language_correct = {
+        language: sum(row.correct for row in rows if row.language == language)
+        for language in languages
     }
     return {
         "cases": total,
@@ -536,6 +564,14 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
         "category_accuracy": {
             category: category_correct[category] / category_counts[category]
             for category in categories
+        },
+        "split_accuracy": {
+            split: split_correct[split] / split_counts[split]
+            for split in splits
+        },
+        "language_accuracy": {
+            language: language_correct[language] / language_counts[language]
+            for language in languages
         },
         "category_accuracy_ci95": {
             category: _wilson_interval(
@@ -724,6 +760,12 @@ async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--corpus", help="JSON corpus path. Omit for the three-case smoke set.")
     parser.add_argument("--max-cases", type=int, default=None)
+    parser.add_argument(
+        "--split",
+        choices=("dev", "calibration", "test"),
+        default=None,
+        help="Optional corpus split filter for v2+ corpora.",
+    )
     parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument("--json-out", default=None)
     parser.add_argument("--csv-out", default=None)
@@ -739,6 +781,16 @@ async def main() -> None:
             "It receives [query, option_text, ...] and returns one vector per input."
         ),
     )
+    parser.add_argument(
+        "--candidate-recall-embedding-callable",
+        help=(
+            "Optional embedding callable used only for bounded semantic candidate recall "
+            "before the final decision backend."
+        ),
+    )
+    parser.add_argument("--candidate-recall-limit", type=int, default=4)
+    parser.add_argument("--candidate-recall-min-similarity", type=float, default=-1.0)
+    parser.add_argument("--candidate-recall-min-margin", type=float, default=0.0)
     parser.add_argument("--min-similarity", type=float, default=-1.0)
     parser.add_argument("--min-margin", type=float, default=0.0)
     parser.add_argument(
@@ -843,6 +895,8 @@ async def main() -> None:
         raise ValueError("--repeat must be >= 1")
     if args.max_cases is not None and args.max_cases < 1:
         raise ValueError("--max-cases must be >= 1")
+    if args.candidate_recall_limit < 1:
+        raise ValueError("--candidate-recall-limit must be >= 1")
     if args.ollama_timeout <= 0:
         raise ValueError("--ollama-timeout must be > 0")
     if args.laya_max_loaded < 1:
@@ -865,6 +919,10 @@ async def main() -> None:
         if args.corpus
         else list(SMOKE_CASES)
     )
+    if args.split is not None:
+        cases = [case for case in cases if case.split == args.split]
+        if not cases:
+            raise ValueError(f"corpus contains no cases for split {args.split!r}")
     if args.max_cases is not None:
         cases = cases[: args.max_cases]
     if args.repeat > 1:
@@ -875,14 +933,40 @@ async def main() -> None:
                 expected=case.expected,
                 category=case.category,
                 expect_abstain=case.expect_abstain,
+                split=case.split,
+                language=case.language,
             )
             for iteration in range(args.repeat)
             for case in cases
         ]
 
+    candidate_recall_backend = None
+    if args.candidate_recall_embedding_callable:
+        candidate_recall_embedder = load_callable(
+            args.candidate_recall_embedding_callable,
+            option_name="--candidate-recall-embedding-callable",
+        )
+        candidate_recall_backend = EmbeddingDecisionBackend(
+            candidate_recall_embedder,
+            min_similarity=args.candidate_recall_min_similarity,
+            min_margin=args.candidate_recall_min_margin,
+        )
+
     planners: list[tuple[str, SchemaPlanner, RecordingDecisionBackend | None]] = [
         ("keyword", SchemaPlanner(registry), None)
     ]
+    if candidate_recall_backend is not None:
+        planners.append(
+            (
+                "keyword+semantic-recall",
+                SchemaPlanner(
+                    registry,
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
+                ),
+                None,
+            )
+        )
 
     if args.model_callable:
         model_callable = load_callable(
@@ -892,7 +976,12 @@ async def main() -> None:
         planners.append(
             (
                 "model-query-analyzer",
-                SchemaPlanner(registry, analyzer=ModelQueryAnalyzer(model_callable)),
+                SchemaPlanner(
+                    registry,
+                    analyzer=ModelQueryAnalyzer(model_callable),
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
+                ),
                 None,
             )
         )
@@ -922,6 +1011,8 @@ async def main() -> None:
                         candidate_abstention=args.candidate_abstention,
                         fallback="deterministic",
                     ),
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
                 ),
                 recorder,
             )
@@ -949,6 +1040,8 @@ async def main() -> None:
                         candidate_abstention=args.candidate_abstention,
                         fallback="deterministic",
                     ),
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
                 ),
                 recorder,
             )
@@ -979,6 +1072,8 @@ async def main() -> None:
                         candidate_abstention=args.candidate_abstention,
                         fallback="deterministic",
                     ),
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
                 ),
                 recorder,
             )
@@ -1007,6 +1102,8 @@ async def main() -> None:
                         candidate_abstention=args.candidate_abstention,
                         fallback="deterministic",
                     ),
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
                 ),
                 recorder,
             )
@@ -1032,6 +1129,14 @@ async def main() -> None:
         "case_count": len(cases),
         "decision_recall_on_empty": args.decision_recall_on_empty,
         "candidate_abstention": args.candidate_abstention,
+        "split_filter": args.split,
+        "semantic_candidate_recall": {
+            "enabled": candidate_recall_backend is not None,
+            "embedding_callable": args.candidate_recall_embedding_callable,
+            "limit": args.candidate_recall_limit,
+            "min_similarity": args.candidate_recall_min_similarity,
+            "min_margin": args.candidate_recall_min_margin,
+        },
         "reproducibility": {
             "source_revision": source_revision,
             "corpus_sha256": _corpus_sha256(args.corpus),
