@@ -1185,3 +1185,188 @@ def test_equal_relevance_prefers_explicit_server_projection() -> None:
     plan = SchemaPlanner(reg).plan("elastic modulus")
 
     assert plan.calls[0].tool == "z_projecting"
+
+
+
+def test_parameter_alias_maps_same_value_without_semantic_transformation() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="provider_b",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    parameters=[
+                        ParameterSpec(
+                            name="chemical_formula",
+                            aliases=["formula"],
+                            required=True,
+                        )
+                    ],
+                    output_fields=[
+                        FieldSpec(
+                            name="elastic_modulus",
+                            aliases=["elastic modulus"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    marker = {"formula": "Si"}
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="elastic modulus",
+            arguments=marker,
+        )
+    )
+
+    assert plan.executable
+    assert plan.calls[0].arguments == {"chemical_formula": "Si"}
+    assert marker == {"formula": "Si"}
+
+
+def test_exact_parameter_name_wins_over_competing_alias() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="provider",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    parameters=[
+                        ParameterSpec(name="formula", required=True),
+                        ParameterSpec(
+                            name="chemical_formula",
+                            aliases=["formula"],
+                            required=False,
+                        ),
+                    ],
+                    output_fields=[FieldSpec(name="value")],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="value",
+            arguments={"formula": "Si"},
+        )
+    )
+
+    assert plan.calls[0].arguments == {"formula": "Si"}
+    assert "chemical_formula" not in plan.calls[0].arguments
+
+
+def test_ambiguous_parameter_alias_never_guesses_a_target() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="provider",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    parameters=[
+                        ParameterSpec(
+                            name="formula",
+                            aliases=["material"],
+                            required=True,
+                        ),
+                        ParameterSpec(
+                            name="material_id",
+                            aliases=["material"],
+                            required=True,
+                        ),
+                    ],
+                    output_fields=[FieldSpec(name="value")],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="value",
+            arguments={"material": "Si"},
+        )
+    )
+
+    assert plan.calls[0].arguments == {}
+    assert sorted(plan.calls[0].missing_required_arguments) == [
+        "formula",
+        "material_id",
+    ]
+    assert plan.executable is False
+    assert any("ambiguous parameter aliases: material" in warning for warning in plan.warnings)
+
+
+def test_fallback_compiles_provider_specific_parameter_aliases_independently() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="provider_a",
+            provider="a",
+            access_mode="openapi",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    parameters=[
+                        ParameterSpec(name="formula", required=True)
+                    ],
+                    output_fields=[
+                        FieldSpec(
+                            name="elastic_modulus",
+                            semantic_id="elastic_modulus",
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    registry.register(
+        ToolSpec(
+            name="provider_b",
+            provider="b",
+            access_mode="optimade",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    parameters=[
+                        ParameterSpec(
+                            name="chemical_formula",
+                            aliases=["formula"],
+                            required=True,
+                        )
+                    ],
+                    output_fields=[
+                        FieldSpec(
+                            name="elasticity",
+                            semantic_id="elastic_modulus",
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="elastic modulus",
+            preferred_tools=["provider_a"],
+            arguments={"formula": "Si"},
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.calls[0].arguments == {"formula": "Si"}
+    route = plan.fallback_route(0)
+    assert route is not None
+    assert route.alternatives[0].tool == "provider_b"
+    assert route.alternatives[0].arguments == {"chemical_formula": "Si"}
