@@ -17,7 +17,10 @@ from schemarouter import (
     EndpointSpec,
     ExecutionBudget,
     ExecutionBudgetExceededError,
+    ExecutionPlan,
     ExecutionPolicy,
+    FallbackRoute,
+    FieldSpec,
     PlanRequest,
     PolicyRule,
     PolicyViolationError,
@@ -28,6 +31,7 @@ from schemarouter import (
     SchemaValidationError,
     SQLiteRegistry,
     SQLiteRunTraceStore,
+    ToolCall,
     ToolSpec,
     __version__,
     compare_endpoint_specs,
@@ -402,6 +406,82 @@ async def scenario_parallel_read_only() -> dict[str, object]:
     return {"result_count": len(results), "peak_concurrency": peak}
 
 
+async def scenario_binding_aware_fallback() -> dict[str, object]:
+    router = SchemaRouter()
+    primary = ToolSpec(
+        name="primary_route",
+        provider="provider",
+        access_mode="openapi",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    fallback = ToolSpec(
+        name="fallback_route",
+        provider="provider",
+        access_mode="python",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    router.add_tool(primary)
+    router.add_tool(fallback)
+    router.executor.bind(
+        "fallback_route",
+        lambda endpoint, arguments: {"value": "fallback"},
+    )
+
+    primary_endpoint = primary.endpoint("read")
+    fallback_endpoint = fallback.endpoint("read")
+    plan = ExecutionPlan(
+        query="value",
+        registry_version=router.registry.version,
+        calls=[
+            ToolCall(
+                tool="primary_route",
+                endpoint="read",
+                fields=["value"],
+                schema_fingerprint=primary_endpoint.fingerprint,
+                tool_fingerprint=primary.fingerprint,
+            )
+        ],
+        fallback_routes=[
+            FallbackRoute(
+                primary_call_index=0,
+                alternatives=[
+                    ToolCall(
+                        tool="fallback_route",
+                        endpoint="read",
+                        fields=["value"],
+                        schema_fingerprint=fallback_endpoint.fingerprint,
+                        tool_fingerprint=fallback.fingerprint,
+                    )
+                ],
+            )
+        ],
+    )
+
+    result = (await router.execute(plan))[0]
+    snapshot = router.inspect()
+
+    assert result.tool == "fallback_route"
+    assert result.data == {"value": "fallback"}
+    assert snapshot.execution.binding_states["primary_route"] == "unbound"
+    assert snapshot.execution.binding_states["fallback_route"] == "ready"
+    return {
+        "binding_fallback": result.tool,
+        "binding_states": snapshot.execution.binding_states,
+    }
+
+
 async def scenario_inspection_redaction() -> dict[str, object]:
     router = SchemaRouter()
     tool = ToolSpec(
@@ -502,6 +582,7 @@ SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("output_validation", scenario_output_validation),
     ("retry_and_budget", scenario_retry_and_budget),
     ("parallel_read_only", scenario_parallel_read_only),
+    ("binding_aware_fallback", scenario_binding_aware_fallback),
     ("inspection_redaction", scenario_inspection_redaction),
     ("persistence_traces_dashboard", scenario_persistence_traces_and_dashboard),
 )

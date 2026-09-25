@@ -290,3 +290,50 @@ Where a provider exposes a documented cheap read-only status/info endpoint, appl
 that endpoint for the probe rather than issuing a normal data query.
 
 This means an all-down state is a temporary availability state, not an absorbing terminal state.
+
+
+## Availability is not the same as executability
+
+SchemaRouter keeps three different questions separate:
+
+1. **Schema/policy validity** — is this call still authorized and compiled against the current
+   contract?
+2. **Access health** — is the remote/local access path currently outside its bounded unavailable
+   cooldown?
+3. **Binding readiness** — is a trusted invoker currently bound to the same tool fingerprint?
+
+A read-only fallback must be valid on all three axes before it can execute.
+
+Optional fallback routes that are currently unbound, stale-bound, or no longer valid under local
+policy are pruned before the primary invocation. They do not block an otherwise valid primary.
+A mutating fallback is different: it violates the structural fallback contract and invalidates the
+whole automatic fallback chain.
+
+If the planned primary is schema/policy-valid but currently unbound, SchemaRouter may move directly
+to the next precompiled, bound, read-only alternative. Typed events record this as:
+
+```text
+tool.fallback  reason=binding_unavailable
+```
+
+Schema drift and policy violations on the primary still fail closed and are never converted into
+availability fallback.
+
+Live inspection exposes both health and binding readiness:
+
+```python
+snapshot = router.inspect()
+print(snapshot.execution.binding_states)
+# {"mp_api": "ready", "mp_optimade": "unbound"}
+# other possible states: "stale", "orphaned"
+
+print(snapshot.execution.unavailable_access_paths)
+# ["mp_api.search"]  # only when a bounded health cooldown is active
+```
+
+This prevents a healthy-but-unbound route from being confused with a network outage.
+
+
+An `orphaned` binding means a trusted invoker object still exists locally after the corresponding
+registry tool was removed. It cannot execute because registry validation happens first, but exposing
+the state makes cleanup/misconfiguration visible instead of presenting it as a healthy bound tool.

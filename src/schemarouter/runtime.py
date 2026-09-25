@@ -877,6 +877,15 @@ class SchemaRouter:
                             for candidate in original_chain
                             if candidate not in available_chain
                         ]
+                        reason = (
+                            "binding_unavailable"
+                            if call.tool_fingerprint is not None
+                            and not self.executor.is_binding_ready_for_contract(
+                                call.tool,
+                                call.tool_fingerprint,
+                            )
+                            else "cooldown"
+                        )
                         yield await emit(RunEvent.create(
                             event="tool.fallback",
                             run_id=run_id,
@@ -892,7 +901,7 @@ class SchemaRouter:
                                 "scope": scope,
                                 "provider": next_tool.provider,
                                 "access_mode": next_tool.access_mode,
-                                "reason": "cooldown",
+                                "reason": reason,
                                 "skipped_unavailable": skipped,
                             },
                         ))
@@ -1107,6 +1116,15 @@ class SchemaRouter:
                     for call in original_chain
                     if call not in chain
                 ]
+                reason = (
+                    "binding_unavailable"
+                    if primary_call.tool_fingerprint is not None
+                    and not self.executor.is_binding_ready_for_contract(
+                        primary_call.tool,
+                        primary_call.tool_fingerprint,
+                    )
+                    else "cooldown"
+                )
                 yield await emit(RunEvent.create(
                     event="tool.fallback",
                     run_id=run_id,
@@ -1122,7 +1140,7 @@ class SchemaRouter:
                         "scope": scope,
                         "provider": next_tool.provider,
                         "access_mode": next_tool.access_mode,
-                        "reason": "cooldown",
+                        "reason": reason,
                         "skipped_unavailable": skipped,
                     },
                 ))

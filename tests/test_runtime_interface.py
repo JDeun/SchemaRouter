@@ -803,3 +803,43 @@ async def test_parallel_event_stream_preserves_provider_fallback_trace() -> None
     assert end.data["fallback_used"] is True
     assert events[-1].event == "run.end"
     assert events[-1].data["fallback_count"] == 1
+
+
+
+@pytest.mark.asyncio
+async def test_event_stream_reports_binding_unavailable_fallback_reason() -> None:
+    router, plan = make_provider_fallback_router()
+
+    # Primary intentionally remains unbound.
+    router.executor.bind(
+        "mp_optimade",
+        lambda endpoint, arguments: {"value": "from-optimade"},
+    )
+    router.executor.bind(
+        "oqmd_api",
+        lambda endpoint, arguments: {"value": "from-oqmd"},
+    )
+
+    original_aplan = router.aplan
+
+    async def fixed_plan(request):
+        return plan
+
+    router.aplan = fixed_plan  # type: ignore[method-assign]
+    try:
+        events = [
+            event
+            async for event in router.astream_events("value")
+        ]
+    finally:
+        router.aplan = original_aplan  # type: ignore[method-assign]
+
+    fallback = next(event for event in events if event.event == "tool.fallback")
+    assert fallback.data["reason"] == "binding_unavailable"
+    assert fallback.data["scope"] == "same_provider"
+    assert fallback.tool == "mp_optimade"
+
+    starts = [event.tool for event in events if event.event == "tool.start"]
+    assert starts == ["mp_optimade"]
+    end = next(event for event in events if event.event == "tool.end")
+    assert end.tool == "mp_optimade"

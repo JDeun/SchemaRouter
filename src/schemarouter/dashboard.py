@@ -114,6 +114,11 @@ def render_dashboard(
         decision = ", ".join(
             f"{key}={value}" for key, value in sorted(live.planner.decision_policy.items())
         )
+        binding_states = ", ".join(
+            f"{key}={value}" for key, value in sorted(live.execution.binding_states.items())
+        )
+        unavailable = ", ".join(live.execution.unavailable_access_paths)
+        health_monitor = "running" if live.execution.health_monitor_running else "stopped"
         live_html = f"""
 <section>
 <h2>Live router</h2>
@@ -121,6 +126,9 @@ def render_dashboard(
 <div><strong>Analyzer</strong><br>{escape(live.planner.analyzer)}</div>
 <div><strong>Decision backend</strong><br>{escape(live.planner.decision_backend or "none")}</div>
 <div><strong>Bound tools</strong><br>{escape(", ".join(live.execution.bound_tools) or "none")}</div>
+<div><strong>Binding states</strong><br><code>{escape(binding_states or "none")}</code></div>
+<div><strong>Unavailable paths</strong><br>{escape(unavailable or "none")}</div>
+<div><strong>Health monitor</strong><br>{escape(health_monitor)}</div>
 <div><strong>Execution policy</strong><br><code>{escape(policy)}</code></div>
 <div><strong>Decision policy</strong><br><code>{escape(decision)}</code></div>
 </div>

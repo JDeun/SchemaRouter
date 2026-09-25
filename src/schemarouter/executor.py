@@ -322,6 +322,24 @@ class RegistryExecutor:
             self._unavailable_until.pop(key, None)
         return tuple(sorted(active))
 
+    def binding_status_for_contract(
+        self,
+        tool_key: str,
+        tool_fingerprint: str,
+    ) -> str:
+        if tool_key not in self._invokers:
+            return "unbound"
+        if self._binding_fingerprints.get(tool_key) != tool_fingerprint:
+            return "stale"
+        return "ready"
+
+    def is_binding_ready_for_contract(
+        self,
+        tool_key: str,
+        tool_fingerprint: str,
+    ) -> bool:
+        return self.binding_status_for_contract(tool_key, tool_fingerprint) == "ready"
+
     def ordered_available_fallback_chain(
         self,
         call: ToolCall,
@@ -329,15 +347,51 @@ class RegistryExecutor:
     ) -> list[ToolCall]:
         self.validate_fallback_chain(call, alternatives)
         chain = [call, *alternatives]
-        available = [
-            candidate
-            for candidate in chain
-            if self.is_access_available(candidate.tool, candidate.endpoint)
-        ]
-        if available:
-            return available
-        raise InvocationUnavailableError(
-            "all precompiled access paths are temporarily unavailable"
+        executable: list[ToolCall] = []
+        bound_candidate_seen = False
+
+        for index, candidate in enumerate(chain):
+            try:
+                self._validated_call_contract(candidate)
+            except PlanValidationError:
+                if index == 0:
+                    raise
+                # Optional alternatives that no longer satisfy their schema/policy contract are
+                # pruned before the primary executes rather than blocking an otherwise valid call.
+                continue
+
+            if candidate.tool_fingerprint is None:
+                if index == 0:
+                    raise PlanValidationError(
+                        "tool_fingerprint is required for automatic fallback execution"
+                    )
+                continue
+
+            binding_status = self.binding_status_for_contract(
+                candidate.tool,
+                candidate.tool_fingerprint,
+            )
+            if binding_status != "ready":
+                continue
+
+            bound_candidate_seen = True
+            if not self.is_access_available_for_contract(
+                candidate.tool,
+                candidate.endpoint,
+                candidate.tool_fingerprint,
+            ):
+                continue
+
+            executable.append(candidate)
+
+        if executable:
+            return executable
+        if bound_candidate_seen:
+            raise InvocationUnavailableError(
+                "all executable precompiled access paths are temporarily unavailable"
+            )
+        raise ExecutionError(
+            "no currently bound executable access path exists in the precompiled fallback chain"
         )
 
     def bind(self, tool_key: str, invoker: EndpointInvoker) -> None:
@@ -352,6 +406,24 @@ class RegistryExecutor:
     def bound_keys(self) -> tuple[str, ...]:
         """Return live trusted-invoker keys without exposing invoker objects."""
         return tuple(sorted(self._invokers))
+
+    def binding_states(self) -> dict[str, str]:
+        """Return privacy-safe binding readiness for registered and orphaned bindings."""
+
+        states: dict[str, str] = {}
+        registry_keys = set(self.registry.keys())
+        binding_keys = set(self._invokers)
+
+        for key in sorted(registry_keys | binding_keys):
+            if key not in registry_keys:
+                states[key] = "orphaned"
+                continue
+            tool = self.registry.get(key)
+            states[key] = self.binding_status_for_contract(
+                key,
+                tool.fingerprint,
+            )
+        return states
 
     def _validated_call_contract(
         self,
@@ -692,25 +764,38 @@ class RegistryExecutor:
     ) -> None:
         chain = [call, *alternatives]
 
-        # Read-only eligibility is the first invariant of automatic fallback. Check it
-        # before policy/binding evaluation so a mutating alternative is rejected specifically
-        # as an invalid fallback contract rather than surfacing an unrelated mutation-policy
-        # error.
-        for candidate in chain:
+        # Read-only eligibility is a structural invariant for every *current* fallback
+        # contract. Optional alternatives that were removed or drifted since planning are already
+        # non-executable and are pruned later; they must not block a still-valid primary.
+        for index, candidate in enumerate(chain):
             try:
-                endpoint = self.registry.endpoint(candidate.tool, candidate.endpoint)
+                tool = self.registry.get(candidate.tool)
+                endpoint = tool.endpoint(candidate.endpoint)
             except KeyError as exc:
-                raise PlanValidationError(
-                    f"unknown tool/endpoint: {candidate.tool}.{candidate.endpoint}"
-                ) from exc
+                if index == 0:
+                    raise PlanValidationError(
+                        f"unknown tool/endpoint: {candidate.tool}.{candidate.endpoint}"
+                    ) from exc
+                continue
+
+            if index > 0 and (
+                candidate.schema_fingerprint != endpoint.fingerprint
+                or (
+                    candidate.tool_fingerprint is not None
+                    and candidate.tool_fingerprint != tool.fingerprint
+                )
+            ):
+                continue
+
             if endpoint.read_only is not True:
                 raise PlanValidationError(
-                    "automatic fallback requires every candidate to be explicitly read-only; "
-                    f"got {candidate.tool}.{candidate.endpoint}"
+                    "automatic fallback requires every current candidate to be explicitly "
+                    f"read-only; got {candidate.tool}.{candidate.endpoint}"
                 )
 
-        for candidate in chain:
-            self._execution_state(candidate)
+        # The primary call remains fail-closed for schema/policy drift. Optional alternatives are
+        # validated/pruned individually by ordered_available_fallback_chain before execution.
+        self._validated_call_contract(call)
 
     async def execute_call_with_fallback(
         self,
@@ -724,10 +809,9 @@ class RegistryExecutor:
         tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
         last_unavailable: InvocationUnavailableError | None = None
 
-        # Validate the entire bounded chain before invoking the primary. This prevents a malformed,
-        # stale, unbound, policy-denied, or mutating fallback from being discovered only after an
-        # earlier route has already executed. Known-unavailable paths are skipped for a bounded
-        # cooldown rather than incurring the same failed network wait on every request.
+        # Validate the bounded chain before invoking anything. Mutating alternatives invalidate
+        # the chain structurally. Optional read-only alternatives that are stale, unbound,
+        # policy-denied, or in cooldown are pruned before the primary runs.
         chain = (
             self.ordered_available_fallback_chain(call, alternatives)
             if alternatives
@@ -763,21 +847,32 @@ class RegistryExecutor:
         ]
 
     def validate_parallel_read_only(self, plan: ExecutionPlan) -> None:
-        """Fail before launching tasks unless every call is currently trusted read-only."""
+        """Fail before launching tasks unless every primary group has a trusted read-only route."""
 
         for index, call in enumerate(plan.calls):
             route = plan.fallback_route(index)
-            candidates = [call, *(route.alternatives if route is not None else [])]
-            for candidate in candidates:
-                tool, endpoint, _ = self._execution_state(candidate)
-                if endpoint.read_only is not True:
-                    raise PlanValidationError(
-                        "parallel_read_only execution requires every primary/fallback call to be "
-                        f"explicitly read-only; got {candidate.tool}.{candidate.endpoint}"
-                    )
-                # Keep the local tool snapshot read so policy/binding validation happens for every
-                # call before any parallel task is launched.
-                del tool
+            if route is not None:
+                # This performs structural read-only validation for the whole bounded chain,
+                # keeps the primary schema/policy fail-closed, and requires at least one currently
+                # bound + available candidate without letting optional unusable fallbacks block it.
+                self.ordered_available_fallback_chain(
+                    call,
+                    route.alternatives,
+                )
+                continue
+
+            try:
+                endpoint = self.registry.endpoint(call.tool, call.endpoint)
+            except KeyError as exc:
+                raise PlanValidationError(
+                    f"unknown tool/endpoint: {call.tool}.{call.endpoint}"
+                ) from exc
+            if endpoint.read_only is not True:
+                raise PlanValidationError(
+                    "parallel_read_only execution requires every call to be explicitly "
+                    f"read-only; got {call.tool}.{call.endpoint}"
+                )
+            self._execution_state(call)
 
     async def execute_parallel_read_only(
         self,

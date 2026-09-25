@@ -134,6 +134,7 @@ class ExecutionInspection(StrictModel):
 
     policy: dict[str, object] = Field(default_factory=dict)
     bound_tools: list[str] = Field(default_factory=list)
+    binding_states: dict[str, str] = Field(default_factory=dict)
     unavailable_access_paths: list[str] = Field(default_factory=list)
     health_monitor_running: bool = False
     health_probes: list[HealthProbeInspection] = Field(default_factory=list)
@@ -231,6 +232,7 @@ def inspect_router(router: Any) -> RouterInspection:
         execution=ExecutionInspection(
             policy=asdict(router.executor.policy),
             bound_tools=list(router.executor.bound_keys()),
+            binding_states=router.executor.binding_states(),
             unavailable_access_paths=[
                 f"{tool}.{endpoint}"
                 for tool, endpoint in router.executor.unavailable_access_paths()
