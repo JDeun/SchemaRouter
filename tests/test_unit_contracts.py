@@ -1224,3 +1224,112 @@ async def test_result_field_contracts_include_only_selected_fields() -> None:
     assert result.data == {"elastic_modulus": 130.0}
     assert set(result.field_contracts) == {"elastic_modulus"}
     assert result.field_contracts["elastic_modulus"].unit == "GPa"
+
+
+
+def test_dimensionless_numeric_field_does_not_require_unit() -> None:
+    field = FieldSpec(
+        name="poisson_ratio",
+        semantic_id="poisson_ratio",
+        json_schema={"type": "number"},
+        aliases=["Poisson ratio", "포아송비"],
+    )
+
+    assert field.unit is None
+    assert field.unit_normalization is None
+    assert field.json_schema == {"type": "number"}
+
+
+def test_dimensionless_numeric_fields_can_fallback_across_providers() -> None:
+    registry = InMemoryRegistry()
+    for name, provider in (
+        ("provider_a", "provider_a"),
+        ("provider_b", "provider_b"),
+    ):
+        registry.register(
+            ToolSpec(
+                name=name,
+                provider=provider,
+                endpoints=[
+                    EndpointSpec(
+                        name="read",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(
+                                name="poisson_ratio",
+                                semantic_id="poisson_ratio",
+                                json_schema={"type": "number"},
+                                aliases=["Poisson ratio", "포아송비"],
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="포아송비",
+            preferred_tools=["provider_a"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.calls[0].tool == "provider_a"
+    route = plan.fallback_route(0)
+    assert route is not None
+    assert [call.tool for call in route.alternatives] == ["provider_b"]
+
+
+def test_dimensionless_numeric_field_does_not_fallback_to_unit_bearing_quantity() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="dimensionless",
+            provider="provider_a",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="ratio",
+                            semantic_id="ratio",
+                            json_schema={"type": "number"},
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    registry.register(
+        ToolSpec(
+            name="unit_bearing",
+            provider="provider_b",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="ratio_with_unit",
+                            semantic_id="ratio",
+                            json_schema={"type": "number"},
+                            unit="Pa",
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="ratio",
+            preferred_tools=["dimensionless"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.calls[0].tool == "dimensionless"
+    assert plan.fallback_route(0) is None
