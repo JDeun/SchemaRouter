@@ -1660,11 +1660,21 @@ class SchemaPlanner:
             fields,
             intent.evidence,
         )
+        matched_field_evidence = self._matched_field_evidence(
+            candidate,
+            fields,
+            intent.field_evidence,
+        )
+        call_field_evidence = {
+            field_name: requirement
+            for field_name, (_, requirement) in matched_field_evidence.items()
+        }
         evidence_ok, evidence_warnings = self._assess_evidence_sync(
             request,
             candidate,
             fields,
             intent.evidence,
+            intent.field_evidence,
         )
         warnings.extend(evidence_warnings)
         if not evidence_ok:
@@ -1676,6 +1686,7 @@ class SchemaPlanner:
             arguments=arguments,
             fields=fields,
             evidence=evidence,
+            field_evidence=call_field_evidence,
             schema_fingerprint=endpoint.fingerprint,
             tool_fingerprint=candidate.tool.fingerprint,
             missing_required_arguments=missing,
@@ -1742,11 +1753,21 @@ class SchemaPlanner:
             fields,
             intent.evidence,
         )
+        matched_field_evidence = self._matched_field_evidence(
+            candidate,
+            fields,
+            intent.field_evidence,
+        )
+        call_field_evidence = {
+            field_name: requirement
+            for field_name, (_, requirement) in matched_field_evidence.items()
+        }
         evidence_ok, evidence_warnings = await self._assess_evidence_async(
             request,
             candidate,
             fields,
             intent.evidence,
+            intent.field_evidence,
         )
         warnings.extend(evidence_warnings)
         if not evidence_ok:
@@ -1758,6 +1779,7 @@ class SchemaPlanner:
             arguments=arguments,
             fields=fields,
             evidence=evidence,
+            field_evidence=call_field_evidence,
             schema_fingerprint=endpoint.fingerprint,
             tool_fingerprint=candidate.tool.fingerprint,
             missing_required_arguments=missing,
