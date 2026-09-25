@@ -245,6 +245,7 @@ class ResultFieldContract(StrictModel):
     source_unit: str | None = None
     unit: str | None = None
     dimension: str | None = None
+    dimensionless: bool = False
 
 
 class FieldSpec(StrictModel):
@@ -256,6 +257,7 @@ class FieldSpec(StrictModel):
     path: list[str] = Field(default_factory=list)
     result_path: list[str] = Field(default_factory=list)
     unit: str | None = None
+    dimensionless: bool = False
     unit_normalization: UnitNormalizationSpec | None = None
     identifier: bool = False
     source_type: str | None = None
@@ -274,6 +276,19 @@ class FieldSpec(StrictModel):
                 raise ValueError("field unit must be non-empty when provided")
             if self.unit != self.unit.strip():
                 raise ValueError("field unit must not have surrounding whitespace")
+        if self.dimensionless and self.unit is not None:
+            raise ValueError("dimensionless fields must not declare a unit")
+        if self.dimensionless and self.unit_normalization is not None:
+            raise ValueError("dimensionless fields must not declare unit normalization")
+        if self.dimensionless and self.json_schema:
+            if not _schema_supports_unit(
+                self.json_schema,
+                require_declared_type=True,
+            ):
+                raise ValueError(
+                    "dimensionless fields must declare a numeric scalar or numeric-array "
+                    "json_schema type"
+                )
         if self.unit_normalization is not None and self.unit is None:
             raise ValueError(
                 "unit_normalization requires the provider source unit in field.unit"
@@ -369,10 +384,15 @@ class EndpointSpec(StrictModel):
                         f"{self.name!r}: {field.name!r}"
                     )
 
-            if field.unit is None:
+            if field.unit is None and not field.dimensionless:
                 continue
 
             declared_quantity_schema = field.json_schema or raw_field_schema
+            if field.dimensionless and not declared_quantity_schema:
+                raise ValueError(
+                    "dimensionless fields require a declared numeric field schema in endpoint "
+                    f"{self.name!r}: {field.name!r}"
+                )
             if field.unit_normalization is not None and not declared_quantity_schema:
                 raise ValueError(
                     "unit normalization requires a declared numeric field schema in endpoint "
@@ -382,9 +402,10 @@ class EndpointSpec(StrictModel):
                 declared_quantity_schema,
                 require_declared_type=True,
             ):
+                label = "dimensionless field" if field.dimensionless else "field with unit metadata"
                 raise ValueError(
-                    "a field with unit metadata must resolve to a numeric scalar or "
-                    f"numeric-array schema in endpoint {self.name!r}: {field.name!r}"
+                    f"{label} must resolve to a numeric scalar or numeric-array schema "
+                    f"in endpoint {self.name!r}: {field.name!r}"
                 )
 
         if self.server_projection is not None:
