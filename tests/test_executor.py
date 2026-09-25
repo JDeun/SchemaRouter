@@ -17,6 +17,7 @@ from schemarouter import (
     PolicyRule,
     PolicyViolationError,
     RegistryExecutor,
+    RequiredFieldUnavailableError,
     RetryPolicy,
     SchemaDriftError,
     SchemaPlanner,
@@ -1294,3 +1295,319 @@ async def test_primary_policy_denial_never_falls_through_to_allowed_fallback() -
         await executor.execute(plan)
 
     assert fallback_called is False
+
+
+
+def _required_field_tool(
+    name: str,
+    *,
+    provider: str,
+    access_mode: str,
+) -> ToolSpec:
+    return ToolSpec(
+        name=name,
+        provider=provider,
+        access_mode=access_mode,
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                read_only=True,
+                output_fields=[
+                    FieldSpec(
+                        name="elastic_modulus",
+                        semantic_id="elastic_modulus",
+                        aliases=["탄성계수", "elastic modulus"],
+                    ),
+                    FieldSpec(name="density"),
+                ],
+                output_schema={
+                    "type": "object",
+                    "properties": {
+                        "elastic_modulus": {"type": "number"},
+                        "density": {"type": "number"},
+                    },
+                    "additionalProperties": False,
+                },
+            )
+        ],
+    )
+
+
+def _required_field_fallback_plan(registry: InMemoryRegistry) -> ExecutionPlan:
+    calls = []
+    for key in ("provider_a", "provider_b"):
+        tool = registry.get(key)
+        endpoint = tool.endpoint("search")
+        calls.append(
+            ToolCall(
+                tool=key,
+                endpoint="search",
+                fields=["elastic_modulus"],
+                required_fields=["elastic_modulus"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        )
+    return ExecutionPlan(
+        query="탄성계수",
+        registry_version=registry.version,
+        calls=[calls[0]],
+        fallback_routes=[
+            FallbackRoute(
+                primary_call_index=0,
+                alternatives=[calls[1]],
+            )
+        ],
+    )
+
+
+@pytest.mark.asyncio
+async def test_required_field_absence_falls_back_without_poisoning_health() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        _required_field_tool(
+            "provider_a",
+            provider="a",
+            access_mode="openapi",
+        )
+    )
+    registry.register(
+        _required_field_tool(
+            "provider_b",
+            provider="b",
+            access_mode="optimade",
+        )
+    )
+    plan = _required_field_fallback_plan(registry)
+    executor = RegistryExecutor(registry)
+    seen = []
+
+    def provider_a(endpoint, arguments):
+        seen.append("provider_a")
+        return {"density": 2.33}
+
+    def provider_b(endpoint, arguments):
+        seen.append("provider_b")
+        return {"elastic_modulus": 130.0, "density": 2.30}
+
+    executor.bind("provider_a", provider_a)
+    executor.bind("provider_b", provider_b)
+
+    result = (await executor.execute(plan))[0]
+
+    assert result.tool == "provider_b"
+    assert result.data == {"elastic_modulus": 130.0}
+    assert seen == ["provider_a", "provider_b"]
+    assert executor.unavailable_access_paths() == ()
+    assert executor.is_access_available("provider_a", "search") is True
+
+
+@pytest.mark.asyncio
+async def test_required_field_absence_is_not_retried_on_same_route() -> None:
+    registry = InMemoryRegistry()
+    tool = _required_field_tool(
+        "provider_a",
+        provider="a",
+        access_mode="openapi",
+    )
+    registry.register(tool)
+    endpoint = tool.endpoint("search")
+    call = ToolCall(
+        tool="provider_a",
+        endpoint="search",
+        fields=["elastic_modulus"],
+        required_fields=["elastic_modulus"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    executor = RegistryExecutor(registry)
+    attempts = 0
+
+    def missing(endpoint_name, arguments):
+        nonlocal attempts
+        attempts += 1
+        return {"density": 2.33}
+
+    executor.bind("provider_a", missing)
+
+    with pytest.raises(RequiredFieldUnavailableError, match="elastic_modulus"):
+        await executor.execute_call(
+            call,
+            retry=RetryPolicy(max_attempts=3),
+        )
+
+    assert attempts == 1
+    assert executor.unavailable_access_paths() == ()
+
+
+@pytest.mark.asyncio
+async def test_all_providers_missing_required_field_raise_request_scoped_error() -> None:
+    registry = InMemoryRegistry()
+    for name, provider, mode in (
+        ("provider_a", "a", "openapi"),
+        ("provider_b", "b", "optimade"),
+    ):
+        registry.register(
+            _required_field_tool(
+                name,
+                provider=provider,
+                access_mode=mode,
+            )
+        )
+
+    plan = _required_field_fallback_plan(registry)
+    executor = RegistryExecutor(registry)
+    executor.bind("provider_a", lambda endpoint, arguments: {"density": 2.33})
+    executor.bind("provider_b", lambda endpoint, arguments: {"density": 2.20})
+
+    with pytest.raises(RequiredFieldUnavailableError, match="elastic_modulus"):
+        await executor.execute(plan)
+
+    assert executor.unavailable_access_paths() == ()
+
+
+@pytest.mark.asyncio
+async def test_empty_search_result_can_fall_back_for_required_field() -> None:
+    registry = InMemoryRegistry()
+    tools = []
+    for name, provider, mode in (
+        ("provider_a", "a", "openapi"),
+        ("provider_b", "b", "optimade"),
+    ):
+        tool = ToolSpec(
+            name=name,
+            provider=provider,
+            access_mode=mode,
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="elastic_modulus",
+                            semantic_id="elastic_modulus",
+                        )
+                    ],
+                    output_schema={
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "elastic_modulus": {"type": "number"},
+                            },
+                        },
+                    },
+                )
+            ],
+        )
+        registry.register(tool)
+        tools.append(tool)
+
+    calls = []
+    for tool in tools:
+        endpoint = tool.endpoint("search")
+        calls.append(
+            ToolCall(
+                tool=tool.name,
+                endpoint="search",
+                fields=["elastic_modulus"],
+                required_fields=["elastic_modulus"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        )
+    plan = ExecutionPlan(
+        query="탄성계수",
+        registry_version=registry.version,
+        calls=[calls[0]],
+        fallback_routes=[
+            FallbackRoute(
+                primary_call_index=0,
+                alternatives=[calls[1]],
+            )
+        ],
+    )
+
+    executor = RegistryExecutor(registry)
+    executor.bind("provider_a", lambda endpoint, arguments: [])
+    executor.bind(
+        "provider_b",
+        lambda endpoint, arguments: [{"elastic_modulus": 130.0}],
+    )
+
+    result = (await executor.execute(plan))[0]
+
+    assert result.tool == "provider_b"
+    assert result.data == [{"elastic_modulus": 130.0}]
+    assert executor.unavailable_access_paths() == ()
+
+
+@pytest.mark.asyncio
+async def test_generic_schema_failure_with_required_field_never_falls_back() -> None:
+    registry = InMemoryRegistry()
+    for name, provider, mode in (
+        ("provider_a", "a", "openapi"),
+        ("provider_b", "b", "optimade"),
+    ):
+        registry.register(
+            _required_field_tool(
+                name,
+                provider=provider,
+                access_mode=mode,
+            )
+        )
+
+    plan = _required_field_fallback_plan(registry)
+    executor = RegistryExecutor(registry)
+    fallback_called = False
+
+    executor.bind(
+        "provider_a",
+        lambda endpoint, arguments: {"elastic_modulus": "invalid"},
+    )
+
+    def fallback(endpoint, arguments):
+        nonlocal fallback_called
+        fallback_called = True
+        return {"elastic_modulus": 130.0}
+
+    executor.bind("provider_b", fallback)
+
+    with pytest.raises(SchemaValidationError):
+        await executor.execute(plan)
+
+    assert fallback_called is False
+
+
+def test_required_fields_must_be_declared_and_projected() -> None:
+    registry = InMemoryRegistry()
+    tool = _required_field_tool(
+        "provider_a",
+        provider="a",
+        access_mode="openapi",
+    )
+    registry.register(tool)
+    endpoint = tool.endpoint("search")
+    executor = RegistryExecutor(registry)
+
+    undeclared = ToolCall(
+        tool="provider_a",
+        endpoint="search",
+        fields=["elastic_modulus"],
+        required_fields=["secret_field"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    with pytest.raises(PlanValidationError, match="undeclared required fields"):
+        executor.validate_call(undeclared)
+
+    unprojected = ToolCall(
+        tool="provider_a",
+        endpoint="search",
+        fields=["density"],
+        required_fields=["elastic_modulus"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    with pytest.raises(PlanValidationError, match="must also be projected"):
+        executor.validate_call(unprojected)
