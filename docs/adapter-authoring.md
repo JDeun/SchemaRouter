@@ -323,3 +323,48 @@ FieldSpec(
 This remains a typed numeric contract even though the unit is absent. Cross-provider fallback may
 match another compatible unitless numeric field, but it will not silently substitute a unit-bearing
 quantity for a unitless one (or vice versa).
+
+
+## Trusted parameter aliases
+
+Different provider/access contracts can accept the same logical input under different local
+parameter names. Use `ParameterSpec.aliases` only for trusted key equivalence:
+
+```python
+ParameterSpec(
+    name="chemical_formula",
+    aliases=["formula"],
+    required=True,
+)
+```
+
+A request argument `{"formula": "Si"}` may then compile to
+`{"chemical_formula": "Si"}` for that endpoint.
+
+Alias routing is deliberately narrow:
+
+- exact parameter names always win;
+- aliases only rename keys and copy values unchanged;
+- if one supplied alias can target multiple parameters, SchemaRouter does not guess;
+- if multiple supplied aliases compete for one parameter, SchemaRouter does not guess;
+- fallback candidates compile arguments independently against their own parameter contracts.
+
+`aliases` are not a value transformation language. For example, this is valid:
+
+```text
+formula="Si" -> chemical_formula="Si"
+```
+
+but SchemaRouter does not generically synthesize:
+
+```text
+formula="Si" -> filter='chemical_formula_reduced="Si"'
+```
+
+Protocol expressions, coercions, and provider-specific query-language construction belong in
+trusted adapter/application code. `wire_name` remains the serialization boundary for a declared
+parameter and is distinct from semantic aliases.
+
+Adapters must not infer trusted aliases from arbitrary remote descriptions or model output. Remote
+schemas may describe names, but local code decides whether two argument keys are semantically
+equivalent.
