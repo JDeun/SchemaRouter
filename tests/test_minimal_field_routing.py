@@ -69,7 +69,8 @@ async def test_elastic_modulus_query_uses_only_healthy_minimal_access_path() -> 
                 read_only=True,
                 parameters=[
                     ParameterSpec(
-                        name="formula",
+                        name="chemical_formula",
+                        aliases=["formula"],
                         required=True,
                         location="query",
                     )
@@ -157,7 +158,7 @@ async def test_elastic_modulus_query_uses_only_healthy_minimal_access_path() -> 
         assert optimade_calls == 1
         assert rest_queries == [
             {
-                "formula": "Si",
+                "chemical_formula": "Si",
                 "fields": "elastic_modulus",
             }
         ]
@@ -174,7 +175,7 @@ async def test_elastic_modulus_query_uses_only_healthy_minimal_access_path() -> 
         assert second_result.data == {"elastic_modulus": 130.0}
         assert optimade_calls == 1
         assert rest_queries[-1] == {
-            "formula": "Si",
+            "chemical_formula": "Si",
             "fields": "elastic_modulus",
         }
 
