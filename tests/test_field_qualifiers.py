@@ -93,6 +93,39 @@ def test_field_qualifiers_reject_empty_or_padded_tags(
         )
 
 
+def test_field_qualifiers_participate_in_fingerprint_canonically() -> None:
+    first = EndpointSpec(
+        name="read",
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                qualifiers={"temperature": "300 K", "phase": "alpha"},
+            )
+        ],
+    )
+    reordered = EndpointSpec(
+        name="read",
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                qualifiers={"phase": "alpha", "temperature": "300 K"},
+            )
+        ],
+    )
+    changed = EndpointSpec(
+        name="read",
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                qualifiers={"temperature": "500 K", "phase": "alpha"},
+            )
+        ],
+    )
+
+    assert first.fingerprint == reordered.fingerprint
+    assert first.fingerprint != changed.fingerprint
+
+
 def test_same_scientific_qualifiers_allow_cross_provider_fallback() -> None:
     registry = InMemoryRegistry()
     registry.register(
