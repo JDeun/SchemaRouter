@@ -185,4 +185,7 @@ class ModelQueryAnalyzer:
                 units=request.evidence.units or parsed.evidence.units,
                 source_type=request.evidence.source_type or parsed.evidence.source_type,
             ),
+            # Per-field evidence is a trusted caller contract. Model output cannot
+            # introduce or broaden field-specific execution constraints.
+            field_evidence=request.field_evidence,
         )
