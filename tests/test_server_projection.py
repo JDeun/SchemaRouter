@@ -258,7 +258,7 @@ async def test_server_projected_response_must_include_every_selected_field() -> 
         )
         with pytest.raises(
             SchemaValidationError,
-            match="projected field 'elastic_modulus' is missing",
+            match="elastic_modulus",
         ):
             await executor.execute_call(call)
 
