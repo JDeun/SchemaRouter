@@ -287,6 +287,7 @@ class SchemaPlanner:
         candidates.sort(
             key=lambda candidate: (
                 -candidate.score,
+                candidate.endpoint.server_projection is None,
                 candidate.tool.key,
                 candidate.endpoint.name,
             )
