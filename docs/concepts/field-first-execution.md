@@ -259,3 +259,18 @@ valid fallback.
 Unit symbols remain exact and case-/punctuation-sensitive. Surrounding whitespace is rejected.
 Nonlinear/logarithmic conversions are not inferred or synthesized. Non-finite/overflowed normalized
 values fail closed.
+
+
+## Numeric unit state is explicit
+
+For scientific numeric fields, SchemaRouter distinguishes three states:
+
+- a declared source unit such as `GPa` or `nm`;
+- an explicitly dimensionless quantity (`dimensionless=True`);
+- a numeric value whose unit is unknown/not declared (`unit=None, dimensionless=False`).
+
+The third state is still a valid query/result contract, but it is not strong enough evidence for
+automatic numeric fallback across provider/access paths. This prevents two providers from silently
+substituting values that may use different unknown scales.
+
+Text/document fields continue to use `unit=None` without any dimensionless marker.
