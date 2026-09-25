@@ -179,7 +179,7 @@ equivalence, convert qualifier values, or synthesize measurement context.
 
     Tool, endpoint, schema identity, planning, and policy.
 
-    [Core concepts →](concepts/schema-router.md)
+    [Core concepts →](concepts/schema-router.md) · [Design principles →](concepts/design-principles.md)
 
 -   **Runtime controls**
 
