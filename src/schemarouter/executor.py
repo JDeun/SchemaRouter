@@ -758,19 +758,33 @@ class RegistryExecutor:
     ) -> None:
         chain = [call, *alternatives]
 
-        # Read-only eligibility is a structural invariant of the whole automatic fallback chain.
-        # It is checked before any invocation and is never pruned/relaxed.
-        for candidate in chain:
+        # Read-only eligibility is a structural invariant for every *current* fallback
+        # contract. Optional alternatives that were removed or drifted since planning are already
+        # non-executable and are pruned later; they must not block a still-valid primary.
+        for index, candidate in enumerate(chain):
             try:
-                endpoint = self.registry.endpoint(candidate.tool, candidate.endpoint)
+                tool = self.registry.get(candidate.tool)
+                endpoint = tool.endpoint(candidate.endpoint)
             except KeyError as exc:
-                raise PlanValidationError(
-                    f"unknown tool/endpoint: {candidate.tool}.{candidate.endpoint}"
-                ) from exc
+                if index == 0:
+                    raise PlanValidationError(
+                        f"unknown tool/endpoint: {candidate.tool}.{candidate.endpoint}"
+                    ) from exc
+                continue
+
+            if index > 0 and (
+                candidate.schema_fingerprint != endpoint.fingerprint
+                or (
+                    candidate.tool_fingerprint is not None
+                    and candidate.tool_fingerprint != tool.fingerprint
+                )
+            ):
+                continue
+
             if endpoint.read_only is not True:
                 raise PlanValidationError(
-                    "automatic fallback requires every candidate to be explicitly read-only; "
-                    f"got {candidate.tool}.{candidate.endpoint}"
+                    "automatic fallback requires every current candidate to be explicitly "
+                    f"read-only; got {candidate.tool}.{candidate.endpoint}"
                 )
 
         # The primary call remains fail-closed for schema/policy drift. Optional alternatives are
