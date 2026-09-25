@@ -9,7 +9,7 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
-- coverage-aware ordering for explicit multi-call plans so bounded call slots prefer complementary semantic fields across heterogeneous providers/access paths instead of redundant routes for an already-covered field; exact query-visible qualifiers remain distinct coverage requirements;
+- coverage-aware selection for explicit multi-call plans so bounded call slots prefer complementary semantic fields across heterogeneous providers/access paths instead of redundant routes for an already-covered field, stop early once matched field coverage is complete, and keep exact query-visible qualifiers as distinct coverage requirements;
 - a dedicated design-principles document clarifying field-first semantics, provider/access separation, general optional-unit contracts, access-path health, multi-source field unions, bounded model authority, and fail-closed equivalence.
 
 ### Changed
