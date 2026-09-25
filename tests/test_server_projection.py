@@ -5,6 +5,7 @@ from schemarouter import (
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
+    ParameterSpec,
     RegistryExecutor,
     SchemaValidationError,
     ServerProjectionSpec,
