@@ -180,7 +180,7 @@ async def test_model_analyzer_never_receives_execution_metadata() -> None:
 
 
 @pytest.mark.asyncio
-async def test_model_analyzer_catalog_exposes_semantic_qualifiers_without_execution_metadata() -> None:
+async def test_model_analyzer_catalog_exposes_qualifiers_without_execution_metadata() -> None:
     captured = {}
 
     async def model(payload: dict) -> dict:
