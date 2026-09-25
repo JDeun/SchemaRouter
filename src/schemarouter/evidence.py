@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .models import EvidenceRequirements, EndpointSpec, FieldSpec, ToolSpec
+from .models import EndpointSpec, EvidenceRequirements, FieldSpec, ToolSpec
 
 
 def _semantic_key(value: str) -> str:
