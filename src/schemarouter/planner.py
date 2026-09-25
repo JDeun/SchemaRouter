@@ -26,7 +26,7 @@ from .models import (
     ToolSpec,
 )
 from .registry import ToolRegistry
-from .validation import field_value_schema, json_schema_types, json_schemas_compatible
+from .validation import field_value_schema, json_schemas_compatible
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[가-힣]+")
 
