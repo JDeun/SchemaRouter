@@ -534,6 +534,51 @@ async def scenario_binding_aware_fallback() -> dict[str, object]:
     }
 
 
+async def scenario_typed_optional_unit_fields() -> dict[str, object]:
+    router = SchemaRouter()
+    router.add_tool(
+        ToolSpec(
+            name="typed_fields",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="abstract_text",
+                            json_schema={"type": "string"},
+                            unit=None,
+                        ),
+                        FieldSpec(
+                            name="elastic_modulus",
+                            semantic_id="elastic_modulus",
+                            json_schema={"type": "number"},
+                            unit="GPa",
+                        ),
+                    ],
+                )
+            ],
+        )
+    )
+
+    snapshot = inspect_registry(router.registry)
+    fields = {
+        field.name: field
+        for field in snapshot.tools[0].endpoints[0].fields
+    }
+    assert fields["abstract"].json_types == ["string"]
+    assert fields["abstract"].unit is None
+    assert fields["elastic_modulus"].json_types == ["number"]
+    assert fields["elastic_modulus"].unit == "GPa"
+    return {
+        "abstract_type": fields["abstract"].json_types,
+        "abstract_unit": fields["abstract"].unit,
+        "elastic_modulus_type": fields["elastic_modulus"].json_types,
+        "elastic_modulus_unit": fields["elastic_modulus"].unit,
+    }
+
+
 async def scenario_inspection_redaction() -> dict[str, object]:
     router = SchemaRouter()
     tool = ToolSpec(
@@ -636,6 +681,7 @@ SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("parallel_read_only", scenario_parallel_read_only),
     ("execution_ready_planning", scenario_execution_ready_planning),
     ("binding_aware_fallback", scenario_binding_aware_fallback),
+    ("typed_optional_unit_fields", scenario_typed_optional_unit_fields),
     ("inspection_redaction", scenario_inspection_redaction),
     ("persistence_traces_dashboard", scenario_persistence_traces_and_dashboard),
 )
