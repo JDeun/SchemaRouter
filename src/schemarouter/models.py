@@ -137,6 +137,8 @@ class FieldSpec(StrictModel):
     def validate_path(self) -> FieldSpec:
         if self.semantic_id is not None and not self.semantic_id.strip():
             raise ValueError("field semantic_id must be non-empty when provided")
+        if self.unit is not None and not self.unit.strip():
+            raise ValueError("field unit must be non-empty when provided")
         if any(not isinstance(part, str) or not part for part in self.path):
             raise ValueError("field path requires non-empty string segments")
         if any(not isinstance(part, str) or not part for part in self.result_path):
@@ -150,6 +152,49 @@ class FieldSpec(StrictModel):
     @property
     def result_projection_path(self) -> tuple[str, ...]:
         return tuple(self.result_path or self.projection_path)
+
+    @property
+    def declared_json_types(self) -> tuple[str, ...]:
+        """Return conservatively declared JSON value types for this field."""
+
+        supported = {
+            "array",
+            "boolean",
+            "integer",
+            "null",
+            "number",
+            "object",
+            "string",
+        }
+        collected: set[str] = set()
+
+        def collect(schema: Any) -> None:
+            if not isinstance(schema, dict):
+                return
+            declared = schema.get("type")
+            if isinstance(declared, str) and declared in supported:
+                collected.add(declared)
+            elif isinstance(declared, list):
+                for value in declared:
+                    if isinstance(value, str) and value in supported:
+                        collected.add(value)
+
+            for keyword in ("anyOf", "oneOf"):
+                variants = schema.get(keyword)
+                if isinstance(variants, list):
+                    for variant in variants:
+                        collect(variant)
+
+        collect(self.json_schema)
+        return tuple(sorted(collected))
+
+    @property
+    def normalized_unit(self) -> str | None:
+        """Whitespace-normalized, case-sensitive unit identity."""
+
+        if self.unit is None:
+            return None
+        return " ".join(self.unit.split())
 
 
 class EndpointSpec(StrictModel):
