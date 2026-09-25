@@ -9,6 +9,13 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- optional bounded semantic candidate recall through a separate `candidate_recall_backend` and
+  `candidate_recall_limit`, allowing lexical candidates to be unioned with multilingual semantic
+  top-k recall before the existing final bounded decision/policy/execution path; live inspection and
+  dashboard output expose the recall backend and bound;
+- a reproducible 1,200-case decision-routing v2 stress corpus with six language groups, balanced
+  per-route coverage, explicit no-route cases, fixed dev/calibration/test splits, exact generator
+  reproducibility tests, and benchmark split/language metrics;
 - runtime evidence revalidation with separate `ToolCall.required_evidence` and route-available
   `ToolCall.evidence`, shared planner/executor evidence checks, fail-closed rejection of forged
   evidence overclaims, unmet global/per-field requirements, unselected field requirements, and
