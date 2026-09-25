@@ -558,3 +558,92 @@ def test_dashboard_renders_typed_unit_contracts() -> None:
     assert "Field contracts" in html
     assert "abstract:string" in html
     assert "elastic_modulus:number [GPa→Pa; pressure]" in html
+
+
+
+def test_registry_inspection_exposes_typed_input_parameter_contracts() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="particles",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    parameters=[
+                        ParameterSpec(
+                            name="max_size",
+                            required=True,
+                            location="query",
+                            json_schema={"type": "number"},
+                            unit="m",
+                            unit_normalization=UnitNormalizationSpec(
+                                dimension="length",
+                                canonical_unit="nm",
+                                scale=1e9,
+                            ),
+                        ),
+                        ParameterSpec(
+                            name="limit",
+                            location="query",
+                            json_schema={"type": "integer"},
+                        ),
+                    ],
+                    output_fields=[FieldSpec(name="particle_size")],
+                )
+            ],
+        )
+    )
+
+    snapshot = inspect_registry(registry)
+    parameters = {
+        parameter.name: parameter
+        for parameter in snapshot.tools[0].endpoints[0].parameters
+    }
+
+    assert parameters["max_size"].type_signature == "number"
+    assert parameters["max_size"].source_unit == "m"
+    assert parameters["max_size"].unit == "nm"
+    assert parameters["max_size"].dimension == "length"
+    assert parameters["max_size"].normalized is True
+    assert parameters["max_size"].normalization_scale == 1e9
+    assert parameters["max_size"].normalization_offset == 0.0
+    assert parameters["max_size"].required is True
+    assert parameters["max_size"].location == "query"
+
+    assert parameters["limit"].type_signature == "integer"
+    assert parameters["limit"].unit is None
+    assert parameters["limit"].normalized is False
+
+
+def test_dashboard_renders_typed_input_parameter_contracts() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="particles",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    parameters=[
+                        ParameterSpec(
+                            name="max_size",
+                            json_schema={"type": "number"},
+                            unit="m",
+                            unit_normalization=UnitNormalizationSpec(
+                                dimension="length",
+                                canonical_unit="nm",
+                                scale=1e9,
+                            ),
+                        )
+                    ],
+                    output_fields=[FieldSpec(name="particle_size")],
+                )
+            ],
+        )
+    )
+
+    html = render_dashboard(inspect_registry(registry))
+
+    assert "Parameter contracts" in html
+    assert "max_size:number [m→nm; length]" in html
