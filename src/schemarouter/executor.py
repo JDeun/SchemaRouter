@@ -237,6 +237,37 @@ class RegistryExecutor:
         self._purge_access_cooldowns(tool_key, endpoint)
         self._unavailable_until[key] = time.monotonic() + cooldown
 
+    def _mark_access_available_for_contract(
+        self,
+        tool_key: str,
+        endpoint: str,
+        tool_fingerprint: str,
+    ) -> None:
+        self._unavailable_until.pop(
+            (tool_key, endpoint, tool_fingerprint),
+            None,
+        )
+
+    def _mark_access_unavailable_for_contract(
+        self,
+        tool_key: str,
+        endpoint: str,
+        tool_fingerprint: str,
+        *,
+        cooldown_seconds: float | None = None,
+    ) -> None:
+        cooldown = (
+            self.unavailable_cooldown_seconds
+            if cooldown_seconds is None
+            else float(cooldown_seconds)
+        )
+        if not math.isfinite(cooldown) or cooldown < 0:
+            raise ValueError("cooldown_seconds must be a finite non-negative number")
+        self._purge_access_cooldowns(tool_key, endpoint)
+        self._unavailable_until[
+            (tool_key, endpoint, tool_fingerprint)
+        ] = time.monotonic() + cooldown
+
     def mark_access_available(self, tool_key: str, endpoint: str) -> None:
         self._current_access_key(tool_key, endpoint)
         self._purge_access_cooldowns(tool_key, endpoint)
@@ -617,7 +648,11 @@ class RegistryExecutor:
                 )
                 await self._run_after_hooks(tool, endpoint, call, result, tracker)
                 tracker.after_attempt()
-                self.mark_access_available(call.tool, call.endpoint)
+                self._mark_access_available_for_contract(
+                    call.tool,
+                    call.endpoint,
+                    tool.fingerprint,
+                )
                 return result
             except (
                 SchemaValidationError,
@@ -638,7 +673,11 @@ class RegistryExecutor:
                     )
 
         if isinstance(last_error, InvocationUnavailableError):
-            self.mark_access_unavailable(call.tool, call.endpoint)
+            self._mark_access_unavailable_for_contract(
+                call.tool,
+                call.endpoint,
+                tool.fingerprint,
+            )
             raise last_error
         raise ExecutionError(
             f"invocation failed for {call.tool}.{call.endpoint} after {max_attempts} attempt(s)"
