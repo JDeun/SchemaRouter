@@ -260,3 +260,51 @@ async def test_server_projected_response_must_include_every_selected_field() -> 
             match="projected field 'elastic_modulus' is missing",
         ):
             await executor.execute_call(call)
+
+
+
+def test_server_projection_rejects_unknown_logical_field_mapping() -> None:
+    with pytest.raises(ValueError, match="undeclared output fields"):
+        EndpointSpec(
+            name="search",
+            read_only=True,
+            output_fields=[FieldSpec(name="elastic_modulus")],
+            server_projection=ServerProjectionSpec(
+                parameter="fields",
+                field_map={"density": "raw_density"},
+            ),
+        )
+
+
+def test_server_projection_rejects_non_query_parameter_collision() -> None:
+    with pytest.raises(ValueError, match="non-query parameter"):
+        EndpointSpec(
+            name="search",
+            read_only=True,
+            parameters=[
+                ParameterSpec(
+                    name="fields",
+                    location="body",
+                )
+            ],
+            output_fields=[FieldSpec(name="elastic_modulus")],
+            server_projection=ServerProjectionSpec(parameter="fields"),
+        )
+
+
+def test_server_projection_allows_declared_query_parameter_collision() -> None:
+    endpoint = EndpointSpec(
+        name="search",
+        read_only=True,
+        parameters=[
+            ParameterSpec(
+                name="fields",
+                location="query",
+            )
+        ],
+        output_fields=[FieldSpec(name="elastic_modulus")],
+        server_projection=ServerProjectionSpec(parameter="fields"),
+    )
+
+    assert endpoint.server_projection is not None
+    assert endpoint.server_projection.parameter == "fields"
