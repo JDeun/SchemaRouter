@@ -427,3 +427,51 @@ def test_server_projection_remapped_source_requires_explicit_raw_output_schema()
                 },
             ),
         )
+
+
+
+@pytest.mark.asyncio
+async def test_list_response_projection_removes_unselected_fields_from_every_item() -> None:
+    endpoint = EndpointSpec(
+        name="search",
+        read_only=True,
+        output_fields=[
+            FieldSpec(name="elastic_modulus"),
+            FieldSpec(name="density"),
+        ],
+        output_schema={
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "elastic_modulus": {"type": "number"},
+                    "density": {"type": "number"},
+                },
+            },
+        },
+    )
+    tool = ToolSpec(name="materials", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool="materials",
+        endpoint="search",
+        fields=["elastic_modulus"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "materials",
+        lambda endpoint_name, arguments: [
+            {"elastic_modulus": 130.0, "density": 2.33},
+            {"elastic_modulus": 75.0, "density": 8.96},
+        ],
+    )
+
+    result = await executor.execute_call(call)
+
+    assert result.data == [
+        {"elastic_modulus": 130.0},
+        {"elastic_modulus": 75.0},
+    ]
