@@ -15,7 +15,12 @@ from .adapters.mcp import MCPClientFactory
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
-from .errors import InvocationUnavailableError, ProposalApprovalError, RegistrationError
+from .errors import (
+    InvocationUnavailableError,
+    ProposalApprovalError,
+    RegistrationError,
+    RequiredFieldUnavailableError,
+)
 from .executor import ExecutionBudgetTracker, RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
@@ -805,7 +810,7 @@ class SchemaRouter:
                                 budget=run_config.budget,
                                 _tracker=budget_tracker,
                             )
-                        except InvocationUnavailableError as exc:
+                        except (InvocationUnavailableError, RequiredFieldUnavailableError) as exc:
                             has_next = candidate_index + 1 < len(chain)
                             next_call = (
                                 chain[candidate_index + 1]
@@ -932,8 +937,16 @@ class SchemaRouter:
 
                     if kind == "unavailable":
                         exc, next_call, candidate_index = payload
-                        assert isinstance(exc, InvocationUnavailableError)
+                        assert isinstance(
+                            exc,
+                            (InvocationUnavailableError, RequiredFieldUnavailableError),
+                        )
                         has_next = next_call is not None
+                        fallback_reason = (
+                            "required_field_unavailable"
+                            if isinstance(exc, RequiredFieldUnavailableError)
+                            else "invocation_unavailable"
+                        )
                         error_data: dict[str, Any] = {
                             "error_type": type(exc).__name__,
                             "fallback_eligible": has_next,
@@ -988,6 +1001,7 @@ class SchemaRouter:
                                 "scope": scope,
                                 "provider": next_tool.provider,
                                 "access_mode": next_tool.access_mode,
+                                "reason": fallback_reason,
                                 "fallback_candidate_index": candidate_index + 1,
                             },
                         ))
@@ -1178,8 +1192,13 @@ class SchemaRouter:
                         budget=run_config.budget,
                         _tracker=budget_tracker,
                     )
-                except InvocationUnavailableError as exc:
+                except (InvocationUnavailableError, RequiredFieldUnavailableError) as exc:
                     has_next = candidate_index + 1 < len(chain)
+                    fallback_reason = (
+                        "required_field_unavailable"
+                        if isinstance(exc, RequiredFieldUnavailableError)
+                        else "invocation_unavailable"
+                    )
                     error_data: dict[str, Any] = {
                         "error_type": type(exc).__name__,
                         "fallback_eligible": has_next,
@@ -1234,6 +1253,7 @@ class SchemaRouter:
                             "scope": scope,
                             "provider": next_tool.provider,
                             "access_mode": next_tool.access_mode,
+                            "reason": fallback_reason,
                         },
                     ))
                     sequence += 1
