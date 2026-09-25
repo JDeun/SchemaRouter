@@ -113,11 +113,14 @@ def json_types_compatible(
         return True
     if not candidate:
         return False
-    if not required.isdisjoint(candidate):
-        return True
 
-    numeric = {"number", "integer"}
-    return bool(required & numeric) and bool(candidate & numeric)
+    def accepted(candidate_type: str) -> bool:
+        if candidate_type in required:
+            return True
+        # Every integer is a JSON number, but an arbitrary number is not necessarily an integer.
+        return candidate_type == "integer" and "number" in required
+
+    return all(accepted(candidate_type) for candidate_type in candidate)
 
 
 def json_schemas_compatible(
