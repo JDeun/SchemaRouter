@@ -843,3 +843,202 @@ async def test_event_stream_reports_binding_unavailable_fallback_reason() -> Non
     assert starts == ["mp_optimade"]
     end = next(event for event in events if event.event == "tool.end")
     assert end.tool == "mp_optimade"
+
+
+
+@pytest.mark.asyncio
+async def test_event_stream_records_required_field_fallback_without_health_poisoning() -> None:
+    router = SchemaRouter()
+    tools = []
+    for name, provider, mode in (
+        ("provider_a", "a", "openapi"),
+        ("provider_b", "b", "optimade"),
+    ):
+        tool = ToolSpec(
+            name=name,
+            provider=provider,
+            access_mode=mode,
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="elastic_modulus",
+                            semantic_id="elastic_modulus",
+                            aliases=["탄성계수", "elastic modulus"],
+                        ),
+                        FieldSpec(name="density"),
+                    ],
+                    output_schema={
+                        "type": "object",
+                        "properties": {
+                            "elastic_modulus": {"type": "number"},
+                            "density": {"type": "number"},
+                        },
+                        "additionalProperties": False,
+                    },
+                )
+            ],
+        )
+        router.add_tool(tool)
+        tools.append(tool)
+
+    calls = []
+    for tool in tools:
+        endpoint = tool.endpoint("search")
+        calls.append(
+            ToolCall(
+                tool=tool.name,
+                endpoint="search",
+                fields=["elastic_modulus"],
+                required_fields=["elastic_modulus"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        )
+    plan = ExecutionPlan(
+        query="탄성계수",
+        registry_version=router.registry.version,
+        calls=[calls[0]],
+        fallback_routes=[
+            FallbackRoute(
+                primary_call_index=0,
+                alternatives=[calls[1]],
+            )
+        ],
+    )
+
+    router.executor.bind(
+        "provider_a",
+        lambda endpoint, arguments: {"density": 2.33},
+    )
+    router.executor.bind(
+        "provider_b",
+        lambda endpoint, arguments: {
+            "elastic_modulus": 130.0,
+            "density": 2.30,
+        },
+    )
+
+    original_aplan = router.aplan
+
+    async def fixed_plan(request):
+        return plan
+
+    router.aplan = fixed_plan  # type: ignore[method-assign]
+    try:
+        events = [
+            event
+            async for event in router.astream_events("탄성계수")
+        ]
+    finally:
+        router.aplan = original_aplan  # type: ignore[method-assign]
+
+    assert [event.event for event in events] == [
+        "run.start",
+        "plan.end",
+        "tool.start",
+        "tool.error",
+        "tool.fallback",
+        "tool.start",
+        "tool.end",
+        "run.end",
+    ]
+
+    error = next(event for event in events if event.event == "tool.error")
+    assert error.data["error_type"] == "RequiredFieldUnavailableError"
+    assert error.data["fallback_eligible"] is True
+
+    fallback = next(event for event in events if event.event == "tool.fallback")
+    assert fallback.data["reason"] == "required_field_unavailable"
+    assert fallback.data["scope"] == "cross_provider"
+    assert fallback.tool == "provider_b"
+
+    end = next(event for event in events if event.event == "tool.end")
+    assert end.tool == "provider_b"
+    assert router.unavailable_access_paths() == ()
+
+
+@pytest.mark.asyncio
+async def test_parallel_event_stream_records_required_field_fallback() -> None:
+    router = SchemaRouter()
+    tools = []
+    for name, provider, mode in (
+        ("provider_a", "a", "openapi"),
+        ("provider_b", "b", "optimade"),
+    ):
+        tool = ToolSpec(
+            name=name,
+            provider=provider,
+            access_mode=mode,
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[FieldSpec(name="elastic_modulus")],
+                    output_schema={
+                        "type": "object",
+                        "properties": {
+                            "elastic_modulus": {"type": "number"},
+                        },
+                    },
+                )
+            ],
+        )
+        router.add_tool(tool)
+        tools.append(tool)
+
+    calls = []
+    for tool in tools:
+        endpoint = tool.endpoint("search")
+        calls.append(
+            ToolCall(
+                tool=tool.name,
+                endpoint="search",
+                fields=["elastic_modulus"],
+                required_fields=["elastic_modulus"],
+                schema_fingerprint=endpoint.fingerprint,
+                tool_fingerprint=tool.fingerprint,
+            )
+        )
+    plan = ExecutionPlan(
+        query="elastic modulus",
+        registry_version=router.registry.version,
+        calls=[calls[0]],
+        fallback_routes=[
+            FallbackRoute(
+                primary_call_index=0,
+                alternatives=[calls[1]],
+            )
+        ],
+    )
+
+    router.executor.bind("provider_a", lambda endpoint, arguments: {})
+    router.executor.bind(
+        "provider_b",
+        lambda endpoint, arguments: {"elastic_modulus": 130.0},
+    )
+
+    original_aplan = router.aplan
+
+    async def fixed_plan(request):
+        return plan
+
+    router.aplan = fixed_plan  # type: ignore[method-assign]
+    try:
+        events = [
+            event
+            async for event in router.astream_events(
+                "elastic modulus",
+                config=RunConfig(execution_mode="parallel_read_only"),
+            )
+        ]
+    finally:
+        router.aplan = original_aplan  # type: ignore[method-assign]
+
+    fallback = next(event for event in events if event.event == "tool.fallback")
+    assert fallback.data["reason"] == "required_field_unavailable"
+    assert fallback.tool == "provider_b"
+    assert events[-1].event == "run.end"
+    assert router.unavailable_access_paths() == ()
