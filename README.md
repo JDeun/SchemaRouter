@@ -149,7 +149,14 @@ agent orchestration:
 - structured, auditable plan explanations based on SchemaRouter-visible signals;
 - explicit flat parallel fan-out only when every planned call is currently trusted read-only;
 - provider/access identity, bounded read-only fallback, server-side field projection contracts,
-  and recoverable access-path health state.
+  and recoverable access-path health state;
+- typed scientific result contracts with explicit JSON datatypes, optional unit metadata, canonical
+  affine unit normalization, and exact measurement/material qualifiers such as temperature, phase,
+  orientation, or method;
+- qualifier-aware routing that can distinguish otherwise equivalent scientific fields when the
+  condition is explicitly present in the query, without unit conversion or scientific inference;
+- trusted parameter aliases so the same logical argument can bind safely to provider-specific local
+  parameter names without model-authored remapping.
 
 Workflow/DAG semantics, memory, prompt systems, and autonomous tool loops remain out of scope.
 
