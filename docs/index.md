@@ -69,6 +69,17 @@ Applications that already use GPT, Gemini, Claude, or another hosted model can i
 client through SchemaRouter's provider-neutral analyzer or decision-backend callable contracts.
 SchemaRouter does not require a second local model stack.
 
+## Real-world scenario
+
+![SchemaRouter real-world scenario: field-first, route-second](assets/real-world-scenario.svg)
+
+One request can require a union of semantic fields from different providers. SchemaRouter resolves
+that field set first, then selects complementary validated routes within the explicit `max_calls`
+bound—for example, Materials Project for `band_gap` and arXiv for `abstract`.
+
+[Read the field-first execution model →](concepts/field-first-execution.md) ·
+[Read the design principles →](concepts/design-principles.md)
+
 ## Start in five minutes
 
 ```python
