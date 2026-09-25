@@ -47,6 +47,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "FallbackScope",
         "ExecutionPolicy",
         "FieldSelectionExplanation",
+        "FieldInspection",
         "FieldSpec",
         "FirstOptionDecisionBackend",
         "InMemoryRegistry",
