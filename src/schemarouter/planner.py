@@ -39,6 +39,17 @@ def _normalize(text: str) -> str:
     return "".join(ch.lower() for ch in text if ch.isalnum())
 
 
+def _schema_is_numeric_value(schema: dict[str, object]) -> bool:
+    types = set(json_schema_types(schema))
+    types.discard("null")
+    if types and types <= {"number", "integer"}:
+        return True
+    if types == {"array"}:
+        items = schema.get("items")
+        return isinstance(items, dict) and _schema_is_numeric_value(items)
+    return False
+
+
 def _semantic_substring_match(left: str, right: str) -> bool:
     """Conservative containment for compound non-ASCII semantic labels.
 
@@ -122,6 +133,7 @@ class _FieldSemantic:
     semantic_id: str | None
     json_schema: dict[str, object]
     unit: str | None
+    dimensionless: bool
     unit_dimension: str | None
     canonical_unit: str | None
     unit_scale: float | None
@@ -741,7 +753,8 @@ class SchemaPlanner:
             and all(field.license for field in answer_fields)
         )
         units_available = bool(answer_fields) and all(
-            field.unit for field in answer_fields
+            field.unit or field.dimensionless
+            for field in answer_fields
         )
         requested_source_type = requested.source_type
         source_type_available = (
@@ -960,6 +973,7 @@ class SchemaPlanner:
                     ),
                     json_schema=canonical_field_value_schema(endpoint, field.name),
                     unit=field.unit.strip() if field.unit else None,
+                    dimensionless=field.dimensionless,
                     unit_dimension=(
                         _normalize(unit_normalization.dimension)
                         if unit_normalization is not None
@@ -1039,6 +1053,26 @@ class SchemaPlanner:
 
                 if (requirement.unit is None) != (candidate_field.unit is None):
                     continue
+                if requirement.unit is None:
+                    requirement_numeric = _schema_is_numeric_value(
+                        requirement.json_schema
+                    )
+                    candidate_numeric = _schema_is_numeric_value(
+                        candidate_field.json_schema
+                    )
+                    if requirement_numeric or candidate_numeric:
+                        # Unitless numeric fallback is safe only when both contracts explicitly
+                        # declare that the quantity is dimensionless. Plain unit=None means the
+                        # source unit is unknown/not declared, not that cross-provider scales match.
+                        if not (
+                            requirement_numeric
+                            and candidate_numeric
+                            and requirement.dimensionless
+                            and candidate_field.dimensionless
+                        ):
+                            continue
+                    elif requirement.dimensionless != candidate_field.dimensionless:
+                        continue
                 if requirement.unit is not None:
                     if (
                         requirement.unit_dimension is not None
