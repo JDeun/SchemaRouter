@@ -883,14 +883,14 @@ class SchemaPlanner:
     ) -> bool:
         required = cls._field_semantics(
             primary_candidate.endpoint,
-            tuple(primary_call.fields),
+            tuple(primary_call.required_fields or primary_call.fields),
         )
         if not required:
             return alternative_candidate.score > 0
 
         available = cls._field_semantics(
             alternative_candidate.endpoint,
-            alternative_call.fields,
+            alternative_call.required_fields or alternative_call.fields,
         )
         if not available:
             return False
@@ -963,6 +963,35 @@ class SchemaPlanner:
         ]
         return [*same_provider, *other_provider]
 
+    @staticmethod
+    def _required_answer_fields(
+        candidate: _Candidate,
+        fields: list[str],
+        *,
+        field_decision_used: bool,
+    ) -> list[str]:
+        field_map = {
+            field.name: field
+            for field in candidate.endpoint.output_fields
+        }
+        if field_decision_used:
+            return [
+                name
+                for name in fields
+                if name in field_map and not field_map[name].identifier
+            ]
+
+        matched = set(candidate.matched_fields)
+        return [
+            name
+            for name in fields
+            if (
+                name in matched
+                and name in field_map
+                and not field_map[name].identifier
+            )
+        ]
+
     def _compile_candidate_sync(
         self,
         request: PlanRequest,
@@ -1001,6 +1030,15 @@ class SchemaPlanner:
             deterministic_fields,
         )
         warnings.extend(field_warnings)
+        field_decision_used = (
+            self.decision_policy.field_selection_enabled
+            and not field_warnings
+        )
+        required_fields = self._required_answer_fields(
+            candidate,
+            fields,
+            field_decision_used=field_decision_used,
+        )
         evidence = self._evidence(
             candidate.tool,
             endpoint,
@@ -1022,6 +1060,7 @@ class SchemaPlanner:
             endpoint=endpoint.name,
             arguments=arguments,
             fields=fields,
+            required_fields=required_fields,
             evidence=evidence,
             schema_fingerprint=endpoint.fingerprint,
             tool_fingerprint=candidate.tool.fingerprint,
@@ -1031,10 +1070,7 @@ class SchemaPlanner:
                 candidate,
                 fields,
                 dropped,
-                field_decision_used=(
-                    self.decision_policy.field_selection_enabled
-                    and not field_warnings
-                ),
+                field_decision_used=field_decision_used,
             ),
         )
 
@@ -1076,6 +1112,15 @@ class SchemaPlanner:
             deterministic_fields,
         )
         warnings.extend(field_warnings)
+        field_decision_used = (
+            self.decision_policy.field_selection_enabled
+            and not field_warnings
+        )
+        required_fields = self._required_answer_fields(
+            candidate,
+            fields,
+            field_decision_used=field_decision_used,
+        )
         evidence = self._evidence(
             candidate.tool,
             endpoint,
@@ -1097,6 +1142,7 @@ class SchemaPlanner:
             endpoint=endpoint.name,
             arguments=arguments,
             fields=fields,
+            required_fields=required_fields,
             evidence=evidence,
             schema_fingerprint=endpoint.fingerprint,
             tool_fingerprint=candidate.tool.fingerprint,
@@ -1106,10 +1152,7 @@ class SchemaPlanner:
                 candidate,
                 fields,
                 dropped,
-                field_decision_used=(
-                    self.decision_policy.field_selection_enabled
-                    and not field_warnings
-                ),
+                field_decision_used=field_decision_used,
             ),
         )
 
