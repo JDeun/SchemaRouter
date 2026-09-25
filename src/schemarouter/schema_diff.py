@@ -177,6 +177,33 @@ def _compare_parameter(
             new=new.json_schema,
         )
 
+    if old.unit != new.unit:
+        _change(
+            changes,
+            path=f"{prefix}.unit",
+            kind="unit_changed",
+            severity="breaking",
+            old=old.unit,
+            new=new.unit,
+        )
+    if old.unit_normalization != new.unit_normalization:
+        _change(
+            changes,
+            path=f"{prefix}.unit_normalization",
+            kind="unit_normalization_changed",
+            severity="breaking",
+            old=(
+                old.unit_normalization.model_dump(mode="json")
+                if old.unit_normalization is not None
+                else None
+            ),
+            new=(
+                new.unit_normalization.model_dump(mode="json")
+                if new.unit_normalization is not None
+                else None
+            ),
+        )
+
     if old.aliases != new.aliases:
         _change(
             changes,
