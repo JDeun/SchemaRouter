@@ -942,14 +942,14 @@ class SchemaPlanner:
                         else None
                     ),
                     json_schema=field_value_schema(endpoint, field.name),
-                    unit=_normalize(field.unit) if field.unit else None,
+                    unit=field.unit.strip() if field.unit else None,
                     unit_dimension=(
                         _normalize(unit_normalization.dimension)
                         if unit_normalization is not None
                         else None
                     ),
                     canonical_unit=(
-                        _normalize(unit_normalization.canonical_unit)
+                        unit_normalization.canonical_unit.strip()
                         if unit_normalization is not None
                         else None
                     ),
