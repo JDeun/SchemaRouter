@@ -27,20 +27,12 @@ def available_evidence(
     if tool.source_type is not None:
         source_type = tool.source_type
     else:
-        field_source_types = {
-            field.source_type
-            for field in answer_fields
-            if field.source_type is not None
-        }
+        field_source_types = [field.source_type for field in answer_fields]
         source_type = (
-            next(iter(field_source_types))
-            if len(field_source_types) == 1
-            and len(field_source_types) == len(
-                {
-                    field.source_type
-                    for field in answer_fields
-                }
-            )
+            field_source_types[0]
+            if field_source_types
+            and all(value is not None for value in field_source_types)
+            and len(set(field_source_types)) == 1
             else None
         )
 
