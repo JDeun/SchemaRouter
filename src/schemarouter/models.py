@@ -181,6 +181,46 @@ class ParameterSpec(StrictModel):
     allow_reserved: bool = False
     json_schema: dict[str, Any] = Field(default_factory=dict)
     aliases: list[str] = Field(default_factory=list)
+    unit: str | None = None
+    unit_normalization: UnitNormalizationSpec | None = None
+
+    @model_validator(mode="after")
+    def validate_unit_contract(self) -> ParameterSpec:
+        if self.unit is not None:
+            if not self.unit.strip():
+                raise ValueError("parameter unit must be non-empty when provided")
+            if self.unit != self.unit.strip():
+                raise ValueError("parameter unit must not have surrounding whitespace")
+        if self.unit_normalization is not None and self.unit is None:
+            raise ValueError(
+                "parameter unit_normalization requires the provider unit in parameter.unit"
+            )
+        if self.unit is not None and self.json_schema:
+            if not _schema_supports_unit(
+                self.json_schema,
+                require_declared_type=True,
+            ):
+                raise ValueError(
+                    "a parameter with unit metadata must declare a numeric scalar or "
+                    "numeric-array json_schema type"
+                )
+        if self.unit_normalization is not None and not self.json_schema:
+            raise ValueError(
+                "parameter unit_normalization requires a declared numeric json_schema"
+            )
+        if (
+            self.unit_normalization is not None
+            and self.unit == self.unit_normalization.canonical_unit
+            and (
+                self.unit_normalization.scale != 1.0
+                or self.unit_normalization.offset != 0.0
+            )
+        ):
+            raise ValueError(
+                "parameter unit normalization must be identity when provider and canonical "
+                "units are equal"
+            )
+        return self
 
 
 class ServerProjectionSpec(StrictModel):
@@ -234,6 +274,39 @@ class UnitNormalizationSpec(StrictModel):
             raise ValueError("unit normalization scale must be finite and positive")
         if not math.isfinite(self.offset):
             raise ValueError("unit normalization offset must be finite")
+        return self
+
+
+class QuantityArgument(StrictModel):
+    """Explicit unit-bearing input value supplied to planning.
+
+    The value/unit pair carries no conversion authority. Conversion factors remain in the trusted
+    local ParameterSpec contract.
+    """
+
+    value: Any
+    unit: str
+
+    @model_validator(mode="after")
+    def validate_quantity(self) -> QuantityArgument:
+        if not self.unit.strip():
+            raise ValueError("quantity argument unit must be non-empty")
+        if self.unit != self.unit.strip():
+            raise ValueError("quantity argument unit must not have surrounding whitespace")
+
+        def validate_numeric(item: Any) -> None:
+            if isinstance(item, list):
+                for child in item:
+                    validate_numeric(child)
+                return
+            if isinstance(item, bool) or not isinstance(item, (int, float)):
+                raise ValueError(
+                    "quantity argument value must be a numeric scalar or numeric array"
+                )
+            if isinstance(item, float) and not math.isfinite(item):
+                raise ValueError("quantity argument value must contain only finite numbers")
+
+        validate_numeric(self.value)
         return self
 
 
