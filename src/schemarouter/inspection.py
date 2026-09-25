@@ -9,8 +9,8 @@ from pydantic import Field
 from ._url_safety import safe_provenance_url
 from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry
-from .validation import canonical_field_value_schema, json_schema_types
 from .traces import RunTrace, RunTraceStore
+from .validation import canonical_field_value_schema, json_schema_types
 
 _EXECUTION_PROVENANCE_KEYS = (
     "adapter",
