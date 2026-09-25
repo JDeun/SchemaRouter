@@ -253,3 +253,41 @@ Fallback requires semantic compatibility plus compatible result datatype and eit
 
 Text/document fields normally use `unit=None`; no unit metadata is required for strings such as
 abstracts, snippets, titles, or prose.
+
+
+## Scientific input parameter units
+
+Adapters may preserve an exact provider/source unit on numeric input parameters:
+
+```python
+ParameterSpec(
+    name="max_size",
+    json_schema={"type": "number"},
+    unit="m",
+)
+```
+
+Built-in OpenAPI and MCP adapters preserve recognized `x-ucum-unit`, `x-unit`, and `unit`
+annotations on numeric parameter schemas. These remote strings are descriptive source-unit labels;
+they do not create conversion factors.
+
+Applications that own a trusted conversion contract can add:
+
+```python
+ParameterSpec(
+    name="max_size",
+    json_schema={"type": "number"},
+    unit="m",
+    unit_normalization=UnitNormalizationSpec(
+        dimension="length",
+        canonical_unit="nm",
+        scale=1e9,
+    ),
+)
+```
+
+For input parameters, the normalization contract still describes **provider -> canonical** values.
+When planning a `QuantityArgument` expressed in the canonical unit, SchemaRouter inverts that
+trusted affine transform before building the provider-native `ToolCall.arguments`.
+
+Do not infer `UnitNormalizationSpec` from remote text, descriptions, SI prefixes, or model output.
