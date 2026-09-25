@@ -43,13 +43,15 @@ elastic modulus
 ```
 
 Local `FieldSpec` contracts declare known semantic equivalence. Prefer one canonical local
-`FieldSpec.name` for the concept and keep provider-specific wire names in
-`ServerProjectionSpec.field_map` (and bounded response paths where needed). `aliases` help the
-planner recognize user phrasing and legacy/provider terminology.
+`FieldSpec.name` for the concept. Keep provider-specific request selector names in
+`ServerProjectionSpec.field_map`, provider response locations in `FieldSpec.path`, and use
+`FieldSpec.result_path` when the final projected result should be written to a different canonical
+location. `aliases` help the planner recognize user phrasing and legacy/provider terminology.
 
 For example, all three access paths can expose the local field `elastic_modulus` while mapping it
-to `elastic_modulus`, `_b_elasticity`, or `youngs_modulus` on the wire. The planner and final
-`ToolResult` then stay provider-neutral.
+to `elastic_modulus`, `_b_elasticity`, or `youngs_modulus` on the wire. A provider-specific
+source path can still be projected into `result_path=["elastic_modulus"]`, so the planner and final
+`ToolResult` stay provider-neutral.
 
 The model does not get to invent field mappings.
 
