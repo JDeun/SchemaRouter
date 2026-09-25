@@ -84,6 +84,12 @@ class ModelQueryAnalyzer:
                                 "location": parameter.location,
                                 "description": parameter.description,
                                 "json_schema": parameter.json_schema,
+                                "unit": parameter.unit,
+                                "canonical_unit": (
+                                    parameter.unit_normalization.canonical_unit
+                                    if parameter.unit_normalization is not None
+                                    else None
+                                ),
                             }
                             for parameter in endpoint.parameters
                         ],
