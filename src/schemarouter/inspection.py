@@ -74,6 +74,7 @@ class FieldInspection(StrictModel):
     name: str
     semantic_id: str | None = None
     data_type: str | None = None
+    effective_data_type: str | None = None
     source_unit: str | None = None
     effective_unit: str | None = None
     identifier: bool = False
@@ -194,6 +195,7 @@ def inspect_tool_spec(tool: ToolSpec) -> ToolInspection:
                     name=field.name,
                     semantic_id=field.semantic_id,
                     data_type=field.data_type,
+                    effective_data_type=field.effective_data_type,
                     source_unit=field.unit,
                     effective_unit=field.effective_unit,
                     identifier=field.identifier,
