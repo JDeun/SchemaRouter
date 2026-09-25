@@ -90,6 +90,45 @@ def field_value_schema(endpoint: EndpointSpec, field_name: str) -> dict[str, Any
     return deepcopy(schema)
 
 
+def canonical_field_value_schema(
+    endpoint: EndpointSpec,
+    field_name: str,
+) -> dict[str, Any]:
+    """Return the projected result type shape after explicit unit normalization.
+
+    Raw provider constraints remain validated before normalization. This helper only widens
+    integer types to JSON number where affine conversion can produce non-integer values.
+    """
+
+    schema = field_value_schema(endpoint, field_name)
+    field = next(
+        (candidate for candidate in endpoint.output_fields if candidate.name == field_name),
+        None,
+    )
+    if field is None or field.unit_normalization is None:
+        return schema
+
+    normalized = deepcopy(schema)
+
+    def widen_integer(current: dict[str, Any]) -> None:
+        declared = current.get("type")
+        if declared == "integer":
+            current["type"] = "number"
+        elif isinstance(declared, list):
+            current["type"] = list(
+                dict.fromkeys(
+                    "number" if value == "integer" else value
+                    for value in declared
+                )
+            )
+        items = current.get("items")
+        if isinstance(items, dict):
+            widen_integer(items)
+
+    widen_integer(normalized)
+    return normalized
+
+
 def json_schema_types(schema: dict[str, Any]) -> frozenset[str]:
     declared = schema.get("type")
     if isinstance(declared, str):
