@@ -545,3 +545,78 @@ def test_field_unit_normalization_change_is_breaking() -> None:
         change.kind == "unit_normalization_changed"
         for change in report.changes
     )
+
+
+
+def test_parameter_unit_change_is_breaking() -> None:
+    old = endpoint(
+        parameters=[
+            ParameterSpec(
+                name="max_size",
+                location="query",
+                json_schema={"type": "number"},
+                unit="nm",
+            )
+        ]
+    )
+    new = endpoint(
+        parameters=[
+            ParameterSpec(
+                name="max_size",
+                location="query",
+                json_schema={"type": "number"},
+                unit="m",
+            )
+        ]
+    )
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "breaking"
+    assert any(
+        change.kind == "unit_changed"
+        and change.path == "parameters.max_size.unit"
+        for change in report.changes
+    )
+
+
+def test_parameter_unit_normalization_change_is_breaking() -> None:
+    old = endpoint(
+        parameters=[
+            ParameterSpec(
+                name="max_size",
+                location="query",
+                json_schema={"type": "number"},
+                unit="m",
+                unit_normalization=UnitNormalizationSpec(
+                    dimension="length",
+                    canonical_unit="nm",
+                    scale=1e9,
+                ),
+            )
+        ]
+    )
+    new = endpoint(
+        parameters=[
+            ParameterSpec(
+                name="max_size",
+                location="query",
+                json_schema={"type": "number"},
+                unit="m",
+                unit_normalization=UnitNormalizationSpec(
+                    dimension="length",
+                    canonical_unit="nm",
+                    scale=1e8,
+                ),
+            )
+        ]
+    )
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "breaking"
+    assert any(
+        change.kind == "unit_normalization_changed"
+        and change.path == "parameters.max_size.unit_normalization"
+        for change in report.changes
+    )
