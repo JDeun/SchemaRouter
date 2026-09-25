@@ -50,6 +50,14 @@ class ExecutionError(SchemaRouterError):
     """Raised when tool invocation fails."""
 
 
+class RequiredFieldUnavailableError(ExecutionError):
+    """Raised when a valid response cannot satisfy a compiled semantic field requirement.
+
+    This is eligible for bounded read-only fallback but does not mark the access path unhealthy,
+    because request-specific data absence is not a transport outage.
+    """
+
+
 class InvocationUnavailableError(ExecutionError, RuntimeError):
     """Raised when an otherwise valid access path is temporarily unavailable.
 
