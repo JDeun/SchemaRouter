@@ -318,6 +318,39 @@ def test_query_qualifier_prefers_matching_endpoint() -> None:
     )
 
 
+def test_numeric_qualifier_does_not_match_inside_larger_number() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        _qualified_tool(
+            "a_provider_300k",
+            provider="a",
+            qualifiers={"temperature": "300 K"},
+        )
+    )
+    registry.register(
+        _qualified_tool(
+            "z_provider_1300k",
+            provider="b",
+            qualifiers={"temperature": "1300 K"},
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(query="elastic modulus at 1300 K")
+    )
+
+    assert [call.tool for call in plan.calls] == ["z_provider_1300k"]
+    assert plan.calls[0].explanation is not None
+    qualifier_components = [
+        component
+        for component in plan.calls[0].explanation.score_components
+        if component.kind == "field_qualifier"
+    ]
+    assert [component.matched for component in qualifier_components] == [
+        "elastic_modulus:temperature=1300 K"
+    ]
+
+
 def test_short_ascii_qualifier_does_not_create_accidental_route_bias() -> None:
     registry = InMemoryRegistry()
     registry.register(
