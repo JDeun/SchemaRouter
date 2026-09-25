@@ -2,6 +2,7 @@ import pytest
 
 from schemarouter import (
     EndpointSpec,
+    EvidenceRequirements,
     FieldSpec,
     InMemoryRegistry,
     PlanRequest,
@@ -1113,3 +1114,66 @@ def test_unitless_text_field_cannot_substitute_unit_bearing_quantity() -> None:
 
     assert plan.calls[0].tool == "numeric_provider"
     assert plan.fallback_route(0) is None
+
+
+
+def test_unitless_text_is_valid_when_units_are_not_requested() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="arxiv",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_text",
+                            json_schema={"type": "string"},
+                            aliases=["논문 초록"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(query="논문 초록")
+    )
+
+    assert plan.calls
+    assert plan.calls[0].fields == ["abstract"]
+
+
+def test_unitless_text_is_rejected_only_when_units_are_explicitly_required() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="arxiv",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_text",
+                            json_schema={"type": "string"},
+                            aliases=["논문 초록"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="논문 초록",
+            evidence=EvidenceRequirements(units=True),
+        )
+    )
+
+    assert plan.calls == []
