@@ -86,6 +86,7 @@ from .models import (
     ToolCall,
     ToolResult,
     ToolSpec,
+    UnitTransformSpec,
 )
 from .openapi_compatibility import (
     OpenAPICompatibilityIssue,
@@ -223,6 +224,7 @@ __all__ = [
     "ToolRegistry",
     "ToolResult",
     "ToolSpec",
+    "UnitTransformSpec",
     "TraceError",
     "UnsupportedSchemaSourceError",
     "schema_tool",
