@@ -1076,6 +1076,7 @@ def test_openapi_adapter_preserves_field_type_and_unit_annotations() -> None:
     assert fields["abstract"].unit is None
     assert fields["elastic_modulus"].json_schema["type"] == "number"
     assert fields["elastic_modulus"].unit == "GPa"
+    assert fields["elastic_modulus"].unit_normalization is None
 
 
 def test_mcp_adapter_preserves_field_type_and_unit_annotations() -> None:
@@ -1112,3 +1113,4 @@ def test_mcp_adapter_preserves_field_type_and_unit_annotations() -> None:
     assert fields["summary"].unit is None
     assert fields["particle_size"].json_schema["type"] == "number"
     assert fields["particle_size"].unit == "nm"
+    assert fields["particle_size"].unit_normalization is None
