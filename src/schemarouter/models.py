@@ -643,6 +643,7 @@ FieldSelectionReason = Literal[
 ]
 CandidateSelectionSource = Literal[
     "deterministic",
+    "semantic_recall",
     "decision_backend",
     "decision_recall",
 ]
