@@ -155,6 +155,20 @@ typed JSON root bodies, nullable normalization, and spec-faithful default parame
 
 [Read the 0.6.0 release notes →](releases/0.6.0.md)
 
+## On main: 0.7 boundary hardening
+
+The current `0.7.0.dev0` line keeps SchemaRouter focused on the execution boundary while adding
+provider/access fallback, recoverable health state, trusted parameter aliases, and stricter
+field-first contracts. Scientific result fields can now carry explicit datatypes, optional unit
+metadata and canonical normalization, plus exact trusted qualifiers such as temperature, phase,
+orientation, or method.
+
+Those qualifiers can participate in deterministic routing only when the condition is visibly present
+in the query. They also gate cross-provider fallback exactly. SchemaRouter does not infer scientific
+equivalence, convert qualifier values, or synthesize measurement context.
+
+[Field-first execution and scientific contracts →](concepts/field-first-execution.md)
+
 ## Go deeper
 
 <div class="grid cards" markdown>
