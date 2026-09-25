@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- formal field-level type/unit contracts: `FieldSpec.json_schema` is now used as the routing type
+  contract, `FieldSpec.unit` remains optional, and inspection/dashboard views expose declared
+  JSON types and units per output field;
 - conservative schema-drift analysis for trusted `EndpointSpec` / `ToolSpec` snapshots, including
   additive/breaking/security-review classification, security-sensitive HTTP method and side-effect
   changes, and `schemarouter inspect diff` for persisted SQLite registries; compatibility reports
@@ -73,6 +76,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
+- provider fallback compatibility now checks semantic identity, JSON value-type compatibility, and
+  exact optional-unit compatibility; scientific unit strings remain case-sensitive and automatic
+  cross-unit conversion is not inferred;
 - execution-facing router APIs now plan across access paths that are both health-eligible and
   currently bound to the same tool fingerprint, while `plan()` / `aplan()` remain schema-planning
   surfaces and explicit `execute(plan)` never replans; `plan_executable()` /
@@ -107,6 +113,8 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Security
 
+- directly resolvable field-level JSON types are checked against endpoint raw output-schema types at
+  registration time, preventing contradictory type metadata from influencing fallback selection;
 - optional read-only fallback routes that are removed, schema-drifted, policy-invalid, unbound, or
   stale-bound are pruned before invocation instead of blocking a still-valid primary, while primary
   schema/policy violations and currently valid mutating fallback contracts remain fail-closed;
