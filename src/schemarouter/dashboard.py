@@ -15,6 +15,15 @@ def _text(value: object | None) -> str:
     return str(value)
 
 
+def _field_contract_text(field: object) -> str:
+    name = str(getattr(field, "name", ""))
+    json_types = getattr(field, "json_types", [])
+    type_text = "|".join(str(value) for value in json_types) if json_types else "?"
+    unit = getattr(field, "unit", None)
+    unit_text = f" [{unit}]" if unit else ""
+    return f"{name}:{type_text}{unit_text}"
+
+
 def _mode(read_only: bool | None, destructive: bool | None) -> str:
     if destructive is True:
         return "destructive"
@@ -65,11 +74,7 @@ def render_dashboard(
         execution_bound = tool.provenance.get("execution_bound")
         for endpoint in tool.endpoints:
             field_summary = ", ".join(
-                (
-                    f"{field.name}:"
-                    f"{'|'.join(field.json_types) if field.json_types else '?'}"
-                    f"{f' [{field.unit}]' if field.unit else ''}"
-                )
+                _field_contract_text(field)
                 for field in endpoint.fields
             )
             search = " ".join(
