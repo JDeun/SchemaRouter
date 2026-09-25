@@ -274,6 +274,51 @@ class SchemaPlanner:
             intent = await intent
         return await self._abuild_plan(request, intent)
 
+    def plan_with_additional_availability(
+        self,
+        request: PlanRequest | str,
+        predicate: Callable[[ToolSpec, EndpointSpec], bool],
+    ) -> ExecutionPlan:
+        """Plan with one extra local availability predicate.
+
+        The configured planner availability predicate still applies. This is used by
+        execution-facing runtimes to add local readiness constraints (for example, current
+        invoker binding state) without changing schema-only planning semantics.
+        """
+
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            if inspect.iscoroutine(intent):
+                intent.close()
+            raise PlanningError(
+                "the configured analyzer is asynchronous; use "
+                "await planner.aplan_with_additional_availability(...)"
+            )
+        return self._build_plan(
+            request,
+            intent,
+            async_decision=False,
+            additional_availability_predicate=predicate,
+        )
+
+    async def aplan_with_additional_availability(
+        self,
+        request: PlanRequest | str,
+        predicate: Callable[[ToolSpec, EndpointSpec], bool],
+    ) -> ExecutionPlan:
+        """Async counterpart to :meth:`plan_with_additional_availability`."""
+
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            intent = await intent
+        return await self._abuild_plan(
+            request,
+            intent,
+            additional_availability_predicate=predicate,
+        )
+
     def _prepare_request(self, request: PlanRequest | str) -> PlanRequest:
         if isinstance(request, str):
             request = PlanRequest(query=request)
@@ -301,7 +346,30 @@ class SchemaPlanner:
             "registry changed repeatedly while building the candidate index"
         )
 
-    def _candidates(self, request: PlanRequest, intent: QueryIntent) -> list[_Candidate]:
+    def _candidates(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> list[_Candidate]:
+        def is_available(tool: ToolSpec, endpoint: EndpointSpec) -> bool:
+            if (
+                self.availability_predicate is not None
+                and not self.availability_predicate(tool, endpoint)
+            ):
+                return False
+            if (
+                additional_availability_predicate is not None
+                and not additional_availability_predicate(tool, endpoint)
+            ):
+                return False
+            return True
+
         if self.candidate_index:
             endpoint_pairs = self._index().endpoint_pairs(request, intent)
         else:
@@ -311,11 +379,14 @@ class SchemaPlanner:
                 for endpoint in tool.endpoints
             )
 
-        if self.availability_predicate is not None:
+        if (
+            self.availability_predicate is not None
+            or additional_availability_predicate is not None
+        ):
             endpoint_pairs = tuple(
                 (tool, endpoint)
                 for tool, endpoint in endpoint_pairs
-                if self.availability_predicate(tool, endpoint)
+                if is_available(tool, endpoint)
             )
 
         candidates = [
@@ -331,10 +402,7 @@ class SchemaPlanner:
                 _Candidate(tool, endpoint, 0.0, ())
                 for tool in self.registry.tools()
                 for endpoint in tool.endpoints
-                if (
-                    self.availability_predicate is None
-                    or self.availability_predicate(tool, endpoint)
-                )
+                if is_available(tool, endpoint)
             ]
         candidates.sort(
             key=lambda candidate: (
@@ -1119,9 +1187,18 @@ class SchemaPlanner:
         intent: QueryIntent,
         *,
         async_decision: bool,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
     ) -> ExecutionPlan:
         del async_decision
-        all_candidates = self._candidates(request, intent)
+        all_candidates = self._candidates(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
         candidates, decision_warnings = self._select_candidates_sync(
             request,
             all_candidates,
@@ -1202,8 +1279,18 @@ class SchemaPlanner:
         self,
         request: PlanRequest,
         intent: QueryIntent,
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
     ) -> ExecutionPlan:
-        all_candidates = self._candidates(request, intent)
+        all_candidates = self._candidates(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
         candidates, decision_warnings = await self._select_candidates_async(
             request,
             all_candidates,

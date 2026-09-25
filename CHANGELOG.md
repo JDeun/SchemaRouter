@@ -70,6 +70,12 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
+- execution-facing router APIs now plan across access paths that are both health-eligible and
+  currently bound to the same tool fingerprint, while `plan()` / `aplan()` remain schema-planning
+  surfaces and explicit `execute(plan)` never replans; `plan_executable()` /
+  `aplan_executable()` expose the live execution-ready planning surface directly;
+- live inspection/dashboard execution state now distinguishes `ready`, `unbound`, `stale`, and
+  `orphaned` invoker bindings from remote/local access-health cooldown state;
 - split descriptive `metadata` from fingerprinted execution-contract metadata: built-in adapters
   now place transport/runtime semantics in `ToolSpec.execution_metadata` /
   `EndpointSpec.execution_metadata`, while `ToolSpec.remote` is the fingerprinted execution-origin
@@ -98,6 +104,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Security
 
+- optional read-only fallback routes that are removed, schema-drifted, policy-invalid, unbound, or
+  stale-bound are pruned before invocation instead of blocking a still-valid primary, while primary
+  schema/policy violations and currently valid mutating fallback contracts remain fail-closed;
 - hardened stale-plan authority boundaries so local/remote classification, approved transport
   origin, and built-in runtime adapter semantics cannot change through unfingerprinted descriptive
   metadata or survive a rebind under an old plan;

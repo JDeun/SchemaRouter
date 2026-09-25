@@ -391,12 +391,12 @@ async def test_parallel_read_only_stream_yields_completion_order() -> None:
 
     router.executor.bind("fanout", invoker)
 
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     try:
         results = [
             result
@@ -409,7 +409,7 @@ async def test_parallel_read_only_stream_yields_completion_order() -> None:
             )
         ]
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     assert [result.data["value"] for result in results] == ["fast", "slow"]
 
@@ -465,12 +465,12 @@ async def test_parallel_read_only_event_stream_reports_completion_order() -> Non
         return {"value": endpoint}
 
     router.executor.bind("fanout", invoker)
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     try:
         events = [
             event
@@ -483,7 +483,7 @@ async def test_parallel_read_only_event_stream_reports_completion_order() -> Non
             )
         ]
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     starts = [event.endpoint for event in events if event.event == "tool.start"]
     ends = [event.endpoint for event in events if event.event == "tool.end"]
@@ -530,12 +530,12 @@ async def test_parallel_preflight_failure_emits_terminal_run_error() -> None:
         "fanout",
         lambda endpoint, arguments: {"value": endpoint},
     )
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     events = []
     try:
         with pytest.raises(PlanValidationError, match="explicitly read-only"):
@@ -545,7 +545,7 @@ async def test_parallel_preflight_failure_emits_terminal_run_error() -> None:
             ):
                 events.append(event)
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     assert [event.event for event in events] == [
         "run.start",
@@ -565,12 +565,12 @@ async def test_parallel_event_tool_start_tracks_actual_concurrency_slot() -> Non
         return {"value": endpoint}
 
     router.executor.bind("fanout", invoker)
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     try:
         events = [
             event
@@ -583,7 +583,7 @@ async def test_parallel_event_tool_start_tracks_actual_concurrency_slot() -> Non
             )
         ]
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     tool_events = [
         event.event
@@ -723,19 +723,19 @@ async def test_fallback_event_stream_records_same_then_cross_provider() -> None:
         lambda endpoint, arguments: {"value": "from-oqmd"},
     )
 
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     try:
         events = [
             event
             async for event in router.astream_events("value")
         ]
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     assert [event.event for event in events] == [
         "run.start",
@@ -778,12 +778,12 @@ async def test_parallel_event_stream_preserves_provider_fallback_trace() -> None
         lambda endpoint, arguments: {"value": "from-oqmd"},
     )
 
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     try:
         events = [
             event
@@ -793,7 +793,7 @@ async def test_parallel_event_stream_preserves_provider_fallback_trace() -> None
             )
         ]
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     fallback = next(event for event in events if event.event == "tool.fallback")
     assert fallback.data["scope"] == "same_provider"
@@ -820,19 +820,19 @@ async def test_event_stream_reports_binding_unavailable_fallback_reason() -> Non
         lambda endpoint, arguments: {"value": "from-oqmd"},
     )
 
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     try:
         events = [
             event
             async for event in router.astream_events("value")
         ]
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     fallback = next(event for event in events if event.event == "tool.fallback")
     assert fallback.data["reason"] == "binding_unavailable"
@@ -843,3 +843,98 @@ async def test_event_stream_reports_binding_unavailable_fallback_reason() -> Non
     assert starts == ["mp_optimade"]
     end = next(event for event in events if event.event == "tool.end")
     assert end.tool == "mp_optimade"
+
+
+
+def _make_execution_ready_router() -> SchemaRouter:
+    router = SchemaRouter()
+    unbound = ToolSpec(
+        name="preferred_unbound",
+        provider="provider_a",
+        access_mode="openapi",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    bound = ToolSpec(
+        name="bound_route",
+        provider="provider_b",
+        access_mode="python",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    router.add_tool(unbound)
+    router.add_tool(bound)
+    router.executor.bind(
+        "bound_route",
+        lambda endpoint, arguments: {"value": "bound"},
+    )
+    return router
+
+
+def test_schema_plan_can_still_describe_unbound_preferred_route() -> None:
+    router = _make_execution_ready_router()
+    request = PlanRequest(
+        query="value",
+        preferred_tools=["preferred_unbound"],
+    )
+
+    plan = router.plan(request)
+
+    assert plan.calls[0].tool == "preferred_unbound"
+
+
+def test_plan_executable_filters_unbound_preferred_route() -> None:
+    router = _make_execution_ready_router()
+    request = PlanRequest(
+        query="value",
+        preferred_tools=["preferred_unbound"],
+    )
+
+    plan = router.plan_executable(request)
+
+    assert plan.calls[0].tool == "bound_route"
+
+
+@pytest.mark.asyncio
+async def test_ainvoke_selects_bound_route_even_when_unbound_route_is_preferred() -> None:
+    router = _make_execution_ready_router()
+    request = PlanRequest(
+        query="value",
+        preferred_tools=["preferred_unbound"],
+    )
+
+    result = await router.ainvoke(request)
+
+    assert result[0].tool == "bound_route"
+    assert result[0].data == {"value": "bound"}
+
+
+@pytest.mark.asyncio
+async def test_event_plan_payload_reflects_execution_ready_route() -> None:
+    router = _make_execution_ready_router()
+    request = PlanRequest(
+        query="value",
+        preferred_tools=["preferred_unbound"],
+    )
+
+    events = [
+        event
+        async for event in router.astream_events(
+            request,
+            config=RunConfig(include_payloads=True),
+        )
+    ]
+
+    plan_event = next(event for event in events if event.event == "plan.end")
+    assert plan_event.data["plan"]["calls"][0]["tool"] == "bound_route"
+    assert next(event for event in events if event.event == "tool.end").tool == "bound_route"

@@ -495,10 +495,37 @@ class SchemaRouter:
         )
 
     def plan(self, request: PlanRequest | str) -> ExecutionPlan:
+        """Schema-aware planning without requiring a currently bound invoker."""
+
         return self.planner.plan(request)
 
     async def aplan(self, request: PlanRequest | str) -> ExecutionPlan:
+        """Async schema-aware planning without requiring a currently bound invoker."""
+
         return await self.planner.aplan(request)
+
+    def _binding_ready(self, tool: ToolSpec, endpoint: Any) -> bool:
+        del endpoint
+        return self.executor.is_binding_ready_for_contract(
+            tool.key,
+            tool.fingerprint,
+        )
+
+    def plan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
+        """Plan only across routes that are currently executable by this router instance."""
+
+        return self.planner.plan_with_additional_availability(
+            request,
+            self._binding_ready,
+        )
+
+    async def aplan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
+        """Async counterpart to :meth:`plan_executable`."""
+
+        return await self.planner.aplan_with_additional_availability(
+            request,
+            self._binding_ready,
+        )
 
     async def _execute_plan(
         self,
@@ -534,7 +561,7 @@ class SchemaRouter:
         config: RunConfig | dict[str, Any] | None = None,
     ) -> list[ToolResult]:
         run_config = _coerce_config(config)
-        plan = await self.aplan(request)
+        plan = await self.aplan_executable(request)
         return await self._execute_plan(plan, run_config)
 
     def invoke(
@@ -637,7 +664,7 @@ class SchemaRouter:
         config: RunConfig | dict[str, Any] | None = None,
     ) -> AsyncIterator[ToolResult]:
         run_config = _coerce_config(config)
-        plan = await self.aplan(request)
+        plan = await self.aplan_executable(request)
         if run_config.execution_mode == "parallel_read_only":
             async for _, result in self.executor.execute_parallel_read_only_iter(
                 plan,
@@ -699,7 +726,7 @@ class SchemaRouter:
         sequence += 1
 
         try:
-            plan = await self.aplan(request)
+            plan = await self.aplan_executable(request)
         except Exception as exc:
             data = {"error_type": type(exc).__name__, "stage": "planning"}
             if run_config.include_payloads:
