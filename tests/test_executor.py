@@ -3,6 +3,7 @@ import pytest
 from schemarouter import (
     BindingDriftError,
     EndpointSpec,
+    EvidenceRequirements,
     ExecutionError,
     ExecutionPlan,
     ExecutionPolicy,
@@ -1294,3 +1295,240 @@ async def test_primary_policy_denial_never_falls_through_to_allowed_fallback() -
         await executor.execute(plan)
 
     assert fallback_called is False
+
+
+def test_executor_rejects_forged_global_required_evidence() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="unitless",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="value",
+                            json_schema={"type": "number"},
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    endpoint = reg.endpoint("unitless", "read")
+    call = ToolCall(
+        tool="unitless",
+        endpoint="read",
+        fields=["value"],
+        required_evidence=EvidenceRequirements(units=True),
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    with pytest.raises(
+        PlanValidationError,
+        match="required evidence unavailable.*units",
+    ):
+        RegistryExecutor(reg).validate_call(call)
+
+
+def test_executor_rejects_forged_field_evidence() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="unitless",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="gap",
+                            semantic_id="band_gap",
+                            json_schema={"type": "number"},
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    endpoint = reg.endpoint("unitless", "read")
+    call = ToolCall(
+        tool="unitless",
+        endpoint="read",
+        fields=["gap"],
+        field_evidence={
+            "gap": EvidenceRequirements(units=True),
+        },
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    with pytest.raises(
+        PlanValidationError,
+        match="field evidence requirements unavailable.*gap.units",
+    ):
+        RegistryExecutor(reg).validate_call(call)
+
+
+def test_executor_rejects_field_evidence_for_unselected_field() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="materials",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="band_gap",
+                            json_schema={"type": "number"},
+                            unit="eV",
+                        ),
+                        FieldSpec(
+                            name="density",
+                            json_schema={"type": "number"},
+                            unit="g/cm3",
+                        ),
+                    ],
+                )
+            ],
+        )
+    )
+    endpoint = reg.endpoint("materials", "read")
+    call = ToolCall(
+        tool="materials",
+        endpoint="read",
+        fields=["band_gap"],
+        field_evidence={
+            "density": EvidenceRequirements(units=True),
+        },
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    with pytest.raises(
+        PlanValidationError,
+        match="field evidence requirements unavailable.*density.selected_field",
+    ):
+        RegistryExecutor(reg).validate_call(call)
+
+
+def test_executor_rejects_available_evidence_overclaim() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="unitless",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="value",
+                            json_schema={"type": "number"},
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    endpoint = reg.endpoint("unitless", "read")
+    call = ToolCall(
+        tool="unitless",
+        endpoint="read",
+        fields=["value"],
+        evidence=EvidenceRequirements(units=True),
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    with pytest.raises(
+        PlanValidationError,
+        match="call evidence overclaims current contract.*units",
+    ):
+        RegistryExecutor(reg).validate_call(call)
+
+
+def test_executor_rejects_conflicting_global_and_field_source_types() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="mixed_source",
+            source_type="calculated",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="value",
+                            source_type="experimental",
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    endpoint = reg.endpoint("mixed_source", "read")
+    call = ToolCall(
+        tool="mixed_source",
+        endpoint="read",
+        fields=["value"],
+        required_evidence=EvidenceRequirements(source_type="calculated"),
+        field_evidence={
+            "value": EvidenceRequirements(source_type="experimental"),
+        },
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    with pytest.raises(
+        PlanValidationError,
+        match="field evidence source_type conflicts with global required evidence",
+    ):
+        RegistryExecutor(reg).validate_call(call)
+
+
+@pytest.mark.asyncio
+async def test_executor_accepts_planner_compiled_evidence_contract() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="materials",
+            source_type="calculated",
+            license="CC BY 4.0",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="band_gap",
+                            semantic_id="band_gap",
+                            aliases=["band gap"],
+                            json_schema={"type": "number"},
+                            unit="eV",
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="band gap",
+            evidence=EvidenceRequirements(
+                provenance=True,
+                license=True,
+                units=True,
+                source_type="calculated",
+            ),
+            field_evidence={
+                "band_gap": EvidenceRequirements(units=True),
+            },
+        )
+    )
+    executor = RegistryExecutor(reg)
+    executor.bind("materials", lambda endpoint, arguments: {"band_gap": 2.1})
+
+    result = (await executor.execute(plan))[0]
+
+    assert result.data == {"band_gap": 2.1}
