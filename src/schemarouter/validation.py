@@ -60,6 +60,64 @@ def effective_output_schema(endpoint: EndpointSpec) -> dict[str, Any]:
     return {}
 
 
+def field_value_schema(endpoint: EndpointSpec, field_name: str) -> dict[str, Any]:
+    """Resolve the declared raw value schema for one output field conservatively."""
+
+    field = next(
+        (candidate for candidate in endpoint.output_fields if candidate.name == field_name),
+        None,
+    )
+    if field is None:
+        return {}
+    if field.json_schema:
+        return deepcopy(field.json_schema)
+
+    schema = effective_output_schema(endpoint)
+    if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
+        schema = schema["items"]
+
+    for part in field.projection_path:
+        if schema.get("type") != "object":
+            return {}
+        properties = schema.get("properties")
+        if not isinstance(properties, dict):
+            return {}
+        child = properties.get(part)
+        if not isinstance(child, dict):
+            return {}
+        schema = child
+
+    return deepcopy(schema)
+
+
+def json_schema_types(schema: dict[str, Any]) -> frozenset[str]:
+    declared = schema.get("type")
+    if isinstance(declared, str):
+        return frozenset({declared})
+    if isinstance(declared, list):
+        return frozenset(
+            value
+            for value in declared
+            if isinstance(value, str)
+        )
+    return frozenset()
+
+
+def json_types_compatible(
+    required: frozenset[str],
+    candidate: frozenset[str],
+) -> bool:
+    """Conservative value-type compatibility for fallback fields."""
+
+    if not required or not candidate:
+        return True
+    if not required.isdisjoint(candidate):
+        return True
+
+    numeric = {"number", "integer"}
+    return bool(required & numeric) and bool(candidate & numeric)
+
+
 def projected_output_schema(
     endpoint: EndpointSpec,
     selected_fields: list[str],
