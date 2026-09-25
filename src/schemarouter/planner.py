@@ -187,7 +187,16 @@ class _CandidateIndex:
                             self._add(self._field_norm_refs, norm, ref)
 
                 for parameter in endpoint.parameters:
-                    self._add(self._parameter_refs, parameter.name, ref)
+                    for parameter_name in [
+                        parameter.name,
+                        *parameter.aliases,
+                    ]:
+                        if not parameter_name:
+                            continue
+                        self._add(self._parameter_refs, parameter_name, ref)
+                        normalized = _normalize(parameter_name)
+                        if normalized:
+                            self._add(self._parameter_refs, normalized, ref)
 
     @staticmethod
     def _add(
@@ -213,6 +222,9 @@ class _CandidateIndex:
             refs.update(self._token_refs.get(token, ()))
         for parameter_name in intent.arguments:
             refs.update(self._parameter_refs.get(parameter_name, ()))
+            normalized = _normalize(parameter_name)
+            if normalized:
+                refs.update(self._parameter_refs.get(normalized, ()))
 
         concept_norms = {
             _normalize(concept)
@@ -963,6 +975,48 @@ class SchemaPlanner:
         ]
         return [*same_provider, *other_provider]
 
+    @staticmethod
+    def _resolve_arguments(
+        endpoint: EndpointSpec,
+        supplied: dict[str, object],
+    ) -> tuple[dict[str, object], list[str], list[str]]:
+        declared = {parameter.name: parameter for parameter in endpoint.parameters}
+        arguments: dict[str, object] = {}
+        consumed: set[str] = set()
+        ambiguous: list[str] = []
+
+        # Exact local contract names always win over aliases.
+        for name, value in supplied.items():
+            if name in declared:
+                arguments[name] = value
+                consumed.add(name)
+
+        for supplied_name, value in supplied.items():
+            if supplied_name in consumed:
+                continue
+            normalized = _normalize(supplied_name)
+            if not normalized:
+                continue
+            matches = [
+                parameter
+                for parameter in endpoint.parameters
+                if parameter.name not in arguments
+                and normalized
+                in {
+                    _normalize(alias)
+                    for alias in parameter.aliases
+                    if alias and _normalize(alias)
+                }
+            ]
+            if len(matches) == 1:
+                arguments[matches[0].name] = value
+                consumed.add(supplied_name)
+            elif len(matches) > 1:
+                ambiguous.append(supplied_name)
+
+        dropped = sorted(set(supplied) - consumed)
+        return arguments, dropped, sorted(set(ambiguous))
+
     def _compile_candidate_sync(
         self,
         request: PlanRequest,
@@ -973,13 +1027,15 @@ class SchemaPlanner:
         warn_ignored_arguments: bool = True,
     ) -> ToolCall | None:
         endpoint = candidate.endpoint
-        declared = {parameter.name: parameter for parameter in endpoint.parameters}
-        arguments = {
-            name: value
-            for name, value in intent.arguments.items()
-            if name in declared
-        }
-        dropped = sorted(set(intent.arguments) - set(arguments))
+        arguments, dropped, ambiguous = self._resolve_arguments(
+            endpoint,
+            intent.arguments,
+        )
+        if ambiguous:
+            warnings.append(
+                f"{candidate.tool.key}.{endpoint.name}: ambiguous parameter aliases: "
+                + ", ".join(ambiguous)
+            )
         if dropped and warn_ignored_arguments:
             warnings.append(
                 f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
@@ -1048,13 +1104,15 @@ class SchemaPlanner:
         warn_ignored_arguments: bool = True,
     ) -> ToolCall | None:
         endpoint = candidate.endpoint
-        declared = {parameter.name: parameter for parameter in endpoint.parameters}
-        arguments = {
-            name: value
-            for name, value in intent.arguments.items()
-            if name in declared
-        }
-        dropped = sorted(set(intent.arguments) - set(arguments))
+        arguments, dropped, ambiguous = self._resolve_arguments(
+            endpoint,
+            intent.arguments,
+        )
+        if ambiguous:
+            warnings.append(
+                f"{candidate.tool.key}.{endpoint.name}: ambiguous parameter aliases: "
+                + ", ".join(ambiguous)
+            )
         if dropped and warn_ignored_arguments:
             warnings.append(
                 f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
@@ -1392,12 +1450,28 @@ class SchemaPlanner:
                     ScoreComponent(kind="field_substring", value=1.0, matched=field.name)
                 )
 
+        supplied_argument_names = set(intent.arguments)
+        supplied_argument_norms = {
+            _normalize(name)
+            for name in supplied_argument_names
+            if _normalize(name)
+        }
         for parameter in endpoint.parameters:
-            if parameter.name in intent.arguments:
+            exact_argument = parameter.name in supplied_argument_names
+            alias_argument = any(
+                _normalize(alias) in supplied_argument_norms
+                for alias in parameter.aliases
+                if alias and _normalize(alias)
+            )
+            if exact_argument or alias_argument:
                 score += 2.0
                 components.append(
                     ScoreComponent(
-                        kind="argument_match",
+                        kind=(
+                            "argument_match"
+                            if exact_argument
+                            else "argument_alias_match"
+                        ),
                         value=2.0,
                         matched=parameter.name,
                     )
