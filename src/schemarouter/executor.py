@@ -9,6 +9,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from .evidence import available_evidence, field_evidence_status, global_evidence_status
 from .errors import (
     ApprovalDeniedError,
     BindingDriftError,
@@ -506,6 +507,74 @@ class RegistryExecutor:
         if endpoint.output_fields and not call.fields:
             raise PlanValidationError(
                 f"explicit output projection required for {call.tool}.{call.endpoint}"
+            )
+
+        actual_available = available_evidence(
+            tool,
+            endpoint,
+            call.fields,
+        )
+        evidence_overclaims: list[str] = []
+        if call.evidence.provenance and not actual_available.provenance:
+            evidence_overclaims.append("provenance")
+        if call.evidence.license and not actual_available.license:
+            evidence_overclaims.append("license")
+        if call.evidence.units and not actual_available.units:
+            evidence_overclaims.append("units")
+        if (
+            call.evidence.source_type is not None
+            and call.evidence.source_type != actual_available.source_type
+        ):
+            evidence_overclaims.append(
+                f"source_type={call.evidence.source_type}"
+            )
+        if evidence_overclaims:
+            raise PlanValidationError(
+                f"call evidence overclaims current contract for "
+                f"{call.tool}.{call.endpoint}: "
+                + ", ".join(evidence_overclaims)
+            )
+
+        global_ok, _, global_missing = global_evidence_status(
+            tool,
+            endpoint,
+            call.fields,
+            call.required_evidence,
+        )
+        if not global_ok:
+            raise PlanValidationError(
+                f"required evidence unavailable for {call.tool}.{call.endpoint}: "
+                + ", ".join(global_missing)
+            )
+
+        if call.required_evidence.source_type is not None:
+            conflicting_field_source_types = sorted(
+                field_name
+                for field_name, requirement in call.field_evidence.items()
+                if (
+                    requirement.source_type is not None
+                    and requirement.source_type
+                    != call.required_evidence.source_type
+                )
+            )
+            if conflicting_field_source_types:
+                raise PlanValidationError(
+                    "field evidence source_type conflicts with global required evidence "
+                    f"for {call.tool}.{call.endpoint}: "
+                    + ", ".join(conflicting_field_source_types)
+                )
+
+        field_ok, _, field_missing = field_evidence_status(
+            tool,
+            endpoint,
+            call.fields,
+            call.field_evidence,
+        )
+        if not field_ok:
+            raise PlanValidationError(
+                f"field evidence requirements unavailable for "
+                f"{call.tool}.{call.endpoint}: "
+                + ", ".join(field_missing)
             )
 
         return tool, endpoint
