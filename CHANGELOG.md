@@ -43,6 +43,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - strict scientific contract validation that enforces selected `FieldSpec.json_schema` values at
   runtime, requires explicit datatypes for unit-bearing automatic fallback, rejects contradictory
   field/raw type declarations, and compares post-normalization canonical result datatypes;
+- OpenAPI/MCP preservation of recognized source-unit schema annotations plus typed field-contract
+  inspection/dashboard views showing result type, source/canonical units, physical dimension,
+  normalization state, and provider/canonical projection paths without inferring conversions;
 
 - self-contained HTML summaries for the decision-routing benchmark, alongside the existing JSON/CSV
   outputs, with escaped metadata and no remote assets;
