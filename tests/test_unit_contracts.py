@@ -1177,3 +1177,50 @@ def test_unitless_text_is_rejected_only_when_units_are_explicitly_required() -> 
     )
 
     assert plan.calls == []
+
+
+
+@pytest.mark.asyncio
+async def test_result_field_contracts_include_only_selected_fields() -> None:
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                semantic_id="elastic_modulus",
+                json_schema={"type": "number"},
+                unit="GPa",
+            ),
+            FieldSpec(
+                name="density",
+                semantic_id="density",
+                json_schema={"type": "number"},
+                unit="g/cm3",
+            ),
+        ],
+    )
+    tool = ToolSpec(name="materials", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "materials",
+        lambda endpoint_name, arguments: {
+            "elastic_modulus": 130.0,
+            "density": 2.33,
+        },
+    )
+    call = ToolCall(
+        tool="materials",
+        endpoint="read",
+        fields=["elastic_modulus"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    result = await executor.execute_call(call)
+
+    assert result.data == {"elastic_modulus": 130.0}
+    assert set(result.field_contracts) == {"elastic_modulus"}
+    assert result.field_contracts["elastic_modulus"].unit == "GPa"
