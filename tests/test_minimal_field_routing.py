@@ -144,11 +144,13 @@ async def test_elastic_modulus_query_uses_only_healthy_minimal_access_path() -> 
         first_plan = router.plan(request)
         assert first_plan.calls[0].tool == "provider_b_optimade"
         assert first_plan.calls[0].fields == ["elastic_modulus"]
+        assert first_plan.calls[0].required_fields == ["elastic_modulus"]
         first_route = first_plan.fallback_route(0)
         assert first_route is not None
         assert [call.tool for call in first_route.alternatives] == [
             "provider_a_rest"
         ]
+        assert first_route.alternatives[0].required_fields == ["elastic_modulus"]
 
         first_result = (await router.execute(first_plan))[0]
 
@@ -169,6 +171,7 @@ async def test_elastic_modulus_query_uses_only_healthy_minimal_access_path() -> 
         # OPTIMADE route is not selected as primary again.
         second_plan = router.plan(request)
         assert second_plan.calls[0].tool == "provider_a_rest"
+        assert second_plan.calls[0].required_fields == ["elastic_modulus"]
         second_result = (await router.execute(second_plan))[0]
 
         assert second_result.data == {"elastic_modulus": 130.0}
