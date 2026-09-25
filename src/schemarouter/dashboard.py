@@ -21,6 +21,7 @@ def _field_contract_text(field: object) -> str:
     source_unit = getattr(field, "source_unit", None)
     canonical_unit = getattr(field, "unit", None)
     dimension = getattr(field, "dimension", None)
+    dimensionless = bool(getattr(field, "dimensionless", False))
 
     unit_text = ""
     if source_unit and canonical_unit and source_unit != canonical_unit:
@@ -33,6 +34,8 @@ def _field_contract_text(field: object) -> str:
         if dimension:
             unit_text += f"; {dimension}"
         unit_text += "]"
+    elif dimensionless:
+        unit_text = " [dimensionless]"
 
     return f"{name}:{type_signature}{unit_text}"
 
