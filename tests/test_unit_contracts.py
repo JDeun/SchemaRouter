@@ -868,3 +868,69 @@ async def test_affine_offset_unit_normalization() -> None:
     assert result.data["temperature"] == pytest.approx(298.15)
     assert result.field_contracts["temperature"].source_unit == "degC"
     assert result.field_contracts["temperature"].unit == "K"
+
+
+
+@pytest.mark.asyncio
+async def test_provider_source_path_is_canonicalized_before_unit_normalization() -> None:
+    field = FieldSpec(
+        name="elastic_modulus",
+        semantic_id="elastic_modulus",
+        json_schema={"type": "number"},
+        path=["elasticity", "_provider_bulk_modulus"],
+        result_path=["elastic_modulus"],
+        unit="GPa",
+        unit_normalization=UnitNormalizationSpec(
+            dimension="pressure",
+            canonical_unit="Pa",
+            scale=1e9,
+        ),
+    )
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[field],
+        output_schema={
+            "type": "object",
+            "properties": {
+                "elasticity": {
+                    "type": "object",
+                    "properties": {
+                        "_provider_bulk_modulus": {"type": "number"},
+                    },
+                    "required": ["_provider_bulk_modulus"],
+                }
+            },
+            "required": ["elasticity"],
+        },
+    )
+    tool = ToolSpec(name="provider_specific", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool="provider_specific",
+        endpoint="read",
+        fields=["elastic_modulus"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "provider_specific",
+        lambda endpoint_name, arguments: {
+            "elasticity": {
+                "_provider_bulk_modulus": 130.0,
+            }
+        },
+    )
+
+    result = await executor.execute_call(call)
+
+    assert result.data == {"elastic_modulus": 130_000_000_000.0}
+    contract = result.field_contracts["elastic_modulus"]
+    assert contract.semantic_id == "elastic_modulus"
+    assert contract.json_schema == {"type": "number"}
+    assert contract.source_unit == "GPa"
+    assert contract.unit == "Pa"
+    assert contract.dimension == "pressure"
