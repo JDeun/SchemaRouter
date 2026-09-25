@@ -278,6 +278,10 @@ class ToolSpec(StrictModel):
     @model_validator(mode="after")
     def validate_endpoints(self) -> ToolSpec:
         _validate_execution_metadata(self.execution_metadata)
+        if self.provider is not None and not self.provider.strip():
+            raise ValueError("tool provider must be non-empty when provided")
+        if self.access_mode is not None and not self.access_mode.strip():
+            raise ValueError("tool access_mode must be non-empty when provided")
         names = [e.name for e in self.endpoints]
         if not names:
             raise ValueError("tool must define at least one endpoint")
