@@ -81,6 +81,29 @@ optional decision backend일 뿐입니다.
 - retry, elapsed time, remote call, response size 제한;
 - OpenAPI 호환성 한계를 추측하지 않고 명시적으로 보고.
 
+## 실사용 시나리오
+
+<p align="center">
+  <img src="docs/assets/real-world-scenario.ko.svg" alt="SchemaRouter 실사용 시나리오: field-first, route-second" width="100%">
+</p>
+
+하나의 요청이 서로 다른 provider의 필드를 동시에 필요로 할 수 있습니다. 예를 들어 소재 관련
+질문 하나가 Materials Project의 숫자형 `band_gap`과 arXiv의 텍스트형 `abstract`를 함께
+요구할 수 있습니다.
+
+SchemaRouter는 **필요한 semantic field를 먼저 결정**한 뒤, 제한된 `max_calls` 예산을
+그 필드들을 상호 보완적으로 충족하는 provider/access path에 사용합니다. health, policy,
+availability 때문에 route는 바뀔 수 있지만 필요한 데이터 contract 자체는 바뀌지 않습니다.
+
+```text
+band_gap  -> Materials Project / OpenAPI
+             ↳ OPTIMADE fallback
+abstract  -> arXiv API
+```
+
+최종 실행 계획은 계속 schema-validated, policy-bounded, fail-closed 원칙 안에 있습니다.
+하나의 route가 필요한 모든 field를 충족하면 `max_calls` 상한에 도달하기 전에 멈출 수 있습니다.
+
 ## 빠른 시작
 
 ```python
