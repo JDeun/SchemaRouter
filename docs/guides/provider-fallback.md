@@ -248,3 +248,45 @@ Fallback routes consume the same run budget as the primary route. Every actual f
 counts as another logical tool call and its attempts/cost units are charged normally.
 
 This prevents fallback from becoming an unbounded availability loop.
+
+
+## What if every access path is down?
+
+Temporary unavailability is never a permanent blacklist.
+
+If every eligible access path is inside its cooldown window, planning can legitimately return no
+route for that moment rather than repeatedly paying for known-failing network calls. Recovery happens
+through either of two bounded mechanisms:
+
+1. **Passive re-entry** — every unavailable mark has a finite cooldown. When it expires, the access
+   path automatically becomes eligible for planning again.
+2. **Active background recovery** — a trusted read-only health probe can reopen a recovered path
+   before the cooldown expires.
+
+Example:
+
+```python
+router.register_health_probe(
+    "mp_optimade",
+    "search_structures",
+    mp_optimade_health,
+)
+
+await router.start_health_monitor(
+    interval_seconds=30,
+    probe_timeout_seconds=5,
+    max_concurrency=4,
+)
+```
+
+The background monitor runs immediately and then repeats at the configured interval. Probe success
+clears the access-path cooldown; the next planning turn can select that path again. Probe failure
+only extends the bounded cooldown and does not alter schema fingerprints, policy authority, or
+provider field semantics.
+
+SchemaRouter does **not** synthesize arbitrary health traffic. There is no universal safe health
+endpoint for generic REST/OpenAPI services, so probes remain explicit trusted local callbacks.
+Where a provider exposes a documented cheap read-only status/info endpoint, applications should use
+that endpoint for the probe rather than issuing a normal data query.
+
+This means an all-down state is a temporary availability state, not an absorbing terminal state.
