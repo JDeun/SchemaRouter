@@ -28,6 +28,8 @@ This document tracks framework-level maturity rather than research metrics.
 | Planning explanations | Structured score components, field-selection reasons, ignored-argument records, and decision-selection source | Keep explanations structural; never expose model chain-of-thought |
 | In-plan concurrency | Explicit flat `parallel_read_only` fan-out with preflight validation, completion streaming, and shared budgets | Keep DAG/dependency/write orchestration out of core |
 | Provider/access fallback | Precompiled read-only same-provider/cross-provider routes with semantic field compatibility and typed fallback events | Expand provider federation only through explicit contracts |
+| Scientific field contracts | Explicit JSON value shape, optional exact units, affine canonical normalization, exact trusted qualifiers, qualifier-aware routing, and fail-closed fallback compatibility | Keep ontology/unit inference outside core; add richer scientific semantics only through explicit trusted contracts |
+| Provider parameter aliases | Trusted exact/alias binding with ambiguity fail-closed behavior and independent fallback compilation | Keep model-generated parameter remapping out of the execution boundary |
 | Access health | Finite passive cooldown + optional trusted background probes with early reopen | Integrate external health sources without model authority |
 | LangChain / LangGraph / LlamaIndex integrations | Implemented optional adapters and native graph node | Expand ecosystem listings |
 | Bounded decision backends | Candidate + field + conservative evidence-sufficiency surfaces, provider-neutral callable/embedding + optional Jev/Laya/Ollama, all opt-in | Gather live decision evidence |
