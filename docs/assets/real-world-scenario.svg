@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+<title id="title">Real-world scenario: field-first, route-second</title>
+<desc id="desc">Four-panel SchemaRouter scenario showing a user request, required fields, route selection, and validated result.</desc>
+<style>
+  .bg{fill:#fff}.panel{fill:#fbfdff;stroke:#cfe1ee;stroke-width:2}.title{font:700 42px system-ui,-apple-system,Segoe UI,sans-serif;fill:#0b1f3a}.sub{font:600 24px system-ui,-apple-system,Segoe UI,sans-serif;fill:#62758c}
+  .h{font:700 27px system-ui,-apple-system,Segoe UI,sans-serif;fill:#0b1f3a}.b{font:500 18px system-ui,-apple-system,Segoe UI,sans-serif;fill:#26384d}.small{font:500 15px system-ui,-apple-system,Segoe UI,sans-serif;fill:#53677d}
+  .mono{font:500 17px ui-monospace,SFMono-Regular,Consolas,monospace;fill:#26384d}.blue{fill:#1479d1}.green{fill:#0b8f62}.soft{fill:#eef8ff;stroke:#93c9eb;stroke-width:2}.ok{fill:#effbf5;stroke:#8ed5b7;stroke-width:2}.badge{fill:#bde6ff}.line{stroke:#1479d1;stroke-width:3;fill:none;marker-end:url(#arrow)}.dash{stroke:#8da3b7;stroke-width:2;fill:none;stroke-dasharray:7 7}
+</style>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#1479d1"/></marker></defs>
+<rect class="bg" width="1440" height="900"/>
+<text x="720" y="58" text-anchor="middle" class="title">Real-world scenario</text>
+<text x="720" y="94" text-anchor="middle" class="sub">Field-first, route-second</text>
+
+<rect x="28" y="125" rx="22" ry="22" width="680" height="350" class="panel"/>
+<circle cx="72" cy="166" r="28" class="badge"/><text x="72" y="176" text-anchor="middle" class="h">1</text><text x="112" y="176" class="h">User request</text>
+<circle cx="108" cy="333" r="38" fill="#1c6fb7"/><circle cx="108" cy="294" r="26" fill="#ffd7b5"/><path d="M76 292 Q108 254 140 292" fill="#17314f"/>
+<rect x="142" y="336" width="170" height="92" rx="8" fill="#d9e4ee" stroke="#50677e" stroke-width="2"/><path d="M130 428 L330 428" stroke="#50677e" stroke-width="5"/>
+<rect x="54" y="210" width="296" height="86" rx="18" class="soft"/><text x="76" y="242" class="b">Find the <tspan font-weight="700" fill="#1479d1">band gap</tspan> and</text><text x="76" y="272" class="b">a related <tspan font-weight="700" fill="#1479d1">paper abstract</tspan>.</text>
+<path d="M340 252 C395 250 400 215 430 205" class="dash"/><path d="M340 260 C395 265 400 305 430 310" class="dash"/><path d="M340 268 C395 290 400 405 430 410" class="dash"/>
+<g><rect x="430" y="190" width="118" height="70" rx="12" class="soft"/><text x="489" y="218" text-anchor="middle" class="small">Materials</text><text x="489" y="241" text-anchor="middle" class="small">Project</text>
+<rect x="560" y="190" width="118" height="70" rx="12" class="soft"/><text x="619" y="231" text-anchor="middle" class="small">OPTIMADE</text>
+<rect x="430" y="280" width="118" height="70" rx="12" class="soft"/><text x="489" y="321" text-anchor="middle" class="small">arXiv</text>
+<rect x="560" y="280" width="118" height="70" rx="12" class="soft"/><text x="619" y="321" text-anchor="middle" class="small">Web</text>
+<rect x="430" y="370" width="118" height="70" rx="12" class="soft"/><text x="489" y="411" text-anchor="middle" class="small">MCP</text>
+<rect x="560" y="370" width="118" height="70" rx="12" class="soft"/><text x="619" y="411" text-anchor="middle" class="small">Python</text></g>
+
+<rect x="732" y="125" rx="22" ry="22" width="680" height="350" class="panel"/>
+<circle cx="776" cy="166" r="28" class="badge"/><text x="776" y="176" text-anchor="middle" class="h">2</text><text x="816" y="176" class="h">Required fields</text>
+<rect x="768" y="265" width="125" height="60" rx="10" fill="#f1f5f8" stroke="#c7d2dc"/><text x="830" y="300" text-anchor="middle" class="b">User request</text>
+<path d="M895 295 L962 295" class="line"/>
+<rect x="970" y="220" width="210" height="150" rx="18" class="soft"/><text x="1075" y="273" text-anchor="middle" class="h">SchemaRouter</text><text x="1075" y="307" text-anchor="middle" class="small">Decides which declared</text><text x="1075" y="330" text-anchor="middle" class="small">data fields are needed first.</text>
+<path d="M1182 295 L1230 295" class="line"/>
+<rect x="1238" y="205" width="150" height="190" rx="14" fill="#fff" stroke="#a8d8e8" stroke-width="2"/><text x="1313" y="236" text-anchor="middle" class="small" font-weight="700">Required fields</text>
+<text x="1253" y="276" class="mono blue">band_gap</text><text x="1268" y="303" class="mono">type: number</text><text x="1268" y="330" class="mono">unit: eV</text>
+<text x="1253" y="366" class="mono blue">abstract</text><text x="1268" y="393" class="mono">type: string</text><text x="1268" y="420" class="mono">unit: —</text>
+
+<rect x="28" y="500" rx="22" ry="22" width="680" height="365" class="panel"/>
+<circle cx="72" cy="541" r="28" class="badge"/><text x="72" y="551" text-anchor="middle" class="h">3</text><text x="112" y="551" class="h">Route selection</text>
+<rect x="54" y="610" width="180" height="150" rx="18" class="soft"/><text x="144" y="664" text-anchor="middle" class="h" font-size="24">SchemaRouter</text><text x="144" y="698" text-anchor="middle" class="small">Selects validated routes</text><text x="144" y="720" text-anchor="middle" class="small">for required fields.</text>
+<path d="M236 650 L302 650" class="line"/><path d="M236 713 L302 713" class="line"/>
+<rect x="310" y="586" width="365" height="205" rx="14" fill="#fff" stroke="#b9dcec" stroke-width="2"/><text x="330" y="617" class="small" font-weight="700">Selected routes</text>
+<text x="330" y="659" class="mono blue">band_gap</text><text x="442" y="659" class="b">→ Materials Project / OpenAPI</text><text x="650" y="659" class="b green">✓</text>
+<text x="442" y="695" class="small">↳ OPTIMADE fallback</text>
+<text x="330" y="744" class="mono blue">abstract</text><text x="442" y="744" class="b">→ arXiv API</text><text x="650" y="744" class="b green">✓</text>
+<rect x="54" y="805" width="621" height="42" rx="10" class="ok"/><text x="74" y="832" class="small"><tspan fill="#0b8f62">✓</tspan> schema   <tspan fill="#0b8f62">✓</tspan> health   <tspan fill="#0b8f62">✓</tspan> policy   <tspan fill="#0b8f62">✓</tspan> read-only     max_calls = 2</text>
+
+<rect x="732" y="500" rx="22" ry="22" width="680" height="365" class="panel"/>
+<circle cx="776" cy="541" r="28" class="badge"/><text x="776" y="551" text-anchor="middle" class="h">4</text><text x="816" y="551" class="h">Validated result</text>
+<circle cx="850" cy="691" r="42" fill="#1c6fb7"/><circle cx="850" cy="648" r="28" fill="#ffd7b5"/><path d="M816 646 Q850 605 884 646" fill="#17314f"/>
+<rect x="885" y="690" width="150" height="86" rx="8" fill="#d9e4ee" stroke="#50677e" stroke-width="2"/>
+<rect x="1025" y="605" width="340" height="170" rx="16" class="ok"/><text x="1048" y="638" class="b green">✓ Result (only requested fields)</text>
+<text x="1050" y="684" class="mono">{</text><text x="1070" y="715" class="mono"><tspan class="blue">"band_gap"</tspan>: 2.31,</text><text x="1070" y="746" class="mono"><tspan class="blue">"abstract"</tspan>: "..."</text><text x="1050" y="773" class="mono">}</text>
+<rect x="1025" y="795" width="340" height="48" rx="12" class="soft"/><text x="1195" y="826" text-anchor="middle" class="b">Execute only what was declared.</text>
+</svg>

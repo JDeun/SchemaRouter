@@ -81,6 +81,28 @@ execution boundary explicit:
 - bound retries, elapsed time, remote calls, and response size;
 - surface OpenAPI compatibility gaps instead of silently guessing.
 
+## Real-world scenario
+
+<p align="center">
+  <img src="docs/assets/real-world-scenario.svg" alt="SchemaRouter real-world scenario: field-first, route-second" width="100%">
+</p>
+
+A single request can require fields from different providers. For example, a materials question may
+need a numeric `band_gap` from Materials Project and a text `abstract` from arXiv.
+
+SchemaRouter resolves the **semantic field need first**, then spends the bounded `max_calls` budget
+on complementary provider/access paths that can satisfy those fields. A route can change because of
+health, policy, or availability; the required data contract does not.
+
+```text
+band_gap  -> Materials Project / OpenAPI
+             ↳ OPTIMADE fallback
+abstract  -> arXiv API
+```
+
+The final execution plan remains schema-validated, policy-bounded, and fail-closed. When one route
+already covers every matched field, SchemaRouter can stop before reaching the `max_calls` bound.
+
 ## Quickstart
 
 ```python
