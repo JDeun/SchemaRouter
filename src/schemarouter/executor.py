@@ -37,7 +37,6 @@ from .validation import (
     effective_input_schema,
     effective_output_schema,
     canonical_field_value_schema,
-    field_value_schema,
     json_schema_types,
     projected_output_schema,
     validate_json_schema_value,
@@ -704,6 +703,12 @@ class RegistryExecutor:
                         endpoint,
                         context=f"output from {call.tool}.{call.endpoint}",
                     )
+                self._validate_selected_field_schemas(
+                    value,
+                    call.fields,
+                    endpoint,
+                    context=f"output from {call.tool}.{call.endpoint}",
+                )
                 selected_field_specs = {
                     field.name: field
                     for field in endpoint.output_fields
@@ -1012,6 +1017,53 @@ class RegistryExecutor:
                     raise SchemaValidationError(
                         f"{context}{suffix}: projected field {field_name!r} is missing"
                     )
+
+    @staticmethod
+    def _validate_selected_field_schemas(
+        value: Any,
+        fields: list[str],
+        endpoint: EndpointSpec,
+        *,
+        context: str,
+    ) -> None:
+        if not fields:
+            return
+        if isinstance(value, dict):
+            items = [value]
+        elif isinstance(value, list):
+            items = value
+        else:
+            return
+
+        field_map = {field.name: field for field in endpoint.output_fields}
+        for item_index, item in enumerate(items):
+            if not isinstance(item, dict):
+                continue
+            for field_name in fields:
+                field = field_map.get(field_name)
+                if field is None or not field.json_schema:
+                    continue
+
+                current: Any = item
+                missing = False
+                for part in field.projection_path:
+                    if not isinstance(current, dict) or part not in current:
+                        missing = True
+                        break
+                    current = current[part]
+                if missing:
+                    continue
+
+                suffix = (
+                    f" item {item_index}"
+                    if isinstance(value, list)
+                    else ""
+                )
+                validate_json_schema_value(
+                    current,
+                    field.json_schema,
+                    context=f"{context}{suffix} field {field_name!r}",
+                )
 
     @staticmethod
     def _normalize_projected_units(
