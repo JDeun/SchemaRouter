@@ -934,7 +934,7 @@ def test_semantic_id_bridges_provider_specific_field_names() -> None:
             access_mode="optimade",
             field_name="_b_emod",
             semantic_id="elastic_modulus",
-            unit="gpa",
+            unit="GPa",
         )
     )
 
