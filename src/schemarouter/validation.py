@@ -109,8 +109,10 @@ def json_types_compatible(
 ) -> bool:
     """Conservative value-type compatibility for fallback fields."""
 
-    if not required or not candidate:
+    if not required:
         return True
+    if not candidate:
+        return False
     if not required.isdisjoint(candidate):
         return True
 
