@@ -10,6 +10,7 @@ from schemarouter import (
     PlanningError,
     PlanRequest,
     SchemaPlanner,
+    ServerProjectionSpec,
     ToolSpec,
 )
 
@@ -1140,3 +1141,47 @@ def test_ambiguous_recall_first_plan_requires_full_fallback_field_coverage() -> 
 
     assert plan.calls[0].fields == ["elastic_modulus", "density"]
     assert plan.fallback_routes == []
+
+
+
+def test_equal_relevance_prefers_explicit_server_projection() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="a_plain",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="elastic_modulus",
+                            aliases=["elastic modulus"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    reg.register(
+        ToolSpec(
+            name="z_projecting",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="elastic_modulus",
+                            aliases=["elastic modulus"],
+                        )
+                    ],
+                    server_projection=ServerProjectionSpec(parameter="fields"),
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan("elastic modulus")
+
+    assert plan.calls[0].tool == "z_projecting"
