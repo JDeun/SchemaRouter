@@ -204,6 +204,21 @@ records which local provider field received each explicit field-specific require
 Per-field evidence is caller-controlled. `ModelQueryAnalyzer` preserves it but does not expose it to
 the model or let model output introduce, remove, or broaden those trusted constraints.
 
+### Required evidence vs available evidence
+
+Compiled calls keep requirement and capability state separate:
+
+- `ToolCall.required_evidence` is the caller's global requirement for that call;
+- `ToolCall.field_evidence` contains caller requirements mapped onto selected local fields;
+- `ToolCall.evidence` records evidence actually declared as available by the selected route.
+
+This distinction prevents a requested property from being mistaken for provider capability. The
+executor recomputes evidence from the current trusted `ToolSpec` / `FieldSpec` contract immediately
+before execution. It rejects forged evidence overclaims, unmet global requirements, unmet per-field
+requirements, requirements attached to unselected fields, and conflicting global/per-field source
+types. Schema/tool fingerprints continue to protect against drift, but evidence is revalidated even
+for manually constructed calls.
+
 
 ## Parameter aliases are bounded argument routing
 
