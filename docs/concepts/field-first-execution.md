@@ -259,3 +259,104 @@ valid fallback.
 Unit symbols remain exact and case-/punctuation-sensitive. Surrounding whitespace is rejected.
 Nonlinear/logarithmic conversions are not inferred or synthesized. Non-finite/overflowed normalized
 values fail closed.
+
+
+## Typed quantity input arguments
+
+Scientific retrieval often needs unit-bearing filters as well as unit-bearing output fields.
+For example, one provider may accept `max_size` in meters while another accepts nanometers.
+
+SchemaRouter preserves the existing raw-argument contract:
+
+```python
+PlanRequest(
+    query="particle size",
+    arguments={"max_size": 1e-7},
+)
+```
+
+A plain number remains **provider-native**. SchemaRouter does not reinterpret or convert it.
+
+Unit-aware conversion is opt-in through `QuantityArgument`:
+
+```python
+from schemarouter import (
+    ParameterSpec,
+    QuantityArgument,
+    UnitNormalizationSpec,
+)
+
+parameter = ParameterSpec(
+    name="max_size",
+    json_schema={"type": "number"},
+    unit="m",
+    unit_normalization=UnitNormalizationSpec(
+        dimension="length",
+        canonical_unit="nm",
+        scale=1e9,
+    ),
+)
+
+request = PlanRequest(
+    query="particles below 100 nm",
+    arguments={
+        "max_size": QuantityArgument(
+            value=100.0,
+            unit="nm",
+        )
+    },
+)
+```
+
+The local parameter contract means:
+
+```text
+canonical_value = provider_value * scale + offset
+```
+
+so the planner can safely invert it for input:
+
+```text
+provider_value = (canonical_value - offset) / scale
+```
+
+The example above compiles `100 nm` to `1e-7 m` for that provider.
+
+If a fallback provider accepts `nm` directly, its separately compiled `ToolCall` keeps
+`max_size=100`. Every provider/access route therefore receives its own native argument value.
+
+### Trust boundary
+
+A `QuantityArgument` carries only:
+
+- a numeric scalar or numeric array;
+- an exact unit label.
+
+It carries **no** scale, offset, physical dimension, or conversion authority. Those values remain in
+trusted local `ParameterSpec.unit_normalization`.
+
+Model-backed analyzers may structure an explicit query quantity as:
+
+```json
+{"value": 100, "unit": "nm"}
+```
+
+but the model-visible catalog exposes only the provider unit and canonical unit names, not
+conversion factors. A model cannot invent a conversion factor that SchemaRouter will execute.
+
+Remote OpenAPI/MCP annotations such as `x-ucum-unit`, `x-unit`, or `unit` are likewise preserved
+only as provider-unit labels. They never synthesize a `UnitNormalizationSpec`.
+
+### Candidate behavior
+
+For a unit-bearing parameter:
+
+- a typed quantity already expressed in the provider unit is passed through;
+- a typed quantity expressed in the declared canonical unit is converted to provider-native units;
+- any other unit makes that candidate incompatible;
+- SchemaRouter continues evaluating other schema-compatible providers/access paths;
+- converted provider-native values are validated against the declared parameter JSON Schema before
+  the call is compiled.
+
+This keeps field-first/provider-aware routing intact for scientific filters without introducing a
+general unit-inference engine.
