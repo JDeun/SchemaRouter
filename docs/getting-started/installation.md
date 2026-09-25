@@ -4,7 +4,7 @@ SchemaRouter requires Python 3.10 or newer.
 
 ## Published release
 
-The current public release is `0.6.0`:
+The current public release is `0.7.0`:
 
 ```bash
 pip install schemarouter
@@ -77,7 +77,7 @@ Install only the integrations you use.
 python -c "import schemarouter; print(schemarouter.__version__)"
 ```
 
-The published release tag and package metadata identify `0.6.0` as the current non-prerelease
+The published release tag and package metadata identify `0.7.0` as the current non-prerelease
 release. Development snapshots use PEP 440 `.dev0` versions so source checkouts remain
 distinguishable from released artifacts.
 
