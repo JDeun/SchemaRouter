@@ -10,6 +10,7 @@ from schemarouter import (
     PlanRequest,
     SchemaRouter,
     ToolSpec,
+    UnitNormalizationSpec,
 )
 
 
@@ -176,3 +177,44 @@ async def test_model_analyzer_never_receives_execution_metadata() -> None:
     assert "private-runtime-route" not in serialized
     assert "trusted-runtime-only" not in serialized
     assert "execution_metadata" not in serialized
+
+
+
+def test_model_catalog_exposes_unit_names_but_not_conversion_authority() -> None:
+    registry_router = SchemaRouter()
+    registry_router.add_tool(
+        ToolSpec(
+            name="particles",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    parameters=[
+                        ParameterSpec(
+                            name="max_size",
+                            json_schema={"type": "number"},
+                            unit="m",
+                            unit_normalization=UnitNormalizationSpec(
+                                dimension="length",
+                                canonical_unit="nm",
+                                scale=1e9,
+                                offset=0.0,
+                            ),
+                        )
+                    ],
+                    output_fields=[FieldSpec(name="particle_size")],
+                )
+            ],
+        )
+    )
+
+    catalog = ModelQueryAnalyzer._catalog(registry_router.registry)
+    parameter = catalog[0]["endpoints"][0]["parameters"][0]
+
+    assert parameter["unit"] == "m"
+    assert parameter["canonical_unit"] == "nm"
+    serialized = repr(parameter)
+    assert "scale" not in serialized
+    assert "offset" not in serialized
+    assert "dimension" not in serialized
+    assert "1000000000" not in serialized
