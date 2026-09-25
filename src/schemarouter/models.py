@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -86,6 +87,62 @@ class StrictModel(BaseModel):
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
 
+def _schema_type_signature(schema: dict[str, Any]) -> str | None:
+    raw_type = schema.get("type")
+    if isinstance(raw_type, str):
+        if raw_type == "array":
+            items = schema.get("items")
+            if isinstance(items, dict):
+                item_type = _schema_type_signature(items)
+                if item_type is not None:
+                    return f"array[{item_type}]"
+        return raw_type
+    if isinstance(raw_type, list):
+        values = sorted({item for item in raw_type if isinstance(item, str)})
+        if values:
+            return "|".join(values)
+    return None
+
+
+def _schema_is_numeric_value(schema: dict[str, Any]) -> bool:
+    raw_type = schema.get("type")
+    if isinstance(raw_type, list):
+        non_null = {item for item in raw_type if item != "null"}
+        if non_null <= {"integer", "number"} and non_null:
+            return True
+        if non_null == {"array"}:
+            items = schema.get("items")
+            return isinstance(items, dict) and _schema_is_numeric_value(items)
+        return False
+    if raw_type in {"integer", "number"}:
+        return True
+    if raw_type == "array":
+        items = schema.get("items")
+        return isinstance(items, dict) and _schema_is_numeric_value(items)
+    return False
+
+
+class UnitTransformSpec(StrictModel):
+    """Trusted affine normalization from a provider unit to one canonical unit.
+
+    Canonical value = source value * scale + offset.
+    """
+
+    target_unit: str
+    scale: float = 1.0
+    offset: float = 0.0
+
+    @model_validator(mode="after")
+    def validate_transform(self) -> UnitTransformSpec:
+        if not self.target_unit.strip():
+            raise ValueError("unit transform target_unit must be non-empty")
+        if not math.isfinite(self.scale) or self.scale == 0:
+            raise ValueError("unit transform scale must be finite and non-zero")
+        if not math.isfinite(self.offset):
+            raise ValueError("unit transform offset must be finite")
+        return self
+
+
 class ParameterSpec(StrictModel):
     name: str
     wire_name: str | None = None
@@ -129,6 +186,7 @@ class FieldSpec(StrictModel):
     path: list[str] = Field(default_factory=list)
     result_path: list[str] = Field(default_factory=list)
     unit: str | None = None
+    unit_transform: UnitTransformSpec | None = None
     identifier: bool = False
     source_type: str | None = None
     license: str | None = None
@@ -141,7 +199,26 @@ class FieldSpec(StrictModel):
             raise ValueError("field path requires non-empty string segments")
         if any(not isinstance(part, str) or not part for part in self.result_path):
             raise ValueError("field result_path requires non-empty string segments")
+        if self.unit_transform is not None:
+            if self.unit is None or not self.unit.strip():
+                raise ValueError(
+                    "field unit_transform requires a non-empty source unit"
+                )
+            if not _schema_is_numeric_value(self.json_schema):
+                raise ValueError(
+                    "field unit_transform requires an explicitly numeric json_schema"
+                )
         return self
+
+    @property
+    def data_type(self) -> str | None:
+        return _schema_type_signature(self.json_schema)
+
+    @property
+    def effective_unit(self) -> str | None:
+        if self.unit_transform is not None:
+            return self.unit_transform.target_unit
+        return self.unit
 
     @property
     def projection_path(self) -> tuple[str, ...]:
