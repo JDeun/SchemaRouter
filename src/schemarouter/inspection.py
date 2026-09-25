@@ -94,6 +94,22 @@ def _type_signature(schema: dict[str, Any]) -> str:
     return base
 
 
+class ParameterInspection(StrictModel):
+    """Derived datatype/unit view of one declared input parameter."""
+
+    name: str
+    type_signature: str = "?"
+    json_types: list[str] = Field(default_factory=list)
+    source_unit: str | None = None
+    unit: str | None = None
+    dimension: str | None = None
+    normalized: bool = False
+    normalization_scale: float | None = None
+    normalization_offset: float | None = None
+    required: bool = False
+    location: str = "argument"
+
+
 class FieldInspection(StrictModel):
     """Derived semantic/type/unit view of one declared output field."""
 
@@ -123,6 +139,7 @@ class EndpointInspection(StrictModel):
     parameter_count: int = Field(ge=0)
     required_parameter_count: int = Field(ge=0)
     output_field_count: int = Field(ge=0)
+    parameters: list[ParameterInspection] = Field(default_factory=list)
     fields: list[FieldInspection] = Field(default_factory=list)
     fingerprint: str
 
@@ -220,6 +237,38 @@ def inspect_tool_spec(tool: ToolSpec) -> ToolInspection:
                 parameter.required for parameter in endpoint.parameters
             ),
             output_field_count=len(endpoint.output_fields),
+            parameters=[
+                ParameterInspection(
+                    name=parameter.name,
+                    type_signature=_type_signature(parameter.json_schema),
+                    json_types=sorted(json_schema_types(parameter.json_schema)),
+                    source_unit=parameter.unit,
+                    unit=(
+                        parameter.unit_normalization.canonical_unit
+                        if parameter.unit_normalization is not None
+                        else parameter.unit
+                    ),
+                    dimension=(
+                        parameter.unit_normalization.dimension
+                        if parameter.unit_normalization is not None
+                        else None
+                    ),
+                    normalized=parameter.unit_normalization is not None,
+                    normalization_scale=(
+                        parameter.unit_normalization.scale
+                        if parameter.unit_normalization is not None
+                        else None
+                    ),
+                    normalization_offset=(
+                        parameter.unit_normalization.offset
+                        if parameter.unit_normalization is not None
+                        else None
+                    ),
+                    required=parameter.required,
+                    location=parameter.location,
+                )
+                for parameter in endpoint.parameters
+            ],
             fields=[
                 FieldInspection(
                     name=field.name,
