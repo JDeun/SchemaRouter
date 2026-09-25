@@ -213,6 +213,24 @@ def _compare_field(
             old=old.path,
             new=new.path,
         )
+    if old.result_path != new.result_path:
+        _change(
+            changes,
+            path=f"{prefix}.result_path",
+            kind="result_projection_path_changed",
+            severity="breaking",
+            old=old.result_path,
+            new=new.result_path,
+        )
+    if old.semantic_id != new.semantic_id:
+        _change(
+            changes,
+            path=f"{prefix}.semantic_id",
+            kind="semantic_id_changed",
+            severity="breaking",
+            old=old.semantic_id,
+            new=new.semantic_id,
+        )
     if old.identifier != new.identifier:
         _change(
             changes,
