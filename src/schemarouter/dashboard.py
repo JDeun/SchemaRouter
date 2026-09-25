@@ -15,6 +15,28 @@ def _text(value: object | None) -> str:
     return str(value)
 
 
+def _field_contract_text(field: object) -> str:
+    name = str(getattr(field, "name", ""))
+    type_signature = str(getattr(field, "type_signature", "?"))
+    source_unit = getattr(field, "source_unit", None)
+    canonical_unit = getattr(field, "unit", None)
+    dimension = getattr(field, "dimension", None)
+
+    unit_text = ""
+    if source_unit and canonical_unit and source_unit != canonical_unit:
+        unit_text = f" [{source_unit}→{canonical_unit}"
+        if dimension:
+            unit_text += f"; {dimension}"
+        unit_text += "]"
+    elif canonical_unit:
+        unit_text = f" [{canonical_unit}"
+        if dimension:
+            unit_text += f"; {dimension}"
+        unit_text += "]"
+
+    return f"{name}:{type_signature}{unit_text}"
+
+
 def _mode(read_only: bool | None, destructive: bool | None) -> str:
     if destructive is True:
         return "destructive"
@@ -64,6 +86,10 @@ def render_dashboard(
         )
         execution_bound = tool.provenance.get("execution_bound")
         for endpoint in tool.endpoints:
+            field_summary = ", ".join(
+                _field_contract_text(field)
+                for field in endpoint.fields
+            )
             search = " ".join(
                 (
                     tool.key,
@@ -71,6 +97,7 @@ def render_dashboard(
                     endpoint.name,
                     endpoint.method or "",
                     endpoint.path or "",
+                    field_summary,
                 )
             ).lower()
             tool_rows.append(
@@ -85,6 +112,7 @@ def render_dashboard(
                 f"<td>{escape(_mode(endpoint.read_only, endpoint.destructive))}</td>"
                 f"<td>{endpoint.parameter_count}</td>"
                 f"<td>{endpoint.output_field_count}</td>"
+                f"<td>{escape(field_summary or '—')}</td>"
                 f"<td>{escape(_text(execution_bound))}</td>"
                 f"<td><code>{escape(endpoint.fingerprint[:12])}</code></td>"
                 "</tr>"
@@ -197,7 +225,8 @@ No tool execution, credentials, arbitrary metadata, or trace payload values are 
 <table id="capabilities">
 <thead><tr>
 <th>Tool</th><th>Adapter</th><th>Source</th><th>Endpoint</th><th>Method</th><th>Path</th>
-<th>Mode</th><th>Params</th><th>Fields</th><th>Bound</th><th>Fingerprint</th>
+<th>Mode</th><th>Params</th><th>Fields</th><th>Field contracts</th>
+<th>Bound</th><th>Fingerprint</th>
 </tr></thead>
 <tbody>{"".join(tool_rows)}</tbody>
 </table>
