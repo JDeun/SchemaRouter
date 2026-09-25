@@ -251,8 +251,9 @@ Fallback requires semantic compatibility plus compatible result datatype and eit
 - the same exact source unit; or
 - explicit matching physical `dimension` and `canonical_unit` normalization contracts.
 
-Units are optional. Text/document/search fields normally use `unit=None`; no unit metadata is required for strings such as
-abstracts, snippets, titles, or prose.
+Units are optional. Text/document/search fields normally use `unit=None`; no unit metadata is
+required for strings such as abstracts, snippets, titles, or prose. `unit=None` by itself means
+"no source unit is declared" — it does not automatically mean a numeric field is dimensionless.
 
 
 ### When to omit units
@@ -260,7 +261,7 @@ abstracts, snippets, titles, or prose.
 Do **not** attach a unit merely because a field comes from a scientific source. The unit belongs to
 the value contract, not to the provider category.
 
-Typical unitless fields include:
+Typical fields with no unit metadata include:
 
 - paper titles, abstracts, and full text;
 - web-search snippets and URLs;
@@ -281,6 +282,9 @@ FieldSpec(
 
 A unit should be declared only when the field represents a physical/numeric quantity and the source
 contract actually defines that unit. If the unit is unknown, leave it unset rather than guessing.
+Such a numeric field may still be queried and returned, but SchemaRouter will not automatically use
+another provider's equally unit-unknown numeric field as a fallback because their scales cannot be
+proven equivalent.
 
 
 ### Dynamic per-record units
@@ -317,9 +321,15 @@ FieldSpec(
     semantic_id="poisson_ratio",
     json_schema={"type": "number"},
     unit=None,
+    dimensionless=True,
 )
 ```
 
-This remains a typed numeric contract even though the unit is absent. Cross-provider fallback may
-match another compatible unitless numeric field, but it will not silently substitute a unit-bearing
-quantity for a unitless one (or vice versa).
+`dimensionless=True` is an explicit semantic claim and therefore requires a declared numeric
+scalar/array datatype (directly on the field or through the endpoint raw output schema). It is
+mutually exclusive with `unit` and unit normalization.
+
+Two unitless numeric fields may participate in automatic provider fallback only when both explicitly
+declare `dimensionless=True`. A numeric field with `unit=None, dimensionless=False` means the
+unit is unknown/not declared; it remains usable as a primary result but is not safe evidence for
+automatic cross-provider numeric substitution.
