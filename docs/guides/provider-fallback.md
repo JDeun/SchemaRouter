@@ -115,7 +115,10 @@ map provider-specific wire names explicitly:
 ```python
 FieldSpec(
     name="elastic_modulus",
+    semantic_id="elastic_modulus",
     aliases=["탄성계수", "elastic modulus", "youngs modulus"],
+    path=["_provider_b_elasticity"],
+    result_path=["elastic_modulus"],
 )
 
 ServerProjectionSpec(
@@ -127,8 +130,8 @@ ServerProjectionSpec(
 ```
 
 The planner reasons about the canonical `elastic_modulus` field. The adapter sends
-`_provider_b_elasticity` upstream and normalizes the response back to `elastic_modulus` before
-the result leaves SchemaRouter.
+`_provider_b_elasticity` upstream. Runtime projection reads the provider-specific `path` and
+writes the value to the canonical `result_path` before the result leaves SchemaRouter.
 
 The fallback planner independently projects fields for every candidate. When the primary matched a
 specific answer field, a fallback is accepted only when the alternative exposes a compatible
