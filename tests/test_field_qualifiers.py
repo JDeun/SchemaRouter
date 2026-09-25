@@ -3,6 +3,8 @@ from __future__ import annotations
 import pytest
 
 from schemarouter import (
+    CallableDecisionBackend,
+    DecisionPolicy,
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
@@ -283,3 +285,98 @@ def test_schema_diff_marks_qualifier_drift_breaking() -> None:
         and change.path.endswith(".qualifiers")
         for change in report.changes
     )
+
+
+
+def test_query_qualifier_prefers_matching_endpoint() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        _qualified_tool(
+            "provider_300k",
+            provider="a",
+            qualifiers={"temperature": "300 K"},
+        )
+    )
+    registry.register(
+        _qualified_tool(
+            "provider_500k",
+            provider="b",
+            qualifiers={"temperature": "500 K"},
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(query="elastic modulus at 500 K")
+    )
+
+    assert [call.tool for call in plan.calls] == ["provider_500k"]
+    assert plan.calls[0].explanation is not None
+    assert any(
+        component.kind == "field_qualifier"
+        and component.matched == "elastic_modulus:temperature=500 K"
+        for component in plan.calls[0].explanation.score_components
+    )
+
+
+def test_short_ascii_qualifier_does_not_create_accidental_route_bias() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        _qualified_tool(
+            "provider_k",
+            provider="a",
+            qualifiers={"state": "K"},
+        )
+    )
+    registry.register(
+        _qualified_tool(
+            "provider_other",
+            provider="b",
+            qualifiers={"state": "Q"},
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(query="bulk elastic modulus")
+    )
+
+    assert plan.calls
+    assert all(
+        component.kind != "field_qualifier"
+        for component in (
+            plan.calls[0].explanation.score_components
+            if plan.calls[0].explanation
+            else []
+        )
+    )
+
+
+def test_field_decision_options_include_trusted_qualifiers() -> None:
+    captured = {}
+
+    def decide(request):
+        captured["request"] = request
+        return {"selections": [{"option_id": "field:0", "score": 1.0}]}
+
+    registry = InMemoryRegistry()
+    registry.register(
+        _qualified_tool(
+            "provider_a",
+            provider="a",
+            qualifiers={
+                "temperature": "300 K",
+                "phase": "alpha",
+            },
+        )
+    )
+    planner = SchemaPlanner(
+        registry,
+        decision_backend=CallableDecisionBackend(decide),
+        decision_policy=DecisionPolicy(enabled=True, field_selection=True),
+    )
+
+    plan = planner.plan(PlanRequest(query="elastic modulus at 300 K"))
+
+    assert plan.calls
+    request = captured["request"]
+    assert request.context["surface"] == "field_selection"
+    assert "qualifiers: phase=alpha, temperature=300 K" in request.options[0].description
