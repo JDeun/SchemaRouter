@@ -1059,7 +1059,17 @@ class RegistryExecutor:
                         f"projected field {field_name!r} requires numeric values "
                         "for unit normalization"
                     )
-                return item * spec.scale + spec.offset
+                try:
+                    converted = item * spec.scale + spec.offset
+                except OverflowError as exc:
+                    raise SchemaValidationError(
+                        f"projected field {field_name!r} overflowed during unit normalization"
+                    ) from exc
+                if isinstance(converted, float) and not math.isfinite(converted):
+                    raise SchemaValidationError(
+                        f"projected field {field_name!r} produced a non-finite normalized value"
+                    )
+                return converted
 
             current[path[-1]] = convert_numeric(raw_value)
 
