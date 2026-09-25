@@ -18,6 +18,16 @@ _PROTECTED_MCP_HEADERS = {
 }
 
 
+def _schema_unit(schema: Any) -> str | None:
+    if not isinstance(schema, dict):
+        return None
+    for key in ("x-ucum-unit", "x-unit", "unit"):
+        value = schema.get(key)
+        if isinstance(value, str) and value.strip() and value.strip() != "inapplicable":
+            return value.strip()
+    return None
+
+
 class MCPClientFactory(Protocol):
     """Trusted factory for an authenticated MCP client lifecycle."""
 
@@ -161,6 +171,7 @@ def tool_from_mcp(
                 name=name,
                 description=spec.get("description", "") if isinstance(spec, dict) else "",
                 json_schema=spec if isinstance(spec, dict) else {},
+                unit=_schema_unit(spec),
                 identifier=name in {"id", "uuid", "key"} or name.endswith("_id"),
                 aliases=[name.replace("_", " ")],
             )
