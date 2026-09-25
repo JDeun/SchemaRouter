@@ -1124,7 +1124,7 @@ class SchemaPlanner:
     def _bind_arguments(
         endpoint: EndpointSpec,
         provided: dict[str, Any],
-    ) -> tuple[dict[str, Any], dict[str, str], list[str]]:
+    ) -> tuple[dict[str, Any], dict[str, str], list[str], list[str]]:
         """Bind exact parameter names first, then unambiguous trusted aliases.
 
         Alias routing only renames keys. Values are copied unchanged. If one supplied alias could
@@ -1176,7 +1176,16 @@ class SchemaPlanner:
             consumed.add(source_name)
 
         ignored = sorted(set(provided) - consumed)
-        return arguments, source_by_parameter, ignored
+        ambiguous = sorted(
+            source_name
+            for source_name, targets in source_targets.items()
+            if len(targets) != 1
+            or any(
+                len(target_sources.get(target, ())) != 1
+                for target in targets
+            )
+        )
+        return arguments, source_by_parameter, ignored, ambiguous
 
     def _compile_candidate_sync(
         self,
@@ -1188,14 +1197,24 @@ class SchemaPlanner:
         warn_ignored_arguments: bool = True,
     ) -> ToolCall | None:
         endpoint = candidate.endpoint
-        arguments, _, dropped = self._bind_arguments(
+        arguments, _, dropped, ambiguous_aliases = self._bind_arguments(
             endpoint,
             intent.arguments,
         )
-        if dropped and warn_ignored_arguments:
+        if ambiguous_aliases and warn_ignored_arguments:
+            warnings.append(
+                f"{candidate.tool.key}.{endpoint.name}: ambiguous parameter aliases: "
+                + ", ".join(ambiguous_aliases)
+            )
+        unambiguous_dropped = [
+            name
+            for name in dropped
+            if name not in set(ambiguous_aliases)
+        ]
+        if unambiguous_dropped and warn_ignored_arguments:
             warnings.append(
                 f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
-                + ", ".join(dropped)
+                + ", ".join(unambiguous_dropped)
             )
         missing = [
             parameter.name
@@ -1260,14 +1279,24 @@ class SchemaPlanner:
         warn_ignored_arguments: bool = True,
     ) -> ToolCall | None:
         endpoint = candidate.endpoint
-        arguments, _, dropped = self._bind_arguments(
+        arguments, _, dropped, ambiguous_aliases = self._bind_arguments(
             endpoint,
             intent.arguments,
         )
-        if dropped and warn_ignored_arguments:
+        if ambiguous_aliases and warn_ignored_arguments:
+            warnings.append(
+                f"{candidate.tool.key}.{endpoint.name}: ambiguous parameter aliases: "
+                + ", ".join(ambiguous_aliases)
+            )
+        unambiguous_dropped = [
+            name
+            for name in dropped
+            if name not in set(ambiguous_aliases)
+        ]
+        if unambiguous_dropped and warn_ignored_arguments:
             warnings.append(
                 f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
-                + ", ".join(dropped)
+                + ", ".join(unambiguous_dropped)
             )
         missing = [
             parameter.name
@@ -1620,7 +1649,7 @@ class SchemaPlanner:
                     ScoreComponent(kind="field_substring", value=1.0, matched=field.name)
                 )
 
-        _, argument_sources, _ = self._bind_arguments(
+        _, argument_sources, _, _ = self._bind_arguments(
             endpoint,
             intent.arguments,
         )
