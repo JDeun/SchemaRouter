@@ -18,6 +18,7 @@ from .errors import (
     InvocationUnavailableError,
     NonRetryableInvocationError,
     PlanValidationError,
+    RequiredFieldUnavailableError,
     SchemaDriftError,
     SchemaValidationError,
 )
@@ -494,6 +495,24 @@ class RegistryExecutor:
             raise PlanValidationError(
                 f"duplicate output fields for {call.tool}.{call.endpoint}"
             )
+
+        unknown_required_fields = sorted(set(call.required_fields) - declared_fields)
+        if unknown_required_fields:
+            raise PlanValidationError(
+                f"undeclared required fields for {call.tool}.{call.endpoint}: "
+                + ", ".join(unknown_required_fields)
+            )
+        required_not_projected = sorted(set(call.required_fields) - set(call.fields))
+        if required_not_projected:
+            raise PlanValidationError(
+                f"required fields must also be projected for {call.tool}.{call.endpoint}: "
+                + ", ".join(required_not_projected)
+            )
+        if len(call.required_fields) != len(set(call.required_fields)):
+            raise PlanValidationError(
+                f"duplicate required fields for {call.tool}.{call.endpoint}"
+            )
+
         if endpoint.output_fields and not call.fields:
             raise PlanValidationError(
                 f"explicit output projection required for {call.tool}.{call.endpoint}"
@@ -687,10 +706,10 @@ class RegistryExecutor:
                     ),
                     context=f"output from {call.tool}.{call.endpoint}",
                 )
-                if server_projected:
-                    self._validate_selected_fields_present(
+                if call.required_fields:
+                    self._validate_required_fields_present(
                         value,
-                        call.fields,
+                        call.required_fields,
                         endpoint,
                         context=f"output from {call.tool}.{call.endpoint}",
                     )
@@ -730,6 +749,7 @@ class RegistryExecutor:
                 return result
             except (
                 SchemaValidationError,
+                RequiredFieldUnavailableError,
                 ExecutionBudgetExceededError,
                 ExecutionHookError,
                 NonRetryableInvocationError,
@@ -807,7 +827,9 @@ class RegistryExecutor:
         _tracker: ExecutionBudgetTracker | None = None,
     ) -> ToolResult:
         tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
-        last_unavailable: InvocationUnavailableError | None = None
+        last_fallback_error: (
+            InvocationUnavailableError | RequiredFieldUnavailableError | None
+        ) = None
 
         # Validate the bounded chain before invoking anything. Mutating alternatives invalidate
         # the chain structurally. Optional read-only alternatives that are stale, unbound,
@@ -826,12 +848,12 @@ class RegistryExecutor:
                     budget=budget,
                     _tracker=tracker,
                 )
-            except InvocationUnavailableError as exc:
-                last_unavailable = exc
+            except (InvocationUnavailableError, RequiredFieldUnavailableError) as exc:
+                last_fallback_error = exc
                 continue
 
-        if last_unavailable is not None:
-            raise last_unavailable
+        if last_fallback_error is not None:
+            raise last_fallback_error
         raise ExecutionError("fallback chain contained no executable candidates")
 
     async def execute(
@@ -954,7 +976,7 @@ class RegistryExecutor:
             )
 
     @staticmethod
-    def _validate_selected_fields_present(
+    def _validate_required_fields_present(
         value: Any,
         fields: list[str],
         endpoint: EndpointSpec,
@@ -967,14 +989,24 @@ class RegistryExecutor:
         if isinstance(value, dict):
             items = [value]
         elif isinstance(value, list):
+            if not value:
+                raise RequiredFieldUnavailableError(
+                    f"{context}: no result item can satisfy required fields "
+                    + ", ".join(repr(field) for field in fields)
+                )
             items = value
         else:
-            return
+            raise RequiredFieldUnavailableError(
+                f"{context}: response cannot expose required fields "
+                + ", ".join(repr(field) for field in fields)
+            )
 
         field_map = {field.name: field for field in endpoint.output_fields}
         for item_index, item in enumerate(items):
             if not isinstance(item, dict):
-                continue
+                raise RequiredFieldUnavailableError(
+                    f"{context} item {item_index}: response item cannot expose required fields"
+                )
             for field_name in fields:
                 field = field_map[field_name]
                 current: Any = item
@@ -990,8 +1022,8 @@ class RegistryExecutor:
                         if isinstance(value, list)
                         else ""
                     )
-                    raise SchemaValidationError(
-                        f"{context}{suffix}: projected field {field_name!r} is missing"
+                    raise RequiredFieldUnavailableError(
+                        f"{context}{suffix}: required field {field_name!r} is unavailable"
                     )
 
     @staticmethod
