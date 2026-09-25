@@ -76,9 +76,27 @@ Therefore OpenAPI, MCP, OPTIMADE, Python, documentation-derived adapters, or any
 can expose unitless fields. The source type does not decide whether a unit exists; the field
 contract does.
 
-If a caller explicitly sets `EvidenceRequirements(units=True)`, unitless answer fields cannot
-satisfy that particular evidence requirement. That is different from saying unitless fields are
-invalid.
+If a caller explicitly sets global `EvidenceRequirements(units=True)`, every selected answer
+field must satisfy that evidence requirement. That is intentionally strict and is different from
+saying unitless fields are invalid.
+
+For mixed requests, evidence can be scoped to a semantic field instead:
+
+```python
+PlanRequest(
+    query="band gap and paper abstract",
+    max_calls=2,
+    field_evidence={
+        "band_gap": EvidenceRequirements(units=True),
+    },
+)
+```
+
+The materials route must then provide unit metadata for `band_gap`, while a unitless arXiv
+`abstract` remains eligible. Field-specific evidence is matched through trusted
+`FieldSpec.semantic_id` (falling back to the field name when no semantic ID is declared), so
+provider-specific field names can still satisfy the same semantic requirement without model-authored
+mapping.
 
 ## Heterogeneous multi-source field requirements
 

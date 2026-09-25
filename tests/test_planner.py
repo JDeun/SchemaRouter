@@ -4,6 +4,7 @@ from schemarouter import (
     CallableDecisionBackend,
     DecisionPolicy,
     EndpointSpec,
+    EvidenceRequirements,
     FieldSpec,
     InMemoryRegistry,
     ParameterSpec,
@@ -137,6 +138,233 @@ def test_multi_call_planner_prefers_complementary_semantic_field_coverage() -> N
         "document_abstract",
     }
     assert plan.coverage.uncovered == []
+
+
+def test_per_field_units_allow_mixed_numeric_and_unitless_text() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="materials",
+            provider="materials_project",
+            access_mode="openapi",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="band_gap",
+                            semantic_id="band_gap",
+                            aliases=["band gap"],
+                            json_schema={"type": "number"},
+                            unit="eV",
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    reg.register(
+        ToolSpec(
+            name="papers",
+            provider="arxiv",
+            access_mode="api",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_abstract",
+                            aliases=["paper abstract"],
+                            json_schema={"type": "string"},
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="band gap and paper abstract",
+            max_calls=2,
+            field_evidence={
+                "band_gap": EvidenceRequirements(units=True),
+            },
+        )
+    )
+
+    assert {call.tool for call in plan.calls} == {"materials", "papers"}
+    calls = {call.tool: call for call in plan.calls}
+    assert calls["materials"].field_evidence["band_gap"].units is True
+    assert calls["papers"].field_evidence == {}
+    assert plan.coverage is not None
+    assert plan.coverage.complete is True
+
+
+def test_per_field_units_skip_unitless_route_without_rejecting_text_route() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="a_unitless_materials",
+            provider="materials_a",
+            access_mode="api",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="gap",
+                            semantic_id="band_gap",
+                            aliases=["band gap"],
+                            json_schema={"type": "number"},
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    reg.register(
+        ToolSpec(
+            name="b_unit_materials",
+            provider="materials_b",
+            access_mode="api",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="gap_ev",
+                            semantic_id="band_gap",
+                            aliases=["band gap"],
+                            json_schema={"type": "number"},
+                            unit="eV",
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    reg.register(
+        ToolSpec(
+            name="z_papers",
+            provider="arxiv",
+            access_mode="api",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_abstract",
+                            aliases=["paper abstract"],
+                            json_schema={"type": "string"},
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="band gap and paper abstract",
+            max_calls=2,
+            field_evidence={
+                "band_gap": EvidenceRequirements(units=True),
+            },
+        )
+    )
+
+    assert {call.tool for call in plan.calls} == {
+        "b_unit_materials",
+        "z_papers",
+    }
+    assert any(
+        "a_unitless_materials.search: local evidence insufficient: band_gap.units"
+        in warning
+        for warning in plan.warnings
+    )
+    assert plan.coverage is not None
+    assert plan.coverage.complete is True
+
+
+def test_global_units_requirement_keeps_existing_all_answer_fields_semantics() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="combined",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="band_gap",
+                            semantic_id="band_gap",
+                            aliases=["band gap"],
+                            json_schema={"type": "number"},
+                            unit="eV",
+                        ),
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_abstract",
+                            aliases=["paper abstract"],
+                            json_schema={"type": "string"},
+                        ),
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="band gap and paper abstract",
+            evidence=EvidenceRequirements(units=True),
+        )
+    )
+
+    assert plan.calls == []
+    assert any(
+        "combined.search: local evidence insufficient: units" in warning
+        for warning in plan.warnings
+    )
+    assert plan.coverage is not None
+    assert plan.coverage.complete is False
+
+
+def test_field_evidence_rejects_ambiguous_normalized_semantic_ids() -> None:
+    with pytest.raises(
+        ValueError,
+        match="ambiguous normalized semantic IDs",
+    ):
+        PlanRequest(
+            query="band gap",
+            field_evidence={
+                "band_gap": EvidenceRequirements(units=True),
+                "band-gap": EvidenceRequirements(units=True),
+            },
+        )
+
+
+def test_field_evidence_source_type_cannot_conflict_with_global_requirement() -> None:
+    with pytest.raises(
+        ValueError,
+        match="source_type conflicts with global evidence",
+    ):
+        PlanRequest(
+            query="band gap",
+            evidence=EvidenceRequirements(source_type="calculated"),
+            field_evidence={
+                "band_gap": EvidenceRequirements(source_type="experimental"),
+            },
+        )
 
 
 def test_multi_call_planner_stops_when_one_route_covers_all_fields() -> None:

@@ -173,6 +173,37 @@ The same rule applies to requested provenance, license, and source type. An opti
 may reject locally sufficient evidence, but it cannot manufacture evidence that the registry does
 not declare.
 
+### Per-field evidence requirements
+
+Global `PlanRequest.evidence` intentionally applies to the whole selected answer surface. For a
+heterogeneous request, callers can instead attach evidence to one semantic field without imposing it
+on unrelated fields:
+
+```python
+from schemarouter import EvidenceRequirements, PlanRequest
+
+request = PlanRequest(
+    query="band gap and paper abstract",
+    max_calls=2,
+    field_evidence={
+        "band_gap": EvidenceRequirements(units=True),
+    },
+)
+```
+
+Here the `band_gap` route must expose unit metadata, while the unitless
+`document_abstract` route remains valid. Keys in `field_evidence` match the trusted canonical
+`FieldSpec.semantic_id` (or the field name when no semantic ID exists), not aliases or
+model-authored remappings.
+
+The contract is additive: global evidence still applies to every selected answer field, and matching
+field-specific evidence adds stricter requirements for that semantic field. Conflicting global and
+field-specific source-type constraints are rejected. The compiled `ToolCall.field_evidence` map
+records which local provider field received each explicit field-specific requirement.
+
+Per-field evidence is caller-controlled. `ModelQueryAnalyzer` preserves it but does not expose it to
+the model or let model output introduce, remove, or broaden those trusted constraints.
+
 
 ## Parameter aliases are bounded argument routing
 
