@@ -1090,3 +1090,42 @@ async def test_all_read_only_fallbacks_unbound_fail_without_invocation() -> None
         await executor.execute(plan)
 
     assert executor.unavailable_access_paths() == ()
+
+
+
+@pytest.mark.asyncio
+async def test_parallel_read_only_uses_bound_fallback_when_primary_is_unbound() -> None:
+    registry = InMemoryRegistry()
+    for tool in (
+        _fallback_tool("mp_api", provider="materials_project", access_mode="openapi"),
+        _fallback_tool("mp_optimade", provider="materials_project", access_mode="optimade"),
+        _fallback_tool("oqmd_api", provider="oqmd", access_mode="openapi"),
+    ):
+        registry.register(tool)
+
+    plan = _provider_fallback_plan(registry)
+    executor = RegistryExecutor(registry)
+    seen = []
+
+    executor.bind(
+        "mp_optimade",
+        lambda endpoint, arguments: (
+            seen.append("mp_optimade")
+            or {"material_id": "mp-149", "band_gap": 1.1}
+        ),
+    )
+    executor.bind(
+        "oqmd_api",
+        lambda endpoint, arguments: (
+            seen.append("oqmd_api")
+            or {"material_id": "oqmd-1", "band_gap": 1.2}
+        ),
+    )
+
+    result = await executor.execute_parallel_read_only(
+        plan,
+        max_concurrency=2,
+    )
+
+    assert result[0].tool == "mp_optimade"
+    assert seen == ["mp_optimade"]
