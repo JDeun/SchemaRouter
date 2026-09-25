@@ -23,6 +23,7 @@ from schemarouter import (
     SchemaValidationError,
     ToolCall,
     ToolSpec,
+    UnitTransformSpec,
 )
 
 
@@ -1294,3 +1295,132 @@ async def test_primary_policy_denial_never_falls_through_to_allowed_fallback() -
         await executor.execute(plan)
 
     assert fallback_called is False
+
+
+
+@pytest.mark.asyncio
+async def test_executor_normalizes_numeric_field_to_canonical_unit() -> None:
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                semantic_id="elastic_modulus",
+                json_schema={"type": "number"},
+                unit="Pa",
+                unit_transform=UnitTransformSpec(
+                    target_unit="GPa",
+                    scale=1e-9,
+                ),
+            ),
+            FieldSpec(
+                name="density",
+                json_schema={"type": "number"},
+                unit="g/cm3",
+            ),
+        ],
+        output_schema={
+            "type": "object",
+            "properties": {
+                "elastic_modulus": {"type": "number"},
+                "density": {"type": "number"},
+            },
+            "required": ["elastic_modulus", "density"],
+        },
+    )
+    tool = ToolSpec(name="materials", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "materials",
+        lambda endpoint_name, arguments: {
+            "elastic_modulus": 130_000_000_000.0,
+            "density": 2.33,
+        },
+    )
+    call = ToolCall(
+        tool="materials",
+        endpoint="read",
+        fields=["elastic_modulus"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    result = await executor.execute_call(call)
+
+    assert result.data == {"elastic_modulus": pytest.approx(130.0)}
+    assert result.field_types == {"elastic_modulus": "number"}
+    assert result.field_units == {"elastic_modulus": "GPa"}
+
+
+@pytest.mark.asyncio
+async def test_executor_normalizes_numeric_array_units_recursively() -> None:
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[
+            FieldSpec(
+                name="wavelengths",
+                json_schema={
+                    "type": "array",
+                    "items": {"type": "number"},
+                },
+                unit="m",
+                unit_transform=UnitTransformSpec(
+                    target_unit="nm",
+                    scale=1e9,
+                ),
+            )
+        ],
+        output_schema={
+            "type": "object",
+            "properties": {
+                "wavelengths": {
+                    "type": "array",
+                    "items": {"type": "number"},
+                },
+            },
+            "required": ["wavelengths"],
+        },
+    )
+    tool = ToolSpec(name="spectra", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "spectra",
+        lambda endpoint_name, arguments: {
+            "wavelengths": [1e-9, 5e-9],
+        },
+    )
+    call = ToolCall(
+        tool="spectra",
+        endpoint="read",
+        fields=["wavelengths"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    result = await executor.execute_call(call)
+
+    assert result.data == {"wavelengths": [1.0, 5.0]}
+    assert result.field_types == {"wavelengths": "array[number]"}
+    assert result.field_units == {"wavelengths": "nm"}
+
+
+def test_unit_transform_requires_typed_numeric_field_contract() -> None:
+    with pytest.raises(
+        ValueError,
+        match="unit_transform requires an explicitly numeric json_schema",
+    ):
+        FieldSpec(
+            name="elastic_modulus",
+            json_schema={"type": "string"},
+            unit="Pa",
+            unit_transform=UnitTransformSpec(
+                target_unit="GPa",
+                scale=1e-9,
+            ),
+        )
