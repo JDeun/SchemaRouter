@@ -21,7 +21,9 @@ from schemarouter import (
     ExecutionPolicy,
     FallbackRoute,
     FieldSpec,
+    ParameterSpec,
     PlanRequest,
+    QuantityArgument,
     PolicyRule,
     PolicyViolationError,
     RetryPolicy,
@@ -407,6 +409,60 @@ async def scenario_parallel_read_only() -> dict[str, object]:
     return {"result_count": len(results), "peak_concurrency": peak}
 
 
+async def scenario_typed_quantity_argument() -> dict[str, object]:
+    router = SchemaRouter()
+    tool = ToolSpec(
+        name="particle_filter",
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                read_only=True,
+                parameters=[
+                    ParameterSpec(
+                        name="max_size",
+                        json_schema={"type": "number"},
+                        unit="m",
+                        unit_normalization=UnitNormalizationSpec(
+                            dimension="length",
+                            canonical_unit="nm",
+                            scale=1e9,
+                        ),
+                    )
+                ],
+                output_fields=[FieldSpec(name="particle_size")],
+            )
+        ],
+    )
+    router.add_tool(tool)
+
+    seen: dict[str, object] = {}
+
+    def invoke(endpoint_name: str, arguments: dict[str, object]) -> dict[str, object]:
+        seen.update(arguments)
+        return {"particle_size": 90.0}
+
+    router.executor.bind("particle_filter", invoke)
+
+    result = await router.ainvoke(
+        PlanRequest(
+            query="particle size",
+            arguments={
+                "max_size": QuantityArgument(value=100.0, unit="nm"),
+            },
+        )
+    )
+
+    converted = seen["max_size"]
+    assert isinstance(converted, float)
+    assert abs(converted - 1e-7) < 1e-15
+    assert result[0].data == {"particle_size": 90.0}
+    return {
+        "provider_argument": converted,
+        "source_unit": "nm",
+        "provider_unit": "m",
+    }
+
+
 async def scenario_scientific_unit_contract() -> dict[str, object]:
     router = SchemaRouter()
     field = FieldSpec(
@@ -683,6 +739,7 @@ SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("retry_and_budget", scenario_retry_and_budget),
     ("parallel_read_only", scenario_parallel_read_only),
     ("scientific_unit_contract", scenario_scientific_unit_contract),
+    ("typed_quantity_argument", scenario_typed_quantity_argument),
     ("execution_ready_planning", scenario_execution_ready_planning),
     ("binding_aware_fallback", scenario_binding_aware_fallback),
     ("inspection_redaction", scenario_inspection_redaction),
