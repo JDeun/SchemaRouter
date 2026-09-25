@@ -934,3 +934,182 @@ async def test_provider_source_path_is_canonicalized_before_unit_normalization()
     assert contract.source_unit == "GPa"
     assert contract.unit == "Pa"
     assert contract.dimension == "pressure"
+
+
+
+def test_text_field_accepts_explicit_string_type_without_unit() -> None:
+    field = FieldSpec(
+        name="abstract",
+        semantic_id="document_text",
+        json_schema={"type": "string"},
+        aliases=["paper abstract", "논문 초록"],
+    )
+
+    assert field.unit is None
+    assert field.unit_normalization is None
+    assert field.json_schema == {"type": "string"}
+
+
+def test_untyped_text_like_field_can_remain_unitless() -> None:
+    field = FieldSpec(
+        name="web_snippet",
+        semantic_id="document_text",
+        aliases=["snippet", "검색 결과"],
+    )
+
+    assert field.unit is None
+    assert field.json_schema == {}
+
+
+def test_unitless_text_fields_can_fallback_across_providers() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="arxiv",
+            provider="arxiv",
+            access_mode="api",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_text",
+                            json_schema={"type": "string"},
+                            aliases=["abstract", "논문 초록"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    registry.register(
+        ToolSpec(
+            name="web",
+            provider="web",
+            access_mode="search",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="snippet",
+                            semantic_id="document_text",
+                            json_schema={"type": "string"},
+                            aliases=["abstract", "논문 초록"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="논문 초록",
+            preferred_tools=["arxiv"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.calls[0].tool == "arxiv"
+    route = plan.fallback_route(0)
+    assert route is not None
+    assert [call.tool for call in route.alternatives] == ["web"]
+
+
+@pytest.mark.asyncio
+async def test_unitless_text_tool_result_has_no_unit_contract() -> None:
+    field = FieldSpec(
+        name="abstract",
+        semantic_id="document_text",
+        json_schema={"type": "string"},
+    )
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[field],
+    )
+    tool = ToolSpec(name="arxiv", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "arxiv",
+        lambda endpoint_name, arguments: {
+            "abstract": "A concise scientific abstract."
+        },
+    )
+    call = ToolCall(
+        tool="arxiv",
+        endpoint="read",
+        fields=["abstract"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    result = await executor.execute_call(call)
+
+    contract = result.field_contracts["abstract"]
+    assert result.data == {"abstract": "A concise scientific abstract."}
+    assert contract.json_schema == {"type": "string"}
+    assert contract.source_unit is None
+    assert contract.unit is None
+    assert contract.dimension is None
+
+
+def test_unitless_text_field_cannot_substitute_unit_bearing_quantity() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="numeric_provider",
+            provider="provider_a",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="elastic_modulus",
+                            semantic_id="elastic_modulus",
+                            json_schema={"type": "number"},
+                            unit="GPa",
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    registry.register(
+        ToolSpec(
+            name="text_provider",
+            provider="provider_b",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="elastic_modulus_text",
+                            semantic_id="elastic_modulus",
+                            json_schema={"type": "string"},
+                            aliases=["탄성계수"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="탄성계수",
+            preferred_tools=["numeric_provider"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.calls[0].tool == "numeric_provider"
+    assert plan.fallback_route(0) is None
