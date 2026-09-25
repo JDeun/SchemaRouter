@@ -303,3 +303,17 @@ the same condition, trusted adapter/application code should canonicalize them be
 
 Selected qualifiers are preserved in `ToolResult.field_contracts`, so downstream answer generation
 can consume the minimal value together with the context that gives the value its meaning.
+
+
+### Qualifier-aware routing remains lexical and bounded
+
+Trusted qualifiers can also break ties between otherwise equivalent schema candidates when the
+qualifier value is visibly present in the user query. For example, between two
+`elastic_modulus` endpoints qualified as `300 K` and `500 K`, the query
+`elastic modulus at 500 K` receives a deterministic score boost only for the `500 K` field.
+
+This is exact lexical routing, not scientific inference. SchemaRouter does not convert temperatures,
+expand synonyms, or infer unstated experimental conditions. Very short ASCII qualifier values are not
+matched by value alone to avoid accidental substring collisions. Bounded field-selection backends also
+receive the trusted qualifier tags in their option descriptions, while execution metadata remains
+outside the decision surface.
