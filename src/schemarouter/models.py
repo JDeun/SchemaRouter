@@ -193,6 +193,18 @@ class EndpointSpec(StrictModel):
             raise ValueError(f"duplicate output field name in endpoint {self.name!r}")
 
         if self.server_projection is not None:
+            remapped_source_fields = [
+                field.name
+                for field in self.output_fields
+                if field.projection_path != (field.name,)
+            ]
+            if remapped_source_fields and not self.output_schema:
+                raise ValueError(
+                    "server projection with provider-specific field paths requires an explicit "
+                    "output_schema in endpoint "
+                    f"{self.name!r}: " + ", ".join(sorted(remapped_source_fields))
+                )
+
             unknown_projection_fields = sorted(
                 set(self.server_projection.field_map) - set(fnames)
             )
