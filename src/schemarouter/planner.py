@@ -1450,32 +1450,24 @@ class SchemaPlanner:
                     ScoreComponent(kind="field_substring", value=1.0, matched=field.name)
                 )
 
+        resolved_arguments, _, _ = self._resolve_arguments(
+            endpoint,
+            intent.arguments,
+        )
         supplied_argument_names = set(intent.arguments)
-        supplied_argument_norms = {
-            _normalize(name)
-            for name in supplied_argument_names
-            if _normalize(name)
-        }
-        for parameter in endpoint.parameters:
-            exact_argument = parameter.name in supplied_argument_names
-            alias_argument = any(
-                _normalize(alias) in supplied_argument_norms
-                for alias in parameter.aliases
-                if alias and _normalize(alias)
-            )
-            if exact_argument or alias_argument:
-                score += 2.0
-                components.append(
-                    ScoreComponent(
-                        kind=(
-                            "argument_match"
-                            if exact_argument
-                            else "argument_alias_match"
-                        ),
-                        value=2.0,
-                        matched=parameter.name,
-                    )
+        for parameter_name in resolved_arguments:
+            score += 2.0
+            components.append(
+                ScoreComponent(
+                    kind=(
+                        "argument_match"
+                        if parameter_name in supplied_argument_names
+                        else "argument_alias_match"
+                    ),
+                    value=2.0,
+                    matched=parameter_name,
                 )
+            )
 
         return _Candidate(
             tool=tool,
