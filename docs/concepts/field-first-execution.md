@@ -110,8 +110,9 @@ plan = router.plan(
 )
 ```
 
-The hard bound remains `max_calls`; SchemaRouter never increases it automatically. The default is
-`1`, so multi-source fan-out is an explicit cost/authority choice by the application.
+The hard bound remains `max_calls`; SchemaRouter never increases it automatically and may use fewer
+calls when one route already covers the remaining semantic field requirements. The default is `1`,
+so multi-source fan-out is an explicit cost/authority choice by the application.
 
 Each call still receives its own field projection, schema fingerprint, provider/access identity,
 health/binding checks, policy checks, and fallback chain. If all calls are explicitly read-only,
