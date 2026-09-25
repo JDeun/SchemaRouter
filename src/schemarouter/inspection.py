@@ -104,6 +104,7 @@ class FieldInspection(StrictModel):
     source_unit: str | None = None
     unit: str | None = None
     dimension: str | None = None
+    dimensionless: bool = False
     normalized: bool = False
     normalization_scale: float | None = None
     normalization_offset: float | None = None
@@ -243,6 +244,7 @@ def inspect_tool_spec(tool: ToolSpec) -> ToolInspection:
                         if field.unit_normalization is not None
                         else None
                     ),
+                    dimensionless=field.dimensionless,
                     normalized=field.unit_normalization is not None,
                     normalization_scale=(
                         field.unit_normalization.scale
