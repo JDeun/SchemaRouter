@@ -40,6 +40,8 @@ The project is pre-1.0 and follows the compatibility rules in
 - typed scientific field contracts with conservative JSON value-shape fallback compatibility,
   case-sensitive source units, explicit affine `UnitNormalizationSpec` conversion into canonical
   units, numeric-array support, and compact `ToolResult.field_contracts` metadata;
+- explicit `FieldSpec.dimensionless` / result-contract semantics that distinguish true
+  dimensionless numeric quantities from numeric values whose source unit is simply unknown;
 - strict scientific contract validation that enforces selected `FieldSpec.json_schema` values at
   runtime, requires explicit datatypes for unit-bearing automatic fallback, rejects contradictory
   field/raw type declarations, and compares post-normalization canonical result datatypes;
@@ -120,6 +122,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Security
 
+- automatic numeric fallback now requires either compatible declared units or explicit
+  `dimensionless=True` contracts on both unitless numeric routes; two numeric fields with unknown
+  units are no longer treated as scale-compatible merely because both omit unit metadata;
 - scientific fallback now rejects known datatype mismatches, missing/asymmetric unit contracts,
   incompatible physical dimensions/canonical units, non-numeric unit-bearing fields, and
   non-finite/overflowing unit normalization results;
