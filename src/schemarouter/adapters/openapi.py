@@ -961,6 +961,9 @@ def tool_from_openapi(
                             else False
                         ),
                         json_schema=_resolve_local_ref(document, parameter.get("schema", {})),
+                        unit=_schema_unit(
+                            _resolve_local_ref(document, parameter.get("schema", {}))
+                        ),
                     )
                 )
 
@@ -1031,6 +1034,7 @@ def tool_from_openapi(
                                     json_schema=(
                                         prop_schema if isinstance(prop_schema, dict) else {}
                                     ),
+                                    unit=_schema_unit(prop_schema),
                                 )
                             )
                     elif isinstance(body_schema, dict) and bool(body_schema):
