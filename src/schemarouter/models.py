@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -120,6 +121,43 @@ class ServerProjectionSpec(StrictModel):
         return self.field_map.get(field.name, field.name)
 
 
+class UnitNormalizationSpec(StrictModel):
+    """Explicit affine conversion from a provider unit to one canonical unit.
+
+    The runtime never infers conversion factors from unit strings. Adapters/applications must
+    declare the conversion contract locally.
+
+    canonical_value = source_value * scale + offset
+    """
+
+    dimension: str
+    canonical_unit: str
+    scale: float = 1.0
+    offset: float = 0.0
+
+    @model_validator(mode="after")
+    def validate_unit_normalization(self) -> UnitNormalizationSpec:
+        if not self.dimension.strip():
+            raise ValueError("unit normalization dimension must be non-empty")
+        if not self.canonical_unit.strip():
+            raise ValueError("unit normalization canonical_unit must be non-empty")
+        if not math.isfinite(self.scale) or self.scale == 0:
+            raise ValueError("unit normalization scale must be finite and non-zero")
+        if not math.isfinite(self.offset):
+            raise ValueError("unit normalization offset must be finite")
+        return self
+
+
+class ResultFieldContract(StrictModel):
+    """Minimal field contract carried with a projected ToolResult."""
+
+    semantic_id: str | None = None
+    json_schema: dict[str, Any] = Field(default_factory=dict)
+    source_unit: str | None = None
+    unit: str | None = None
+    dimension: str | None = None
+
+
 class FieldSpec(StrictModel):
     name: str
     semantic_id: str | None = None
@@ -129,6 +167,7 @@ class FieldSpec(StrictModel):
     path: list[str] = Field(default_factory=list)
     result_path: list[str] = Field(default_factory=list)
     unit: str | None = None
+    unit_normalization: UnitNormalizationSpec | None = None
     identifier: bool = False
     source_type: str | None = None
     license: str | None = None
@@ -141,6 +180,21 @@ class FieldSpec(StrictModel):
             raise ValueError("field path requires non-empty string segments")
         if any(not isinstance(part, str) or not part for part in self.result_path):
             raise ValueError("field result_path requires non-empty string segments")
+        if self.unit_normalization is not None and self.unit is None:
+            raise ValueError(
+                "unit_normalization requires the provider source unit in field.unit"
+            )
+        explicit_type = self.json_schema.get("type")
+        if self.unit is not None and explicit_type is not None:
+            allowed = (
+                set(explicit_type)
+                if isinstance(explicit_type, list)
+                else {explicit_type}
+            )
+            if allowed.isdisjoint({"number", "integer"}):
+                raise ValueError(
+                    "a field with unit metadata must declare a numeric json_schema type"
+                )
         return self
 
     @property
@@ -484,3 +538,4 @@ class ToolResult(StrictModel):
     endpoint: str
     data: Any
     projected_fields: list[str] = Field(default_factory=list)
+    field_contracts: dict[str, ResultFieldContract] = Field(default_factory=dict)
