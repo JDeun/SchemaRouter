@@ -201,3 +201,34 @@ used as the output shape.
 
 This lets multiple provider/access contracts expose different wire schemas while keeping the
 downstream context provider-neutral.
+
+
+## Scientific datatype and unit contracts
+
+Adapters that expose scientific quantities should preserve both the raw value schema and source
+unit on each projectable field.
+
+```python
+FieldSpec(
+    name="wavelength",
+    semantic_id="wavelength",
+    json_schema={"type": "number"},
+    unit="nm",
+    unit_normalization=UnitNormalizationSpec(
+        dimension="length",
+        canonical_unit="m",
+        scale=1e-9,
+    ),
+)
+```
+
+Do not guess unit conversion from a remote label. Only populate `unit_normalization` when the
+adapter/application has a trusted, exact conversion contract. `unit` is the provider source unit;
+the canonical unit is the unit returned after SchemaRouter projection/normalization.
+
+A unit-bearing field must resolve to a numeric scalar or numeric-array schema. Adapters should
+populate `FieldSpec.json_schema` directly where possible; if the type is only present in the
+endpoint output schema, SchemaRouter validates the declared field path against that raw schema.
+
+For cross-provider fallback, type and unit metadata are part of semantic compatibility, so adapter
+quality directly affects safe route substitution.
