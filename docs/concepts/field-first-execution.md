@@ -191,12 +191,22 @@ Fallback compatibility is conservative:
 
 ```text
 same semantic field
-  AND compatible JSON value type
+  AND explicit compatible JSON value type
+      (required for unit-bearing cross-provider fallback)
   AND (
         same explicit source unit
         OR same declared dimension + same canonical unit
       )
 ```
+
+A unit label by itself is not enough to establish a scientific value contract. If a unit-bearing
+field participates in automatic provider fallback, both sides must expose an explicit datatype
+shape through `FieldSpec.json_schema` or the declared endpoint output schema. Unknown datatype +
+known unit is treated as insufficient evidence for automatic fallback.
+
+When both a field-level schema and a raw endpoint output schema describe the same value, their type
+shapes must be compatible. The whole raw response is validated first, then selected values are also
+validated against any stronger `FieldSpec.json_schema` contract before unit normalization.
 
 Numeric type compatibility is directional: an integer-producing fallback can satisfy a numeric
 requirement, but an arbitrary number-producing fallback cannot satisfy an integer-only requirement.
@@ -237,4 +247,15 @@ canonical_value = source_value * scale + offset
 ```
 
 This covers SI-prefix scaling and offset units when the application declares the exact conversion.
-Non-finite/overflowed normalized values fail closed.
+For example, `degC -> K` can use `scale=1.0, offset=273.15`. A source unit that is already equal
+to the canonical unit must use the identity transform; contradictory same-unit conversion contracts
+are rejected or excluded from fallback.
+
+The planner compares the **post-normalization result datatype**, not just the provider raw datatype.
+For example, an integer source value converted by an affine unit contract is treated as a canonical
+JSON `number`, so a provider that already returns the canonical quantity as `number` can be a
+valid fallback.
+
+Unit symbols remain exact and case-/punctuation-sensitive. Surrounding whitespace is rejected.
+Nonlinear/logarithmic conversions are not inferred or synthesized. Non-finite/overflowed normalized
+values fail closed.
