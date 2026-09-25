@@ -672,13 +672,43 @@ class ToolCall(StrictModel):
     endpoint: str
     arguments: dict[str, Any] = Field(default_factory=dict)
     fields: list[str] = Field(default_factory=list)
+    # Available evidence is a planner/runtime-observed summary of the selected route.
+    # It is not execution authority; required_evidence carries caller requirements.
     evidence: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
+    required_evidence: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
+    # Keys are provider-local selected field names; values are caller requirements.
     field_evidence: dict[str, EvidenceRequirements] = Field(default_factory=dict)
     schema_fingerprint: str
     tool_fingerprint: str | None = None
     missing_required_arguments: list[str] = Field(default_factory=list)
     score: float = 0.0
     explanation: PlanExplanation | None = None
+
+    @model_validator(mode="after")
+    def validate_evidence_requirements(self) -> ToolCall:
+        global_source = self.required_evidence.source_type
+        if global_source is not None:
+            for field_name, requirement in self.field_evidence.items():
+                if (
+                    requirement.source_type is not None
+                    and requirement.source_type != global_source
+                ):
+                    raise ValueError(
+                        "field_evidence source_type conflicts with required_evidence "
+                        f"for {field_name!r}"
+                    )
+        if any(not name.strip() or name != name.strip() for name in self.field_evidence):
+            raise ValueError(
+                "field_evidence keys must be non-empty local field names without "
+                "surrounding whitespace"
+            )
+        return self
+
+    @property
+    def available_evidence(self) -> EvidenceRequirements:
+        """Return the route's declared available-evidence summary."""
+
+        return self.evidence
 
     @property
     def executable(self) -> bool:
