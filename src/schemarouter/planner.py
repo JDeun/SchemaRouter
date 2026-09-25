@@ -9,6 +9,12 @@ from typing import Any, Protocol
 from .decision_policy import DecisionPolicy
 from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
 from .errors import PlanningError
+from .evidence import (
+    available_evidence,
+    match_semantic_field_evidence,
+    missing_global_evidence,
+    missing_local_field_evidence,
+)
 from .models import (
     CandidateSelectionSource,
     EndpointSpec,
@@ -996,89 +1002,44 @@ class SchemaPlanner:
     ) -> dict[str, tuple[str, EvidenceRequirements]]:
         """Map trusted semantic evidence requirements onto selected local fields."""
 
-        requested_by_semantic = {
-            _normalize(semantic_id): (semantic_id, requirement)
-            for semantic_id, requirement in requested.items()
-        }
-        field_map = {
-            field.name: field
-            for field in candidate.endpoint.output_fields
-        }
-        matched: dict[str, tuple[str, EvidenceRequirements]] = {}
-        for field_name in selected_fields:
-            field = field_map.get(field_name)
-            if field is None or field.identifier:
-                continue
-            semantic = _normalize(field.semantic_id or field.name)
-            item = requested_by_semantic.get(semantic)
-            if item is not None:
-                matched[field_name] = item
-        return matched
-
+        return match_semantic_field_evidence(
+            candidate.endpoint,
+            selected_fields,
+            requested,
+        )
     @staticmethod
     def _local_evidence_status(
         candidate: _Candidate,
         selected_fields: list[str],
         requested: EvidenceRequirements,
     ) -> tuple[bool, dict[str, object], list[str]]:
-        endpoint = candidate.endpoint
-        field_map = {field.name: field for field in endpoint.output_fields}
-        selected = [
-            field_map[name]
-            for name in selected_fields
-            if name in field_map
-        ]
-        answer_fields = [field for field in selected if not field.identifier]
-
-        provenance_available = bool(
-            candidate.tool.source_type
-            or any(field.source_type for field in answer_fields)
+        available = available_evidence(
+            candidate.tool,
+            candidate.endpoint,
+            selected_fields,
         )
-        license_available = bool(candidate.tool.license) or (
-            bool(answer_fields)
-            and all(field.license for field in answer_fields)
+        missing = missing_global_evidence(
+            candidate.tool,
+            candidate.endpoint,
+            selected_fields,
+            requested,
         )
-        units_available = bool(answer_fields) and all(
-            field.unit for field in answer_fields
-        )
-        requested_source_type = requested.source_type
-        source_type_available = (
-            requested_source_type is None
-            or candidate.tool.source_type == requested_source_type
-            or (
-                bool(answer_fields)
-                and all(
-                    field.source_type == requested_source_type
-                    for field in answer_fields
-                )
-            )
-        )
-
-        missing: list[str] = []
-        if requested.provenance and not provenance_available:
-            missing.append("provenance")
-        if requested.license and not license_available:
-            missing.append("license")
-        if requested.units and not units_available:
-            missing.append("units")
-        if requested_source_type is not None and not source_type_available:
-            missing.append(f"source_type={requested_source_type}")
-
         context: dict[str, object] = {
             "surface": "evidence_sufficiency",
             "tool": candidate.tool.key,
-            "endpoint": endpoint.name,
+            "endpoint": candidate.endpoint.name,
             "selected_fields": list(selected_fields),
             "requested": requested.model_dump(mode="json"),
             "available": {
-                "provenance": provenance_available,
-                "license": license_available,
-                "units": units_available,
-                "source_type": source_type_available,
+                "provenance": available.provenance,
+                "license": available.license,
+                "units": available.units,
+                "source_type": not any(
+                    item.startswith("source_type=") for item in missing
+                ),
             },
         }
         return not missing, context, missing
-
     @classmethod
     def _local_field_evidence_status(
         cls,
@@ -1091,70 +1052,50 @@ class SchemaPlanner:
         list[str],
         dict[str, tuple[str, EvidenceRequirements]],
     ]:
-        matched = cls._matched_field_evidence(
-            candidate,
-            selected_fields,
-            requested,
-        )
+        matched = cls._matched_field_evidence(candidate, selected_fields, requested)
         if not matched:
             return True, {}, [], {}
 
-        field_map = {
-            field.name: field
-            for field in candidate.endpoint.output_fields
+        local_requested = {
+            field_name: requirement
+            for field_name, (_, requirement) in matched.items()
         }
-        available_context: dict[str, object] = {}
-        requested_context: dict[str, object] = {}
+        missing_local = missing_local_field_evidence(
+            candidate.tool, candidate.endpoint, local_requested
+        )
+        semantic_by_field = {
+            field_name: semantic_id
+            for field_name, (semantic_id, _) in matched.items()
+        }
         missing: list[str] = []
+        for item in missing_local:
+            field_name, _, suffix = item.partition(".")
+            semantic_id = semantic_by_field.get(field_name, field_name)
+            missing.append(f"{semantic_id}.{suffix}" if suffix else semantic_id)
 
+        field_map = {field.name: field for field in candidate.endpoint.output_fields}
+        requested_context: dict[str, object] = {}
+        available_context: dict[str, object] = {}
         for field_name, (semantic_id, requirement) in matched.items():
             field = field_map[field_name]
-            provenance_available = bool(
-                candidate.tool.source_type or field.source_type
-            )
-            license_available = bool(
-                candidate.tool.license or field.license
-            )
-            units_available = bool(field.unit)
-            source_type_available = (
-                requirement.source_type is None
-                or candidate.tool.source_type == requirement.source_type
-                or field.source_type == requirement.source_type
-            )
-
             requested_context[semantic_id] = requirement.model_dump(mode="json")
             available_context[semantic_id] = {
                 "field": field_name,
-                "provenance": provenance_available,
-                "license": license_available,
-                "units": units_available,
-                "source_type": source_type_available,
+                "provenance": bool(candidate.tool.source_type or field.source_type),
+                "license": bool(candidate.tool.license or field.license),
+                "units": bool(field.unit),
+                "source_type": (
+                    requirement.source_type is None
+                    or candidate.tool.source_type == requirement.source_type
+                    or field.source_type == requirement.source_type
+                ),
             }
-
-            if requirement.provenance and not provenance_available:
-                missing.append(f"{semantic_id}.provenance")
-            if requirement.license and not license_available:
-                missing.append(f"{semantic_id}.license")
-            if requirement.units and not units_available:
-                missing.append(f"{semantic_id}.units")
-            if (
-                requirement.source_type is not None
-                and not source_type_available
-            ):
-                missing.append(
-                    f"{semantic_id}.source_type={requirement.source_type}"
-                )
-
         return (
             not missing,
-            {
-                "field_requested": requested_context,
-                "field_available": available_context,
-            },
+            {"field_requested": requested_context, "field_available": available_context},
             missing,
             matched,
         )
-
     @classmethod
     def _combined_local_evidence_status(
         cls,
@@ -2301,33 +2242,4 @@ class SchemaPlanner:
         endpoint: EndpointSpec,
         selected_fields: list[str],
     ) -> EvidenceRequirements:
-        """Summarize evidence actually declared by the selected route."""
-
-        field_map = {field.name: field for field in endpoint.output_fields}
-        answer_fields = [
-            field_map[name]
-            for name in selected_fields
-            if name in field_map and not field_map[name].identifier
-        ]
-        source_type: str | None = tool.source_type
-        if source_type is None and answer_fields:
-            field_source_types = {field.source_type for field in answer_fields}
-            if len(field_source_types) == 1:
-                only = next(iter(field_source_types))
-                if only is not None:
-                    source_type = only
-
-        return EvidenceRequirements(
-            provenance=bool(
-                tool.source_type
-                or any(field.source_type for field in answer_fields)
-            ),
-            license=bool(tool.license) or (
-                bool(answer_fields)
-                and all(field.license for field in answer_fields)
-            ),
-            units=bool(answer_fields) and all(
-                field.unit for field in answer_fields
-            ),
-            source_type=source_type,
-        )
+        return available_evidence(tool, endpoint, selected_fields)
