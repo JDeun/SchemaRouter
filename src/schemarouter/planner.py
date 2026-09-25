@@ -44,6 +44,31 @@ def _json_schema_types(schema: dict[str, Any]) -> frozenset[str] | None:
     return None
 
 
+def _effective_field_schema(field: FieldSpec) -> dict[str, Any]:
+    if field.unit_transform is None:
+        return field.json_schema
+
+    def normalize(schema: dict[str, Any]) -> dict[str, Any]:
+        normalized: dict[str, Any] = {}
+        raw_type = schema.get("type")
+        if isinstance(raw_type, str):
+            normalized["type"] = "number" if raw_type == "integer" else raw_type
+        elif isinstance(raw_type, list):
+            normalized["type"] = sorted(
+                {
+                    "number" if item == "integer" else item
+                    for item in raw_type
+                    if isinstance(item, str)
+                }
+            )
+        items = schema.get("items")
+        if isinstance(items, dict):
+            normalized["items"] = normalize(items)
+        return normalized
+
+    return normalize(field.json_schema)
+
+
 def _schema_value_compatible(
     required: dict[str, Any],
     candidate: dict[str, Any],
@@ -978,7 +1003,7 @@ class SchemaPlanner:
                         if field.semantic_id
                         else None
                     ),
-                    json_schema=field.json_schema,
+                    json_schema=_effective_field_schema(field),
                     unit=(
                         _normalize(field.effective_unit)
                         if field.effective_unit
