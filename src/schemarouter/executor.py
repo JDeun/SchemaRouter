@@ -9,7 +9,6 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-from .evidence import available_evidence, missing_global_evidence, missing_local_field_evidence
 from .errors import (
     ApprovalDeniedError,
     BindingDriftError,
@@ -22,6 +21,7 @@ from .errors import (
     SchemaDriftError,
     SchemaValidationError,
 )
+from .evidence import available_evidence, missing_global_evidence, missing_local_field_evidence
 from .hooks import ExecutionHooks
 from .models import (
     EndpointSpec,
