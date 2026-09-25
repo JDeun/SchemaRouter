@@ -326,3 +326,28 @@ def test_legacy_optimade_tool_metadata_migrates_adapter_specific_identity() -> N
         "field_projection": "response_fields",
         "mode": "search",
     }
+
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("provider", "", "provider must be non-empty"),
+        ("provider", "   ", "provider must be non-empty"),
+        ("access_mode", "", "access_mode must be non-empty"),
+        ("access_mode", "   ", "access_mode must be non-empty"),
+    ],
+)
+def test_tool_rejects_empty_provider_access_identity(
+    field: str,
+    value: str,
+    message: str,
+) -> None:
+    kwargs = {
+        "name": "demo",
+        "endpoints": [EndpointSpec(name="read", read_only=True)],
+        field: value,
+    }
+
+    with pytest.raises(ValueError, match=message):
+        ToolSpec(**kwargs)
