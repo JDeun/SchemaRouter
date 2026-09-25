@@ -9,6 +9,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- trusted semantic `PlanRequest.field_evidence` constraints so heterogeneous requests can require
+  units, provenance, license, or source type for one logical field without imposing that requirement
+  on unrelated unitless/text fields; compiled calls expose the matched local field requirements and
+  model-assisted analysis cannot author or broaden them;
 - structured `ExecutionPlan.coverage` reporting with required, covered, and uncovered semantic-field
   requirements plus an explicit completeness flag and warning when bounded planning cannot satisfy the
   full matched field set;
