@@ -721,9 +721,9 @@ class RegistryExecutor:
                     data=projected,
                     projected_fields=call.fields,
                     field_types={
-                        name: field.data_type
+                        name: field.effective_data_type
                         for name, field in selected_field_specs.items()
-                        if field.data_type is not None
+                        if field.effective_data_type is not None
                     },
                     field_units={
                         name: field.effective_unit
