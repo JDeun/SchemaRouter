@@ -1155,6 +1155,39 @@ class SchemaPlanner:
             matched,
         )
 
+    @classmethod
+    def _combined_local_evidence_status(
+        cls,
+        candidate: _Candidate,
+        selected_fields: list[str],
+        requested: EvidenceRequirements,
+        field_requested: dict[str, EvidenceRequirements],
+    ) -> tuple[
+        bool,
+        dict[str, object],
+        list[str],
+        dict[str, tuple[str, EvidenceRequirements]],
+    ]:
+        global_ok, context, global_missing = cls._local_evidence_status(
+            candidate,
+            selected_fields,
+            requested,
+        )
+        field_ok, field_context, field_missing, matched = (
+            cls._local_field_evidence_status(
+                candidate,
+                selected_fields,
+                field_requested,
+            )
+        )
+        context.update(field_context)
+        return (
+            global_ok and field_ok,
+            context,
+            [*global_missing, *field_missing],
+            matched,
+        )
+
     @staticmethod
     def _evidence_decision_request(
         request: PlanRequest,
@@ -1188,15 +1221,22 @@ class SchemaPlanner:
         candidate: _Candidate,
         selected_fields: list[str],
         requested: EvidenceRequirements,
+        field_requested: dict[str, EvidenceRequirements],
     ) -> tuple[bool, list[str]]:
-        if not self._evidence_request_active(requested):
+        if not (
+            self._evidence_request_active(requested)
+            or self._field_evidence_request_active(field_requested)
+        ):
             return True, []
 
         prefix = f"{candidate.tool.key}.{candidate.endpoint.name}"
-        locally_sufficient, context, missing = self._local_evidence_status(
-            candidate,
-            selected_fields,
-            requested,
+        locally_sufficient, context, missing, _ = (
+            self._combined_local_evidence_status(
+                candidate,
+                selected_fields,
+                requested,
+                field_requested,
+            )
         )
         if not locally_sufficient:
             message = (
@@ -1209,9 +1249,9 @@ class SchemaPlanner:
                 raise PlanningError(message)
             return False, [message]
 
-        # EvidenceRequirements are deterministic local constraints even when no model-backed
-        # evidence judge is enabled. A decision backend may veto locally sufficient evidence,
-        # but it can never upgrade a locally missing unit/provenance/license/source-type contract.
+        # Evidence requirements are deterministic local constraints. A decision
+        # backend may veto locally sufficient evidence, but it can never upgrade
+        # locally missing global or field-specific contracts.
         if not self.decision_policy.evidence_sufficiency_enabled:
             return True, []
 
@@ -1249,15 +1289,22 @@ class SchemaPlanner:
         candidate: _Candidate,
         selected_fields: list[str],
         requested: EvidenceRequirements,
+        field_requested: dict[str, EvidenceRequirements],
     ) -> tuple[bool, list[str]]:
-        if not self._evidence_request_active(requested):
+        if not (
+            self._evidence_request_active(requested)
+            or self._field_evidence_request_active(field_requested)
+        ):
             return True, []
 
         prefix = f"{candidate.tool.key}.{candidate.endpoint.name}"
-        locally_sufficient, context, missing = self._local_evidence_status(
-            candidate,
-            selected_fields,
-            requested,
+        locally_sufficient, context, missing, _ = (
+            self._combined_local_evidence_status(
+                candidate,
+                selected_fields,
+                requested,
+                field_requested,
+            )
         )
         if not locally_sufficient:
             message = (
