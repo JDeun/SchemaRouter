@@ -442,3 +442,21 @@ def test_live_inspection_distinguishes_unbound_and_stale_bindings() -> None:
 
     assert snapshot.execution.binding_states[ready_key] == "stale"
     assert snapshot.execution.binding_states["unbound"] == "unbound"
+
+
+
+def test_live_inspection_reports_orphaned_binding_after_registry_removal() -> None:
+    registry = InMemoryRegistry()
+    router = SchemaRouter(registry=registry)
+    key = router.add_callable(_echo)
+
+    registry.unregister(key)
+
+    snapshot = router.inspect()
+
+    assert snapshot.execution.bound_tools == [key]
+    assert snapshot.execution.binding_states[key] == "orphaned"
+
+    html = render_dashboard(snapshot.registry, live=snapshot)
+    assert "Binding states" in html
+    assert "orphaned" in html
