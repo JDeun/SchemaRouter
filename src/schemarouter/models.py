@@ -42,6 +42,44 @@ _TOOL_RUNTIME_KEYS_BY_ADAPTER = {
 }
 
 
+def _schema_supports_unit(schema: dict[str, Any]) -> bool:
+    declared = schema.get("type")
+    types = (
+        set(declared)
+        if isinstance(declared, list)
+        else ({declared} if isinstance(declared, str) else set())
+    )
+    types.discard("null")
+    if not types:
+        return True
+    if types <= {"number", "integer"}:
+        return True
+    if types == {"array"}:
+        items = schema.get("items")
+        return isinstance(items, dict) and _schema_supports_unit(items)
+    return False
+
+
+def _schema_at_projection_path(
+    output_schema: dict[str, Any],
+    path: tuple[str, ...],
+) -> dict[str, Any]:
+    schema = output_schema
+    if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
+        schema = schema["items"]
+    for part in path:
+        if schema.get("type") != "object":
+            return {}
+        properties = schema.get("properties")
+        if not isinstance(properties, dict):
+            return {}
+        child = properties.get(part)
+        if not isinstance(child, dict):
+            return {}
+        schema = child
+    return schema
+
+
 def _validate_execution_metadata(value: dict[str, Any]) -> None:
     try:
         json.dumps(
@@ -184,31 +222,8 @@ class FieldSpec(StrictModel):
             raise ValueError(
                 "unit_normalization requires the provider source unit in field.unit"
             )
-        explicit_type = self.json_schema.get("type")
-        if self.unit is not None and explicit_type is not None:
-            allowed = (
-                set(explicit_type)
-                if isinstance(explicit_type, list)
-                else {explicit_type}
-            )
-            allowed.discard("null")
-            numeric_scalar = bool(allowed) and allowed <= {"number", "integer"}
-            numeric_array = False
-            if allowed == {"array"}:
-                items = self.json_schema.get("items")
-                if isinstance(items, dict):
-                    item_type = items.get("type")
-                    item_types = (
-                        set(item_type)
-                        if isinstance(item_type, list)
-                        else {item_type}
-                    )
-                    item_types.discard("null")
-                    numeric_array = bool(item_types) and item_types <= {
-                        "number",
-                        "integer",
-                    }
-            if not numeric_scalar and not numeric_array:
+        if self.unit is not None and self.json_schema:
+            if not _schema_supports_unit(self.json_schema):
                 raise ValueError(
                     "a field with unit metadata must declare a numeric scalar or numeric-array "
                     "json_schema type"
@@ -263,6 +278,20 @@ class EndpointSpec(StrictModel):
             raise ValueError(f"duplicate parameter name in endpoint {self.name!r}")
         if len(fnames) != len(set(fnames)):
             raise ValueError(f"duplicate output field name in endpoint {self.name!r}")
+
+        if self.output_schema:
+            for field in self.output_fields:
+                if field.unit is None or field.json_schema:
+                    continue
+                raw_field_schema = _schema_at_projection_path(
+                    self.output_schema,
+                    field.projection_path,
+                )
+                if raw_field_schema and not _schema_supports_unit(raw_field_schema):
+                    raise ValueError(
+                        "a field with unit metadata must resolve to a numeric scalar or "
+                        f"numeric-array output schema in endpoint {self.name!r}: {field.name!r}"
+                    )
 
         if self.server_projection is not None:
             remapped_source_fields = [
