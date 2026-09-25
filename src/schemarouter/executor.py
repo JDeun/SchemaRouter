@@ -675,7 +675,11 @@ class RegistryExecutor:
         # stale, unbound, policy-denied, or mutating fallback from being discovered only after an
         # earlier route has already executed. Known-unavailable paths are skipped for a bounded
         # cooldown rather than incurring the same failed network wait on every request.
-        chain = self.ordered_available_fallback_chain(call, alternatives)
+        chain = (
+            self.ordered_available_fallback_chain(call, alternatives)
+            if alternatives
+            else [call]
+        )
 
         for candidate in chain:
             try:
