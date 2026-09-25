@@ -248,6 +248,15 @@ def _compare_field(
                 else None
             ),
         )
+    if old.qualifiers != new.qualifiers:
+        _change(
+            changes,
+            path=f"{prefix}.qualifiers",
+            kind="qualifiers_changed",
+            severity="breaking",
+            old=old.qualifiers,
+            new=new.qualifiers,
+        )
     if old.identifier != new.identifier:
         _change(
             changes,

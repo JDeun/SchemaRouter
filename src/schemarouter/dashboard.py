@@ -21,6 +21,7 @@ def _field_contract_text(field: object) -> str:
     source_unit = getattr(field, "source_unit", None)
     canonical_unit = getattr(field, "unit", None)
     dimension = getattr(field, "dimension", None)
+    qualifiers = getattr(field, "qualifiers", {}) or {}
 
     unit_text = ""
     if source_unit and canonical_unit and source_unit != canonical_unit:
@@ -34,7 +35,14 @@ def _field_contract_text(field: object) -> str:
             unit_text += f"; {dimension}"
         unit_text += "]"
 
-    return f"{name}:{type_signature}{unit_text}"
+    qualifier_text = ""
+    if isinstance(qualifiers, dict) and qualifiers:
+        rendered = ", ".join(
+            f"{key}={value}" for key, value in sorted(qualifiers.items())
+        )
+        qualifier_text = f" {{{rendered}}}"
+
+    return f"{name}:{type_signature}{unit_text}{qualifier_text}"
 
 
 def _mode(read_only: bool | None, destructive: bool | None) -> str:

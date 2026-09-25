@@ -524,6 +524,49 @@ async def scenario_parameter_alias_routing() -> dict[str, object]:
     }
 
 
+async def scenario_scientific_field_qualifiers() -> dict[str, object]:
+    router = SchemaRouter()
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                semantic_id="elastic_modulus",
+                json_schema={"type": "number"},
+                unit="GPa",
+                qualifiers={
+                    "temperature": "300 K",
+                    "phase": "alpha",
+                },
+            )
+        ],
+    )
+    tool = ToolSpec(name="qualified_materials", endpoints=[endpoint])
+    router.add_tool(tool)
+    router.executor.bind(
+        "qualified_materials",
+        lambda endpoint_name, arguments: {"elastic_modulus": 130.0},
+    )
+
+    result = await router.ainvoke(
+        PlanRequest(
+            query="elastic modulus",
+            preferred_tools=["qualified_materials"],
+        )
+    )
+
+    contract = result[0].field_contracts["elastic_modulus"]
+    assert contract.qualifiers == {
+        "temperature": "300 K",
+        "phase": "alpha",
+    }
+    return {
+        "value": result[0].data["elastic_modulus"],
+        "qualifiers": contract.qualifiers,
+    }
+
+
 async def scenario_execution_ready_planning() -> dict[str, object]:
     router = SchemaRouter()
     unbound = ToolSpec(
@@ -753,6 +796,7 @@ SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("retry_and_budget", scenario_retry_and_budget),
     ("parallel_read_only", scenario_parallel_read_only),
     ("scientific_unit_contract", scenario_scientific_unit_contract),
+    ("scientific_field_qualifiers", scenario_scientific_field_qualifiers),
     ("parameter_alias_routing", scenario_parameter_alias_routing),
     ("execution_ready_planning", scenario_execution_ready_planning),
     ("binding_aware_fallback", scenario_binding_aware_fallback),

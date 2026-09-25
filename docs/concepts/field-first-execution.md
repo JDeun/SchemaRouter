@@ -259,3 +259,61 @@ valid fallback.
 Unit symbols remain exact and case-/punctuation-sensitive. Surrounding whitespace is rejected.
 Nonlinear/logarithmic conversions are not inferred or synthesized. Non-finite/overflowed normalized
 values fail closed.
+
+
+## Scientific field qualifiers
+
+A semantic field name, datatype, and unit are not always sufficient to prove that two scientific
+values are interchangeable. The value may depend on a fixed measurement/material context such as:
+
+- temperature;
+- pressure;
+- phase;
+- crystal orientation;
+- measurement method;
+- sample state.
+
+`FieldSpec.qualifiers` is an optional trusted exact-string map for this context:
+
+```python
+FieldSpec(
+    name="elastic_modulus",
+    semantic_id="elastic_modulus",
+    json_schema={"type": "number"},
+    unit="GPa",
+    qualifiers={
+        "temperature": "300 K",
+        "phase": "alpha",
+        "orientation": "[100]",
+    },
+)
+```
+
+Qualifiers are optional. Text/document/search fields and scientific fields with no fixed contextual
+constraint normally keep `qualifiers={}`.
+
+Automatic provider fallback requires exact qualifier equality after semantic/type/unit checks. A
+300 K field is therefore not silently substituted with a 500 K field, and a qualified field is not
+silently substituted with an unqualified field.
+
+Qualifier values are deliberately opaque and case-sensitive. SchemaRouter does not infer that
+`300 K` equals `26.85 degC`, normalize phase names, parse crystallographic notation, or derive a
+measurement condition from natural language. If multiple provider representations are known to mean
+the same condition, trusted adapter/application code should canonicalize them before registration.
+
+Selected qualifiers are preserved in `ToolResult.field_contracts`, so downstream answer generation
+can consume the minimal value together with the context that gives the value its meaning.
+
+
+### Qualifier-aware routing remains lexical and bounded
+
+Trusted qualifiers can also break ties between otherwise equivalent schema candidates when the
+qualifier value is visibly present in the user query. For example, between two
+`elastic_modulus` endpoints qualified as `300 K` and `500 K`, the query
+`elastic modulus at 500 K` receives a deterministic score boost only for the `500 K` field.
+
+This is exact lexical routing, not scientific inference. SchemaRouter does not convert temperatures,
+expand synonyms, or infer unstated experimental conditions. ASCII and numeric qualifier values are matched on token boundaries, so `300 K` does not match
+`1300 K`. Very short ASCII qualifier values are not matched by value alone. Bounded field-selection backends also
+receive the trusted qualifier tags in their option descriptions, while execution metadata remains
+outside the decision surface.

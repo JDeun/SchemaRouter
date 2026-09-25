@@ -368,3 +368,33 @@ parameter and is distinct from semantic aliases.
 Adapters must not infer trusted aliases from arbitrary remote descriptions or model output. Remote
 schemas may describe names, but local code decides whether two argument keys are semantically
 equivalent.
+
+
+## Scientific qualifiers are exact local contracts
+
+When a provider field has a fixed contextual meaning that affects scientific comparability, adapters
+may preserve that context with `FieldSpec.qualifiers`.
+
+```python
+FieldSpec(
+    name="youngs_modulus",
+    semantic_id="elastic_modulus",
+    json_schema={"type": "number"},
+    unit="GPa",
+    qualifiers={
+        "temperature": "300 K",
+        "orientation": "[100]",
+    },
+)
+```
+
+Only declare qualifiers that are fixed and trusted for the field contract. Do not copy arbitrary
+per-record metadata into this map. If a condition varies per record, keep it as an ordinary returned
+field or normalize the provider data in trusted application/adapter code first.
+
+Qualifier keys and values must be non-empty and have no surrounding whitespace. Their values are
+exact opaque tags; SchemaRouter does not perform unit conversion, synonym expansion, or natural
+language inference inside qualifier strings.
+
+This makes qualifiers suitable for conservative fallback safety without turning SchemaRouter into a
+scientific ontology or query-language engine.

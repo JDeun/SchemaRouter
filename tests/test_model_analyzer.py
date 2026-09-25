@@ -176,3 +176,64 @@ async def test_model_analyzer_never_receives_execution_metadata() -> None:
     assert "private-runtime-route" not in serialized
     assert "trusted-runtime-only" not in serialized
     assert "execution_metadata" not in serialized
+
+
+
+@pytest.mark.asyncio
+async def test_model_analyzer_catalog_exposes_qualifiers_without_execution_metadata() -> None:
+    captured = {}
+
+    async def model(payload: dict) -> dict:
+        captured.update(payload)
+        return {
+            "preferred_tools": ["materials"],
+            "preferred_endpoints": ["materials.read"],
+            "arguments": {},
+            "fields": ["elastic_modulus"],
+            "concepts": ["elastic modulus"],
+            "evidence": {},
+        }
+
+    router = SchemaRouter(analyzer=ModelQueryAnalyzer(model))
+    router.add_tool(
+        ToolSpec(
+            name="materials",
+            remote=True,
+            execution_metadata={
+                "approved_base_url": "https://internal.example/api",
+                "transport_identity": "private-runtime-route",
+            },
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="elastic_modulus",
+                            semantic_id="elastic_modulus",
+                            json_schema={"type": "number"},
+                            unit="GPa",
+                            qualifiers={
+                                "temperature": "300 K",
+                                "phase": "alpha",
+                            },
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    await router.aplan("elastic modulus")
+
+    serialized = repr(captured)
+    assert "internal.example" not in serialized
+    assert "private-runtime-route" not in serialized
+    field = captured["schema_catalog"][0]["endpoints"][0]["fields"][0]
+    assert field["semantic_id"] == "elastic_modulus"
+    assert field["json_schema"] == {"type": "number"}
+    assert field["unit"] == "GPa"
+    assert field["qualifiers"] == {
+        "temperature": "300 K",
+        "phase": "alpha",
+    }

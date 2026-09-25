@@ -60,6 +60,53 @@ def _semantic_substring_match(left: str, right: str) -> bool:
     return left in right or right in left
 
 
+def _matched_field_qualifiers(query: str, field: FieldSpec) -> tuple[str, ...]:
+    """Return trusted qualifier tags that are visibly present in the query.
+
+    Matching is token-bounded for ASCII/numeric values so 300 K cannot match
+    1300 K. Very short ASCII values such as K are ignored by themselves
+    unless the query also contains their qualifier key. Non-ASCII values fall back
+    to normalized literal containment because the lightweight tokenizer intentionally
+    covers only ASCII words/numbers and Korean text.
+    """
+
+    if not field.qualifiers:
+        return ()
+
+    query_tokens = _tokens(query)
+    query_norm = _normalize(query)
+    if not query_tokens and not query_norm:
+        return ()
+
+    matches: list[str] = []
+    for key, value in sorted(field.qualifiers.items()):
+        value_tokens = _tokens(value)
+        value_norm = _normalize(value)
+
+        token_value_match = bool(
+            value_tokens
+            and value_tokens.issubset(query_tokens)
+            and (
+                len(value_tokens) > 1
+                or any(len(token) >= 3 for token in value_tokens)
+            )
+        )
+        non_ascii_value_match = bool(
+            value_norm
+            and not value_norm.isascii()
+            and value_norm in query_norm
+        )
+
+        keyed_tokens = _tokens(f"{key} {value}")
+        keyed_match = bool(
+            len(keyed_tokens) > 1
+            and keyed_tokens.issubset(query_tokens)
+        )
+
+        if token_value_match or non_ascii_value_match or keyed_match:
+            matches.append(f"{key}={value}")
+    return tuple(matches)
+
 _KOREAN_PARTICLE_SUFFIXES = (
     "에서",
     "에게",
@@ -121,6 +168,7 @@ class _FieldSemantic:
     names: frozenset[str]
     semantic_id: str | None
     json_schema: dict[str, object]
+    qualifiers: tuple[tuple[str, str], ...]
     unit: str | None
     unit_dimension: str | None
     canonical_unit: str | None
@@ -583,6 +631,14 @@ class SchemaPlanner:
                 detail_parts.append("aliases: " + ", ".join(field.aliases))
             if field.unit:
                 detail_parts.append(f"unit: {field.unit}")
+            if field.qualifiers:
+                detail_parts.append(
+                    "qualifiers: "
+                    + ", ".join(
+                        f"{key}={value}"
+                        for key, value in sorted(field.qualifiers.items())
+                    )
+                )
             description = "; ".join(part for part in detail_parts if part)
             options.append(
                 DecisionOption(
@@ -961,6 +1017,7 @@ class SchemaPlanner:
                         else None
                     ),
                     json_schema=canonical_field_value_schema(endpoint, field.name),
+                    qualifiers=tuple(sorted(field.qualifiers.items())),
                     unit=field.unit.strip() if field.unit else None,
                     unit_dimension=(
                         _normalize(unit_normalization.dimension)
@@ -1037,6 +1094,8 @@ class SchemaPlanner:
                     requirement.json_schema,
                     candidate_field.json_schema,
                 ):
+                    continue
+                if requirement.qualifiers != candidate_field.qualifiers:
                     continue
 
                 if (requirement.unit is None) != (candidate_field.unit is None):
@@ -1648,6 +1707,18 @@ class SchemaPlanner:
                 components.append(
                     ScoreComponent(kind="field_substring", value=1.0, matched=field.name)
                 )
+
+            if exact or lexical or substring:
+                qualifier_matches = _matched_field_qualifiers(query, field)
+                if qualifier_matches:
+                    score += 4.0
+                    components.append(
+                        ScoreComponent(
+                            kind="field_qualifier",
+                            value=4.0,
+                            matched=f"{field.name}:" + ",".join(qualifier_matches),
+                        )
+                    )
 
         _, argument_sources, _, _ = self._bind_arguments(
             endpoint,
