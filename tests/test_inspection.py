@@ -491,6 +491,12 @@ def test_registry_inspection_exposes_typed_unit_contracts() -> None:
                             ),
                         ),
                         FieldSpec(
+                            name="poisson_ratio",
+                            semantic_id="poisson_ratio",
+                            json_schema={"type": "number"},
+                            dimensionless=True,
+                        ),
+                        FieldSpec(
                             name="particle_sizes",
                             semantic_id="particle_size",
                             json_schema={
@@ -519,6 +525,9 @@ def test_registry_inspection_exposes_typed_unit_contracts() -> None:
     assert fields["elastic_modulus"].dimension == "pressure"
     assert fields["elastic_modulus"].normalized is True
     assert fields["elastic_modulus"].normalization_scale == 1_000_000_000.0
+    assert fields["poisson_ratio"].type_signature == "number"
+    assert fields["poisson_ratio"].unit is None
+    assert fields["poisson_ratio"].dimensionless is True
     assert fields["particle_sizes"].type_signature == "array<number|null>"
     assert fields["particle_sizes"].unit == "nm"
 
@@ -536,6 +545,11 @@ def test_dashboard_renders_typed_unit_contracts() -> None:
                         FieldSpec(
                             name="abstract",
                             json_schema={"type": "string"},
+                        ),
+                        FieldSpec(
+                            name="poisson_ratio",
+                            json_schema={"type": "number"},
+                            dimensionless=True,
                         ),
                         FieldSpec(
                             name="elastic_modulus",
@@ -557,4 +571,5 @@ def test_dashboard_renders_typed_unit_contracts() -> None:
 
     assert "Field contracts" in html
     assert "abstract:string" in html
+    assert "poisson_ratio:number [dimensionless]" in html
     assert "elastic_modulus:number [GPa→Pa; pressure]" in html
