@@ -408,10 +408,16 @@ class RegistryExecutor:
         return tuple(sorted(self._invokers))
 
     def binding_states(self) -> dict[str, str]:
-        """Return privacy-safe binding readiness for every registered tool."""
+        """Return privacy-safe binding readiness for registered and orphaned bindings."""
 
         states: dict[str, str] = {}
-        for key in self.registry.keys():
+        registry_keys = set(self.registry.keys())
+        binding_keys = set(self._invokers)
+
+        for key in sorted(registry_keys | binding_keys):
+            if key not in registry_keys:
+                states[key] = "orphaned"
+                continue
             tool = self.registry.get(key)
             states[key] = self.binding_status_for_contract(
                 key,
