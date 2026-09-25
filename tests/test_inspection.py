@@ -12,6 +12,7 @@ from schemarouter import (
     SQLiteRegistry,
     SQLiteRunTraceStore,
     ToolSpec,
+    UnitNormalizationSpec,
     inspect_registry,
     inspect_router,
     inspect_trace,
@@ -460,3 +461,100 @@ def test_live_inspection_reports_orphaned_binding_after_registry_removal() -> No
     html = render_dashboard(snapshot.registry, live=snapshot)
     assert "Binding states" in html
     assert "orphaned" in html
+
+
+
+def test_registry_inspection_exposes_typed_unit_contracts() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="mixed_data",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="abstract_text",
+                            json_schema={"type": "string"},
+                        ),
+                        FieldSpec(
+                            name="elastic_modulus",
+                            semantic_id="elastic_modulus",
+                            json_schema={"type": "number"},
+                            unit="GPa",
+                            unit_normalization=UnitNormalizationSpec(
+                                dimension="pressure",
+                                canonical_unit="Pa",
+                                scale=1_000_000_000.0,
+                            ),
+                        ),
+                        FieldSpec(
+                            name="particle_sizes",
+                            semantic_id="particle_size",
+                            json_schema={
+                                "type": "array",
+                                "items": {"type": ["number", "null"]},
+                            },
+                            unit="nm",
+                        ),
+                    ],
+                )
+            ],
+        )
+    )
+
+    snapshot = inspect_registry(registry)
+    fields = {
+        field.name: field
+        for field in snapshot.tools[0].endpoints[0].fields
+    }
+
+    assert fields["abstract"].type_signature == "string"
+    assert fields["abstract"].source_unit is None
+    assert fields["elastic_modulus"].type_signature == "number"
+    assert fields["elastic_modulus"].source_unit == "GPa"
+    assert fields["elastic_modulus"].unit == "Pa"
+    assert fields["elastic_modulus"].dimension == "pressure"
+    assert fields["elastic_modulus"].normalized is True
+    assert fields["elastic_modulus"].normalization_scale == 1_000_000_000.0
+    assert fields["particle_sizes"].type_signature == "array<number|null>"
+    assert fields["particle_sizes"].unit == "nm"
+
+
+def test_dashboard_renders_typed_unit_contracts() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="scientific",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            json_schema={"type": "string"},
+                        ),
+                        FieldSpec(
+                            name="elastic_modulus",
+                            json_schema={"type": "number"},
+                            unit="GPa",
+                            unit_normalization=UnitNormalizationSpec(
+                                dimension="pressure",
+                                canonical_unit="Pa",
+                                scale=1_000_000_000.0,
+                            ),
+                        ),
+                    ],
+                )
+            ],
+        )
+    )
+
+    html = render_dashboard(inspect_registry(registry))
+
+    assert "Field contracts" in html
+    assert "abstract:string" in html
+    assert "elastic_modulus:number [GPa→Pa; pressure]" in html
