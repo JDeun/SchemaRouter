@@ -251,5 +251,33 @@ Fallback requires semantic compatibility plus compatible result datatype and eit
 - the same exact source unit; or
 - explicit matching physical `dimension` and `canonical_unit` normalization contracts.
 
-Text/document fields normally use `unit=None`; no unit metadata is required for strings such as
+Units are optional. Text/document/search fields normally use `unit=None`; no unit metadata is required for strings such as
 abstracts, snippets, titles, or prose.
+
+
+### When to omit units
+
+Do **not** attach a unit merely because a field comes from a scientific source. The unit belongs to
+the value contract, not to the provider category.
+
+Typical unitless fields include:
+
+- paper titles, abstracts, and full text;
+- web-search snippets and URLs;
+- material names and identifiers;
+- categorical labels, symmetry symbols, and free-form notes;
+- provenance/license/source strings.
+
+For example:
+
+```python
+FieldSpec(
+    name="abstract",
+    semantic_id="document_text",
+    json_schema={"type": "string"},
+    unit=None,  # optional; this is also the default
+)
+```
+
+A unit should be declared only when the field represents a physical/numeric quantity and the source
+contract actually defines that unit. If the unit is unknown, leave it unset rather than guessing.
