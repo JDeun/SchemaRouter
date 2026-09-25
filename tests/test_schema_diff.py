@@ -5,6 +5,7 @@ from schemarouter import (
     FieldSpec,
     ParameterSpec,
     ToolSpec,
+    UnitNormalizationSpec,
     compare_endpoint_specs,
     compare_tool_specs,
 )
@@ -459,5 +460,88 @@ def test_provider_route_identity_drift_requires_security_review(
     assert any(
         change.kind == kind
         and change.severity == "security"
+        for change in report.changes
+    )
+
+
+
+def test_field_semantic_id_change_is_breaking() -> None:
+    old = endpoint()
+    new_fields = [field.model_copy(deep=True) for field in old.output_fields]
+    new_fields[1] = new_fields[1].model_copy(
+        update={"semantic_id": "electronic_band_gap"},
+        deep=True,
+    )
+    report = compare_endpoint_specs(
+        old,
+        old.model_copy(update={"output_fields": new_fields}, deep=True),
+    )
+
+    assert report.compatibility == "breaking"
+    assert any(
+        change.kind == "semantic_id_changed"
+        for change in report.changes
+    )
+
+
+def test_field_result_path_change_is_breaking() -> None:
+    old = endpoint()
+    new_fields = [field.model_copy(deep=True) for field in old.output_fields]
+    new_fields[1] = new_fields[1].model_copy(
+        update={"result_path": ["properties", "band_gap"]},
+        deep=True,
+    )
+    report = compare_endpoint_specs(
+        old,
+        old.model_copy(update={"output_fields": new_fields}, deep=True),
+    )
+
+    assert report.compatibility == "breaking"
+    assert any(
+        change.kind == "result_projection_path_changed"
+        for change in report.changes
+    )
+
+
+def test_field_unit_normalization_change_is_breaking() -> None:
+    old = endpoint()
+    old_fields = [field.model_copy(deep=True) for field in old.output_fields]
+    old_fields[1] = old_fields[1].model_copy(
+        update={
+            "unit_normalization": UnitNormalizationSpec(
+                dimension="energy",
+                canonical_unit="J",
+                scale=1.602176634e-19,
+            )
+        },
+        deep=True,
+    )
+    old_with_units = old.model_copy(
+        update={"output_fields": old_fields},
+        deep=True,
+    )
+
+    new_fields = [field.model_copy(deep=True) for field in old_fields]
+    new_fields[1] = new_fields[1].model_copy(
+        update={
+            "unit_normalization": UnitNormalizationSpec(
+                dimension="energy",
+                canonical_unit="J",
+                scale=1.0,
+            )
+        },
+        deep=True,
+    )
+    report = compare_endpoint_specs(
+        old_with_units,
+        old_with_units.model_copy(
+            update={"output_fields": new_fields},
+            deep=True,
+        ),
+    )
+
+    assert report.compatibility == "breaking"
+    assert any(
+        change.kind == "unit_normalization_changed"
         for change in report.changes
     )
