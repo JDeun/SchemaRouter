@@ -853,3 +853,67 @@ async def test_all_precompiled_paths_in_cooldown_fail_without_network_invocation
         await executor.execute(plan)
 
     assert invoked == []
+
+
+
+@pytest.mark.asyncio
+async def test_no_fallback_preserves_unclassified_primary_execution() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="remote_mystery",
+        remote=True,
+        endpoints=[EndpointSpec(name="read", read_only=None)],
+    )
+    registry.register(tool)
+    endpoint = tool.endpoint("read")
+    call = ToolCall(
+        tool=tool.key,
+        endpoint=endpoint.name,
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    plan = ExecutionPlan(
+        query="read",
+        registry_version=registry.version,
+        calls=[call],
+    )
+    executor = RegistryExecutor(
+        registry,
+        policy=ExecutionPolicy(allow_unclassified_remote=True),
+    )
+    executor.bind(tool.key, lambda endpoint, arguments: {"ok": True})
+
+    result = await executor.execute(plan)
+
+    assert result[0].data == {"ok": True}
+
+
+@pytest.mark.asyncio
+async def test_no_fallback_preserves_locally_allowed_mutation_execution() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="writer",
+        endpoints=[EndpointSpec(name="write", read_only=False)],
+    )
+    registry.register(tool)
+    endpoint = tool.endpoint("write")
+    call = ToolCall(
+        tool=tool.key,
+        endpoint=endpoint.name,
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    plan = ExecutionPlan(
+        query="write",
+        registry_version=registry.version,
+        calls=[call],
+    )
+    executor = RegistryExecutor(
+        registry,
+        policy=ExecutionPolicy(allow_mutations=True),
+    )
+    executor.bind(tool.key, lambda endpoint, arguments: {"ok": True})
+
+    result = await executor.execute(plan)
+
+    assert result[0].data == {"ok": True}
