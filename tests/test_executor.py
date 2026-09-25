@@ -3,6 +3,7 @@ import pytest
 from schemarouter import (
     BindingDriftError,
     EndpointSpec,
+    EvidenceRequirements,
     ExecutionError,
     ExecutionPlan,
     ExecutionPolicy,
@@ -109,6 +110,124 @@ def test_executor_recomputes_required_arguments() -> None:
     with pytest.raises(PlanValidationError, match="missing required arguments"):
         RegistryExecutor(reg).validate_call(call)
 
+
+def test_executor_rejects_forged_global_evidence_requirement() -> None:
+    reg = make_registry()
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(query="temperature", arguments={"city": "Seoul"})
+    )
+    forged = plan.calls[0].model_copy(
+        update={"required_evidence": EvidenceRequirements(units=True)}
+    )
+
+    with pytest.raises(
+        PlanValidationError,
+        match="required evidence unavailable.*units",
+    ):
+        RegistryExecutor(reg).validate_call(forged)
+
+
+def test_executor_rejects_forged_field_evidence_requirement() -> None:
+    reg = make_registry()
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(query="temperature", arguments={"city": "Seoul"})
+    )
+    forged = plan.calls[0].model_copy(
+        update={
+            "field_evidence": {
+                "temperature": EvidenceRequirements(units=True)
+            }
+        }
+    )
+
+    with pytest.raises(
+        PlanValidationError,
+        match="required field evidence unavailable.*temperature.units",
+    ):
+        RegistryExecutor(reg).validate_call(forged)
+
+
+def test_executor_rejects_field_evidence_for_unselected_field() -> None:
+    reg = make_registry()
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(query="temperature", arguments={"city": "Seoul"})
+    )
+    assert "debug_blob" not in plan.calls[0].fields
+    forged = plan.calls[0].model_copy(
+        update={
+            "field_evidence": {
+                "debug_blob": EvidenceRequirements(provenance=True)
+            }
+        }
+    )
+
+    with pytest.raises(
+        PlanValidationError,
+        match="field evidence targets unselected fields.*debug_blob",
+    ):
+        RegistryExecutor(reg).validate_call(forged)
+
+
+def test_executor_rejects_forged_available_evidence_summary() -> None:
+    reg = make_registry()
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(query="temperature", arguments={"city": "Seoul"})
+    )
+    forged = plan.calls[0].model_copy(
+        update={"evidence": EvidenceRequirements(units=True)}
+    )
+
+    with pytest.raises(
+        PlanValidationError,
+        match="available evidence summary does not match",
+    ):
+        RegistryExecutor(reg).validate_call(forged)
+
+
+def test_executor_accepts_valid_required_and_available_evidence() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="materials",
+            source_type="calculated",
+            license="CC BY 4.0",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="band_gap",
+                            semantic_id="band_gap",
+                            json_schema={"type": "number"},
+                            unit="eV",
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="band gap",
+            evidence=EvidenceRequirements(
+                provenance=True,
+                license=True,
+                units=True,
+                source_type="calculated",
+            ),
+            field_evidence={
+                "band_gap": EvidenceRequirements(units=True)
+            },
+        )
+    )
+    call = plan.calls[0]
+
+    assert call.required_evidence.units is True
+    assert call.evidence.units is True
+    assert call.available_evidence == call.evidence
+    assert call.field_evidence["band_gap"].units is True
+    RegistryExecutor(reg).validate_call(call)
 
 def test_executor_rejects_undeclared_output_fields() -> None:
     reg = make_registry()
