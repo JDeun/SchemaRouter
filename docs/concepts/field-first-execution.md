@@ -160,3 +160,54 @@ ambiguous semantic need -> preserve recall
 
 Applications that need stronger domain-specific minimization should improve local aliases/schemas or
 use a bounded analyzer rather than weakening validation.
+
+
+## Field type and optional unit contracts
+
+Field-first routing needs more than a field name. A local field contract can also declare:
+
+- semantic identity through `semantic_id`;
+- JSON value type through `FieldSpec.json_schema`;
+- an optional scientific unit through `FieldSpec.unit`.
+
+Examples:
+
+```python
+FieldSpec(
+    name="elastic_modulus",
+    semantic_id="elastic_modulus",
+    json_schema={"type": "number"},
+    unit="GPa",
+)
+
+FieldSpec(
+    name="abstract",
+    semantic_id="abstract_text",
+    json_schema={"type": "string"},
+    unit=None,
+)
+```
+
+`unit=None` is normal for text, identifiers, booleans, dates, document bodies, arXiv abstracts,
+web-search snippets, and any other value that has no scientific unit. Applications should not
+invent a unit merely to fill the field.
+
+Built-in OpenAPI, MCP, Python, and OPTIMADE adapters preserve field-level JSON Schema where their
+source contracts expose it. OPTIMADE also preserves declared units when available.
+
+Automatic fallback now requires compatible field types as well as compatible semantic identity.
+If the primary explicitly declares a type and a fallback does not, SchemaRouter does not silently
+substitute the unknown-typed field. JSON `integer` can satisfy a `number` requirement, but an
+arbitrary `number` cannot satisfy an `integer` requirement.
+
+Units are compared as whitespace-normalized, **case-sensitive** contract identifiers. This matters
+for scientific notation: SchemaRouter must not treat arbitrary case changes as harmless natural
+language normalization.
+
+For automatic fallback, units must currently match exactly after whitespace normalization, including
+the `None` case. SchemaRouter does not automatically convert `m` to `nm`, `Pa` to `GPa`, or
+`g` to `ng` without an explicit trusted conversion contract. Rejecting an unproven conversion is
+safer than silently changing numerical meaning.
+
+Where both a field-level `json_schema` and a directly resolvable raw `output_schema` type are
+declared, SchemaRouter validates that the type declarations agree when the endpoint is registered.
