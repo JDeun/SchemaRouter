@@ -322,6 +322,24 @@ class RegistryExecutor:
             self._unavailable_until.pop(key, None)
         return tuple(sorted(active))
 
+    def binding_status_for_contract(
+        self,
+        tool_key: str,
+        tool_fingerprint: str,
+    ) -> str:
+        if tool_key not in self._invokers:
+            return "unbound"
+        if self._binding_fingerprints.get(tool_key) != tool_fingerprint:
+            return "stale"
+        return "ready"
+
+    def is_binding_ready_for_contract(
+        self,
+        tool_key: str,
+        tool_fingerprint: str,
+    ) -> bool:
+        return self.binding_status_for_contract(tool_key, tool_fingerprint) == "ready"
+
     def ordered_available_fallback_chain(
         self,
         call: ToolCall,
@@ -329,15 +347,51 @@ class RegistryExecutor:
     ) -> list[ToolCall]:
         self.validate_fallback_chain(call, alternatives)
         chain = [call, *alternatives]
-        available = [
-            candidate
-            for candidate in chain
-            if self.is_access_available(candidate.tool, candidate.endpoint)
-        ]
-        if available:
-            return available
-        raise InvocationUnavailableError(
-            "all precompiled access paths are temporarily unavailable"
+        executable: list[ToolCall] = []
+        bound_candidate_seen = False
+
+        for index, candidate in enumerate(chain):
+            try:
+                self._validated_call_contract(candidate)
+            except PlanValidationError:
+                if index == 0:
+                    raise
+                # Optional alternatives that no longer satisfy their schema/policy contract are
+                # pruned before the primary executes rather than blocking an otherwise valid call.
+                continue
+
+            if candidate.tool_fingerprint is None:
+                if index == 0:
+                    raise PlanValidationError(
+                        "tool_fingerprint is required for automatic fallback execution"
+                    )
+                continue
+
+            binding_status = self.binding_status_for_contract(
+                candidate.tool,
+                candidate.tool_fingerprint,
+            )
+            if binding_status != "ready":
+                continue
+
+            bound_candidate_seen = True
+            if not self.is_access_available_for_contract(
+                candidate.tool,
+                candidate.endpoint,
+                candidate.tool_fingerprint,
+            ):
+                continue
+
+            executable.append(candidate)
+
+        if executable:
+            return executable
+        if bound_candidate_seen:
+            raise InvocationUnavailableError(
+                "all executable precompiled access paths are temporarily unavailable"
+            )
+        raise ExecutionError(
+            "no currently bound executable access path exists in the precompiled fallback chain"
         )
 
     def bind(self, tool_key: str, invoker: EndpointInvoker) -> None:
@@ -692,10 +746,8 @@ class RegistryExecutor:
     ) -> None:
         chain = [call, *alternatives]
 
-        # Read-only eligibility is the first invariant of automatic fallback. Check it
-        # before policy/binding evaluation so a mutating alternative is rejected specifically
-        # as an invalid fallback contract rather than surfacing an unrelated mutation-policy
-        # error.
+        # Read-only eligibility is a structural invariant of the whole automatic fallback chain.
+        # It is checked before any invocation and is never pruned/relaxed.
         for candidate in chain:
             try:
                 endpoint = self.registry.endpoint(candidate.tool, candidate.endpoint)
@@ -709,8 +761,9 @@ class RegistryExecutor:
                     f"got {candidate.tool}.{candidate.endpoint}"
                 )
 
-        for candidate in chain:
-            self._execution_state(candidate)
+        # The primary call remains fail-closed for schema/policy drift. Optional alternatives are
+        # validated/pruned individually by ordered_available_fallback_chain before execution.
+        self._validated_call_contract(call)
 
     async def execute_call_with_fallback(
         self,
