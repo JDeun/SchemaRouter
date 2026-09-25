@@ -232,3 +232,35 @@ endpoint output schema, SchemaRouter validates the declared field path against t
 
 For cross-provider fallback, type and unit metadata are part of semantic compatibility, so adapter
 quality directly affects safe route substitution.
+
+
+## Scientific datatype and unit contracts
+
+For scientific quantities, adapters should declare both the value shape and source unit whenever
+the source schema makes them known:
+
+```python
+FieldSpec(
+    name="elastic_modulus",
+    semantic_id="elastic_modulus",
+    json_schema={"type": "number"},
+    unit="GPa",
+    unit_normalization=UnitNormalizationSpec(
+        dimension="pressure",
+        canonical_unit="Pa",
+        scale=1e9,
+    ),
+)
+```
+
+Do not attach a unit to a textual/categorical field. Unit normalization requires a numeric scalar
+or recursively numeric-array schema, supplied either by the field contract or by the endpoint raw
+output schema.
+
+If both `FieldSpec.json_schema` and the endpoint raw `output_schema` describe the same field,
+their datatype shapes must be compatible. Field-level schemas are also enforced at execution time,
+so a loose provider response schema cannot silently bypass a stronger local field contract.
+
+Automatic cross-provider fallback for unit-bearing fields requires an explicit datatype contract on
+both routes. Unit strings are exact identifiers, not a unit parser: SchemaRouter never derives
+conversion factors from prefixes or spelling. Conversions remain trusted local affine contracts.
