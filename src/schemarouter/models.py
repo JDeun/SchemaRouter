@@ -141,8 +141,8 @@ class UnitNormalizationSpec(StrictModel):
             raise ValueError("unit normalization dimension must be non-empty")
         if not self.canonical_unit.strip():
             raise ValueError("unit normalization canonical_unit must be non-empty")
-        if not math.isfinite(self.scale) or self.scale == 0:
-            raise ValueError("unit normalization scale must be finite and non-zero")
+        if not math.isfinite(self.scale) or self.scale <= 0:
+            raise ValueError("unit normalization scale must be finite and positive")
         if not math.isfinite(self.offset):
             raise ValueError("unit normalization offset must be finite")
         return self
@@ -191,9 +191,27 @@ class FieldSpec(StrictModel):
                 if isinstance(explicit_type, list)
                 else {explicit_type}
             )
-            if allowed.isdisjoint({"number", "integer"}):
+            allowed.discard("null")
+            numeric_scalar = bool(allowed) and allowed <= {"number", "integer"}
+            numeric_array = False
+            if allowed == {"array"}:
+                items = self.json_schema.get("items")
+                if isinstance(items, dict):
+                    item_type = items.get("type")
+                    item_types = (
+                        set(item_type)
+                        if isinstance(item_type, list)
+                        else {item_type}
+                    )
+                    item_types.discard("null")
+                    numeric_array = bool(item_types) and item_types <= {
+                        "number",
+                        "integer",
+                    }
+            if not numeric_scalar and not numeric_array:
                 raise ValueError(
-                    "a field with unit metadata must declare a numeric json_schema type"
+                    "a field with unit metadata must declare a numeric scalar or numeric-array "
+                    "json_schema type"
                 )
         return self
 
