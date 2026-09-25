@@ -5,6 +5,8 @@ import pytest
 from schemarouter import (
     AccessHealthMonitor,
     EndpointSpec,
+    FieldSpec,
+    PlanRequest,
     PlanValidationError,
     SchemaRouter,
     ToolSpec,
@@ -212,4 +214,117 @@ async def test_health_probe_result_is_discarded_if_contract_changes_while_awaiti
 
     assert snapshots[0].status == "stale"
     assert snapshots[0].last_error_type == "ToolContractChanged"
+    assert router.unavailable_access_paths() == ()
+
+
+
+@pytest.mark.asyncio
+async def test_all_unavailable_paths_reenter_planning_after_cooldown() -> None:
+    router = SchemaRouter(unavailable_cooldown_seconds=0.01)
+    for name, provider, access_mode in (
+        ("provider_a_rest", "provider_a", "openapi"),
+        ("provider_b_optimade", "provider_b", "optimade"),
+    ):
+        router.add_tool(
+            ToolSpec(
+                name=name,
+                provider=provider,
+                access_mode=access_mode,
+                endpoints=[
+                    EndpointSpec(
+                        name="search",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(
+                                name="elastic_modulus",
+                                semantic_id="elastic_modulus",
+                                aliases=["탄성계수", "elastic modulus"],
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+        router.mark_access_unavailable(name, "search")
+
+    request = PlanRequest(
+        query="탄성계수를 알려줘",
+        fallback_scope="cross_provider",
+    )
+
+    blocked = router.plan(request)
+    assert blocked.calls == []
+    assert set(router.unavailable_access_paths()) == {
+        ("provider_a_rest", "search"),
+        ("provider_b_optimade", "search"),
+    }
+
+    await asyncio.sleep(0.02)
+
+    recovered = router.plan(request)
+    assert recovered.calls
+    assert recovered.calls[0].fields == ["elastic_modulus"]
+    assert router.unavailable_access_paths() == ()
+
+
+@pytest.mark.asyncio
+async def test_background_probe_reintroduces_route_into_planner_before_cooldown_expiry() -> None:
+    router = SchemaRouter(unavailable_cooldown_seconds=60)
+    router.add_tool(
+        ToolSpec(
+            name="provider_a_rest",
+            provider="provider_a",
+            access_mode="openapi",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="elastic_modulus",
+                            semantic_id="elastic_modulus",
+                            aliases=["탄성계수", "elastic modulus"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    router.mark_access_unavailable("provider_a_rest", "search")
+
+    recovered = asyncio.Event()
+    probe_calls = 0
+
+    async def probe() -> bool:
+        nonlocal probe_calls
+        probe_calls += 1
+        if probe_calls >= 2:
+            recovered.set()
+            return True
+        return False
+
+    router.register_health_probe("provider_a_rest", "search", probe)
+    await router.start_health_monitor(
+        interval_seconds=0.01,
+        probe_timeout_seconds=0.1,
+        max_concurrency=1,
+    )
+    try:
+        await asyncio.wait_for(recovered.wait(), timeout=1)
+        for _ in range(20):
+            plan = router.plan(
+                PlanRequest(
+                    query="탄성계수",
+                    fallback_scope="cross_provider",
+                )
+            )
+            if plan.calls:
+                break
+            await asyncio.sleep(0.01)
+    finally:
+        await router.stop_health_monitor()
+
+    assert probe_calls >= 2
+    assert plan.calls[0].tool == "provider_a_rest"
+    assert plan.calls[0].fields == ["elastic_modulus"]
     assert router.unavailable_access_paths() == ()
