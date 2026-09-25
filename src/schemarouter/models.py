@@ -427,6 +427,7 @@ class ToolCall(StrictModel):
     endpoint: str
     arguments: dict[str, Any] = Field(default_factory=dict)
     fields: list[str] = Field(default_factory=list)
+    required_fields: list[str] = Field(default_factory=list)
     evidence: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
     schema_fingerprint: str
     tool_fingerprint: str | None = None
