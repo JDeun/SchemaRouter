@@ -60,6 +60,40 @@ def _semantic_substring_match(left: str, right: str) -> bool:
     return left in right or right in left
 
 
+def _matched_field_qualifiers(query: str, field: FieldSpec) -> tuple[str, ...]:
+    """Return trusted qualifier tags that are visibly present in the query.
+
+    This is deliberately lexical, not scientific inference. Short ASCII tags such as
+    single-letter symbols are ignored unless the combined key/value text is present,
+    which avoids accidental matches such as a K inside an unrelated word.
+    """
+
+    if not field.qualifiers:
+        return ()
+
+    query_norm = _normalize(query)
+    if not query_norm:
+        return ()
+
+    matches: list[str] = []
+    for key, value in sorted(field.qualifiers.items()):
+        value_norm = _normalize(value)
+        keyed_norm = _normalize(f"{key}{value}")
+        value_match = bool(
+            value_norm
+            and value_norm in query_norm
+            and (len(value_norm) >= 3 or not value_norm.isascii())
+        )
+        keyed_match = bool(
+            keyed_norm
+            and len(keyed_norm) >= 4
+            and keyed_norm in query_norm
+        )
+        if value_match or keyed_match:
+            matches.append(f"{key}={value}")
+    return tuple(matches)
+
+
 _KOREAN_PARTICLE_SUFFIXES = (
     "에서",
     "에게",
@@ -584,6 +618,14 @@ class SchemaPlanner:
                 detail_parts.append("aliases: " + ", ".join(field.aliases))
             if field.unit:
                 detail_parts.append(f"unit: {field.unit}")
+            if field.qualifiers:
+                detail_parts.append(
+                    "qualifiers: "
+                    + ", ".join(
+                        f"{key}={value}"
+                        for key, value in sorted(field.qualifiers.items())
+                    )
+                )
             description = "; ".join(part for part in detail_parts if part)
             options.append(
                 DecisionOption(
@@ -1652,6 +1694,18 @@ class SchemaPlanner:
                 components.append(
                     ScoreComponent(kind="field_substring", value=1.0, matched=field.name)
                 )
+
+            if exact or lexical or substring:
+                qualifier_matches = _matched_field_qualifiers(query, field)
+                if qualifier_matches:
+                    score += 4.0
+                    components.append(
+                        ScoreComponent(
+                            kind="field_qualifier",
+                            value=4.0,
+                            matched=f"{field.name}:" + ",".join(qualifier_matches),
+                        )
+                    )
 
         _, argument_sources, _, _ = self._bind_arguments(
             endpoint,
