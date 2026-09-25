@@ -1692,7 +1692,6 @@ class SchemaPlanner:
             candidate.tool,
             endpoint,
             fields,
-            intent.evidence,
         )
         matched_field_evidence = self._matched_field_evidence(
             candidate,
@@ -1720,6 +1719,7 @@ class SchemaPlanner:
             arguments=arguments,
             fields=fields,
             evidence=evidence,
+            required_evidence=intent.evidence,
             field_evidence=call_field_evidence,
             schema_fingerprint=endpoint.fingerprint,
             tool_fingerprint=candidate.tool.fingerprint,
