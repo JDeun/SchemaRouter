@@ -139,3 +139,22 @@ requires unit evidence.
 The same rule applies to requested provenance, license, and source type. An optional decision backend
 may reject locally sufficient evidence, but it cannot manufacture evidence that the registry does
 not declare.
+
+
+## Parameter aliases are bounded argument routing
+
+Planner argument compilation first binds exact endpoint parameter names. Remaining supplied
+arguments may bind through one-to-one trusted `ParameterSpec.aliases`.
+
+This matters for provider fallback. One request can preserve the same semantic value while each
+precompiled route receives the key required by its own contract:
+
+```text
+request arguments: {"formula": "Si"}
+
+provider A -> {"formula": "Si"}
+provider B -> {"chemical_formula": "Si"}
+```
+
+The value `"Si"` is not transformed. Ambiguous alias relationships remain unbound, required
+parameters remain missing, and planning warnings identify the ambiguous input key.
