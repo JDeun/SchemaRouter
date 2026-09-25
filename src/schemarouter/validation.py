@@ -120,6 +120,38 @@ def json_types_compatible(
     return bool(required & numeric) and bool(candidate & numeric)
 
 
+def json_schemas_compatible(
+    required: dict[str, Any],
+    candidate: dict[str, Any],
+) -> bool:
+    """Conservatively compare field value-shape compatibility."""
+
+    required_types = json_schema_types(required)
+    candidate_types = json_schema_types(candidate)
+    if not json_types_compatible(required_types, candidate_types):
+        return False
+    if not required_types:
+        return True
+
+    if "array" in required_types:
+        if "array" not in candidate_types:
+            # A union can still be compatible through another shared type.
+            shared_non_array = (required_types & candidate_types) - {"array"}
+            numeric = {"number", "integer"}
+            return bool(shared_non_array) or bool(
+                required_types & numeric and candidate_types & numeric
+            )
+        required_items = required.get("items")
+        candidate_items = candidate.get("items")
+        if isinstance(required_items, dict):
+            if not isinstance(candidate_items, dict):
+                return False
+            if not json_schemas_compatible(required_items, candidate_items):
+                return False
+
+    return True
+
+
 def projected_output_schema(
     endpoint: EndpointSpec,
     selected_fields: list[str],
