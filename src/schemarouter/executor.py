@@ -1049,14 +1049,37 @@ class RegistryExecutor:
                 continue
 
             raw_value = current[path[-1]]
-            if isinstance(raw_value, bool) or not isinstance(raw_value, (int, float)):
-                raise SchemaValidationError(
-                    f"projected field {field_name!r} requires a numeric value for unit normalization"
-                )
             spec = field.unit_normalization
-            current[path[-1]] = raw_value * spec.scale + spec.offset
+
+            def convert_numeric(item: Any) -> Any:
+                if isinstance(item, list):
+                    return [convert_numeric(child) for child in item]
+                if isinstance(item, bool) or not isinstance(item, (int, float)):
+                    raise SchemaValidationError(
+                        f"projected field {field_name!r} requires numeric values "
+                        "for unit normalization"
+                    )
+                return item * spec.scale + spec.offset
+
+            current[path[-1]] = convert_numeric(raw_value)
 
         return normalized
+
+    @staticmethod
+    def _minimal_type_schema(schema: dict[str, Any]) -> dict[str, Any]:
+        declared_types = sorted(json_schema_types(schema))
+        result: dict[str, Any] = {}
+        if declared_types:
+            result["type"] = (
+                declared_types[0]
+                if len(declared_types) == 1
+                else declared_types
+            )
+        if "array" in declared_types and isinstance(schema.get("items"), dict):
+            item_schema = RegistryExecutor._minimal_type_schema(schema["items"])
+            if item_schema:
+                result["items"] = item_schema
+        return result
 
     @staticmethod
     def _result_field_contracts(
@@ -1070,23 +1093,25 @@ class RegistryExecutor:
             if field is None:
                 continue
             raw_schema = field_value_schema(endpoint, field_name)
-            declared_types = sorted(json_schema_types(raw_schema))
-            output_schema: dict[str, Any] = {}
-            if declared_types:
-                output_schema["type"] = (
-                    declared_types[0]
-                    if len(declared_types) == 1
-                    else declared_types
-                )
+            output_schema = RegistryExecutor._minimal_type_schema(raw_schema)
             if field.unit_normalization is not None:
-                # Affine conversion can turn an integer source into a non-integer result.
-                if output_schema.get("type") == "integer":
-                    output_schema["type"] = "number"
-                elif isinstance(output_schema.get("type"), list):
-                    output_schema["type"] = [
-                        "number" if value == "integer" else value
-                        for value in output_schema["type"]
-                    ]
+                # Affine conversion can turn integer source values into non-integer results.
+                def normalize_integer_type(schema: dict[str, Any]) -> None:
+                    declared = schema.get("type")
+                    if declared == "integer":
+                        schema["type"] = "number"
+                    elif isinstance(declared, list):
+                        schema["type"] = list(
+                            dict.fromkeys(
+                                "number" if value == "integer" else value
+                                for value in declared
+                            )
+                        )
+                    items = schema.get("items")
+                    if isinstance(items, dict):
+                        normalize_integer_type(items)
+
+                normalize_integer_type(output_schema)
 
             contracts[field_name] = ResultFieldContract(
                 semantic_id=field.semantic_id,
