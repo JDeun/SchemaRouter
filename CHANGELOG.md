@@ -9,6 +9,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- execution-time evidence revalidation with explicit separation between caller
+  `required_evidence`, provider-local `field_evidence`, and route-observed `evidence` /
+  `available_evidence`; forged summaries, unselected field requirements, and locally unsatisfied
+  evidence contracts now fail closed before invocation;
 - trusted semantic `PlanRequest.field_evidence` constraints so heterogeneous requests can require
   units, provenance, license, or source type for one logical field without imposing that requirement
   on unrelated unitless/text fields; compiled calls expose the matched local field requirements and
