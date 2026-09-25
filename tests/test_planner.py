@@ -687,6 +687,7 @@ def _provider_tool(
                     FieldSpec(
                         name=field_name,
                         aliases=list(aliases or []),
+                        json_schema={"type": "number"},
                         unit="eV",
                     ),
                 ],
