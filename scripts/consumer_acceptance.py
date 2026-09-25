@@ -21,6 +21,7 @@ from schemarouter import (
     ExecutionPolicy,
     FallbackRoute,
     FieldSpec,
+    ParameterSpec,
     PlanRequest,
     PolicyRule,
     PolicyViolationError,
@@ -454,6 +455,75 @@ async def scenario_scientific_unit_contract() -> dict[str, object]:
     }
 
 
+async def scenario_parameter_alias_routing() -> dict[str, object]:
+    router = SchemaRouter()
+    provider_a = ToolSpec(
+        name="provider_a",
+        provider="a",
+        access_mode="openapi",
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                read_only=True,
+                parameters=[ParameterSpec(name="formula", required=True)],
+                output_fields=[
+                    FieldSpec(
+                        name="value",
+                        semantic_id="material_value",
+                        json_schema={"type": "number"},
+                    )
+                ],
+            )
+        ],
+    )
+    provider_b = ToolSpec(
+        name="provider_b",
+        provider="b",
+        access_mode="optimade",
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                read_only=True,
+                parameters=[
+                    ParameterSpec(
+                        name="chemical_formula",
+                        aliases=["formula"],
+                        required=True,
+                    )
+                ],
+                output_fields=[
+                    FieldSpec(
+                        name="alternate_value",
+                        semantic_id="material_value",
+                        json_schema={"type": "number"},
+                    )
+                ],
+            )
+        ],
+    )
+    router.add_tool(provider_a)
+    router.add_tool(provider_b)
+
+    plan = router.plan(
+        PlanRequest(
+            query="material value",
+            preferred_tools=["provider_a"],
+            arguments={"formula": "Si"},
+            fallback_scope="cross_provider",
+        )
+    )
+
+    route = plan.fallback_route(0)
+    assert plan.calls[0].arguments == {"formula": "Si"}
+    assert route is not None
+    assert route.alternatives[0].tool == "provider_b"
+    assert route.alternatives[0].arguments == {"chemical_formula": "Si"}
+    return {
+        "primary_arguments": plan.calls[0].arguments,
+        "fallback_arguments": route.alternatives[0].arguments,
+    }
+
+
 async def scenario_execution_ready_planning() -> dict[str, object]:
     router = SchemaRouter()
     unbound = ToolSpec(
@@ -683,6 +753,7 @@ SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("retry_and_budget", scenario_retry_and_budget),
     ("parallel_read_only", scenario_parallel_read_only),
     ("scientific_unit_contract", scenario_scientific_unit_contract),
+    ("parameter_alias_routing", scenario_parameter_alias_routing),
     ("execution_ready_planning", scenario_execution_ready_planning),
     ("binding_aware_fallback", scenario_binding_aware_fallback),
     ("inspection_redaction", scenario_inspection_redaction),
