@@ -22,7 +22,7 @@ from .errors import (
     SchemaValidationError,
 )
 from .hooks import ExecutionHooks
-from .models import EndpointSpec, ExecutionPlan, ToolCall, ToolResult, ToolSpec
+from .models import EndpointSpec, ExecutionPlan, FieldSpec, ToolCall, ToolResult, ToolSpec
 from .policy import ApprovalCallback, ExecutionPolicy, is_remote_tool
 from .registry import ToolRegistry
 from .runs import ExecutionBudget, RetryPolicy
@@ -702,6 +702,7 @@ class RegistryExecutor:
                 has_explicit_paths = any(
                     field.path
                     or field.result_projection_path != field.projection_path
+                    or field.unit_transform is not None
                     for field in selected_field_specs.values()
                 )
                 adapter_projected = (
@@ -719,6 +720,16 @@ class RegistryExecutor:
                     endpoint=call.endpoint,
                     data=projected,
                     projected_fields=call.fields,
+                    field_types={
+                        name: field.data_type
+                        for name, field in selected_field_specs.items()
+                        if field.data_type is not None
+                    },
+                    field_units={
+                        name: field.effective_unit
+                        for name, field in selected_field_specs.items()
+                        if field.effective_unit is not None
+                    },
                 )
                 await self._run_after_hooks(tool, endpoint, call, result, tracker)
                 tracker.after_attempt()
@@ -995,6 +1006,36 @@ class RegistryExecutor:
                     )
 
     @staticmethod
+    def _normalize_field_value(
+        value: Any,
+        field: FieldSpec,
+        endpoint: EndpointSpec,
+    ) -> Any:
+        transform = field.unit_transform
+        if transform is None:
+            return deepcopy(value)
+
+        def convert(item: Any) -> Any:
+            if item is None:
+                return None
+            if isinstance(item, list):
+                return [convert(child) for child in item]
+            if isinstance(item, bool) or not isinstance(item, (int, float)):
+                raise PlanValidationError(
+                    "unit normalization requires numeric scalar/array data for "
+                    f"{field.name!r} in {endpoint.name!r}"
+                )
+            normalized = item * transform.scale + transform.offset
+            if isinstance(normalized, float) and not math.isfinite(normalized):
+                raise PlanValidationError(
+                    "unit normalization produced a non-finite value for "
+                    f"{field.name!r} in {endpoint.name!r}"
+                )
+            return normalized
+
+        return convert(deepcopy(value))
+
+    @staticmethod
     def _project(value: Any, fields: list[str], endpoint: EndpointSpec) -> Any:
         if not fields:
             return value
@@ -1022,6 +1063,12 @@ class RegistryExecutor:
                 current = current[part]
             if missing:
                 continue
+
+            current = RegistryExecutor._normalize_field_value(
+                current,
+                field,
+                endpoint,
+            )
 
             target = projected
             result_path = field.result_projection_path
