@@ -388,6 +388,29 @@ class SchemaPlanner:
             request = PlanRequest(query=request)
         if not self.registry.keys():
             raise PlanningError("cannot plan with an empty registry")
+
+        active_field_evidence = {
+            semantic_id
+            for semantic_id, requirement in request.field_evidence.items()
+            if self._evidence_request_active(requirement)
+        }
+        if active_field_evidence:
+            declared_semantics = {
+                _normalize(field.semantic_id or field.name)
+                for tool in self.registry.tools()
+                for endpoint in tool.endpoints
+                for field in endpoint.output_fields
+                if not field.identifier
+            }
+            unknown = sorted(
+                semantic_id
+                for semantic_id in active_field_evidence
+                if _normalize(semantic_id) not in declared_semantics
+            )
+            if unknown:
+                raise PlanningError(
+                    "unknown field_evidence semantic ID(s): " + ", ".join(unknown)
+                )
         return request
 
     def _index(self) -> _CandidateIndex:

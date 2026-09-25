@@ -37,9 +37,9 @@ def available_evidence(
         )
 
     return EvidenceRequirements(
-        provenance=bool(
-            tool.source_type
-            or any(field.source_type for field in answer_fields)
+        provenance=bool(tool.source_type) or (
+            bool(answer_fields)
+            and all(field.source_type for field in answer_fields)
         ),
         license=bool(tool.license) or (
             bool(answer_fields)

@@ -28,6 +28,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
+- global provenance evidence now applies consistently to the entire selected answer surface: a
+  tool-level source type covers the route, otherwise every selected answer field must declare source
+  provenance; active unknown `field_evidence` semantic IDs now fail closed during planning instead of
+  being silently ignored;
 - post-release development has resumed as `0.8.0.dev0`; published `0.7.0` artifacts remain immutable.
 
 ## 0.7.0 - 2026-09-25

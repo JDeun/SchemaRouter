@@ -332,3 +332,71 @@ async def test_async_evidence_sufficiency_uses_async_backend() -> None:
     assert plan.calls[0].evidence.license is True
     assert plan.calls[0].evidence.units is True
     assert plan.calls[0].evidence.source_type == "calculated"
+
+
+def test_global_provenance_requires_the_entire_selected_answer_surface() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="mixed_provenance",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="value_a",
+                            aliases=["value a"],
+                            source_type="calculated",
+                        ),
+                        FieldSpec(
+                            name="value_b",
+                            aliases=["value b"],
+                        ),
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="value a and value b",
+            evidence=EvidenceRequirements(provenance=True),
+        )
+    )
+
+    assert plan.calls == []
+    assert any(
+        "local evidence insufficient: provenance" in warning
+        for warning in plan.warnings
+    )
+
+
+def test_unknown_active_field_evidence_semantic_id_fails_closed() -> None:
+    with pytest.raises(
+        PlanningError,
+        match="unknown field_evidence semantic ID",
+    ):
+        SchemaPlanner(registry()).plan(
+            PlanRequest(
+                query="band gap",
+                field_evidence={
+                    "band_gpa_typo": EvidenceRequirements(units=True),
+                },
+            )
+        )
+
+
+def test_inactive_unknown_field_evidence_does_not_create_authority() -> None:
+    plan = SchemaPlanner(registry()).plan(
+        PlanRequest(
+            query="band gap",
+            field_evidence={
+                "unused_semantic": EvidenceRequirements(),
+            },
+        )
+    )
+
+    assert len(plan.calls) == 1
+    assert plan.calls[0].field_evidence == {}
