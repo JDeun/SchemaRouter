@@ -830,11 +830,7 @@ class SchemaPlanner:
     ) -> bool:
         required = cls._field_semantics(
             primary_candidate.endpoint,
-            tuple(
-                name
-                for name in primary_call.fields
-                if name in primary_candidate.matched_fields
-            ),
+            tuple(primary_call.fields),
         )
         if not required:
             return alternative_candidate.score > 0
@@ -854,10 +850,8 @@ class SchemaPlanner:
                         candidate_field.semantic_id == requirement.semantic_id
                     )
                 else:
-                    names_match = any(
-                        left == right or left in right or right in left
-                        for left in requirement.names
-                        for right in candidate_field.names
+                    names_match = not requirement.names.isdisjoint(
+                        candidate_field.names
                     )
                 if not names_match:
                     continue
