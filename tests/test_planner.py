@@ -1140,6 +1140,7 @@ def test_ambiguous_recall_first_plan_requires_full_fallback_field_coverage() -> 
     )
 
     assert plan.calls[0].fields == ["elastic_modulus", "density"]
+    assert plan.calls[0].required_fields == []
     assert plan.fallback_routes == []
 
 
