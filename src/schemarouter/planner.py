@@ -121,6 +121,7 @@ class _FieldSemantic:
     names: frozenset[str]
     semantic_id: str | None
     json_schema: dict[str, object]
+    qualifiers: tuple[tuple[str, str], ...]
     unit: str | None
     unit_dimension: str | None
     canonical_unit: str | None
@@ -961,6 +962,7 @@ class SchemaPlanner:
                         else None
                     ),
                     json_schema=canonical_field_value_schema(endpoint, field.name),
+                    qualifiers=tuple(sorted(field.qualifiers.items())),
                     unit=field.unit.strip() if field.unit else None,
                     unit_dimension=(
                         _normalize(unit_normalization.dimension)
@@ -1037,6 +1039,8 @@ class SchemaPlanner:
                     requirement.json_schema,
                     candidate_field.json_schema,
                 ):
+                    continue
+                if requirement.qualifiers != candidate_field.qualifiers:
                     continue
 
                 if (requirement.unit is None) != (candidate_field.unit is None):
