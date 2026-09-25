@@ -107,6 +107,40 @@ projection remains in force after raw schema validation.
 
 See [Field-first execution](../concepts/field-first-execution.md).
 
+## Different input names across access paths
+
+Equivalent input names can be declared with trusted `ParameterSpec.aliases`:
+
+```python
+ParameterSpec(
+    name="chemical_formula",
+    aliases=["formula"],
+    required=True,
+)
+```
+
+If the request carries `{"formula": "Si"}`, this endpoint can compile its own call as
+`{"chemical_formula": "Si"}`. Exact parameter names always win over aliases, and an alias that
+matches more than one parameter is treated as ambiguous rather than guessed.
+
+Alias routing changes **only the argument key**. It never rewrites the value. Therefore this is
+allowed:
+
+```text
+formula="Si" -> chemical_formula="Si"
+```
+
+but this is deliberately not a generic SchemaRouter transformation:
+
+```text
+formula="Si" -> filter='chemical_formula_reduced="Si"'
+```
+
+The second case changes representation/semantics and belongs in trusted adapter or application
+logic. A protocol adapter can expose a canonical local parameter surface and deterministically
+translate it to its wire protocol, but model output or generic fallback logic must not invent that
+translation.
+
 ## Different field names across access paths
 
 Access paths often expose slightly different schemas. Keep a stable canonical local field name and
