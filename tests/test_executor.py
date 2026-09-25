@@ -4,6 +4,7 @@ from schemarouter import (
     BindingDriftError,
     EndpointSpec,
     ExecutionPlan,
+    ExecutionPolicy,
     FallbackRoute,
     FieldSpec,
     InMemoryRegistry,
@@ -710,6 +711,7 @@ async def test_fallback_chain_rejects_non_read_only_alternative() -> None:
                 tool="primary",
                 endpoint="search",
                 arguments={"formula": "Si"},
+                fields=["material_id", "band_gap"],
                 schema_fingerprint=primary_endpoint.fingerprint,
                 tool_fingerprint=primary.fingerprint,
             )
@@ -722,6 +724,7 @@ async def test_fallback_chain_rejects_non_read_only_alternative() -> None:
                         tool="mutation",
                         endpoint="search",
                         arguments={"formula": "Si"},
+                        fields=["material_id", "band_gap"],
                         schema_fingerprint=mutation_endpoint.fingerprint,
                         tool_fingerprint=mutation.fingerprint,
                     )
