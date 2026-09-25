@@ -64,6 +64,14 @@ def render_dashboard(
         )
         execution_bound = tool.provenance.get("execution_bound")
         for endpoint in tool.endpoints:
+            field_summary = ", ".join(
+                (
+                    f"{field.name}:"
+                    f"{'|'.join(field.json_types) if field.json_types else '?'}"
+                    f"{f' [{field.unit}]' if field.unit else ''}"
+                )
+                for field in endpoint.fields
+            )
             search = " ".join(
                 (
                     tool.key,
@@ -71,6 +79,7 @@ def render_dashboard(
                     endpoint.name,
                     endpoint.method or "",
                     endpoint.path or "",
+                    field_summary,
                 )
             ).lower()
             tool_rows.append(
@@ -85,6 +94,7 @@ def render_dashboard(
                 f"<td>{escape(_mode(endpoint.read_only, endpoint.destructive))}</td>"
                 f"<td>{endpoint.parameter_count}</td>"
                 f"<td>{endpoint.output_field_count}</td>"
+                f"<td>{escape(field_summary or '—')}</td>"
                 f"<td>{escape(_text(execution_bound))}</td>"
                 f"<td><code>{escape(endpoint.fingerprint[:12])}</code></td>"
                 "</tr>"
@@ -197,7 +207,7 @@ No tool execution, credentials, arbitrary metadata, or trace payload values are 
 <table id="capabilities">
 <thead><tr>
 <th>Tool</th><th>Adapter</th><th>Source</th><th>Endpoint</th><th>Method</th><th>Path</th>
-<th>Mode</th><th>Params</th><th>Fields</th><th>Bound</th><th>Fingerprint</th>
+<th>Mode</th><th>Params</th><th>Fields</th><th>Field contracts</th><th>Bound</th><th>Fingerprint</th>
 </tr></thead>
 <tbody>{"".join(tool_rows)}</tbody>
 </table>
