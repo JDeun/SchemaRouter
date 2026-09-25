@@ -13,6 +13,7 @@ import math
 import os
 import platform
 import statistics
+import sys
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -20,6 +21,10 @@ from html import escape
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 from schemarouter import (
     DecisionPolicy,
