@@ -1532,3 +1532,69 @@ async def test_executor_accepts_planner_compiled_evidence_contract() -> None:
     result = (await executor.execute(plan))[0]
 
     assert result.data == {"band_gap": 2.1}
+
+
+def test_executor_rejects_partial_global_provenance_overclaim() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="mixed_provenance",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(name="value_a", source_type="calculated"),
+                        FieldSpec(name="value_b"),
+                    ],
+                )
+            ],
+        )
+    )
+    endpoint = reg.endpoint("mixed_provenance", "read")
+    call = ToolCall(
+        tool="mixed_provenance",
+        endpoint="read",
+        fields=["value_a", "value_b"],
+        evidence=EvidenceRequirements(provenance=True),
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    with pytest.raises(
+        PlanValidationError,
+        match="call evidence overclaims current contract.*provenance",
+    ):
+        RegistryExecutor(reg).validate_call(call)
+
+
+def test_executor_rejects_partial_global_provenance_requirement() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="mixed_provenance",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(name="value_a", source_type="calculated"),
+                        FieldSpec(name="value_b"),
+                    ],
+                )
+            ],
+        )
+    )
+    endpoint = reg.endpoint("mixed_provenance", "read")
+    call = ToolCall(
+        tool="mixed_provenance",
+        endpoint="read",
+        fields=["value_a", "value_b"],
+        required_evidence=EvidenceRequirements(provenance=True),
+        schema_fingerprint=endpoint.fingerprint,
+    )
+
+    with pytest.raises(
+        PlanValidationError,
+        match="required evidence unavailable.*provenance",
+    ):
+        RegistryExecutor(reg).validate_call(call)
