@@ -178,3 +178,26 @@ New adapters should test:
 - mutation/destructive policy;
 - selected-field propagation when the protocol supports server-side projection;
 - transport-specific origin/redirect behavior where relevant.
+
+
+## Canonical result paths
+
+When a provider's response key differs from the local semantic field name, keep the local field
+identity stable and separate the provider source path from the downstream result path:
+
+```python
+FieldSpec(
+    name="elastic_modulus",
+    semantic_id="elastic_modulus",
+    path=["_provider_specific_elasticity"],
+    result_path=["elastic_modulus"],
+)
+```
+
+`path` describes where SchemaRouter reads the value from the validated provider response.
+`result_path` describes where the projected value is written in `ToolResult.data`. If
+`result_path` is omitted, existing behavior is preserved and the source projection path is also
+used as the output shape.
+
+This lets multiple provider/access contracts expose different wire schemas while keeping the
+downstream context provider-neutral.
