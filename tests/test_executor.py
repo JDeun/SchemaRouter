@@ -14,6 +14,8 @@ from schemarouter import (
     ParameterSpec,
     PlanRequest,
     PlanValidationError,
+    PolicyRule,
+    PolicyViolationError,
     RegistryExecutor,
     RetryPolicy,
     SchemaDriftError,
@@ -1243,3 +1245,49 @@ async def test_drifted_optional_fallback_that_became_mutating_is_pruned() -> Non
 
     assert result.tool == "mp_api"
     assert seen == ["mp_api"]
+
+
+
+@pytest.mark.asyncio
+async def test_primary_policy_denial_never_falls_through_to_allowed_fallback() -> None:
+    registry = InMemoryRegistry()
+    for tool in (
+        _fallback_tool("mp_api", provider="materials_project", access_mode="openapi"),
+        _fallback_tool("mp_optimade", provider="materials_project", access_mode="optimade"),
+        _fallback_tool("oqmd_api", provider="oqmd", access_mode="openapi"),
+    ):
+        registry.register(tool)
+
+    plan = _provider_fallback_plan(registry)
+    fallback_called = False
+
+    executor = RegistryExecutor(
+        registry,
+        policy=ExecutionPolicy(
+            rules=(
+                PolicyRule(
+                    name="deny-primary",
+                    operation="mp_api.search",
+                    effect="deny",
+                ),
+            ),
+        ),
+    )
+
+    executor.bind(
+        "mp_api",
+        lambda endpoint, arguments: {"material_id": "mp-149", "band_gap": 1.0},
+    )
+
+    def fallback(endpoint, arguments):
+        nonlocal fallback_called
+        fallback_called = True
+        return {"material_id": "mp-149", "band_gap": 1.1}
+
+    executor.bind("mp_optimade", fallback)
+    executor.bind("oqmd_api", fallback)
+
+    with pytest.raises(PolicyViolationError, match="deny-primary"):
+        await executor.execute(plan)
+
+    assert fallback_called is False
