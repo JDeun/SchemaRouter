@@ -1001,6 +1001,8 @@ class SchemaPlanner:
                 ):
                     continue
 
+                if (requirement.unit is None) != (candidate_field.unit is None):
+                    continue
                 if requirement.unit is not None:
                     if (
                         requirement.unit_dimension is not None
