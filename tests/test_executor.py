@@ -1424,3 +1424,49 @@ def test_unit_transform_requires_typed_numeric_field_contract() -> None:
                 scale=1e-9,
             ),
         )
+
+
+
+@pytest.mark.asyncio
+async def test_integer_unit_transform_reports_number_result_type() -> None:
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[
+            FieldSpec(
+                name="mass",
+                json_schema={"type": "integer"},
+                unit="ng",
+                unit_transform=UnitTransformSpec(
+                    target_unit="g",
+                    scale=1e-9,
+                ),
+            )
+        ],
+        output_schema={
+            "type": "object",
+            "properties": {"mass": {"type": "integer"}},
+            "required": ["mass"],
+        },
+    )
+    tool = ToolSpec(name="measurement", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "measurement",
+        lambda endpoint_name, arguments: {"mass": 1_000_000_000},
+    )
+    call = ToolCall(
+        tool="measurement",
+        endpoint="read",
+        fields=["mass"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    result = await executor.execute_call(call)
+
+    assert result.data == {"mass": 1.0}
+    assert result.field_types == {"mass": "number"}
+    assert result.field_units == {"mass": "g"}
