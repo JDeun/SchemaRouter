@@ -60,6 +60,16 @@ _SCHEMA_LIST_KEYWORDS = {
 }
 
 
+def _schema_unit(schema: Any) -> str | None:
+    if not isinstance(schema, dict):
+        return None
+    for key in ("x-ucum-unit", "x-unit", "unit"):
+        value = schema.get(key)
+        if isinstance(value, str) and value.strip() and value.strip() != "inapplicable":
+            return value.strip()
+    return None
+
+
 def _normalize_openapi30_schema(schema: dict[str, Any]) -> tuple[dict[str, Any], int]:
     """Translate OAS 3.0 nullable semantics into ordinary JSON Schema type unions."""
 
@@ -1057,6 +1067,7 @@ def tool_from_openapi(
                         else ""
                     ),
                     json_schema=field_schema if isinstance(field_schema, dict) else {},
+                    unit=_schema_unit(field_schema),
                     identifier=field_name in {"id", "uuid", "key"} or field_name.endswith("_id"),
                     aliases=[field_name.replace("_", " ")],
                 )
