@@ -201,3 +201,24 @@ used as the output shape.
 
 This lets multiple provider/access contracts expose different wire schemas while keeping the
 downstream context provider-neutral.
+
+
+## Canonical input names
+
+When two access paths accept the same value under different parameter names, declare the local
+equivalence explicitly:
+
+```python
+ParameterSpec(
+    name="chemical_formula",
+    aliases=["formula"],
+)
+```
+
+Planning may then copy the unchanged value from a supplied `formula` argument into the endpoint's
+`chemical_formula` argument. Alias resolution is exact/local and fails closed when more than one
+parameter claims the same alias.
+
+Do not use aliases to imply a value transformation. For example, converting a formula value into an
+OPTIMADE filter expression is protocol/domain logic and should live in trusted adapter code behind a
+canonical local parameter contract.
