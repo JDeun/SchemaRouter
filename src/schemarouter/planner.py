@@ -1547,37 +1547,55 @@ class SchemaPlanner:
                 warnings=[*warnings, "no schema candidate matched the request"],
             )
 
-        candidate_coverage, required_coverage = self._field_coverage_matrix(
-            request,
-            candidates,
-        )
-        uncovered_coverage = set(required_coverage)
         primary_pairs: list[tuple[_Candidate, ToolCall]] = []
-        for candidate, potential_coverage in zip(candidates, candidate_coverage, strict=True):
-            if len(primary_pairs) >= request.max_calls:
-                break
-            if required_coverage and not (potential_coverage & uncovered_coverage):
-                continue
-            call = self._compile_candidate_sync(
-                request,
-                intent,
-                candidate,
-                warnings,
-            )
-            if call is None:
-                continue
-            primary_pairs.append((candidate, call))
-            if required_coverage:
-                selected_coverage = self._coverage_requirements_for_candidate(
+        if request.max_calls <= 1:
+            for candidate in candidates:
+                call = self._compile_candidate_sync(
+                    request,
+                    intent,
                     candidate,
-                    request.query,
-                    field_names=set(call.fields),
+                    warnings,
                 )
-                uncovered_coverage.difference_update(
-                    selected_coverage & potential_coverage
-                )
-                if not uncovered_coverage:
+                if call is not None:
+                    primary_pairs.append((candidate, call))
                     break
+        else:
+            candidate_coverage, required_coverage = self._field_coverage_matrix(
+                request,
+                candidates,
+            )
+            uncovered_coverage = set(required_coverage)
+            for candidate, potential_coverage in zip(
+                candidates,
+                candidate_coverage,
+                strict=True,
+            ):
+                if len(primary_pairs) >= request.max_calls:
+                    break
+                if required_coverage and not (
+                    potential_coverage & uncovered_coverage
+                ):
+                    continue
+                call = self._compile_candidate_sync(
+                    request,
+                    intent,
+                    candidate,
+                    warnings,
+                )
+                if call is None:
+                    continue
+                primary_pairs.append((candidate, call))
+                if required_coverage:
+                    selected_coverage = self._coverage_requirements_for_candidate(
+                        candidate,
+                        request.query,
+                        field_names=set(call.fields),
+                    )
+                    uncovered_coverage.difference_update(
+                        selected_coverage & potential_coverage
+                    )
+                    if not uncovered_coverage:
+                        break
 
         calls = [call for _, call in primary_pairs]
         fallback_routes: list[FallbackRoute] = []
@@ -1658,37 +1676,55 @@ class SchemaPlanner:
                 warnings=[*warnings, "no schema candidate matched the request"],
             )
 
-        candidate_coverage, required_coverage = self._field_coverage_matrix(
-            request,
-            candidates,
-        )
-        uncovered_coverage = set(required_coverage)
         primary_pairs: list[tuple[_Candidate, ToolCall]] = []
-        for candidate, potential_coverage in zip(candidates, candidate_coverage, strict=True):
-            if len(primary_pairs) >= request.max_calls:
-                break
-            if required_coverage and not (potential_coverage & uncovered_coverage):
-                continue
-            call = await self._compile_candidate_async(
-                request,
-                intent,
-                candidate,
-                warnings,
-            )
-            if call is None:
-                continue
-            primary_pairs.append((candidate, call))
-            if required_coverage:
-                selected_coverage = self._coverage_requirements_for_candidate(
+        if request.max_calls <= 1:
+            for candidate in candidates:
+                call = await self._compile_candidate_async(
+                    request,
+                    intent,
                     candidate,
-                    request.query,
-                    field_names=set(call.fields),
+                    warnings,
                 )
-                uncovered_coverage.difference_update(
-                    selected_coverage & potential_coverage
-                )
-                if not uncovered_coverage:
+                if call is not None:
+                    primary_pairs.append((candidate, call))
                     break
+        else:
+            candidate_coverage, required_coverage = self._field_coverage_matrix(
+                request,
+                candidates,
+            )
+            uncovered_coverage = set(required_coverage)
+            for candidate, potential_coverage in zip(
+                candidates,
+                candidate_coverage,
+                strict=True,
+            ):
+                if len(primary_pairs) >= request.max_calls:
+                    break
+                if required_coverage and not (
+                    potential_coverage & uncovered_coverage
+                ):
+                    continue
+                call = await self._compile_candidate_async(
+                    request,
+                    intent,
+                    candidate,
+                    warnings,
+                )
+                if call is None:
+                    continue
+                primary_pairs.append((candidate, call))
+                if required_coverage:
+                    selected_coverage = self._coverage_requirements_for_candidate(
+                        candidate,
+                        request.query,
+                        field_names=set(call.fields),
+                    )
+                    uncovered_coverage.difference_update(
+                        selected_coverage & potential_coverage
+                    )
+                    if not uncovered_coverage:
+                        break
 
         calls = [call for _, call in primary_pairs]
         fallback_routes: list[FallbackRoute] = []
