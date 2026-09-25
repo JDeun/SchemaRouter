@@ -133,8 +133,12 @@ jobs:
 
   semantic-recall-calibration-cpu:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
     continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        candidate_recall_limit: [2, 4, 6]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -148,34 +152,34 @@ jobs:
         env:
           SCHEMAROUTER_LAYA_RESIDENT_CHECKPOINTS: "2"
           SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+          CANDIDATE_RECALL_LIMIT: ${{ matrix.candidate_recall_limit }}
         run: |
-          for K in 2 4 6; do
-            mkdir -p "artifacts/semantic-recall/top-${K}"
-            python scripts/benchmark_decision_routing.py \
-              --corpus benchmarks/decision-routing-v2.json \
-              --split calibration \
-              --laya \
-              --laya-device cpu \
-              --laya-max-loaded 2 \
-              --laya-preload \
-              --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
-              --candidate-recall-limit "${K}" \
-              --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
-              --json-out "artifacts/semantic-recall/top-${K}/report.json" \
-              --csv-out "artifacts/semantic-recall/top-${K}/rows.csv" \
-              --html-out "artifacts/semantic-recall/top-${K}/report.html"
-            python scripts/calibrate_decision_threshold.py \
-              "artifacts/semantic-recall/top-${K}/report.json" \
-              --backend laya:auto \
-              --abstention-mode no_route \
-              --json-out "artifacts/semantic-recall/top-${K}/calibration.json" \
-              --csv-out "artifacts/semantic-recall/top-${K}/calibration.csv" \
-              --html-out "artifacts/semantic-recall/top-${K}/calibration.html"
-          done
+          K="${CANDIDATE_RECALL_LIMIT}"
+          mkdir -p "artifacts/semantic-recall/top-${K}"
+          python scripts/benchmark_decision_routing.py \
+            --corpus benchmarks/decision-routing-v2.json \
+            --split calibration \
+            --laya \
+            --laya-device cpu \
+            --laya-max-loaded 2 \
+            --laya-preload \
+            --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
+            --candidate-recall-limit "${K}" \
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+            --json-out "artifacts/semantic-recall/top-${K}/report.json" \
+            --csv-out "artifacts/semantic-recall/top-${K}/rows.csv" \
+            --html-out "artifacts/semantic-recall/top-${K}/report.html"
+          python scripts/calibrate_decision_threshold.py \
+            "artifacts/semantic-recall/top-${K}/report.json" \
+            --backend laya:auto \
+            --abstention-mode no_route \
+            --json-out "artifacts/semantic-recall/top-${K}/calibration.json" \
+            --csv-out "artifacts/semantic-recall/top-${K}/calibration.csv" \
+            --html-out "artifacts/semantic-recall/top-${K}/calibration.html"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
-          name: benchmark-semantic-recall-calibration-${{ github.run_id }}
+          name: benchmark-semantic-recall-calibration-k${{ matrix.candidate_recall_limit }}-${{ github.run_id }}
           path: artifacts/semantic-recall/
           if-no-files-found: warn
           retention-days: 30
