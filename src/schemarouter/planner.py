@@ -731,7 +731,13 @@ class SchemaPlanner:
         if not candidates or not self.decision_policy.candidate_selection_enabled:
             return candidates, []
         assert self.decision_backend is not None
-        recall_expanded = all(candidate.score <= 0 for candidate in candidates)
+        recall_expanded = (
+            all(candidate.score <= 0 for candidate in candidates)
+            and all(
+                candidate.selection_source != "semantic_recall"
+                for candidate in candidates
+            )
+        )
         try:
             result = choose_sync(
                 self.decision_backend,
@@ -803,7 +809,13 @@ class SchemaPlanner:
         if not candidates or not self.decision_policy.candidate_selection_enabled:
             return candidates, []
         assert self.decision_backend is not None
-        recall_expanded = all(candidate.score <= 0 for candidate in candidates)
+        recall_expanded = (
+            all(candidate.score <= 0 for candidate in candidates)
+            and all(
+                candidate.selection_source != "semantic_recall"
+                for candidate in candidates
+            )
+        )
         try:
             result = await choose_async(
                 self.decision_backend,
