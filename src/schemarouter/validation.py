@@ -60,6 +60,140 @@ def effective_output_schema(endpoint: EndpointSpec) -> dict[str, Any]:
     return {}
 
 
+def field_value_schema(endpoint: EndpointSpec, field_name: str) -> dict[str, Any]:
+    """Resolve the declared raw value schema for one output field conservatively."""
+
+    field = next(
+        (candidate for candidate in endpoint.output_fields if candidate.name == field_name),
+        None,
+    )
+    if field is None:
+        return {}
+    if field.json_schema:
+        return deepcopy(field.json_schema)
+
+    schema = effective_output_schema(endpoint)
+    if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
+        schema = schema["items"]
+
+    for part in field.projection_path:
+        if schema.get("type") != "object":
+            return {}
+        properties = schema.get("properties")
+        if not isinstance(properties, dict):
+            return {}
+        child = properties.get(part)
+        if not isinstance(child, dict):
+            return {}
+        schema = child
+
+    return deepcopy(schema)
+
+
+def canonical_field_value_schema(
+    endpoint: EndpointSpec,
+    field_name: str,
+) -> dict[str, Any]:
+    """Return the projected result type shape after explicit unit normalization.
+
+    Raw provider constraints remain validated before normalization. This helper only widens
+    integer types to JSON number where affine conversion can produce non-integer values.
+    """
+
+    schema = field_value_schema(endpoint, field_name)
+    field = next(
+        (candidate for candidate in endpoint.output_fields if candidate.name == field_name),
+        None,
+    )
+    if field is None or field.unit_normalization is None:
+        return schema
+
+    normalized = deepcopy(schema)
+
+    def widen_integer(current: dict[str, Any]) -> None:
+        declared = current.get("type")
+        if declared == "integer":
+            current["type"] = "number"
+        elif isinstance(declared, list):
+            current["type"] = list(
+                dict.fromkeys(
+                    "number" if value == "integer" else value
+                    for value in declared
+                )
+            )
+        items = current.get("items")
+        if isinstance(items, dict):
+            widen_integer(items)
+
+    widen_integer(normalized)
+    return normalized
+
+
+def json_schema_types(schema: dict[str, Any]) -> frozenset[str]:
+    declared = schema.get("type")
+    if isinstance(declared, str):
+        return frozenset({declared})
+    if isinstance(declared, list):
+        return frozenset(
+            value
+            for value in declared
+            if isinstance(value, str)
+        )
+    return frozenset()
+
+
+def json_types_compatible(
+    required: frozenset[str],
+    candidate: frozenset[str],
+) -> bool:
+    """Conservative value-type compatibility for fallback fields."""
+
+    if not required:
+        return True
+    if not candidate:
+        return False
+
+    def accepted(candidate_type: str) -> bool:
+        if candidate_type in required:
+            return True
+        # Every integer is a JSON number, but an arbitrary number is not necessarily an integer.
+        return candidate_type == "integer" and "number" in required
+
+    return all(accepted(candidate_type) for candidate_type in candidate)
+
+
+def json_schemas_compatible(
+    required: dict[str, Any],
+    candidate: dict[str, Any],
+) -> bool:
+    """Conservatively compare field value-shape compatibility."""
+
+    required_types = json_schema_types(required)
+    candidate_types = json_schema_types(candidate)
+    if not json_types_compatible(required_types, candidate_types):
+        return False
+    if not required_types:
+        return True
+
+    if "array" in required_types:
+        if "array" not in candidate_types:
+            # A union can still be compatible through another shared type.
+            shared_non_array = (required_types & candidate_types) - {"array"}
+            numeric = {"number", "integer"}
+            return bool(shared_non_array) or bool(
+                required_types & numeric and candidate_types & numeric
+            )
+        required_items = required.get("items")
+        candidate_items = candidate.get("items")
+        if isinstance(required_items, dict):
+            if not isinstance(candidate_items, dict):
+                return False
+            if not json_schemas_compatible(required_items, candidate_items):
+                return False
+
+    return True
+
+
 def projected_output_schema(
     endpoint: EndpointSpec,
     selected_fields: list[str],

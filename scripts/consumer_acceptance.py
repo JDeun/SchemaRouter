@@ -33,6 +33,7 @@ from schemarouter import (
     SQLiteRunTraceStore,
     ToolCall,
     ToolSpec,
+    UnitNormalizationSpec,
     __version__,
     compare_endpoint_specs,
     inspect_registry,
@@ -406,6 +407,53 @@ async def scenario_parallel_read_only() -> dict[str, object]:
     return {"result_count": len(results), "peak_concurrency": peak}
 
 
+async def scenario_scientific_unit_contract() -> dict[str, object]:
+    router = SchemaRouter()
+    field = FieldSpec(
+        name="elastic_modulus",
+        semantic_id="elastic_modulus",
+        aliases=["elastic modulus"],
+        json_schema={"type": "number"},
+        unit="GPa",
+        unit_normalization=UnitNormalizationSpec(
+            dimension="pressure",
+            canonical_unit="Pa",
+            scale=1e9,
+        ),
+    )
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[field],
+    )
+    tool = ToolSpec(name="scientific_materials", endpoints=[endpoint])
+    router.add_tool(tool)
+    router.executor.bind(
+        "scientific_materials",
+        lambda endpoint_name, arguments: {"elastic_modulus": 130.0},
+    )
+
+    result = await router.ainvoke(
+        PlanRequest(
+            query="elastic modulus",
+            preferred_tools=["scientific_materials"],
+        )
+    )
+
+    assert result[0].data == {"elastic_modulus": 130_000_000_000.0}
+    contract = result[0].field_contracts["elastic_modulus"]
+    assert contract.json_schema == {"type": "number"}
+    assert contract.source_unit == "GPa"
+    assert contract.unit == "Pa"
+    assert contract.dimension == "pressure"
+    return {
+        "value": result[0].data["elastic_modulus"],
+        "source_unit": contract.source_unit,
+        "canonical_unit": contract.unit,
+        "dimension": contract.dimension,
+    }
+
+
 async def scenario_execution_ready_planning() -> dict[str, object]:
     router = SchemaRouter()
     unbound = ToolSpec(
@@ -634,6 +682,7 @@ SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("output_validation", scenario_output_validation),
     ("retry_and_budget", scenario_retry_and_budget),
     ("parallel_read_only", scenario_parallel_read_only),
+    ("scientific_unit_contract", scenario_scientific_unit_contract),
     ("execution_ready_planning", scenario_execution_ready_planning),
     ("binding_aware_fallback", scenario_binding_aware_fallback),
     ("inspection_redaction", scenario_inspection_redaction),

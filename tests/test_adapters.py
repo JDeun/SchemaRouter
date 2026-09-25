@@ -1035,3 +1035,82 @@ async def test_openapi_invoker_handles_compressed_json_without_double_decoding()
         )
         assert await invoker("read", {}) == {"ok": True}
 
+
+
+
+def test_openapi_adapter_preserves_field_type_and_unit_annotations() -> None:
+    document = {
+        "openapi": "3.1.0",
+        "info": {"title": "Materials"},
+        "paths": {
+            "/materials": {
+                "get": {
+                    "operationId": "get_material",
+                    "responses": {
+                        "200": {
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "abstract": {"type": "string"},
+                                            "elastic_modulus": {
+                                                "type": "number",
+                                                "x-ucum-unit": "GPa",
+                                            },
+                                        },
+                                    }
+                                }
+                            }
+                        }
+                    },
+                }
+            }
+        },
+    }
+
+    endpoint = tool_from_openapi("materials", document).endpoint("get_material")
+    fields = {field.name: field for field in endpoint.output_fields}
+
+    assert fields["abstract"].json_schema["type"] == "string"
+    assert fields["abstract"].unit is None
+    assert fields["elastic_modulus"].json_schema["type"] == "number"
+    assert fields["elastic_modulus"].unit == "GPa"
+    assert fields["elastic_modulus"].unit_normalization is None
+
+
+def test_mcp_adapter_preserves_field_type_and_unit_annotations() -> None:
+    tool = tool_from_mcp(
+        "materials",
+        {
+            "tools": [
+                {
+                    "name": "read",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {},
+                    },
+                    "outputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "summary": {"type": "string"},
+                            "particle_size": {
+                                "type": "number",
+                                "x-unit": "nm",
+                            },
+                        },
+                    },
+                    "annotations": {"readOnlyHint": True},
+                }
+            ]
+        },
+    )
+
+    endpoint = tool.endpoint("read")
+    fields = {field.name: field for field in endpoint.output_fields}
+
+    assert fields["summary"].json_schema["type"] == "string"
+    assert fields["summary"].unit is None
+    assert fields["particle_size"].json_schema["type"] == "number"
+    assert fields["particle_size"].unit == "nm"
+    assert fields["particle_size"].unit_normalization is None

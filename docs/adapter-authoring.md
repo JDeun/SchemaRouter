@@ -201,3 +201,55 @@ used as the output shape.
 
 This lets multiple provider/access contracts expose different wire schemas while keeping the
 downstream context provider-neutral.
+
+
+## Scientific datatype and unit contracts
+
+Adapters that expose scientific quantities should preserve both the raw value schema and the exact
+provider source unit whenever the source contract makes them known.
+
+```python
+FieldSpec(
+    name="elastic_modulus",
+    semantic_id="elastic_modulus",
+    json_schema={"type": "number"},
+    unit="GPa",
+    unit_normalization=UnitNormalizationSpec(
+        dimension="pressure",
+        canonical_unit="Pa",
+        scale=1e9,
+    ),
+)
+```
+
+`FieldSpec.unit` is the provider/source unit. `unit_normalization` is optional and must only be
+populated when trusted local code has an exact affine conversion contract:
+
+```text
+canonical_value = source_value * scale + offset
+```
+
+SchemaRouter never infers a conversion factor from a unit label, SI prefix, spelling, or model
+output. Unit symbols remain case- and punctuation-sensitive. A remote label such as `nm`, `GPa`,
+or `degC` is descriptive until a trusted adapter/application declares the conversion.
+
+The built-in OpenAPI and MCP adapters preserve recognized schema annotations
+`x-ucum-unit`, `x-unit`, and `unit` as the source-unit label. They do **not** create a
+`UnitNormalizationSpec` from those strings. OPTIMADE continues to preserve provider-declared
+units through its schema adapter.
+
+Unit normalization requires a numeric scalar or recursively numeric-array schema, supplied either
+by `FieldSpec.json_schema` or by the endpoint raw `output_schema`. If both field-level and raw
+endpoint schemas describe the value, their datatype shapes must be compatible. Field-level schemas
+are enforced at execution time, so a loose provider response schema cannot bypass a stronger local
+field contract.
+
+For automatic cross-provider fallback, unit-bearing fields require an explicit datatype contract on
+both routes. Unknown datatype + known unit is insufficient evidence for automatic substitution.
+Fallback requires semantic compatibility plus compatible result datatype and either:
+
+- the same exact source unit; or
+- explicit matching physical `dimension` and `canonical_unit` normalization contracts.
+
+Text/document fields normally use `unit=None`; no unit metadata is required for strings such as
+abstracts, snippets, titles, or prose.

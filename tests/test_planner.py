@@ -687,6 +687,7 @@ def _provider_tool(
                     FieldSpec(
                         name=field_name,
                         aliases=list(aliases or []),
+                        json_schema={"type": "number"},
                         unit="eV",
                     ),
                 ],
@@ -907,6 +908,7 @@ def _semantic_provider_tool(
                     FieldSpec(
                         name=field_name,
                         semantic_id=semantic_id,
+                        json_schema={"type": "number"} if unit is not None else {},
                         unit=unit,
                     ),
                 ],
@@ -934,7 +936,7 @@ def test_semantic_id_bridges_provider_specific_field_names() -> None:
             access_mode="optimade",
             field_name="_b_emod",
             semantic_id="elastic_modulus",
-            unit="gpa",
+            unit="GPa",
         )
     )
 

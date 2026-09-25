@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -39,6 +40,89 @@ _TOOL_RUNTIME_KEYS_BY_ADAPTER = {
     },
     "python": {"adapter"},
 }
+
+
+def _schema_types(schema: dict[str, Any]) -> set[str]:
+    declared = schema.get("type")
+    if isinstance(declared, str):
+        return {declared}
+    if isinstance(declared, list):
+        return {
+            value
+            for value in declared
+            if isinstance(value, str)
+        }
+    return set()
+
+
+def _schema_supports_unit(
+    schema: dict[str, Any],
+    *,
+    require_declared_type: bool = False,
+) -> bool:
+    types = _schema_types(schema)
+    types.discard("null")
+    if not types:
+        return not require_declared_type
+    if types <= {"number", "integer"}:
+        return True
+    if types == {"array"}:
+        items = schema.get("items")
+        return isinstance(items, dict) and _schema_supports_unit(
+            items,
+            require_declared_type=require_declared_type,
+        )
+    return False
+
+
+def _schema_type_shape_compatible(
+    required: dict[str, Any],
+    candidate: dict[str, Any],
+) -> bool:
+    """Return whether candidate values fit the declared required type shape."""
+
+    required_types = _schema_types(required)
+    candidate_types = _schema_types(candidate)
+    if not required_types or not candidate_types:
+        return True
+
+    for candidate_type in candidate_types:
+        if candidate_type in required_types:
+            continue
+        if candidate_type == "integer" and "number" in required_types:
+            continue
+        return False
+
+    if "array" in candidate_types and "array" in required_types:
+        required_items = required.get("items")
+        candidate_items = candidate.get("items")
+        if isinstance(required_items, dict):
+            if not isinstance(candidate_items, dict):
+                return False
+            if not _schema_type_shape_compatible(required_items, candidate_items):
+                return False
+
+    return True
+
+
+def _schema_at_projection_path(
+    output_schema: dict[str, Any],
+    path: tuple[str, ...],
+) -> dict[str, Any]:
+    schema = output_schema
+    if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
+        schema = schema["items"]
+    for part in path:
+        if schema.get("type") != "object":
+            return {}
+        properties = schema.get("properties")
+        if not isinstance(properties, dict):
+            return {}
+        child = properties.get(part)
+        if not isinstance(child, dict):
+            return {}
+        schema = child
+    return schema
 
 
 def _validate_execution_metadata(value: dict[str, Any]) -> None:
@@ -120,6 +204,49 @@ class ServerProjectionSpec(StrictModel):
         return self.field_map.get(field.name, field.name)
 
 
+class UnitNormalizationSpec(StrictModel):
+    """Explicit affine conversion from a provider unit to one canonical unit.
+
+    The runtime never infers conversion factors from unit strings. Adapters/applications must
+    declare the conversion contract locally.
+
+    canonical_value = source_value * scale + offset
+    """
+
+    dimension: str
+    canonical_unit: str
+    scale: float = 1.0
+    offset: float = 0.0
+
+    @model_validator(mode="after")
+    def validate_unit_normalization(self) -> UnitNormalizationSpec:
+        if not self.dimension.strip():
+            raise ValueError("unit normalization dimension must be non-empty")
+        if self.dimension != self.dimension.strip():
+            raise ValueError("unit normalization dimension must not have surrounding whitespace")
+        if not self.canonical_unit.strip():
+            raise ValueError("unit normalization canonical_unit must be non-empty")
+        if self.canonical_unit != self.canonical_unit.strip():
+            raise ValueError(
+                "unit normalization canonical_unit must not have surrounding whitespace"
+            )
+        if not math.isfinite(self.scale) or self.scale <= 0:
+            raise ValueError("unit normalization scale must be finite and positive")
+        if not math.isfinite(self.offset):
+            raise ValueError("unit normalization offset must be finite")
+        return self
+
+
+class ResultFieldContract(StrictModel):
+    """Minimal field contract carried with a projected ToolResult."""
+
+    semantic_id: str | None = None
+    json_schema: dict[str, Any] = Field(default_factory=dict)
+    source_unit: str | None = None
+    unit: str | None = None
+    dimension: str | None = None
+
+
 class FieldSpec(StrictModel):
     name: str
     semantic_id: str | None = None
@@ -129,6 +256,7 @@ class FieldSpec(StrictModel):
     path: list[str] = Field(default_factory=list)
     result_path: list[str] = Field(default_factory=list)
     unit: str | None = None
+    unit_normalization: UnitNormalizationSpec | None = None
     identifier: bool = False
     source_type: str | None = None
     license: str | None = None
@@ -141,6 +269,35 @@ class FieldSpec(StrictModel):
             raise ValueError("field path requires non-empty string segments")
         if any(not isinstance(part, str) or not part for part in self.result_path):
             raise ValueError("field result_path requires non-empty string segments")
+        if self.unit is not None:
+            if not self.unit.strip():
+                raise ValueError("field unit must be non-empty when provided")
+            if self.unit != self.unit.strip():
+                raise ValueError("field unit must not have surrounding whitespace")
+        if self.unit_normalization is not None and self.unit is None:
+            raise ValueError(
+                "unit_normalization requires the provider source unit in field.unit"
+            )
+        if (
+            self.unit_normalization is not None
+            and self.unit == self.unit_normalization.canonical_unit
+            and (
+                self.unit_normalization.scale != 1.0
+                or self.unit_normalization.offset != 0.0
+            )
+        ):
+            raise ValueError(
+                "unit normalization must be identity when source and canonical units are equal"
+            )
+        if self.unit is not None and self.json_schema:
+            if not _schema_supports_unit(
+                self.json_schema,
+                require_declared_type=True,
+            ):
+                raise ValueError(
+                    "a field with unit metadata must declare a numeric scalar or numeric-array "
+                    "json_schema type"
+                )
         return self
 
     @property
@@ -191,6 +348,44 @@ class EndpointSpec(StrictModel):
             raise ValueError(f"duplicate parameter name in endpoint {self.name!r}")
         if len(fnames) != len(set(fnames)):
             raise ValueError(f"duplicate output field name in endpoint {self.name!r}")
+
+        for field in self.output_fields:
+            raw_field_schema = (
+                _schema_at_projection_path(
+                    self.output_schema,
+                    field.projection_path,
+                )
+                if self.output_schema
+                else {}
+            )
+
+            if field.json_schema and raw_field_schema:
+                if not _schema_type_shape_compatible(
+                    field.json_schema,
+                    raw_field_schema,
+                ):
+                    raise ValueError(
+                        "field json_schema is incompatible with the raw output schema in endpoint "
+                        f"{self.name!r}: {field.name!r}"
+                    )
+
+            if field.unit is None:
+                continue
+
+            declared_quantity_schema = field.json_schema or raw_field_schema
+            if field.unit_normalization is not None and not declared_quantity_schema:
+                raise ValueError(
+                    "unit normalization requires a declared numeric field schema in endpoint "
+                    f"{self.name!r}: {field.name!r}"
+                )
+            if declared_quantity_schema and not _schema_supports_unit(
+                declared_quantity_schema,
+                require_declared_type=True,
+            ):
+                raise ValueError(
+                    "a field with unit metadata must resolve to a numeric scalar or "
+                    f"numeric-array schema in endpoint {self.name!r}: {field.name!r}"
+                )
 
         if self.server_projection is not None:
             remapped_source_fields = [
@@ -484,3 +679,4 @@ class ToolResult(StrictModel):
     endpoint: str
     data: Any
     projected_fields: list[str] = Field(default_factory=list)
+    field_contracts: dict[str, ResultFieldContract] = Field(default_factory=dict)

@@ -213,6 +213,41 @@ def _compare_field(
             old=old.path,
             new=new.path,
         )
+    if old.result_path != new.result_path:
+        _change(
+            changes,
+            path=f"{prefix}.result_path",
+            kind="result_projection_path_changed",
+            severity="breaking",
+            old=old.result_path,
+            new=new.result_path,
+        )
+    if old.semantic_id != new.semantic_id:
+        _change(
+            changes,
+            path=f"{prefix}.semantic_id",
+            kind="semantic_id_changed",
+            severity="breaking",
+            old=old.semantic_id,
+            new=new.semantic_id,
+        )
+    if old.unit_normalization != new.unit_normalization:
+        _change(
+            changes,
+            path=f"{prefix}.unit_normalization",
+            kind="unit_normalization_changed",
+            severity="breaking",
+            old=(
+                old.unit_normalization.model_dump(mode="json")
+                if old.unit_normalization is not None
+                else None
+            ),
+            new=(
+                new.unit_normalization.model_dump(mode="json")
+                if new.unit_normalization is not None
+                else None
+            ),
+        )
     if old.identifier != new.identifier:
         _change(
             changes,

@@ -26,6 +26,11 @@ from .models import (
     ToolSpec,
 )
 from .registry import ToolRegistry
+from .validation import (
+    canonical_field_value_schema,
+    json_schema_types,
+    json_schemas_compatible,
+)
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[가-힣]+")
 
@@ -115,7 +120,12 @@ class KeywordAnalyzer:
 class _FieldSemantic:
     names: frozenset[str]
     semantic_id: str | None
+    json_schema: dict[str, object]
     unit: str | None
+    unit_dimension: str | None
+    canonical_unit: str | None
+    unit_scale: float | None
+    unit_offset: float | None
 
 
 @dataclass(frozen=True)
@@ -928,6 +938,7 @@ class SchemaPlanner:
             }
             if not values:
                 continue
+            unit_normalization = field.unit_normalization
             semantics.append(
                 _FieldSemantic(
                     names=frozenset(values),
@@ -936,7 +947,28 @@ class SchemaPlanner:
                         if field.semantic_id
                         else None
                     ),
-                    unit=_normalize(field.unit) if field.unit else None,
+                    json_schema=canonical_field_value_schema(endpoint, field.name),
+                    unit=field.unit.strip() if field.unit else None,
+                    unit_dimension=(
+                        _normalize(unit_normalization.dimension)
+                        if unit_normalization is not None
+                        else None
+                    ),
+                    canonical_unit=(
+                        unit_normalization.canonical_unit
+                        if unit_normalization is not None
+                        else None
+                    ),
+                    unit_scale=(
+                        unit_normalization.scale
+                        if unit_normalization is not None
+                        else None
+                    ),
+                    unit_offset=(
+                        unit_normalization.offset
+                        if unit_normalization is not None
+                        else None
+                    ),
                 )
             )
         return tuple(semantics)
@@ -977,8 +1009,52 @@ class SchemaPlanner:
                 if not names_match:
                     continue
 
+                requirement_types = json_schema_types(requirement.json_schema)
+                candidate_types = json_schema_types(candidate_field.json_schema)
+                if bool(requirement_types) != bool(candidate_types):
+                    continue
+                if (
+                    (requirement.unit is not None or candidate_field.unit is not None)
+                    and (not requirement_types or not candidate_types)
+                ):
+                    # Unit-bearing cross-provider fallback must carry an explicit datatype
+                    # contract on both sides.
+                    continue
+                if not json_schemas_compatible(
+                    requirement.json_schema,
+                    candidate_field.json_schema,
+                ):
+                    continue
+
+                if (requirement.unit is None) != (candidate_field.unit is None):
+                    continue
                 if requirement.unit is not None:
-                    if candidate_field.unit != requirement.unit:
+                    if (
+                        requirement.unit_dimension is not None
+                        or candidate_field.unit_dimension is not None
+                    ):
+                        if (
+                            requirement.unit_dimension is None
+                            or candidate_field.unit_dimension is None
+                            or requirement.canonical_unit is None
+                            or candidate_field.canonical_unit is None
+                            or requirement.unit_dimension
+                            != candidate_field.unit_dimension
+                            or requirement.canonical_unit
+                            != candidate_field.canonical_unit
+                        ):
+                            continue
+                        if (
+                            requirement.unit == candidate_field.unit
+                            and (
+                                requirement.unit_scale != candidate_field.unit_scale
+                                or requirement.unit_offset != candidate_field.unit_offset
+                            )
+                        ):
+                            # Identical source-unit labels cannot legitimately use different
+                            # affine transforms to the same canonical unit.
+                            continue
+                    elif candidate_field.unit != requirement.unit:
                         continue
                 matched = True
                 break

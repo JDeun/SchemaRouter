@@ -160,3 +160,102 @@ ambiguous semantic need -> preserve recall
 
 Applications that need stronger domain-specific minimization should improve local aliases/schemas or
 use a bounded analyzer rather than weakening validation.
+
+
+## Typed scientific fields and units
+
+Field selection is not only about names. Scientific fallbacks must preserve the value contract.
+
+`FieldSpec.json_schema` carries the declared value type/shape and `FieldSpec.unit` carries the
+provider source unit. When providers use different units for the same semantic field, applications
+can add an explicit `UnitNormalizationSpec`:
+
+```python
+FieldSpec(
+    name="elastic_modulus",
+    semantic_id="elastic_modulus",
+    json_schema={"type": "number"},
+    unit="GPa",
+    unit_normalization=UnitNormalizationSpec(
+        dimension="pressure",
+        canonical_unit="Pa",
+        scale=1e9,
+    ),
+)
+```
+
+SchemaRouter does **not** infer conversion factors from unit strings. Unit symbols are
+case-/punctuation-sensitive and the conversion contract is trusted local configuration.
+
+Fallback compatibility is conservative:
+
+```text
+same semantic field
+  AND explicit compatible JSON value type
+      (required for unit-bearing cross-provider fallback)
+  AND (
+        same explicit source unit
+        OR same declared dimension + same canonical unit
+      )
+```
+
+A unit label by itself is not enough to establish a scientific value contract. If a unit-bearing
+field participates in automatic provider fallback, both sides must expose an explicit datatype
+shape through `FieldSpec.json_schema` or the declared endpoint output schema. Unknown datatype +
+known unit is treated as insufficient evidence for automatic fallback.
+
+When both a field-level schema and a raw endpoint output schema describe the same value, their type
+shapes must be compatible. The whole raw response is validated first, then selected values are also
+validated against any stronger `FieldSpec.json_schema` contract before unit normalization.
+
+Numeric type compatibility is directional: an integer-producing fallback can satisfy a numeric
+requirement, but an arbitrary number-producing fallback cannot satisfy an integer-only requirement.
+Numeric arrays also compare their item types.
+
+Execution order remains fail-closed:
+
+```text
+provider raw value
+  -> raw JSON Schema validation
+  -> field projection / canonical result path
+  -> explicit unit normalization
+  -> ToolResult
+```
+
+This means a provider returning `"130"` for a numeric GPa field fails before conversion.
+
+`ToolResult.field_contracts` exposes only the selected field contracts needed downstream:
+
+```python
+result.field_contracts["elastic_modulus"]
+# ResultFieldContract(
+#     semantic_id="elastic_modulus",
+#     json_schema={"type": "number"},
+#     source_unit="GPa",
+#     unit="Pa",
+#     dimension="pressure",
+# )
+```
+
+So answer-generation code can consume a compact canonical value plus the unit/type contract without
+pulling unrelated provider metadata into context.
+
+Affine conversions are supported explicitly:
+
+```text
+canonical_value = source_value * scale + offset
+```
+
+This covers SI-prefix scaling and offset units when the application declares the exact conversion.
+For example, `degC -> K` can use `scale=1.0, offset=273.15`. A source unit that is already equal
+to the canonical unit must use the identity transform; contradictory same-unit conversion contracts
+are rejected or excluded from fallback.
+
+The planner compares the **post-normalization result datatype**, not just the provider raw datatype.
+For example, an integer source value converted by an affine unit contract is treated as a canonical
+JSON `number`, so a provider that already returns the canonical quantity as `number` can be a
+valid fallback.
+
+Unit symbols remain exact and case-/punctuation-sensitive. Surrounding whitespace is rejected.
+Nonlinear/logarithmic conversions are not inferred or synthesized. Non-finite/overflowed normalized
+values fail closed.

@@ -22,13 +22,22 @@ from .errors import (
     SchemaValidationError,
 )
 from .hooks import ExecutionHooks
-from .models import EndpointSpec, ExecutionPlan, ToolCall, ToolResult, ToolSpec
+from .models import (
+    EndpointSpec,
+    ExecutionPlan,
+    ResultFieldContract,
+    ToolCall,
+    ToolResult,
+    ToolSpec,
+)
 from .policy import ApprovalCallback, ExecutionPolicy, is_remote_tool
 from .registry import ToolRegistry
 from .runs import ExecutionBudget, RetryPolicy
 from .validation import (
+    canonical_field_value_schema,
     effective_input_schema,
     effective_output_schema,
+    json_schema_types,
     projected_output_schema,
     validate_json_schema_value,
 )
@@ -694,6 +703,12 @@ class RegistryExecutor:
                         endpoint,
                         context=f"output from {call.tool}.{call.endpoint}",
                     )
+                self._validate_selected_field_schemas(
+                    value,
+                    call.fields,
+                    endpoint,
+                    context=f"output from {call.tool}.{call.endpoint}",
+                )
                 selected_field_specs = {
                     field.name: field
                     for field in endpoint.output_fields
@@ -714,11 +729,20 @@ class RegistryExecutor:
                     if adapter_projected
                     else self._project(value, call.fields, endpoint)
                 )
+                projected = self._normalize_projected_units(
+                    projected,
+                    call.fields,
+                    endpoint,
+                )
                 result = ToolResult(
                     tool=call.tool,
                     endpoint=call.endpoint,
                     data=projected,
                     projected_fields=call.fields,
+                    field_contracts=self._result_field_contracts(
+                        call.fields,
+                        endpoint,
+                    ),
                 )
                 await self._run_after_hooks(tool, endpoint, call, result, tracker)
                 tracker.after_attempt()
@@ -993,6 +1017,173 @@ class RegistryExecutor:
                     raise SchemaValidationError(
                         f"{context}{suffix}: projected field {field_name!r} is missing"
                     )
+
+    @staticmethod
+    def _validate_selected_field_schemas(
+        value: Any,
+        fields: list[str],
+        endpoint: EndpointSpec,
+        *,
+        context: str,
+    ) -> None:
+        if not fields:
+            return
+        if isinstance(value, dict):
+            items = [value]
+        elif isinstance(value, list):
+            items = value
+        else:
+            return
+
+        field_map = {field.name: field for field in endpoint.output_fields}
+        for item_index, item in enumerate(items):
+            if not isinstance(item, dict):
+                continue
+            for field_name in fields:
+                field = field_map.get(field_name)
+                if field is None or not field.json_schema:
+                    continue
+
+                current: Any = item
+                missing = False
+                for part in field.projection_path:
+                    if not isinstance(current, dict) or part not in current:
+                        missing = True
+                        break
+                    current = current[part]
+                if missing:
+                    continue
+
+                suffix = (
+                    f" item {item_index}"
+                    if isinstance(value, list)
+                    else ""
+                )
+                validate_json_schema_value(
+                    current,
+                    field.json_schema,
+                    context=f"{context}{suffix} field {field_name!r}",
+                )
+
+    @staticmethod
+    def _normalize_projected_units(
+        value: Any,
+        fields: list[str],
+        endpoint: EndpointSpec,
+    ) -> Any:
+        if not fields:
+            return value
+        if isinstance(value, list):
+            return [
+                RegistryExecutor._normalize_projected_units(item, fields, endpoint)
+                if isinstance(item, dict)
+                else deepcopy(item)
+                for item in value
+            ]
+        if not isinstance(value, dict):
+            return value
+
+        normalized = deepcopy(value)
+        field_map = {field.name: field for field in endpoint.output_fields}
+        for field_name in fields:
+            field = field_map.get(field_name)
+            if field is None or field.unit_normalization is None:
+                continue
+
+            current: Any = normalized
+            path = field.result_projection_path
+            missing = False
+            for part in path[:-1]:
+                if not isinstance(current, dict) or part not in current:
+                    missing = True
+                    break
+                current = current[part]
+            if missing or not isinstance(current, dict) or path[-1] not in current:
+                continue
+
+            raw_value = current[path[-1]]
+            spec = field.unit_normalization
+
+            def convert_numeric(
+                item: Any,
+                *,
+                _spec=spec,
+                _field_name=field_name,
+            ) -> Any:
+                if item is None:
+                    return None
+                if isinstance(item, list):
+                    return [convert_numeric(child) for child in item]
+                if isinstance(item, bool) or not isinstance(item, (int, float)):
+                    raise SchemaValidationError(
+                        f"projected field {_field_name!r} requires numeric values "
+                        "for unit normalization"
+                    )
+                try:
+                    converted = item * _spec.scale + _spec.offset
+                except OverflowError as exc:
+                    raise SchemaValidationError(
+                        f"projected field {_field_name!r} overflowed during unit normalization"
+                    ) from exc
+                if isinstance(converted, float) and not math.isfinite(converted):
+                    raise SchemaValidationError(
+                        f"projected field {_field_name!r} produced a non-finite normalized value"
+                    )
+                return converted
+
+            current[path[-1]] = convert_numeric(raw_value)
+
+        return normalized
+
+    @staticmethod
+    def _minimal_type_schema(schema: dict[str, Any]) -> dict[str, Any]:
+        declared_types = sorted(json_schema_types(schema))
+        result: dict[str, Any] = {}
+        if declared_types:
+            result["type"] = (
+                declared_types[0]
+                if len(declared_types) == 1
+                else declared_types
+            )
+        if "array" in declared_types and isinstance(schema.get("items"), dict):
+            item_schema = RegistryExecutor._minimal_type_schema(schema["items"])
+            if item_schema:
+                result["items"] = item_schema
+        return result
+
+    @staticmethod
+    def _result_field_contracts(
+        fields: list[str],
+        endpoint: EndpointSpec,
+    ) -> dict[str, ResultFieldContract]:
+        field_map = {field.name: field for field in endpoint.output_fields}
+        contracts: dict[str, ResultFieldContract] = {}
+        for field_name in fields:
+            field = field_map.get(field_name)
+            if field is None:
+                continue
+            canonical_schema = canonical_field_value_schema(
+                endpoint,
+                field_name,
+            )
+            output_schema = RegistryExecutor._minimal_type_schema(canonical_schema)
+
+            contracts[field_name] = ResultFieldContract(
+                semantic_id=field.semantic_id,
+                json_schema=output_schema,
+                source_unit=field.unit,
+                unit=(
+                    field.unit_normalization.canonical_unit
+                    if field.unit_normalization is not None
+                    else field.unit
+                ),
+                dimension=(
+                    field.unit_normalization.dimension
+                    if field.unit_normalization is not None
+                    else None
+                ),
+            )
+        return contracts
 
     @staticmethod
     def _project(value: Any, fields: list[str], endpoint: EndpointSpec) -> Any:
