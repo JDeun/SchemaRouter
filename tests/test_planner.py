@@ -64,6 +64,137 @@ def test_planner_projects_matched_fields_and_identifier() -> None:
     assert "made_up" in plan.warnings[0]
 
 
+def test_multi_call_planner_prefers_complementary_semantic_field_coverage() -> None:
+    reg = InMemoryRegistry()
+    for name, access_mode in (
+        ("a_materials_openapi", "openapi"),
+        ("b_materials_optimade", "optimade"),
+    ):
+        reg.register(
+            ToolSpec(
+                name=name,
+                provider="materials_project",
+                access_mode=access_mode,
+                endpoints=[
+                    EndpointSpec(
+                        name="search",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(name="material_id", identifier=True),
+                            FieldSpec(
+                                name="band_gap",
+                                semantic_id="band_gap",
+                                aliases=["band gap"],
+                                json_schema={"type": "number"},
+                                unit="eV",
+                            ),
+                        ],
+                    )
+                ],
+            )
+        )
+    reg.register(
+        ToolSpec(
+            name="z_arxiv",
+            provider="arxiv",
+            access_mode="api",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(name="paper_id", identifier=True),
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_abstract",
+                            aliases=["paper abstract"],
+                            json_schema={"type": "string"},
+                        ),
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="band gap and paper abstract",
+            max_calls=2,
+        )
+    )
+
+    assert [call.tool for call in plan.calls] == [
+        "a_materials_openapi",
+        "z_arxiv",
+    ]
+    assert plan.calls[0].fields == ["material_id", "band_gap"]
+    assert plan.calls[1].fields == ["paper_id", "abstract"]
+
+
+def test_multi_call_field_coverage_respects_explicit_qualifiers() -> None:
+    reg = InMemoryRegistry()
+    for name, temperature in (
+        ("a_elastic_300k", "300 K"),
+        ("b_elastic_500k", "500 K"),
+    ):
+        reg.register(
+            ToolSpec(
+                name=name,
+                provider="materials_project",
+                access_mode="api",
+                endpoints=[
+                    EndpointSpec(
+                        name="read",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(
+                                name="elastic_modulus",
+                                semantic_id="elastic_modulus",
+                                aliases=["elastic modulus"],
+                                json_schema={"type": "number"},
+                                unit="GPa",
+                                qualifiers={"temperature": temperature},
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+    reg.register(
+        ToolSpec(
+            name="z_arxiv",
+            provider="arxiv",
+            access_mode="api",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="document_abstract",
+                            aliases=["paper abstract"],
+                            json_schema={"type": "string"},
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="elastic modulus at 300 K and paper abstract",
+            max_calls=2,
+        )
+    )
+
+    assert [call.tool for call in plan.calls] == [
+        "a_elastic_300k",
+        "z_arxiv",
+    ]
+
+
 def test_planner_favors_recall_when_field_intent_is_ambiguous() -> None:
     reg = registry()
     plan = SchemaPlanner(reg).plan(
