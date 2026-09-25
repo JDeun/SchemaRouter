@@ -607,6 +607,97 @@ class SchemaPlanner:
 
 
     @staticmethod
+    def _coverage_requirements_for_candidate(
+        candidate: _Candidate,
+        query: str,
+    ) -> frozenset[tuple[str, tuple[str, ...]]]:
+        """Return query-matched semantic field requirements for one candidate.
+
+        Equivalent provider/access routes collapse onto the same semantic key. Exact
+        qualifiers are included only when they are visibly present in the query, so
+        different fixed measurement contexts remain distinct requirements when the
+        user actually asks for them.
+        """
+
+        field_map = {field.name: field for field in candidate.endpoint.output_fields}
+        requirements: set[tuple[str, tuple[str, ...]]] = set()
+        for field_name in candidate.matched_fields:
+            field = field_map.get(field_name)
+            if field is None or field.identifier:
+                continue
+            semantic = _normalize(field.semantic_id or field.name)
+            if not semantic:
+                continue
+            requirements.add(
+                (
+                    semantic,
+                    _matched_field_qualifiers(query, field),
+                )
+            )
+        return frozenset(requirements)
+
+    @classmethod
+    def _order_candidates_for_field_coverage(
+        cls,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> list[_Candidate]:
+        """Prefer complementary semantic-field coverage for explicit multi-call plans.
+
+        max_calls remains the hard authority boundary. This method only changes
+        deterministic ordering inside that existing bound; it never increases the
+        number of planned calls.
+
+        If a query visibly names an exact qualifier for one semantic field, candidates
+        for the same semantic field that do not match that qualifier do not create an
+        additional coverage requirement. This avoids treating, for example, an
+        unqualified/500 K elastic-modulus route as a second user need when the query
+        explicitly asks for 300 K.
+        """
+
+        if request.max_calls <= 1 or len(candidates) <= 1:
+            return candidates
+
+        raw_requirements = [
+            cls._coverage_requirements_for_candidate(candidate, request.query)
+            for candidate in candidates
+        ]
+        qualified_semantics = {
+            semantic
+            for requirements in raw_requirements
+            for semantic, qualifiers in requirements
+            if qualifiers
+        }
+        coverage = [
+            frozenset(
+                (semantic, qualifiers)
+                for semantic, qualifiers in requirements
+                if not (semantic in qualified_semantics and not qualifiers)
+            )
+            for requirements in raw_requirements
+        ]
+        uncovered = set().union(*coverage) if coverage else set()
+        if len(uncovered) < 2:
+            return candidates
+
+        remaining = list(range(len(candidates)))
+        ordered: list[_Candidate] = []
+        while remaining:
+            best_index = min(
+                remaining,
+                key=lambda index: (
+                    -len(coverage[index] & uncovered),
+                    -candidates[index].score,
+                    index,
+                ),
+            )
+            remaining.remove(best_index)
+            ordered.append(candidates[best_index])
+            uncovered.difference_update(coverage[best_index])
+
+        return ordered
+
+    @staticmethod
     def _field_decision_request(
         request: PlanRequest,
         candidate: _Candidate,
@@ -1432,6 +1523,7 @@ class SchemaPlanner:
             request,
             all_candidates,
         )
+        candidates = self._order_candidates_for_field_coverage(request, candidates)
 
         warnings: list[str] = list(decision_warnings)
         if not candidates:
@@ -1524,6 +1616,7 @@ class SchemaPlanner:
             request,
             all_candidates,
         )
+        candidates = self._order_candidates_for_field_coverage(request, candidates)
         warnings = list(decision_warnings)
         if not candidates:
             return ExecutionPlan(
