@@ -21,6 +21,7 @@ from schemarouter import (
     ExecutionPolicy,
     FallbackRoute,
     FieldSpec,
+    ParameterSpec,
     PlanRequest,
     PolicyRule,
     PolicyViolationError,
