@@ -218,3 +218,60 @@ def test_model_catalog_exposes_unit_names_but_not_conversion_authority() -> None
     assert "offset" not in serialized
     assert "dimension" not in serialized
     assert "1000000000" not in serialized
+
+
+
+@pytest.mark.asyncio
+async def test_model_analyzer_quantity_argument_is_compiled_with_local_conversion_contract() -> None:
+    async def model(payload: dict) -> dict:
+        return {
+            "preferred_tools": ["particles"],
+            "preferred_endpoints": ["particles.search"],
+            "arguments": {
+                "max_size": {
+                    "value": 100.0,
+                    "unit": "nm",
+                }
+            },
+            "fields": ["particle_size"],
+            "concepts": ["particle size"],
+            "evidence": {},
+        }
+
+    router = SchemaRouter(analyzer=ModelQueryAnalyzer(model))
+    router.add_tool(
+        ToolSpec(
+            name="particles",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    description="Search particle size data",
+                    read_only=True,
+                    parameters=[
+                        ParameterSpec(
+                            name="max_size",
+                            json_schema={"type": "number"},
+                            unit="m",
+                            unit_normalization=UnitNormalizationSpec(
+                                dimension="length",
+                                canonical_unit="nm",
+                                scale=1e9,
+                            ),
+                        )
+                    ],
+                    output_fields=[
+                        FieldSpec(
+                            name="particle_size",
+                            aliases=["particle size"],
+                            json_schema={"type": "number"},
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    plan = await router.aplan("particles below 100 nm")
+
+    assert plan.calls[0].tool == "particles"
+    assert plan.calls[0].arguments["max_size"] == pytest.approx(1e-7)
