@@ -90,9 +90,12 @@ class ModelQueryAnalyzer:
                         "fields": [
                             {
                                 "name": field.name,
+                                "semantic_id": field.semantic_id,
                                 "description": field.description,
                                 "aliases": field.aliases,
+                                "json_schema": field.json_schema,
                                 "unit": field.unit,
+                                "qualifiers": field.qualifiers,
                                 "identifier": field.identifier,
                             }
                             for field in endpoint.output_fields
