@@ -391,12 +391,12 @@ async def test_parallel_read_only_stream_yields_completion_order() -> None:
 
     router.executor.bind("fanout", invoker)
 
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     try:
         results = [
             result
@@ -409,7 +409,7 @@ async def test_parallel_read_only_stream_yields_completion_order() -> None:
             )
         ]
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     assert [result.data["value"] for result in results] == ["fast", "slow"]
 
@@ -465,12 +465,12 @@ async def test_parallel_read_only_event_stream_reports_completion_order() -> Non
         return {"value": endpoint}
 
     router.executor.bind("fanout", invoker)
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     try:
         events = [
             event
@@ -483,7 +483,7 @@ async def test_parallel_read_only_event_stream_reports_completion_order() -> Non
             )
         ]
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     starts = [event.endpoint for event in events if event.event == "tool.start"]
     ends = [event.endpoint for event in events if event.event == "tool.end"]
@@ -530,12 +530,12 @@ async def test_parallel_preflight_failure_emits_terminal_run_error() -> None:
         "fanout",
         lambda endpoint, arguments: {"value": endpoint},
     )
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     events = []
     try:
         with pytest.raises(PlanValidationError, match="explicitly read-only"):
@@ -545,7 +545,7 @@ async def test_parallel_preflight_failure_emits_terminal_run_error() -> None:
             ):
                 events.append(event)
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     assert [event.event for event in events] == [
         "run.start",
@@ -565,12 +565,12 @@ async def test_parallel_event_tool_start_tracks_actual_concurrency_slot() -> Non
         return {"value": endpoint}
 
     router.executor.bind("fanout", invoker)
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     try:
         events = [
             event
@@ -583,7 +583,7 @@ async def test_parallel_event_tool_start_tracks_actual_concurrency_slot() -> Non
             )
         ]
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     tool_events = [
         event.event
@@ -723,19 +723,19 @@ async def test_fallback_event_stream_records_same_then_cross_provider() -> None:
         lambda endpoint, arguments: {"value": "from-oqmd"},
     )
 
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     try:
         events = [
             event
             async for event in router.astream_events("value")
         ]
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     assert [event.event for event in events] == [
         "run.start",
@@ -778,12 +778,12 @@ async def test_parallel_event_stream_preserves_provider_fallback_trace() -> None
         lambda endpoint, arguments: {"value": "from-oqmd"},
     )
 
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     try:
         events = [
             event
@@ -793,7 +793,7 @@ async def test_parallel_event_stream_preserves_provider_fallback_trace() -> None
             )
         ]
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     fallback = next(event for event in events if event.event == "tool.fallback")
     assert fallback.data["scope"] == "same_provider"
@@ -820,19 +820,19 @@ async def test_event_stream_reports_binding_unavailable_fallback_reason() -> Non
         lambda endpoint, arguments: {"value": "from-oqmd"},
     )
 
-    original_aplan = router.aplan
+    original_aplan = router.aplan_executable
 
     async def fixed_plan(request):
         return plan
 
-    router.aplan = fixed_plan  # type: ignore[method-assign]
+    router.aplan_executable = fixed_plan  # type: ignore[method-assign]
     try:
         events = [
             event
             async for event in router.astream_events("value")
         ]
     finally:
-        router.aplan = original_aplan  # type: ignore[method-assign]
+        router.aplan_executable = original_aplan  # type: ignore[method-assign]
 
     fallback = next(event for event in events if event.event == "tool.fallback")
     assert fallback.data["reason"] == "binding_unavailable"
