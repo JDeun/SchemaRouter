@@ -72,6 +72,7 @@ def test_field_unit_requires_numeric_explicit_schema_type() -> None:
     ("scale", "offset"),
     [
         (0.0, 0.0),
+        (-1.0, 0.0),
         (float("inf"), 0.0),
         (1.0, float("nan")),
     ],
@@ -348,9 +349,7 @@ async def test_executor_normalizes_numeric_array_units() -> None:
 
     result = await executor.execute_call(call)
 
-    assert result.data == {
-        "wavelengths": [pytest.approx(4e-7), pytest.approx(5e-7)]
-    }
+    assert result.data["wavelengths"] == pytest.approx([4e-7, 5e-7])
     contract = result.field_contracts["wavelengths"]
     assert contract.json_schema == {
         "type": "array",
@@ -359,3 +358,161 @@ async def test_executor_normalizes_numeric_array_units() -> None:
     assert contract.source_unit == "nm"
     assert contract.unit == "m"
     assert contract.dimension == "length"
+
+
+
+def test_endpoint_schema_rejects_unit_on_non_numeric_raw_field() -> None:
+    with pytest.raises(ValueError, match="numeric scalar or numeric-array"):
+        EndpointSpec(
+            name="read",
+            read_only=True,
+            output_fields=[
+                FieldSpec(
+                    name="title",
+                    unit="GPa",
+                )
+            ],
+            output_schema={
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                },
+            },
+        )
+
+
+def test_fallback_keeps_scientific_unit_symbols_case_and_punctuation_sensitive() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        _quantity_tool(
+            "meters_per_second",
+            FieldSpec(
+                name="speed",
+                semantic_id="speed",
+                aliases=["speed"],
+                json_schema={"type": "number"},
+                unit="m/s",
+            ),
+            provider="provider_a",
+        )
+    )
+    registry.register(
+        _quantity_tool(
+            "milliseconds",
+            FieldSpec(
+                name="speed_value",
+                semantic_id="speed",
+                aliases=["speed"],
+                json_schema={"type": "number"},
+                unit="ms",
+            ),
+            provider="provider_b",
+        )
+    )
+
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="speed",
+            preferred_tools=["meters_per_second"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.fallback_route(0) is None
+
+
+def test_fallback_allows_integer_candidate_for_number_requirement_not_reverse() -> None:
+    def field(name: str, json_type: str) -> FieldSpec:
+        return FieldSpec(
+            name=name,
+            semantic_id="sample_count",
+            aliases=["sample count"],
+            json_schema={"type": json_type},
+        )
+
+    registry = InMemoryRegistry()
+    registry.register(
+        _quantity_tool(
+            "number_primary",
+            field("count", "number"),
+            provider="provider_a",
+        )
+    )
+    registry.register(
+        _quantity_tool(
+            "integer_candidate",
+            field("count_integer", "integer"),
+            provider="provider_b",
+        )
+    )
+    plan = SchemaPlanner(registry).plan(
+        PlanRequest(
+            query="sample count",
+            preferred_tools=["number_primary"],
+            fallback_scope="cross_provider",
+        )
+    )
+    assert plan.fallback_route(0) is not None
+
+    reverse_registry = InMemoryRegistry()
+    reverse_registry.register(
+        _quantity_tool(
+            "integer_primary",
+            field("count_integer", "integer"),
+            provider="provider_a",
+        )
+    )
+    reverse_registry.register(
+        _quantity_tool(
+            "number_candidate",
+            field("count", "number"),
+            provider="provider_b",
+        )
+    )
+    reverse_plan = SchemaPlanner(reverse_registry).plan(
+        PlanRequest(
+            query="sample count",
+            preferred_tools=["integer_primary"],
+            fallback_scope="cross_provider",
+        )
+    )
+    assert reverse_plan.fallback_route(0) is None
+
+
+@pytest.mark.asyncio
+async def test_unit_normalization_overflow_fails_closed() -> None:
+    field = FieldSpec(
+        name="value",
+        semantic_id="huge_value",
+        json_schema={"type": "number"},
+        unit="GPa",
+        unit_normalization=UnitNormalizationSpec(
+            dimension="pressure",
+            canonical_unit="Pa",
+            scale=1e9,
+        ),
+    )
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[field],
+    )
+    tool = ToolSpec(name="huge", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool="huge",
+        endpoint="read",
+        fields=["value"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "huge",
+        lambda endpoint_name, arguments: {"value": 1e308},
+    )
+
+    with pytest.raises(SchemaValidationError, match="non-finite|overflow"):
+        await executor.execute_call(call)
