@@ -169,9 +169,14 @@ requires the selected answer fields to declare units. A unitless arXiv abstract 
 still a perfectly valid field in ordinary planning; it is excluded only when the request explicitly
 requires unit evidence.
 
-The same rule applies to requested provenance, license, and source type. An optional decision backend
-may reject locally sufficient evidence, but it cannot manufacture evidence that the registry does
-not declare.
+The same rule applies to requested provenance, license, and source type. Global evidence requirements
+apply to the **entire selected answer surface**. For provenance specifically, a tool-level
+`source_type` covers the route; otherwise every selected answer field must declare its own
+`source_type`. Evidence on only one of several selected fields is not enough to satisfy a global
+provenance requirement.
+
+An optional decision backend may reject locally sufficient evidence, but it cannot manufacture
+evidence that the registry does not declare.
 
 ### Per-field evidence requirements
 
@@ -202,7 +207,9 @@ field-specific source-type constraints are rejected. The compiled `ToolCall.fiel
 records which local provider field received each explicit field-specific requirement.
 
 Per-field evidence is caller-controlled. `ModelQueryAnalyzer` preserves it but does not expose it to
-the model or let model output introduce, remove, or broaden those trusted constraints.
+the model or let model output introduce, remove, or broaden those trusted constraints. Active
+`field_evidence` keys must resolve to a registered canonical semantic field ID (or field name when no
+semantic ID is declared); unknown active keys fail closed instead of being silently ignored.
 
 ### Required evidence vs available evidence
 
