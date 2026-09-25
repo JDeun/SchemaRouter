@@ -689,14 +689,26 @@ class RegistryExecutor:
         alternatives: list[ToolCall] | tuple[ToolCall, ...],
     ) -> None:
         chain = [call, *alternatives]
+
+        # Read-only eligibility is the first invariant of automatic fallback. Check it
+        # before policy/binding evaluation so a mutating alternative is rejected specifically
+        # as an invalid fallback contract rather than surfacing an unrelated mutation-policy
+        # error.
         for candidate in chain:
-            tool, endpoint, _ = self._execution_state(candidate)
+            try:
+                endpoint = self.registry.endpoint(candidate.tool, candidate.endpoint)
+            except KeyError as exc:
+                raise PlanValidationError(
+                    f"unknown tool/endpoint: {candidate.tool}.{candidate.endpoint}"
+                ) from exc
             if endpoint.read_only is not True:
                 raise PlanValidationError(
                     "automatic fallback requires every candidate to be explicitly read-only; "
                     f"got {candidate.tool}.{candidate.endpoint}"
                 )
-            del tool
+
+        for candidate in chain:
+            self._execution_state(candidate)
 
     async def execute_call_with_fallback(
         self,
