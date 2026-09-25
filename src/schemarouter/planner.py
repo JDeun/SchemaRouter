@@ -34,8 +34,39 @@ def _normalize(text: str) -> str:
     return "".join(ch.lower() for ch in text if ch.isalnum())
 
 
+_KOREAN_PARTICLE_SUFFIXES = (
+    "에서",
+    "에게",
+    "으로",
+    "까지",
+    "부터",
+    "처럼",
+    "보다",
+    "을",
+    "를",
+    "이",
+    "가",
+    "은",
+    "는",
+    "의",
+    "에",
+    "로",
+    "와",
+    "과",
+)
+
+
 def _tokens(text: str) -> set[str]:
-    return {token.lower() for token in _TOKEN_RE.findall(text)}
+    tokens = {token.lower() for token in _TOKEN_RE.findall(text)}
+    expanded = set(tokens)
+    for token in tokens:
+        if not token or not all("가" <= char <= "힣" for char in token):
+            continue
+        for suffix in _KOREAN_PARTICLE_SUFFIXES:
+            if token.endswith(suffix) and len(token) > len(suffix) + 1:
+                expanded.add(token[: -len(suffix)])
+                break
+    return expanded
 
 
 class QueryAnalyzer(Protocol):
