@@ -38,6 +38,39 @@ The planner favors:
 
 The score is a selection heuristic, not execution authority.
 
+## Semantic field coverage
+
+For requests that match declared semantic fields, `ExecutionPlan.coverage` exposes the planner's
+bounded coverage state as structured data:
+
+```python
+plan = router.plan(
+    PlanRequest(
+        query="band gap and paper abstract",
+        max_calls=2,
+    )
+)
+
+print(plan.coverage.required)
+print(plan.coverage.covered)
+print(plan.coverage.uncovered)
+print(plan.coverage.complete)
+```
+
+`required` is derived from the full schema-recalled candidate set before bounded decision assistance
+can narrow or prioritize candidates. `covered` reflects the fields actually retained by the compiled
+primary calls. If `max_calls`, policy, missing bindings, or another local constraint prevents complete
+coverage, `uncovered` remains explicit and the plan includes an `uncovered semantic field
+requirements` warning.
+
+For explicit multi-call plans, a bounded decision backend may prioritize candidates but does not
+delete the deterministic schema-recalled pool. Final call selection remains constrained by
+complementary semantic-field coverage and the existing `max_calls` authority boundary. This prevents
+two redundant access paths for the same field from consuming all call slots while another required
+field still has an available route.
+
+Single-call decision behavior and empty-lexical-recall fail-closed behavior remain unchanged.
+
 ## Structured plan explanations
 
 Every planned call can carry a `PlanExplanation` with locally observable routing facts:
