@@ -494,6 +494,7 @@ class SchemaPlanner:
         if (
             not candidates
             and self.decision_policy.candidate_recall_on_empty_enabled
+            and self.candidate_recall_backend is None
         ):
             candidates = [
                 _Candidate(tool, endpoint, 0.0, ())
