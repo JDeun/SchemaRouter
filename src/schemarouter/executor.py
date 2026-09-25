@@ -901,7 +901,16 @@ class RegistryExecutor:
 
     @staticmethod
     def _project(value: Any, fields: list[str], endpoint: EndpointSpec) -> Any:
-        if not fields or not isinstance(value, dict):
+        if not fields:
+            return value
+        if isinstance(value, list):
+            return [
+                RegistryExecutor._project(item, fields, endpoint)
+                if isinstance(item, dict)
+                else deepcopy(item)
+                for item in value
+            ]
+        if not isinstance(value, dict):
             return value
 
         field_map = {field.name: field for field in endpoint.output_fields}
