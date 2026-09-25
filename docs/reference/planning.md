@@ -16,6 +16,18 @@
 
 ::: schemarouter.SchemaPlanner
 
+## ExecutionPlan
+
+::: schemarouter.ExecutionPlan
+
+## PlanCoverage
+
+::: schemarouter.PlanCoverage
+
+## SemanticFieldRequirement
+
+::: schemarouter.SemanticFieldRequirement
+
 ## QueryAnalyzer
 
 ::: schemarouter.QueryAnalyzer
