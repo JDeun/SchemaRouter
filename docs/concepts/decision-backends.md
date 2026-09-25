@@ -58,6 +58,40 @@ SchemaRouter first proves the requested provenance/license/unit/source-type requ
 schema metadata, then the backend may only keep that locally sufficient call or veto it as
 insufficient. A provider can never upgrade missing local evidence.
 
+### Bounded semantic candidate recall
+
+For multilingual or paraphrased queries, lexical recall can miss a valid endpoint even when the
+registered schema describes the right capability. `SchemaPlanner` can optionally add a separate
+**candidate recall backend** before final candidate selection:
+
+```python
+from schemarouter import EmbeddingDecisionBackend, SchemaPlanner
+
+recall = EmbeddingDecisionBackend(multilingual_embed_batch)
+
+planner = SchemaPlanner(
+    registry,
+    candidate_recall_backend=recall,
+    candidate_recall_limit=4,
+    decision_backend=final_decider,
+    decision_policy=policy,
+)
+```
+
+This stage is recall-only. It receives the finite registered endpoint catalog and may return at most
+`candidate_recall_limit` option IDs. SchemaRouter unions those semantic top-k candidates with the
+ordinary lexical candidates, then the existing bounded decision/policy/schema/evidence/runtime
+pipeline decides what can actually execute.
+
+The semantic recall backend does **not** create tools, calls, arguments, fields, or execution
+authority. When it fails or abstains, SchemaRouter keeps lexical candidates and emits a warning.
+When lexical recall is empty and a semantic recall backend is configured, SchemaRouter does not
+additionally expose the full catalog through `recall_on_empty`; the semantic top-k remains bounded.
+
+A multilingual embedding model is a natural fit, but SchemaRouter does not depend on one. The
+existing `EmbeddingDecisionBackend` can wrap an application-owned SentenceTransformers, FastEmbed,
+remote embedding API, or domain encoder.
+
 ### Empty lexical recall
 
 `recall_on_empty=True` is an additional opt-in for candidate selection. It matters when the
