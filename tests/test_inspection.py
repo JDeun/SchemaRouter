@@ -256,6 +256,7 @@ def test_live_router_inspection_reports_actual_binding_without_invoker_object() 
     assert snapshot.planner.analyzer == "KeywordAnalyzer"
     assert snapshot.planner.decision_backend is None
     assert snapshot.execution.bound_tools == [key]
+    assert snapshot.execution.binding_states == {key: "ready"}
     assert snapshot.execution.policy["allow_mutations"] is False
 
     document = snapshot.model_dump_json()
@@ -418,3 +419,26 @@ def test_live_inspection_reports_access_health_without_probe_callable() -> None:
 
     serialized = snapshot.model_dump_json()
     assert "<lambda>" not in serialized
+
+
+
+def test_live_inspection_distinguishes_unbound_and_stale_bindings() -> None:
+    router = SchemaRouter()
+    ready_key = router.add_callable(_echo)
+
+    unbound_tool = ToolSpec(
+        name="unbound",
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    router.add_tool(unbound_tool)
+
+    stale_tool = router.registry.get(ready_key).model_copy(
+        update={"description": "replacement contract"},
+        deep=True,
+    )
+    router.registry.register(stale_tool, replace=True)
+
+    snapshot = router.inspect()
+
+    assert snapshot.execution.binding_states[ready_key] == "stale"
+    assert snapshot.execution.binding_states["unbound"] == "unbound"
