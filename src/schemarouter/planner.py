@@ -44,9 +44,13 @@ def _semantic_substring_match(left: str, right: str) -> bool:
 
     if not left or not right:
         return False
-    if len(left) < 3 or len(right) < 3:
-        return False
     if left.isascii() and right.isascii():
+        # Avoid accidental chemistry/token collisions such as "Si" inside "density"
+        # while preserving useful semantic compounds such as "conductivity" inside
+        # "thermalconductivity" or "elastic" inside "elasticmodulus".
+        if min(len(left), len(right)) < 4:
+            return False
+    elif min(len(left), len(right)) < 3:
         return False
     return left in right or right in left
 
