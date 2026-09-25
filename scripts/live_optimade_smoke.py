@@ -46,9 +46,12 @@ async def run_smoke(url: str) -> dict[str, object]:
     assert results[0].data
     first = results[0].data[0]
     assert first["id"]
-    assert first["type"] == "structures"
     assert "chemical_formula_descriptive" in first
     assert "nelements" in first
+    # Final ToolResult projection is field-first: OPTIMADE's raw JSON:API
+    # identity envelope is schema-validated before projection, but unselected
+    # non-identifier fields such as "type" are intentionally not retained.
+    assert "type" not in first
 
     return {
         "tool": tool_key,
