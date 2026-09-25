@@ -60,6 +60,60 @@ def _validate_execution_metadata(value: dict[str, Any]) -> None:
         ) from exc
 
 
+_JSON_VALUE_TYPES = {
+    "array",
+    "boolean",
+    "integer",
+    "null",
+    "number",
+    "object",
+    "string",
+}
+
+
+def _declared_json_types(schema: Any) -> tuple[str, ...]:
+    collected: set[str] = set()
+
+    def collect(value: Any) -> None:
+        if not isinstance(value, dict):
+            return
+        declared = value.get("type")
+        if isinstance(declared, str) and declared in _JSON_VALUE_TYPES:
+            collected.add(declared)
+        elif isinstance(declared, list):
+            for item in declared:
+                if isinstance(item, str) and item in _JSON_VALUE_TYPES:
+                    collected.add(item)
+
+        for keyword in ("anyOf", "oneOf"):
+            variants = value.get(keyword)
+            if isinstance(variants, list):
+                for variant in variants:
+                    collect(variant)
+
+    collect(schema)
+    return tuple(sorted(collected))
+
+
+def _schema_at_object_path(
+    schema: dict[str, Any],
+    path: tuple[str, ...],
+) -> dict[str, Any] | None:
+    current: Any = schema
+    if current.get("type") == "array":
+        current = current.get("items")
+
+    for part in path:
+        if not isinstance(current, dict) or current.get("type") != "object":
+            return None
+        properties = current.get("properties")
+        if not isinstance(properties, dict):
+            return None
+        current = properties.get(part)
+
+    return current if isinstance(current, dict) else None
+
+
 def _legacy_endpoint_execution_metadata(metadata: dict[str, Any]) -> dict[str, Any]:
     keys: set[str] = set()
     if any(key in metadata for key in _OPENAPI_ENDPOINT_RUNTIME_KEYS):
@@ -157,36 +211,7 @@ class FieldSpec(StrictModel):
     def declared_json_types(self) -> tuple[str, ...]:
         """Return conservatively declared JSON value types for this field."""
 
-        supported = {
-            "array",
-            "boolean",
-            "integer",
-            "null",
-            "number",
-            "object",
-            "string",
-        }
-        collected: set[str] = set()
-
-        def collect(schema: Any) -> None:
-            if not isinstance(schema, dict):
-                return
-            declared = schema.get("type")
-            if isinstance(declared, str) and declared in supported:
-                collected.add(declared)
-            elif isinstance(declared, list):
-                for value in declared:
-                    if isinstance(value, str) and value in supported:
-                        collected.add(value)
-
-            for keyword in ("anyOf", "oneOf"):
-                variants = schema.get(keyword)
-                if isinstance(variants, list):
-                    for variant in variants:
-                        collect(variant)
-
-        collect(self.json_schema)
-        return tuple(sorted(collected))
+        return _declared_json_types(self.json_schema)
 
     @property
     def normalized_unit(self) -> str | None:
@@ -305,6 +330,25 @@ class EndpointSpec(StrictModel):
                     raise ValueError(
                         "overlapping output result paths in endpoint "
                         f"{self.name!r}: {left_name!r} and {right_name!r}"
+                    )
+
+        if self.output_schema:
+            for field in self.output_fields:
+                field_types = field.declared_json_types
+                if not field_types:
+                    continue
+                raw_schema = _schema_at_object_path(
+                    self.output_schema,
+                    field.projection_path,
+                )
+                if raw_schema is None:
+                    continue
+                raw_types = _declared_json_types(raw_schema)
+                if raw_types and raw_types != field_types:
+                    raise ValueError(
+                        "output field json_schema type disagrees with endpoint output_schema "
+                        f"in {self.name!r}.{field.name!r}: "
+                        f"{field_types!r} != {raw_types!r}"
                     )
         return self
 
