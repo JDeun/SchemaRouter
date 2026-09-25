@@ -1658,7 +1658,6 @@ class SchemaPlanner:
             candidate.tool,
             endpoint,
             fields,
-            intent.evidence,
         )
         matched_field_evidence = self._matched_field_evidence(
             candidate,
@@ -1686,6 +1685,7 @@ class SchemaPlanner:
             arguments=arguments,
             fields=fields,
             evidence=evidence,
+            required_evidence=intent.evidence,
             field_evidence=call_field_evidence,
             schema_fingerprint=endpoint.fingerprint,
             tool_fingerprint=candidate.tool.fingerprint,
@@ -2300,19 +2300,34 @@ class SchemaPlanner:
         tool: ToolSpec,
         endpoint: EndpointSpec,
         selected_fields: list[str],
-        requested: EvidenceRequirements,
     ) -> EvidenceRequirements:
-        field_map: dict[str, FieldSpec] = {
-            field.name: field
-            for field in endpoint.output_fields
-        }
+        """Summarize evidence actually declared by the selected route."""
+
+        field_map = {field.name: field for field in endpoint.output_fields}
+        answer_fields = [
+            field_map[name]
+            for name in selected_fields
+            if name in field_map and not field_map[name].identifier
+        ]
+        source_type: str | None = tool.source_type
+        if source_type is None and answer_fields:
+            field_source_types = {field.source_type for field in answer_fields}
+            if len(field_source_types) == 1:
+                only = next(iter(field_source_types))
+                if only is not None:
+                    source_type = only
+
         return EvidenceRequirements(
-            provenance=requested.provenance or bool(tool.source_type),
-            license=requested.license or bool(tool.license),
-            units=requested.units
-            or any(
-                field_map.get(name) and field_map[name].unit
-                for name in selected_fields
+            provenance=bool(
+                tool.source_type
+                or any(field.source_type for field in answer_fields)
             ),
-            source_type=requested.source_type or tool.source_type,
+            license=bool(tool.license) or (
+                bool(answer_fields)
+                and all(field.license for field in answer_fields)
+            ),
+            units=bool(answer_fields) and all(
+                field.unit for field in answer_fields
+            ),
+            source_type=source_type,
         )
