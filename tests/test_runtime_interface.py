@@ -843,3 +843,98 @@ async def test_event_stream_reports_binding_unavailable_fallback_reason() -> Non
     assert starts == ["mp_optimade"]
     end = next(event for event in events if event.event == "tool.end")
     assert end.tool == "mp_optimade"
+
+
+
+def _make_execution_ready_router() -> SchemaRouter:
+    router = SchemaRouter()
+    unbound = ToolSpec(
+        name="preferred_unbound",
+        provider="provider_a",
+        access_mode="openapi",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    bound = ToolSpec(
+        name="bound_route",
+        provider="provider_b",
+        access_mode="python",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_fields=[FieldSpec(name="value")],
+            )
+        ],
+    )
+    router.add_tool(unbound)
+    router.add_tool(bound)
+    router.executor.bind(
+        "bound_route",
+        lambda endpoint, arguments: {"value": "bound"},
+    )
+    return router
+
+
+def test_schema_plan_can_still_describe_unbound_preferred_route() -> None:
+    router = _make_execution_ready_router()
+    request = PlanRequest(
+        query="value",
+        preferred_tools=["preferred_unbound"],
+    )
+
+    plan = router.plan(request)
+
+    assert plan.calls[0].tool == "preferred_unbound"
+
+
+def test_plan_executable_filters_unbound_preferred_route() -> None:
+    router = _make_execution_ready_router()
+    request = PlanRequest(
+        query="value",
+        preferred_tools=["preferred_unbound"],
+    )
+
+    plan = router.plan_executable(request)
+
+    assert plan.calls[0].tool == "bound_route"
+
+
+@pytest.mark.asyncio
+async def test_ainvoke_selects_bound_route_even_when_unbound_route_is_preferred() -> None:
+    router = _make_execution_ready_router()
+    request = PlanRequest(
+        query="value",
+        preferred_tools=["preferred_unbound"],
+    )
+
+    result = await router.ainvoke(request)
+
+    assert result[0].tool == "bound_route"
+    assert result[0].data == {"value": "bound"}
+
+
+@pytest.mark.asyncio
+async def test_event_plan_payload_reflects_execution_ready_route() -> None:
+    router = _make_execution_ready_router()
+    request = PlanRequest(
+        query="value",
+        preferred_tools=["preferred_unbound"],
+    )
+
+    events = [
+        event
+        async for event in router.astream_events(
+            request,
+            config=RunConfig(include_payloads=True),
+        )
+    ]
+
+    plan_event = next(event for event in events if event.event == "plan.end")
+    assert plan_event.data["plan"]["calls"][0]["tool"] == "bound_route"
+    assert next(event for event in events if event.event == "tool.end").tool == "bound_route"
