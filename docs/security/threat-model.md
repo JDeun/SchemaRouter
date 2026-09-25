@@ -32,6 +32,8 @@ SchemaRouter therefore:
 - rejects undeclared tools, endpoints, parameters, and fields;
 - validates input and raw output with JSON Schema;
 - rejects stale schema fingerprints and stale invoker bindings;
+- recomputes declared evidence at execution time and revalidates global/per-field evidence
+  requirements instead of trusting plan-carried evidence claims;
 - requires trusted local policy for mutation, destructive, or unclassified remote operations.
 
 ### Credentials
