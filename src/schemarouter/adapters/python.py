@@ -61,6 +61,8 @@ def tool_from_callable(
     *,
     name: str | None = None,
     namespace: str | None = None,
+    provider: str | None = None,
+    access_mode: str | None = None,
     description: str | None = None,
     read_only: bool | None = None,
     destructive: bool | None = None,
@@ -125,6 +127,10 @@ def tool_from_callable(
         output_schema=output_schema,
         read_only=read_only,
         destructive=destructive,
+        execution_metadata={
+            "callable_name": function.__qualname__,
+            "callable_module": function.__module__,
+        },
         metadata={
             "adapter": "python",
             "callable_name": function.__qualname__,
@@ -135,7 +141,10 @@ def tool_from_callable(
         name=name or function.__name__,
         namespace=namespace,
         description=description or inspect.getdoc(function) or "",
+        provider=provider,
+        access_mode=access_mode or "python",
         endpoints=[endpoint],
+        execution_metadata={"adapter": "python"},
         metadata={"adapter": "python"},
     )
 
@@ -164,6 +173,8 @@ def schema_tool(
     *,
     name: str | None = None,
     namespace: str | None = None,
+    provider: str | None = None,
+    access_mode: str | None = None,
     description: str | None = None,
     read_only: bool | None = None,
     destructive: bool | None = None,
@@ -175,6 +186,8 @@ def schema_tool(
         dynamic_function.__schemarouter_options__ = {
             "name": name,
             "namespace": namespace,
+            "provider": provider,
+            "access_mode": access_mode,
             "description": description,
             "read_only": read_only,
             "destructive": destructive,

@@ -17,11 +17,9 @@ ApprovalCallback = Callable[
 
 
 def is_remote_tool(tool: ToolSpec) -> bool:
-    return bool(tool.metadata.get("remote")) or tool.metadata.get("adapter") in {
-        "mcp",
-        "openapi",
-        "html_proposal",
-    }
+    """Return the fingerprinted execution-origin classification."""
+
+    return tool.remote
 
 
 @dataclass(frozen=True)

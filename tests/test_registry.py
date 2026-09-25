@@ -1,6 +1,6 @@
 import pytest
 
-from schemarouter import EndpointSpec, InMemoryRegistry, RegistrationError, ToolSpec
+from schemarouter import EndpointSpec, InMemoryRegistry, ParameterSpec, RegistrationError, ToolSpec
 
 
 def test_registry_rejects_collisions_without_replace() -> None:
@@ -161,3 +161,193 @@ def test_registry_empty_update_many_is_a_noop() -> None:
     reg.update_many([])
 
     assert reg.version == version
+
+
+
+def test_descriptive_metadata_does_not_change_execution_fingerprints() -> None:
+    old = ToolSpec(
+        name="demo",
+        endpoints=[
+            EndpointSpec(
+                name="run",
+                metadata={"note": "old"},
+            )
+        ],
+        metadata={"catalog_note": "old"},
+    )
+    new = ToolSpec(
+        name="demo",
+        endpoints=[
+            EndpointSpec(
+                name="run",
+                metadata={"note": "new"},
+            )
+        ],
+        metadata={"catalog_note": "new"},
+    )
+
+    assert old.endpoints[0].fingerprint == new.endpoints[0].fingerprint
+    assert old.fingerprint == new.fingerprint
+
+
+def test_execution_metadata_changes_execution_fingerprints() -> None:
+    old = ToolSpec(
+        name="demo",
+        endpoints=[
+            EndpointSpec(
+                name="run",
+                execution_metadata={"mode": "search"},
+            )
+        ],
+        execution_metadata={"approved_base_url": "https://a.example/api"},
+    )
+    new = ToolSpec(
+        name="demo",
+        endpoints=[
+            EndpointSpec(
+                name="run",
+                execution_metadata={"mode": "get"},
+            )
+        ],
+        execution_metadata={"approved_base_url": "https://b.example/api"},
+    )
+
+    assert old.endpoints[0].fingerprint != new.endpoints[0].fingerprint
+    assert old.fingerprint != new.fingerprint
+
+
+
+def test_registry_revalidates_nested_endpoint_mutation_before_write() -> None:
+    registry = InMemoryRegistry()
+    tool = ToolSpec(
+        name="mutated",
+        endpoints=[EndpointSpec(name="run")],
+    )
+    tool.endpoints.append(EndpointSpec(name="run"))
+
+    with pytest.raises(RegistrationError, match="not a valid ToolSpec"):
+        registry.register(tool)
+
+    assert registry.keys() == ()
+    assert registry.version == 0
+
+
+def test_registry_revalidates_nested_parameter_mutation_in_batch() -> None:
+    registry = InMemoryRegistry()
+    endpoint = EndpointSpec(
+        name="run",
+        parameters=[ParameterSpec(name="value")],
+    )
+    tool = ToolSpec(name="mutated", endpoints=[endpoint])
+    tool.endpoints[0].parameters.append(ParameterSpec(name="value"))
+
+    with pytest.raises(RegistrationError, match="not a valid ToolSpec"):
+        registry.update_many([tool])
+
+    assert registry.keys() == ()
+    assert registry.version == 0
+
+
+
+def test_execution_metadata_requires_canonical_json_safe_values() -> None:
+    with pytest.raises(ValueError, match="JSON-safe"):
+        ToolSpec(
+            name="invalid_execution_metadata",
+            endpoints=[EndpointSpec(name="run")],
+            execution_metadata={"opaque": object()},
+        )
+
+    with pytest.raises(ValueError, match="finite JSON numbers"):
+        EndpointSpec(
+            name="run",
+            execution_metadata={"weight": float("nan")},
+        )
+
+
+def test_descriptive_metadata_can_remain_non_json_for_in_memory_use() -> None:
+    opaque = object()
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="descriptive",
+            endpoints=[EndpointSpec(name="run")],
+            metadata={"opaque": opaque},
+        )
+    )
+
+    assert registry.get("descriptive").metadata["opaque"] is not None
+
+
+
+def test_generic_descriptive_metadata_is_not_legacy_migrated_by_key_name_alone() -> None:
+    endpoint = EndpointSpec(
+        name="run",
+        metadata={"mode": "documentation-only"},
+    )
+    tool = ToolSpec(
+        name="local",
+        endpoints=[endpoint],
+        metadata={"source_url": "https://docs.example.test/local"},
+    )
+
+    assert endpoint.execution_metadata == {}
+    assert tool.execution_metadata == {}
+    assert tool.remote is False
+
+
+def test_legacy_optimade_tool_metadata_migrates_adapter_specific_identity() -> None:
+    tool = ToolSpec(
+        name="materials",
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                metadata={
+                    "entry_type": "structures",
+                    "mode": "search",
+                    "field_projection": "response_fields",
+                },
+            )
+        ],
+        metadata={
+            "adapter": "optimade",
+            "api_version": "1.3.0",
+            "versioned_base_url": "https://optimade.example/v1",
+            "source_url": "descriptive-only-for-this-adapter",
+        },
+    )
+
+    assert tool.execution_metadata == {
+        "adapter": "optimade",
+        "api_version": "1.3.0",
+        "versioned_base_url": "https://optimade.example/v1",
+    }
+    assert tool.endpoints[0].execution_metadata == {
+        "entry_type": "structures",
+        "field_projection": "response_fields",
+        "mode": "search",
+    }
+
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "message"),
+    [
+        ("provider", "", "provider must be non-empty"),
+        ("provider", "   ", "provider must be non-empty"),
+        ("access_mode", "", "access_mode must be non-empty"),
+        ("access_mode", "   ", "access_mode must be non-empty"),
+    ],
+)
+def test_tool_rejects_empty_provider_access_identity(
+    field: str,
+    value: str,
+    message: str,
+) -> None:
+    kwargs = {
+        "name": "demo",
+        "endpoints": [EndpointSpec(name="read", read_only=True)],
+        field: value,
+    }
+
+    with pytest.raises(ValueError, match=message):
+        ToolSpec(**kwargs)

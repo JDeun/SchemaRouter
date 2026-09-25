@@ -72,7 +72,10 @@ A schema adapter should return:
 - declared `ParameterSpec` objects;
 - declared `FieldSpec` objects when fields are projectable;
 - input/output JSON Schema where the source provides it;
-- descriptive metadata marked as untrusted when it originates remotely.
+- descriptive metadata marked as untrusted when it originates remotely;
+- `tool.remote=True` for capabilities whose invoker crosses a remote trust boundary;
+- `ToolSpec.execution_metadata` / `EndpointSpec.execution_metadata` for JSON-safe values that
+  alter transport/runtime behavior and therefore must participate in fingerprints.
 
 A normal transport adapter can provide an invoker compatible with:
 
@@ -104,8 +107,36 @@ Adapters must not:
 - skip SchemaRouter input/output validation;
 - call a remote service directly from planning.
 
-Remote adapters should set `tool.metadata["remote"] = True` so unclassified side effects remain
-policy-gated.
+Remote adapters must set `tool.remote = True` (or construct `ToolSpec(remote=True, ...)`) so
+unclassified side effects remain policy-gated. Ordinary `metadata` is descriptive only and must
+not be read by an invoker to decide execution origin, transport target, request encoding, or other
+runtime semantics.
+
+If an invoker needs adapter-specific runtime values, put them in fingerprinted
+`execution_metadata`. For example:
+
+```python
+tool = ToolSpec(
+    name="graphql",
+    remote=True,
+    execution_metadata={
+        "adapter": "graphql",
+        "approved_base_url": approved_base_url,
+    },
+    endpoints=[
+        EndpointSpec(
+            name="query",
+            execution_metadata={"selection_mode": "typed"},
+            # ...
+        )
+    ],
+)
+```
+
+Do not place credentials in either metadata bag. Secrets remain only in the trusted invoker object.
+A discovery/schema URL is provenance, not automatically runtime identity; keep it descriptive unless
+the invoker actually calls that URL. If a URL is part of `execution_metadata`, require a stable,
+credential-free form and keep query/fragment authentication in trusted transport configuration.
 
 ## Schema fidelity
 
@@ -141,7 +172,32 @@ New adapters should test:
 - invalid input values;
 - invalid raw output values;
 - stale invoker bindings;
+- stale plans after tool-level origin/transport changes;
+- ordinary metadata changes not altering execution semantics;
 - credential separation;
 - mutation/destructive policy;
 - selected-field propagation when the protocol supports server-side projection;
 - transport-specific origin/redirect behavior where relevant.
+
+
+## Canonical result paths
+
+When a provider's response key differs from the local semantic field name, keep the local field
+identity stable and separate the provider source path from the downstream result path:
+
+```python
+FieldSpec(
+    name="elastic_modulus",
+    semantic_id="elastic_modulus",
+    path=["_provider_specific_elasticity"],
+    result_path=["elastic_modulus"],
+)
+```
+
+`path` describes where SchemaRouter reads the value from the validated provider response.
+`result_path` describes where the projected value is written in `ToolResult.data`. If
+`result_path` is omitted, existing behavior is preserved and the source projection path is also
+used as the output shape.
+
+This lets multiple provider/access contracts expose different wire schemas while keeping the
+downstream context provider-neutral.

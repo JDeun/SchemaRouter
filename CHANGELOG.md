@@ -22,6 +22,18 @@ The project is pre-1.0 and follows the compatibility rules in
 - explicit `parallel_read_only` in-plan fan-out with full preflight schema/binding/policy checks,
   completion-order streaming/events, one shared execution budget, and an independent
   `max_parallel_calls` bound so batch concurrency does not multiply implicitly;
+- opt-in provider-aware read-only fallback routes with explicit `provider` / `access_mode`
+  identities, same-provider-before-cross-provider ordering, per-alternative schema/evidence
+  compilation, semantic field-alias compatibility checks, explicit `InvocationUnavailableError`
+  triggers, and typed `tool.fallback` observability;
+- explicit `ServerProjectionSpec` contracts that push planned logical fields into upstream
+  selectors such as OpenAPI `fields=...` and OPTIMADE `response_fields=...`, while preserving
+  raw-response validation and final local projection;
+- bounded passive access-path cooldown plus optional trusted `AccessHealthMonitor` probes that
+  reopen recovered read-only routes without permanent blacklisting or model-controlled health state;
+- field-first execution documentation that formalizes query -> required logical fields ->
+  provider/access selection -> upstream projection -> validated minimal `ToolResult` as a core
+  architectural principle;
 
 - self-contained HTML summaries for the decision-routing benchmark, alongside the existing JSON/CSV
   outputs, with escaped metadata and no remote assets;
@@ -58,6 +70,15 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
+- split descriptive `metadata` from fingerprinted execution-contract metadata: built-in adapters
+  now place transport/runtime semantics in `ToolSpec.execution_metadata` /
+  `EndpointSpec.execution_metadata`, while `ToolSpec.remote` is the fingerprinted execution-origin
+  classification. Legacy built-in registry JSON is migrated on validation;
+- planner-generated calls and LangChain/LlamaIndex bridges now include `tool_fingerprint` in
+  addition to endpoint fingerprints. Manually constructed remote or runtime-sensitive `ToolCall`
+  values must provide the current tool fingerprint; replan/recreate the call instead of reusing an
+  older serialized call;
+
 - raised the blocking branch-coverage floor from 82% to 84%;
 - made the protected `package` CI check depend on both the Laya integration contract and a
   dependency vulnerability audit, so either regression blocks merge even when the repository
@@ -76,6 +97,17 @@ The project is pre-1.0 and follows the compatibility rules in
 - post-release development has resumed as `0.7.0.dev0`; published `0.6.0` artifacts remain immutable.
 
 ### Security
+
+- hardened stale-plan authority boundaries so local/remote classification, approved transport
+  origin, and built-in runtime adapter semantics cannot change through unfingerprinted descriptive
+  metadata or survive a rebind under an old plan;
+- automatic fallback never treats schema, policy, approval, stale-state, deterministic 4xx, or
+  mutation failures as availability signals; complete fallback chains are preflighted and only
+  explicitly read-only candidates can participate;
+- operational inspection now derives execution-critical provenance from the fingerprinted contract
+  rather than ordinary metadata mirrors, preventing observability from reporting spoofed authority
+  state; URL userinfo/query/fragment values are stripped from inspection/dashboard output, and
+  schema/document provenance is sanitized before it reaches model payloads or persisted tool state;
 
 - added a pinned OpenSSF Scorecard workflow that publishes authenticated results, retains SARIF, and
   uploads findings to GitHub Code Scanning on main and a weekly schedule;

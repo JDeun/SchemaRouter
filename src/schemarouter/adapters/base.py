@@ -13,6 +13,8 @@ class AdapterContext:
     url: str
     name: str | None = None
     namespace: str | None = None
+    provider: str | None = None
+    access_mode: str | None = None
     base_url: str | None = None
     schema_headers: dict[str, str] | None = None
     trusted_headers: dict[str, str] | None = None

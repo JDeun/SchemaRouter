@@ -9,8 +9,8 @@ from urllib.parse import quote, unquote, urldefrag, urljoin, urlparse
 
 import httpx
 
-from ..errors import NonRetryableInvocationError
-from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
+from ..errors import InvocationUnavailableError, NonRetryableInvocationError
+from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
 from ..openapi_compatibility import analyze_openapi_compatibility
 
 _HTTP_METHODS = {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
@@ -1077,10 +1077,17 @@ def tool_from_openapi(
                     path=path,
                     read_only=method.lower() in {"get", "head", "options"},
                     destructive=method.lower() == "delete",
+                    execution_metadata={
+                        "request_body_required": request_body_required,
+                        "request_body_mode": request_body_mode,
+                        "request_body_discriminator": request_body_discriminator,
+                    },
                     metadata={
                         "tags": operation.get("tags", []),
                         "security": operation.get("security"),
                         "deprecated": bool(operation.get("deprecated", False)),
+                        # Kept as descriptive mirrors for backward-compatible inspection. Runtime
+                        # behavior reads the fingerprinted execution_metadata contract above.
                         "request_body_required": request_body_required,
                         "request_body_mode": request_body_mode,
                         "request_body_discriminator": request_body_discriminator,
@@ -1099,6 +1106,7 @@ def tool_from_openapi(
         namespace=namespace,
         description=(document.get("info") or {}).get("description", ""),
         endpoints=endpoints,
+        execution_metadata={"adapter": "openapi"},
         metadata={
             "adapter": "openapi",
             "openapi": document.get("openapi"),
@@ -1175,6 +1183,22 @@ class OpenAPIRemoteInvoker:
         self.http_client = http_client
 
     async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
+        return await self._invoke(endpoint, arguments, selected_fields=None)
+
+    async def invoke_call(self, call: ToolCall) -> Any:
+        return await self._invoke(
+            call.endpoint,
+            dict(call.arguments),
+            selected_fields=list(call.fields),
+        )
+
+    async def _invoke(
+        self,
+        endpoint: str,
+        arguments: dict[str, Any],
+        *,
+        selected_fields: list[str] | None,
+    ) -> Any:
         endpoint_name = endpoint
         endpoint_spec = self.tool.endpoint(endpoint_name)
         if not endpoint_spec.method or not endpoint_spec.path:
@@ -1262,12 +1286,33 @@ class OpenAPIRemoteInvoker:
                 f"unresolved path parameter in endpoint {endpoint_name!r}"
             )
 
+        if endpoint_spec.server_projection is not None and selected_fields:
+            field_map = {field.name: field for field in endpoint_spec.output_fields}
+            selectors = [
+                endpoint_spec.server_projection.selector_for(field_map[name])
+                for name in selected_fields
+                if name in field_map
+            ]
+            if selectors:
+                parameter_name = endpoint_spec.server_projection.parameter
+                query = [
+                    (name, value)
+                    for name, value in query
+                    if name != parameter_name
+                ]
+                query.append(
+                    (
+                        parameter_name,
+                        endpoint_spec.server_projection.separator.join(selectors),
+                    )
+                )
+
         headers.update(self.trusted_headers)
 
-        request_body_mode = endpoint_spec.metadata.get("request_body_mode")
+        request_body_mode = endpoint_spec.execution_metadata.get("request_body_mode")
         if (
             request_body_mode in {"root_schema", "discriminated_root"}
-            and bool(endpoint_spec.metadata.get("request_body_required"))
+            and bool(endpoint_spec.execution_metadata.get("request_body_required"))
             and not root_body_seen
         ):
             raise NonRetryableInvocationError(
@@ -1312,7 +1357,7 @@ class OpenAPIRemoteInvoker:
             else:
                 request_kwargs["json"] = (
                     body
-                    if body or bool(endpoint_spec.metadata.get("request_body_required"))
+                    if body or bool(endpoint_spec.execution_metadata.get("request_body_required"))
                     else None
                 )
 
@@ -1329,7 +1374,10 @@ class OpenAPIRemoteInvoker:
                             "OpenAPI request failed with non-retryable HTTP status "
                             f"{response.status_code}"
                         ) from exc
-                    raise
+                    raise InvocationUnavailableError(
+                        "OpenAPI access path is temporarily unavailable with HTTP status "
+                        f"{response.status_code}"
+                    ) from exc
 
                 content_length = response.headers.get("content-length")
                 if content_length is not None:
@@ -1360,6 +1408,10 @@ class OpenAPIRemoteInvoker:
                 content = b"".join(chunks)
                 content_type = response.headers.get("content-type", "").lower()
                 encoding = response.encoding or "utf-8"
+        except (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError) as exc:
+            raise InvocationUnavailableError(
+                "OpenAPI access path is temporarily unavailable"
+            ) from exc
         finally:
             if owns_client:
                 await client.aclose()

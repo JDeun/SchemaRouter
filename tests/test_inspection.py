@@ -105,6 +105,7 @@ def test_inspect_registry_derives_operational_counts() -> None:
         "adapter": "openapi",
         "source_url": "https://example.test/openapi.json",
         "execution_bound": True,
+        "remote": True,
     }
     assert len(snapshot.tools[0].fingerprint) == 64
     assert len(snapshot.tools[0].endpoints[0].fingerprint) == 64
@@ -324,3 +325,96 @@ def test_cli_dashboard_exports_self_contained_html(tmp_path, capsys) -> None:
     assert "demo.weather" in html
     assert "run-dashboard" in html
     assert "https://" not in html.split("<script>", 1)[1]
+
+
+
+def test_inspection_uses_fingerprinted_execution_provenance_over_descriptive_metadata() -> None:
+    tool = sample_tool()
+    tool.execution_metadata["approved_base_url"] = "https://trusted.example/api"
+    tool.metadata["approved_base_url"] = "https://spoofed.example/api"
+    tool.metadata["remote"] = False
+
+    snapshot = inspect_registry(
+        _registry_with_tool(tool)
+    )
+
+    assert snapshot.tools[0].provenance["approved_base_url"] == "https://trusted.example/api"
+    assert snapshot.tools[0].provenance["remote"] is True
+
+
+def _registry_with_tool(tool: ToolSpec) -> InMemoryRegistry:
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    return registry
+
+
+
+def test_inspection_redacts_url_query_and_fragment_from_provenance() -> None:
+    tool = sample_tool()
+    tool.execution_metadata.update(
+        {
+            "source_url": (
+                "https://user:password@example.test/openapi.json?token=secret#fragment"
+            ),
+            "approved_base_url": "https://api.example.test/v1?should-not-render=yes",
+        }
+    )
+
+    snapshot = inspect_registry(_registry_with_tool(tool))
+    provenance = snapshot.tools[0].provenance
+
+    assert provenance["source_url"] == "https://example.test/openapi.json"
+    assert provenance["approved_base_url"] == "https://api.example.test/v1"
+    serialized = snapshot.model_dump_json()
+    assert "user:password" not in serialized
+    assert "token=secret" not in serialized
+    assert "should-not-render" not in serialized
+    assert "fragment" not in serialized
+
+
+
+def test_inspection_fail_closes_on_malformed_or_non_http_provenance_urls() -> None:
+    tool = sample_tool()
+    tool.execution_metadata.update(
+        {
+            "source_url": "https://user:password@example.test:notaport/path?token=secret",
+            "approved_base_url": "ftp://user:password@example.test/private?token=secret",
+        }
+    )
+
+    snapshot = inspect_registry(_registry_with_tool(tool))
+    provenance = snapshot.tools[0].provenance
+
+    assert provenance["source_url"] == "<redacted-invalid-url>"
+    assert provenance["approved_base_url"] == "<redacted-invalid-url>"
+    serialized = snapshot.model_dump_json()
+    assert "user:password" not in serialized
+    assert "token=secret" not in serialized
+
+
+
+def test_live_inspection_reports_access_health_without_probe_callable() -> None:
+    router = SchemaRouter(unavailable_cooldown_seconds=60)
+    router.add_tool(
+        ToolSpec(
+            name="materials_api",
+            provider="materials",
+            access_mode="openapi",
+            endpoints=[EndpointSpec(name="read", read_only=True)],
+        )
+    )
+    router.register_health_probe("materials_api", "read", lambda: True)
+    router.mark_access_unavailable("materials_api", "read")
+
+    snapshot = router.inspect()
+
+    assert snapshot.execution.unavailable_access_paths == ["materials_api.read"]
+    assert snapshot.execution.health_monitor_running is False
+    assert len(snapshot.execution.health_probes) == 1
+    probe = snapshot.execution.health_probes[0]
+    assert probe.tool == "materials_api"
+    assert probe.endpoint == "read"
+    assert probe.status == "unknown"
+
+    serialized = snapshot.model_dump_json()
+    assert "<lambda>" not in serialized

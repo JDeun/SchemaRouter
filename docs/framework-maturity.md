@@ -23,10 +23,12 @@ This document tracks framework-level maturity rather than research metrics.
 | MCP ingestion and execution | Implemented with authenticated/custom transport boundary | Expand OAuth/gateway examples |
 | Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
 | Runtime policy | Category defaults + ordered operation-scoped allow/deny/approval rules + execution budgets | Add external organization policy adapters only behind the trusted local boundary |
-| Runtime JSON Schema validation / projection | Full raw validation + explicit nested object projection paths | Add typed array-element projection only if needed |
+| Runtime JSON Schema validation / projection | Full raw validation + explicit nested object projection paths + trusted server-side field selectors | Add typed array-element projection only if needed |
 | Schema drift analysis | Conservative endpoint/tool compatibility reports; exact fingerprints still gate execution | Add CI/reporting integrations without weakening drift rejection |
 | Planning explanations | Structured score components, field-selection reasons, ignored-argument records, and decision-selection source | Keep explanations structural; never expose model chain-of-thought |
 | In-plan concurrency | Explicit flat `parallel_read_only` fan-out with preflight validation, completion streaming, and shared budgets | Keep DAG/dependency/write orchestration out of core |
+| Provider/access fallback | Precompiled read-only same-provider/cross-provider routes with semantic field compatibility and typed fallback events | Expand provider federation only through explicit contracts |
+| Access health | Finite passive cooldown + optional trusted background probes with early reopen | Integrate external health sources without model authority |
 | LangChain / LangGraph / LlamaIndex integrations | Implemented optional adapters and native graph node | Expand ecosystem listings |
 | Bounded decision backends | Candidate + field + conservative evidence-sufficiency surfaces, provider-neutral callable/embedding + optional Jev/Laya/Ollama, all opt-in | Gather live decision evidence |
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
@@ -125,6 +127,8 @@ Completed locally:
 - conservative endpoint/tool schema diff reports that never bypass fingerprint checks;
 - structured planning explanations derived from deterministic/runtime-visible signals;
 - flat read-only parallel fan-out with preflight validation and shared run budgets;
+- field-first server-side projection contracts plus final local projection;
+- bounded provider/access fallback with finite cooldown and trusted health-probe recovery;
 - privacy-preserving OpenTelemetry exporter;
 - explicit allowlisted third-party adapter plugins;
 - property-based OpenAPI default-serialization coverage;

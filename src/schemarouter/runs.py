@@ -70,6 +70,7 @@ RunEventName = Literal[
     "tool.start",
     "tool.end",
     "tool.error",
+    "tool.fallback",
     "run.end",
     "run.error",
 ]

@@ -136,6 +136,7 @@ def to_llamaindex_tool(
             arguments=arguments,
             fields=fields,
             schema_fingerprint=endpoint.fingerprint,
+            tool_fingerprint=tool.fingerprint,
         )
         result = await router.executor.execute_call(call)
         return result.data

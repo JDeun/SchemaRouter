@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from schemarouter import (
     ApprovalDeniedError,
     BindingDriftError,
+    EndpointSpec,
     ExecutionBudget,
     ExecutionBudgetExceededError,
     ExecutionPolicy,
@@ -27,6 +28,7 @@ from schemarouter import (
     SchemaValidationError,
     SQLiteRegistry,
     SQLiteRunTraceStore,
+    ToolSpec,
     __version__,
     compare_endpoint_specs,
     inspect_registry,
@@ -89,6 +91,7 @@ async def scenario_happy_path() -> dict[str, object]:
     assert plan.calls[0].explanation is not None
     assert plan.calls[0].explanation.candidate_selection == "deterministic"
     assert plan.calls[0].explanation.score_components
+    assert plan.calls[0].tool_fingerprint == router.registry.get(key).fingerprint
 
     results = await router.execute(plan)
 
@@ -226,6 +229,15 @@ async def scenario_schema_drift() -> dict[str, object]:
 async def scenario_binding_drift() -> dict[str, object]:
     router = SchemaRouter()
     key = router.add_callable(lookup_value)
+
+    original = router.registry.get(key)
+    changed = original.model_copy(
+        update={"description": "tool contract changed without rebinding"},
+        deep=True,
+    )
+    router.registry.register(changed, replace=True)
+
+    # Replan against the new contract but intentionally keep the old invoker binding.
     plan = await router.aplan(
         PlanRequest(
             query="lookup value key",
@@ -235,15 +247,43 @@ async def scenario_binding_drift() -> dict[str, object]:
     )
     assert plan.executable
 
-    original = router.registry.get(key)
-    changed = original.model_copy(
-        update={"description": "tool metadata changed without rebinding"},
-        deep=True,
-    )
-    router.registry.register(changed, replace=True)
-
     await _expect(BindingDriftError, router.execute(plan))
     return {"stale_binding": "blocked"}
+
+
+async def scenario_tool_execution_contract_drift() -> dict[str, object]:
+    router = SchemaRouter()
+    original = ToolSpec(
+        name="remote_contract",
+        remote=True,
+        execution_metadata={
+            "adapter": "test",
+            "approved_base_url": "https://a.example/api",
+        },
+        endpoints=[EndpointSpec(name="run", read_only=True)],
+    )
+    router.add_tool(original)
+    router.executor.bind(
+        "remote_contract",
+        lambda endpoint, arguments: {"origin": "a"},
+    )
+    plan = await router.aplan(
+        PlanRequest(
+            query="remote contract run",
+            preferred_tools=["remote_contract"],
+        )
+    )
+
+    changed = original.model_copy(deep=True)
+    changed.execution_metadata["approved_base_url"] = "https://b.example/api"
+    router.registry.register(changed, replace=True)
+    router.executor.bind(
+        "remote_contract",
+        lambda endpoint, arguments: {"origin": "b"},
+    )
+
+    await _expect(SchemaDriftError, router.execute(plan))
+    return {"stale_tool_contract": "blocked"}
 
 
 async def scenario_output_validation() -> dict[str, object]:
@@ -362,6 +402,34 @@ async def scenario_parallel_read_only() -> dict[str, object]:
     return {"result_count": len(results), "peak_concurrency": peak}
 
 
+async def scenario_inspection_redaction() -> dict[str, object]:
+    router = SchemaRouter()
+    tool = ToolSpec(
+        name="redaction_probe",
+        remote=True,
+        execution_metadata={
+            "adapter": "openapi",
+            "source_url": (
+                "https://user:password@example.test/openapi.json"
+                "?token=secret#fragment"
+            ),
+            "approved_base_url": "https://api.example.test/v1?tenant=secret",
+        },
+        endpoints=[EndpointSpec(name="read", read_only=True)],
+    )
+    router.add_tool(tool)
+
+    snapshot = inspect_registry(router.registry)
+    provenance = snapshot.tools[0].provenance
+    assert provenance["source_url"] == "https://example.test/openapi.json"
+    assert provenance["approved_base_url"] == "https://api.example.test/v1"
+    serialized = snapshot.model_dump_json()
+    assert "user:password" not in serialized
+    assert "token=secret" not in serialized
+    assert "tenant=secret" not in serialized
+    return {"inspection_url_secrets": "redacted"}
+
+
 async def scenario_persistence_traces_and_dashboard() -> dict[str, object]:
     with TemporaryDirectory(prefix="schemarouter-acceptance-") as temp:
         root = Path(temp)
@@ -430,9 +498,11 @@ SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("scoped_policy_rule", scenario_scoped_policy_rule),
     ("schema_drift", scenario_schema_drift),
     ("binding_drift", scenario_binding_drift),
+    ("tool_execution_contract_drift", scenario_tool_execution_contract_drift),
     ("output_validation", scenario_output_validation),
     ("retry_and_budget", scenario_retry_and_budget),
     ("parallel_read_only", scenario_parallel_read_only),
+    ("inspection_redaction", scenario_inspection_redaction),
     ("persistence_traces_dashboard", scenario_persistence_traces_and_dashboard),
 )
 

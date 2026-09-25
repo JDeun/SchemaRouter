@@ -19,7 +19,9 @@ materials.search
 ## Versioning
 
 Every registry mutation advances a monotonic version. Plans record the registry version they were
-compiled against, while each call records the endpoint fingerprint that matters for execution.
+compiled against, while each planned call records both the endpoint fingerprint and the current
+tool fingerprint. The second fingerprint pins tool-level execution-origin and transport identity
+that cannot be represented by the endpoint contract alone.
 
 ## Snapshot semantics
 
@@ -39,16 +41,32 @@ assert "local_change" not in registry.get("weather").metadata
 Custom `ToolRegistry` implementations must provide the same semantic guarantee, either through
 detached snapshots or immutable values.
 
+The built-in registries also revalidate the complete `ToolSpec` at every write boundary. This is
+necessary because nested Pydantic collections can be mutated after initial model construction
+without triggering assignment validation. A tool whose endpoint/parameter/field collections were
+made invalid after construction is rejected atomically rather than snapshotted or persisted.
+
 ## Schema fingerprints
 
-Fingerprinting excludes arbitrary `metadata`, but it intentionally includes the declared
-planner/execution contract: endpoint descriptions, aliases, parameters, fields, side-effect
-classification, evidence metadata, and JSON Schemas can all affect planning or execution behavior.
+Fingerprinting excludes arbitrary descriptive `metadata`, but it intentionally includes the
+declared planner/execution contract: endpoint descriptions, aliases, parameters, fields,
+side-effect classification, evidence metadata, JSON Schemas, `ToolSpec.remote`, and explicit
+`execution_metadata`.
 
-A plan compiled against an older endpoint fingerprint fails closed:
+`execution_metadata` is reserved for trusted adapter/runtime values that can change what gets
+executed, such as an approved OpenAPI base URL, the actual MCP/OPTIMADE runtime target,
+request-body mode, or built-in callable identity. Schema-document provenance such as an OpenAPI
+source URL remains descriptive metadata unless that URL is itself the invocation target. Custom
+adapters must put execution-affecting values in `execution_metadata` rather than reading them from
+ordinary `metadata` at invocation time. Ordinary `metadata` remains descriptive/observability
+data and must not grant authority or alter transport semantics.
+
+A plan compiled against an older endpoint or tool execution contract fails closed:
 
 ```text
-plan fingerprint != current endpoint fingerprint
+endpoint fingerprint != current endpoint fingerprint
+ OR
+tool fingerprint != current tool fingerprint
  -> SchemaDriftError
 ```
 
@@ -100,5 +118,5 @@ Applications can still inject any structural registry implementation:
 router = SchemaRouter(registry=MyPersistentRegistry(...))
 ```
 
-Custom persistent implementations are responsible for atomic writes, snapshot semantics, and
-concurrency control.
+Custom persistent implementations are responsible for atomic writes, snapshot semantics,
+write-time contract revalidation, and concurrency control.

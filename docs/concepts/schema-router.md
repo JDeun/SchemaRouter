@@ -28,13 +28,14 @@ SchemaRouter produces a typed execution plan:
 
 ```text
 Query
-  -> Tool
-  -> Endpoint
-  -> Parameters
-  -> Response fields
-  -> Evidence requirements
-  -> Schema fingerprint
-  -> Execution policy
+  -> semantic data need
+  -> required response fields
+  -> provider / access path
+  -> tool / endpoint
+  -> parameters
+  -> evidence requirements
+  -> schema + tool fingerprints
+  -> execution policy / availability
 ```
 
 That plan is validated again immediately before execution.
@@ -53,14 +54,22 @@ SchemaRouter therefore makes `EndpointSpec` first-class instead of assuming one 
 
 ## Why response fields matter
 
-Fetching every field can waste context, expose irrelevant data, and increase downstream model cost.
-Pruning too aggressively can also destroy recall.
+Fetching every field can waste provider bandwidth, increase latency, pollute downstream model
+context with irrelevant values, and consume unnecessary prompt tokens. SchemaRouter therefore uses
+**field-first, route-second** planning: determine the logical fields first, then choose a route that
+can provide them.
 
-SchemaRouter uses **recall-preserving projection**:
+When a query-to-field match is clear:
 
-- keep confidently relevant fields;
-- retain identifiers;
-- when intent is ambiguous, prefer the declared field set instead of risky over-pruning.
+- keep only confidently relevant fields plus identifiers;
+- push those fields upstream when the endpoint has an explicit `ServerProjectionSpec`;
+- validate the raw projected response;
+- perform final local projection before producing the `ToolResult`.
+
+Pruning too aggressively can also destroy recall. When field intent is genuinely ambiguous, the
+default planner prefers the declared field set rather than pretending one field is sufficient.
+
+See [Field-first execution](field-first-execution.md).
 
 ## Why the executor validates again
 

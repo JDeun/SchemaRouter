@@ -16,6 +16,10 @@
 
 ::: schemarouter.FieldSpec
 
+## ServerProjectionSpec
+
+::: schemarouter.ServerProjectionSpec
+
 ## EvidenceRequirements
 
 ::: schemarouter.EvidenceRequirements
@@ -31,6 +35,10 @@
 ## ExecutionPlan
 
 ::: schemarouter.ExecutionPlan
+
+## FallbackRoute
+
+::: schemarouter.FallbackRoute
 
 
 ## ScoreComponent

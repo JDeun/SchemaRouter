@@ -10,6 +10,7 @@ from urllib.parse import unquote, urldefrag, urljoin, urlparse
 import httpx
 import yaml
 
+from ._url_safety import safe_provenance_url
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
 from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
 from .adapters.openapi import (
@@ -682,10 +683,11 @@ class OpenAPISourceAdapter:
                 ) from exc
             suggested_base_url = None
 
+        tool.execution_metadata.update({"adapter": "openapi"})
         tool.metadata.update(
             {
-                "source_url": context.url,
-                "resolved_schema_url": resolved_schema_url,
+                "source_url": safe_provenance_url(context.url),
+                "resolved_schema_url": safe_provenance_url(resolved_schema_url),
                 "suggested_base_url": suggested_base_url,
                 "same_document_refs_normalized": normalized_ref_count,
                 "external_refs_enabled": context.openapi_external_refs,
@@ -724,6 +726,13 @@ class OpenAPISourceAdapter:
                 ) from exc
 
         if invoker is not None:
+            tool.execution_metadata.update(
+                {
+                    "execution_bound": True,
+                    "approved_base_url": selected_base_url,
+                    "requires_explicit_base_url": False,
+                }
+            )
             tool.metadata.update(
                 {
                     "execution_bound": True,
@@ -731,6 +740,12 @@ class OpenAPISourceAdapter:
                 }
             )
         else:
+            tool.execution_metadata.update(
+                {
+                    "execution_bound": False,
+                    "requires_explicit_base_url": True,
+                }
+            )
             tool.metadata.update(
                 {
                     "execution_bound": False,
@@ -760,6 +775,7 @@ class MCPSourceAdapter:
         except Exception:  # noqa: BLE001
             return None
 
+        tool.remote = True
         tool.metadata["remote"] = True
         return AdapterLoadResult(
             tool=tool,
@@ -808,6 +824,8 @@ class URLSchemaLoader:
         kind: SourceKind = "auto",
         name: str | None = None,
         namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
         replace: bool = False,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
@@ -835,6 +853,8 @@ class URLSchemaLoader:
             url=url,
             name=name,
             namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
             base_url=base_url,
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
@@ -866,13 +886,19 @@ class URLSchemaLoader:
                     ) from exc
                 raise
             except Exception as exc:  # noqa: BLE001
+                safe_url = safe_provenance_url(url)
                 raise SchemaSourceError(
-                    f"{normalized_kind} adapter failed for {url!r}"
+                    f"{normalized_kind} adapter failed for {safe_url!r}"
                 ) from exc
             if result is None:
                 raise UnsupportedSchemaSourceError(
                     f"URL did not yield a supported {normalized_kind} source"
                 )
+            result = self._with_identity(
+                result,
+                context,
+                adapter_kind=adapter.kind,
+            )
             return self._commit(result, replace=replace)
 
         for adapter in self.adapters.ordered():
@@ -882,6 +908,11 @@ class URLSchemaLoader:
                 diagnostics.append(f"{adapter.kind}: {exc}")
                 continue
             if result is not None:
+                result = self._with_identity(
+                    result,
+                    context,
+                    adapter_kind=adapter.kind,
+                )
                 return self._commit(result, replace=replace)
 
         detail = "; ".join(diagnostics) or "no registered adapter recognized the source"
@@ -890,6 +921,22 @@ class URLSchemaLoader:
             "Human-readable documentation is intentionally not inferred in the safe path. "
             + detail
         )
+
+    @staticmethod
+    def _with_identity(
+        result: AdapterLoadResult,
+        context: AdapterContext,
+        *,
+        adapter_kind: str,
+    ) -> AdapterLoadResult:
+        tool = result.tool.model_copy(deep=True)
+        if context.provider is not None:
+            tool.provider = context.provider
+        if context.access_mode is not None:
+            tool.access_mode = context.access_mode
+        elif tool.access_mode is None:
+            tool.access_mode = adapter_kind
+        return AdapterLoadResult(tool=tool, invoker=result.invoker)
 
     def _commit(self, result: AdapterLoadResult, *, replace: bool) -> ToolSpec:
         key = self.registry.register(result.tool, replace=replace)

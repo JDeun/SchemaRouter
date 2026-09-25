@@ -38,6 +38,10 @@ ToolSpec
 This keeps schema fingerprints, planning, validation, policy, retries, and observability independent
 of the source protocol.
 
+Runtime-affecting adapter state belongs in fingerprinted `execution_metadata`, not ordinary
+descriptive `metadata`. Remote adapters also set the first-class `ToolSpec.remote` contract.
+This prevents a transport/origin change from occurring behind an unchanged plan fingerprint.
+
 ## Call-aware transport
 
 Most adapters bind a normal `endpoint + arguments` invoker.

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import math
 import time
 from collections.abc import AsyncIterator, Awaitable
 from copy import deepcopy
@@ -14,6 +15,7 @@ from .errors import (
     ExecutionBudgetExceededError,
     ExecutionError,
     ExecutionHookError,
+    InvocationUnavailableError,
     NonRetryableInvocationError,
     PlanValidationError,
     SchemaDriftError,
@@ -27,6 +29,7 @@ from .runs import ExecutionBudget, RetryPolicy
 from .validation import (
     effective_input_schema,
     effective_output_schema,
+    projected_output_schema,
     validate_json_schema_value,
 )
 
@@ -180,13 +183,162 @@ class RegistryExecutor:
         policy: ExecutionPolicy | None = None,
         approval_callback: ApprovalCallback | None = None,
         hooks: ExecutionHooks | None = None,
+        unavailable_cooldown_seconds: float = 30.0,
     ) -> None:
+        if (
+            not isinstance(unavailable_cooldown_seconds, (int, float))
+            or isinstance(unavailable_cooldown_seconds, bool)
+            or not math.isfinite(float(unavailable_cooldown_seconds))
+            or unavailable_cooldown_seconds < 0
+        ):
+            raise ValueError("unavailable_cooldown_seconds must be a finite non-negative number")
         self.registry = registry
         self.policy = policy or ExecutionPolicy()
         self.approval_callback = approval_callback
         self.hooks = hooks or ExecutionHooks()
+        self.unavailable_cooldown_seconds = float(unavailable_cooldown_seconds)
         self._invokers: dict[str, EndpointInvoker] = {}
         self._binding_fingerprints: dict[str, str] = {}
+        self._unavailable_until: dict[tuple[str, str, str], float] = {}
+
+    def _current_access_key(
+        self,
+        tool_key: str,
+        endpoint: str,
+    ) -> tuple[str, str, str]:
+        tool = self.registry.get(tool_key)
+        tool.endpoint(endpoint)
+        return tool_key, endpoint, tool.fingerprint
+
+    def _purge_access_cooldowns(self, tool_key: str, endpoint: str) -> None:
+        stale = [
+            key
+            for key in self._unavailable_until
+            if key[0] == tool_key and key[1] == endpoint
+        ]
+        for key in stale:
+            self._unavailable_until.pop(key, None)
+
+    def mark_access_unavailable(
+        self,
+        tool_key: str,
+        endpoint: str,
+        *,
+        cooldown_seconds: float | None = None,
+    ) -> None:
+        cooldown = (
+            self.unavailable_cooldown_seconds
+            if cooldown_seconds is None
+            else float(cooldown_seconds)
+        )
+        if not math.isfinite(cooldown) or cooldown < 0:
+            raise ValueError("cooldown_seconds must be a finite non-negative number")
+        key = self._current_access_key(tool_key, endpoint)
+        self._purge_access_cooldowns(tool_key, endpoint)
+        self._unavailable_until[key] = time.monotonic() + cooldown
+
+    def _mark_access_available_for_contract(
+        self,
+        tool_key: str,
+        endpoint: str,
+        tool_fingerprint: str,
+    ) -> None:
+        self._unavailable_until.pop(
+            (tool_key, endpoint, tool_fingerprint),
+            None,
+        )
+
+    def _mark_access_unavailable_for_contract(
+        self,
+        tool_key: str,
+        endpoint: str,
+        tool_fingerprint: str,
+        *,
+        cooldown_seconds: float | None = None,
+    ) -> None:
+        cooldown = (
+            self.unavailable_cooldown_seconds
+            if cooldown_seconds is None
+            else float(cooldown_seconds)
+        )
+        if not math.isfinite(cooldown) or cooldown < 0:
+            raise ValueError("cooldown_seconds must be a finite non-negative number")
+        self._purge_access_cooldowns(tool_key, endpoint)
+        self._unavailable_until[
+            (tool_key, endpoint, tool_fingerprint)
+        ] = time.monotonic() + cooldown
+
+    def mark_access_available(self, tool_key: str, endpoint: str) -> None:
+        self._current_access_key(tool_key, endpoint)
+        self._purge_access_cooldowns(tool_key, endpoint)
+
+    def is_access_available_for_contract(
+        self,
+        tool_key: str,
+        endpoint: str,
+        tool_fingerprint: str,
+    ) -> bool:
+        key = (tool_key, endpoint, tool_fingerprint)
+        until = self._unavailable_until.get(key)
+        if until is None:
+            return True
+        if time.monotonic() >= until:
+            self._unavailable_until.pop(key, None)
+            return True
+        return False
+
+    def is_access_available(self, tool_key: str, endpoint: str) -> bool:
+        key = self._current_access_key(tool_key, endpoint)
+        until = self._unavailable_until.get(key)
+        if until is None:
+            return True
+        if time.monotonic() >= until:
+            self._unavailable_until.pop(key, None)
+            return True
+        return False
+
+    def unavailable_access_paths(self) -> tuple[tuple[str, str], ...]:
+        now = time.monotonic()
+        active: list[tuple[str, str]] = []
+        stale_keys: list[tuple[str, str, str]] = []
+
+        for key, until in self._unavailable_until.items():
+            tool_key, endpoint, fingerprint = key
+            if now >= until:
+                stale_keys.append(key)
+                continue
+            try:
+                current = self.registry.get(tool_key)
+                current.endpoint(endpoint)
+            except KeyError:
+                stale_keys.append(key)
+                continue
+            if current.fingerprint != fingerprint:
+                stale_keys.append(key)
+                continue
+            active.append((tool_key, endpoint))
+
+        for key in stale_keys:
+            self._unavailable_until.pop(key, None)
+        return tuple(sorted(active))
+
+    def ordered_available_fallback_chain(
+        self,
+        call: ToolCall,
+        alternatives: list[ToolCall] | tuple[ToolCall, ...],
+    ) -> list[ToolCall]:
+        self.validate_fallback_chain(call, alternatives)
+        chain = [call, *alternatives]
+        available = [
+            candidate
+            for candidate in chain
+            if self.is_access_available(candidate.tool, candidate.endpoint)
+        ]
+        if available:
+            return available
+        raise InvocationUnavailableError(
+            "all precompiled access paths are temporarily unavailable"
+        )
 
     def bind(self, tool_key: str, invoker: EndpointInvoker) -> None:
         tool = self.registry.get(tool_key)
@@ -201,12 +353,31 @@ class RegistryExecutor:
         """Return live trusted-invoker keys without exposing invoker objects."""
         return tuple(sorted(self._invokers))
 
-    def validate_call(self, call: ToolCall) -> None:
+    def _validated_call_contract(
+        self,
+        call: ToolCall,
+    ) -> tuple[ToolSpec, EndpointSpec]:
         try:
-            endpoint = self.registry.endpoint(call.tool, call.endpoint)
+            tool = self.registry.get(call.tool)
+            endpoint = tool.endpoint(call.endpoint)
         except KeyError as exc:
             message = f"unknown tool/endpoint: {call.tool}.{call.endpoint}"
             raise PlanValidationError(message) from exc
+
+        if call.tool_fingerprint is None and (
+            tool.remote
+            or bool(tool.execution_metadata)
+            or bool(endpoint.execution_metadata)
+        ):
+            raise PlanValidationError(
+                "tool_fingerprint is required for remote or runtime-sensitive "
+                f"operation {call.tool}.{call.endpoint}; replan before execution"
+            )
+
+        if call.tool_fingerprint is not None and tool.fingerprint != call.tool_fingerprint:
+            raise SchemaDriftError(
+                f"tool contract changed for {call.tool!r}; replan before execution"
+            )
 
         if endpoint.fingerprint != call.schema_fingerprint:
             raise SchemaDriftError(
@@ -238,7 +409,6 @@ class RegistryExecutor:
             context=f"arguments for {call.tool}.{call.endpoint}",
         )
 
-        tool = self.registry.get(call.tool)
         self.policy.validate(tool, endpoint, call)
 
         declared_fields = {field.name for field in endpoint.output_fields}
@@ -257,15 +427,20 @@ class RegistryExecutor:
                 f"explicit output projection required for {call.tool}.{call.endpoint}"
             )
 
+        return tool, endpoint
+
+    def validate_call(self, call: ToolCall) -> None:
+        self._validated_call_contract(call)
+
     async def _approve(
         self,
         tool: ToolSpec,
         endpoint: EndpointSpec,
         call: ToolCall,
         tracker: ExecutionBudgetTracker,
-    ) -> None:
+    ) -> bool:
         if not self.policy.requires_approval(endpoint, tool=tool, call=call):
-            return
+            return False
         if self.approval_callback is None:
             raise ApprovalDeniedError(
                 f"operation {call.tool}.{call.endpoint} requires trusted local approval"
@@ -293,14 +468,13 @@ class RegistryExecutor:
             raise ApprovalDeniedError(
                 f"operation {call.tool}.{call.endpoint} was not approved"
             )
+        return True
 
     def _execution_state(
         self,
         call: ToolCall,
     ) -> tuple[ToolSpec, EndpointSpec, EndpointInvoker]:
-        self.validate_call(call)
-        endpoint = self.registry.endpoint(call.tool, call.endpoint)
-        tool = self.registry.get(call.tool)
+        tool, endpoint = self._validated_call_contract(call)
         invoker = self._invokers.get(call.tool)
         if invoker is None:
             raise ExecutionError(f"no invoker bound for tool {call.tool!r}")
@@ -318,8 +492,10 @@ class RegistryExecutor:
         endpoint: EndpointSpec,
         call: ToolCall,
         tracker: ExecutionBudgetTracker,
-    ) -> None:
+    ) -> bool:
+        ran = False
         for hook in self.hooks.before_call:
+            ran = True
             try:
                 outcome = hook(
                     tool.model_copy(deep=True),
@@ -343,6 +519,7 @@ class RegistryExecutor:
                 raise ExecutionHookError(
                     "before execution hooks must return None"
                 )
+        return ran
 
     async def _run_after_hooks(
         self,
@@ -389,16 +566,18 @@ class RegistryExecutor:
         tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
         tool, endpoint, invoker = self._execution_state(call)
 
-        await self._approve(tool, endpoint, call, tracker)
+        approval_ran = await self._approve(tool, endpoint, call, tracker)
 
-        # Trusted callbacks may await while schema or bindings change. Refresh all executable state
-        # after approval and again after before-hooks so stale local references cannot execute.
-        tool, endpoint, invoker = self._execution_state(call)
+        # Trusted callbacks may mutate or await while schema/bindings change. Refresh only when
+        # such a callback actually ran; otherwise keep the validated registry snapshot coherent.
+        if approval_ran:
+            tool, endpoint, invoker = self._execution_state(call)
 
         tracker.before_call(call)
 
-        await self._run_before_hooks(tool, endpoint, call, tracker)
-        tool, endpoint, invoker = self._execution_state(call)
+        before_hooks_ran = await self._run_before_hooks(tool, endpoint, call, tracker)
+        if before_hooks_ran:
+            tool, endpoint, invoker = self._execution_state(call)
 
         retry = retry or RetryPolicy()
         can_retry = endpoint.read_only is True or retry.retry_non_read_only
@@ -422,18 +601,36 @@ class RegistryExecutor:
                     )
                 tracker.after_attempt()
 
+                server_projected = (
+                    call_aware
+                    and endpoint.server_projection is not None
+                    and bool(call.fields)
+                )
                 validate_json_schema_value(
                     value,
-                    effective_output_schema(endpoint),
+                    (
+                        projected_output_schema(endpoint, call.fields)
+                        if server_projected
+                        else effective_output_schema(endpoint)
+                    ),
                     context=f"output from {call.tool}.{call.endpoint}",
                 )
+                if server_projected:
+                    self._validate_selected_fields_present(
+                        value,
+                        call.fields,
+                        endpoint,
+                        context=f"output from {call.tool}.{call.endpoint}",
+                    )
                 selected_field_specs = {
                     field.name: field
                     for field in endpoint.output_fields
                     if field.name in call.fields
                 }
                 has_explicit_paths = any(
-                    field.path for field in selected_field_specs.values()
+                    field.path
+                    or field.result_projection_path != field.projection_path
+                    for field in selected_field_specs.values()
                 )
                 adapter_projected = (
                     call_aware
@@ -453,6 +650,11 @@ class RegistryExecutor:
                 )
                 await self._run_after_hooks(tool, endpoint, call, result, tracker)
                 tracker.after_attempt()
+                self._mark_access_available_for_contract(
+                    call.tool,
+                    call.endpoint,
+                    tool.fingerprint,
+                )
                 return result
             except (
                 SchemaValidationError,
@@ -472,9 +674,81 @@ class RegistryExecutor:
                         delay * retry.backoff_multiplier,
                     )
 
+        if isinstance(last_error, InvocationUnavailableError):
+            self._mark_access_unavailable_for_contract(
+                call.tool,
+                call.endpoint,
+                tool.fingerprint,
+            )
+            raise last_error
         raise ExecutionError(
             f"invocation failed for {call.tool}.{call.endpoint} after {max_attempts} attempt(s)"
         ) from last_error
+
+    def validate_fallback_chain(
+        self,
+        call: ToolCall,
+        alternatives: list[ToolCall] | tuple[ToolCall, ...],
+    ) -> None:
+        chain = [call, *alternatives]
+
+        # Read-only eligibility is the first invariant of automatic fallback. Check it
+        # before policy/binding evaluation so a mutating alternative is rejected specifically
+        # as an invalid fallback contract rather than surfacing an unrelated mutation-policy
+        # error.
+        for candidate in chain:
+            try:
+                endpoint = self.registry.endpoint(candidate.tool, candidate.endpoint)
+            except KeyError as exc:
+                raise PlanValidationError(
+                    f"unknown tool/endpoint: {candidate.tool}.{candidate.endpoint}"
+                ) from exc
+            if endpoint.read_only is not True:
+                raise PlanValidationError(
+                    "automatic fallback requires every candidate to be explicitly read-only; "
+                    f"got {candidate.tool}.{candidate.endpoint}"
+                )
+
+        for candidate in chain:
+            self._execution_state(candidate)
+
+    async def execute_call_with_fallback(
+        self,
+        call: ToolCall,
+        alternatives: list[ToolCall] | tuple[ToolCall, ...],
+        *,
+        retry: RetryPolicy | None = None,
+        budget: ExecutionBudget | None = None,
+        _tracker: ExecutionBudgetTracker | None = None,
+    ) -> ToolResult:
+        tracker = _tracker or ExecutionBudgetTracker(budget or ExecutionBudget())
+        last_unavailable: InvocationUnavailableError | None = None
+
+        # Validate the entire bounded chain before invoking the primary. This prevents a malformed,
+        # stale, unbound, policy-denied, or mutating fallback from being discovered only after an
+        # earlier route has already executed. Known-unavailable paths are skipped for a bounded
+        # cooldown rather than incurring the same failed network wait on every request.
+        chain = (
+            self.ordered_available_fallback_chain(call, alternatives)
+            if alternatives
+            else [call]
+        )
+
+        for candidate in chain:
+            try:
+                return await self.execute_call(
+                    candidate,
+                    retry=retry,
+                    budget=budget,
+                    _tracker=tracker,
+                )
+            except InvocationUnavailableError as exc:
+                last_unavailable = exc
+                continue
+
+        if last_unavailable is not None:
+            raise last_unavailable
+        raise ExecutionError("fallback chain contained no executable candidates")
 
     async def execute(
         self,
@@ -491,16 +765,19 @@ class RegistryExecutor:
     def validate_parallel_read_only(self, plan: ExecutionPlan) -> None:
         """Fail before launching tasks unless every call is currently trusted read-only."""
 
-        for call in plan.calls:
-            tool, endpoint, _ = self._execution_state(call)
-            if endpoint.read_only is not True:
-                raise PlanValidationError(
-                    "parallel_read_only execution requires every call to be explicitly "
-                    f"read-only; got {call.tool}.{call.endpoint}"
-                )
-            # Keep the local tool snapshot read so policy/binding validation happens for every
-            # call before any parallel task is launched.
-            del tool
+        for index, call in enumerate(plan.calls):
+            route = plan.fallback_route(index)
+            candidates = [call, *(route.alternatives if route is not None else [])]
+            for candidate in candidates:
+                tool, endpoint, _ = self._execution_state(candidate)
+                if endpoint.read_only is not True:
+                    raise PlanValidationError(
+                        "parallel_read_only execution requires every primary/fallback call to be "
+                        f"explicitly read-only; got {candidate.tool}.{candidate.endpoint}"
+                    )
+                # Keep the local tool snapshot read so policy/binding validation happens for every
+                # call before any parallel task is launched.
+                del tool
 
     async def execute_parallel_read_only(
         self,
@@ -539,8 +816,10 @@ class RegistryExecutor:
 
         async def run_one(index: int, call: ToolCall) -> tuple[int, ToolResult]:
             async with semaphore:
-                result = await self.execute_call(
+                route = plan.fallback_route(index)
+                result = await self.execute_call_with_fallback(
                     call,
+                    route.alternatives if route is not None else [],
                     retry=retry,
                     budget=budget,
                     _tracker=tracker,
@@ -569,17 +848,69 @@ class RegistryExecutor:
         budget: ExecutionBudget | None = None,
     ) -> AsyncIterator[ToolResult]:
         tracker = ExecutionBudgetTracker(budget or ExecutionBudget())
-        for call in plan.calls:
-            yield await self.execute_call(
+        for index, call in enumerate(plan.calls):
+            route = plan.fallback_route(index)
+            yield await self.execute_call_with_fallback(
                 call,
+                route.alternatives if route is not None else [],
                 retry=retry,
                 budget=budget,
                 _tracker=tracker,
             )
 
     @staticmethod
+    def _validate_selected_fields_present(
+        value: Any,
+        fields: list[str],
+        endpoint: EndpointSpec,
+        *,
+        context: str,
+    ) -> None:
+        if not fields:
+            return
+
+        if isinstance(value, dict):
+            items = [value]
+        elif isinstance(value, list):
+            items = value
+        else:
+            return
+
+        field_map = {field.name: field for field in endpoint.output_fields}
+        for item_index, item in enumerate(items):
+            if not isinstance(item, dict):
+                continue
+            for field_name in fields:
+                field = field_map[field_name]
+                current: Any = item
+                missing = False
+                for part in field.projection_path:
+                    if not isinstance(current, dict) or part not in current:
+                        missing = True
+                        break
+                    current = current[part]
+                if missing:
+                    suffix = (
+                        f" item {item_index}"
+                        if isinstance(value, list)
+                        else ""
+                    )
+                    raise SchemaValidationError(
+                        f"{context}{suffix}: projected field {field_name!r} is missing"
+                    )
+
+    @staticmethod
     def _project(value: Any, fields: list[str], endpoint: EndpointSpec) -> Any:
-        if not fields or not isinstance(value, dict):
+        if not fields:
+            return value
+        if isinstance(value, list):
+            return [
+                RegistryExecutor._project(item, fields, endpoint)
+                if isinstance(item, dict)
+                else deepcopy(item)
+                for item in value
+            ]
+        if not isinstance(value, dict):
             return value
 
         field_map = {field.name: field for field in endpoint.output_fields}
@@ -598,18 +929,18 @@ class RegistryExecutor:
                 continue
 
             target = projected
-            path = field.projection_path
-            for part in path[:-1]:
+            result_path = field.result_projection_path
+            for part in result_path[:-1]:
                 child = target.get(part)
                 if child is None:
                     child = {}
                     target[part] = child
                 if not isinstance(child, dict):
                     raise PlanValidationError(
-                        "nested projection path collision for "
+                        "nested projection result-path collision for "
                         f"{field_name!r} in {endpoint.name!r}"
                     )
                 target = child
-            target[path[-1]] = deepcopy(current)
+            target[result_path[-1]] = deepcopy(current)
 
         return projected

@@ -5,7 +5,7 @@ from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any, Protocol
 from urllib.parse import urlparse
 
-from ..errors import SchemaSourceError
+from ..errors import InvocationUnavailableError, SchemaSourceError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolSpec
 
 _PROTECTED_MCP_HEADERS = {
@@ -92,6 +92,11 @@ def _validate_mcp_url(url: str) -> None:
     if parsed.username or parsed.password:
         raise ValueError(
             "MCP URL must not contain credentials; use trusted transport authentication"
+        )
+    if parsed.query or parsed.fragment:
+        raise ValueError(
+            "MCP URL must not contain query or fragment; use trusted transport authentication "
+            "or a stable endpoint path"
         )
 
 
@@ -184,6 +189,7 @@ def tool_from_mcp(
         namespace=namespace,
         description=f"MCP server: {server_name}",
         endpoints=endpoints,
+        execution_metadata={"adapter": "mcp"},
         metadata={"adapter": "mcp", "remote_metadata_untrusted": True},
     )
 
@@ -223,6 +229,13 @@ async def inspect_mcp_url(
 
     name = server_name or discovered_name or "mcp_server"
     tool = tool_from_mcp(name, raw_tools, namespace=namespace)
+    tool.execution_metadata.update(
+        {
+            "source_url": url,
+            "protocol_version": protocol_version,
+            "authenticated_transport": bool(headers),
+        }
+    )
     tool.metadata.update(
         {
             "source_url": url,
@@ -255,25 +268,31 @@ class MCPRemoteInvoker:
         self.client_factory = client_factory or _DEFAULT_CLIENT_FACTORY
 
     async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
-        async with self.client_factory(
-            self.url,
-            headers=self._trusted_headers,
-            timeout=self.timeout,
-        ) as client:
-            result = await client.call_tool(endpoint, arguments)
-            if getattr(result, "is_error", False):
-                raise RuntimeError(f"MCP tool {endpoint!r} returned an error")
+        try:
+            async with self.client_factory(
+                self.url,
+                headers=self._trusted_headers,
+                timeout=self.timeout,
+            ) as client:
+                result = await client.call_tool(endpoint, arguments)
+        except (TimeoutError, ConnectionError, OSError) as exc:
+            raise InvocationUnavailableError(
+                "MCP access path is temporarily unavailable"
+            ) from exc
 
-            structured = getattr(result, "structured_content", None)
-            if structured is not None:
-                return structured
+        if getattr(result, "is_error", False):
+            raise RuntimeError(f"MCP tool {endpoint!r} returned an error")
 
-            content = getattr(result, "content", None)
-            if content is None:
-                return None
-            return [
-                block.model_dump(mode="json", by_alias=True, exclude_none=True)
-                if hasattr(block, "model_dump")
-                else str(block)
-                for block in content
-            ]
+        structured = getattr(result, "structured_content", None)
+        if structured is not None:
+            return structured
+
+        content = getattr(result, "content", None)
+        if content is None:
+            return None
+        return [
+            block.model_dump(mode="json", by_alias=True, exclude_none=True)
+            if hasattr(block, "model_dump")
+            else str(block)
+            for block in content
+        ]

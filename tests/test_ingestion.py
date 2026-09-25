@@ -6,7 +6,9 @@ import pytest
 from schemarouter import (
     ExecutionError,
     PlanRequest,
+    SchemaDriftError,
     SchemaRouter,
+    SchemaSourceError,
     UnsupportedSchemaSourceError,
 )
 
@@ -101,6 +103,19 @@ async def test_cross_origin_openapi_is_ingested_but_not_auto_bound() -> None:
     rebound = router.registry.get("users_api")
     assert rebound.metadata["execution_bound"] is True
     assert rebound.metadata["approved_base_url"] == "https://service.example.com/api/"
+    assert rebound.execution_metadata["approved_base_url"] == "https://service.example.com/api/"
+    assert rebound.remote is True
+
+    with pytest.raises(SchemaDriftError, match="tool contract changed"):
+        await router.execute(plan)
+
+    replanned = router.plan(
+        PlanRequest(
+            query="get user name",
+            arguments={"user_id": "42"},
+        )
+    )
+    assert replanned.calls[0].tool_fingerprint == rebound.fingerprint
 
 
 @pytest.mark.asyncio
@@ -122,6 +137,9 @@ async def test_explicit_base_url_can_approve_cross_origin_openapi() -> None:
     tool = router.registry.get("users_api")
     assert tool.metadata["execution_bound"] is True
     assert tool.metadata["approved_base_url"] == "https://service.example.com/api/"
+    assert tool.execution_metadata["execution_bound"] is True
+    assert tool.execution_metadata["approved_base_url"] == "https://service.example.com/api/"
+    assert tool.remote is True
 
 
 @pytest.mark.asyncio
@@ -295,3 +313,54 @@ async def test_openapi_document_size_is_bounded() -> None:
                 "https://docs.example.com/openapi.json",
                 kind="openapi",
             )
+
+
+
+@pytest.mark.asyncio
+async def test_openapi_query_secret_is_fetched_but_not_persisted_in_tool_state() -> None:
+    source = "https://docs.example.com/openapi.json?token=top-secret"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert str(request.url) == source
+        return httpx.Response(
+            200,
+            content=json.dumps(openapi_document()),
+            headers={"content-type": "application/json"},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            source,
+            kind="openapi",
+            http_client=client,
+        )
+
+    tool = router.registry.get("users_api")
+    assert tool.metadata["source_url"] == "https://docs.example.com/openapi.json"
+    assert tool.metadata["resolved_schema_url"] == "https://docs.example.com/openapi.json"
+    assert "source_url" not in tool.execution_metadata
+    assert "resolved_schema_url" not in tool.execution_metadata
+    assert "top-secret" not in tool.model_dump_json()
+
+
+
+@pytest.mark.asyncio
+async def test_adapter_error_redacts_source_query_secret() -> None:
+    class ExplodingAdapter:
+        kind = "explode"
+        priority = 1
+
+        async def load(self, context):
+            raise RuntimeError("adapter failure")
+
+    router = SchemaRouter()
+    router.register_adapter(ExplodingAdapter())
+    source = "https://docs.example.com/schema?token=top-secret"
+
+    with pytest.raises(SchemaSourceError) as exc_info:
+        await router.add_url(source, kind="explode")
+
+    message = str(exc_info.value)
+    assert "https://docs.example.com/schema" in message
+    assert "top-secret" not in message
+    assert "token=" not in message

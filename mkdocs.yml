@@ -98,6 +98,7 @@ nav:
       - What SchemaRouter is: concepts/schema-router.md
       - Tool and endpoint contracts: concepts/tool-endpoint.md
       - Planning and field projection: concepts/planning.md
+      - Field-first execution: concepts/field-first-execution.md
       - Registry and schema identity: concepts/registry.md
       - Execution and trust boundaries: concepts/execution.md
       - Adapter ecosystem: concepts/adapters.md
@@ -117,6 +118,7 @@ nav:
   - Runtime:
       - Batch, streaming, and events: guides/runtime.md
       - Execution policy: guides/execution-policy.md
+      - Provider-aware fallback: guides/provider-fallback.md
       - Schema drift analysis: guides/schema-drift.md
       - Retry policy: guides/retry.md
       - Trusted execution hooks: guides/execution-hooks.md

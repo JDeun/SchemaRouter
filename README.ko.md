@@ -39,6 +39,18 @@ Query
 LlamaIndex 또는 자체 orchestrator는 위에 두고, OpenAPI, MCP, OPTIMADE, Python callable,
 adapter plugin은 아래에 연결하는 **tool-schema boundary**입니다.
 
+### Field-first, route-second
+
+SchemaRouter는 먼저 **사용자 질문에 실제로 필요한 선언된 데이터 필드가 무엇인지**를
+결정한 뒤, 그 필드를 제공할 수 있는 provider/access path를 선택합니다. endpoint가
+server-side projection을 명시적으로 지원하면 계획된 필드만 upstream에 요청하고, raw
+schema 검증 후 final local projection을 다시 적용해 provider가 더 넓은 payload를 보내도
+downstream LLM context에는 필요한 데이터만 남깁니다.
+
+가용성 문제는 route를 바꿀 수 있지만 data need 자체를 넓히지는 않습니다. 미리 컴파일된
+read-only fallback은 같은 provider의 다른 access mode로 우회하고, 명시적으로 허용한
+경우에만 다른 provider로 넘어갑니다. runtime에서 agent식 자율 재탐색은 하지 않습니다.
+
 ```text
 Agent / graph / application orchestrator
                  |
@@ -158,7 +170,9 @@ parameter/output field 수, schema fingerprint를 확인할 수 있고, trace �
 - exact fingerprint 차단은 유지하면서 변경 원인을 설명하는 보수적 schema diff;
 - operation 단위의 로컬 allow/deny/approval policy rule;
 - SchemaRouter가 직접 관측 가능한 신호만 기록하는 구조화된 plan explanation;
-- 모든 call이 현재 시점에서 명시적 read-only일 때만 허용되는 flat parallel fan-out.
+- 모든 call이 현재 시점에서 명시적 read-only일 때만 허용되는 flat parallel fan-out;
+- provider/access identity, bounded read-only fallback, server-side field projection contract,
+  복구 가능한 access-path health state.
 
 DAG/workflow, memory, prompt system, autonomous tool loop는 계속 범위 밖에 둡니다.
 

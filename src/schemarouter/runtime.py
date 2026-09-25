@@ -15,8 +15,9 @@ from .adapters.mcp import MCPClientFactory
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
-from .errors import ProposalApprovalError, RegistrationError
+from .errors import InvocationUnavailableError, ProposalApprovalError, RegistrationError
 from .executor import ExecutionBudgetTracker, RegistryExecutor
+from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
 from .ingestion import SourceKind, URLSchemaLoader
 from .inspection import RouterInspection, inspect_router
@@ -99,15 +100,28 @@ class SchemaRouter:
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
+        unavailable_cooldown_seconds: float = 30.0,
     ) -> None:
         self.registry = registry if registry is not None else InMemoryRegistry()
-        self.planner = SchemaPlanner(self.registry, analyzer=analyzer)
         self.executor = RegistryExecutor(
             self.registry,
             policy=policy,
             approval_callback=approval_callback,
             hooks=execution_hooks,
+            unavailable_cooldown_seconds=unavailable_cooldown_seconds,
         )
+        self.planner = SchemaPlanner(
+            self.registry,
+            analyzer=analyzer,
+            availability_predicate=(
+                lambda tool, endpoint: self.executor.is_access_available_for_contract(
+                    tool.key,
+                    endpoint.name,
+                    tool.fingerprint,
+                )
+            ),
+        )
+        self.health_monitor = AccessHealthMonitor(self.executor)
         self.loader = URLSchemaLoader(
             self.registry,
             self.executor,
@@ -131,6 +145,66 @@ class SchemaRouter:
         """Return a privacy-safe live operational snapshot."""
         return inspect_router(self)
 
+    def mark_access_unavailable(
+        self,
+        tool_key: str,
+        endpoint: str,
+        *,
+        cooldown_seconds: float | None = None,
+    ) -> None:
+        """Mark one trusted access path temporarily unavailable."""
+
+        self.executor.mark_access_unavailable(
+            tool_key,
+            endpoint,
+            cooldown_seconds=cooldown_seconds,
+        )
+
+    def mark_access_available(self, tool_key: str, endpoint: str) -> None:
+        """Clear temporary unavailability for one trusted access path."""
+
+        self.executor.mark_access_available(tool_key, endpoint)
+
+    def unavailable_access_paths(self) -> tuple[tuple[str, str], ...]:
+        """Return access paths currently held in the bounded cooldown window."""
+
+        return self.executor.unavailable_access_paths()
+
+    def register_health_probe(
+        self,
+        tool_key: str,
+        endpoint: str,
+        probe: HealthProbe,
+    ) -> None:
+        """Register a trusted local health probe for one read-only access path."""
+
+        self.health_monitor.register(tool_key, endpoint, probe)
+
+    def unregister_health_probe(self, tool_key: str, endpoint: str) -> None:
+        self.health_monitor.unregister(tool_key, endpoint)
+
+    def health_snapshots(self) -> tuple[HealthProbeSnapshot, ...]:
+        return self.health_monitor.snapshots()
+
+    async def check_health_once(self) -> tuple[HealthProbeSnapshot, ...]:
+        return await self.health_monitor.run_once()
+
+    async def start_health_monitor(
+        self,
+        *,
+        interval_seconds: float = 30.0,
+        probe_timeout_seconds: float = 5.0,
+        max_concurrency: int = 4,
+    ) -> None:
+        await self.health_monitor.start(
+            interval_seconds=interval_seconds,
+            probe_timeout_seconds=probe_timeout_seconds,
+            max_concurrency=max_concurrency,
+        )
+
+    async def stop_health_monitor(self) -> None:
+        await self.health_monitor.stop()
+
     def with_config(
         self,
         config: RunConfig | dict[str, Any],
@@ -145,6 +219,8 @@ class SchemaRouter:
         kind: SourceKind = "auto",
         name: str | None = None,
         namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
         analyzer: QueryAnalyzer | None = None,
         http_client: httpx.AsyncClient | None = None,
         policy: ExecutionPolicy | None = None,
@@ -152,6 +228,7 @@ class SchemaRouter:
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
+        unavailable_cooldown_seconds: float = 30.0,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
@@ -169,12 +246,15 @@ class SchemaRouter:
             execution_hooks=execution_hooks,
             registry=registry,
             adapter_registry=adapter_registry,
+            unavailable_cooldown_seconds=unavailable_cooldown_seconds,
         )
         await router.add_url(
             url,
             kind=kind,
             name=name,
             namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
             base_url=base_url,
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
@@ -219,6 +299,8 @@ class SchemaRouter:
         *,
         name: str | None = None,
         namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
         description: str | None = None,
         read_only: bool | None = None,
         destructive: bool | None = None,
@@ -230,6 +312,12 @@ class SchemaRouter:
             name=name if name is not None else decorated.get("name"),
             namespace=(
                 namespace if namespace is not None else decorated.get("namespace")
+            ),
+            provider=(
+                provider if provider is not None else decorated.get("provider")
+            ),
+            access_mode=(
+                access_mode if access_mode is not None else decorated.get("access_mode")
             ),
             description=(
                 description if description is not None else decorated.get("description")
@@ -271,7 +359,7 @@ class SchemaRouter:
         timeout: float = 20.0,
     ) -> None:
         tool = self.registry.get(tool_key)
-        if tool.metadata.get("adapter") != "openapi":
+        if tool.execution_metadata.get("adapter") != "openapi":
             raise RegistrationError(
                 f"tool {tool_key!r} was not imported from OpenAPI"
             )
@@ -285,6 +373,13 @@ class SchemaRouter:
         except ValueError as exc:
             raise RegistrationError("invalid OpenAPI execution binding") from exc
         updated = tool.model_copy(deep=True)
+        updated.execution_metadata.update(
+            {
+                "execution_bound": True,
+                "approved_base_url": base_url,
+                "requires_explicit_base_url": False,
+            }
+        )
         updated.metadata.update(
             {
                 "execution_bound": True,
@@ -333,6 +428,12 @@ class SchemaRouter:
             )
 
         tool = proposal.tool.model_copy(deep=True)
+        tool.execution_metadata.update(
+            {
+                "executable": True,
+                "approved_base_url": base_url,
+            }
+        )
         tool.metadata.update(
             {
                 "approved_from_proposal": True,
@@ -361,6 +462,8 @@ class SchemaRouter:
         kind: SourceKind = "auto",
         name: str | None = None,
         namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
         replace: bool = False,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
@@ -377,6 +480,8 @@ class SchemaRouter:
             kind=kind,
             name=name,
             namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
             replace=replace,
             base_url=base_url,
             schema_headers=schema_headers,
@@ -610,6 +715,7 @@ class SchemaRouter:
 
         plan_data: dict[str, Any] = {
             "call_count": len(plan.calls),
+            "fallback_route_count": len(plan.fallback_routes),
             "warnings": list(plan.warnings),
             "execution_mode": run_config.execution_mode,
         }
@@ -647,26 +753,83 @@ class SchemaRouter:
             budget_tracker = ExecutionBudgetTracker(run_config.budget)
             semaphore = asyncio.Semaphore(run_config.max_parallel_calls)
             event_queue: asyncio.Queue[
-                tuple[str, int, ToolResult | Exception | None]
+                tuple[str, int, Any, Any]
             ] = asyncio.Queue()
 
             async def run_parallel_call(
                 index: int,
-                call: Any,
+                primary_call: Any,
             ) -> None:
                 async with semaphore:
-                    await event_queue.put(("start", index, None))
+                    route = plan.fallback_route(index)
+                    alternatives = route.alternatives if route is not None else []
+                    original_chain = [primary_call, *alternatives]
                     try:
-                        result = await self.executor.execute_call(
-                            call,
-                            retry=run_config.retry,
-                            budget=run_config.budget,
-                            _tracker=budget_tracker,
+                        chain = (
+                            self.executor.ordered_available_fallback_chain(
+                                primary_call,
+                                alternatives,
+                            )
+                            if alternatives
+                            else [primary_call]
                         )
                     except Exception as exc:
-                        await event_queue.put(("error", index, exc))
+                        await event_queue.put(
+                            ("preflight_error", index, primary_call, exc)
+                        )
                         return
-                    await event_queue.put(("end", index, result))
+
+                    if chain and chain[0] is not primary_call:
+                        await event_queue.put(
+                            (
+                                "cooldown_fallback",
+                                index,
+                                primary_call,
+                                (chain[0], original_chain, chain),
+                            )
+                        )
+
+                    for candidate_index, call in enumerate(chain):
+                        original_candidate_index = next(
+                            position
+                            for position, candidate in enumerate(original_chain)
+                            if candidate is call
+                        )
+                        await event_queue.put(
+                            ("start", index, call, original_candidate_index)
+                        )
+                        try:
+                            result = await self.executor.execute_call(
+                                call,
+                                retry=run_config.retry,
+                                budget=run_config.budget,
+                                _tracker=budget_tracker,
+                            )
+                        except InvocationUnavailableError as exc:
+                            has_next = candidate_index + 1 < len(chain)
+                            next_call = (
+                                chain[candidate_index + 1]
+                                if has_next
+                                else None
+                            )
+                            await event_queue.put(
+                                (
+                                    "unavailable",
+                                    index,
+                                    call,
+                                    (exc, next_call, original_candidate_index),
+                                )
+                            )
+                            if has_next:
+                                continue
+                            return
+                        except Exception as exc:
+                            await event_queue.put(("error", index, call, exc))
+                            return
+                        await event_queue.put(
+                            ("end", index, call, (result, original_candidate_index))
+                        )
+                        return
 
             tasks = [
                 asyncio.create_task(run_parallel_call(index, call))
@@ -674,16 +837,75 @@ class SchemaRouter:
             ]
 
             result_count = 0
+            fallback_count = 0
             terminal_count = 0
             try:
                 while terminal_count < len(tasks):
-                    kind, index, payload = await event_queue.get()
-                    call = plan.calls[index]
+                    kind, index, call, payload = await event_queue.get()
+
+                    if kind == "preflight_error":
+                        terminal_count += 1
+                        assert isinstance(payload, Exception)
+                        error_data: dict[str, Any] = {
+                            "error_type": type(payload).__name__,
+                            "stage": "execution",
+                            "phase": "fallback_preflight",
+                        }
+                        if run_config.include_payloads:
+                            error_data["message"] = str(payload)
+                        yield await emit(RunEvent.create(
+                            event="run.error",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            data=error_data,
+                        ))
+                        raise payload
+
+                    if kind == "cooldown_fallback":
+                        next_call, original_chain, available_chain = payload
+                        current_tool = self.registry.get(call.tool)
+                        next_tool = self.registry.get(next_call.tool)
+                        scope = (
+                            "same_provider"
+                            if current_tool.provider is not None
+                            and current_tool.provider == next_tool.provider
+                            else "cross_provider"
+                        )
+                        skipped = [
+                            f"{candidate.tool}.{candidate.endpoint}"
+                            for candidate in original_chain
+                            if candidate not in available_chain
+                        ]
+                        yield await emit(RunEvent.create(
+                            event="tool.fallback",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            tool=next_call.tool,
+                            endpoint=next_call.endpoint,
+                            data={
+                                "from_tool": call.tool,
+                                "from_endpoint": call.endpoint,
+                                "to_tool": next_call.tool,
+                                "to_endpoint": next_call.endpoint,
+                                "scope": scope,
+                                "provider": next_tool.provider,
+                                "access_mode": next_tool.access_mode,
+                                "reason": "cooldown",
+                                "skipped_unavailable": skipped,
+                            },
+                        ))
+                        sequence += 1
+                        fallback_count += 1
+                        continue
 
                     if kind == "start":
+                        candidate_index = int(payload)
                         start_data: dict[str, Any] = {
                             "argument_names": sorted(call.arguments),
                             "fields": list(call.fields),
+                            "fallback_candidate_index": candidate_index,
                         }
                         if run_config.include_payloads:
                             start_data["arguments"] = dict(call.arguments)
@@ -699,8 +921,73 @@ class SchemaRouter:
                         sequence += 1
                         continue
 
-                    terminal_count += 1
+                    if kind == "unavailable":
+                        exc, next_call, candidate_index = payload
+                        assert isinstance(exc, InvocationUnavailableError)
+                        has_next = next_call is not None
+                        error_data: dict[str, Any] = {
+                            "error_type": type(exc).__name__,
+                            "fallback_eligible": has_next,
+                        }
+                        if run_config.include_payloads:
+                            error_data["message"] = str(exc)
+                        yield await emit(RunEvent.create(
+                            event="tool.error",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            tool=call.tool,
+                            endpoint=call.endpoint,
+                            data=error_data,
+                        ))
+                        sequence += 1
+
+                        if not has_next:
+                            terminal_count += 1
+                            yield await emit(RunEvent.create(
+                                event="run.error",
+                                run_id=run_id,
+                                sequence=sequence,
+                                config=run_config,
+                                data={
+                                    "error_type": type(exc).__name__,
+                                    "stage": "execution",
+                                },
+                            ))
+                            raise exc
+
+                        current_tool = self.registry.get(call.tool)
+                        next_tool = self.registry.get(next_call.tool)
+                        scope = (
+                            "same_provider"
+                            if current_tool.provider is not None
+                            and current_tool.provider == next_tool.provider
+                            else "cross_provider"
+                        )
+                        yield await emit(RunEvent.create(
+                            event="tool.fallback",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            tool=next_call.tool,
+                            endpoint=next_call.endpoint,
+                            data={
+                                "from_tool": call.tool,
+                                "from_endpoint": call.endpoint,
+                                "to_tool": next_call.tool,
+                                "to_endpoint": next_call.endpoint,
+                                "scope": scope,
+                                "provider": next_tool.provider,
+                                "access_mode": next_tool.access_mode,
+                                "fallback_candidate_index": candidate_index + 1,
+                            },
+                        ))
+                        sequence += 1
+                        fallback_count += 1
+                        continue
+
                     if kind == "error":
+                        terminal_count += 1
                         assert isinstance(payload, Exception)
                         error_data = {"error_type": type(payload).__name__}
                         if run_config.include_payloads:
@@ -727,21 +1014,26 @@ class SchemaRouter:
                         ))
                         raise payload
 
-                    if kind != "end" or not isinstance(payload, ToolResult):
+                    if kind != "end":
                         raise RuntimeError("invalid parallel execution event")
 
+                    terminal_count += 1
+                    result, candidate_index = payload
+                    if not isinstance(result, ToolResult):
+                        raise RuntimeError("invalid parallel execution result")
                     end_data: dict[str, Any] = {
-                        "projected_fields": list(payload.projected_fields),
+                        "projected_fields": list(result.projected_fields),
+                        "fallback_used": candidate_index > 0,
                     }
                     if run_config.include_payloads:
-                        end_data["result"] = payload.model_dump(mode="json")
+                        end_data["result"] = result.model_dump(mode="json")
                     yield await emit(RunEvent.create(
                         event="tool.end",
                         run_id=run_id,
                         sequence=sequence,
                         config=run_config,
-                        tool=payload.tool,
-                        endpoint=payload.endpoint,
+                        tool=result.tool,
+                        endpoint=result.endpoint,
                         data=end_data,
                     ))
                     sequence += 1
@@ -758,86 +1050,234 @@ class SchemaRouter:
                 run_id=run_id,
                 sequence=sequence,
                 config=run_config,
-                data={"result_count": result_count},
+                data={
+                    "result_count": result_count,
+                    "fallback_count": fallback_count,
+                },
             ))
             return
 
         result_count = 0
+        fallback_count = 0
         budget_tracker = ExecutionBudgetTracker(run_config.budget)
-        for call in plan.calls:
-            start_data: dict[str, Any] = {
-                "argument_names": sorted(call.arguments),
-                "fields": list(call.fields),
-            }
-            if run_config.include_payloads:
-                start_data["arguments"] = dict(call.arguments)
-            yield await emit(RunEvent.create(
-                event="tool.start",
-                run_id=run_id,
-                sequence=sequence,
-                config=run_config,
-                tool=call.tool,
-                endpoint=call.endpoint,
-                data=start_data,
-            ))
-            sequence += 1
+        for primary_index, primary_call in enumerate(plan.calls):
+            route = plan.fallback_route(primary_index)
+            alternatives = route.alternatives if route is not None else []
+            original_chain = [primary_call, *alternatives]
+            result: ToolResult | None = None
 
             try:
-                result = await self.executor.execute_call(
-                    call,
-                    retry=run_config.retry,
-                    budget=run_config.budget,
-                    _tracker=budget_tracker,
+                chain = (
+                    self.executor.ordered_available_fallback_chain(
+                        primary_call,
+                        alternatives,
+                    )
+                    if alternatives
+                    else [primary_call]
                 )
             except Exception as exc:
-                error_data = {"error_type": type(exc).__name__}
+                error_data: dict[str, Any] = {
+                    "error_type": type(exc).__name__,
+                    "stage": "execution",
+                    "phase": "fallback_preflight",
+                }
                 if run_config.include_payloads:
                     error_data["message"] = str(exc)
-                yield await emit(RunEvent.create(
-                    event="tool.error",
-                    run_id=run_id,
-                    sequence=sequence,
-                    config=run_config,
-                    tool=call.tool,
-                    endpoint=call.endpoint,
-                    data=error_data,
-                ))
-                sequence += 1
                 yield await emit(RunEvent.create(
                     event="run.error",
                     run_id=run_id,
                     sequence=sequence,
                     config=run_config,
-                    data={
-                        "error_type": type(exc).__name__,
-                        "stage": "execution",
-                    },
+                    data=error_data,
                 ))
                 raise
 
-            end_data: dict[str, Any] = {
-                "projected_fields": list(result.projected_fields),
-            }
-            if run_config.include_payloads:
-                end_data["result"] = result.model_dump(mode="json")
-            yield await emit(RunEvent.create(
-                event="tool.end",
-                run_id=run_id,
-                sequence=sequence,
-                config=run_config,
-                tool=result.tool,
-                endpoint=result.endpoint,
-                data=end_data,
-            ))
-            sequence += 1
-            result_count += 1
+            if chain and chain[0] is not primary_call:
+                next_call = chain[0]
+                next_tool = self.registry.get(next_call.tool)
+                current_tool = self.registry.get(primary_call.tool)
+                scope = (
+                    "same_provider"
+                    if current_tool.provider is not None
+                    and current_tool.provider == next_tool.provider
+                    else "cross_provider"
+                )
+                skipped = [
+                    f"{call.tool}.{call.endpoint}"
+                    for call in original_chain
+                    if call not in chain
+                ]
+                yield await emit(RunEvent.create(
+                    event="tool.fallback",
+                    run_id=run_id,
+                    sequence=sequence,
+                    config=run_config,
+                    tool=next_call.tool,
+                    endpoint=next_call.endpoint,
+                    data={
+                        "from_tool": primary_call.tool,
+                        "from_endpoint": primary_call.endpoint,
+                        "to_tool": next_call.tool,
+                        "to_endpoint": next_call.endpoint,
+                        "scope": scope,
+                        "provider": next_tool.provider,
+                        "access_mode": next_tool.access_mode,
+                        "reason": "cooldown",
+                        "skipped_unavailable": skipped,
+                    },
+                ))
+                sequence += 1
+                fallback_count += 1
+
+            for candidate_index, call in enumerate(chain):
+                original_candidate_index = next(
+                    index
+                    for index, candidate in enumerate(original_chain)
+                    if candidate is call
+                )
+                start_data: dict[str, Any] = {
+                    "argument_names": sorted(call.arguments),
+                    "fields": list(call.fields),
+                    "fallback_candidate_index": original_candidate_index,
+                }
+                if run_config.include_payloads:
+                    start_data["arguments"] = dict(call.arguments)
+                yield await emit(RunEvent.create(
+                    event="tool.start",
+                    run_id=run_id,
+                    sequence=sequence,
+                    config=run_config,
+                    tool=call.tool,
+                    endpoint=call.endpoint,
+                    data=start_data,
+                ))
+                sequence += 1
+
+                try:
+                    result = await self.executor.execute_call(
+                        call,
+                        retry=run_config.retry,
+                        budget=run_config.budget,
+                        _tracker=budget_tracker,
+                    )
+                except InvocationUnavailableError as exc:
+                    has_next = candidate_index + 1 < len(chain)
+                    error_data: dict[str, Any] = {
+                        "error_type": type(exc).__name__,
+                        "fallback_eligible": has_next,
+                    }
+                    if run_config.include_payloads:
+                        error_data["message"] = str(exc)
+                    yield await emit(RunEvent.create(
+                        event="tool.error",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        tool=call.tool,
+                        endpoint=call.endpoint,
+                        data=error_data,
+                    ))
+                    sequence += 1
+
+                    if not has_next:
+                        yield await emit(RunEvent.create(
+                            event="run.error",
+                            run_id=run_id,
+                            sequence=sequence,
+                            config=run_config,
+                            data={
+                                "error_type": type(exc).__name__,
+                                "stage": "execution",
+                            },
+                        ))
+                        raise
+
+                    next_call = chain[candidate_index + 1]
+                    current_tool = self.registry.get(call.tool)
+                    next_tool = self.registry.get(next_call.tool)
+                    scope = (
+                        "same_provider"
+                        if current_tool.provider is not None
+                        and current_tool.provider == next_tool.provider
+                        else "cross_provider"
+                    )
+                    yield await emit(RunEvent.create(
+                        event="tool.fallback",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        tool=next_call.tool,
+                        endpoint=next_call.endpoint,
+                        data={
+                            "from_tool": call.tool,
+                            "from_endpoint": call.endpoint,
+                            "to_tool": next_call.tool,
+                            "to_endpoint": next_call.endpoint,
+                            "scope": scope,
+                            "provider": next_tool.provider,
+                            "access_mode": next_tool.access_mode,
+                        },
+                    ))
+                    sequence += 1
+                    fallback_count += 1
+                    continue
+                except Exception as exc:
+                    error_data = {"error_type": type(exc).__name__}
+                    if run_config.include_payloads:
+                        error_data["message"] = str(exc)
+                    yield await emit(RunEvent.create(
+                        event="tool.error",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        tool=call.tool,
+                        endpoint=call.endpoint,
+                        data=error_data,
+                    ))
+                    sequence += 1
+                    yield await emit(RunEvent.create(
+                        event="run.error",
+                        run_id=run_id,
+                        sequence=sequence,
+                        config=run_config,
+                        data={
+                            "error_type": type(exc).__name__,
+                            "stage": "execution",
+                        },
+                    ))
+                    raise
+
+                end_data: dict[str, Any] = {
+                    "projected_fields": list(result.projected_fields),
+                    "fallback_used": candidate_index > 0,
+                }
+                if run_config.include_payloads:
+                    end_data["result"] = result.model_dump(mode="json")
+                yield await emit(RunEvent.create(
+                    event="tool.end",
+                    run_id=run_id,
+                    sequence=sequence,
+                    config=run_config,
+                    tool=result.tool,
+                    endpoint=result.endpoint,
+                    data=end_data,
+                ))
+                sequence += 1
+                result_count += 1
+                break
+
+            if result is None:
+                raise RuntimeError("fallback chain produced no terminal result")
 
         yield await emit(RunEvent.create(
             event="run.end",
             run_id=run_id,
             sequence=sequence,
             config=run_config,
-            data={"result_count": result_count},
+            data={
+                "result_count": result_count,
+                "fallback_count": fallback_count,
+            },
         ))
 
     async def run(

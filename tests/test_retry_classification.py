@@ -30,6 +30,7 @@ def _executor_for(
         endpoint=endpoint.name,
         fields=list(fields or []),
         schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
     )
     executor = RegistryExecutor(registry)
     executor.bind(tool.key, invoker)

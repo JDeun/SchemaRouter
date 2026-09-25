@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 import re
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
 from typing import Protocol
 
@@ -14,6 +14,7 @@ from .models import (
     EndpointSpec,
     EvidenceRequirements,
     ExecutionPlan,
+    FallbackRoute,
     FieldSelectionExplanation,
     FieldSelectionReason,
     FieldSpec,
@@ -33,8 +34,60 @@ def _normalize(text: str) -> str:
     return "".join(ch.lower() for ch in text if ch.isalnum())
 
 
+def _semantic_substring_match(left: str, right: str) -> bool:
+    """Conservative containment for compound non-ASCII semantic labels.
+
+    Short ASCII tokens such as chemical symbols ("Si") must never match unrelated
+    field names such as "density" merely because the same letters occur inside them.
+    ASCII semantic matching is already handled by exact normalization and token overlap.
+    """
+
+    if not left or not right:
+        return False
+    if left.isascii() and right.isascii():
+        # Avoid accidental chemistry/token collisions such as "Si" inside "density"
+        # while preserving useful semantic compounds such as "conductivity" inside
+        # "thermalconductivity" or "elastic" inside "elasticmodulus".
+        if min(len(left), len(right)) < 4:
+            return False
+    elif min(len(left), len(right)) < 3:
+        return False
+    return left in right or right in left
+
+
+_KOREAN_PARTICLE_SUFFIXES = (
+    "에서",
+    "에게",
+    "으로",
+    "까지",
+    "부터",
+    "처럼",
+    "보다",
+    "을",
+    "를",
+    "이",
+    "가",
+    "은",
+    "는",
+    "의",
+    "에",
+    "로",
+    "와",
+    "과",
+)
+
+
 def _tokens(text: str) -> set[str]:
-    return {token.lower() for token in _TOKEN_RE.findall(text)}
+    tokens = {token.lower() for token in _TOKEN_RE.findall(text)}
+    expanded = set(tokens)
+    for token in tokens:
+        if not token or not all("가" <= char <= "힣" for char in token):
+            continue
+        for suffix in _KOREAN_PARTICLE_SUFFIXES:
+            if token.endswith(suffix) and len(token) > len(suffix) + 1:
+                expanded.add(token[: -len(suffix)])
+                break
+    return expanded
 
 
 class QueryAnalyzer(Protocol):
@@ -56,6 +109,13 @@ class KeywordAnalyzer:
             arguments=request.arguments,
             evidence=request.evidence,
         )
+
+
+@dataclass(frozen=True)
+class _FieldSemantic:
+    names: frozenset[str]
+    semantic_id: str | None
+    unit: str | None
 
 
 @dataclass(frozen=True)
@@ -113,6 +173,7 @@ class _CandidateIndex:
                 for field in endpoint.output_fields:
                     names = [
                         field.name,
+                        field.semantic_id or "",
                         *field.aliases,
                         ".".join(field.projection_path),
                     ]
@@ -164,7 +225,7 @@ class _CandidateIndex:
         if concept_norms:
             for norm, norm_refs in self._field_norm_refs.items():
                 if any(
-                    concept in norm or norm in concept
+                    _semantic_substring_match(concept, norm)
                     for concept in concept_norms
                 ):
                     refs.update(norm_refs)
@@ -183,12 +244,14 @@ class SchemaPlanner:
         decision_backend: DecisionBackend | None = None,
         decision_policy: DecisionPolicy | None = None,
         candidate_index: bool = True,
+        availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> None:
         self.registry = registry
         self.analyzer = analyzer or KeywordAnalyzer()
         self.decision_backend = decision_backend
         self.decision_policy = decision_policy or DecisionPolicy()
         self.candidate_index = candidate_index
+        self.availability_predicate = availability_predicate
         self._candidate_index: _CandidateIndex | None = None
         if self.decision_policy.enabled and self.decision_backend is None:
             raise PlanningError("decision policy is enabled but no decision backend is configured")
@@ -248,6 +311,13 @@ class SchemaPlanner:
                 for endpoint in tool.endpoints
             )
 
+        if self.availability_predicate is not None:
+            endpoint_pairs = tuple(
+                (tool, endpoint)
+                for tool, endpoint in endpoint_pairs
+                if self.availability_predicate(tool, endpoint)
+            )
+
         candidates = [
             self._score_endpoint(tool, endpoint, request.query, intent)
             for tool, endpoint in endpoint_pairs
@@ -261,10 +331,15 @@ class SchemaPlanner:
                 _Candidate(tool, endpoint, 0.0, ())
                 for tool in self.registry.tools()
                 for endpoint in tool.endpoints
+                if (
+                    self.availability_predicate is None
+                    or self.availability_predicate(tool, endpoint)
+                )
             ]
         candidates.sort(
             key=lambda candidate: (
                 -candidate.score,
+                candidate.endpoint.server_projection is None,
                 candidate.tool.key,
                 candidate.endpoint.name,
             )
@@ -763,6 +838,281 @@ class SchemaPlanner:
             return False, [f"{prefix}: evidence decision marked evidence insufficient"]
         raise PlanningError(f"{prefix}: unsupported evidence decision {option_id!r}")
 
+    @staticmethod
+    def _field_semantics(
+        endpoint: EndpointSpec,
+        field_names: list[str] | tuple[str, ...],
+    ) -> tuple[_FieldSemantic, ...]:
+        by_name = {field.name: field for field in endpoint.output_fields}
+        semantics: list[_FieldSemantic] = []
+        for name in field_names:
+            field = by_name.get(name)
+            if field is None or field.identifier:
+                continue
+            values = {
+                _normalize(value)
+                for value in [
+                    field.name,
+                    field.semantic_id or "",
+                    *field.aliases,
+                ]
+                if value and _normalize(value)
+            }
+            if not values:
+                continue
+            semantics.append(
+                _FieldSemantic(
+                    names=frozenset(values),
+                    semantic_id=(
+                        _normalize(field.semantic_id)
+                        if field.semantic_id
+                        else None
+                    ),
+                    unit=_normalize(field.unit) if field.unit else None,
+                )
+            )
+        return tuple(semantics)
+
+    @classmethod
+    def _fallback_semantics_compatible(
+        cls,
+        primary_candidate: _Candidate,
+        primary_call: ToolCall,
+        alternative_candidate: _Candidate,
+        alternative_call: ToolCall,
+    ) -> bool:
+        required = cls._field_semantics(
+            primary_candidate.endpoint,
+            tuple(primary_call.fields),
+        )
+        if not required:
+            return alternative_candidate.score > 0
+
+        available = cls._field_semantics(
+            alternative_candidate.endpoint,
+            alternative_call.fields,
+        )
+        if not available:
+            return False
+
+        for requirement in required:
+            matched = False
+            for candidate_field in available:
+                if requirement.semantic_id is not None:
+                    names_match = (
+                        candidate_field.semantic_id == requirement.semantic_id
+                    )
+                else:
+                    names_match = not requirement.names.isdisjoint(
+                        candidate_field.names
+                    )
+                if not names_match:
+                    continue
+
+                if requirement.unit is not None:
+                    if candidate_field.unit != requirement.unit:
+                        continue
+                matched = True
+                break
+
+            if not matched:
+                return False
+        return True
+
+    @staticmethod
+    def _ordered_fallback_candidates(
+        primary: _Candidate,
+        candidates: list[_Candidate],
+        *,
+        scope: str,
+    ) -> list[_Candidate]:
+        if scope == "disabled":
+            return []
+
+        distinct = [
+            candidate
+            for candidate in candidates
+            if (
+                candidate.tool.key,
+                candidate.endpoint.name,
+            )
+            != (
+                primary.tool.key,
+                primary.endpoint.name,
+            )
+        ]
+        provider = primary.tool.provider
+        if provider is None:
+            return []
+
+        same_provider = [
+            candidate
+            for candidate in distinct
+            if candidate.tool.provider == provider
+        ]
+        if scope == "same_provider":
+            return same_provider
+
+        other_provider = [
+            candidate
+            for candidate in distinct
+            if (
+                candidate.tool.provider is not None
+                and candidate.tool.provider != provider
+            )
+        ]
+        return [*same_provider, *other_provider]
+
+    def _compile_candidate_sync(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        candidate: _Candidate,
+        warnings: list[str],
+        *,
+        warn_ignored_arguments: bool = True,
+    ) -> ToolCall | None:
+        endpoint = candidate.endpoint
+        declared = {parameter.name: parameter for parameter in endpoint.parameters}
+        arguments = {
+            name: value
+            for name, value in intent.arguments.items()
+            if name in declared
+        }
+        dropped = sorted(set(intent.arguments) - set(arguments))
+        if dropped and warn_ignored_arguments:
+            warnings.append(
+                f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
+                + ", ".join(dropped)
+            )
+        missing = [
+            parameter.name
+            for parameter in endpoint.parameters
+            if parameter.required and parameter.name not in arguments
+        ]
+        deterministic_fields = self._project_fields(
+            endpoint,
+            intent,
+            candidate.matched_fields,
+        )
+        fields, field_warnings = self._select_fields_sync(
+            request,
+            candidate,
+            deterministic_fields,
+        )
+        warnings.extend(field_warnings)
+        evidence = self._evidence(
+            candidate.tool,
+            endpoint,
+            fields,
+            intent.evidence,
+        )
+        evidence_ok, evidence_warnings = self._assess_evidence_sync(
+            request,
+            candidate,
+            fields,
+            intent.evidence,
+        )
+        warnings.extend(evidence_warnings)
+        if not evidence_ok:
+            return None
+
+        return ToolCall(
+            tool=candidate.tool.key,
+            endpoint=endpoint.name,
+            arguments=arguments,
+            fields=fields,
+            evidence=evidence,
+            schema_fingerprint=endpoint.fingerprint,
+            tool_fingerprint=candidate.tool.fingerprint,
+            missing_required_arguments=missing,
+            score=candidate.score,
+            explanation=self._build_explanation(
+                candidate,
+                fields,
+                dropped,
+                field_decision_used=(
+                    self.decision_policy.field_selection_enabled
+                    and not field_warnings
+                ),
+            ),
+        )
+
+    async def _compile_candidate_async(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        candidate: _Candidate,
+        warnings: list[str],
+        *,
+        warn_ignored_arguments: bool = True,
+    ) -> ToolCall | None:
+        endpoint = candidate.endpoint
+        declared = {parameter.name: parameter for parameter in endpoint.parameters}
+        arguments = {
+            name: value
+            for name, value in intent.arguments.items()
+            if name in declared
+        }
+        dropped = sorted(set(intent.arguments) - set(arguments))
+        if dropped and warn_ignored_arguments:
+            warnings.append(
+                f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
+                + ", ".join(dropped)
+            )
+        missing = [
+            parameter.name
+            for parameter in endpoint.parameters
+            if parameter.required and parameter.name not in arguments
+        ]
+        deterministic_fields = self._project_fields(
+            endpoint,
+            intent,
+            candidate.matched_fields,
+        )
+        fields, field_warnings = await self._select_fields_async(
+            request,
+            candidate,
+            deterministic_fields,
+        )
+        warnings.extend(field_warnings)
+        evidence = self._evidence(
+            candidate.tool,
+            endpoint,
+            fields,
+            intent.evidence,
+        )
+        evidence_ok, evidence_warnings = await self._assess_evidence_async(
+            request,
+            candidate,
+            fields,
+            intent.evidence,
+        )
+        warnings.extend(evidence_warnings)
+        if not evidence_ok:
+            return None
+
+        return ToolCall(
+            tool=candidate.tool.key,
+            endpoint=endpoint.name,
+            arguments=arguments,
+            fields=fields,
+            evidence=evidence,
+            schema_fingerprint=endpoint.fingerprint,
+            tool_fingerprint=candidate.tool.fingerprint,
+            missing_required_arguments=missing,
+            score=candidate.score,
+            explanation=self._build_explanation(
+                candidate,
+                fields,
+                dropped,
+                field_decision_used=(
+                    self.decision_policy.field_selection_enabled
+                    and not field_warnings
+                ),
+            ),
+        )
+
     def _build_plan(
         self,
         request: PlanRequest,
@@ -771,8 +1121,11 @@ class SchemaPlanner:
         async_decision: bool,
     ) -> ExecutionPlan:
         del async_decision
-        candidates = self._candidates(request, intent)
-        candidates, decision_warnings = self._select_candidates_sync(request, candidates)
+        all_candidates = self._candidates(request, intent)
+        candidates, decision_warnings = self._select_candidates_sync(
+            request,
+            all_candidates,
+        )
 
         warnings: list[str] = list(decision_warnings)
         if not candidates:
@@ -783,79 +1136,65 @@ class SchemaPlanner:
                 warnings=[*warnings, "no schema candidate matched the request"],
             )
 
-        calls: list[ToolCall] = []
-        for candidate in candidates[: request.max_calls]:
-            endpoint = candidate.endpoint
-            declared = {parameter.name: parameter for parameter in endpoint.parameters}
-            arguments = {
-                name: value
-                for name, value in intent.arguments.items()
-                if name in declared
-            }
-            dropped = sorted(set(intent.arguments) - set(arguments))
-            if dropped:
-                warnings.append(
-                    f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
-                    + ", ".join(dropped)
-                )
-            missing = [
-                parameter.name
-                for parameter in endpoint.parameters
-                if parameter.required and parameter.name not in arguments
-            ]
-            deterministic_fields = self._project_fields(
-                endpoint,
+        primary_pairs: list[tuple[_Candidate, ToolCall]] = []
+        for candidate in candidates:
+            if len(primary_pairs) >= request.max_calls:
+                break
+            call = self._compile_candidate_sync(
+                request,
                 intent,
-                candidate.matched_fields,
-            )
-            fields, field_warnings = self._select_fields_sync(
-                request,
                 candidate,
-                deterministic_fields,
+                warnings,
             )
-            warnings.extend(field_warnings)
-            evidence = self._evidence(
-                candidate.tool,
-                endpoint,
-                fields,
-                intent.evidence,
-            )
-            evidence_ok, evidence_warnings = self._assess_evidence_sync(
-                request,
-                candidate,
-                fields,
-                intent.evidence,
-            )
-            warnings.extend(evidence_warnings)
-            if not evidence_ok:
-                continue
+            if call is not None:
+                primary_pairs.append((candidate, call))
 
-            calls.append(
-                ToolCall(
-                    tool=candidate.tool.key,
-                    endpoint=endpoint.name,
-                    arguments=arguments,
-                    fields=fields,
-                    evidence=evidence,
-                    schema_fingerprint=endpoint.fingerprint,
-                    missing_required_arguments=missing,
-                    score=candidate.score,
-                    explanation=self._build_explanation(
+        calls = [call for _, call in primary_pairs]
+        fallback_routes: list[FallbackRoute] = []
+        if request.fallback_scope != "disabled" and request.max_fallbacks > 0:
+            for index, (primary_candidate, primary_call) in enumerate(primary_pairs):
+                if primary_candidate.endpoint.read_only is not True:
+                    continue
+                alternatives: list[ToolCall] = []
+                for candidate in self._ordered_fallback_candidates(
+                    primary_candidate,
+                    all_candidates,
+                    scope=request.fallback_scope,
+                ):
+                    if len(alternatives) >= request.max_fallbacks:
+                        break
+                    if candidate.endpoint.read_only is not True:
+                        continue
+                    alternative = self._compile_candidate_sync(
+                        request,
+                        intent,
                         candidate,
-                        fields,
-                        dropped,
-                        field_decision_used=(
-                            self.decision_policy.field_selection_enabled
-                            and not field_warnings
-                        ),
-                    ),
-                )
-            )
+                        warnings,
+                        warn_ignored_arguments=False,
+                    )
+                    if alternative is None or not alternative.executable:
+                        continue
+                    if not self._fallback_semantics_compatible(
+                        primary_candidate,
+                        primary_call,
+                        candidate,
+                        alternative,
+                    ):
+                        continue
+                    alternatives.append(alternative)
+                if alternatives:
+                    fallback_routes.append(
+                        FallbackRoute(
+                            primary_call_index=index,
+                            alternatives=alternatives,
+                        )
+                    )
 
         return ExecutionPlan(
             query=request.query,
             registry_version=self.registry.version,
             calls=calls,
+            fallback_routes=fallback_routes,
             warnings=warnings,
         )
 
@@ -864,89 +1203,79 @@ class SchemaPlanner:
         request: PlanRequest,
         intent: QueryIntent,
     ) -> ExecutionPlan:
-        candidates = self._candidates(request, intent)
-        candidates, decision_warnings = await self._select_candidates_async(request, candidates)
+        all_candidates = self._candidates(request, intent)
+        candidates, decision_warnings = await self._select_candidates_async(
+            request,
+            all_candidates,
+        )
+        warnings = list(decision_warnings)
         if not candidates:
             return ExecutionPlan(
                 query=request.query,
                 registry_version=self.registry.version,
                 calls=[],
-                warnings=[*decision_warnings, "no schema candidate matched the request"],
+                warnings=[*warnings, "no schema candidate matched the request"],
             )
 
-        calls: list[ToolCall] = []
-        warnings = list(decision_warnings)
-        for candidate in candidates[: request.max_calls]:
-            endpoint = candidate.endpoint
-            declared = {parameter.name: parameter for parameter in endpoint.parameters}
-            arguments = {
-                name: value
-                for name, value in intent.arguments.items()
-                if name in declared
-            }
-            dropped = sorted(set(intent.arguments) - set(arguments))
-            if dropped:
-                warnings.append(
-                    f"{candidate.tool.key}.{endpoint.name}: ignored undeclared arguments: "
-                    + ", ".join(dropped)
-                )
-            missing = [
-                parameter.name
-                for parameter in endpoint.parameters
-                if parameter.required and parameter.name not in arguments
-            ]
-            deterministic_fields = self._project_fields(
-                endpoint,
+        primary_pairs: list[tuple[_Candidate, ToolCall]] = []
+        for candidate in candidates:
+            if len(primary_pairs) >= request.max_calls:
+                break
+            call = await self._compile_candidate_async(
+                request,
                 intent,
-                candidate.matched_fields,
-            )
-            fields, field_warnings = await self._select_fields_async(
-                request,
                 candidate,
-                deterministic_fields,
+                warnings,
             )
-            warnings.extend(field_warnings)
-            evidence = self._evidence(
-                candidate.tool,
-                endpoint,
-                fields,
-                intent.evidence,
-            )
-            evidence_ok, evidence_warnings = await self._assess_evidence_async(
-                request,
-                candidate,
-                fields,
-                intent.evidence,
-            )
-            warnings.extend(evidence_warnings)
-            if not evidence_ok:
-                continue
+            if call is not None:
+                primary_pairs.append((candidate, call))
 
-            calls.append(
-                ToolCall(
-                    tool=candidate.tool.key,
-                    endpoint=endpoint.name,
-                    arguments=arguments,
-                    fields=fields,
-                    evidence=evidence,
-                    schema_fingerprint=endpoint.fingerprint,
-                    missing_required_arguments=missing,
-                    score=candidate.score,
-                    explanation=self._build_explanation(
+        calls = [call for _, call in primary_pairs]
+        fallback_routes: list[FallbackRoute] = []
+        if request.fallback_scope != "disabled" and request.max_fallbacks > 0:
+            for index, (primary_candidate, primary_call) in enumerate(primary_pairs):
+                if primary_candidate.endpoint.read_only is not True:
+                    continue
+                alternatives: list[ToolCall] = []
+                for candidate in self._ordered_fallback_candidates(
+                    primary_candidate,
+                    all_candidates,
+                    scope=request.fallback_scope,
+                ):
+                    if len(alternatives) >= request.max_fallbacks:
+                        break
+                    if candidate.endpoint.read_only is not True:
+                        continue
+                    alternative = await self._compile_candidate_async(
+                        request,
+                        intent,
                         candidate,
-                        fields,
-                        dropped,
-                        field_decision_used=(
-                            self.decision_policy.field_selection_enabled
-                            and not field_warnings
-                        ),
-                    ),
-                )
-            )
+                        warnings,
+                        warn_ignored_arguments=False,
+                    )
+                    if alternative is None or not alternative.executable:
+                        continue
+                    if not self._fallback_semantics_compatible(
+                        primary_candidate,
+                        primary_call,
+                        candidate,
+                        alternative,
+                    ):
+                        continue
+                    alternatives.append(alternative)
+                if alternatives:
+                    fallback_routes.append(
+                        FallbackRoute(
+                            primary_call_index=index,
+                            alternatives=alternatives,
+                        )
+                    )
+
         return ExecutionPlan(
             query=request.query,
             registry_version=self.registry.version,
             calls=calls,
+            fallback_routes=fallback_routes,
             warnings=warnings,
         )
 
@@ -1029,6 +1358,7 @@ class SchemaPlanner:
         for field in endpoint.output_fields:
             names = [
                 field.name,
+                field.semantic_id or "",
                 *field.aliases,
                 ".".join(field.projection_path),
             ]
@@ -1036,7 +1366,7 @@ class SchemaPlanner:
             exact = bool(norms & concept_norms)
             lexical = any(query_tokens & _tokens(name) for name in names)
             substring = any(
-                concept and norm and (concept in norm or norm in concept)
+                _semantic_substring_match(concept, norm)
                 for concept in concept_norms
                 for norm in norms
             )

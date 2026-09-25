@@ -7,8 +7,15 @@ from urllib.parse import quote, urljoin, urlparse
 
 import httpx
 
-from ..errors import NonRetryableInvocationError, SchemaSourceError
-from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
+from ..errors import InvocationUnavailableError, NonRetryableInvocationError, SchemaSourceError
+from ..models import (
+    EndpointSpec,
+    FieldSpec,
+    ParameterSpec,
+    ServerProjectionSpec,
+    ToolCall,
+    ToolSpec,
+)
 from .base import AdapterContext, AdapterLoadResult
 
 _MAX_DISCOVERY_BYTES = 2 * 1024 * 1024
@@ -378,6 +385,14 @@ def _tool_from_discovery(
                     path=f"/{safe_entry_type}",
                     read_only=True,
                     destructive=False,
+                    server_projection=ServerProjectionSpec(
+                        parameter="response_fields",
+                    ),
+                    execution_metadata={
+                        "entry_type": entry_type,
+                        "mode": "search",
+                        "field_projection": "response_fields",
+                    },
                     metadata={
                         "entry_type": entry_type,
                         "mode": "search",
@@ -403,6 +418,14 @@ def _tool_from_discovery(
                     path=f"/{safe_entry_type}/{{id}}",
                     read_only=True,
                     destructive=False,
+                    server_projection=ServerProjectionSpec(
+                        parameter="response_fields",
+                    ),
+                    execution_metadata={
+                        "entry_type": entry_type,
+                        "mode": "get",
+                        "field_projection": "response_fields",
+                    },
                     metadata={
                         "entry_type": entry_type,
                         "mode": "get",
@@ -424,6 +447,11 @@ def _tool_from_discovery(
         description="OPTIMADE interoperable materials database",
         endpoints=endpoints,
         source_type="optimade",
+        execution_metadata={
+            "adapter": "optimade",
+            "versioned_base_url": versioned_base_url,
+            "api_version": base_info.get("api_version"),
+        },
         metadata={
             "adapter": "optimade",
             "remote": True,
@@ -568,8 +596,10 @@ class OPTIMADERemoteInvoker:
 
     async def invoke_call(self, call: ToolCall) -> Any:
         endpoint = self.tool.endpoint(call.endpoint)
-        entry_type = _validate_entry_type(str(endpoint.metadata["entry_type"]))
-        mode = str(endpoint.metadata["mode"])
+        entry_type = _validate_entry_type(
+            str(endpoint.execution_metadata["entry_type"])
+        )
+        mode = str(endpoint.execution_metadata["mode"])
 
         arguments = dict(call.arguments)
         query = {
@@ -577,13 +607,19 @@ class OPTIMADERemoteInvoker:
             for key, value in arguments.items()
             if key != "id"
         }
-        selected_fields = [
-            field
-            for field in call.fields
-            if field not in {"id", "type"}
+        field_specs = {field.name: field for field in endpoint.output_fields}
+        projection = endpoint.server_projection
+        selected_wire_fields = [
+            (
+                projection.selector_for(field_specs[field_name])
+                if projection is not None and field_name in field_specs
+                else field_name
+            )
+            for field_name in call.fields
+            if field_name not in {"id", "type"}
         ]
-        if selected_fields:
-            query["response_fields"] = ",".join(selected_fields)
+        if selected_wire_fields:
+            query["response_fields"] = ",".join(selected_wire_fields)
         if mode == "search":
             query.setdefault("page_limit", 20)
             url = f"{self.base_url}/{entry_type}"
@@ -617,7 +653,14 @@ class OPTIMADERemoteInvoker:
                         "OPTIMADE request failed with non-retryable HTTP status "
                         f"{exc.response.status_code}"
                     ) from exc
-                raise
+                raise InvocationUnavailableError(
+                    "OPTIMADE access path is temporarily unavailable with HTTP status "
+                    f"{exc.response.status_code}"
+                ) from exc
+            except (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError) as exc:
+                raise InvocationUnavailableError(
+                    "OPTIMADE access path is temporarily unavailable"
+                ) from exc
             except SchemaSourceError as exc:
                 raise NonRetryableInvocationError(
                     "OPTIMADE runtime response violated the transport safety contract"
@@ -640,7 +683,7 @@ class OPTIMADERemoteInvoker:
                     "OPTIMADE listing response must contain a data list"
                 )
             return [
-                self._flatten_entry(item, call.fields)
+                self._flatten_entry(item, call.fields, endpoint)
                 for item in data
             ]
 
@@ -648,34 +691,50 @@ class OPTIMADERemoteInvoker:
             raise NonRetryableInvocationError(
                 "OPTIMADE single-entry response must contain a data object"
             )
-        return self._flatten_entry(data, call.fields)
+        return self._flatten_entry(data, call.fields, endpoint)
 
     @staticmethod
-    def _flatten_entry(item: Any, fields: list[str]) -> dict[str, Any]:
+    def _flatten_entry(
+        item: Any,
+        fields: list[str],
+        endpoint: EndpointSpec,
+    ) -> dict[str, Any]:
         if not isinstance(item, dict):
             raise NonRetryableInvocationError("OPTIMADE entry must be an object")
         attributes = item.get("attributes")
         if not isinstance(attributes, dict):
             attributes = {}
 
-        value: dict[str, Any] = {
+        raw: dict[str, Any] = {
             "id": item.get("id"),
             "type": item.get("type"),
             **attributes,
         }
-        requested = set(fields)
-        missing = sorted(
-            field
-            for field in requested
-            if field not in value
-        )
+        if not fields:
+            return raw
+
+        field_specs = {field.name: field for field in endpoint.output_fields}
+        projection = endpoint.server_projection
+        projected: dict[str, Any] = {}
+        missing: list[str] = []
+        for field_name in fields:
+            if field_name in {"id", "type"}:
+                wire_name = field_name
+            else:
+                field_spec = field_specs.get(field_name)
+                wire_name = (
+                    projection.selector_for(field_spec)
+                    if projection is not None and field_spec is not None
+                    else field_name
+                )
+            if wire_name not in raw:
+                missing.append(field_name)
+                continue
+            projected[field_name] = raw[wire_name]
+
         if missing:
             raise NonRetryableInvocationError(
                 "OPTIMADE provider omitted requested response fields: "
-                + ", ".join(missing)
+                + ", ".join(sorted(missing))
             )
-        if not requested:
-            return value
-
-        keep = requested | {"id", "type"}
-        return {key: value[key] for key in value if key in keep}
+        return projected

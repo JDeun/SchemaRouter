@@ -88,10 +88,45 @@ run.start
 plan.end
 tool.start
 tool.end | tool.error
+tool.fallback  # only after an explicitly unavailable precompiled read-only route
 run.end  | run.error
 ```
 
 All events in one invocation share a `run_id` and monotonic `sequence`.
+
+Provider/access fallback uses the same event stream and never performs open-ended replanning. See
+[Provider-aware fallback](provider-fallback.md).
+
+## Access health and recovery
+
+A transport route that exhausts retry with an `InvocationUnavailableError` enters a finite
+process-local cooldown. It is automatically eligible again when that cooldown expires.
+
+For faster recovery, register a trusted probe for an explicitly read-only path:
+
+```python
+router.register_health_probe(
+    "mp_optimade",
+    "search_structures",
+    mp_optimade_health,
+)
+
+await router.start_health_monitor(
+    interval_seconds=30,
+    probe_timeout_seconds=5,
+)
+
+# during shutdown
+await router.stop_health_monitor()
+```
+
+Probe success immediately reopens the path; probe failure only extends the bounded cooldown.
+SchemaRouter never invents probes from remote metadata and never lets model output modify health
+state. Applications with an external service-health system can instead call
+`mark_access_unavailable()` / `mark_access_available()` directly.
+
+Live `router.inspect()` exposes current cooldown paths, probe status, and whether the monitor is
+running. Static SQLite registry inspection cannot report process-local health state.
 
 ## Payload redaction
 

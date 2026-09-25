@@ -6,11 +6,12 @@ from typing import Any
 
 from pydantic import Field
 
+from ._url_safety import safe_provenance_url
 from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry
 from .traces import RunTrace, RunTraceStore
 
-_PROVENANCE_KEYS = (
+_EXECUTION_PROVENANCE_KEYS = (
     "adapter",
     "source_url",
     "resolved_schema_url",
@@ -19,24 +20,52 @@ _PROVENANCE_KEYS = (
     "versioned_base_url",
     "api_version",
     "protocol_version",
-    "remote",
     "execution_bound",
     "requires_explicit_base_url",
+    "authenticated_transport",
+)
+_URL_PROVENANCE_KEYS = {
+    "approved_base_url",
+    "resolved_schema_url",
+    "source_url",
+    "suggested_base_url",
+    "versioned_base_url",
+}
+
+
+def _safe_provenance_value(key: str, value: object) -> object:
+    if key not in _URL_PROVENANCE_KEYS or not isinstance(value, str):
+        return value
+    return safe_provenance_url(value)
+
+
+_DESCRIPTIVE_PROVENANCE_KEYS = (
+    "source_url",
+    "resolved_schema_url",
+    "suggested_base_url",
     "external_refs_enabled",
     "same_document_refs_normalized",
     "external_ref_documents_resolved",
     "external_ref_bytes_fetched",
     "external_ref_limits",
-    "authenticated_transport",
 )
 
 
 def _provenance(tool: ToolSpec) -> dict[str, object]:
-    return {
-        key: tool.metadata[key]
-        for key in _PROVENANCE_KEYS
+    provenance: dict[str, object] = {
+        key: _safe_provenance_value(key, tool.metadata[key])
+        for key in _DESCRIPTIVE_PROVENANCE_KEYS
         if key in tool.metadata
     }
+    provenance.update(
+        {
+            key: _safe_provenance_value(key, tool.execution_metadata[key])
+            for key in _EXECUTION_PROVENANCE_KEYS
+            if key in tool.execution_metadata
+        }
+    )
+    provenance["remote"] = tool.remote
+    return provenance
 
 
 class EndpointInspection(StrictModel):
@@ -62,6 +91,8 @@ class ToolInspection(StrictModel):
     description: str = ""
     source_type: str | None = None
     license: str | None = None
+    provider: str | None = None
+    access_mode: str | None = None
     endpoint_count: int = Field(ge=0)
     fingerprint: str
     provenance: dict[str, object] = Field(default_factory=dict)
@@ -88,11 +119,24 @@ class PlannerInspection(StrictModel):
     decision_policy: dict[str, object] = Field(default_factory=dict)
 
 
+class HealthProbeInspection(StrictModel):
+    """Privacy-safe view of one registered access-path health probe."""
+
+    tool: str
+    endpoint: str
+    status: str
+    last_checked_at: datetime.datetime | None = None
+    last_error_type: str | None = None
+
+
 class ExecutionInspection(StrictModel):
-    """Privacy-safe view of live execution authority and bindings."""
+    """Privacy-safe view of live execution authority, bindings, and access health."""
 
     policy: dict[str, object] = Field(default_factory=dict)
     bound_tools: list[str] = Field(default_factory=list)
+    unavailable_access_paths: list[str] = Field(default_factory=list)
+    health_monitor_running: bool = False
+    health_probes: list[HealthProbeInspection] = Field(default_factory=list)
 
 
 class RouterInspection(StrictModel):
@@ -141,6 +185,8 @@ def inspect_tool_spec(tool: ToolSpec) -> ToolInspection:
         description=tool.description,
         source_type=tool.source_type,
         license=tool.license,
+        provider=tool.provider,
+        access_mode=tool.access_mode,
         endpoint_count=len(endpoints),
         fingerprint=tool.fingerprint,
         provenance=_provenance(tool),
@@ -185,6 +231,21 @@ def inspect_router(router: Any) -> RouterInspection:
         execution=ExecutionInspection(
             policy=asdict(router.executor.policy),
             bound_tools=list(router.executor.bound_keys()),
+            unavailable_access_paths=[
+                f"{tool}.{endpoint}"
+                for tool, endpoint in router.executor.unavailable_access_paths()
+            ],
+            health_monitor_running=router.health_monitor.running,
+            health_probes=[
+                HealthProbeInspection(
+                    tool=snapshot.tool,
+                    endpoint=snapshot.endpoint,
+                    status=snapshot.status,
+                    last_checked_at=snapshot.last_checked_at,
+                    last_error_type=snapshot.last_error_type,
+                )
+                for snapshot in router.health_monitor.snapshots()
+            ],
         ),
     )
 
@@ -251,6 +312,8 @@ def tool_spec_document(tool: ToolSpec) -> dict[str, object]:
         "description": tool.description,
         "source_type": tool.source_type,
         "license": tool.license,
+        "provider": tool.provider,
+        "access_mode": tool.access_mode,
         "fingerprint": tool.fingerprint,
         "provenance": _provenance(tool),
         "endpoints": [
