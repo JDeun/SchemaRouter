@@ -325,9 +325,15 @@ Live inspection exposes both health and binding readiness:
 snapshot = router.inspect()
 print(snapshot.execution.binding_states)
 # {"mp_api": "ready", "mp_optimade": "unbound"}
+# other possible states: "stale", "orphaned"
 
 print(snapshot.execution.unavailable_access_paths)
 # ["mp_api.search"]  # only when a bounded health cooldown is active
 ```
 
 This prevents a healthy-but-unbound route from being confused with a network outage.
+
+
+An `orphaned` binding means a trusted invoker object still exists locally after the corresponding
+registry tool was removed. It cannot execute because registry validation happens first, but exposing
+the state makes cleanup/misconfiguration visible instead of presenting it as a healthy bound tool.
