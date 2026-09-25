@@ -94,6 +94,12 @@ SchemaRouter never guesses that a generic OpenAPI parameter means field projecti
 must be declared locally or by a trusted adapter. OPTIMADE's `response_fields` is a built-in
 example.
 
+For explicit provider source paths such as `elasticity.bulk_modulus`, projected raw-schema
+validation can narrow nested **object-only** paths recursively. A root array whose items are objects
+is also supported. Paths that require traversing an array, unresolved `$ref`, unions, or another
+shape that cannot be narrowed conservatively keep the full declared schema and therefore fail
+closed rather than weakening validation.
+
 ### 2. Final local projection
 
 Even when an upstream service ignores or cannot perform server-side projection, SchemaRouter
