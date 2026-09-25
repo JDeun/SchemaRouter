@@ -561,3 +561,5 @@ class ToolResult(StrictModel):
     endpoint: str
     data: Any
     projected_fields: list[str] = Field(default_factory=list)
+    field_types: dict[str, str] = Field(default_factory=dict)
+    field_units: dict[str, str] = Field(default_factory=dict)
