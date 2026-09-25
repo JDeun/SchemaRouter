@@ -245,6 +245,7 @@ class ResultFieldContract(StrictModel):
     source_unit: str | None = None
     unit: str | None = None
     dimension: str | None = None
+    qualifiers: dict[str, str] = Field(default_factory=dict)
 
 
 class FieldSpec(StrictModel):
@@ -257,6 +258,7 @@ class FieldSpec(StrictModel):
     result_path: list[str] = Field(default_factory=list)
     unit: str | None = None
     unit_normalization: UnitNormalizationSpec | None = None
+    qualifiers: dict[str, str] = Field(default_factory=dict)
     identifier: bool = False
     source_type: str | None = None
     license: str | None = None
@@ -274,6 +276,15 @@ class FieldSpec(StrictModel):
                 raise ValueError("field unit must be non-empty when provided")
             if self.unit != self.unit.strip():
                 raise ValueError("field unit must not have surrounding whitespace")
+        for key, value in self.qualifiers.items():
+            if not key or key != key.strip():
+                raise ValueError(
+                    "field qualifier keys must be non-empty and have no surrounding whitespace"
+                )
+            if not value or value != value.strip():
+                raise ValueError(
+                    "field qualifier values must be non-empty and have no surrounding whitespace"
+                )
         if self.unit_normalization is not None and self.unit is None:
             raise ValueError(
                 "unit_normalization requires the provider source unit in field.unit"
