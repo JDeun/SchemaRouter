@@ -460,3 +460,44 @@ def test_live_inspection_reports_orphaned_binding_after_registry_removal() -> No
     html = render_dashboard(snapshot.registry, live=snapshot)
     assert "Binding states" in html
     assert "orphaned" in html
+
+
+
+def test_registry_inspection_exposes_field_types_and_optional_units() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="mixed_data",
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="abstract",
+                            semantic_id="abstract_text",
+                            json_schema={"type": "string"},
+                            unit=None,
+                        ),
+                        FieldSpec(
+                            name="elastic_modulus",
+                            semantic_id="elastic_modulus",
+                            json_schema={"type": "number"},
+                            unit="GPa",
+                        ),
+                    ],
+                )
+            ],
+        )
+    )
+
+    snapshot = inspect_registry(registry)
+    fields = {
+        field.name: field
+        for field in snapshot.tools[0].endpoints[0].fields
+    }
+
+    assert fields["abstract"].json_types == ["string"]
+    assert fields["abstract"].unit is None
+    assert fields["elastic_modulus"].json_types == ["number"]
+    assert fields["elastic_modulus"].unit == "GPa"
