@@ -938,6 +938,31 @@ async def test_provider_source_path_is_canonicalized_before_unit_normalization()
 
 
 
+@pytest.mark.parametrize(
+    "json_schema",
+    [
+        {"type": "string"},
+        {"type": "boolean"},
+        {"type": "object"},
+        {"type": "array", "items": {"type": "string"}},
+        {"type": "number"},
+        {"type": "integer"},
+    ],
+)
+def test_unitless_field_supports_general_json_value_shapes(
+    json_schema: dict[str, object],
+) -> None:
+    field = FieldSpec(
+        name="value",
+        semantic_id="generic_value",
+        json_schema=json_schema,
+    )
+
+    assert field.unit is None
+    assert field.unit_normalization is None
+    assert field.json_schema == json_schema
+
+
 def test_text_field_accepts_explicit_string_type_without_unit() -> None:
     field = FieldSpec(
         name="abstract",

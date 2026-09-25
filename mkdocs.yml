@@ -96,6 +96,7 @@ nav:
       - Choose an ingestion path: getting-started/ingestion-paths.md
   - Concepts:
       - What SchemaRouter is: concepts/schema-router.md
+      - Design principles: concepts/design-principles.md
       - Tool and endpoint contracts: concepts/tool-endpoint.md
       - Planning and field projection: concepts/planning.md
       - Field-first execution: concepts/field-first-execution.md

@@ -55,6 +55,70 @@ source path can still be projected into `result_path=["elastic_modulus"]`, so th
 
 The model does not get to invent field mappings.
 
+## Unit metadata is optional by field semantics
+
+`FieldSpec.unit` is a general optional contract, not an arXiv/Web special case.
+
+A field should carry a unit only when the value is a physical or otherwise explicitly unit-bearing
+quantity. Unitless fields can come from any provider or access mode:
+
+```text
+paper abstract / title / snippet   -> string, unit=None
+material identifier / DOI         -> string, unit=None
+phase / category / label          -> string, unit=None
+flags                             -> boolean, unit=None
+structured metadata              -> object/array, unit=None
+dimensionless score or ratio      -> number, unit=None
+physical quantity                 -> number/array, unit="..." when declared
+```
+
+Therefore OpenAPI, MCP, OPTIMADE, Python, documentation-derived adapters, or any approved plugin
+can expose unitless fields. The source type does not decide whether a unit exists; the field
+contract does.
+
+If a caller explicitly sets `EvidenceRequirements(units=True)`, unitless answer fields cannot
+satisfy that particular evidence requirement. That is different from saying unitless fields are
+invalid.
+
+## Heterogeneous multi-source field requirements
+
+One user question can require fields that no single endpoint provides. SchemaRouter can compile a
+bounded multi-call plan when the caller explicitly allows more than one call with `max_calls`.
+
+For example:
+
+```text
+query need
+  -> band_gap
+       -> Materials Project / OpenAPI
+       -> Materials Project / OPTIMADE
+  -> abstract
+       -> arXiv / API
+```
+
+With `max_calls=2`, multi-call planning prefers **complementary semantic field coverage** over
+spending both call slots on equivalent access paths for the same already-covered field. Equivalent
+routes collapse through `semantic_id`; an exact qualifier such as `temperature=300 K` remains a
+separate requirement only when that qualifier is visibly requested.
+
+```python
+plan = router.plan(
+    PlanRequest(
+        query="band gap and paper abstract",
+        max_calls=2,
+    )
+)
+```
+
+The hard bound remains `max_calls`; SchemaRouter never increases it automatically and may use fewer
+calls when one route already covers the remaining semantic field requirements. The default is `1`,
+so multi-source fan-out is an explicit cost/authority choice by the application.
+
+Each call still receives its own field projection, schema fingerprint, provider/access identity,
+health/binding checks, policy checks, and fallback chain. If all calls are explicitly read-only,
+the executor can use the bounded `parallel_read_only` execution surface; otherwise normal
+execution remains sequential and policy-gated.
+
 ## Two layers of projection
 
 SchemaRouter minimizes data at two different boundaries.
