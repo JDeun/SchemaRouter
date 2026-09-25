@@ -172,7 +172,13 @@ parameter/output field 수, schema fingerprint를 확인할 수 있고, trace �
 - SchemaRouter가 직접 관측 가능한 신호만 기록하는 구조화된 plan explanation;
 - 모든 call이 현재 시점에서 명시적 read-only일 때만 허용되는 flat parallel fan-out;
 - provider/access identity, bounded read-only fallback, server-side field projection contract,
-  복구 가능한 access-path health state.
+  복구 가능한 access-path health state;
+- 명시적 JSON datatype, optional unit metadata, canonical affine unit normalization, 그리고
+  temperature/phase/orientation/method 같은 exact qualifier를 갖는 typed scientific result contract;
+- 쿼리에 조건이 명시된 경우 동일한 scientific field를 qualifier로 구분하되 unit conversion이나
+  과학적 추론은 수행하지 않는 qualifier-aware routing;
+- 동일한 논리 인자를 provider별 로컬 parameter 이름으로 안전하게 연결하는 trusted
+  parameter alias.
 
 DAG/workflow, memory, prompt system, autonomous tool loop는 계속 범위 밖에 둡니다.
 
