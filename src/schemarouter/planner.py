@@ -4,7 +4,7 @@ import inspect
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
-from typing import Protocol
+from typing import Any, Protocol
 
 from .decision_policy import DecisionPolicy
 from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
@@ -978,10 +978,10 @@ class SchemaPlanner:
     @staticmethod
     def _resolve_arguments(
         endpoint: EndpointSpec,
-        supplied: dict[str, object],
-    ) -> tuple[dict[str, object], list[str], list[str]]:
+        supplied: dict[str, Any],
+    ) -> tuple[dict[str, Any], list[str], list[str]]:
         declared = {parameter.name: parameter for parameter in endpoint.parameters}
-        arguments: dict[str, object] = {}
+        arguments: dict[str, Any] = {}
         consumed: set[str] = set()
         ambiguous: list[str] = []
 
