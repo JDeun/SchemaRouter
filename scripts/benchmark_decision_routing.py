@@ -26,7 +26,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from schemarouter import (
+from schemarouter import (  # noqa: E402
     DecisionPolicy,
     EmbeddingDecisionBackend,
     EndpointSpec,
@@ -36,8 +36,12 @@ from schemarouter import (
     SchemaPlanner,
     ToolSpec,
 )
-from schemarouter.analyzers import ModelQueryAnalyzer
-from schemarouter.integrations import JevDecisionBackend, LayaDecisionBackend, OllamaDecisionBackend
+from schemarouter.analyzers import ModelQueryAnalyzer  # noqa: E402
+from schemarouter.integrations import (  # noqa: E402
+    JevDecisionBackend,
+    LayaDecisionBackend,
+    OllamaDecisionBackend,
+)
 
 
 @dataclass(frozen=True)
