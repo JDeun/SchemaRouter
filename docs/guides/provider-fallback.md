@@ -337,3 +337,22 @@ This prevents a healthy-but-unbound route from being confused with a network out
 An `orphaned` binding means a trusted invoker object still exists locally after the corresponding
 registry tool was removed. It cannot execute because registry validation happens first, but exposing
 the state makes cleanup/misconfiguration visible instead of presenting it as a healthy bound tool.
+
+
+## Prefer executable routes before fallback
+
+Fallback remains a runtime safety net for failures that appear after planning. Live execution should
+not deliberately choose a route that is already known to be locally unbound.
+
+For that reason, SchemaRouter execution-facing APIs plan with both:
+
+```text
+access-health eligible
+AND
+current trusted binding ready
+```
+
+A route that is healthy but unbound can still appear in schema-only `router.plan()`, but it is
+excluded from `router.plan_executable()` and normal `invoke/stream` planning. If binding state
+changes after a plan was compiled, executor-level binding-aware fallback remains the second line of
+defense.
