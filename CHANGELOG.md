@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- trusted `ParameterSpec.aliases` routing that copies argument values unchanged across provider-specific
+  local parameter names, with exact-name precedence, ambiguity fail-closed behavior, candidate-index
+  support, and independent fallback compilation per access contract;
 - conservative schema-drift analysis for trusted `EndpointSpec` / `ToolSpec` snapshots, including
   additive/breaking/security-review classification, security-sensitive HTTP method and side-effect
   changes, and `schemarouter inspect diff` for persisted SQLite registries; compatibility reports
