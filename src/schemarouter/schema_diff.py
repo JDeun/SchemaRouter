@@ -248,6 +248,18 @@ def _compare_field(
                 else None
             ),
         )
+    if old.dimensionless != new.dimensionless:
+        _change(
+            changes,
+            path=f"{prefix}.dimensionless",
+            kind="dimensionless_changed",
+            severity="breaking",
+            old=old.dimensionless,
+            new=new.dimensionless,
+            message=(
+                "Dimensionless semantics changed and may alter scientific fallback compatibility."
+            ),
+        )
     if old.identifier != new.identifier:
         _change(
             changes,
