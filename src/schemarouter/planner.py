@@ -162,6 +162,7 @@ class KeywordAnalyzer:
             preferred_tools=request.preferred_tools,
             arguments=request.arguments,
             evidence=request.evidence,
+            field_evidence=request.field_evidence,
         )
 
 
