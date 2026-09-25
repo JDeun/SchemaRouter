@@ -185,6 +185,29 @@ class EndpointSpec(StrictModel):
         if len(fnames) != len(set(fnames)):
             raise ValueError(f"duplicate output field name in endpoint {self.name!r}")
 
+        if self.server_projection is not None:
+            unknown_projection_fields = sorted(
+                set(self.server_projection.field_map) - set(fnames)
+            )
+            if unknown_projection_fields:
+                raise ValueError(
+                    "server projection field_map contains undeclared output fields in endpoint "
+                    f"{self.name!r}: " + ", ".join(unknown_projection_fields)
+                )
+
+            projection_parameter = self.server_projection.parameter
+            conflicting_parameters = [
+                parameter
+                for parameter in self.parameters
+                if (parameter.wire_name or parameter.name) == projection_parameter
+                and parameter.location != "query"
+            ]
+            if conflicting_parameters:
+                raise ValueError(
+                    "server projection parameter conflicts with a non-query parameter in endpoint "
+                    f"{self.name!r}: {projection_parameter!r}"
+                )
+
         paths = [(field.name, field.projection_path) for field in self.output_fields]
         if len({path for _, path in paths}) != len(paths):
             raise ValueError(f"duplicate output field path in endpoint {self.name!r}")
