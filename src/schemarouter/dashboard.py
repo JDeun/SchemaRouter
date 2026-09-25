@@ -161,6 +161,7 @@ def render_dashboard(
 <div class="live-grid">
 <div><strong>Analyzer</strong><br>{escape(live.planner.analyzer)}</div>
 <div><strong>Decision backend</strong><br>{escape(live.planner.decision_backend or "none")}</div>
+<div><strong>Candidate recall</strong><br>{escape(live.planner.candidate_recall_backend or "none")} (top {live.planner.candidate_recall_limit})</div>
 <div><strong>Bound tools</strong><br>{escape(", ".join(live.execution.bound_tools) or "none")}</div>
 <div><strong>Binding states</strong><br><code>{escape(binding_states or "none")}</code></div>
 <div><strong>Unavailable paths</strong><br>{escape(unavailable or "none")}</div>
