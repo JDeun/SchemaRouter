@@ -34,9 +34,9 @@ from .policy import ApprovalCallback, ExecutionPolicy, is_remote_tool
 from .registry import ToolRegistry
 from .runs import ExecutionBudget, RetryPolicy
 from .validation import (
+    canonical_field_value_schema,
     effective_input_schema,
     effective_output_schema,
-    canonical_field_value_schema,
     json_schema_types,
     projected_output_schema,
     validate_json_schema_value,
