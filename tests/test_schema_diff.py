@@ -5,6 +5,7 @@ from schemarouter import (
     FieldSpec,
     ParameterSpec,
     ToolSpec,
+    UnitTransformSpec,
     compare_endpoint_specs,
     compare_tool_specs,
 )
@@ -461,3 +462,74 @@ def test_provider_route_identity_drift_requires_security_review(
         and change.severity == "security"
         for change in report.changes
     )
+
+
+
+def test_field_unit_normalization_change_is_breaking() -> None:
+    old = endpoint(
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                semantic_id="elastic_modulus",
+                json_schema={"type": "number"},
+                unit="Pa",
+                unit_transform=UnitTransformSpec(
+                    target_unit="GPa",
+                    scale=1e-9,
+                ),
+            )
+        ]
+    )
+    new = endpoint(
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                semantic_id="elastic_modulus",
+                json_schema={"type": "number"},
+                unit="Pa",
+                unit_transform=UnitTransformSpec(
+                    target_unit="MPa",
+                    scale=1e-6,
+                ),
+            )
+        ]
+    )
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "breaking"
+    assert any(
+        change.kind == "unit_transform_changed"
+        and change.severity == "breaking"
+        for change in report.changes
+    )
+
+
+def test_field_semantic_id_and_result_path_changes_are_breaking() -> None:
+    old = endpoint(
+        output_fields=[
+            FieldSpec(
+                name="value",
+                semantic_id="elastic_modulus",
+                path=["raw_value"],
+                result_path=["elastic_modulus"],
+            )
+        ]
+    )
+    new = endpoint(
+        output_fields=[
+            FieldSpec(
+                name="value",
+                semantic_id="bulk_modulus",
+                path=["raw_value"],
+                result_path=["bulk_modulus"],
+            )
+        ]
+    )
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "breaking"
+    kinds = {change.kind for change in report.changes}
+    assert "semantic_id_changed" in kinds
+    assert "result_path_changed" in kinds
