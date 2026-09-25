@@ -516,3 +516,44 @@ async def test_unit_normalization_overflow_fails_closed() -> None:
 
     with pytest.raises(SchemaValidationError, match="non-finite|overflow"):
         await executor.execute_call(call)
+
+
+
+@pytest.mark.asyncio
+async def test_nullable_numeric_unit_value_remains_null() -> None:
+    field = FieldSpec(
+        name="elastic_modulus",
+        semantic_id="elastic_modulus",
+        json_schema={"type": ["number", "null"]},
+        unit="GPa",
+        unit_normalization=UnitNormalizationSpec(
+            dimension="pressure",
+            canonical_unit="Pa",
+            scale=1e9,
+        ),
+    )
+    endpoint = EndpointSpec(
+        name="read",
+        read_only=True,
+        output_fields=[field],
+    )
+    tool = ToolSpec(name="nullable_materials", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool="nullable_materials",
+        endpoint="read",
+        fields=["elastic_modulus"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    executor = RegistryExecutor(registry)
+    executor.bind(
+        "nullable_materials",
+        lambda endpoint_name, arguments: {"elastic_modulus": None},
+    )
+
+    result = await executor.execute_call(call)
+
+    assert result.data == {"elastic_modulus": None}
+    assert result.field_contracts["elastic_modulus"].unit == "Pa"
