@@ -37,6 +37,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - field-first execution documentation that formalizes query -> required logical fields ->
   provider/access selection -> upstream projection -> validated minimal `ToolResult` as a core
   architectural principle;
+- typed scientific field contracts with conservative JSON value-shape fallback compatibility,
+  case-sensitive source units, explicit affine `UnitNormalizationSpec` conversion into canonical
+  units, numeric-array support, and compact `ToolResult.field_contracts` metadata;
 
 - self-contained HTML summaries for the decision-routing benchmark, alongside the existing JSON/CSV
   outputs, with escaped metadata and no remote assets;
@@ -107,6 +110,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Security
 
+- scientific fallback now rejects known datatype mismatches, missing/asymmetric unit contracts,
+  incompatible physical dimensions/canonical units, non-numeric unit-bearing fields, and
+  non-finite/overflowing unit normalization results;
 - optional read-only fallback routes that are removed, schema-drifted, policy-invalid, unbound, or
   stale-bound are pruned before invocation instead of blocking a still-valid primary, while primary
   schema/policy violations and currently valid mutating fallback contracts remain fail-closed;
