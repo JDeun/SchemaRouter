@@ -475,3 +475,172 @@ async def test_list_response_projection_removes_unselected_fields_from_every_ite
         {"elastic_modulus": 130.0},
         {"elastic_modulus": 75.0},
     ]
+
+
+
+@pytest.mark.asyncio
+async def test_nested_server_projection_validates_only_selected_object_path() -> None:
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen["fields"] = request.url.params.get("fields")
+        return httpx.Response(
+            200,
+            json={
+                "elasticity": {
+                    "bulk_modulus": 130.0,
+                }
+            },
+            request=request,
+        )
+
+    endpoint = EndpointSpec(
+        name="search",
+        method="GET",
+        path="/materials",
+        read_only=True,
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                semantic_id="elastic_modulus",
+                path=["elasticity", "bulk_modulus"],
+                result_path=["elastic_modulus"],
+                unit="GPa",
+            ),
+            FieldSpec(
+                name="shear_modulus",
+                path=["elasticity", "shear_modulus"],
+                result_path=["shear_modulus"],
+                unit="GPa",
+            ),
+            FieldSpec(name="density"),
+        ],
+        output_schema={
+            "type": "object",
+            "properties": {
+                "elasticity": {
+                    "type": "object",
+                    "properties": {
+                        "bulk_modulus": {"type": "number"},
+                        "shear_modulus": {"type": "number"},
+                    },
+                    "required": ["bulk_modulus", "shear_modulus"],
+                    "additionalProperties": False,
+                },
+                "density": {"type": "number"},
+            },
+            "required": ["elasticity", "density"],
+            "additionalProperties": False,
+        },
+        server_projection=ServerProjectionSpec(
+            parameter="fields",
+            field_map={
+                "elastic_modulus": "elasticity.bulk_modulus",
+                "shear_modulus": "elasticity.shear_modulus",
+            },
+        ),
+    )
+    tool = ToolSpec(name="nested_materials", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool="nested_materials",
+        endpoint="search",
+        fields=["elastic_modulus"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        executor = RegistryExecutor(registry)
+        executor.bind(
+            "nested_materials",
+            OpenAPIRemoteInvoker(
+                tool,
+                "https://api.example.test",
+                http_client=client,
+            ),
+        )
+        result = await executor.execute_call(call)
+
+    assert seen["fields"] == "elasticity.bulk_modulus"
+    assert result.data == {"elastic_modulus": 130.0}
+
+
+@pytest.mark.asyncio
+async def test_nested_server_projection_supports_root_array_of_objects() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json=[
+                {"elasticity": {"bulk_modulus": 130.0}},
+                {"elasticity": {"bulk_modulus": 75.0}},
+            ],
+            request=request,
+        )
+
+    endpoint = EndpointSpec(
+        name="search",
+        method="GET",
+        path="/materials",
+        read_only=True,
+        output_fields=[
+            FieldSpec(
+                name="elastic_modulus",
+                path=["elasticity", "bulk_modulus"],
+                result_path=["elastic_modulus"],
+            ),
+            FieldSpec(name="density"),
+        ],
+        output_schema={
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "elasticity": {
+                        "type": "object",
+                        "properties": {
+                            "bulk_modulus": {"type": "number"},
+                            "shear_modulus": {"type": "number"},
+                        },
+                        "required": ["bulk_modulus", "shear_modulus"],
+                    },
+                    "density": {"type": "number"},
+                },
+                "required": ["elasticity", "density"],
+            },
+        },
+        server_projection=ServerProjectionSpec(
+            parameter="fields",
+            field_map={
+                "elastic_modulus": "elasticity.bulk_modulus",
+            },
+        ),
+    )
+    tool = ToolSpec(name="nested_array_materials", endpoints=[endpoint])
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    call = ToolCall(
+        tool="nested_array_materials",
+        endpoint="search",
+        fields=["elastic_modulus"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        executor = RegistryExecutor(registry)
+        executor.bind(
+            "nested_array_materials",
+            OpenAPIRemoteInvoker(
+                tool,
+                "https://api.example.test",
+                http_client=client,
+            ),
+        )
+        result = await executor.execute_call(call)
+
+    assert result.data == [
+        {"elastic_modulus": 130.0},
+        {"elastic_modulus": 75.0},
+    ]
