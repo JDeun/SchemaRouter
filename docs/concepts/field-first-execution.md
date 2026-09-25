@@ -160,3 +160,81 @@ ambiguous semantic need -> preserve recall
 
 Applications that need stronger domain-specific minimization should improve local aliases/schemas or
 use a bounded analyzer rather than weakening validation.
+
+
+## Typed scientific fields and units
+
+Field selection is not only about names. Scientific fallbacks must preserve the value contract.
+
+`FieldSpec.json_schema` carries the declared value type/shape and `FieldSpec.unit` carries the
+provider source unit. When providers use different units for the same semantic field, applications
+can add an explicit `UnitNormalizationSpec`:
+
+```python
+FieldSpec(
+    name="elastic_modulus",
+    semantic_id="elastic_modulus",
+    json_schema={"type": "number"},
+    unit="GPa",
+    unit_normalization=UnitNormalizationSpec(
+        dimension="pressure",
+        canonical_unit="Pa",
+        scale=1e9,
+    ),
+)
+```
+
+SchemaRouter does **not** infer conversion factors from unit strings. Unit symbols are
+case-/punctuation-sensitive and the conversion contract is trusted local configuration.
+
+Fallback compatibility is conservative:
+
+```text
+same semantic field
+  AND compatible JSON value type
+  AND (
+        same explicit source unit
+        OR same declared dimension + same canonical unit
+      )
+```
+
+Numeric type compatibility is directional: an integer-producing fallback can satisfy a numeric
+requirement, but an arbitrary number-producing fallback cannot satisfy an integer-only requirement.
+Numeric arrays also compare their item types.
+
+Execution order remains fail-closed:
+
+```text
+provider raw value
+  -> raw JSON Schema validation
+  -> field projection / canonical result path
+  -> explicit unit normalization
+  -> ToolResult
+```
+
+This means a provider returning `"130"` for a numeric GPa field fails before conversion.
+
+`ToolResult.field_contracts` exposes only the selected field contracts needed downstream:
+
+```python
+result.field_contracts["elastic_modulus"]
+# ResultFieldContract(
+#     semantic_id="elastic_modulus",
+#     json_schema={"type": "number"},
+#     source_unit="GPa",
+#     unit="Pa",
+#     dimension="pressure",
+# )
+```
+
+So answer-generation code can consume a compact canonical value plus the unit/type contract without
+pulling unrelated provider metadata into context.
+
+Affine conversions are supported explicitly:
+
+```text
+canonical_value = source_value * scale + offset
+```
+
+This covers SI-prefix scaling and offset units when the application declares the exact conversion.
+Non-finite/overflowed normalized values fail closed.
