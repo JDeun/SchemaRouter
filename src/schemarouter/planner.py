@@ -978,6 +978,43 @@ class SchemaPlanner:
             or requested.source_type
         )
 
+    @classmethod
+    def _field_evidence_request_active(
+        cls,
+        requested: dict[str, EvidenceRequirements],
+    ) -> bool:
+        return any(
+            cls._evidence_request_active(requirement)
+            for requirement in requested.values()
+        )
+
+    @staticmethod
+    def _matched_field_evidence(
+        candidate: _Candidate,
+        selected_fields: list[str],
+        requested: dict[str, EvidenceRequirements],
+    ) -> dict[str, tuple[str, EvidenceRequirements]]:
+        """Map trusted semantic evidence requirements onto selected local fields."""
+
+        requested_by_semantic = {
+            _normalize(semantic_id): (semantic_id, requirement)
+            for semantic_id, requirement in requested.items()
+        }
+        field_map = {
+            field.name: field
+            for field in candidate.endpoint.output_fields
+        }
+        matched: dict[str, tuple[str, EvidenceRequirements]] = {}
+        for field_name in selected_fields:
+            field = field_map.get(field_name)
+            if field is None or field.identifier:
+                continue
+            semantic = _normalize(field.semantic_id or field.name)
+            item = requested_by_semantic.get(semantic)
+            if item is not None:
+                matched[field_name] = item
+        return matched
+
     @staticmethod
     def _local_evidence_status(
         candidate: _Candidate,
@@ -1041,6 +1078,82 @@ class SchemaPlanner:
             },
         }
         return not missing, context, missing
+
+    @classmethod
+    def _local_field_evidence_status(
+        cls,
+        candidate: _Candidate,
+        selected_fields: list[str],
+        requested: dict[str, EvidenceRequirements],
+    ) -> tuple[
+        bool,
+        dict[str, object],
+        list[str],
+        dict[str, tuple[str, EvidenceRequirements]],
+    ]:
+        matched = cls._matched_field_evidence(
+            candidate,
+            selected_fields,
+            requested,
+        )
+        if not matched:
+            return True, {}, [], {}
+
+        field_map = {
+            field.name: field
+            for field in candidate.endpoint.output_fields
+        }
+        available_context: dict[str, object] = {}
+        requested_context: dict[str, object] = {}
+        missing: list[str] = []
+
+        for field_name, (semantic_id, requirement) in matched.items():
+            field = field_map[field_name]
+            provenance_available = bool(
+                candidate.tool.source_type or field.source_type
+            )
+            license_available = bool(
+                candidate.tool.license or field.license
+            )
+            units_available = bool(field.unit)
+            source_type_available = (
+                requirement.source_type is None
+                or candidate.tool.source_type == requirement.source_type
+                or field.source_type == requirement.source_type
+            )
+
+            requested_context[semantic_id] = requirement.model_dump(mode="json")
+            available_context[semantic_id] = {
+                "field": field_name,
+                "provenance": provenance_available,
+                "license": license_available,
+                "units": units_available,
+                "source_type": source_type_available,
+            }
+
+            if requirement.provenance and not provenance_available:
+                missing.append(f"{semantic_id}.provenance")
+            if requirement.license and not license_available:
+                missing.append(f"{semantic_id}.license")
+            if requirement.units and not units_available:
+                missing.append(f"{semantic_id}.units")
+            if (
+                requirement.source_type is not None
+                and not source_type_available
+            ):
+                missing.append(
+                    f"{semantic_id}.source_type={requirement.source_type}"
+                )
+
+        return (
+            not missing,
+            {
+                "field_requested": requested_context,
+                "field_available": available_context,
+            },
+            missing,
+            matched,
+        )
 
     @staticmethod
     def _evidence_decision_request(
