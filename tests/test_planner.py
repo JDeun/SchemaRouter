@@ -1106,6 +1106,46 @@ def test_fallback_accepts_integer_when_primary_contract_accepts_number() -> None
     assert plan.fallback_route(0) is not None
 
 
+def test_fallback_rejects_unit_transformed_integer_when_primary_requires_integer() -> None:
+    reg = InMemoryRegistry()
+    reg.register(
+        _semantic_provider_tool(
+            "provider_a",
+            provider="a",
+            access_mode="openapi",
+            field_name="elasticity_value",
+            semantic_id="elastic_modulus",
+            unit="GPa",
+            json_schema={"type": "integer"},
+        )
+    )
+    reg.register(
+        _semantic_provider_tool(
+            "provider_b",
+            provider="b",
+            access_mode="optimade",
+            field_name="_b_emod",
+            semantic_id="elastic_modulus",
+            unit="Pa",
+            json_schema={"type": "integer"},
+            unit_transform=UnitTransformSpec(
+                target_unit="GPa",
+                scale=1e-9,
+            ),
+        )
+    )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="elastic modulus",
+            preferred_tools=["provider_a"],
+            fallback_scope="cross_provider",
+        )
+    )
+
+    assert plan.fallback_routes == []
+
+
 def test_semantic_id_takes_precedence_over_lexical_alias_overlap() -> None:
     primary = ToolSpec(
         name="primary",
