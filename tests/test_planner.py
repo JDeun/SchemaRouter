@@ -2683,6 +2683,7 @@ def test_operation_fit_gate_sees_only_primary_tool_operations() -> None:
 
     def fit(request):
         seen["context"] = request.context
+        seen["ids"] = [option.id for option in request.options]
         seen["labels"] = [option.label for option in request.options]
         seen["descriptions"] = [option.description for option in request.options]
         return {"selections": [{"option_id": request.options[0].id}]}
@@ -2698,15 +2699,14 @@ def test_operation_fit_gate_sees_only_primary_tool_operations() -> None:
         "tool": "inventory",
     }
     assert set(seen["labels"]) == {"search", "update"}
+    assert len(seen["ids"]) == len(set(seen["ids"])) == 8
+    assert all(option_id.count(":") == 2 for option_id in seen["ids"])
     assert all("inventory" not in label for label in seen["labels"])
-    assert any(
-        "Operation aliases: find stock; check quantity" in description
-        for description in seen["descriptions"]
+    assert {"find stock", "check quantity", "change quantity", "set stock count"} <= set(
+        seen["descriptions"]
     )
-    assert any(
-        "Operation aliases: change quantity; set stock count" in description
-        for description in seen["descriptions"]
-    )
+    assert all("Operation class:" not in description for description in seen["descriptions"])
+    assert all("HTTP method:" not in description for description in seen["descriptions"])
     assert all("Fields:" not in description for description in seen["descriptions"])
     assert all(
         "Inventory lookup and stock update operations" not in description
