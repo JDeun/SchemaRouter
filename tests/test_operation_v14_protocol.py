@@ -8,7 +8,7 @@ CASCADE_CYCLE = ROOT / "benchmarks" / "operation-fit-0.10-cascade-cycle.json"
 CASCADE_WORKFLOW = ROOT / ".github" / "workflows" / "research-operation-cascade.yml"
 
 
-def test_v14_protocol_is_reserved_before_cascade_implementation() -> None:
+def test_v14_protocol_is_retired_without_generation_after_calibration_rejection() -> None:
     v13 = json.loads(V13_PROTOCOL.read_text(encoding="utf-8"))
     v14 = json.loads(V14_PROTOCOL.read_text(encoding="utf-8"))
     cycle = json.loads(CASCADE_CYCLE.read_text(encoding="utf-8"))
@@ -16,26 +16,23 @@ def test_v14_protocol_is_reserved_before_cascade_implementation() -> None:
     assert v13["status"] == "consumed_blind_final"
     assert v13["tuning_eligible"] is False
 
-    assert v14["status"] == "protocol_reserved_not_generated"
+    assert v14["status"] == "retired_without_generation"
     assert v14["corpus_exists"] is False
     assert v14["tuning_eligible"] is False
+    assert v14["execution_performed"] is False
     assert v14["cycle"] == "0.10-operation-cascade-v2"
-    assert v14["selection_policy"]["candidate_selection_data"] == "v5 development split only"
-    assert v14["selection_policy"]["candidate_confirmation_data"] == (
-        "v5 calibration split only after candidate freeze"
-    )
-    assert v14["selection_policy"]["supported_operation_floor"] == 0.60
-    assert v14["selection_policy"]["near_domain_unsupported_rejection_floor"] == 0.95
 
-    assert cycle["status"] == "candidate_selected_and_frozen_before_calibration"
+    assert cycle["status"] == "calibration_rejected"
     assert cycle["selection"]["split"] == "dev"
     assert len(cycle["selection"]["candidate_grid"]) == 6
     assert cycle["confirmation"]["split"] == "calibration"
+    assert cycle["confirmation"]["quality_floors_passed"] is False
+    assert cycle["confirmation"]["latency_requirement_passed"] is True
     assert cycle["blind_final"]["corpus_exists"] is False
-    assert cycle["blind_final"]["run_allowed_only_after_candidate_freeze"] is True
+    assert cycle["blind_final"]["status"] == "blocked_candidate_rejected_at_calibration"
 
 
-def test_v14_has_no_checked_in_corpus_or_workflow_path() -> None:
+def test_v14_has_no_checked_in_corpus_or_one_shot_workflow_path() -> None:
     assert not (
         ROOT / "benchmarks" / "decision-routing-v14-operation-cascade-holdout.json"
     ).exists()
@@ -45,6 +42,7 @@ def test_v14_has_no_checked_in_corpus_or_workflow_path() -> None:
         for path in sorted((ROOT / ".github" / "workflows").glob("*.yml"))
     )
     assert "decision-routing-v14-operation-cascade-holdout.json" not in workflows
+    assert "research-operation-cascade-calibration-once.yml" not in workflows
 
 
 def test_cascade_dev_workflow_is_v5_dev_only() -> None:
