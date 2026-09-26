@@ -15,6 +15,7 @@ CORPUS_V7 = ROOT / "benchmarks" / "decision-routing-v7-operation-post-change-hol
 CORPUS_V8 = ROOT / "benchmarks" / "decision-routing-v8-operation-alias-holdout.json"
 CORPUS_V9 = ROOT / "benchmarks" / "decision-routing-v9-operation-alias-holdout.json"
 CORPUS_V10 = ROOT / "benchmarks" / "decision-routing-v10-operation-generalization-holdout.json"
+CORPUS_V11 = ROOT / "benchmarks" / "decision-routing-v11-operation-generalization-holdout.json"
 GENERATOR_V2 = ROOT / "scripts" / "generate_decision_routing_v2.py"
 GENERATOR_V3 = ROOT / "scripts" / "generate_decision_routing_v3.py"
 SCRIPT = ROOT / "scripts" / "benchmark_decision_routing.py"
@@ -958,3 +959,35 @@ def test_benchmark_summary_counts_failure_stages() -> None:
         "candidate_recall": 1,
         "operation_fit": 1,
     }
+
+
+def test_v11_generalization_holdout_is_reserved_balanced_and_nonoverlapping() -> None:
+    cases = json.loads(CORPUS_V11.read_text(encoding="utf-8"))
+    prior_cases = []
+    for path in (CORPUS_V5, CORPUS_V6, CORPUS_V7, CORPUS_V8, CORPUS_V9, CORPUS_V10):
+        prior_cases.extend(json.loads(path.read_text(encoding="utf-8")))
+
+    assert len(cases) == 600
+    assert len({case["id"] for case in cases}) == 600
+    assert sum(case["expected"] is None for case in cases) == 216
+    assert {case["language"] for case in cases} == {
+        "de",
+        "en",
+        "es",
+        "ja",
+        "ko",
+        "mixed",
+    }
+    assert all(case["split"] == "test" for case in cases)
+
+    route_counts = {
+        route: sum(case["expected"] == route for case in cases)
+        for route in {case["expected"] for case in cases if case["expected"]}
+    }
+    assert all(count == 24 for count in route_counts.values())
+
+    def normalized(query: str) -> str:
+        return " ".join(query.casefold().split())
+
+    previous_queries = {normalized(case["query"]) for case in prior_cases}
+    assert not any(normalized(case["query"]) in previous_queries for case in cases)
