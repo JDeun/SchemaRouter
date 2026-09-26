@@ -185,6 +185,45 @@ def test_tool_report_prefixes_endpoint_changes() -> None:
     )
 
 
+def test_adding_unsupported_operation_alias_is_compatible_but_changes_fingerprint() -> None:
+    old = ToolSpec(name="materials", endpoints=[endpoint()])
+    new = ToolSpec(
+        name="materials",
+        unsupported_operation_aliases=["predict melting point"],
+        endpoints=[endpoint()],
+    )
+
+    report = compare_tool_specs(old, new)
+
+    assert report.compatibility == "compatible"
+    assert report.old_fingerprint != report.new_fingerprint
+    assert any(
+        change.kind == "unsupported_operation_aliases_changed"
+        and change.path == "unsupported_operation_aliases"
+        and change.severity == "compatible"
+        for change in report.changes
+    )
+
+
+def test_removing_unsupported_operation_alias_requires_security_review() -> None:
+    old = ToolSpec(
+        name="materials",
+        unsupported_operation_aliases=["predict melting point"],
+        endpoints=[endpoint()],
+    )
+    new = ToolSpec(name="materials", endpoints=[endpoint()])
+
+    report = compare_tool_specs(old, new)
+
+    assert report.compatibility == "security_review"
+    assert any(
+        change.kind == "unsupported_operation_aliases_changed"
+        and change.path == "unsupported_operation_aliases"
+        and change.severity == "security"
+        for change in report.changes
+    )
+
+
 def test_tool_endpoint_addition_is_compatible_but_never_reuses_fingerprint() -> None:
     old = ToolSpec(name="materials", endpoints=[endpoint()])
     new = ToolSpec(
