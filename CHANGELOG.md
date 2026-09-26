@@ -19,6 +19,7 @@ The project is pre-1.0 and follows the compatibility rules in
   as regression evidence rather than reused for a new untouched claim;
 - a separate 600-case multilingual v7 post-change operation holdout, reserved before measuring the tool-domain-label-cleaned operation-fit surface so v6 can remain regression evidence rather than be reused for a new untouched claim;
 - recorded the consumed v7 result as distribution-shift evidence and restored the holdout workflow to its manual, explicit-threshold guard after the one-shot run;
+- reserved a fresh 600-case multilingual v8 operation-alias holdout before implementing trusted endpoint operation aliases;
 - optional bounded `endpoint_disambiguation_backend` stage that may reorder only sibling endpoints
   inside the currently leading tool domain for single-call plans, preserving the existing candidate
   order on backend failure/abstention and never switching tools or creating execution authority;

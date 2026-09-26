@@ -398,3 +398,15 @@ The corpus was added before measuring the label-cleaned operation-fit implementa
 to select the operation-fit threshold. Calibrate only on v5; after freezing the threshold, evaluate
 v7 once for the post-change generalization claim. Repeated v6 runs are regression evidence only
 because v6 had already been consumed before the operation-fit input representation changed.
+
+
+### Reserved operation-alias holdout (v8)
+
+`benchmarks/decision-routing-v8-operation-alias-holdout.json` is a fresh 600-case,
+six-language holdout reserved before adding trusted endpoint operation aliases. It contains 384
+supported-operation cases, 192 near-domain unsupported-operation cases, and 24 ordinary
+out-of-domain cases. Its normalized queries are disjoint from v2 through v7.
+
+v8 must not be used to design aliases or select the operation-fit threshold. v7 is now diagnostic
+data; implementation and threshold work may use v5 plus the consumed v7 evidence, but v8 remains
+untouched until the alias-aware surface is frozen.

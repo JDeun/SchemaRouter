@@ -12,6 +12,7 @@ CORPUS_V4 = ROOT / "benchmarks" / "decision-routing-v4-operation-holdout.json"
 CORPUS_V5 = ROOT / "benchmarks" / "decision-routing-v5-operation-calibration.json"
 CORPUS_V6 = ROOT / "benchmarks" / "decision-routing-v6-operation-holdout.json"
 CORPUS_V7 = ROOT / "benchmarks" / "decision-routing-v7-operation-post-change-holdout.json"
+CORPUS_V8 = ROOT / "benchmarks" / "decision-routing-v8-operation-alias-holdout.json"
 GENERATOR_V2 = ROOT / "scripts" / "generate_decision_routing_v2.py"
 GENERATOR_V3 = ROOT / "scripts" / "generate_decision_routing_v3.py"
 SCRIPT = ROOT / "scripts" / "benchmark_decision_routing.py"
@@ -705,3 +706,54 @@ def test_v7_operation_post_change_holdout_loads_and_is_disjoint_from_prior_corpo
     assert sum(case.expect_abstain for case in cases) == 216
     assert len(v7) == 600
     assert v7.isdisjoint(prior)
+
+
+def test_v8_operation_alias_holdout_is_balanced_multilingual_and_disjoint() -> None:
+    import re
+
+    cases = json.loads(CORPUS_V8.read_text(encoding="utf-8"))
+    assert len(cases) == 600
+    assert len({case["id"] for case in cases}) == 600
+    assert all(case["split"] == "test" for case in cases)
+
+    language_counts: dict[str, int] = {}
+    category_counts: dict[str, int] = {}
+    route_counts: dict[str, int] = {}
+    for case in cases:
+        language_counts[case["language"]] = language_counts.get(case["language"], 0) + 1
+        category_counts[case["category"]] = category_counts.get(case["category"], 0) + 1
+        route = case["expected"] or "NO_ROUTE"
+        route_counts[route] = route_counts.get(route, 0) + 1
+
+    assert all(count == 100 for count in language_counts.values())
+    assert category_counts == {
+        "operation_supported_alias_holdout": 384,
+        "near_domain_unsupported_operation": 192,
+        "out_of_domain": 24,
+    }
+    assert route_counts["NO_ROUTE"] == 216
+    assert all(count == 24 for route, count in route_counts.items() if route != "NO_ROUTE")
+
+    def normalized_queries(path: Path) -> set[str]:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        return {re.sub(r"[^\w]+", "", case["query"].casefold()) for case in raw}
+
+    v8 = normalized_queries(CORPUS_V8)
+    prior: set[str] = set()
+    for path in (CORPUS_V2, CORPUS_V3, CORPUS_V4, CORPUS_V5, CORPUS_V6, CORPUS_V7):
+        prior.update(normalized_queries(path))
+    assert len(v8) == 600
+    assert v8.isdisjoint(prior)
+
+
+def test_v8_operation_alias_holdout_loads_against_reference_catalog() -> None:
+    module = _benchmark_module()
+    registry = module.reference_registry()
+    allowed = {
+        f"{tool.key}.{endpoint.name}"
+        for tool in registry.tools()
+        for endpoint in tool.endpoints
+    }
+    cases = module.load_corpus(CORPUS_V8, allowed_routes=allowed)
+    assert len(cases) == 600
+    assert sum(case.expect_abstain for case in cases) == 216
