@@ -628,53 +628,29 @@ def test_v5_v6_are_disjoint_from_prior_corpora_and_each_other() -> None:
     assert v6.isdisjoint(prior)
     assert v5.isdisjoint(v6)
 
-def test_v11_operation_holdout_workflow_is_manual_and_frozen() -> None:
+def test_consumed_v11_is_not_runnable_from_research_workflow() -> None:
     workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
-    marker = "  operation-fit-v11-heldout-cpu:"
-    assert marker in workflow
-    holdout_job = workflow.split(marker, 1)[1]
 
-    assert (
-        "if: ${{ github.event_name == 'workflow_dispatch' "
-        "&& inputs.run_operation_holdout }}"
-        in holdout_job
-    )
-    assert 'SCHEMAROUTER_BENCHMARK_RERANKER_MODEL: "BAAI/bge-reranker-v2-m3"' in holdout_job
-    assert "--operation-fit-pairwise-callable benchmarks.bge_reranker:score_pairs" in holdout_job
-    assert "--operation-fit-min-score 0.01" in holdout_job
-    assert "operation_fit_min_similarity" not in holdout_job
-    assert "benchmarks/decision-routing-v11-operation-generalization-holdout.json" in holdout_job
-    assert (
-        "benchmarks/decision-routing-v10-operation-generalization-holdout.json"
-        not in holdout_job
-    )
+    assert "run_operation_holdout:" not in workflow
+    assert "operation-fit-v11-heldout-cpu:" not in workflow
+    assert "benchmarks/decision-routing-v11-operation-generalization-holdout.json" not in workflow
 
 
 def test_research_matrix_requires_explicit_full_matrix_dispatch() -> None:
     workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
+
     assert "run_full_research_matrix:" in workflow
-    assert 'default: false' in workflow
-
-    holdout_marker = "  operation-fit-v11-heldout-cpu:"
-    before_holdout, holdout_job = workflow.split(holdout_marker, 1)
-
-    assert before_holdout.count(
+    assert workflow.count(
         "if: ${{ github.event_name == 'workflow_dispatch' "
         "&& inputs.run_full_research_matrix }}"
     ) == 9
-    assert "inputs.run_full_research_matrix" not in holdout_job.split("\n  ", 1)[0]
-    assert (
-        "if: ${{ github.event_name == 'workflow_dispatch' "
-        "&& inputs.run_operation_holdout }}"
-        in holdout_job
-    )
-
+    assert "run_operation_holdout:" not in workflow
 
 def test_alias_aware_operation_calibration_uses_consumed_v7_as_diagnostic_only() -> None:
     workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
     marker = "  operation-fit-calibration-cpu:"
     assert marker in workflow
-    calibration_job = workflow.split(marker, 1)[1].split("  operation-fit-v11-heldout-cpu:", 1)[0]
+    calibration_job = workflow.split(marker, 1)[1]
 
     assert "benchmarks/decision-routing-v5-operation-calibration.json" in calibration_job
     assert "benchmarks/decision-routing-v7-operation-post-change-holdout.json" in calibration_job

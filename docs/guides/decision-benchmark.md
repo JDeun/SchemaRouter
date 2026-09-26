@@ -440,6 +440,49 @@ optimization must reserve a new untouched holdout before implementation; v10 is 
 regression evidence.
 
 
+
+### v11 pairwise operation-fit generalization
+
+After v10, threshold/margin variants and replacement bi-encoders were evaluated using v5
+development/calibration only. Neither global margins, two-tier rescue, multilingual MPNet, nor
+multilingual E5 improved the pre-registered robustness objective over the concise multilingual
+MiniLM bi-encoder. A pairwise reranking experiment was the first alternative scoring form to exceed
+that objective on v5 dev/calibration: `BAAI/bge-reranker-v2-m3` with sigmoid-normalized pair
+logits and `min_score = 0.01` reached 71.354% robustness, compared with 69.792% for the MiniLM
+bi-encoder.
+
+Before that pairwise result was inspected, v11 had already been reserved as a fresh 600-case,
+six-language test-only holdout containing 384 supported operations, 192 near-domain unsupported
+operations, and 24 ordinary out-of-domain requests. The frozen BGE candidate was evaluated once on
+2026-09-26 at source revision `57af2fd18d254fa1a9cd5855a158ae74b94adfc7` with corpus SHA-256
+`efa8cd371bc7613895e44a915d78c77f5b88239c64a8de52d9c407839660d816`. The artifact
+`benchmark-operation-fit-v11-heldout-36239340782` has SHA-256
+`f977511c7d65bc94e2dba9142b6cedf378ceaae1b8418c351e85b550f191dfd1`.
+
+The final BGE stack produced:
+
+- 51.667% overall accuracy;
+- 25.781% supported-operation routed accuracy;
+- 97.396% near-domain unsupported-operation rejection;
+- 100% ordinary out-of-domain rejection;
+- 61.589% balanced operation score;
+- 0 provider/planner errors and 0 invalid plans;
+- 277 missed routes, of which 251 were attributed to operation-fit.
+
+Because the BGE result traded substantial supported recall for stronger rejection, the already-frozen
+MiniLM 0.40 configuration was then run once on the **already consumed** v11 corpus strictly as a
+paired diagnostic, not for tuning. That baseline produced 54.833% overall accuracy, 40.625%
+supported-operation routed accuracy, 77.604% near-domain rejection, 100% ordinary OOD rejection,
+and a 59.115% balanced operation score. Its diagnostic artifact
+`benchmark-operation-fit-v11-baseline-diagnostic-36240431389` has SHA-256
+`1048405ab34b41371004247e15934f5086a53977a14d4957bd14c6d69e194dee`.
+
+Thus the pairwise candidate generalized a **+2.474 percentage-point improvement on the
+pre-registered balanced objective**, but not an overall-accuracy or supported-recall improvement.
+SchemaRouter therefore exposes pairwise scoring as an optional bounded backend rather than selecting
+BGE as a library default. v11 is consumed evidence and must not be used to select any later hybrid
+rule, threshold, representation, or model.
+
 ### Post-change operation holdout (v7)
 
 `benchmarks/decision-routing-v7-operation-post-change-holdout.json` is a 600-case,
