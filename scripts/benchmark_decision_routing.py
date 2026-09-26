@@ -38,6 +38,7 @@ from schemarouter import (  # noqa: E402
     ToolSpec,
 )
 from schemarouter.analyzers import ModelQueryAnalyzer  # noqa: E402
+from schemarouter.graph_routing import GraphOperationGate  # noqa: E402
 from schemarouter.integrations import (  # noqa: E402
     JevDecisionBackend,
     LayaDecisionBackend,
@@ -966,6 +967,15 @@ async def main() -> None:
     parser.add_argument("--corpus", help="JSON corpus path. Omit for the three-case smoke set.")
     parser.add_argument("--max-cases", type=int, default=None)
     parser.add_argument(
+        "--planner-name",
+        action="append",
+        default=[],
+        help=(
+            "Run only the named planner. Repeat for multiple planners. "
+            "Unknown names fail before benchmark execution."
+        ),
+    )
+    parser.add_argument(
         "--split",
         choices=("dev", "calibration", "test"),
         default=None,
@@ -1023,6 +1033,22 @@ async def main() -> None:
         ),
     )
     parser.add_argument("--operation-fit-min-score", type=float, default=0.0)
+    parser.add_argument(
+        "--graph-operation-gate",
+        action="store_true",
+        help=(
+            "Add an experimental graph-first operation planner. Unique trusted graph paths "
+            "resolve locally; ambiguous cases may escalate to the configured operation-fit backend."
+        ),
+    )
+    parser.add_argument(
+        "--graph-operation-field-paths",
+        action="store_true",
+        help=(
+            "Allow unique registered response-field concept paths to resolve an operation in "
+            "the experimental graph planner. Disabled by default for conservative alias-only routing."
+        ),
+    )
     parser.add_argument(
         "--endpoint-disambiguation-embedding-callable",
         help=(
@@ -1131,6 +1157,8 @@ async def main() -> None:
         ),
     )
     args = parser.parse_args()
+    if args.graph_operation_field_paths and not args.graph_operation_gate:
+        parser.error("--graph-operation-field-paths requires --graph-operation-gate")
 
     if args.repeat < 1:
         raise ValueError("--repeat must be >= 1")
@@ -1232,6 +1260,14 @@ async def main() -> None:
             min_margin=args.operation_fit_min_margin,
         )
 
+    graph_operation_gate = (
+        GraphOperationGate(
+            accept_unique_field_path=args.graph_operation_field_paths,
+        )
+        if args.graph_operation_gate
+        else None
+    )
+
     endpoint_disambiguation_backend = None
     if args.endpoint_disambiguation_embedding_callable:
         endpoint_disambiguation_embedder = load_callable(
@@ -1316,6 +1352,33 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
+                    endpoint_disambiguation_backend=endpoint_disambiguation_backend,
+                ),
+                None,
+            )
+        )
+
+    if graph_operation_gate is not None:
+        graph_name_parts = ["keyword"]
+        if candidate_recall_backend is not None:
+            graph_name_parts.append("semantic-recall")
+        if candidate_fit_backend is not None:
+            graph_name_parts.append("capability-fit")
+        graph_name_parts.append("graph-operation")
+        if operation_fit_backend is not None:
+            graph_name_parts.append("selective-operation-fit")
+        if endpoint_disambiguation_backend is not None:
+            graph_name_parts.append("selective-endpoint-disambiguation")
+        planners.append(
+            (
+                "+".join(graph_name_parts),
+                SchemaPlanner(
+                    registry,
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
+                    graph_operation_gate=graph_operation_gate,
                     operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
@@ -1479,6 +1542,23 @@ async def main() -> None:
             )
         )
 
+    if args.planner_name:
+        requested_planners = set(args.planner_name)
+        available_planners = {name for name, _, _ in planners}
+        unknown_planners = sorted(requested_planners - available_planners)
+        if unknown_planners:
+            raise ValueError(
+                "unknown --planner-name value(s): "
+                + ", ".join(unknown_planners)
+                + "; available: "
+                + ", ".join(sorted(available_planners))
+            )
+        planners = [
+            item
+            for item in planners
+            if item[0] in requested_planners
+        ]
+
     try:
         package_version = version("schemarouter")
     except PackageNotFoundError:
@@ -1521,6 +1601,17 @@ async def main() -> None:
             "min_score": args.operation_fit_min_score,
             "min_margin": args.operation_fit_min_margin,
         },
+        "graph_operation": {
+            "enabled": graph_operation_gate is not None,
+            "accept_unique_field_path": args.graph_operation_field_paths,
+            "authority": "registered-schema-graph-only",
+            "ambiguous_action": (
+                "escalate_to_operation_fit"
+                if operation_fit_backend is not None
+                else "retain_authorized_candidates"
+            ),
+        },
+        "planner_filter": list(args.planner_name),
         "endpoint_disambiguation": {
             "enabled": endpoint_disambiguation_backend is not None,
             "embedding_callable": args.endpoint_disambiguation_embedding_callable,
