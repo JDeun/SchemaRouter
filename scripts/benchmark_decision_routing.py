@@ -147,14 +147,22 @@ def reference_registry() -> InMemoryRegistry:
                     "Search materials by properties such as band gap",
                     "material_id",
                     "band_gap",
-                    operation_aliases=("find material properties", "look up band gap", "search material properties"),
+                    operation_aliases=(
+                        "find material properties",
+                        "look up band gap",
+                        "search material properties",
+                    ),
                 ),
                 _endpoint(
                     "structure",
                     "Retrieve crystal structure and lattice information",
                     "material_id",
                     "structure",
-                    operation_aliases=("crystal structure", "lattice structure", "retrieve crystal structure"),
+                    operation_aliases=(
+                        "crystal structure",
+                        "lattice structure",
+                        "retrieve crystal structure",
+                    ),
                 ),
             ],
         )
@@ -169,14 +177,22 @@ def reference_registry() -> InMemoryRegistry:
                     "Search research papers and article metadata",
                     "doi",
                     "title",
-                    operation_aliases=("search papers", "find research articles", "academic paper search"),
+                    operation_aliases=(
+                        "search papers",
+                        "find research articles",
+                        "academic paper search",
+                    ),
                 ),
                 _endpoint(
                     "citations",
                     "Find papers that cite a DOI or article",
                     "doi",
                     "citations",
-                    operation_aliases=("find citing papers", "list articles that cite", "citation lookup"),
+                    operation_aliases=(
+                        "find citing papers",
+                        "list articles that cite",
+                        "citation lookup",
+                    ),
                 ),
             ],
         )
@@ -191,7 +207,11 @@ def reference_registry() -> InMemoryRegistry:
                     "Get the latest market quote for a ticker",
                     "symbol",
                     "price",
-                    operation_aliases=("latest stock price", "current market price", "latest trading price"),
+                    operation_aliases=(
+                        "latest stock price",
+                        "current market price",
+                        "latest trading price",
+                    ),
                 ),
                 _endpoint(
                     "history",
@@ -213,7 +233,11 @@ def reference_registry() -> InMemoryRegistry:
                     "List scheduled calendar events",
                     "id",
                     "title",
-                    operation_aliases=("list calendar events", "show scheduled appointments", "view calendar"),
+                    operation_aliases=(
+                        "list calendar events",
+                        "show scheduled appointments",
+                        "view calendar",
+                    ),
                 ),
                 _endpoint(
                     "create",
@@ -221,7 +245,11 @@ def reference_registry() -> InMemoryRegistry:
                     "id",
                     "title",
                     read_only=False,
-                    operation_aliases=("create calendar event", "schedule appointment", "add calendar event"),
+                    operation_aliases=(
+                        "create calendar event",
+                        "schedule appointment",
+                        "add calendar event",
+                    ),
                 ),
             ],
         )
@@ -236,7 +264,11 @@ def reference_registry() -> InMemoryRegistry:
                     "Search support knowledge base articles",
                     "id",
                     "title",
-                    operation_aliases=("search support knowledge base", "find help documentation", "support article lookup"),
+                    operation_aliases=(
+                        "search support knowledge base",
+                        "find help documentation",
+                        "support article lookup",
+                    ),
                 ),
                 _endpoint(
                     "create_ticket",
@@ -244,7 +276,11 @@ def reference_registry() -> InMemoryRegistry:
                     "id",
                     "status",
                     read_only=False,
-                    operation_aliases=("create support ticket", "open support case", "file support request"),
+                    operation_aliases=(
+                        "create support ticket",
+                        "open support case",
+                        "file support request",
+                    ),
                 ),
             ],
         )
@@ -267,7 +303,11 @@ def reference_registry() -> InMemoryRegistry:
                     "sku",
                     "quantity",
                     read_only=False,
-                    operation_aliases=("update inventory quantity", "set stock count", "change inventory"),
+                    operation_aliases=(
+                        "update inventory quantity",
+                        "set stock count",
+                        "change inventory",
+                    ),
                 ),
             ],
         )
@@ -282,7 +322,11 @@ def reference_registry() -> InMemoryRegistry:
                     "Look up a user profile or account",
                     "id",
                     "name",
-                    operation_aliases=("look up user profile", "find account details", "retrieve user account"),
+                    operation_aliases=(
+                        "look up user profile",
+                        "find account details",
+                        "retrieve user account",
+                    ),
                 ),
                 _endpoint(
                     "update",
@@ -290,7 +334,11 @@ def reference_registry() -> InMemoryRegistry:
                     "id",
                     "name",
                     read_only=False,
-                    operation_aliases=("update user profile", "change account details", "edit user account"),
+                    operation_aliases=(
+                        "update user profile",
+                        "change account details",
+                        "edit user account",
+                    ),
                 ),
             ],
         )

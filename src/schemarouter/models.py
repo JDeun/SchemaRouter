@@ -358,7 +358,8 @@ class EndpointSpec(StrictModel):
         for alias in self.operation_aliases:
             if not alias or alias != alias.strip():
                 raise ValueError(
-                    "endpoint operation_aliases must be non-empty and have no surrounding whitespace"
+                    "endpoint operation_aliases must be non-empty and have no "
+                    "surrounding whitespace"
                 )
             normalized = " ".join(alias.casefold().split())
             if normalized in normalized_operation_aliases:

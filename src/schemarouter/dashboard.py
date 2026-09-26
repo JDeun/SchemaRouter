@@ -244,7 +244,8 @@ No tool execution, credentials, arbitrary metadata, or trace payload values are 
 <div class="table-wrap">
 <table id="capabilities">
 <thead><tr>
-<th>Tool</th><th>Adapter</th><th>Source</th><th>Endpoint</th><th>Operation aliases</th><th>Method</th><th>Path</th>
+<th>Tool</th><th>Adapter</th><th>Source</th><th>Endpoint</th>
+<th>Operation aliases</th><th>Method</th><th>Path</th>
 <th>Mode</th><th>Params</th><th>Fields</th><th>Field contracts</th>
 <th>Bound</th><th>Fingerprint</th>
 </tr></thead>
