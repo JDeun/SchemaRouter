@@ -65,6 +65,34 @@ def _registry(*, conflicts: bool = False) -> InMemoryRegistry:
     return registry
 
 
+def test_unsupported_operation_aliases_are_typed_and_fingerprinted() -> None:
+    base = ToolSpec(
+        name="weather",
+        endpoints=[EndpointSpec(name="current")],
+    )
+    guarded = ToolSpec(
+        name="weather",
+        unsupported_operation_aliases=["weather alerts"],
+        endpoints=[EndpointSpec(name="current")],
+    )
+
+    assert base.fingerprint != guarded.fingerprint
+
+    with pytest.raises(ValueError, match="surrounding whitespace"):
+        ToolSpec(
+            name="weather",
+            unsupported_operation_aliases=[" weather alerts "],
+            endpoints=[EndpointSpec(name="current")],
+        )
+
+    with pytest.raises(ValueError, match="duplicate unsupported operation alias"):
+        ToolSpec(
+            name="weather",
+            unsupported_operation_aliases=["weather alerts", "Weather   Alerts"],
+            endpoints=[EndpointSpec(name="current")],
+        )
+
+
 def test_compiled_graph_exposes_typed_schema_paths() -> None:
     graph = CompiledSchemaGraph.from_registry(_registry(conflicts=True))
 
