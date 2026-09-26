@@ -484,3 +484,19 @@ def test_v4_operation_holdout_loads_against_reference_catalog() -> None:
     assert len(cases) == 600
     assert sum(case.expect_abstain for case in cases) == 120
     assert all(case.split == "test" for case in cases)
+
+
+def test_v4_operation_holdout_has_no_normalized_overlap_with_v2_or_v3() -> None:
+    import re
+
+    def normalized_queries(path: Path) -> set[str]:
+        cases = json.loads(path.read_text(encoding="utf-8"))
+        return {
+            re.sub(r"[^\w]+", "", case["query"].casefold())
+            for case in cases
+        }
+
+    v4 = normalized_queries(CORPUS_V4)
+
+    assert v4.isdisjoint(normalized_queries(CORPUS_V2))
+    assert v4.isdisjoint(normalized_queries(CORPUS_V3))
