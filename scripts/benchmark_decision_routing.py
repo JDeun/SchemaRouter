@@ -497,8 +497,10 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
     latencies = [row.latency_ms for row in successful]
     categories = sorted({row.category for row in rows})
     expected_abstentions = [row for row in rows if row.expected is None]
+    routed_rows = [row for row in rows if row.expected is not None]
     confidences = [row.confidence for row in rows if row.confidence is not None]
     correct_count = sum(row.correct for row in rows)
+    routed_correct_count = sum(row.correct for row in routed_rows)
     expected_no_route_count = sum(
         row.predicted is None for row in expected_abstentions
     )
@@ -534,6 +536,15 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
         "cases": total,
         "accuracy": correct_count / total if total else 0.0,
         "accuracy_ci95": _wilson_interval(correct_count, total),
+        "routed_accuracy": (
+            routed_correct_count / len(routed_rows)
+            if routed_rows
+            else None
+        ),
+        "routed_accuracy_ci95": _wilson_interval(
+            routed_correct_count,
+            len(routed_rows),
+        ),
         "invalid_plan_rate": (
             sum(row.invalid_plan for row in rows) / total if total else 0.0
         ),
