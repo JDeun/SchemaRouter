@@ -1,0 +1,26 @@
+{
+  "cycle": "0.10-operation-contrastive-v1",
+  "status": "blind_final_ready",
+  "candidate_freeze_revision": "14e1977011c5b926476731736f7a4a9e1876367a",
+  "candidate_manifest": "benchmarks/operation-fit-0.10-confirmed-candidate.json",
+  "protocol_manifest": "benchmarks/decision-routing-v13-blind-protocol.json",
+  "generator": "scripts/generate_decision_routing_v13.py",
+  "execution": {
+    "seed_source": "GitHub Actions run ID",
+    "generate_and_score_same_job": true,
+    "intermediate_corpus_inspection_allowed": false,
+    "rerun_allowed": false
+  },
+  "frozen_candidate": {
+    "architecture": "sibling-contrastive BGE operation-fit",
+    "reranker_model": "BAAI/bge-reranker-v2-m3",
+    "beta": 1.0,
+    "operation_fit_min_score": 0.01,
+    "operation_fit_min_margin": 0.0,
+    "semantic_recall_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "semantic_recall_top_k": 2,
+    "capability_fit_min_similarity": 0.25,
+    "endpoint_disambiguation_min_margin": 0.03
+  },
+  "selection_objective": "harmonic mean of supported-operation routed accuracy and near-domain unsupported-operation rejection subject to preregistered floors"
+}

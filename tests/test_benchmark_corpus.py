@@ -718,12 +718,13 @@ def test_operation_contrastive_cycle_uses_dev_only_for_candidate_selection() -> 
     assert "decision-routing-v13" not in workflow
 
 
-def test_v13_blind_protocol_has_no_generated_corpus() -> None:
+def test_consumed_v13_blind_protocol_is_archived_and_not_tunable() -> None:
     protocol = json.loads(V13_PROTOCOL.read_text(encoding="utf-8"))
 
-    assert protocol["status"] == "protocol_reserved_not_generated"
-    assert protocol["corpus_exists"] is False
+    assert protocol["status"] == "consumed_blind_final"
+    assert protocol["corpus_exists"] is True
     assert protocol["tuning_eligible"] is False
+    assert protocol["consumed_run_id"] == 36246386089
     assert protocol["generation_timing"] == "only_after_complete_candidate_configuration_is_frozen"
 
 
