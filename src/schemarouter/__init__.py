@@ -128,7 +128,7 @@ from .traces import (
 __all__ = [
     "__version__",
     "ADAPTER_ENTRY_POINT_GROUP",
-    "AdapterContext",
+    "AggregatedField",\n    "CanonicalEntity",\n    "FieldObservation",\n    "SourceRecord",\n    "AdapterContext",
     "AdapterLoadResult",
     "AdapterPluginInfo",
     "AdapterRegistry",
@@ -237,7 +237,7 @@ __all__ = [
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
-    "analyze_openapi_compatibility",
+    "aggregate_records",\n    "analyze_openapi_compatibility",\n    "canonical_identity",
     "choose_async",
     "choose_sync",
     "compare_endpoint_specs",
