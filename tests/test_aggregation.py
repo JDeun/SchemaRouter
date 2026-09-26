@@ -153,3 +153,64 @@ def test_identity_resolution_is_transitive_across_identifier_types() -> None:
     assert len(entities) == 1
     assert entities[0].providers == ["crossref", "openalex", "arxiv"]
     assert entities[0].canonical_key == "document:doi:10.1000/paper"
+
+
+
+def test_material_formula_alone_does_not_define_canonical_identity() -> None:
+    records = [
+        SourceRecord(
+            provider="provider_a",
+            entity_kind="material",
+            identifiers={"formula": "SiO2"},
+            fields={"band_gap": 8.9},
+        ),
+        SourceRecord(
+            provider="provider_b",
+            entity_kind="material",
+            identifiers={"formula": "SiO2"},
+            fields={"band_gap": 5.5},
+        ),
+    ]
+
+    assert len(aggregate_records(records)) == 2
+
+
+def test_material_records_merge_on_explicit_structure_identity() -> None:
+    records = [
+        SourceRecord(
+            provider="provider_a",
+            entity_kind="material",
+            identifiers={"structure_id": "shared-structure", "formula": "SiO2"},
+            fields={"density": 2.65},
+        ),
+        SourceRecord(
+            provider="provider_b",
+            entity_kind="material",
+            identifiers={"structure_id": "shared-structure", "formula": "SiO2"},
+            fields={"density": 2.66},
+        ),
+    ]
+
+    entities = aggregate_records(records)
+
+    assert len(entities) == 1
+    assert len(entities[0].fields["density"].observations) == 2
+
+
+def test_chemical_formula_alone_does_not_merge_isomers() -> None:
+    records = [
+        SourceRecord(
+            provider="provider_a",
+            entity_kind="chemical",
+            identifiers={"formula": "C2H6O"},
+            fields={"name": "ethanol"},
+        ),
+        SourceRecord(
+            provider="provider_b",
+            entity_kind="chemical",
+            identifiers={"formula": "C2H6O"},
+            fields={"name": "dimethyl ether"},
+        ),
+    ]
+
+    assert len(aggregate_records(records)) == 2
