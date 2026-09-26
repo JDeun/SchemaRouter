@@ -307,3 +307,49 @@ jobs:
           path: artifacts/capability-fit/heldout-v3/
           if-no-files-found: warn
           retention-days: 30
+
+  endpoint-disambiguation-dev-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        endpoint_margin: [0.0, 0.03, 0.06, 0.10]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "sentence-transformers>=3,<6"
+      - run: pip install -e ".[dev]"
+      - name: Screen same-tool endpoint disambiguation on v2 dev
+        env:
+          SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+          ENDPOINT_MARGIN: ${{ matrix.endpoint_margin }}
+        run: |
+          SAFE_MARGIN="${ENDPOINT_MARGIN//./_}"
+          OUT="artifacts/endpoint-disambiguation/dev-margin-${SAFE_MARGIN}"
+          mkdir -p "${OUT}"
+          python scripts/benchmark_decision_routing.py \
+            --corpus benchmarks/decision-routing-v2.json \
+            --split dev \
+            --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
+            --candidate-recall-limit 2 \
+            --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed \
+            --candidate-fit-min-similarity 0.25 \
+            --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed \
+            --endpoint-disambiguation-min-margin "${ENDPOINT_MARGIN}" \
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+            --json-out "${OUT}/report.json" \
+            --csv-out "${OUT}/rows.csv" \
+            --html-out "${OUT}/report.html"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: endpoint-disambiguation-dev-margin-${{ matrix.endpoint_margin }}-${{ github.run_id }}
+          path: artifacts/endpoint-disambiguation/
+          if-no-files-found: warn
+          retention-days: 30
