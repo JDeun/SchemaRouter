@@ -1,0 +1,76 @@
+{
+  "cycle": "0.10-operation-contrastive-v1",
+  "status": "consumed_blind_final_evidence",
+  "evaluation": {
+    "workflow_run_id": 36246386089,
+    "workflow_run_attempt": 1,
+    "source_revision": "07096b7350ba2b7e60bda2ddf04de49db894e75f",
+    "candidate_freeze_revision": "14e1977011c5b926476731736f7a4a9e1876367a",
+    "artifact_id": 10907304722,
+    "artifact_sha256": "0ca1cb673bee4d64999194252de8ddfe13a408548b7b53f0980c70b2d4719460",
+    "corpus_sha256": "73863c15191d6e75d892a8b0024056abe562aad2ad11d334610871dc5e070596",
+    "report_sha256": "c5fed02850028886449d7fd0c55be8bbec71780b44d8e2a01331f0d1741bd106",
+    "rows_sha256": "5e1b4e6afa6c17f65def3a0c010eea9d39bd019499f6fc4ba3eaf5261bd6b844",
+    "report_html_sha256": "1649faadf99d86b2ef36c194428617fc2c8d035249d4a647df51df9bec4d03cb",
+    "generation_manifest_sha256": "d532186993d1220c6ddc246b1ff41748b32096396e447a6baeaf9abef1d1c2a1"
+  },
+  "frozen_candidate": {
+    "architecture": "sibling-contrastive BGE operation-fit",
+    "reranker_model": "BAAI/bge-reranker-v2-m3",
+    "transform": "sigmoid(raw_i + beta * (raw_i - max_sibling_raw))",
+    "beta": 1.0,
+    "operation_fit_min_score": 0.01,
+    "operation_fit_min_margin": 0.0,
+    "semantic_recall_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "semantic_recall_top_k": 2,
+    "capability_fit_min_similarity": 0.25,
+    "endpoint_disambiguation_min_margin": 0.03
+  },
+  "final_stack": {
+    "cases": 600,
+    "overall_accuracy": 0.75,
+    "overall_accuracy_ci95": [0.713836, 0.782983],
+    "supported_operation_routed_accuracy": 0.6171875,
+    "supported_operation_routed_accuracy_ci95": [0.567638, 0.664416],
+    "near_domain_unsupported_operation_rejection": 0.984375,
+    "near_domain_unsupported_operation_rejection_ci95": [0.955076, 0.994672],
+    "out_of_domain_rejection": 1.0,
+    "out_of_domain_rejection_ci95": [0.862024, 1.0],
+    "expected_no_route_recall": 0.9861111111111112,
+    "expected_no_route_recall_ci95": [0.959968, 0.995265],
+    "operation_harmonic_mean": 0.7586890243902439,
+    "operation_arithmetic_mean": 0.80078125,
+    "invalid_plan_rate": 0.0,
+    "errors": 0,
+    "error_taxonomy": {
+      "correct": 450,
+      "false_route": 3,
+      "missed_route": 109,
+      "wrong_tool": 1,
+      "wrong_endpoint": 37,
+      "execution_error": 0
+    },
+    "failure_stage_counts": {
+      "capability_fit": 14,
+      "operation_fit": 95
+    },
+    "latency_ms": {
+      "mean": 612.435,
+      "p50": 664.195,
+      "p95": 757.382
+    },
+    "language_accuracy": {
+      "de": 0.69,
+      "en": 0.91,
+      "es": 0.65,
+      "ja": 0.73,
+      "ko": 0.71,
+      "mixed": 0.81
+    }
+  },
+  "interpretation": {
+    "promotion_evidence": "The frozen contrastive candidate preserved very high unsupported-operation rejection while materially recovering supported-operation routing relative to the v11 pairwise result.",
+    "default_policy": "This evidence supports the contrastive scoring form as a stronger candidate profile, not an unconditional global default for every workload.",
+    "holdout_policy": "v13 is permanently consumed and must never be used to select or retune a model, representation, beta, threshold, margin, hybrid rule, or upstream routing parameter."
+  }
+}
