@@ -233,7 +233,8 @@ NEAR_WRAPPERS: dict[str, tuple[str, ...]] = {
         "Die Aktion liegt nahe an einer unterstützten, aber ich brauche {core}.",
         "Nutze keine angenäherte Operation; die genaue Anfrage lautet {core}.",
         "Eine Domänenübereinstimmung reicht nicht; ich brauche konkret {core}.",
-        "Behandle es als nicht unterstützt, wenn der registrierte Graph es nicht ausdrückt: {core}.",
+        "Behandle es als nicht unterstützt, wenn der registrierte Graph es nicht "
+        "ausdrückt: {core}.",
     ),
     "mixed": (
         "same domain이지만 exact unsupported action은 이거야: {core}.",
