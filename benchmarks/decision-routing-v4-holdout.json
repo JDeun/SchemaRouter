@@ -1,0 +1,5186 @@
+[
+  {
+    "id": "v4-weather-current-en-1",
+    "query": "Operational request: check what the weather is like right now in Incheon.",
+    "expected": "weather.current",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-current-en-2",
+    "query": "Skip the analysis and check what the weather is like right now in Jeju.",
+    "expected": "weather.current",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-current-en-3",
+    "query": "The intended action is this — check what the weather is like right now in London.",
+    "expected": "weather.current",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-current-en-4",
+    "query": "Do exactly this task: check what the weather is like right now in Rome.",
+    "expected": "weather.current",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-current-ko-1",
+    "query": "실행 요청: Jeju의 현재 날씨 상태를 확인해줘.",
+    "expected": "weather.current",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-current-ko-2",
+    "query": "분석은 생략하고 London의 현재 날씨 상태를 확인해줘.",
+    "expected": "weather.current",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-current-ko-3",
+    "query": "의도한 작업은 이것이야: Rome의 현재 날씨 상태를 확인해줘.",
+    "expected": "weather.current",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-current-ko-4",
+    "query": "정확히 이 작업만 해줘: Singapore의 현재 날씨 상태를 확인해줘.",
+    "expected": "weather.current",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-current-es-1",
+    "query": "Solicitud operativa: comprueba cómo está el clima ahora mismo en London.",
+    "expected": "weather.current",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-current-es-2",
+    "query": "Omite el análisis y comprueba cómo está el clima ahora mismo en Rome.",
+    "expected": "weather.current",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-current-es-3",
+    "query": "La acción prevista es esta: comprueba cómo está el clima ahora mismo en Singapore.",
+    "expected": "weather.current",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-current-es-4",
+    "query": "Haz exactamente esta tarea: comprueba cómo está el clima ahora mismo en Incheon.",
+    "expected": "weather.current",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-current-ja-1",
+    "query": "実行依頼: Romeの今の天気を確認して。",
+    "expected": "weather.current",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-current-ja-2",
+    "query": "分析は省いてSingaporeの今の天気を確認して。",
+    "expected": "weather.current",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-current-ja-3",
+    "query": "意図している操作はこれです: Incheonの今の天気を確認して。",
+    "expected": "weather.current",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-current-ja-4",
+    "query": "この作業だけを正確に実行して: Jejuの今の天気を確認して。",
+    "expected": "weather.current",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-current-de-1",
+    "query": "Operative Anfrage: prüfe, wie das Wetter gerade in Singapore ist.",
+    "expected": "weather.current",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-current-de-2",
+    "query": "Lass die Analyse weg und prüfe, wie das Wetter gerade in Incheon ist.",
+    "expected": "weather.current",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-current-de-3",
+    "query": "Die beabsichtigte Aktion ist: prüfe, wie das Wetter gerade in Jeju ist.",
+    "expected": "weather.current",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-current-de-4",
+    "query": "Führe genau diese Aufgabe aus: prüfe, wie das Wetter gerade in London ist.",
+    "expected": "weather.current",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-current-mixed-1",
+    "query": "execution request: Incheon의 right-now weather 상태를 check해.",
+    "expected": "weather.current",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-current-mixed-2",
+    "query": "analysis는 skip하고 Jeju의 right-now weather 상태를 check해.",
+    "expected": "weather.current",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-current-mixed-3",
+    "query": "intended action은 이거야: London의 right-now weather 상태를 check해.",
+    "expected": "weather.current",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-current-mixed-4",
+    "query": "exactly 이 task만 해줘: Rome의 right-now weather 상태를 check해.",
+    "expected": "weather.current",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-forecast-en-1",
+    "query": "Operational request: show the upcoming weather outlook for Incheon Friday evening.",
+    "expected": "weather.forecast",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-forecast-en-2",
+    "query": "Skip the analysis and show the upcoming weather outlook for Jeju next weekend.",
+    "expected": "weather.forecast",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-forecast-en-3",
+    "query": "The intended action is this — show the upcoming weather outlook for London tomorrow morning.",
+    "expected": "weather.forecast",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-forecast-en-4",
+    "query": "Do exactly this task: show the upcoming weather outlook for Rome next Wednesday.",
+    "expected": "weather.forecast",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-forecast-ko-1",
+    "query": "실행 요청: Jeju next weekend의 앞으로 날씨 전망을 보여줘.",
+    "expected": "weather.forecast",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-forecast-ko-2",
+    "query": "분석은 생략하고 London tomorrow morning의 앞으로 날씨 전망을 보여줘.",
+    "expected": "weather.forecast",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-forecast-ko-3",
+    "query": "의도한 작업은 이것이야: Rome next Wednesday의 앞으로 날씨 전망을 보여줘.",
+    "expected": "weather.forecast",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-forecast-ko-4",
+    "query": "정확히 이 작업만 해줘: Singapore next week의 앞으로 날씨 전망을 보여줘.",
+    "expected": "weather.forecast",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-forecast-es-1",
+    "query": "Solicitud operativa: muestra la previsión meteorológica para London tomorrow morning.",
+    "expected": "weather.forecast",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-forecast-es-2",
+    "query": "Omite el análisis y muestra la previsión meteorológica para Rome next Wednesday.",
+    "expected": "weather.forecast",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-forecast-es-3",
+    "query": "La acción prevista es esta: muestra la previsión meteorológica para Singapore next week.",
+    "expected": "weather.forecast",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-forecast-es-4",
+    "query": "Haz exactamente esta tarea: muestra la previsión meteorológica para Incheon Friday evening.",
+    "expected": "weather.forecast",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-forecast-ja-1",
+    "query": "実行依頼: Rome next Wednesdayのこれからの天気予報を見せて。",
+    "expected": "weather.forecast",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-forecast-ja-2",
+    "query": "分析は省いてSingapore next weekのこれからの天気予報を見せて。",
+    "expected": "weather.forecast",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-forecast-ja-3",
+    "query": "意図している操作はこれです: Incheon Friday eveningのこれからの天気予報を見せて。",
+    "expected": "weather.forecast",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-forecast-ja-4",
+    "query": "この作業だけを正確に実行して: Jeju next weekendのこれからの天気予報を見せて。",
+    "expected": "weather.forecast",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-forecast-de-1",
+    "query": "Operative Anfrage: zeige die kommende Wettervorhersage für Singapore next week.",
+    "expected": "weather.forecast",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-forecast-de-2",
+    "query": "Lass die Analyse weg und zeige die kommende Wettervorhersage für Incheon Friday evening.",
+    "expected": "weather.forecast",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-forecast-de-3",
+    "query": "Die beabsichtigte Aktion ist: zeige die kommende Wettervorhersage für Jeju next weekend.",
+    "expected": "weather.forecast",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-forecast-de-4",
+    "query": "Führe genau diese Aufgabe aus: zeige die kommende Wettervorhersage für London tomorrow morning.",
+    "expected": "weather.forecast",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-forecast-mixed-1",
+    "query": "execution request: Incheon Friday evening upcoming weather outlook을 보여줘.",
+    "expected": "weather.forecast",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-forecast-mixed-2",
+    "query": "analysis는 skip하고 Jeju next weekend upcoming weather outlook을 보여줘.",
+    "expected": "weather.forecast",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-forecast-mixed-3",
+    "query": "intended action은 이거야: London tomorrow morning upcoming weather outlook을 보여줘.",
+    "expected": "weather.forecast",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-forecast-mixed-4",
+    "query": "exactly 이 task만 해줘: Rome next Wednesday upcoming weather outlook을 보여줘.",
+    "expected": "weather.forecast",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-search-en-1",
+    "query": "Operational request: look up physical material properties such as band gap for MoS2.",
+    "expected": "materials.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-search-en-2",
+    "query": "Skip the analysis and look up physical material properties such as band gap for h-BN.",
+    "expected": "materials.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-search-en-3",
+    "query": "The intended action is this — look up physical material properties such as band gap for ZnO.",
+    "expected": "materials.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-search-en-4",
+    "query": "Do exactly this task: look up physical material properties such as band gap for SrTiO3.",
+    "expected": "materials.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-search-ko-1",
+    "query": "실행 요청: h-BN의 밴드갭 같은 물성 데이터를 조회해줘.",
+    "expected": "materials.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-search-ko-2",
+    "query": "분석은 생략하고 ZnO의 밴드갭 같은 물성 데이터를 조회해줘.",
+    "expected": "materials.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-search-ko-3",
+    "query": "의도한 작업은 이것이야: SrTiO3의 밴드갭 같은 물성 데이터를 조회해줘.",
+    "expected": "materials.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-search-ko-4",
+    "query": "정확히 이 작업만 해줘: NiO의 밴드갭 같은 물성 데이터를 조회해줘.",
+    "expected": "materials.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-search-es-1",
+    "query": "Solicitud operativa: consulta propiedades físicas como la banda prohibida de ZnO.",
+    "expected": "materials.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-search-es-2",
+    "query": "Omite el análisis y consulta propiedades físicas como la banda prohibida de SrTiO3.",
+    "expected": "materials.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-search-es-3",
+    "query": "La acción prevista es esta: consulta propiedades físicas como la banda prohibida de NiO.",
+    "expected": "materials.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-search-es-4",
+    "query": "Haz exactamente esta tarea: consulta propiedades físicas como la banda prohibida de MoS2.",
+    "expected": "materials.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-search-ja-1",
+    "query": "実行依頼: SrTiO3のバンドギャップなどの物性を調べて。",
+    "expected": "materials.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-search-ja-2",
+    "query": "分析は省いてNiOのバンドギャップなどの物性を調べて。",
+    "expected": "materials.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-search-ja-3",
+    "query": "意図している操作はこれです: MoS2のバンドギャップなどの物性を調べて。",
+    "expected": "materials.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-search-ja-4",
+    "query": "この作業だけを正確に実行して: h-BNのバンドギャップなどの物性を調べて。",
+    "expected": "materials.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-search-de-1",
+    "query": "Operative Anfrage: schlage Materialeigenschaften wie die Bandlücke von NiO nach.",
+    "expected": "materials.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-search-de-2",
+    "query": "Lass die Analyse weg und schlage Materialeigenschaften wie die Bandlücke von MoS2 nach.",
+    "expected": "materials.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-search-de-3",
+    "query": "Die beabsichtigte Aktion ist: schlage Materialeigenschaften wie die Bandlücke von h-BN nach.",
+    "expected": "materials.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-search-de-4",
+    "query": "Führe genau diese Aufgabe aus: schlage Materialeigenschaften wie die Bandlücke von ZnO nach.",
+    "expected": "materials.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-search-mixed-1",
+    "query": "execution request: MoS2의 band gap 같은 material property를 lookup해.",
+    "expected": "materials.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-search-mixed-2",
+    "query": "analysis는 skip하고 h-BN의 band gap 같은 material property를 lookup해.",
+    "expected": "materials.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-search-mixed-3",
+    "query": "intended action은 이거야: ZnO의 band gap 같은 material property를 lookup해.",
+    "expected": "materials.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-search-mixed-4",
+    "query": "exactly 이 task만 해줘: SrTiO3의 band gap 같은 material property를 lookup해.",
+    "expected": "materials.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-structure-en-1",
+    "query": "Operational request: retrieve the atomic crystal structure and lattice information for MoS2.",
+    "expected": "materials.structure",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-structure-en-2",
+    "query": "Skip the analysis and retrieve the atomic crystal structure and lattice information for h-BN.",
+    "expected": "materials.structure",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-structure-en-3",
+    "query": "The intended action is this — retrieve the atomic crystal structure and lattice information for ZnO.",
+    "expected": "materials.structure",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-structure-en-4",
+    "query": "Do exactly this task: retrieve the atomic crystal structure and lattice information for SrTiO3.",
+    "expected": "materials.structure",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-structure-ko-1",
+    "query": "실행 요청: h-BN의 원자 결정구조와 격자 정보를 가져와.",
+    "expected": "materials.structure",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-structure-ko-2",
+    "query": "분석은 생략하고 ZnO의 원자 결정구조와 격자 정보를 가져와.",
+    "expected": "materials.structure",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-structure-ko-3",
+    "query": "의도한 작업은 이것이야: SrTiO3의 원자 결정구조와 격자 정보를 가져와.",
+    "expected": "materials.structure",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-structure-ko-4",
+    "query": "정확히 이 작업만 해줘: NiO의 원자 결정구조와 격자 정보를 가져와.",
+    "expected": "materials.structure",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-structure-es-1",
+    "query": "Solicitud operativa: recupera la estructura cristalina atómica y la red de ZnO.",
+    "expected": "materials.structure",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-structure-es-2",
+    "query": "Omite el análisis y recupera la estructura cristalina atómica y la red de SrTiO3.",
+    "expected": "materials.structure",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-structure-es-3",
+    "query": "La acción prevista es esta: recupera la estructura cristalina atómica y la red de NiO.",
+    "expected": "materials.structure",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-structure-es-4",
+    "query": "Haz exactamente esta tarea: recupera la estructura cristalina atómica y la red de MoS2.",
+    "expected": "materials.structure",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-structure-ja-1",
+    "query": "実行依頼: SrTiO3の原子結晶構造と格子情報を取得して。",
+    "expected": "materials.structure",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-structure-ja-2",
+    "query": "分析は省いてNiOの原子結晶構造と格子情報を取得して。",
+    "expected": "materials.structure",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-structure-ja-3",
+    "query": "意図している操作はこれです: MoS2の原子結晶構造と格子情報を取得して。",
+    "expected": "materials.structure",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-structure-ja-4",
+    "query": "この作業だけを正確に実行して: h-BNの原子結晶構造と格子情報を取得して。",
+    "expected": "materials.structure",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-structure-de-1",
+    "query": "Operative Anfrage: hole atomare Kristallstruktur und Gitterinformationen für NiO.",
+    "expected": "materials.structure",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-structure-de-2",
+    "query": "Lass die Analyse weg und hole atomare Kristallstruktur und Gitterinformationen für MoS2.",
+    "expected": "materials.structure",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-structure-de-3",
+    "query": "Die beabsichtigte Aktion ist: hole atomare Kristallstruktur und Gitterinformationen für h-BN.",
+    "expected": "materials.structure",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-structure-de-4",
+    "query": "Führe genau diese Aufgabe aus: hole atomare Kristallstruktur und Gitterinformationen für ZnO.",
+    "expected": "materials.structure",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-structure-mixed-1",
+    "query": "execution request: MoS2 atomic crystal structure랑 lattice info를 가져와.",
+    "expected": "materials.structure",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-structure-mixed-2",
+    "query": "analysis는 skip하고 h-BN atomic crystal structure랑 lattice info를 가져와.",
+    "expected": "materials.structure",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-structure-mixed-3",
+    "query": "intended action은 이거야: ZnO atomic crystal structure랑 lattice info를 가져와.",
+    "expected": "materials.structure",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-structure-mixed-4",
+    "query": "exactly 이 task만 해줘: SrTiO3 atomic crystal structure랑 lattice info를 가져와.",
+    "expected": "materials.structure",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-search-en-1",
+    "query": "Operational request: find scholarly papers on sparse mixture of experts.",
+    "expected": "papers.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-search-en-2",
+    "query": "Skip the analysis and find scholarly papers on sodium ion batteries.",
+    "expected": "papers.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-search-en-3",
+    "query": "The intended action is this — find scholarly papers on tool use evaluation.",
+    "expected": "papers.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-search-en-4",
+    "query": "Do exactly this task: find scholarly papers on polymer electrolytes.",
+    "expected": "papers.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-search-ko-1",
+    "query": "실행 요청: sodium ion batteries 주제의 학술 논문을 찾아줘.",
+    "expected": "papers.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-search-ko-2",
+    "query": "분석은 생략하고 tool use evaluation 주제의 학술 논문을 찾아줘.",
+    "expected": "papers.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-search-ko-3",
+    "query": "의도한 작업은 이것이야: polymer electrolytes 주제의 학술 논문을 찾아줘.",
+    "expected": "papers.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-search-ko-4",
+    "query": "정확히 이 작업만 해줘: diffusion models 주제의 학술 논문을 찾아줘.",
+    "expected": "papers.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-search-es-1",
+    "query": "Solicitud operativa: encuentra artículos académicos sobre tool use evaluation.",
+    "expected": "papers.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-search-es-2",
+    "query": "Omite el análisis y encuentra artículos académicos sobre polymer electrolytes.",
+    "expected": "papers.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-search-es-3",
+    "query": "La acción prevista es esta: encuentra artículos académicos sobre diffusion models.",
+    "expected": "papers.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-search-es-4",
+    "query": "Haz exactamente esta tarea: encuentra artículos académicos sobre sparse mixture of experts.",
+    "expected": "papers.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-search-ja-1",
+    "query": "実行依頼: polymer electrolytesについての学術論文を探して。",
+    "expected": "papers.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-search-ja-2",
+    "query": "分析は省いてdiffusion modelsについての学術論文を探して。",
+    "expected": "papers.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-search-ja-3",
+    "query": "意図している操作はこれです: sparse mixture of expertsについての学術論文を探して。",
+    "expected": "papers.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-search-ja-4",
+    "query": "この作業だけを正確に実行して: sodium ion batteriesについての学術論文を探して。",
+    "expected": "papers.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-search-de-1",
+    "query": "Operative Anfrage: finde wissenschaftliche Arbeiten zu diffusion models.",
+    "expected": "papers.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-search-de-2",
+    "query": "Lass die Analyse weg und finde wissenschaftliche Arbeiten zu sparse mixture of experts.",
+    "expected": "papers.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-search-de-3",
+    "query": "Die beabsichtigte Aktion ist: finde wissenschaftliche Arbeiten zu sodium ion batteries.",
+    "expected": "papers.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-search-de-4",
+    "query": "Führe genau diese Aufgabe aus: finde wissenschaftliche Arbeiten zu tool use evaluation.",
+    "expected": "papers.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-search-mixed-1",
+    "query": "execution request: sparse mixture of experts 주제 scholarly papers를 찾아줘.",
+    "expected": "papers.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-search-mixed-2",
+    "query": "analysis는 skip하고 sodium ion batteries 주제 scholarly papers를 찾아줘.",
+    "expected": "papers.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-search-mixed-3",
+    "query": "intended action은 이거야: tool use evaluation 주제 scholarly papers를 찾아줘.",
+    "expected": "papers.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-search-mixed-4",
+    "query": "exactly 이 task만 해줘: polymer electrolytes 주제 scholarly papers를 찾아줘.",
+    "expected": "papers.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-citations-en-1",
+    "query": "Operational request: retrieve works that cite the paper identified by 10.5555/2026.001.",
+    "expected": "papers.citations",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-citations-en-2",
+    "query": "Skip the analysis and retrieve works that cite the paper identified by 10.5555/2026.002.",
+    "expected": "papers.citations",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-citations-en-3",
+    "query": "The intended action is this — retrieve works that cite the paper identified by 10.5555/2026.003.",
+    "expected": "papers.citations",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-citations-en-4",
+    "query": "Do exactly this task: retrieve works that cite the paper identified by 10.5555/2026.004.",
+    "expected": "papers.citations",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-citations-ko-1",
+    "query": "실행 요청: 10.5555/2026.002 논문을 인용한 후속 논문을 찾아줘.",
+    "expected": "papers.citations",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-citations-ko-2",
+    "query": "분석은 생략하고 10.5555/2026.003 논문을 인용한 후속 논문을 찾아줘.",
+    "expected": "papers.citations",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-citations-ko-3",
+    "query": "의도한 작업은 이것이야: 10.5555/2026.004 논문을 인용한 후속 논문을 찾아줘.",
+    "expected": "papers.citations",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-citations-ko-4",
+    "query": "정확히 이 작업만 해줘: 10.5555/2026.005 논문을 인용한 후속 논문을 찾아줘.",
+    "expected": "papers.citations",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-citations-es-1",
+    "query": "Solicitud operativa: recupera trabajos que citan el artículo identificado por 10.5555/2026.003.",
+    "expected": "papers.citations",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-citations-es-2",
+    "query": "Omite el análisis y recupera trabajos que citan el artículo identificado por 10.5555/2026.004.",
+    "expected": "papers.citations",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-citations-es-3",
+    "query": "La acción prevista es esta: recupera trabajos que citan el artículo identificado por 10.5555/2026.005.",
+    "expected": "papers.citations",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-citations-es-4",
+    "query": "Haz exactamente esta tarea: recupera trabajos que citan el artículo identificado por 10.5555/2026.001.",
+    "expected": "papers.citations",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-citations-ja-1",
+    "query": "実行依頼: 10.5555/2026.004の論文を引用している文献を取得して。",
+    "expected": "papers.citations",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-citations-ja-2",
+    "query": "分析は省いて10.5555/2026.005の論文を引用している文献を取得して。",
+    "expected": "papers.citations",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-citations-ja-3",
+    "query": "意図している操作はこれです: 10.5555/2026.001の論文を引用している文献を取得して。",
+    "expected": "papers.citations",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-citations-ja-4",
+    "query": "この作業だけを正確に実行して: 10.5555/2026.002の論文を引用している文献を取得して。",
+    "expected": "papers.citations",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-citations-de-1",
+    "query": "Operative Anfrage: hole Arbeiten, die den durch 10.5555/2026.005 bezeichneten Artikel zitieren.",
+    "expected": "papers.citations",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-citations-de-2",
+    "query": "Lass die Analyse weg und hole Arbeiten, die den durch 10.5555/2026.001 bezeichneten Artikel zitieren.",
+    "expected": "papers.citations",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-citations-de-3",
+    "query": "Die beabsichtigte Aktion ist: hole Arbeiten, die den durch 10.5555/2026.002 bezeichneten Artikel zitieren.",
+    "expected": "papers.citations",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-citations-de-4",
+    "query": "Führe genau diese Aufgabe aus: hole Arbeiten, die den durch 10.5555/2026.003 bezeichneten Artikel zitieren.",
+    "expected": "papers.citations",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-citations-mixed-1",
+    "query": "execution request: 10.5555/2026.001 paper를 cite한 follow-up works를 찾아줘.",
+    "expected": "papers.citations",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-citations-mixed-2",
+    "query": "analysis는 skip하고 10.5555/2026.002 paper를 cite한 follow-up works를 찾아줘.",
+    "expected": "papers.citations",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-citations-mixed-3",
+    "query": "intended action은 이거야: 10.5555/2026.003 paper를 cite한 follow-up works를 찾아줘.",
+    "expected": "papers.citations",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-citations-mixed-4",
+    "query": "exactly 이 task만 해줘: 10.5555/2026.004 paper를 cite한 follow-up works를 찾아줘.",
+    "expected": "papers.citations",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-quote-en-1",
+    "query": "Operational request: return the latest market price quote for NFLX.",
+    "expected": "finance.quote",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-quote-en-2",
+    "query": "Skip the analysis and return the latest market price quote for ORCL.",
+    "expected": "finance.quote",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-quote-en-3",
+    "query": "The intended action is this — return the latest market price quote for IBM.",
+    "expected": "finance.quote",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-quote-en-4",
+    "query": "Do exactly this task: return the latest market price quote for QCOM.",
+    "expected": "finance.quote",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-quote-ko-1",
+    "query": "실행 요청: ORCL의 최신 시장 가격을 조회해줘.",
+    "expected": "finance.quote",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-quote-ko-2",
+    "query": "분석은 생략하고 IBM의 최신 시장 가격을 조회해줘.",
+    "expected": "finance.quote",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-quote-ko-3",
+    "query": "의도한 작업은 이것이야: QCOM의 최신 시장 가격을 조회해줘.",
+    "expected": "finance.quote",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-quote-ko-4",
+    "query": "정확히 이 작업만 해줘: DIS의 최신 시장 가격을 조회해줘.",
+    "expected": "finance.quote",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-quote-es-1",
+    "query": "Solicitud operativa: devuelve la cotización de mercado más reciente de IBM.",
+    "expected": "finance.quote",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-quote-es-2",
+    "query": "Omite el análisis y devuelve la cotización de mercado más reciente de QCOM.",
+    "expected": "finance.quote",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-quote-es-3",
+    "query": "La acción prevista es esta: devuelve la cotización de mercado más reciente de DIS.",
+    "expected": "finance.quote",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-quote-es-4",
+    "query": "Haz exactamente esta tarea: devuelve la cotización de mercado más reciente de NFLX.",
+    "expected": "finance.quote",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-quote-ja-1",
+    "query": "実行依頼: QCOMの最新市場価格を取得して。",
+    "expected": "finance.quote",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-quote-ja-2",
+    "query": "分析は省いてDISの最新市場価格を取得して。",
+    "expected": "finance.quote",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-quote-ja-3",
+    "query": "意図している操作はこれです: NFLXの最新市場価格を取得して。",
+    "expected": "finance.quote",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-quote-ja-4",
+    "query": "この作業だけを正確に実行して: ORCLの最新市場価格を取得して。",
+    "expected": "finance.quote",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-quote-de-1",
+    "query": "Operative Anfrage: gib den neuesten Marktpreis für DIS zurück.",
+    "expected": "finance.quote",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-quote-de-2",
+    "query": "Lass die Analyse weg und gib den neuesten Marktpreis für NFLX zurück.",
+    "expected": "finance.quote",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-quote-de-3",
+    "query": "Die beabsichtigte Aktion ist: gib den neuesten Marktpreis für ORCL zurück.",
+    "expected": "finance.quote",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-quote-de-4",
+    "query": "Führe genau diese Aufgabe aus: gib den neuesten Marktpreis für IBM zurück.",
+    "expected": "finance.quote",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-quote-mixed-1",
+    "query": "execution request: NFLX latest market quote를 return해.",
+    "expected": "finance.quote",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-quote-mixed-2",
+    "query": "analysis는 skip하고 ORCL latest market quote를 return해.",
+    "expected": "finance.quote",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-quote-mixed-3",
+    "query": "intended action은 이거야: IBM latest market quote를 return해.",
+    "expected": "finance.quote",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-quote-mixed-4",
+    "query": "exactly 이 task만 해줘: QCOM latest market quote를 return해.",
+    "expected": "finance.quote",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-history-en-1",
+    "query": "Operational request: retrieve the historical price series for NFLX over 18 months.",
+    "expected": "finance.history",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-history-en-2",
+    "query": "Skip the analysis and retrieve the historical price series for ORCL since last summer.",
+    "expected": "finance.history",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-history-en-3",
+    "query": "The intended action is this — retrieve the historical price series for IBM for the previous quarter.",
+    "expected": "finance.history",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-history-en-4",
+    "query": "Do exactly this task: retrieve the historical price series for QCOM over 3 years.",
+    "expected": "finance.history",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-history-ko-1",
+    "query": "실행 요청: ORCL since last summer의 과거 가격 시계열을 가져와.",
+    "expected": "finance.history",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-history-ko-2",
+    "query": "분석은 생략하고 IBM for the previous quarter의 과거 가격 시계열을 가져와.",
+    "expected": "finance.history",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-history-ko-3",
+    "query": "의도한 작업은 이것이야: QCOM over 3 years의 과거 가격 시계열을 가져와.",
+    "expected": "finance.history",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-history-ko-4",
+    "query": "정확히 이 작업만 해줘: DIS since 2022의 과거 가격 시계열을 가져와.",
+    "expected": "finance.history",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-history-es-1",
+    "query": "Solicitud operativa: recupera la serie histórica de precios de IBM for the previous quarter.",
+    "expected": "finance.history",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-history-es-2",
+    "query": "Omite el análisis y recupera la serie histórica de precios de QCOM over 3 years.",
+    "expected": "finance.history",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-history-es-3",
+    "query": "La acción prevista es esta: recupera la serie histórica de precios de DIS since 2022.",
+    "expected": "finance.history",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-history-es-4",
+    "query": "Haz exactamente esta tarea: recupera la serie histórica de precios de NFLX over 18 months.",
+    "expected": "finance.history",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-history-ja-1",
+    "query": "実行依頼: QCOM over 3 yearsの過去価格の時系列を取得して。",
+    "expected": "finance.history",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-history-ja-2",
+    "query": "分析は省いてDIS since 2022の過去価格の時系列を取得して。",
+    "expected": "finance.history",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-history-ja-3",
+    "query": "意図している操作はこれです: NFLX over 18 monthsの過去価格の時系列を取得して。",
+    "expected": "finance.history",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-history-ja-4",
+    "query": "この作業だけを正確に実行して: ORCL since last summerの過去価格の時系列を取得して。",
+    "expected": "finance.history",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-history-de-1",
+    "query": "Operative Anfrage: hole die historische Kursreihe für DIS since 2022.",
+    "expected": "finance.history",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-history-de-2",
+    "query": "Lass die Analyse weg und hole die historische Kursreihe für NFLX over 18 months.",
+    "expected": "finance.history",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-history-de-3",
+    "query": "Die beabsichtigte Aktion ist: hole die historische Kursreihe für ORCL since last summer.",
+    "expected": "finance.history",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-history-de-4",
+    "query": "Führe genau diese Aufgabe aus: hole die historische Kursreihe für IBM for the previous quarter.",
+    "expected": "finance.history",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-history-mixed-1",
+    "query": "execution request: NFLX over 18 months historical price series를 가져와.",
+    "expected": "finance.history",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-history-mixed-2",
+    "query": "analysis는 skip하고 ORCL since last summer historical price series를 가져와.",
+    "expected": "finance.history",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-history-mixed-3",
+    "query": "intended action은 이거야: IBM for the previous quarter historical price series를 가져와.",
+    "expected": "finance.history",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-history-mixed-4",
+    "query": "exactly 이 task만 해줘: QCOM over 3 years historical price series를 가져와.",
+    "expected": "finance.history",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-list-en-1",
+    "query": "Operational request: show the events already on my calendar for Wednesday morning.",
+    "expected": "calendar.list",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-list-en-2",
+    "query": "Skip the analysis and show the events already on my calendar for next Thursday afternoon.",
+    "expected": "calendar.list",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-list-en-3",
+    "query": "The intended action is this — show the events already on my calendar for October 12.",
+    "expected": "calendar.list",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-list-en-4",
+    "query": "Do exactly this task: show the events already on my calendar for the end of this month.",
+    "expected": "calendar.list",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-list-ko-1",
+    "query": "실행 요청: next Thursday afternoon에 이미 잡힌 캘린더 일정을 보여줘.",
+    "expected": "calendar.list",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-list-ko-2",
+    "query": "분석은 생략하고 October 12에 이미 잡힌 캘린더 일정을 보여줘.",
+    "expected": "calendar.list",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-list-ko-3",
+    "query": "의도한 작업은 이것이야: the end of this month에 이미 잡힌 캘린더 일정을 보여줘.",
+    "expected": "calendar.list",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-list-ko-4",
+    "query": "정확히 이 작업만 해줘: the next two days에 이미 잡힌 캘린더 일정을 보여줘.",
+    "expected": "calendar.list",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-list-es-1",
+    "query": "Solicitud operativa: muestra los eventos que ya están en mi calendario para October 12.",
+    "expected": "calendar.list",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-list-es-2",
+    "query": "Omite el análisis y muestra los eventos que ya están en mi calendario para the end of this month.",
+    "expected": "calendar.list",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-list-es-3",
+    "query": "La acción prevista es esta: muestra los eventos que ya están en mi calendario para the next two days.",
+    "expected": "calendar.list",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-list-es-4",
+    "query": "Haz exactamente esta tarea: muestra los eventos que ya están en mi calendario para Wednesday morning.",
+    "expected": "calendar.list",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-list-ja-1",
+    "query": "実行依頼: the end of this monthに入っている予定を表示して。",
+    "expected": "calendar.list",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-list-ja-2",
+    "query": "分析は省いてthe next two daysに入っている予定を表示して。",
+    "expected": "calendar.list",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-list-ja-3",
+    "query": "意図している操作はこれです: Wednesday morningに入っている予定を表示して。",
+    "expected": "calendar.list",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-list-ja-4",
+    "query": "この作業だけを正確に実行して: next Thursday afternoonに入っている予定を表示して。",
+    "expected": "calendar.list",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-list-de-1",
+    "query": "Operative Anfrage: zeige die bereits eingetragenen Termine für the next two days.",
+    "expected": "calendar.list",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-list-de-2",
+    "query": "Lass die Analyse weg und zeige die bereits eingetragenen Termine für Wednesday morning.",
+    "expected": "calendar.list",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-list-de-3",
+    "query": "Die beabsichtigte Aktion ist: zeige die bereits eingetragenen Termine für next Thursday afternoon.",
+    "expected": "calendar.list",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-list-de-4",
+    "query": "Führe genau diese Aufgabe aus: zeige die bereits eingetragenen Termine für October 12.",
+    "expected": "calendar.list",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-list-mixed-1",
+    "query": "execution request: Wednesday morning에 already scheduled calendar events를 보여줘.",
+    "expected": "calendar.list",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-list-mixed-2",
+    "query": "analysis는 skip하고 next Thursday afternoon에 already scheduled calendar events를 보여줘.",
+    "expected": "calendar.list",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-list-mixed-3",
+    "query": "intended action은 이거야: October 12에 already scheduled calendar events를 보여줘.",
+    "expected": "calendar.list",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-list-mixed-4",
+    "query": "exactly 이 task만 해줘: the end of this month에 already scheduled calendar events를 보여줘.",
+    "expected": "calendar.list",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-create-en-1",
+    "query": "Operational request: add a new calendar event for architecture review Wednesday at 10:30.",
+    "expected": "calendar.create",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-create-en-2",
+    "query": "Skip the analysis and add a new calendar event for coffee with Mina Friday at 8.",
+    "expected": "calendar.create",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-create-en-3",
+    "query": "The intended action is this — add a new calendar event for security review Monday at 14:00.",
+    "expected": "calendar.create",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-create-en-4",
+    "query": "Do exactly this task: add a new calendar event for roadmap sync Tuesday at 16:30.",
+    "expected": "calendar.create",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-create-ko-1",
+    "query": "실행 요청: coffee with Mina Friday at 8 일정을 새 캘린더 이벤트로 추가해줘.",
+    "expected": "calendar.create",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-create-ko-2",
+    "query": "분석은 생략하고 security review Monday at 14:00 일정을 새 캘린더 이벤트로 추가해줘.",
+    "expected": "calendar.create",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-create-ko-3",
+    "query": "의도한 작업은 이것이야: roadmap sync Tuesday at 16:30 일정을 새 캘린더 이벤트로 추가해줘.",
+    "expected": "calendar.create",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-create-ko-4",
+    "query": "정확히 이 작업만 해줘: focus block Thursday at 9 일정을 새 캘린더 이벤트로 추가해줘.",
+    "expected": "calendar.create",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-create-es-1",
+    "query": "Solicitud operativa: añade un nuevo evento de calendario para security review Monday at 14:00.",
+    "expected": "calendar.create",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-create-es-2",
+    "query": "Omite el análisis y añade un nuevo evento de calendario para roadmap sync Tuesday at 16:30.",
+    "expected": "calendar.create",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-create-es-3",
+    "query": "La acción prevista es esta: añade un nuevo evento de calendario para focus block Thursday at 9.",
+    "expected": "calendar.create",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-create-es-4",
+    "query": "Haz exactamente esta tarea: añade un nuevo evento de calendario para architecture review Wednesday at 10:30.",
+    "expected": "calendar.create",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-create-ja-1",
+    "query": "実行依頼: roadmap sync Tuesday at 16:30を新しいカレンダー予定として追加して。",
+    "expected": "calendar.create",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-create-ja-2",
+    "query": "分析は省いてfocus block Thursday at 9を新しいカレンダー予定として追加して。",
+    "expected": "calendar.create",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-create-ja-3",
+    "query": "意図している操作はこれです: architecture review Wednesday at 10:30を新しいカレンダー予定として追加して。",
+    "expected": "calendar.create",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-create-ja-4",
+    "query": "この作業だけを正確に実行して: coffee with Mina Friday at 8を新しいカレンダー予定として追加して。",
+    "expected": "calendar.create",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-create-de-1",
+    "query": "Operative Anfrage: füge einen neuen Kalendereintrag für focus block Thursday at 9 hinzu.",
+    "expected": "calendar.create",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-create-de-2",
+    "query": "Lass die Analyse weg und füge einen neuen Kalendereintrag für architecture review Wednesday at 10:30 hinzu.",
+    "expected": "calendar.create",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-create-de-3",
+    "query": "Die beabsichtigte Aktion ist: füge einen neuen Kalendereintrag für coffee with Mina Friday at 8 hinzu.",
+    "expected": "calendar.create",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-create-de-4",
+    "query": "Führe genau diese Aufgabe aus: füge einen neuen Kalendereintrag für security review Monday at 14:00 hinzu.",
+    "expected": "calendar.create",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-create-mixed-1",
+    "query": "execution request: architecture review Wednesday at 10:30를 new calendar event로 add해.",
+    "expected": "calendar.create",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-create-mixed-2",
+    "query": "analysis는 skip하고 coffee with Mina Friday at 8를 new calendar event로 add해.",
+    "expected": "calendar.create",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-create-mixed-3",
+    "query": "intended action은 이거야: security review Monday at 14:00를 new calendar event로 add해.",
+    "expected": "calendar.create",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-create-mixed-4",
+    "query": "exactly 이 task만 해줘: roadmap sync Tuesday at 16:30를 new calendar event로 add해.",
+    "expected": "calendar.create",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-search-en-1",
+    "query": "Operational request: look up the support documentation for SSO configuration.",
+    "expected": "support.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-search-en-2",
+    "query": "Skip the analysis and look up the support documentation for invoice VAT handling.",
+    "expected": "support.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-search-en-3",
+    "query": "The intended action is this — look up the support documentation for API rate limits.",
+    "expected": "support.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-search-en-4",
+    "query": "Do exactly this task: look up the support documentation for workspace deletion.",
+    "expected": "support.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-search-ko-1",
+    "query": "실행 요청: invoice VAT handling 관련 지원 문서를 찾아줘.",
+    "expected": "support.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-search-ko-2",
+    "query": "분석은 생략하고 API rate limits 관련 지원 문서를 찾아줘.",
+    "expected": "support.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-search-ko-3",
+    "query": "의도한 작업은 이것이야: workspace deletion 관련 지원 문서를 찾아줘.",
+    "expected": "support.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-search-ko-4",
+    "query": "정확히 이 작업만 해줘: webhook retry policy 관련 지원 문서를 찾아줘.",
+    "expected": "support.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-search-es-1",
+    "query": "Solicitud operativa: busca la documentación de soporte para API rate limits.",
+    "expected": "support.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-search-es-2",
+    "query": "Omite el análisis y busca la documentación de soporte para workspace deletion.",
+    "expected": "support.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-search-es-3",
+    "query": "La acción prevista es esta: busca la documentación de soporte para webhook retry policy.",
+    "expected": "support.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-search-es-4",
+    "query": "Haz exactamente esta tarea: busca la documentación de soporte para SSO configuration.",
+    "expected": "support.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-search-ja-1",
+    "query": "実行依頼: workspace deletionに関するサポート文書を探して。",
+    "expected": "support.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-search-ja-2",
+    "query": "分析は省いてwebhook retry policyに関するサポート文書を探して。",
+    "expected": "support.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-search-ja-3",
+    "query": "意図している操作はこれです: SSO configurationに関するサポート文書を探して。",
+    "expected": "support.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-search-ja-4",
+    "query": "この作業だけを正確に実行して: invoice VAT handlingに関するサポート文書を探して。",
+    "expected": "support.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-search-de-1",
+    "query": "Operative Anfrage: suche die Support-Dokumentation für webhook retry policy.",
+    "expected": "support.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-search-de-2",
+    "query": "Lass die Analyse weg und suche die Support-Dokumentation für SSO configuration.",
+    "expected": "support.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-search-de-3",
+    "query": "Die beabsichtigte Aktion ist: suche die Support-Dokumentation für invoice VAT handling.",
+    "expected": "support.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-search-de-4",
+    "query": "Führe genau diese Aufgabe aus: suche die Support-Dokumentation für API rate limits.",
+    "expected": "support.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-search-mixed-1",
+    "query": "execution request: SSO configuration 관련 support docs를 lookup해.",
+    "expected": "support.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-search-mixed-2",
+    "query": "analysis는 skip하고 invoice VAT handling 관련 support docs를 lookup해.",
+    "expected": "support.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-search-mixed-3",
+    "query": "intended action은 이거야: API rate limits 관련 support docs를 lookup해.",
+    "expected": "support.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-search-mixed-4",
+    "query": "exactly 이 task만 해줘: workspace deletion 관련 support docs를 lookup해.",
+    "expected": "support.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-create-ticket-en-1",
+    "query": "Operational request: open a support ticket for this problem: SSO redirect loop.",
+    "expected": "support.create_ticket",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-create-ticket-en-2",
+    "query": "Skip the analysis and open a support ticket for this problem: duplicated invoice.",
+    "expected": "support.create_ticket",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-create-ticket-en-3",
+    "query": "The intended action is this — open a support ticket for this problem: webhook returns 401.",
+    "expected": "support.create_ticket",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-create-ticket-en-4",
+    "query": "Do exactly this task: open a support ticket for this problem: workspace cannot be deleted.",
+    "expected": "support.create_ticket",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-create-ticket-ko-1",
+    "query": "실행 요청: duplicated invoice 문제로 지원 티켓을 접수해줘.",
+    "expected": "support.create_ticket",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-create-ticket-ko-2",
+    "query": "분석은 생략하고 webhook returns 401 문제로 지원 티켓을 접수해줘.",
+    "expected": "support.create_ticket",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-create-ticket-ko-3",
+    "query": "의도한 작업은 이것이야: workspace cannot be deleted 문제로 지원 티켓을 접수해줘.",
+    "expected": "support.create_ticket",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-create-ticket-ko-4",
+    "query": "정확히 이 작업만 해줘: API keeps timing out 문제로 지원 티켓을 접수해줘.",
+    "expected": "support.create_ticket",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-create-ticket-es-1",
+    "query": "Solicitud operativa: abre un ticket de soporte por este problema: webhook returns 401.",
+    "expected": "support.create_ticket",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-create-ticket-es-2",
+    "query": "Omite el análisis y abre un ticket de soporte por este problema: workspace cannot be deleted.",
+    "expected": "support.create_ticket",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-create-ticket-es-3",
+    "query": "La acción prevista es esta: abre un ticket de soporte por este problema: API keeps timing out.",
+    "expected": "support.create_ticket",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-create-ticket-es-4",
+    "query": "Haz exactamente esta tarea: abre un ticket de soporte por este problema: SSO redirect loop.",
+    "expected": "support.create_ticket",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-create-ticket-ja-1",
+    "query": "実行依頼: workspace cannot be deletedの問題でサポートチケットを作成して。",
+    "expected": "support.create_ticket",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-create-ticket-ja-2",
+    "query": "分析は省いてAPI keeps timing outの問題でサポートチケットを作成して。",
+    "expected": "support.create_ticket",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-create-ticket-ja-3",
+    "query": "意図している操作はこれです: SSO redirect loopの問題でサポートチケットを作成して。",
+    "expected": "support.create_ticket",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-create-ticket-ja-4",
+    "query": "この作業だけを正確に実行して: duplicated invoiceの問題でサポートチケットを作成して。",
+    "expected": "support.create_ticket",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-create-ticket-de-1",
+    "query": "Operative Anfrage: eröffne ein Support-Ticket für dieses Problem: API keeps timing out.",
+    "expected": "support.create_ticket",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-create-ticket-de-2",
+    "query": "Lass die Analyse weg und eröffne ein Support-Ticket für dieses Problem: SSO redirect loop.",
+    "expected": "support.create_ticket",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-create-ticket-de-3",
+    "query": "Die beabsichtigte Aktion ist: eröffne ein Support-Ticket für dieses Problem: duplicated invoice.",
+    "expected": "support.create_ticket",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-create-ticket-de-4",
+    "query": "Führe genau diese Aufgabe aus: eröffne ein Support-Ticket für dieses Problem: webhook returns 401.",
+    "expected": "support.create_ticket",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-create-ticket-mixed-1",
+    "query": "execution request: SSO redirect loop 문제로 support ticket을 open해.",
+    "expected": "support.create_ticket",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-create-ticket-mixed-2",
+    "query": "analysis는 skip하고 duplicated invoice 문제로 support ticket을 open해.",
+    "expected": "support.create_ticket",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-create-ticket-mixed-3",
+    "query": "intended action은 이거야: webhook returns 401 문제로 support ticket을 open해.",
+    "expected": "support.create_ticket",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-create-ticket-mixed-4",
+    "query": "exactly 이 task만 해줘: workspace cannot be deleted 문제로 support ticket을 open해.",
+    "expected": "support.create_ticket",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-search-en-1",
+    "query": "Operational request: read the current stock quantity for ITEM-X17.",
+    "expected": "inventory.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-search-en-2",
+    "query": "Skip the analysis and read the current stock quantity for ITEM-Y28.",
+    "expected": "inventory.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-search-en-3",
+    "query": "The intended action is this — read the current stock quantity for ITEM-Z39.",
+    "expected": "inventory.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-search-en-4",
+    "query": "Do exactly this task: read the current stock quantity for ITEM-K41.",
+    "expected": "inventory.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-search-ko-1",
+    "query": "실행 요청: ITEM-Y28의 현재 재고 수량을 조회해줘.",
+    "expected": "inventory.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-search-ko-2",
+    "query": "분석은 생략하고 ITEM-Z39의 현재 재고 수량을 조회해줘.",
+    "expected": "inventory.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-search-ko-3",
+    "query": "의도한 작업은 이것이야: ITEM-K41의 현재 재고 수량을 조회해줘.",
+    "expected": "inventory.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-search-ko-4",
+    "query": "정확히 이 작업만 해줘: ITEM-M52의 현재 재고 수량을 조회해줘.",
+    "expected": "inventory.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-search-es-1",
+    "query": "Solicitud operativa: consulta la cantidad actual de existencias de ITEM-Z39.",
+    "expected": "inventory.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-search-es-2",
+    "query": "Omite el análisis y consulta la cantidad actual de existencias de ITEM-K41.",
+    "expected": "inventory.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-search-es-3",
+    "query": "La acción prevista es esta: consulta la cantidad actual de existencias de ITEM-M52.",
+    "expected": "inventory.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-search-es-4",
+    "query": "Haz exactamente esta tarea: consulta la cantidad actual de existencias de ITEM-X17.",
+    "expected": "inventory.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-search-ja-1",
+    "query": "実行依頼: ITEM-K41の現在庫数を取得して。",
+    "expected": "inventory.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-search-ja-2",
+    "query": "分析は省いてITEM-M52の現在庫数を取得して。",
+    "expected": "inventory.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-search-ja-3",
+    "query": "意図している操作はこれです: ITEM-X17の現在庫数を取得して。",
+    "expected": "inventory.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-search-ja-4",
+    "query": "この作業だけを正確に実行して: ITEM-Y28の現在庫数を取得して。",
+    "expected": "inventory.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-search-de-1",
+    "query": "Operative Anfrage: lies den aktuellen Lagerbestand für ITEM-M52.",
+    "expected": "inventory.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-search-de-2",
+    "query": "Lass die Analyse weg und lies den aktuellen Lagerbestand für ITEM-X17.",
+    "expected": "inventory.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-search-de-3",
+    "query": "Die beabsichtigte Aktion ist: lies den aktuellen Lagerbestand für ITEM-Y28.",
+    "expected": "inventory.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-search-de-4",
+    "query": "Führe genau diese Aufgabe aus: lies den aktuellen Lagerbestand für ITEM-Z39.",
+    "expected": "inventory.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-search-mixed-1",
+    "query": "execution request: ITEM-X17 current stock quantity를 read해.",
+    "expected": "inventory.search",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-search-mixed-2",
+    "query": "analysis는 skip하고 ITEM-Y28 current stock quantity를 read해.",
+    "expected": "inventory.search",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-search-mixed-3",
+    "query": "intended action은 이거야: ITEM-Z39 current stock quantity를 read해.",
+    "expected": "inventory.search",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-search-mixed-4",
+    "query": "exactly 이 task만 해줘: ITEM-K41 current stock quantity를 read해.",
+    "expected": "inventory.search",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-update-en-1",
+    "query": "Operational request: change the stored inventory quantity for ITEM-X17 to 18.",
+    "expected": "inventory.update",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-update-en-2",
+    "query": "Skip the analysis and change the stored inventory quantity for ITEM-Y28 to 0.",
+    "expected": "inventory.update",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-update-en-3",
+    "query": "The intended action is this — change the stored inventory quantity for ITEM-Z39 to 44.",
+    "expected": "inventory.update",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-update-en-4",
+    "query": "Do exactly this task: change the stored inventory quantity for ITEM-K41 to 6.",
+    "expected": "inventory.update",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-update-ko-1",
+    "query": "실행 요청: ITEM-Y28 to 0로 저장된 재고 수량을 변경해줘.",
+    "expected": "inventory.update",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-update-ko-2",
+    "query": "분석은 생략하고 ITEM-Z39 to 44로 저장된 재고 수량을 변경해줘.",
+    "expected": "inventory.update",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-update-ko-3",
+    "query": "의도한 작업은 이것이야: ITEM-K41 to 6로 저장된 재고 수량을 변경해줘.",
+    "expected": "inventory.update",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-update-ko-4",
+    "query": "정확히 이 작업만 해줘: ITEM-M52 to 71로 저장된 재고 수량을 변경해줘.",
+    "expected": "inventory.update",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-update-es-1",
+    "query": "Solicitud operativa: cambia la cantidad de inventario almacenada de ITEM-Z39 to 44.",
+    "expected": "inventory.update",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-update-es-2",
+    "query": "Omite el análisis y cambia la cantidad de inventario almacenada de ITEM-K41 to 6.",
+    "expected": "inventory.update",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-update-es-3",
+    "query": "La acción prevista es esta: cambia la cantidad de inventario almacenada de ITEM-M52 to 71.",
+    "expected": "inventory.update",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-update-es-4",
+    "query": "Haz exactamente esta tarea: cambia la cantidad de inventario almacenada de ITEM-X17 to 18.",
+    "expected": "inventory.update",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-update-ja-1",
+    "query": "実行依頼: 在庫数量をITEM-K41 to 6に変更して。",
+    "expected": "inventory.update",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-update-ja-2",
+    "query": "分析は省いて在庫数量をITEM-M52 to 71に変更して。",
+    "expected": "inventory.update",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-update-ja-3",
+    "query": "意図している操作はこれです: 在庫数量をITEM-X17 to 18に変更して。",
+    "expected": "inventory.update",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-update-ja-4",
+    "query": "この作業だけを正確に実行して: 在庫数量をITEM-Y28 to 0に変更して。",
+    "expected": "inventory.update",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-update-de-1",
+    "query": "Operative Anfrage: ändere den gespeicherten Lagerbestand für ITEM-M52 to 71.",
+    "expected": "inventory.update",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-update-de-2",
+    "query": "Lass die Analyse weg und ändere den gespeicherten Lagerbestand für ITEM-X17 to 18.",
+    "expected": "inventory.update",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-update-de-3",
+    "query": "Die beabsichtigte Aktion ist: ändere den gespeicherten Lagerbestand für ITEM-Y28 to 0.",
+    "expected": "inventory.update",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-update-de-4",
+    "query": "Führe genau diese Aufgabe aus: ändere den gespeicherten Lagerbestand für ITEM-Z39 to 44.",
+    "expected": "inventory.update",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-update-mixed-1",
+    "query": "execution request: stored inventory quantity를 ITEM-X17 to 18로 change해.",
+    "expected": "inventory.update",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-update-mixed-2",
+    "query": "analysis는 skip하고 stored inventory quantity를 ITEM-Y28 to 0로 change해.",
+    "expected": "inventory.update",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-update-mixed-3",
+    "query": "intended action은 이거야: stored inventory quantity를 ITEM-Z39 to 44로 change해.",
+    "expected": "inventory.update",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-update-mixed-4",
+    "query": "exactly 이 task만 해줘: stored inventory quantity를 ITEM-K41 to 6로 change해.",
+    "expected": "inventory.update",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-lookup-en-1",
+    "query": "Operational request: retrieve the existing user profile for user 314.",
+    "expected": "users.lookup",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-lookup-en-2",
+    "query": "Skip the analysis and retrieve the existing user profile for dev@example.org.",
+    "expected": "users.lookup",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-lookup-en-3",
+    "query": "The intended action is this — retrieve the existing user profile for Mina Park.",
+    "expected": "users.lookup",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-lookup-en-4",
+    "query": "Do exactly this task: retrieve the existing user profile for account 808.",
+    "expected": "users.lookup",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-lookup-ko-1",
+    "query": "실행 요청: dev@example.org의 기존 사용자 프로필을 조회해줘.",
+    "expected": "users.lookup",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-lookup-ko-2",
+    "query": "분석은 생략하고 Mina Park의 기존 사용자 프로필을 조회해줘.",
+    "expected": "users.lookup",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-lookup-ko-3",
+    "query": "의도한 작업은 이것이야: account 808의 기존 사용자 프로필을 조회해줘.",
+    "expected": "users.lookup",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-lookup-ko-4",
+    "query": "정확히 이 작업만 해줘: Luca Rossi의 기존 사용자 프로필을 조회해줘.",
+    "expected": "users.lookup",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-lookup-es-1",
+    "query": "Solicitud operativa: recupera el perfil de usuario existente de Mina Park.",
+    "expected": "users.lookup",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-lookup-es-2",
+    "query": "Omite el análisis y recupera el perfil de usuario existente de account 808.",
+    "expected": "users.lookup",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-lookup-es-3",
+    "query": "La acción prevista es esta: recupera el perfil de usuario existente de Luca Rossi.",
+    "expected": "users.lookup",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-lookup-es-4",
+    "query": "Haz exactamente esta tarea: recupera el perfil de usuario existente de user 314.",
+    "expected": "users.lookup",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-lookup-ja-1",
+    "query": "実行依頼: account 808の既存ユーザープロフィールを取得して。",
+    "expected": "users.lookup",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-lookup-ja-2",
+    "query": "分析は省いてLuca Rossiの既存ユーザープロフィールを取得して。",
+    "expected": "users.lookup",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-lookup-ja-3",
+    "query": "意図している操作はこれです: user 314の既存ユーザープロフィールを取得して。",
+    "expected": "users.lookup",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-lookup-ja-4",
+    "query": "この作業だけを正確に実行して: dev@example.orgの既存ユーザープロフィールを取得して。",
+    "expected": "users.lookup",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-lookup-de-1",
+    "query": "Operative Anfrage: hole das vorhandene Benutzerprofil für Luca Rossi.",
+    "expected": "users.lookup",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-lookup-de-2",
+    "query": "Lass die Analyse weg und hole das vorhandene Benutzerprofil für user 314.",
+    "expected": "users.lookup",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-lookup-de-3",
+    "query": "Die beabsichtigte Aktion ist: hole das vorhandene Benutzerprofil für dev@example.org.",
+    "expected": "users.lookup",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-lookup-de-4",
+    "query": "Führe genau diese Aufgabe aus: hole das vorhandene Benutzerprofil für Mina Park.",
+    "expected": "users.lookup",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-lookup-mixed-1",
+    "query": "execution request: user 314 existing user profile을 retrieve해.",
+    "expected": "users.lookup",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-lookup-mixed-2",
+    "query": "analysis는 skip하고 dev@example.org existing user profile을 retrieve해.",
+    "expected": "users.lookup",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-lookup-mixed-3",
+    "query": "intended action은 이거야: Mina Park existing user profile을 retrieve해.",
+    "expected": "users.lookup",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-lookup-mixed-4",
+    "query": "exactly 이 task만 해줘: account 808 existing user profile을 retrieve해.",
+    "expected": "users.lookup",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-update-en-1",
+    "query": "Operational request: modify the stored user profile for user 314 locale to ko-KR.",
+    "expected": "users.update",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-update-en-2",
+    "query": "Skip the analysis and modify the stored user profile for dev@example.org timezone.",
+    "expected": "users.update",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-update-en-3",
+    "query": "The intended action is this — modify the stored user profile for Mina Park job title.",
+    "expected": "users.update",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-update-en-4",
+    "query": "Do exactly this task: modify the stored user profile for account 808 display name.",
+    "expected": "users.update",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-update-ko-1",
+    "query": "실행 요청: dev@example.org timezone 사용자 프로필 정보를 수정해줘.",
+    "expected": "users.update",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-update-ko-2",
+    "query": "분석은 생략하고 Mina Park job title 사용자 프로필 정보를 수정해줘.",
+    "expected": "users.update",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-update-ko-3",
+    "query": "의도한 작업은 이것이야: account 808 display name 사용자 프로필 정보를 수정해줘.",
+    "expected": "users.update",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-update-ko-4",
+    "query": "정확히 이 작업만 해줘: Luca Rossi department 사용자 프로필 정보를 수정해줘.",
+    "expected": "users.update",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-update-es-1",
+    "query": "Solicitud operativa: modifica el perfil de usuario almacenado de Mina Park job title.",
+    "expected": "users.update",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-update-es-2",
+    "query": "Omite el análisis y modifica el perfil de usuario almacenado de account 808 display name.",
+    "expected": "users.update",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-update-es-3",
+    "query": "La acción prevista es esta: modifica el perfil de usuario almacenado de Luca Rossi department.",
+    "expected": "users.update",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-update-es-4",
+    "query": "Haz exactamente esta tarea: modifica el perfil de usuario almacenado de user 314 locale to ko-KR.",
+    "expected": "users.update",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-update-ja-1",
+    "query": "実行依頼: account 808 display nameの保存済みユーザープロフィールを変更して。",
+    "expected": "users.update",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-update-ja-2",
+    "query": "分析は省いてLuca Rossi departmentの保存済みユーザープロフィールを変更して。",
+    "expected": "users.update",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-update-ja-3",
+    "query": "意図している操作はこれです: user 314 locale to ko-KRの保存済みユーザープロフィールを変更して。",
+    "expected": "users.update",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-update-ja-4",
+    "query": "この作業だけを正確に実行して: dev@example.org timezoneの保存済みユーザープロフィールを変更して。",
+    "expected": "users.update",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-update-de-1",
+    "query": "Operative Anfrage: ändere das gespeicherte Benutzerprofil für Luca Rossi department.",
+    "expected": "users.update",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-update-de-2",
+    "query": "Lass die Analyse weg und ändere das gespeicherte Benutzerprofil für user 314 locale to ko-KR.",
+    "expected": "users.update",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-update-de-3",
+    "query": "Die beabsichtigte Aktion ist: ändere das gespeicherte Benutzerprofil für dev@example.org timezone.",
+    "expected": "users.update",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-update-de-4",
+    "query": "Führe genau diese Aufgabe aus: ändere das gespeicherte Benutzerprofil für Mina Park job title.",
+    "expected": "users.update",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-update-mixed-1",
+    "query": "execution request: user 314 locale to ko-KR stored user profile을 modify해.",
+    "expected": "users.update",
+    "category": "operational",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-update-mixed-2",
+    "query": "analysis는 skip하고 dev@example.org timezone stored user profile을 modify해.",
+    "expected": "users.update",
+    "category": "directive",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-update-mixed-3",
+    "query": "intended action은 이거야: Mina Park job title stored user profile을 modify해.",
+    "expected": "users.update",
+    "category": "intent_explicit",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-update-mixed-4",
+    "query": "exactly 이 task만 해줘: account 808 display name stored user profile을 modify해.",
+    "expected": "users.update",
+    "category": "strict_scope",
+    "expect_abstain": false,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-en-1-1",
+    "query": "Operational request: explain how climate change affects rainfall patterns.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-1-2",
+    "query": "Skip the analysis and explain how climate change affects rainfall patterns.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-1-3",
+    "query": "The intended action is this — explain how climate change affects rainfall patterns.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-1-4",
+    "query": "Do exactly this task: explain how climate change affects rainfall patterns.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-2-1",
+    "query": "Operational request: explain why silicon has a band gap.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-2-2",
+    "query": "Skip the analysis and explain why silicon has a band gap.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-2-3",
+    "query": "The intended action is this — explain why silicon has a band gap.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-2-4",
+    "query": "Do exactly this task: explain why silicon has a band gap.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-3-1",
+    "query": "Operational request: write an abstract for my paper about retrieval augmented generation.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-3-2",
+    "query": "Skip the analysis and write an abstract for my paper about retrieval augmented generation.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-3-3",
+    "query": "The intended action is this — write an abstract for my paper about retrieval augmented generation.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-3-4",
+    "query": "Do exactly this task: write an abstract for my paper about retrieval augmented generation.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-4-1",
+    "query": "Operational request: explain what a price-to-earnings ratio means.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-4-2",
+    "query": "Skip the analysis and explain what a price-to-earnings ratio means.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-4-3",
+    "query": "The intended action is this — explain what a price-to-earnings ratio means.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-4-4",
+    "query": "Do exactly this task: explain what a price-to-earnings ratio means.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-5-1",
+    "query": "Operational request: write a polite invitation message for a project meeting.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-5-2",
+    "query": "Skip the analysis and write a polite invitation message for a project meeting.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-5-3",
+    "query": "The intended action is this — write a polite invitation message for a project meeting.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-5-4",
+    "query": "Do exactly this task: write a polite invitation message for a project meeting.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-6-1",
+    "query": "Operational request: rewrite this customer support response to sound friendlier.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-6-2",
+    "query": "Skip the analysis and rewrite this customer support response to sound friendlier.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-6-3",
+    "query": "The intended action is this — rewrite this customer support response to sound friendlier.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-6-4",
+    "query": "Do exactly this task: rewrite this customer support response to sound friendlier.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-7-1",
+    "query": "Operational request: calculate inventory turnover from these accounting numbers.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-7-2",
+    "query": "Skip the analysis and calculate inventory turnover from these accounting numbers.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-7-3",
+    "query": "The intended action is this — calculate inventory turnover from these accounting numbers.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-7-4",
+    "query": "Do exactly this task: calculate inventory turnover from these accounting numbers.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-8-1",
+    "query": "Operational request: design a user profile card interface.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-8-2",
+    "query": "Skip the analysis and design a user profile card interface.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-8-3",
+    "query": "The intended action is this — design a user profile card interface.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-8-4",
+    "query": "Do exactly this task: design a user profile card interface.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-ko-1-1",
+    "query": "실행 요청: 기후 변화가 강수 패턴에 어떤 영향을 주는지 설명해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-1-2",
+    "query": "분석은 생략하고 기후 변화가 강수 패턴에 어떤 영향을 주는지 설명해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-1-3",
+    "query": "의도한 작업은 이것이야: 기후 변화가 강수 패턴에 어떤 영향을 주는지 설명해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-1-4",
+    "query": "정확히 이 작업만 해줘: 기후 변화가 강수 패턴에 어떤 영향을 주는지 설명해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-2-1",
+    "query": "실행 요청: 실리콘에 밴드갭이 생기는 이유를 설명해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-2-2",
+    "query": "분석은 생략하고 실리콘에 밴드갭이 생기는 이유를 설명해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-2-3",
+    "query": "의도한 작업은 이것이야: 실리콘에 밴드갭이 생기는 이유를 설명해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-2-4",
+    "query": "정확히 이 작업만 해줘: 실리콘에 밴드갭이 생기는 이유를 설명해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-3-1",
+    "query": "실행 요청: 검색증강생성에 관한 내 논문의 초록을 써줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-3-2",
+    "query": "분석은 생략하고 검색증강생성에 관한 내 논문의 초록을 써줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-3-3",
+    "query": "의도한 작업은 이것이야: 검색증강생성에 관한 내 논문의 초록을 써줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-3-4",
+    "query": "정확히 이 작업만 해줘: 검색증강생성에 관한 내 논문의 초록을 써줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-4-1",
+    "query": "실행 요청: 주가수익비율이 무엇을 의미하는지 설명해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-4-2",
+    "query": "분석은 생략하고 주가수익비율이 무엇을 의미하는지 설명해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-4-3",
+    "query": "의도한 작업은 이것이야: 주가수익비율이 무엇을 의미하는지 설명해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-4-4",
+    "query": "정확히 이 작업만 해줘: 주가수익비율이 무엇을 의미하는지 설명해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-5-1",
+    "query": "실행 요청: 프로젝트 회의용 정중한 초대 문구를 써줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-5-2",
+    "query": "분석은 생략하고 프로젝트 회의용 정중한 초대 문구를 써줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-5-3",
+    "query": "의도한 작업은 이것이야: 프로젝트 회의용 정중한 초대 문구를 써줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-5-4",
+    "query": "정확히 이 작업만 해줘: 프로젝트 회의용 정중한 초대 문구를 써줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-6-1",
+    "query": "실행 요청: 이 고객지원 답변을 더 친절한 문장으로 고쳐줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-6-2",
+    "query": "분석은 생략하고 이 고객지원 답변을 더 친절한 문장으로 고쳐줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-6-3",
+    "query": "의도한 작업은 이것이야: 이 고객지원 답변을 더 친절한 문장으로 고쳐줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-6-4",
+    "query": "정확히 이 작업만 해줘: 이 고객지원 답변을 더 친절한 문장으로 고쳐줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-7-1",
+    "query": "실행 요청: 이 회계 숫자로 재고회전율을 계산해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-7-2",
+    "query": "분석은 생략하고 이 회계 숫자로 재고회전율을 계산해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-7-3",
+    "query": "의도한 작업은 이것이야: 이 회계 숫자로 재고회전율을 계산해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-7-4",
+    "query": "정확히 이 작업만 해줘: 이 회계 숫자로 재고회전율을 계산해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-8-1",
+    "query": "실행 요청: 사용자 프로필 카드 UI를 디자인해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-8-2",
+    "query": "분석은 생략하고 사용자 프로필 카드 UI를 디자인해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-8-3",
+    "query": "의도한 작업은 이것이야: 사용자 프로필 카드 UI를 디자인해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-8-4",
+    "query": "정확히 이 작업만 해줘: 사용자 프로필 카드 UI를 디자인해줘.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-es-1-1",
+    "query": "Solicitud operativa: explica cómo afecta el cambio climático a los patrones de lluvia.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-1-2",
+    "query": "Omite el análisis y explica cómo afecta el cambio climático a los patrones de lluvia.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-1-3",
+    "query": "La acción prevista es esta: explica cómo afecta el cambio climático a los patrones de lluvia.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-1-4",
+    "query": "Haz exactamente esta tarea: explica cómo afecta el cambio climático a los patrones de lluvia.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-2-1",
+    "query": "Solicitud operativa: explica por qué el silicio tiene una banda prohibida.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-2-2",
+    "query": "Omite el análisis y explica por qué el silicio tiene una banda prohibida.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-2-3",
+    "query": "La acción prevista es esta: explica por qué el silicio tiene una banda prohibida.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-2-4",
+    "query": "Haz exactamente esta tarea: explica por qué el silicio tiene una banda prohibida.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-3-1",
+    "query": "Solicitud operativa: escribe un resumen para mi artículo sobre generación aumentada por recuperación.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-3-2",
+    "query": "Omite el análisis y escribe un resumen para mi artículo sobre generación aumentada por recuperación.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-3-3",
+    "query": "La acción prevista es esta: escribe un resumen para mi artículo sobre generación aumentada por recuperación.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-3-4",
+    "query": "Haz exactamente esta tarea: escribe un resumen para mi artículo sobre generación aumentada por recuperación.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-4-1",
+    "query": "Solicitud operativa: explica qué significa la relación precio-beneficio.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-4-2",
+    "query": "Omite el análisis y explica qué significa la relación precio-beneficio.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-4-3",
+    "query": "La acción prevista es esta: explica qué significa la relación precio-beneficio.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-4-4",
+    "query": "Haz exactamente esta tarea: explica qué significa la relación precio-beneficio.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-5-1",
+    "query": "Solicitud operativa: escribe una invitación educada para una reunión de proyecto.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-5-2",
+    "query": "Omite el análisis y escribe una invitación educada para una reunión de proyecto.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-5-3",
+    "query": "La acción prevista es esta: escribe una invitación educada para una reunión de proyecto.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-5-4",
+    "query": "Haz exactamente esta tarea: escribe una invitación educada para una reunión de proyecto.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-6-1",
+    "query": "Solicitud operativa: reescribe esta respuesta de soporte para que suene más amable.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-6-2",
+    "query": "Omite el análisis y reescribe esta respuesta de soporte para que suene más amable.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-6-3",
+    "query": "La acción prevista es esta: reescribe esta respuesta de soporte para que suene más amable.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-6-4",
+    "query": "Haz exactamente esta tarea: reescribe esta respuesta de soporte para que suene más amable.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-7-1",
+    "query": "Solicitud operativa: calcula la rotación de inventario con estas cifras contables.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-7-2",
+    "query": "Omite el análisis y calcula la rotación de inventario con estas cifras contables.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-7-3",
+    "query": "La acción prevista es esta: calcula la rotación de inventario con estas cifras contables.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-7-4",
+    "query": "Haz exactamente esta tarea: calcula la rotación de inventario con estas cifras contables.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-8-1",
+    "query": "Solicitud operativa: diseña una interfaz de tarjeta de perfil de usuario.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-8-2",
+    "query": "Omite el análisis y diseña una interfaz de tarjeta de perfil de usuario.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-8-3",
+    "query": "La acción prevista es esta: diseña una interfaz de tarjeta de perfil de usuario.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-8-4",
+    "query": "Haz exactamente esta tarea: diseña una interfaz de tarjeta de perfil de usuario.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-ja-1-1",
+    "query": "実行依頼: 気候変動が降雨パターンにどう影響するか説明して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-1-2",
+    "query": "分析は省いて気候変動が降雨パターンにどう影響するか説明して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-1-3",
+    "query": "意図している操作はこれです: 気候変動が降雨パターンにどう影響するか説明して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-1-4",
+    "query": "この作業だけを正確に実行して: 気候変動が降雨パターンにどう影響するか説明して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-2-1",
+    "query": "実行依頼: シリコンにバンドギャップがある理由を説明して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-2-2",
+    "query": "分析は省いてシリコンにバンドギャップがある理由を説明して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-2-3",
+    "query": "意図している操作はこれです: シリコンにバンドギャップがある理由を説明して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-2-4",
+    "query": "この作業だけを正確に実行して: シリコンにバンドギャップがある理由を説明して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-3-1",
+    "query": "実行依頼: 検索拡張生成についての私の論文の要旨を書いて。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-3-2",
+    "query": "分析は省いて検索拡張生成についての私の論文の要旨を書いて。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-3-3",
+    "query": "意図している操作はこれです: 検索拡張生成についての私の論文の要旨を書いて。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-3-4",
+    "query": "この作業だけを正確に実行して: 検索拡張生成についての私の論文の要旨を書いて。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-4-1",
+    "query": "実行依頼: 株価収益率の意味を説明して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-4-2",
+    "query": "分析は省いて株価収益率の意味を説明して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-4-3",
+    "query": "意図している操作はこれです: 株価収益率の意味を説明して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-4-4",
+    "query": "この作業だけを正確に実行して: 株価収益率の意味を説明して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-5-1",
+    "query": "実行依頼: プロジェクト会議の丁寧な招待文を書いて。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-5-2",
+    "query": "分析は省いてプロジェクト会議の丁寧な招待文を書いて。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-5-3",
+    "query": "意図している操作はこれです: プロジェクト会議の丁寧な招待文を書いて。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-5-4",
+    "query": "この作業だけを正確に実行して: プロジェクト会議の丁寧な招待文を書いて。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-6-1",
+    "query": "実行依頼: このサポート回答をもっと親切な表現に書き直して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-6-2",
+    "query": "分析は省いてこのサポート回答をもっと親切な表現に書き直して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-6-3",
+    "query": "意図している操作はこれです: このサポート回答をもっと親切な表現に書き直して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-6-4",
+    "query": "この作業だけを正確に実行して: このサポート回答をもっと親切な表現に書き直して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-7-1",
+    "query": "実行依頼: この会計数値から在庫回転率を計算して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-7-2",
+    "query": "分析は省いてこの会計数値から在庫回転率を計算して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-7-3",
+    "query": "意図している操作はこれです: この会計数値から在庫回転率を計算して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-7-4",
+    "query": "この作業だけを正確に実行して: この会計数値から在庫回転率を計算して。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-8-1",
+    "query": "実行依頼: ユーザープロフィールカードのUIをデザインして。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-8-2",
+    "query": "分析は省いてユーザープロフィールカードのUIをデザインして。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-8-3",
+    "query": "意図している操作はこれです: ユーザープロフィールカードのUIをデザインして。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-8-4",
+    "query": "この作業だけを正確に実行して: ユーザープロフィールカードのUIをデザインして。",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-de-1-1",
+    "query": "Operative Anfrage: erkläre, wie der Klimawandel Niederschlagsmuster beeinflusst.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-1-2",
+    "query": "Lass die Analyse weg und erkläre, wie der Klimawandel Niederschlagsmuster beeinflusst.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-1-3",
+    "query": "Die beabsichtigte Aktion ist: erkläre, wie der Klimawandel Niederschlagsmuster beeinflusst.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-1-4",
+    "query": "Führe genau diese Aufgabe aus: erkläre, wie der Klimawandel Niederschlagsmuster beeinflusst.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-2-1",
+    "query": "Operative Anfrage: erkläre, warum Silizium eine Bandlücke hat.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-2-2",
+    "query": "Lass die Analyse weg und erkläre, warum Silizium eine Bandlücke hat.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-2-3",
+    "query": "Die beabsichtigte Aktion ist: erkläre, warum Silizium eine Bandlücke hat.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-2-4",
+    "query": "Führe genau diese Aufgabe aus: erkläre, warum Silizium eine Bandlücke hat.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-3-1",
+    "query": "Operative Anfrage: schreibe eine Zusammenfassung für meine Arbeit über Retrieval-Augmented Generation.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-3-2",
+    "query": "Lass die Analyse weg und schreibe eine Zusammenfassung für meine Arbeit über Retrieval-Augmented Generation.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-3-3",
+    "query": "Die beabsichtigte Aktion ist: schreibe eine Zusammenfassung für meine Arbeit über Retrieval-Augmented Generation.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-3-4",
+    "query": "Führe genau diese Aufgabe aus: schreibe eine Zusammenfassung für meine Arbeit über Retrieval-Augmented Generation.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-4-1",
+    "query": "Operative Anfrage: erkläre, was das Kurs-Gewinn-Verhältnis bedeutet.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-4-2",
+    "query": "Lass die Analyse weg und erkläre, was das Kurs-Gewinn-Verhältnis bedeutet.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-4-3",
+    "query": "Die beabsichtigte Aktion ist: erkläre, was das Kurs-Gewinn-Verhältnis bedeutet.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-4-4",
+    "query": "Führe genau diese Aufgabe aus: erkläre, was das Kurs-Gewinn-Verhältnis bedeutet.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-5-1",
+    "query": "Operative Anfrage: schreibe eine höfliche Einladung für ein Projekttreffen.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-5-2",
+    "query": "Lass die Analyse weg und schreibe eine höfliche Einladung für ein Projekttreffen.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-5-3",
+    "query": "Die beabsichtigte Aktion ist: schreibe eine höfliche Einladung für ein Projekttreffen.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-5-4",
+    "query": "Führe genau diese Aufgabe aus: schreibe eine höfliche Einladung für ein Projekttreffen.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-6-1",
+    "query": "Operative Anfrage: formuliere diese Support-Antwort freundlicher.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-6-2",
+    "query": "Lass die Analyse weg und formuliere diese Support-Antwort freundlicher.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-6-3",
+    "query": "Die beabsichtigte Aktion ist: formuliere diese Support-Antwort freundlicher.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-6-4",
+    "query": "Führe genau diese Aufgabe aus: formuliere diese Support-Antwort freundlicher.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-7-1",
+    "query": "Operative Anfrage: berechne den Lagerumschlag aus diesen Buchhaltungszahlen.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-7-2",
+    "query": "Lass die Analyse weg und berechne den Lagerumschlag aus diesen Buchhaltungszahlen.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-7-3",
+    "query": "Die beabsichtigte Aktion ist: berechne den Lagerumschlag aus diesen Buchhaltungszahlen.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-7-4",
+    "query": "Führe genau diese Aufgabe aus: berechne den Lagerumschlag aus diesen Buchhaltungszahlen.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-8-1",
+    "query": "Operative Anfrage: entwirf eine Benutzerprofilkarten-Oberfläche.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-8-2",
+    "query": "Lass die Analyse weg und entwirf eine Benutzerprofilkarten-Oberfläche.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-8-3",
+    "query": "Die beabsichtigte Aktion ist: entwirf eine Benutzerprofilkarten-Oberfläche.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-8-4",
+    "query": "Führe genau diese Aufgabe aus: entwirf eine Benutzerprofilkarten-Oberfläche.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-mixed-1-1",
+    "query": "execution request: climate change가 rainfall pattern에 미치는 영향을 explain해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-1-2",
+    "query": "analysis는 skip하고 climate change가 rainfall pattern에 미치는 영향을 explain해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-1-3",
+    "query": "intended action은 이거야: climate change가 rainfall pattern에 미치는 영향을 explain해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-1-4",
+    "query": "exactly 이 task만 해줘: climate change가 rainfall pattern에 미치는 영향을 explain해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-2-1",
+    "query": "execution request: silicon에 band gap이 생기는 이유를 explain해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-2-2",
+    "query": "analysis는 skip하고 silicon에 band gap이 생기는 이유를 explain해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-2-3",
+    "query": "intended action은 이거야: silicon에 band gap이 생기는 이유를 explain해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-2-4",
+    "query": "exactly 이 task만 해줘: silicon에 band gap이 생기는 이유를 explain해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-3-1",
+    "query": "execution request: 내 retrieval augmented generation paper abstract를 write해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-3-2",
+    "query": "analysis는 skip하고 내 retrieval augmented generation paper abstract를 write해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-3-3",
+    "query": "intended action은 이거야: 내 retrieval augmented generation paper abstract를 write해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-3-4",
+    "query": "exactly 이 task만 해줘: 내 retrieval augmented generation paper abstract를 write해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-4-1",
+    "query": "execution request: P/E ratio가 무슨 뜻인지 explain해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-4-2",
+    "query": "analysis는 skip하고 P/E ratio가 무슨 뜻인지 explain해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-4-3",
+    "query": "intended action은 이거야: P/E ratio가 무슨 뜻인지 explain해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-4-4",
+    "query": "exactly 이 task만 해줘: P/E ratio가 무슨 뜻인지 explain해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-5-1",
+    "query": "execution request: project meeting용 polite invitation message를 write해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-5-2",
+    "query": "analysis는 skip하고 project meeting용 polite invitation message를 write해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-5-3",
+    "query": "intended action은 이거야: project meeting용 polite invitation message를 write해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-5-4",
+    "query": "exactly 이 task만 해줘: project meeting용 polite invitation message를 write해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-6-1",
+    "query": "execution request: 이 support response를 friendlier하게 rewrite해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-6-2",
+    "query": "analysis는 skip하고 이 support response를 friendlier하게 rewrite해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-6-3",
+    "query": "intended action은 이거야: 이 support response를 friendlier하게 rewrite해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-6-4",
+    "query": "exactly 이 task만 해줘: 이 support response를 friendlier하게 rewrite해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-7-1",
+    "query": "execution request: 이 accounting numbers로 inventory turnover를 calculate해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-7-2",
+    "query": "analysis는 skip하고 이 accounting numbers로 inventory turnover를 calculate해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-7-3",
+    "query": "intended action은 이거야: 이 accounting numbers로 inventory turnover를 calculate해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-7-4",
+    "query": "exactly 이 task만 해줘: 이 accounting numbers로 inventory turnover를 calculate해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-8-1",
+    "query": "execution request: user profile card UI를 design해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-8-2",
+    "query": "analysis는 skip하고 user profile card UI를 design해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-8-3",
+    "query": "intended action은 이거야: user profile card UI를 design해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-8-4",
+    "query": "exactly 이 task만 해줘: user profile card UI를 design해.",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "fresh_holdout",
+    "language": "mixed"
+  }
+]
