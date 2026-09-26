@@ -701,6 +701,15 @@ def test_v12_reservation_is_unconsumed_and_not_runnable_from_research_workflow()
     assert "decision-routing-v12-operation-contrastive-holdout.json" not in workflow
 
 
+def test_pairwise_operation_fit_cli_wires_score_and_margin() -> None:
+    source = SCRIPT.read_text(encoding="utf-8")
+    marker = "if args.operation_fit_pairwise_callable:"
+    block = source.split(marker, 1)[1].split("elif args.operation_fit_embedding_callable:", 1)[0]
+
+    assert "min_score=args.operation_fit_min_score" in block
+    assert "min_margin=args.operation_fit_min_margin" in block
+
+
 def test_consumed_v11_is_not_runnable_from_research_workflow() -> None:
     workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
 
