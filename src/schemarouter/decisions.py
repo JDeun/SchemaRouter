@@ -280,6 +280,12 @@ class EmbeddingDecisionBackend:
         )
         eligible = [item for item in ranked if item[1] >= self.min_similarity]
 
+        second_similarity = ranked[1][1] if len(ranked) > 1 else None
+        top_margin = (
+            ranked[0][1] - second_similarity
+            if second_similarity is not None
+            else None
+        )
         metadata: dict[str, Any] = {
             "provider": "embedding-similarity",
             "dimensions": len(query_vector),
@@ -287,6 +293,8 @@ class EmbeddingDecisionBackend:
             "min_similarity": self.min_similarity,
             "min_margin": self.min_margin,
             "top_similarity": ranked[0][1],
+            "second_similarity": second_similarity,
+            "top_margin": top_margin,
         }
         if not eligible:
             return validate_decision(
