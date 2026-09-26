@@ -458,7 +458,9 @@ jobs:
 
 
   operation-fit-v7-heldout-cpu:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_operation_holdout && inputs.operation_fit_min_similarity != '' }}
+    # One-shot PR execution after v5 calibration froze 0.45. Restore the manual-only guard
+    # immediately after this reserved v7 holdout has been consumed.
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -474,7 +476,7 @@ jobs:
       - name: Run frozen operation-fit configuration on reserved v7 post-change holdout
         env:
           SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-          OPERATION_FIT_MIN_SIMILARITY: ${{ inputs.operation_fit_min_similarity }}
+          OPERATION_FIT_MIN_SIMILARITY: "0.45"
         run: |
           mkdir -p artifacts/operation-fit/heldout-v7
           python scripts/benchmark_decision_routing.py \

@@ -372,6 +372,12 @@ Only the operation-fit threshold is varied during v5 calibration. For the label-
 operation-fit surface, freeze that threshold before evaluating v7 and do not retune it from v7
 results.
 
+For the label-cleaned surface, the v5 sweep over 0.05 through 0.70 froze
+`operation_fit_min_similarity = 0.45` before v7 evaluation. The selection rule is maximum
+calibration accuracy, with dev accuracy used as a stability check. At 0.45, calibration accuracy
+was 65.625% and dev accuracy was 66.667%; adjacent thresholds 0.40 and 0.50 reached 60.938% and
+60.417% calibration accuracy respectively. This frozen value must not be changed based on v7.
+
 
 ### Post-change operation holdout (v7)
 
