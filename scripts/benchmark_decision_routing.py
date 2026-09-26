@@ -80,6 +80,7 @@ class BenchmarkRow:
     actual_device: str | None = None
     estimated_cost: float | None = None
     error: str | None = None
+    failure_stage: str | None = None
 
 
 SMOKE_CASES = [
@@ -526,6 +527,11 @@ async def benchmark_planner(
                 "expanded an empty lexical candidate set" in warning
                 for warning in plan.warnings
             )
+            failure_stage = _failure_stage(
+                plan.warnings,
+                expected=case.expected,
+                predicted=predicted,
+            )
             metadata = getattr(result, "metadata", {}) if result is not None else {}
             input_tokens = metadata.get("input_tokens")
             output_tokens = metadata.get("output_tokens")
@@ -607,6 +613,28 @@ async def benchmark_planner(
                 )
             )
     return rows
+
+
+def _failure_stage(
+    warnings: list[str],
+    *,
+    expected: str | None,
+    predicted: str | None,
+) -> str | None:
+    if expected is None or predicted is not None:
+        return None
+    lowered = [warning.casefold() for warning in warnings]
+    if any("operation capability fit gate abstained" in warning for warning in lowered):
+        return "operation_fit"
+    if any("capability fit gate abstained" in warning for warning in lowered):
+        return "capability_fit"
+    if any(
+        "empty lexical candidate" in warning
+        or "semantic candidate recall" in warning and "abstained" in warning
+        for warning in lowered
+    ):
+        return "candidate_recall"
+    return "deterministic_recall_or_coverage"
 
 
 def _error_taxonomy(rows: list[BenchmarkRow]) -> dict[str, int]:
@@ -698,6 +726,12 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
         ),
         "errors": sum(row.error is not None for row in rows),
         "error_taxonomy": _error_taxonomy(rows),
+        "failure_stage_counts": {
+            stage: sum(row.failure_stage == stage for row in rows)
+            for stage in sorted(
+                {row.failure_stage for row in rows if row.failure_stage is not None}
+            )
+        },
         "backend_invocations": sum(row.backend_invoked for row in rows),
         "backend_invocation_rate": (
             sum(row.backend_invoked for row in rows) / total if total else 0.0
