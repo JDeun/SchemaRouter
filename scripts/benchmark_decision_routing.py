@@ -27,6 +27,7 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 from schemarouter import (  # noqa: E402
+    CachedEmbeddingDecisionBackend,
     DecisionPolicy,
     EmbeddingDecisionBackend,
     EndpointSpec,
@@ -1348,7 +1349,7 @@ async def main() -> None:
             args.graph_semantic_seed_embedding_callable,
             option_name="--graph-semantic-seed-embedding-callable",
         )
-        graph_semantic_seed_backend = EmbeddingDecisionBackend(
+        graph_semantic_seed_backend = CachedEmbeddingDecisionBackend(
             graph_semantic_seed_embedder,
             min_similarity=args.graph_semantic_seed_min_similarity,
             min_margin=args.graph_semantic_seed_min_margin,
