@@ -65,7 +65,7 @@ Optional decision backends (Laya / Ollama / Jev) plug into SchemaRouter's bounde
 They do not become agents, do not run tool loops, and do not receive execution authority.
 ```
 
-> **Current stable release: 0.7.0** · `pip install schemarouter` · pre-1.0
+> **Current stable release: 0.8.0** · `pip install schemarouter` · pre-1.0
 
 ## Why SchemaRouter
 
@@ -182,6 +182,28 @@ Version `0.7.0` strengthens the same narrow execution boundary rather than addin
 Workflow/DAG semantics, memory, prompt systems, and autonomous tool loops remain out of scope.
 
 See the [0.7.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.7.0/) for details.
+
+## What 0.8 adds
+
+Version `0.8.0` extends field-first routing with bounded semantic recall and explicit
+multi-provider evidence handling while keeping execution authority local:
+
+- optional semantic candidate recall plus separate capability-fit, operation-fit, and same-tool
+  endpoint-disambiguation stages;
+- trusted endpoint operation aliases without model-authored capability expansion;
+- per-field evidence requirements and explicit plan coverage reporting;
+- coverage-aware multi-call selection across complementary providers;
+- opt-in corroboration across distinct providers plus provenance-preserving aggregation that keeps
+  independent scientific observations separate instead of silently choosing a value;
+- reproducible multilingual routing corpora with frozen development/calibration/holdout discipline.
+
+The fresh 600-case v10 one-shot holdout reached **55.667% overall accuracy**, **42.188%
+supported-operation routed accuracy**, **77.083% near-domain unsupported-operation rejection**, and
+**100% ordinary OOD rejection**. Operation-fit remains the dominant recall bottleneck, so v10 is
+treated as consumed regression evidence and will not be reused for tuning.
+
+See the [0.8.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.8.0/) and the
+[multi-provider evidence guide](https://jdeun.github.io/SchemaRouter/guides/multi-provider-evidence/).
 
 ## Inspect what SchemaRouter built
 
