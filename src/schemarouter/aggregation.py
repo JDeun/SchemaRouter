@@ -10,7 +10,6 @@ from pydantic import Field, model_validator
 
 from .models import StrictModel
 
-
 EntityKind = Literal["document", "material", "chemical", "generic"]
 MergeMode = Literal["deduplicate", "preserve_observations"]
 
