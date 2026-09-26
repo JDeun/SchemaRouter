@@ -1,0 +1,41 @@
+{
+  "cycle": "0.10-operation-cascade-v2",
+  "status": "candidate_frozen_before_calibration",
+  "v14_protocol": "benchmarks/decision-routing-v14-blind-protocol.json",
+  "frozen_from_dev_run": {
+    "workflow_run_id": 36248873541,
+    "source_revision": "f542fbd92bd55432eff6b508e0577eef1d71866c",
+    "result_manifest": "benchmarks/operation-fit-0.10-cascade-dev-result.json",
+    "selection_split": "dev"
+  },
+  "selected_candidate": {
+    "name": "r030-a060-m005",
+    "architecture": "MiniLM cheap-first triage -> beta=1 sibling-contrastive BGE on ambiguous cases",
+    "reject_below": 0.3,
+    "accept_above": 0.6,
+    "accept_margin": 0.05,
+    "reranker_model": "BAAI/bge-reranker-v2-m3",
+    "bge_beta": 1,
+    "pairwise_min_score": 0.01,
+    "pairwise_min_margin": 0,
+    "semantic_recall_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "semantic_recall_top_k": 2,
+    "capability_fit_min_similarity": 0.25,
+    "endpoint_disambiguation_min_margin": 0.03
+  },
+  "calibration": {
+    "corpus": "benchmarks/decision-routing-v5-operation-calibration.json",
+    "split": "calibration",
+    "supported_operation_floor": 0.6,
+    "near_domain_unsupported_rejection_floor": 0.95,
+    "latency_rule": "compare frozen cascade and frozen full-BGE baseline sequentially in the same GitHub Actions job after model-cache warmup; cascade mean latency must be lower",
+    "candidate_changes_allowed": false
+  },
+  "promotion_rule": "advance to v14 blind final only if the frozen candidate passes both calibration quality floors and has lower mean latency than full BGE in the paired same-job comparison",
+  "prohibited": [
+    "No threshold, beta, model, representation, upstream routing, or cascade-policy changes after this freeze.",
+    "Calibration may veto the candidate but may not select an alternative.",
+    "Do not inspect v12 or v13 for tuning.",
+    "Do not generate, inspect, or execute v14 before calibration confirmation is recorded and the complete blind-final configuration is frozen."
+  ]
+}
