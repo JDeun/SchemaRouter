@@ -1,0 +1,74 @@
+name: Graph Operation Development
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-operation-graph-dev.yml"
+      - "src/schemarouter/graph_routing.py"
+      - "src/schemarouter/planner.py"
+      - "src/schemarouter/models.py"
+      - "scripts/benchmark_decision_routing.py"
+      - "scripts/generate_decision_routing_graph_v1.py"
+      - "benchmarks/operation-fit-0.10-graph-cycle.json"
+      - "benchmarks/decision-routing-v15-blind-protocol.json"
+      - "tests/test_graph_routing.py"
+      - "tests/test_operation_graph_protocol.py"
+
+permissions:
+  contents: read
+
+env:
+  SCHEMAROUTER_SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
+  SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+  SCHEMAROUTER_BENCHMARK_RERANKER_MODEL: "BAAI/bge-reranker-v2-m3"
+  SCHEMAROUTER_BENCHMARK_CONTRASTIVE_BETA: "1.00"
+
+concurrency:
+  group: operation-graph-dev-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  graph-dev:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "sentence-transformers>=3,<6"
+      - run: pip install -e ".[dev]"
+
+      - name: Validate graph research contracts
+        run: |
+          pytest -q             tests/test_graph_routing.py             tests/test_operation_graph_protocol.py             tests/test_operation_contrastive_protocol.py
+
+      - name: Generate fresh graph-v1 development corpus
+        run: |
+          OUT="artifacts/operation-graph/development"
+          mkdir -p "${OUT}"
+          python scripts/generate_decision_routing_graph_v1.py             --seed "graph-v1-development-2026-09-26"             --source-revision "${SCHEMAROUTER_SOURCE_REVISION}"             --out "${OUT}/corpus.json"             --manifest "${OUT}/corpus-manifest.json"
+
+      - name: Run alias-only graph candidate against full BGE baseline
+        run: |
+          OUT="artifacts/operation-graph/development"
+          BASELINE="keyword+semantic-recall+capability-fit+operation-fit+endpoint-disambiguation"
+          GRAPH="keyword+semantic-recall+capability-fit+graph-operation+selective-operation-fit+selective-endpoint-disambiguation"
+          python scripts/benchmark_decision_routing.py             --corpus "${OUT}/corpus.json"             --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed             --candidate-recall-limit 2             --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed             --candidate-fit-min-similarity 0.25             --operation-fit-pairwise-callable benchmarks.bge_contrastive:score_pairs             --operation-fit-min-score 0.01             --operation-fit-min-margin 0.0             --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed             --endpoint-disambiguation-min-margin 0.03             --graph-operation-gate             --planner-name "${BASELINE}"             --planner-name "${GRAPH}"             --hardware-label "GitHub Actions ubuntu-latest x64 CPU"             --json-out "${OUT}/alias-only-report.json"             --csv-out "${OUT}/alias-only-rows.csv"             --html-out "${OUT}/alias-only-report.html"
+
+      - name: Run field-path graph ablation against full BGE baseline
+        run: |
+          OUT="artifacts/operation-graph/development"
+          BASELINE="keyword+semantic-recall+capability-fit+operation-fit+endpoint-disambiguation"
+          GRAPH="keyword+semantic-recall+capability-fit+graph-operation+selective-operation-fit+selective-endpoint-disambiguation"
+          python scripts/benchmark_decision_routing.py             --corpus "${OUT}/corpus.json"             --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed             --candidate-recall-limit 2             --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed             --candidate-fit-min-similarity 0.25             --operation-fit-pairwise-callable benchmarks.bge_contrastive:score_pairs             --operation-fit-min-score 0.01             --operation-fit-min-margin 0.0             --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed             --endpoint-disambiguation-min-margin 0.03             --graph-operation-gate             --graph-operation-field-paths             --planner-name "${BASELINE}"             --planner-name "${GRAPH}"             --hardware-label "GitHub Actions ubuntu-latest x64 CPU"             --json-out "${OUT}/field-path-report.json"             --csv-out "${OUT}/field-path-rows.csv"             --html-out "${OUT}/field-path-report.html"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: operation-graph-development-${{ github.run_id }}
+          path: artifacts/operation-graph/
+          if-no-files-found: error
+          retention-days: 30
