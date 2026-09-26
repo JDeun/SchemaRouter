@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 from pathlib import Path
 
-from generate_decision_routing_v2 import CONFIG
+_V2_GENERATOR = Path(__file__).with_name("generate_decision_routing_v2.py")
+_spec = importlib.util.spec_from_file_location("generate_decision_routing_v2", _V2_GENERATOR)
+if _spec is None or _spec.loader is None:
+    raise RuntimeError("cannot load decision-routing v2 generator")
+_v2 = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_v2)
+CONFIG = _v2.CONFIG
 
 WRAPPERS = json.loads(r'''{
   "en": [
