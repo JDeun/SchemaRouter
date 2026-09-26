@@ -4,7 +4,14 @@ from dataclasses import dataclass
 
 import pytest
 
-from schemarouter import EndpointSpec, FieldSpec, InMemoryRegistry, PlanRequest, ToolSpec
+from schemarouter import (
+    EndpointSpec,
+    FieldSpec,
+    InMemoryRegistry,
+    PlanRequest,
+    QueryIntent,
+    ToolSpec,
+)
 from schemarouter.decisions import DecisionRequest, DecisionResult, DecisionSelection
 from schemarouter.graph_routing import CompiledSchemaGraph, GraphOperationGate
 from schemarouter.planner import SchemaPlanner
@@ -356,6 +363,19 @@ class _AbstainingBackend:
         return DecisionResult(abstained=True)
 
 
+class _EndpointPreferringAnalyzer:
+    def analyze(self, request: PlanRequest, registry: object) -> QueryIntent:
+        del registry
+        return QueryIntent(
+            concepts=request.concepts,
+            preferred_tools=request.preferred_tools,
+            preferred_endpoints=["weather.forecast"],
+            arguments=request.arguments,
+            evidence=request.evidence,
+            field_evidence=request.field_evidence,
+        )
+
+
 @dataclass
 class _RouteSelectingBackend:
     route_id: str
@@ -444,6 +464,7 @@ def test_semantic_seed_respects_preferred_tool_and_endpoint_constraints() -> Non
     seed = _RouteSelectingBackend("weather.forecast")
     planner = SchemaPlanner(
         _registry(),
+        analyzer=_EndpointPreferringAnalyzer(),
         graph_operation_gate=GraphOperationGate(),
         graph_semantic_seed_backend=seed,
     )
@@ -452,7 +473,6 @@ def test_semantic_seed_respects_preferred_tool_and_endpoint_constraints() -> Non
         PlanRequest(
             query="Show future conditions around Seoul.",
             preferred_tools=["weather"],
-            preferred_endpoints=["weather.forecast"],
         )
     )
 
@@ -471,7 +491,7 @@ def test_semantic_seed_abstention_escalates_to_existing_operation_stack() -> Non
         operation_fit_backend=operation,
     )
 
-    plan = planner.plan(PlanRequest(query="Show severe conditions around Seoul."))
+    plan = planner.plan(PlanRequest(query="Show severe weather conditions around Seoul."))
 
     assert seed.calls == 1
     assert operation.calls == 1
