@@ -2697,10 +2697,6 @@ class SchemaPlanner:
                 intent,
                 additional_availability_predicate=additional_availability_predicate,
             )
-            semantic_seed_enabled = (
-                self.graph_operation_gate is not None
-                and self.graph_operation_gate.semantic_seed_min_score is not None
-            )
             recall_outcome = self._semantic_recall_outcome_sync(
                 request,
                 intent,
@@ -2947,10 +2943,6 @@ class SchemaPlanner:
                 request,
                 intent,
                 additional_availability_predicate=additional_availability_predicate,
-            )
-            semantic_seed_enabled = (
-                self.graph_operation_gate is not None
-                and self.graph_operation_gate.semantic_seed_min_score is not None
             )
             recall_outcome = await self._semantic_recall_outcome_async(
                 request,
