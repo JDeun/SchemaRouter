@@ -2522,12 +2522,14 @@ def _endpoint_disambiguation_registry() -> InMemoryRegistry:
                 EndpointSpec(
                     name="search",
                     description="Search inventory and stock by SKU",
+                    operation_aliases=["find stock", "check quantity"],
                     read_only=True,
                     output_fields=[FieldSpec(name="quantity")],
                 ),
                 EndpointSpec(
                     name="update",
                     description="Update inventory quantity for a SKU",
+                    operation_aliases=["change quantity", "set stock count"],
                     read_only=False,
                     output_fields=[FieldSpec(name="quantity")],
                 ),
@@ -2697,6 +2699,14 @@ def test_operation_fit_gate_sees_only_primary_tool_operations() -> None:
     }
     assert set(seen["labels"]) == {"search", "update"}
     assert all("inventory" not in label for label in seen["labels"])
+    assert any(
+        "Operation aliases: find stock; check quantity" in description
+        for description in seen["descriptions"]
+    )
+    assert any(
+        "Operation aliases: change quantity; set stock count" in description
+        for description in seen["descriptions"]
+    )
     assert all("Fields:" not in description for description in seen["descriptions"])
     assert all(
         "Inventory lookup and stock update operations" not in description

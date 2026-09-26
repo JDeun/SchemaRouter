@@ -9,6 +9,7 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- explicit trusted `EndpointSpec.operation_aliases` vocabulary for bounded operation-fit, with validation, fingerprinting, compatible schema-diff reporting, inspection/dashboard visibility, and no automatic/model-authored alias inference;
 - optional bounded `operation_fit_backend` gate for single-call plans that checks only sibling
   endpoint operations inside the currently leading tool domain, deliberately excluding broad tool
   descriptions, tool-name labels, and output-field labels; the gate can suppress unsupported operations but cannot add,

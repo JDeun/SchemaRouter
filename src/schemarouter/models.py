@@ -360,7 +360,7 @@ class EndpointSpec(StrictModel):
                 raise ValueError(
                     "endpoint operation_aliases must be non-empty and have no surrounding whitespace"
                 )
-            normalized = alias.casefold()
+            normalized = " ".join(alias.casefold().split())
             if normalized in normalized_operation_aliases:
                 raise ValueError(
                     f"duplicate operation alias in endpoint {self.name!r}: {alias!r}"

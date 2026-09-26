@@ -152,10 +152,18 @@ planner = SchemaPlanner(
 
 The operation-fit surface is intentionally narrower than the broad capability-fit surface. It sees
 only sibling endpoints in the currently leading tool domain and receives endpoint operation names,
-endpoint descriptions, operation class, and optional HTTP method. Tool descriptions, tool-name labels, and answer-field
-labels are omitted from the embedding text so domain or field similarity alone cannot turn an
-unsupported action into a supported one. The leading tool identity remains available only as local
-request metadata; it is not part of the default embedding option text.
+trusted `EndpointSpec.operation_aliases`, endpoint descriptions, operation class, and optional HTTP
+method. Tool descriptions, tool-name labels, and answer-field labels are omitted from the embedding
+text so domain or field similarity alone cannot turn an unsupported action into a supported one. The
+leading tool identity remains available only as local request metadata; it is not part of the default
+embedding option text.
+
+Operation aliases are explicit application-owned routing vocabulary, for example
+`["current conditions", "live conditions"]` or `["create support ticket", "open support case"]`.
+SchemaRouter does not infer them from user input or model output, and ingestion adapters do not
+fabricate them. They are planning hints only: aliases cannot create an endpoint, modify arguments,
+change side-effect classification or policy, or grant execution authority. Alias changes are
+fingerprinted and exposed through inspection/dashboard output.
 
 A positive decision only means that one offered operation plausibly matches the request. The stage
 keeps the candidate order unchanged and therefore cannot choose the final route. Explicit abstention

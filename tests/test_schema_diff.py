@@ -561,3 +561,33 @@ def test_operation_alias_change_is_planning_compatible_but_changes_fingerprint()
         and change.severity == "compatible"
         for change in report.changes
     )
+
+
+def test_operation_alias_change_is_compatible_but_changes_fingerprint() -> None:
+    old = endpoint()
+    new = endpoint(operation_aliases=["find materials", "look up properties"])
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "compatible"
+    assert old.fingerprint != new.fingerprint
+    assert any(
+        change.kind == "operation_aliases_changed"
+        and change.path == "operation_aliases"
+        for change in report.changes
+    )
+
+
+@pytest.mark.parametrize(
+    "aliases",
+    [
+        [""],
+        ["  find"],
+        ["find  "],
+        ["Find", "find"],
+        ["look  up", "look up"],
+    ],
+)
+def test_operation_aliases_reject_invalid_or_normalized_duplicate_values(aliases) -> None:
+    with pytest.raises(ValueError, match="operation_alias"):
+        endpoint(operation_aliases=aliases)

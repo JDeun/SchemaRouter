@@ -40,6 +40,7 @@ def sample_tool() -> ToolSpec:
         endpoints=[
             EndpointSpec(
                 name="current",
+                operation_aliases=["live conditions", "current conditions"],
                 method="GET",
                 path="/weather/current",
                 read_only=True,
@@ -294,6 +295,7 @@ def test_dashboard_uses_safe_inspection_models_only(tmp_path) -> None:
 
     assert "SchemaRouter inspection dashboard" in html
     assert "demo.weather" in html
+    assert "live conditions, current conditions" in html
     assert "https://example.test/openapi.json" in html
     assert "run-dashboard" in html
     assert "must-never-render" not in html
