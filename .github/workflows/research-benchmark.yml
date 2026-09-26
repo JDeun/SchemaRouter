@@ -29,6 +29,7 @@ concurrency:
 
 jobs:
   deterministic-full:
+    if: ${{ false }}  # temporary isolated operation-fit experiment
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -59,6 +60,7 @@ jobs:
           retention-days: 30
 
   laya-full-cpu:
+    if: ${{ false }}  # temporary isolated operation-fit experiment
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -143,6 +145,7 @@ jobs:
           retention-days: 30
 
   semantic-recall-calibration-cpu:
+    if: ${{ false }}  # temporary isolated operation-fit experiment
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -197,6 +200,7 @@ jobs:
 
 
   semantic-recall-heldout-cpu:
+    if: ${{ false }}  # temporary isolated operation-fit experiment
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -240,6 +244,7 @@ jobs:
 
 
   capability-fit-calibration-cpu:
+    if: ${{ false }}  # temporary isolated operation-fit experiment
     runs-on: ubuntu-latest
     timeout-minutes: 35
     continue-on-error: true
@@ -283,6 +288,7 @@ jobs:
           retention-days: 30
 
   capability-fit-v3-heldout-cpu:
+    if: ${{ false }}  # temporary isolated operation-fit experiment
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -320,6 +326,7 @@ jobs:
           retention-days: 30
 
   endpoint-disambiguation-calibration-cpu:
+    if: ${{ false }}  # temporary isolated operation-fit experiment
     runs-on: ubuntu-latest
     timeout-minutes: 35
     continue-on-error: true
@@ -366,6 +373,7 @@ jobs:
           retention-days: 30
 
   endpoint-disambiguation-v4-heldout-cpu:
+    if: ${{ false }}  # temporary isolated operation-fit experiment
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -406,6 +414,7 @@ jobs:
 
 
   operation-fit-calibration-cpu:
+    if: ${{ false }}  # temporary isolated operation-fit experiment
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -519,7 +528,7 @@ jobs:
 
 
   operation-fit-v9-heldout-cpu:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_operation_holdout && inputs.operation_fit_min_similarity != '' }}
+    if: ${{ false }}  # temporary isolated operation-fit experiment
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
