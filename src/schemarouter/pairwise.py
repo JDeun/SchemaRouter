@@ -129,12 +129,20 @@ class PairwiseDecisionBackend:
         )
         eligible = [item for item in ranked if item[1] >= self.min_score]
 
+        second_score = ranked[1][1] if len(ranked) > 1 else None
+        top_margin = (
+            ranked[0][1] - second_score
+            if second_score is not None
+            else None
+        )
         metadata: dict[str, Any] = {
             "provider": "pairwise-score",
             "option_count": len(request.options),
             "min_score": self.min_score,
             "min_margin": self.min_margin,
             "top_score": ranked[0][1],
+            "second_score": second_score,
+            "top_margin": top_margin,
         }
         if not eligible:
             return validate_decision(
