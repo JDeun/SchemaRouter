@@ -5,7 +5,7 @@ All notable changes to SchemaRouter are documented here.
 The project is pre-1.0 and follows the compatibility rules in
 [`docs/versioning.md`](docs/versioning.md).
 
-## Unreleased
+## 0.8.0 - 2026-09-26
 
 ### Added
 
@@ -55,6 +55,7 @@ The project is pre-1.0 and follows the compatibility rules in
   without pruning the deterministic schema-recalled pool before complementary field-coverage
   selection; single-call and empty-recall fail-closed behavior remain unchanged;
 - coverage-aware selection for explicit multi-call plans so bounded call slots prefer complementary semantic fields across heterogeneous providers/access paths instead of redundant routes for an already-covered field, stop early once matched field coverage is complete, and keep exact query-visible qualifiers as distinct coverage requirements;
+- explicit multi-provider corroboration and aggregation contracts with `PlanRequest.retrieval_mode="corroborate"`, strict trusted-identifier canonical identity, provenance-preserving `SourceRecord` / `FieldObservation` / `CanonicalEntity` models, and scientific observation preservation instead of silently collapsing conflicting values;
 - a dedicated design-principles document clarifying field-first semantics, provider/access separation, general optional-unit contracts, access-path health, multi-source field unions, bounded model authority, and fail-closed equivalence.
 
 ### Changed
@@ -64,7 +65,7 @@ The project is pre-1.0 and follows the compatibility rules in
   tool-level source type covers the route, otherwise every selected answer field must declare source
   provenance; active unknown `field_evidence` semantic IDs now fail closed during planning instead of
   being silently ignored;
-- post-release development has resumed as `0.8.0.dev0`; published `0.7.0` artifacts remain immutable.
+- promoted the 0.8 development line to the non-prerelease `0.8.0` release after the bounded semantic-routing, multi-provider evidence, reproducibility, packaging, and security gates passed.
 
 ## 0.7.0 - 2026-09-25
 
