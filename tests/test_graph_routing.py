@@ -138,6 +138,48 @@ def test_unique_operation_alias_is_a_graph_accept() -> None:
     assert assessment.evidence[0].operation_aliases == ("weather forecast",)
 
 
+def test_global_graph_resolves_unique_registered_operation() -> None:
+    graph = CompiledSchemaGraph.from_registry(_registry())
+
+    assessment = GraphOperationGate().assess_global(
+        query="Please use the weather forecast for Seoul.",
+        graph=graph,
+    )
+
+    assert assessment.decision == "accept"
+    assert assessment.tool_key == "weather"
+    assert assessment.endpoint_name == "forecast"
+
+
+def test_global_graph_ambiguity_escalates() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="alpha",
+            endpoints=[
+                EndpointSpec(name="one", operation_aliases=["shared action"]),
+            ],
+        )
+    )
+    registry.register(
+        ToolSpec(
+            name="beta",
+            endpoints=[
+                EndpointSpec(name="two", operation_aliases=["shared action"]),
+            ],
+        )
+    )
+
+    assessment = GraphOperationGate().assess_global(
+        query="Perform the shared action.",
+        graph=CompiledSchemaGraph.from_registry(registry),
+    )
+
+    assert assessment.decision == "escalate"
+    assert assessment.tool_key == ""
+    assert "multiple" in assessment.reason
+
+
 def test_multiple_alias_paths_escalate_instead_of_guessing() -> None:
     registry = InMemoryRegistry()
     registry.register(
@@ -290,6 +332,37 @@ def test_planner_skips_operation_backend_when_graph_resolves_alias() -> None:
     assert plan.calls[0].explanation is not None
     assert plan.calls[0].explanation.candidate_selection == "graph_operation"
     assert any("graph operation gate accepted" in warning for warning in plan.warnings)
+
+
+def test_graph_resolution_skips_all_semantic_routing_backends() -> None:
+    backend = _ExplodingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        candidate_recall_backend=backend,
+        candidate_fit_backend=backend,
+        operation_fit_backend=backend,
+        endpoint_disambiguation_backend=backend,
+    )
+
+    plan = planner.plan(PlanRequest(query="Get the weather forecast for Seoul."))
+
+    assert backend.calls == 0
+    assert len(plan.calls) == 1
+    assert plan.calls[0].endpoint == "forecast"
+
+
+def test_graph_feature_is_opt_in_and_default_path_is_unchanged() -> None:
+    backend = _AbstainingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        operation_fit_backend=backend,
+    )
+
+    plan = planner.plan(PlanRequest(query="Get the weather forecast for Seoul."))
+
+    assert backend.calls == 1
+    assert plan.calls == []
 
 
 def test_planner_escalates_when_graph_is_uncertain() -> None:
