@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import inspect
+import math
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 from .decision_policy import DecisionPolicy
 from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
@@ -314,6 +315,10 @@ class SchemaPlanner:
         operation_fit_backend: DecisionBackend | None = None,
         graph_operation_gate: GraphOperationGate | None = None,
         graph_semantic_seed_backend: DecisionBackend | None = None,
+        graph_semantic_direct_min_similarity: float | None = None,
+        graph_semantic_direct_min_margin: float | None = None,
+        graph_semantic_propagation_backend: DecisionBackend | None = None,
+        graph_semantic_propagation_on_abstain: Literal["fallback", "reject"] = "fallback",
         endpoint_disambiguation_backend: DecisionBackend | None = None,
         candidate_index: bool = True,
         availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
@@ -324,6 +329,34 @@ class SchemaPlanner:
             or candidate_recall_limit < 1
         ):
             raise ValueError("candidate_recall_limit must be an integer >= 1")
+        for name, value in (
+            ("graph_semantic_direct_min_similarity", graph_semantic_direct_min_similarity),
+            ("graph_semantic_direct_min_margin", graph_semantic_direct_min_margin),
+        ):
+            if value is None:
+                continue
+            if not isinstance(value, (int, float)) or isinstance(value, bool):
+                raise TypeError(f"{name} must be numeric or None")
+            if not math.isfinite(float(value)):
+                raise ValueError(f"{name} must be finite")
+        if (
+            graph_semantic_direct_min_similarity is not None
+            and not -1.0 <= graph_semantic_direct_min_similarity <= 1.0
+        ):
+            raise ValueError(
+                "graph_semantic_direct_min_similarity must be between -1 and 1"
+            )
+        if (
+            graph_semantic_direct_min_margin is not None
+            and not 0.0 <= graph_semantic_direct_min_margin <= 2.0
+        ):
+            raise ValueError(
+                "graph_semantic_direct_min_margin must be between 0 and 2"
+            )
+        if graph_semantic_propagation_on_abstain not in {"fallback", "reject"}:
+            raise ValueError(
+                "graph_semantic_propagation_on_abstain must be 'fallback' or 'reject'"
+            )
         self.registry = registry
         self.analyzer = analyzer or KeywordAnalyzer()
         self.decision_backend = decision_backend
@@ -334,6 +367,12 @@ class SchemaPlanner:
         self.operation_fit_backend = operation_fit_backend
         self.graph_operation_gate = graph_operation_gate
         self.graph_semantic_seed_backend = graph_semantic_seed_backend
+        self.graph_semantic_direct_min_similarity = graph_semantic_direct_min_similarity
+        self.graph_semantic_direct_min_margin = graph_semantic_direct_min_margin
+        self.graph_semantic_propagation_backend = graph_semantic_propagation_backend
+        self.graph_semantic_propagation_on_abstain = (
+            graph_semantic_propagation_on_abstain
+        )
         self.endpoint_disambiguation_backend = endpoint_disambiguation_backend
         self.candidate_index = candidate_index
         self.availability_predicate = availability_predicate
@@ -1066,6 +1105,237 @@ class SchemaPlanner:
             authorized,
         )
 
+    def _graph_semantic_direct_accepts(self, metadata: dict[str, Any]) -> bool:
+        min_similarity = self.graph_semantic_direct_min_similarity
+        min_margin = self.graph_semantic_direct_min_margin
+        if min_similarity is None and min_margin is None:
+            return True
+
+        top_similarity = metadata.get("top_similarity")
+        top_margin = metadata.get("top_margin")
+        if min_similarity is not None:
+            if (
+                not isinstance(top_similarity, (int, float))
+                or isinstance(top_similarity, bool)
+                or float(top_similarity) < min_similarity
+            ):
+                return False
+        if min_margin is not None:
+            if (
+                not isinstance(top_margin, (int, float))
+                or isinstance(top_margin, bool)
+                or float(top_margin) < min_margin
+            ):
+                return False
+        return True
+
+    def _graph_propagation_request(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        tool: ToolSpec,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> tuple[
+        DecisionRequest | None,
+        dict[str, tuple[ToolSpec, EndpointSpec]],
+    ]:
+        if self.graph_semantic_propagation_backend is None:
+            return None, {}
+
+        preferred_endpoints = set(intent.preferred_endpoints)
+        authorized: dict[str, tuple[ToolSpec, EndpointSpec]] = {}
+        options: list[DecisionOption] = []
+        graph_routes = set(self._graph().operation_routes())
+
+        for endpoint in tool.endpoints:
+            route_id = f"{tool.key}.{endpoint.name}"
+            if (tool.key, endpoint.name) not in graph_routes:
+                continue
+            if preferred_endpoints and route_id not in preferred_endpoints:
+                continue
+            if (
+                self.availability_predicate is not None
+                and not self.availability_predicate(tool, endpoint)
+            ):
+                continue
+            if (
+                additional_availability_predicate is not None
+                and not additional_availability_predicate(tool, endpoint)
+            ):
+                continue
+
+            operation_name = endpoint.name.replace("_", " ").replace("-", " ")
+            field_terms = [
+                field.semantic_id or field.name
+                for field in endpoint.output_fields
+                if not field.identifier
+            ]
+            parts = [
+                operation_name,
+                *endpoint.operation_aliases,
+                endpoint.description.strip(),
+            ]
+            if field_terms:
+                parts.append("returns: " + ", ".join(dict.fromkeys(field_terms)))
+
+            authorized[route_id] = (tool, endpoint)
+            options.append(
+                DecisionOption(
+                    id=route_id,
+                    label=route_id,
+                    description="\n".join(part for part in parts if part),
+                    metadata={
+                        "tool": tool.key,
+                        "endpoint": endpoint.name,
+                        "surface": "graph_bounded_propagation",
+                    },
+                )
+            )
+
+        if not options:
+            return None, {}
+
+        return (
+            DecisionRequest(
+                query=request.query,
+                options=options,
+                max_selections=1,
+                context={
+                    "surface": "graph_bounded_propagation",
+                    "tool": tool.key,
+                    "authority": "registered_schema_graph_siblings_only",
+                },
+            ),
+            authorized,
+        )
+
+    def _graph_propagation_sync(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        seed_tool: ToolSpec,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> tuple[list[_Candidate], list[str], bool]:
+        decision_request, authorized = self._graph_propagation_request(
+            request,
+            intent,
+            tool=seed_tool,
+            additional_availability_predicate=additional_availability_predicate,
+        )
+        backend = self.graph_semantic_propagation_backend
+        if decision_request is None or backend is None:
+            return [], [
+                "graph propagation unavailable; escalated to existing semantic routing"
+            ], True
+
+        try:
+            result = choose_sync(backend, decision_request)
+        except Exception as exc:
+            return [], [
+                "graph propagation fallback: "
+                f"{type(exc).__name__}; escalated to existing semantic routing"
+            ], True
+
+        if result.abstained or not result.selections:
+            if self.graph_semantic_propagation_on_abstain == "reject":
+                return [], [
+                    "graph propagation rejected the unresolved route after bounded "
+                    "sibling verification"
+                ], False
+            return [], [
+                "graph propagation abstained; escalated to existing semantic routing"
+            ], True
+
+        route_id = result.selections[0].option_id
+        target = authorized.get(route_id)
+        if target is None:
+            return [], [
+                "graph propagation returned no authorized sibling route; escalated"
+            ], True
+
+        tool, endpoint = target
+        candidate = replace(
+            self._score_endpoint(tool, endpoint, request.query, intent),
+            selection_source="graph_propagation",
+        )
+        score = result.selections[0].score
+        score_suffix = f" score={score:.6f}" if score is not None else ""
+        return [candidate], [
+            "graph propagation accepted "
+            f"{route_id}{score_suffix}; bounded to registered sibling operations"
+        ], False
+
+    async def _graph_propagation_async(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        seed_tool: ToolSpec,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> tuple[list[_Candidate], list[str], bool]:
+        decision_request, authorized = self._graph_propagation_request(
+            request,
+            intent,
+            tool=seed_tool,
+            additional_availability_predicate=additional_availability_predicate,
+        )
+        backend = self.graph_semantic_propagation_backend
+        if decision_request is None or backend is None:
+            return [], [
+                "graph propagation unavailable; escalated to existing semantic routing"
+            ], True
+
+        try:
+            result = await choose_async(backend, decision_request)
+        except Exception as exc:
+            return [], [
+                "graph propagation fallback: "
+                f"{type(exc).__name__}; escalated to existing semantic routing"
+            ], True
+
+        if result.abstained or not result.selections:
+            if self.graph_semantic_propagation_on_abstain == "reject":
+                return [], [
+                    "graph propagation rejected the unresolved route after bounded "
+                    "sibling verification"
+                ], False
+            return [], [
+                "graph propagation abstained; escalated to existing semantic routing"
+            ], True
+
+        route_id = result.selections[0].option_id
+        target = authorized.get(route_id)
+        if target is None:
+            return [], [
+                "graph propagation returned no authorized sibling route; escalated"
+            ], True
+
+        tool, endpoint = target
+        candidate = replace(
+            self._score_endpoint(tool, endpoint, request.query, intent),
+            selection_source="graph_propagation",
+        )
+        score = result.selections[0].score
+        score_suffix = f" score={score:.6f}" if score is not None else ""
+        return [candidate], [
+            "graph propagation accepted "
+            f"{route_id}{score_suffix}; bounded to registered sibling operations"
+        ], False
+
     def _graph_semantic_seed_candidates_sync(
         self,
         request: PlanRequest,
@@ -1113,6 +1383,30 @@ class SchemaPlanner:
             ], True
 
         tool, endpoint = target
+        top_similarity = result.metadata.get("top_similarity")
+        top_margin = result.metadata.get("top_margin")
+        geometry = (
+            f" similarity={float(top_similarity):.6f}"
+            if isinstance(top_similarity, (int, float))
+            and not isinstance(top_similarity, bool)
+            else ""
+        )
+        if isinstance(top_margin, (int, float)) and not isinstance(top_margin, bool):
+            geometry += f" margin={float(top_margin):.6f}"
+
+        if not self._graph_semantic_direct_accepts(result.metadata):
+            propagated, propagation_warnings, escalates = self._graph_propagation_sync(
+                request,
+                intent,
+                seed_tool=tool,
+                additional_availability_predicate=additional_availability_predicate,
+            )
+            return propagated, [
+                "graph semantic seed entered bounded propagation band "
+                f"for {route_id}{geometry}",
+                *propagation_warnings,
+            ], escalates
+
         candidate = replace(
             self._score_endpoint(
                 tool,
@@ -1126,7 +1420,7 @@ class SchemaPlanner:
         score_suffix = f" score={score:.6f}" if score is not None else ""
         return [candidate], [
             "graph semantic seed accepted "
-            f"{route_id}{score_suffix}; path remained schema-authorized"
+            f"{route_id}{score_suffix}{geometry}; path remained schema-authorized"
         ], False
 
     async def _graph_semantic_seed_candidates_async(
@@ -1176,6 +1470,30 @@ class SchemaPlanner:
             ], True
 
         tool, endpoint = target
+        top_similarity = result.metadata.get("top_similarity")
+        top_margin = result.metadata.get("top_margin")
+        geometry = (
+            f" similarity={float(top_similarity):.6f}"
+            if isinstance(top_similarity, (int, float))
+            and not isinstance(top_similarity, bool)
+            else ""
+        )
+        if isinstance(top_margin, (int, float)) and not isinstance(top_margin, bool):
+            geometry += f" margin={float(top_margin):.6f}"
+
+        if not self._graph_semantic_direct_accepts(result.metadata):
+            propagated, propagation_warnings, escalates = await self._graph_propagation_async(
+                request,
+                intent,
+                seed_tool=tool,
+                additional_availability_predicate=additional_availability_predicate,
+            )
+            return propagated, [
+                "graph semantic seed entered bounded propagation band "
+                f"for {route_id}{geometry}",
+                *propagation_warnings,
+            ], escalates
+
         candidate = replace(
             self._score_endpoint(
                 tool,
@@ -1189,7 +1507,7 @@ class SchemaPlanner:
         score_suffix = f" score={score:.6f}" if score is not None else ""
         return [candidate], [
             "graph semantic seed accepted "
-            f"{route_id}{score_suffix}; path remained schema-authorized"
+            f"{route_id}{score_suffix}{geometry}; path remained schema-authorized"
         ], False
 
     def _apply_operation_fit_sync(
