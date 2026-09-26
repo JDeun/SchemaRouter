@@ -9,6 +9,7 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- reserved a fresh 600-case multilingual v9 alias-aware operation holdout after detecting that v8 had been accidentally consumed by a calibration diagnostic path; corrected calibration to use consumed v7 only and kept v9 manual/threshold-gated;
 - explicit trusted `EndpointSpec.operation_aliases` vocabulary for bounded operation-fit, with validation, fingerprinting, compatible schema-diff reporting, inspection/dashboard visibility, and no automatic/model-authored alias inference;
 - optional bounded `operation_fit_backend` gate for single-call plans that checks only sibling
   endpoint operations inside the currently leading tool domain, deliberately excluding broad tool

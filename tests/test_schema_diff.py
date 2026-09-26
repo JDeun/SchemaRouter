@@ -589,5 +589,7 @@ def test_operation_alias_change_is_compatible_but_changes_fingerprint() -> None:
     ],
 )
 def test_operation_aliases_reject_invalid_or_normalized_duplicate_values(aliases) -> None:
+    payload = endpoint().model_dump(mode="python")
+    payload["operation_aliases"] = aliases
     with pytest.raises(ValueError, match="operation_alias"):
-        endpoint(operation_aliases=aliases)
+        EndpointSpec.model_validate(payload)

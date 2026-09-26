@@ -407,9 +407,11 @@ six-language holdout reserved before adding trusted endpoint operation aliases. 
 supported-operation cases, 192 near-domain unsupported-operation cases, and 24 ordinary
 out-of-domain cases. Its normalized queries are disjoint from v2 through v7.
 
-v8 must not be used to design aliases or select the operation-fit threshold. v7 is now diagnostic
-data; implementation and threshold work may use v5 plus the consumed v7 evidence, but v8 remains
-untouched until the alias-aware surface is frozen.
+v8 was reserved before alias implementation, but an early alias-aware calibration workflow
+accidentally referenced v8 from the per-threshold diagnostic step. That exposed v8 across the
+threshold sweep, so v8 is now treated as consumed diagnostic data and must not support an untouched
+generalization claim. The workflow has been corrected to use the already-consumed v7 diagnostic
+corpus during threshold selection.
 
 
 ### Alias-aware threshold selection rule
@@ -422,5 +424,18 @@ balanced score and the v7 diagnostic balanced score.
 
 Freeze the threshold that maximizes this robustness score. Use v5 development balanced accuracy as
 the first tie-breaker, then prefer the lower threshold as the second tie-breaker to preserve
-supported-request recall. The reserved v8 corpus must not participate in threshold selection or
-alias design. After the alias vocabulary and threshold are frozen, v8 is evaluated once.
+supported-request recall. Neither consumed v8 nor reserved v9 may participate in threshold selection or alias design.
+After the alias vocabulary and threshold are frozen from v5 plus the already-consumed v7
+diagnostic, v9 is evaluated once.
+
+
+### Reserved alias-aware holdout (v9)
+
+`benchmarks/decision-routing-v9-operation-alias-holdout.json` is the replacement untouched
+600-case, six-language holdout reserved after discovering the v8 workflow contamination and before
+inspecting alias-aware calibration results. It contains 384 supported operations, 192 near-domain
+unsupported operations, and 24 ordinary out-of-domain requests. Its normalized queries are
+disjoint from v2 through v8.
+
+v9 is manual-only and threshold-gated in GitHub Actions. Do not run it until the alias vocabulary
+and operation-fit threshold are frozen using v5 and the already-consumed v7 diagnostic corpus.

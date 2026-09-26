@@ -13,6 +13,7 @@ CORPUS_V5 = ROOT / "benchmarks" / "decision-routing-v5-operation-calibration.jso
 CORPUS_V6 = ROOT / "benchmarks" / "decision-routing-v6-operation-holdout.json"
 CORPUS_V7 = ROOT / "benchmarks" / "decision-routing-v7-operation-post-change-holdout.json"
 CORPUS_V8 = ROOT / "benchmarks" / "decision-routing-v8-operation-alias-holdout.json"
+CORPUS_V9 = ROOT / "benchmarks" / "decision-routing-v9-operation-alias-holdout.json"
 GENERATOR_V2 = ROOT / "scripts" / "generate_decision_routing_v2.py"
 GENERATOR_V3 = ROOT / "scripts" / "generate_decision_routing_v3.py"
 SCRIPT = ROOT / "scripts" / "benchmark_decision_routing.py"
@@ -625,9 +626,9 @@ def test_v5_v6_are_disjoint_from_prior_corpora_and_each_other() -> None:
     assert v6.isdisjoint(prior)
     assert v5.isdisjoint(v6)
 
-def test_v8_operation_holdout_workflow_is_manual_and_threshold_gated() -> None:
+def test_v9_operation_holdout_workflow_is_manual_and_threshold_gated() -> None:
     workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
-    marker = "  operation-fit-v8-heldout-cpu:"
+    marker = "  operation-fit-v9-heldout-cpu:"
     assert marker in workflow
     holdout_job = workflow.split(marker, 1)[1]
 
@@ -639,20 +640,21 @@ def test_v8_operation_holdout_workflow_is_manual_and_threshold_gated() -> None:
     )
     assert "OPERATION_FIT_MIN_SIMILARITY: ${{ inputs.operation_fit_min_similarity }}" in holdout_job
     assert '--operation-fit-min-similarity "${OPERATION_FIT_MIN_SIMILARITY}"' in holdout_job
-    assert "benchmarks/decision-routing-v8-operation-alias-holdout.json" in holdout_job
-    assert "benchmarks/decision-routing-v7-operation-post-change-holdout.json" not in holdout_job
+    assert "benchmarks/decision-routing-v9-operation-alias-holdout.json" in holdout_job
+    assert "benchmarks/decision-routing-v8-operation-alias-holdout.json" not in holdout_job
 
 
 def test_alias_aware_operation_calibration_uses_consumed_v7_as_diagnostic_only() -> None:
     workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
     marker = "  operation-fit-calibration-cpu:"
     assert marker in workflow
-    calibration_job = workflow.split(marker, 1)[1].split("  operation-fit-v8-heldout-cpu:", 1)[0]
+    calibration_job = workflow.split(marker, 1)[1].split("  operation-fit-v9-heldout-cpu:", 1)[0]
 
     assert "benchmarks/decision-routing-v5-operation-calibration.json" in calibration_job
     assert "benchmarks/decision-routing-v7-operation-post-change-holdout.json" in calibration_job
     assert "diagnostic-v7" in calibration_job
     assert "benchmarks/decision-routing-v8-operation-alias-holdout.json" not in calibration_job
+    assert "benchmarks/decision-routing-v9-operation-alias-holdout.json" not in calibration_job
 
 
 
@@ -766,5 +768,64 @@ def test_v8_operation_alias_holdout_loads_against_reference_catalog() -> None:
         for endpoint in tool.endpoints
     }
     cases = module.load_corpus(CORPUS_V8, allowed_routes=allowed)
+    assert len(cases) == 600
+    assert sum(case.expect_abstain for case in cases) == 216
+
+
+def test_v9_operation_alias_holdout_is_balanced_multilingual_and_disjoint() -> None:
+    import re
+
+    cases = json.loads(CORPUS_V9.read_text(encoding="utf-8"))
+    assert len(cases) == 600
+    assert len({case["id"] for case in cases}) == 600
+    assert all(case["split"] == "test" for case in cases)
+
+    language_counts: dict[str, int] = {}
+    category_counts: dict[str, int] = {}
+    route_counts: dict[str, int] = {}
+    for case in cases:
+        language_counts[case["language"]] = language_counts.get(case["language"], 0) + 1
+        category_counts[case["category"]] = category_counts.get(case["category"], 0) + 1
+        route = case["expected"] or "NO_ROUTE"
+        route_counts[route] = route_counts.get(route, 0) + 1
+
+    assert language_counts == {
+        "en": 100,
+        "ko": 100,
+        "es": 100,
+        "ja": 100,
+        "de": 100,
+        "mixed": 100,
+    }
+    assert category_counts == {
+        "operation_supported_alias_holdout_v9": 384,
+        "near_domain_unsupported_operation": 192,
+        "out_of_domain": 24,
+    }
+    assert route_counts["NO_ROUTE"] == 216
+    assert all(count == 24 for route, count in route_counts.items() if route != "NO_ROUTE")
+
+    def normalized_queries(path: Path) -> set[str]:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        return {re.sub(r"[^\w]+", "", case["query"].casefold()) for case in raw}
+
+    v9 = normalized_queries(CORPUS_V9)
+    prior: set[str] = set()
+    for path in (CORPUS_V2, CORPUS_V3, CORPUS_V4, CORPUS_V5, CORPUS_V6, CORPUS_V7, CORPUS_V8):
+        prior.update(normalized_queries(path))
+
+    assert len(v9) == 600
+    assert v9.isdisjoint(prior)
+
+
+def test_v9_operation_alias_holdout_loads_against_reference_catalog() -> None:
+    module = _benchmark_module()
+    registry = module.reference_registry()
+    allowed = {
+        f"{tool.key}.{endpoint.name}"
+        for tool in registry.tools()
+        for endpoint in tool.endpoints
+    }
+    cases = module.load_corpus(CORPUS_V9, allowed_routes=allowed)
     assert len(cases) == 600
     assert sum(case.expect_abstain for case in cases) == 216
