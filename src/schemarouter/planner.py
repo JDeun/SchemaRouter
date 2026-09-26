@@ -1143,17 +1143,38 @@ class SchemaPlanner:
                 return False
         return True
 
+    def _graph_semantic_ranked_route_ids(
+        self,
+        metadata: dict[str, Any],
+        authorized: dict[str, tuple[ToolSpec, EndpointSpec]],
+    ) -> tuple[str, ...]:
+        raw = metadata.get("ranked_options")
+        if not isinstance(raw, list):
+            return ()
+
+        ranked: list[str] = []
+        seen: set[str] = set()
+        for item in raw:
+            if not isinstance(item, dict):
+                continue
+            option_id = item.get("option_id")
+            if (
+                not isinstance(option_id, str)
+                or option_id not in authorized
+                or option_id in seen
+            ):
+                continue
+            ranked.append(option_id)
+            seen.add(option_id)
+        return tuple(ranked)
+
     def _graph_propagation_request(
         self,
         request: PlanRequest,
-        intent: QueryIntent,
         *,
-        tool: ToolSpec,
-        additional_availability_predicate: Callable[
-            [ToolSpec, EndpointSpec],
-            bool,
-        ]
-        | None = None,
+        seed_tool: ToolSpec,
+        seed_authorized: dict[str, tuple[ToolSpec, EndpointSpec]],
+        ranked_route_ids: tuple[str, ...],
     ) -> tuple[
         DecisionRequest | None,
         dict[str, tuple[ToolSpec, EndpointSpec]],
@@ -1161,28 +1182,28 @@ class SchemaPlanner:
         if self.graph_semantic_propagation_backend is None:
             return None, {}
 
-        preferred_endpoints = set(intent.preferred_endpoints)
+        route_ids: list[str] = []
+        seen: set[str] = set()
+
+        if self.graph_semantic_propagation_scope == "ranked":
+            for route_id in ranked_route_ids[: self.graph_semantic_propagation_limit]:
+                if route_id in seed_authorized and route_id not in seen:
+                    route_ids.append(route_id)
+                    seen.add(route_id)
+
+        for endpoint in seed_tool.endpoints:
+            route_id = f"{seed_tool.key}.{endpoint.name}"
+            if route_id in seed_authorized and route_id not in seen:
+                route_ids.append(route_id)
+                seen.add(route_id)
+
         authorized: dict[str, tuple[ToolSpec, EndpointSpec]] = {}
         options: list[DecisionOption] = []
-        graph_routes = set(self._graph().operation_routes())
-
-        for endpoint in tool.endpoints:
-            route_id = f"{tool.key}.{endpoint.name}"
-            if (tool.key, endpoint.name) not in graph_routes:
+        for route_id in route_ids:
+            target = seed_authorized.get(route_id)
+            if target is None:
                 continue
-            if preferred_endpoints and route_id not in preferred_endpoints:
-                continue
-            if (
-                self.availability_predicate is not None
-                and not self.availability_predicate(tool, endpoint)
-            ):
-                continue
-            if (
-                additional_availability_predicate is not None
-                and not additional_availability_predicate(tool, endpoint)
-            ):
-                continue
-
+            tool, endpoint = target
             operation_name = endpoint.name.replace("_", " ").replace("-", " ")
             field_terms = [
                 field.semantic_id or field.name
@@ -1197,7 +1218,7 @@ class SchemaPlanner:
             if field_terms:
                 parts.append("returns: " + ", ".join(dict.fromkeys(field_terms)))
 
-            authorized[route_id] = (tool, endpoint)
+            authorized[route_id] = target
             options.append(
                 DecisionOption(
                     id=route_id,
@@ -1214,6 +1235,11 @@ class SchemaPlanner:
         if not options:
             return None, {}
 
+        authority = (
+            "registered_schema_graph_ranked_routes_plus_seed_siblings"
+            if self.graph_semantic_propagation_scope == "ranked"
+            else "registered_schema_graph_siblings_only"
+        )
         return (
             DecisionRequest(
                 query=request.query,
@@ -1221,8 +1247,9 @@ class SchemaPlanner:
                 max_selections=1,
                 context={
                     "surface": "graph_bounded_propagation",
-                    "tool": tool.key,
-                    "authority": "registered_schema_graph_siblings_only",
+                    "seed_tool": seed_tool.key,
+                    "scope": self.graph_semantic_propagation_scope,
+                    "authority": authority,
                 },
             ),
             authorized,
@@ -1234,17 +1261,14 @@ class SchemaPlanner:
         intent: QueryIntent,
         *,
         seed_tool: ToolSpec,
-        additional_availability_predicate: Callable[
-            [ToolSpec, EndpointSpec],
-            bool,
-        ]
-        | None = None,
+        seed_authorized: dict[str, tuple[ToolSpec, EndpointSpec]],
+        ranked_route_ids: tuple[str, ...],
     ) -> tuple[list[_Candidate], list[str], bool]:
         decision_request, authorized = self._graph_propagation_request(
             request,
-            intent,
-            tool=seed_tool,
-            additional_availability_predicate=additional_availability_predicate,
+            seed_tool=seed_tool,
+            seed_authorized=seed_authorized,
+            ranked_route_ids=ranked_route_ids,
         )
         backend = self.graph_semantic_propagation_backend
         if decision_request is None or backend is None:
@@ -1264,7 +1288,7 @@ class SchemaPlanner:
             if self.graph_semantic_propagation_on_abstain == "reject":
                 return [], [
                     "graph propagation rejected the unresolved route after bounded "
-                    "sibling verification"
+                    "graph verification"
                 ], False
             return [], [
                 "graph propagation abstained; escalated to existing semantic routing"
@@ -1274,7 +1298,7 @@ class SchemaPlanner:
         target = authorized.get(route_id)
         if target is None:
             return [], [
-                "graph propagation returned no authorized sibling route; escalated"
+                "graph propagation returned no authorized graph route; escalated"
             ], True
 
         tool, endpoint = target
@@ -1286,7 +1310,7 @@ class SchemaPlanner:
         score_suffix = f" score={score:.6f}" if score is not None else ""
         return [candidate], [
             "graph propagation accepted "
-            f"{route_id}{score_suffix}; bounded to registered sibling operations"
+            f"{route_id}{score_suffix}; bounded to registered graph operations"
         ], False
 
     async def _graph_propagation_async(
@@ -1295,17 +1319,14 @@ class SchemaPlanner:
         intent: QueryIntent,
         *,
         seed_tool: ToolSpec,
-        additional_availability_predicate: Callable[
-            [ToolSpec, EndpointSpec],
-            bool,
-        ]
-        | None = None,
+        seed_authorized: dict[str, tuple[ToolSpec, EndpointSpec]],
+        ranked_route_ids: tuple[str, ...],
     ) -> tuple[list[_Candidate], list[str], bool]:
         decision_request, authorized = self._graph_propagation_request(
             request,
-            intent,
-            tool=seed_tool,
-            additional_availability_predicate=additional_availability_predicate,
+            seed_tool=seed_tool,
+            seed_authorized=seed_authorized,
+            ranked_route_ids=ranked_route_ids,
         )
         backend = self.graph_semantic_propagation_backend
         if decision_request is None or backend is None:
@@ -1335,7 +1356,7 @@ class SchemaPlanner:
         target = authorized.get(route_id)
         if target is None:
             return [], [
-                "graph propagation returned no authorized sibling route; escalated"
+                "graph propagation returned no authorized graph route; escalated"
             ], True
 
         tool, endpoint = target
@@ -1347,7 +1368,7 @@ class SchemaPlanner:
         score_suffix = f" score={score:.6f}" if score is not None else ""
         return [candidate], [
             "graph propagation accepted "
-            f"{route_id}{score_suffix}; bounded to registered sibling operations"
+            f"{route_id}{score_suffix}; bounded to registered graph operations"
         ], False
 
     def _graph_semantic_seed_candidates_sync(
