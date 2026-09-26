@@ -1024,6 +1024,14 @@ async def main() -> None:
     )
     parser.add_argument("--operation-fit-min-score", type=float, default=0.0)
     parser.add_argument(
+        "--operation-fit-explicit-abstention",
+        action="store_true",
+        help=(
+            "Add one non-executable same-domain unsupported-operation sentinel to the "
+            "bounded operation-fit choice set. Selecting it can only suppress routes."
+        ),
+    )
+    parser.add_argument(
         "--endpoint-disambiguation-embedding-callable",
         help=(
             "Optional embedding callable used only to rerank sibling endpoints within "
@@ -1293,6 +1301,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_explicit_abstention=args.operation_fit_explicit_abstention,
                 ),
                 None,
             )
@@ -1316,6 +1325,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_explicit_abstention=args.operation_fit_explicit_abstention,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 None,
@@ -1337,6 +1347,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_explicit_abstention=args.operation_fit_explicit_abstention,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 None,
@@ -1372,6 +1383,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_explicit_abstention=args.operation_fit_explicit_abstention,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1404,6 +1416,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_explicit_abstention=args.operation_fit_explicit_abstention,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1439,6 +1452,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_explicit_abstention=args.operation_fit_explicit_abstention,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1472,6 +1486,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_explicit_abstention=args.operation_fit_explicit_abstention,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1518,6 +1533,7 @@ async def main() -> None:
             "pairwise_callable": args.operation_fit_pairwise_callable,
             "min_similarity": args.operation_fit_min_similarity,
             "min_score": args.operation_fit_min_score,
+            "explicit_abstention": args.operation_fit_explicit_abstention,
             "min_margin": args.operation_fit_min_margin,
         },
         "endpoint_disambiguation": {
