@@ -1,27 +1,19 @@
 name: Operation Cascade Dev Sweep
 
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/research-operation-cascade.yml"
-      - "benchmarks/bge_cascade.py"
-      - "benchmarks/bge_contrastive.py"
-      - "benchmarks/operation-fit-0.10-cascade-cycle.json"
-      - "scripts/benchmark_decision_routing.py"
-      - "tests/test_bge_cascade.py"
-      - "tests/test_operation_v14_protocol.py"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 env:
-  SCHEMAROUTER_SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
+  SCHEMAROUTER_SOURCE_REVISION: ${{ github.sha }}
   SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
   SCHEMAROUTER_BENCHMARK_RERANKER_MODEL: "BAAI/bge-reranker-v2-m3"
   SCHEMAROUTER_BENCHMARK_CONTRASTIVE_BETA: "1.00"
 
 concurrency:
-  group: operation-cascade-dev-${{ github.event.pull_request.number }}
+  group: operation-cascade-dev-${{ github.run_id }}
   cancel-in-progress: true
 
 jobs:
