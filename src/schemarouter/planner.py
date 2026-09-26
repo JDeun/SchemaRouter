@@ -833,7 +833,7 @@ class SchemaPlanner:
             options.append(
                 DecisionOption(
                     id=f"operation:{index}",
-                    label=f"{candidate.tool.key}.{endpoint.name}",
+                    label=endpoint.name,
                     description="\n".join(part for part in parts if part),
                     metadata={"tool": primary_tool},
                 )

@@ -152,9 +152,10 @@ planner = SchemaPlanner(
 
 The operation-fit surface is intentionally narrower than the broad capability-fit surface. It sees
 only sibling endpoints in the currently leading tool domain and receives endpoint operation names,
-endpoint descriptions, operation class, and optional HTTP method. Tool descriptions and answer-field
-labels are omitted so domain or field similarity alone cannot turn an unsupported action into a
-supported one.
+endpoint descriptions, operation class, and optional HTTP method. Tool descriptions, tool-name labels, and answer-field
+labels are omitted from the embedding text so domain or field similarity alone cannot turn an
+unsupported action into a supported one. The leading tool identity remains available only as local
+request metadata; it is not part of the default embedding option text.
 
 A positive decision only means that one offered operation plausibly matches the request. The stage
 keeps the candidate order unchanged and therefore cannot choose the final route. Explicit abstention

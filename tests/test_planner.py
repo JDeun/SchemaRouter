@@ -2695,8 +2695,8 @@ def test_operation_fit_gate_sees_only_primary_tool_operations() -> None:
         "surface": "operation_capability_fit",
         "tool": "inventory",
     }
-    assert set(seen["labels"]) == {"inventory.search", "inventory.update"}
-    assert all(label.startswith("inventory.") for label in seen["labels"])
+    assert set(seen["labels"]) == {"search", "update"}
+    assert all("inventory" not in label for label in seen["labels"])
     assert all("Fields:" not in description for description in seen["descriptions"])
     assert all(
         "Inventory lookup and stock update operations" not in description
