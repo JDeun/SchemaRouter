@@ -59,6 +59,11 @@ def test_embedding_backend_selects_best_bounded_option() -> None:
     assert result.metadata["dimensions"] == 2
     assert result.metadata["top_similarity"] > result.metadata["second_similarity"]
     assert result.metadata["top_margin"] > 0.0
+    assert [item["option_id"] for item in result.metadata["ranked_options"]] == [
+        "candidate:0",
+        "candidate:1",
+        "candidate:2",
+    ]
 
 
 def test_embedding_backend_never_forwards_option_metadata() -> None:
