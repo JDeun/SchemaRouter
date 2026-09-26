@@ -800,6 +800,15 @@ async def main() -> None:
     parser.add_argument("--candidate-recall-limit", type=int, default=4)
     parser.add_argument("--candidate-recall-min-similarity", type=float, default=-1.0)
     parser.add_argument("--candidate-recall-min-margin", type=float, default=0.0)
+    parser.add_argument(
+        "--candidate-fit-embedding-callable",
+        help=(
+            "Optional embedding callable used only as a bounded capability-fit/no-route gate "
+            "after candidate recall and before final candidate selection."
+        ),
+    )
+    parser.add_argument("--candidate-fit-min-similarity", type=float, default=-1.0)
+    parser.add_argument("--candidate-fit-min-margin", type=float, default=0.0)
     parser.add_argument("--min-similarity", type=float, default=-1.0)
     parser.add_argument("--min-margin", type=float, default=0.0)
     parser.add_argument(
@@ -961,6 +970,18 @@ async def main() -> None:
             min_margin=args.candidate_recall_min_margin,
         )
 
+    candidate_fit_backend = None
+    if args.candidate_fit_embedding_callable:
+        candidate_fit_embedder = load_callable(
+            args.candidate_fit_embedding_callable,
+            option_name="--candidate-fit-embedding-callable",
+        )
+        candidate_fit_backend = EmbeddingDecisionBackend(
+            candidate_fit_embedder,
+            min_similarity=args.candidate_fit_min_similarity,
+            min_margin=args.candidate_fit_min_margin,
+        )
+
     planners: list[tuple[str, SchemaPlanner, RecordingDecisionBackend | None]] = [
         ("keyword", SchemaPlanner(registry), None)
     ]
@@ -972,6 +993,24 @@ async def main() -> None:
                     registry,
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                ),
+                None,
+            )
+        )
+    if candidate_fit_backend is not None:
+        fit_name = (
+            "keyword+semantic-recall+capability-fit"
+            if candidate_recall_backend is not None
+            else "keyword+capability-fit"
+        )
+        planners.append(
+            (
+                fit_name,
+                SchemaPlanner(
+                    registry,
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
                 ),
                 None,
             )
@@ -990,6 +1029,7 @@ async def main() -> None:
                     analyzer=ModelQueryAnalyzer(model_callable),
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
                 ),
                 None,
             )
@@ -1022,6 +1062,7 @@ async def main() -> None:
                     ),
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
                 ),
                 recorder,
             )
@@ -1051,6 +1092,7 @@ async def main() -> None:
                     ),
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
                 ),
                 recorder,
             )
@@ -1083,6 +1125,7 @@ async def main() -> None:
                     ),
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
                 ),
                 recorder,
             )
@@ -1113,6 +1156,7 @@ async def main() -> None:
                     ),
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
                 ),
                 recorder,
             )
@@ -1145,6 +1189,12 @@ async def main() -> None:
             "limit": args.candidate_recall_limit,
             "min_similarity": args.candidate_recall_min_similarity,
             "min_margin": args.candidate_recall_min_margin,
+        },
+        "capability_fit": {
+            "enabled": candidate_fit_backend is not None,
+            "embedding_callable": args.candidate_fit_embedding_callable,
+            "min_similarity": args.candidate_fit_min_similarity,
+            "min_margin": args.candidate_fit_min_margin,
         },
         "reproducibility": {
             "source_revision": source_revision,
