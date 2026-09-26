@@ -628,7 +628,7 @@ def test_v5_v6_are_disjoint_from_prior_corpora_and_each_other() -> None:
     assert v6.isdisjoint(prior)
     assert v5.isdisjoint(v6)
 
-def test_v11_operation_holdout_workflow_is_manual_and_threshold_gated() -> None:
+def test_v11_operation_holdout_workflow_is_manual_and_frozen() -> None:
     workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
     marker = "  operation-fit-v11-heldout-cpu:"
     assert marker in workflow
@@ -636,12 +636,13 @@ def test_v11_operation_holdout_workflow_is_manual_and_threshold_gated() -> None:
 
     assert (
         "if: ${{ github.event_name == 'workflow_dispatch' "
-        "&& inputs.run_operation_holdout "
-        "&& inputs.operation_fit_min_similarity != '' }}"
+        "&& inputs.run_operation_holdout }}"
         in holdout_job
     )
-    assert "OPERATION_FIT_MIN_SIMILARITY: ${{ inputs.operation_fit_min_similarity }}" in holdout_job
-    assert '--operation-fit-min-similarity "${OPERATION_FIT_MIN_SIMILARITY}"' in holdout_job
+    assert 'SCHEMAROUTER_BENCHMARK_RERANKER_MODEL: "BAAI/bge-reranker-v2-m3"' in holdout_job
+    assert "--operation-fit-pairwise-callable benchmarks.bge_reranker:score_pairs" in holdout_job
+    assert "--operation-fit-min-score 0.01" in holdout_job
+    assert "operation_fit_min_similarity" not in holdout_job
     assert "benchmarks/decision-routing-v11-operation-generalization-holdout.json" in holdout_job
     assert (
         "benchmarks/decision-routing-v10-operation-generalization-holdout.json"
