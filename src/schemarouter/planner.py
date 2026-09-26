@@ -1430,11 +1430,16 @@ class SchemaPlanner:
             geometry += f" margin={float(top_margin):.6f}"
 
         if not self._graph_semantic_direct_accepts(result.metadata):
+            ranked_route_ids = self._graph_semantic_ranked_route_ids(
+                result.metadata,
+                authorized,
+            )
             propagated, propagation_warnings, escalates = self._graph_propagation_sync(
                 request,
                 intent,
                 seed_tool=tool,
-                additional_availability_predicate=additional_availability_predicate,
+                seed_authorized=authorized,
+                ranked_route_ids=ranked_route_ids,
             )
             return propagated, [
                 "graph semantic seed entered bounded propagation band "
@@ -1517,11 +1522,16 @@ class SchemaPlanner:
             geometry += f" margin={float(top_margin):.6f}"
 
         if not self._graph_semantic_direct_accepts(result.metadata):
+            ranked_route_ids = self._graph_semantic_ranked_route_ids(
+                result.metadata,
+                authorized,
+            )
             propagated, propagation_warnings, escalates = await self._graph_propagation_async(
                 request,
                 intent,
                 seed_tool=tool,
-                additional_availability_predicate=additional_availability_predicate,
+                seed_authorized=authorized,
+                ranked_route_ids=ranked_route_ids,
             )
             return propagated, [
                 "graph semantic seed entered bounded propagation band "
