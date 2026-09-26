@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import pytest
 
 from schemarouter import EndpointSpec, FieldSpec, InMemoryRegistry, PlanRequest, ToolSpec
-from schemarouter.decisions import DecisionRequest, DecisionResult
+from schemarouter.decisions import DecisionRequest, DecisionResult, DecisionSelection
 from schemarouter.graph_routing import CompiledSchemaGraph, GraphOperationGate
 from schemarouter.planner import SchemaPlanner
 
@@ -356,6 +356,23 @@ class _AbstainingBackend:
         return DecisionResult(abstained=True)
 
 
+@dataclass
+class _RouteSelectingBackend:
+    route_id: str
+    calls: int = 0
+    offered_ids: tuple[str, ...] = ()
+
+    def decide(self, request: DecisionRequest) -> DecisionResult:
+        self.calls += 1
+        self.offered_ids = tuple(option.id for option in request.options)
+        if self.route_id not in self.offered_ids:
+            return DecisionResult(abstained=True, metadata={"reason": "target_not_offered"})
+        return DecisionResult(
+            selections=[DecisionSelection(option_id=self.route_id, score=0.95)],
+            metadata={"provider": "test-semantic-seed"},
+        )
+
+
 def test_planner_skips_operation_backend_when_graph_resolves_alias() -> None:
     backend = _ExplodingBackend()
     planner = SchemaPlanner(
@@ -395,6 +412,106 @@ def test_graph_resolution_skips_all_semantic_routing_backends() -> None:
     assert backend.calls == 0
     assert len(plan.calls) == 1
     assert plan.calls[0].endpoint == "forecast"
+
+
+def test_semantic_seed_can_resolve_only_registered_graph_route() -> None:
+    seed = _RouteSelectingBackend("weather.forecast")
+    downstream = _ExplodingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        candidate_recall_backend=downstream,
+        candidate_fit_backend=downstream,
+        operation_fit_backend=downstream,
+        endpoint_disambiguation_backend=downstream,
+    )
+
+    plan = planner.plan(PlanRequest(query="Show future conditions around Seoul."))
+
+    assert seed.calls == 1
+    assert set(seed.offered_ids) == {"weather.current", "weather.forecast"}
+    assert downstream.calls == 0
+    assert len(plan.calls) == 1
+    assert plan.calls[0].tool == "weather"
+    assert plan.calls[0].endpoint == "forecast"
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "graph_semantic_seed"
+    assert any("graph semantic seed accepted" in warning for warning in plan.warnings)
+
+
+def test_semantic_seed_respects_preferred_tool_and_endpoint_constraints() -> None:
+    seed = _RouteSelectingBackend("weather.forecast")
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+    )
+
+    plan = planner.plan(
+        PlanRequest(
+            query="Show future conditions around Seoul.",
+            preferred_tools=["weather"],
+            preferred_endpoints=["weather.forecast"],
+        )
+    )
+
+    assert seed.offered_ids == ("weather.forecast",)
+    assert len(plan.calls) == 1
+    assert plan.calls[0].endpoint == "forecast"
+
+
+def test_semantic_seed_abstention_escalates_to_existing_operation_stack() -> None:
+    seed = _AbstainingBackend()
+    operation = _AbstainingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        operation_fit_backend=operation,
+    )
+
+    plan = planner.plan(PlanRequest(query="Show severe conditions around Seoul."))
+
+    assert seed.calls == 1
+    assert operation.calls == 1
+    assert plan.calls == []
+    assert any("graph semantic seed abstained" in warning for warning in plan.warnings)
+    assert any("operation capability fit gate abstained" in warning for warning in plan.warnings)
+
+
+def test_hard_graph_path_preempts_semantic_seed() -> None:
+    seed = _ExplodingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+    )
+
+    plan = planner.plan(PlanRequest(query="Get the weather forecast for Seoul."))
+
+    assert seed.calls == 0
+    assert plan.calls[0].endpoint == "forecast"
+
+
+@pytest.mark.asyncio
+async def test_async_semantic_seed_uses_same_authority_boundary() -> None:
+    seed = _RouteSelectingBackend("weather.current")
+    downstream = _ExplodingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        operation_fit_backend=downstream,
+    )
+
+    plan = await planner.aplan(PlanRequest(query="Tell me the conditions in Seoul now."))
+
+    assert seed.calls == 1
+    assert downstream.calls == 0
+    assert plan.calls[0].endpoint == "current"
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "graph_semantic_seed"
 
 
 def test_graph_feature_is_opt_in_and_default_path_is_unchanged() -> None:
