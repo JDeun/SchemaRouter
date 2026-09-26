@@ -364,7 +364,8 @@ class EndpointSpec(StrictModel):
             normalized = " ".join(alias.casefold().split())
             if normalized in normalized_operation_aliases:
                 raise ValueError(
-                    f"duplicate endpoint operation_aliases value in endpoint {self.name!r}: {alias!r}"
+                    f"duplicate operation alias in endpoint {self.name!r}: {alias!r}; "
+                    "operation_aliases must be unique"
                 )
             normalized_operation_aliases.add(normalized)
         pnames = [p.name for p in self.parameters]
