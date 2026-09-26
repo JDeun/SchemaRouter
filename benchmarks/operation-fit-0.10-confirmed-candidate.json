@@ -1,6 +1,6 @@
 {
   "cycle": "0.10-operation-contrastive-v1",
-  "status": "candidate_confirmed_and_frozen_before_blind_final",
+  "status": "blind_final_passed",
   "candidate_code_revision": "912c3790bba4f6104f4ccf5451170894f3b84f1f",
   "selection_rule": "maximum harmonic mean of supported-operation routed accuracy and near-domain unsupported-operation rejection among candidates meeting both preregistered floors",
   "selected_candidate": {
@@ -46,16 +46,32 @@
     "wrong_endpoints": 8,
     "errors": 0
   },
+  "blind_final": {
+    "result_manifest": "benchmarks/operation-fit-0.10-v13-result.json",
+    "workflow_run_id": 36246386089,
+    "source_revision": "07096b7350ba2b7e60bda2ddf04de49db894e75f",
+    "corpus_sha256": "73863c15191d6e75d892a8b0024056abe562aad2ad11d334610871dc5e070596",
+    "overall_accuracy": 0.75,
+    "supported_operation_routed_accuracy": 0.6171875,
+    "near_domain_unsupported_operation_rejection": 0.984375,
+    "out_of_domain_rejection": 1.0,
+    "harmonic_mean": 0.7586890243902439,
+    "mean_latency_ms": 612.435,
+    "errors": 0,
+    "passed_both_preregistered_floors": true
+  },
   "decision": {
-    "promotion_status": "confirmed_for_blind_final_evaluation",
+    "promotion_status": "blind_final_passed_for_optional_profile",
     "supported_floor": 0.532083,
     "unsupported_rejection_floor": 0.82375,
-    "calibration_passed_both_floors": true
+    "calibration_passed_both_floors": true,
+    "blind_final_passed_both_floors": true,
+    "default_status": "not_promoted_to_library_default"
   },
   "freeze_policy": [
-    "No model, representation, beta, threshold, margin, recall, capability-fit, or endpoint-disambiguation change is allowed before the v13 blind final run.",
-    "v12 remains design-known stress evidence and is not eligible for candidate selection.",
-    "v13 must be generated and scored in the same one-shot workflow without intermediate corpus inspection.",
-    "Any candidate change invalidates this freeze and requires a new blind-final protocol version."
+    "The beta=1 sibling-contrastive BGE candidate was frozen before v13 generation and remained unchanged through the blind-final run.",
+    "v12 is design-known stress evidence and is not eligible for candidate selection.",
+    "v13 is permanently consumed and may be used only for reporting or clearly labeled diagnostics.",
+    "The passing blind-final result validates this exact optional profile; it does not authorize retuning on v13 or make a model-specific scorer a library default."
   ]
 }
