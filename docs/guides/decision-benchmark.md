@@ -53,6 +53,20 @@ python scripts/benchmark_decision_routing.py \
 Tune recall width and confidence thresholds only on `dev` / `calibration`. Treat `test` as held out
 until the configuration is frozen.
 
+### v3 capability-fit holdout
+
+`benchmarks/decision-routing-v3-holdout.json` is a separate frozen **600-case** holdout created
+before semantic-similarity capability-fit thresholds are tuned:
+
+- 16 registered routes × 30 cases = 480 in-domain cases;
+- 120 near-domain no-route cases, including unsupported operations that are semantically close to
+  registered weather, materials, papers, finance, calendar, support, inventory, and user tools;
+- English, Korean, Spanish, Japanese, German, and mixed Korean/English, 100 cases each;
+- all cases are marked `test`; this file is not used for threshold selection.
+
+The v2 calibration split remains the tuning surface. Once a semantic-recall similarity threshold is
+selected there, v3 is evaluated once and then becomes a frozen regression set.
+
 ## Persist results
 
 ```bash
@@ -152,6 +166,12 @@ The checked-in research callable uses
 
 The Research Benchmark compares recall widths on the calibration split first and sweeps confidence
 thresholds offline. The held-out test split is evaluated only after a configuration is selected.
+
+For capability-fit/no-route calibration, use the semantic recall backend's own
+`--candidate-recall-min-similarity` (and, when justified, `--candidate-recall-min-margin`) before
+adding a separate model gate. A low-similarity embedding abstention adds no execution authority: it
+simply declines to add semantic candidates, leaving lexical candidates unchanged or producing
+no-route when lexical recall was empty.
 
 ## Jev
 
