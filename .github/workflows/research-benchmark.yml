@@ -183,3 +183,46 @@ jobs:
           path: artifacts/semantic-recall/
           if-no-files-found: warn
           retention-days: 30
+
+
+  semantic-recall-heldout-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "sentence-transformers>=3,<6"
+      - run: pip install -e ".[dev,laya]"
+      - name: Run frozen v2 held-out semantic recall evaluation
+        env:
+          SCHEMAROUTER_LAYA_RESIDENT_CHECKPOINTS: "2"
+          SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+        run: |
+          mkdir -p artifacts/semantic-recall/heldout
+          python scripts/benchmark_decision_routing.py \
+            --corpus benchmarks/decision-routing-v2.json \
+            --split test \
+            --laya \
+            --laya-device cpu \
+            --laya-max-loaded 2 \
+            --laya-preload \
+            --laya-min-confidence 0.05 \
+            --candidate-abstention no_route \
+            --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
+            --candidate-recall-limit 2 \
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+            --json-out artifacts/semantic-recall/heldout/report.json \
+            --csv-out artifacts/semantic-recall/heldout/rows.csv \
+            --html-out artifacts/semantic-recall/heldout/report.html
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: benchmark-semantic-recall-heldout-${{ github.run_id }}
+          path: artifacts/semantic-recall/heldout/
+          if-no-files-found: warn
+          retention-days: 30
