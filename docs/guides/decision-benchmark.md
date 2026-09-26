@@ -356,13 +356,10 @@ negatives, and 24 ordinary out-of-domain negatives, balanced to 100 cases per la
 already evaluated with the earlier operation-fit input representation and is therefore regression
 evidence only; it must not be reused for a new untouched generalization claim.
 
-The protected GitHub Actions holdout job now targets v9 and remains deliberately manual-only. It is
-skipped for pull-request runs and ordinary manual benchmark runs. v6 and v7 are consumed regression
-evidence; v8 was accidentally consumed by a calibration diagnostic path and therefore cannot support
-an untouched claim. v9 was reserved before the alias-aware operation-fit implementation was evaluated.
-After the alias-aware v5 threshold was frozen at 0.40, v9 was consumed exactly once on 2026-09-26.
-The permanent workflow guard remains manual/threshold-gated so the consumed corpus cannot be
-silently presented as a fresh holdout.
+Earlier operation holdouts v6 through v10 are consumed evidence. v8 was accidentally consumed by a
+calibration diagnostic path; v9 and v10 were later consumed by explicit one-shot evaluations after
+their configurations were frozen. Consumed corpora may be used only as regression/diagnostic evidence,
+not for fresh generalization claims or threshold/model selection.
 
 The frozen upstream stack for this experiment is:
 
@@ -438,6 +435,73 @@ routes. Of the missed routes, 162 were attributed to operation-fit and 37 to cap
 retained as a limitation signal, not a reason to retune against v10. Any further operation-fit
 optimization must reserve a new untouched holdout before implementation; v10 is now consumed
 regression evidence.
+
+
+### Pairwise reranker experiment and v11 one-shot
+
+After v10, threshold/margin variants and alternate bi-encoder representations were evaluated on
+**v5 development/calibration only**. Global margins and two-tier rescue rules did not beat the
+existing MiniLM cosine baseline. A direct pairwise reranker experiment then compared two
+cross-encoders while keeping semantic recall, capability fit, and endpoint disambiguation frozen.
+`BAAI/bge-reranker-v2-m3` was the first candidate to exceed the v5 robustness baseline:
+71.354% versus 69.792%, using sigmoid-normalized pair logits and `min_score = 0.01`.
+The gain came primarily from unsupported-operation rejection rather than supported-route recall,
+so SchemaRouter added only the generic provider-neutral `PairwiseDecisionBackend`; no reranker
+became a core dependency or default.
+
+Before inspecting v11, the frozen stack was:
+
+- semantic candidate recall: multilingual MiniLM, top-k = 2;
+- capability-fit: multilingual MiniLM, min similarity = 0.25;
+- operation-fit: `BAAI/bge-reranker-v2-m3`, sigmoid score, min score = 0.01;
+- endpoint disambiguation: multilingual MiniLM, min margin = 0.03.
+
+`benchmarks/decision-routing-v11-operation-generalization-holdout.json` is a 600-case,
+six-language test-only corpus with 384 supported operations, 192 near-domain unsupported operations,
+and 24 ordinary out-of-domain requests. It was evaluated exactly once on 2026-09-26 at source
+revision `57af2fd18d254fa1a9cd5855a158ae74b94adfc7`. The final stack produced:
+
+- **51.667%** overall accuracy (95% Wilson CI 47.670%–55.642%);
+- **25.781%** supported-operation routed accuracy (21.661%–30.381%);
+- **97.396%** near-domain unsupported-operation rejection (94.050%–98.883%);
+- **100%** ordinary out-of-domain rejection (86.202%–100%);
+- expected no-route recall **97.685%**;
+- 0 invalid plans and 0 execution/planner errors;
+- language-group accuracy from 48% (Spanish) to 54% (English, Korean, and mixed).
+
+The final error taxonomy was 310 correct, 5 false routes, 277 missed routes, 0 wrong-tool routes,
+8 wrong-endpoint routes, and 0 execution errors. Of the 277 missed routes, 251 were attributed to
+operation-fit and 26 to capability-fit. Mean end-to-end latency on the GitHub Actions x64 CPU runner
+was 589.627 ms per case (p50 651.841 ms, p95 748.293 ms).
+
+This result does **not** justify promoting the tested BGE configuration as a default. It is an
+effective conservative rejector but generalizes with excessive supported-route suppression.
+The generic `PairwiseDecisionBackend` remains useful as a bounded integration primitive for
+application-owned rerankers; model choice and calibration remain workload-specific. v11 is consumed
+and must not be used for further model or threshold selection.
+
+Reproducibility record:
+
+- corpus SHA-256: `efa8cd371bc7613895e44a915d78c77f5b88239c64a8de52d9c407839660d816`;
+- GitHub Actions run: `36239340782`;
+- artifact ID: `10905503165`;
+- artifact SHA-256: `f977511c7d65bc94e2dba9142b6cedf378ceaae1b8418c351e85b550f191dfd1`.
+
+
+Because v11 was already consumed, a **post-hoc diagnostic only** reran the prior frozen MiniLM
+operation-fit baseline (similarity 0.40) on the same corpus. It reached 54.833% overall accuracy,
+40.625% supported-operation accuracy, 77.604% near-domain rejection, and 100% OOD rejection, with
+253.947 ms mean latency. Its equal-weight supported/rejection balanced score was 59.115%, versus
+61.589% for BGE. Thus BGE retained a +2.474 percentage-point advantage on the pre-registered balanced
+metric, but only by trading away 14.844 points of supported recall, 3.167 points of overall accuracy,
+and more than doubling CPU latency. This diagnostic was run **after** v11 consumption and is not a
+fresh holdout claim.
+
+Baseline diagnostic reproducibility:
+- source SHA: `099cf009003df35f48571ecdc988fddaa11db904`;
+- GitHub Actions run: `36240431389`;
+- artifact ID: `10905429518`;
+- artifact SHA-256: `1048405ab34b41371004247e15934f5086a53977a14d4957bd14c6d69e194dee`.
 
 
 ### Post-change operation holdout (v7)
