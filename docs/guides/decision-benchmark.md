@@ -356,11 +356,13 @@ negatives, and 24 ordinary out-of-domain negatives, balanced to 100 cases per la
 already evaluated with the earlier operation-fit input representation and is therefore regression
 evidence only; it must not be reused for a new untouched generalization claim.
 
-The protected GitHub Actions holdout job now targets v7 and is deliberately manual-only. It is skipped
-for pull-request runs and ordinary manual benchmark runs. After freezing the label-cleaned threshold
-from v5, explicitly enable `run_operation_holdout` and provide that frozen
-`operation_fit_min_similarity` value to consume v7 once. An empty threshold leaves the holdout job
-skipped.
+The protected GitHub Actions holdout job now targets v9 and remains deliberately manual-only. It is
+skipped for pull-request runs and ordinary manual benchmark runs. v6 and v7 are consumed regression
+evidence; v8 was accidentally consumed by a calibration diagnostic path and therefore cannot support
+an untouched claim. v9 was reserved before the alias-aware operation-fit implementation was evaluated.
+After the alias-aware v5 threshold was frozen at 0.40, v9 was consumed exactly once on 2026-09-26.
+The permanent workflow guard remains manual/threshold-gated so the consumed corpus cannot be
+silently presented as a fresh holdout.
 
 The frozen upstream stack for this experiment is:
 
@@ -384,6 +386,18 @@ The one-shot v7 evaluation at the frozen 0.45 threshold produced 46.833% overall
 (70.086%–81.997%), and 100% accuracy on ordinary out-of-domain cases. This is treated as a
 distribution-shift diagnostic, not as a target for threshold retuning. The v7 holdout is now
 consumed and the workflow guard has been restored to manual-only.
+
+For the later trusted-alias surface, the post-alias v5 sweep froze
+`operation_fit_min_similarity = 0.40` using development/calibration only. The one-shot v9
+evaluation at that frozen threshold produced 51.167% overall accuracy (95% Wilson CI
+47.172%–55.146%), 38.281% routed accuracy on supported alias-operation cases
+(33.558%–43.236%), 70.833% accuracy on near-domain unsupported operations
+(64.046%–76.804%), and 100% accuracy on ordinary out-of-domain cases
+(86.202%–100%). Language-group accuracy ranged from 40% (Korean) to 57% (Japanese).
+The result is retained as untouched generalization evidence: aliases improved the supported-route
+surface relative to the consumed v7 diagnostic, but operation selection recall remains materially
+weaker than unsupported-operation rejection. v9 is now consumed and must not be used for threshold
+retuning.
 
 
 ### Post-change operation holdout (v7)
