@@ -632,7 +632,10 @@ def _graph_semantic_seed_decision(warnings: list[str]) -> str | None:
     lowered = [warning.casefold() for warning in warnings]
     if any("graph semantic seed accepted" in warning for warning in lowered):
         return "accept"
-    if any("graph semantic seed entered bounded propagation band" in warning for warning in lowered):
+    if any(
+        "graph semantic seed entered bounded propagation band" in warning
+        for warning in lowered
+    ):
         return "propagate"
     if any("graph semantic seed abstained" in warning for warning in lowered):
         return "abstain"
@@ -1153,8 +1156,8 @@ async def main() -> None:
         "--graph-semantic-propagation",
         action="store_true",
         help=(
-            "Resolve semantic-seed uncertainty inside the selected tool's registered "
-            "sibling-operation subgraph using the operation-fit backend."
+            "Resolve semantic-seed uncertainty with the operation-fit backend over a "
+            "bounded registered graph surface."
         ),
     )
     parser.add_argument(
@@ -1165,6 +1168,21 @@ async def main() -> None:
             "When bounded graph propagation abstains, either fall back to the existing "
             "semantic stack or fail closed."
         ),
+    )
+    parser.add_argument(
+        "--graph-semantic-propagation-scope",
+        choices=("siblings", "ranked"),
+        default="siblings",
+        help=(
+            "Use only seed-tool siblings, or reuse the semantic graph ranking plus "
+            "seed-tool siblings in one selective-BGE batch."
+        ),
+    )
+    parser.add_argument(
+        "--graph-semantic-propagation-limit",
+        type=int,
+        default=4,
+        help="Maximum number of ranked graph routes added before seed-tool siblings.",
     )
     parser.add_argument(
         "--counterbalanced",
@@ -1291,9 +1309,16 @@ async def main() -> None:
     if args.graph_operation_field_paths and not args.graph_operation_gate:
         parser.error("--graph-operation-field-paths requires --graph-operation-gate")
     if args.graph_semantic_seed_embedding_callable and not args.graph_operation_gate:
-        parser.error("--graph-semantic-seed-embedding-callable requires --graph-operation-gate")
+        parser.error(
+            "--graph-semantic-seed-embedding-callable requires --graph-operation-gate"
+        )
     if args.graph_semantic_propagation and not args.graph_semantic_seed_embedding_callable:
-        parser.error("--graph-semantic-propagation requires --graph-semantic-seed-embedding-callable")
+        parser.error(
+            "--graph-semantic-propagation requires "
+            "--graph-semantic-seed-embedding-callable"
+        )
+    if args.graph_semantic_propagation_limit < 1:
+        parser.error("--graph-semantic-propagation-limit must be >= 1")
     if args.warmup_cases < 0:
         parser.error("--warmup-cases must be >= 0")
 
@@ -1548,6 +1573,12 @@ async def main() -> None:
                     graph_semantic_propagation_on_abstain=(
                         args.graph_semantic_propagation_on_abstain
                     ),
+                    graph_semantic_propagation_scope=(
+                        args.graph_semantic_propagation_scope
+                    ),
+                    graph_semantic_propagation_limit=(
+                        args.graph_semantic_propagation_limit
+                    ),
                     operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
@@ -1797,7 +1828,13 @@ async def main() -> None:
                 if args.graph_semantic_propagation
                 else None
             ),
-            "scope": "seed-selected-tool-registered-siblings-only",
+            "scope": args.graph_semantic_propagation_scope,
+            "ranked_limit": args.graph_semantic_propagation_limit,
+            "authority": (
+                "ranked-registered-routes-plus-seed-siblings"
+                if args.graph_semantic_propagation_scope == "ranked"
+                else "seed-selected-tool-registered-siblings-only"
+            ),
             "on_abstain": args.graph_semantic_propagation_on_abstain,
         },
         "measurement": {
