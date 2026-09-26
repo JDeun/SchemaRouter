@@ -115,6 +115,14 @@ def _default_merge_mode(entity_kind: EntityKind, field: str) -> MergeMode:
     return "deduplicate"
 
 
+def _identifier_tokens(record: SourceRecord) -> set[tuple[str, str]]:
+    return {
+        (kind.casefold(), _normalise_identifier(kind, value))
+        for kind, value in record.identifiers.items()
+        if value.strip()
+    }
+
+
 def aggregate_records(
     records: list[SourceRecord],
     *,
@@ -122,18 +130,48 @@ def aggregate_records(
 ) -> list[CanonicalEntity]:
     """Resolve duplicate entities while preserving independent scientific observations.
 
+    Identity resolution is transitive across trusted identifiers: if record A shares a DOI
+    with B and B shares an arXiv ID with C, all three belong to one entity. Records without
+    identifiers are never fuzzy-merged.
+
     Documents default to metadata deduplication. Material/chemical records default to
     observation preservation so equal semantic fields from independent providers remain
     available for agreement/conflict analysis.
     """
 
     field_modes = field_modes or {}
-    groups: dict[str, list[SourceRecord]] = defaultdict(list)
-    for record in records:
-        groups[canonical_identity(record)].append(record)
+    if not records:
+        return []
+
+    parent = list(range(len(records)))
+
+    def find(index: int) -> int:
+        while parent[index] != index:
+            parent[index] = parent[parent[index]]
+            index = parent[index]
+        return index
+
+    def union(left: int, right: int) -> None:
+        left_root, right_root = find(left), find(right)
+        if left_root != right_root:
+            parent[right_root] = left_root
+
+    token_owner: dict[tuple[str, str, str], int] = {}
+    for index, record in enumerate(records):
+        for kind, value in _identifier_tokens(record):
+            token = (record.entity_kind, kind, value)
+            previous = token_owner.get(token)
+            if previous is None:
+                token_owner[token] = index
+            else:
+                union(index, previous)
+
+    groups: dict[int, list[SourceRecord]] = defaultdict(list)
+    for index, record in enumerate(records):
+        groups[find(index)].append(record)
 
     entities: list[CanonicalEntity] = []
-    for key, group in groups.items():
+    for group in groups.values():
         entity_kind = group[0].entity_kind
         identifiers: dict[str, str] = {}
         providers: list[str] = []
@@ -156,6 +194,13 @@ def aggregate_records(
                     )
                 )
 
+        representative = SourceRecord(
+            provider=group[0].provider,
+            entity_kind=entity_kind,
+            identifiers=identifiers,
+        )
+        key = canonical_identity(representative)
+
         fields: dict[str, AggregatedField] = {}
         for field, observations in field_observations.items():
             mode = field_modes.get(field, _default_merge_mode(entity_kind, field))
@@ -172,8 +217,6 @@ def aggregate_records(
                 )
                 continue
 
-            # Metadata deduplication keeps one canonical value but does not erase provenance:
-            # every source observation remains inspectable.
             canonical = next((obs.value for obs in observations if obs.value is not None), None)
             fields[field] = AggregatedField(
                 name=field,
