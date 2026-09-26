@@ -437,6 +437,57 @@ optimization must reserve a new untouched holdout before implementation; v10 is 
 regression evidence.
 
 
+### Pairwise reranker experiment and v11 one-shot
+
+After v10, threshold/margin variants and alternate bi-encoder representations were evaluated on
+**v5 development/calibration only**. Global margins and two-tier rescue rules did not beat the
+existing MiniLM cosine baseline. A direct pairwise reranker experiment then compared two
+cross-encoders while keeping semantic recall, capability fit, and endpoint disambiguation frozen.
+`BAAI/bge-reranker-v2-m3` was the first candidate to exceed the v5 robustness baseline:
+71.354% versus 69.792%, using sigmoid-normalized pair logits and `min_score = 0.01`.
+The gain came primarily from unsupported-operation rejection rather than supported-route recall,
+so SchemaRouter added only the generic provider-neutral `PairwiseDecisionBackend`; no reranker
+became a core dependency or default.
+
+Before inspecting v11, the frozen stack was:
+
+- semantic candidate recall: multilingual MiniLM, top-k = 2;
+- capability-fit: multilingual MiniLM, min similarity = 0.25;
+- operation-fit: `BAAI/bge-reranker-v2-m3`, sigmoid score, min score = 0.01;
+- endpoint disambiguation: multilingual MiniLM, min margin = 0.03.
+
+`benchmarks/decision-routing-v11-operation-generalization-holdout.json` is a 600-case,
+six-language test-only corpus with 384 supported operations, 192 near-domain unsupported operations,
+and 24 ordinary out-of-domain requests. It was evaluated exactly once on 2026-09-26 at source
+revision `57af2fd18d254fa1a9cd5855a158ae74b94adfc7`. The final stack produced:
+
+- **51.667%** overall accuracy (95% Wilson CI 47.670%–55.642%);
+- **25.781%** supported-operation routed accuracy (21.661%–30.381%);
+- **97.396%** near-domain unsupported-operation rejection (94.050%–98.883%);
+- **100%** ordinary out-of-domain rejection (86.202%–100%);
+- expected no-route recall **97.685%**;
+- 0 invalid plans and 0 execution/planner errors;
+- language-group accuracy from 48% (Spanish) to 54% (English, Korean, and mixed).
+
+The final error taxonomy was 310 correct, 5 false routes, 277 missed routes, 0 wrong-tool routes,
+8 wrong-endpoint routes, and 0 execution errors. Of the 277 missed routes, 251 were attributed to
+operation-fit and 26 to capability-fit. Mean end-to-end latency on the GitHub Actions x64 CPU runner
+was 589.627 ms per case (p50 651.841 ms, p95 748.293 ms).
+
+This result does **not** justify promoting the tested BGE configuration as a default. It is an
+effective conservative rejector but generalizes with excessive supported-route suppression.
+The generic `PairwiseDecisionBackend` remains useful as a bounded integration primitive for
+application-owned rerankers; model choice and calibration remain workload-specific. v11 is consumed
+and must not be used for further model or threshold selection.
+
+Reproducibility record:
+
+- corpus SHA-256: `efa8cd371bc7613895e44a915d78c77f5b88239c64a8de52d9c407839660d816`;
+- GitHub Actions run: `36239340782`;
+- artifact ID: `10905503165`;
+- artifact SHA-256: `f977511c7d65bc94e2dba9142b6cedf378ceaae1b8418c351e85b550f191dfd1`.
+
+
 ### Post-change operation holdout (v7)
 
 `benchmarks/decision-routing-v7-operation-post-change-holdout.json` is a 600-case,
