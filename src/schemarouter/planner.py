@@ -7,7 +7,14 @@ from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
 from .decision_policy import DecisionPolicy
-from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
+from .decisions import (
+    DecisionBackend,
+    DecisionOption,
+    DecisionRequest,
+    DecisionResult,
+    choose_async,
+    choose_sync,
+)
 from .errors import PlanningError
 from .evidence import available_evidence, field_evidence_status, global_evidence_status
 from .graph_routing import CompiledSchemaGraph, GraphOperationGate
@@ -196,6 +203,14 @@ class _Candidate:
 class _EndpointRef:
     tool_key: str
     endpoint_name: str
+
+
+@dataclass(frozen=True)
+class _SemanticRecallOutcome:
+    candidates: list[_Candidate]
+    warnings: list[str]
+    catalog: list[_Candidate]
+    result: DecisionResult | None
 
 
 class _CandidateIndex:
@@ -580,6 +595,8 @@ class SchemaPlanner:
         self,
         request: PlanRequest,
         catalog: list[_Candidate],
+        *,
+        include_operation_semantics: bool = False,
     ) -> DecisionRequest:
         options: list[DecisionOption] = []
         for index, candidate in enumerate(catalog):
@@ -592,6 +609,31 @@ class SchemaPlanner:
                 candidate.tool.description.strip(),
                 candidate.endpoint.description.strip(),
             ]
+            if include_operation_semantics:
+                operation_name = (
+                    candidate.endpoint.name.replace("_", " ").replace("-", " ")
+                )
+                operation_parts = [
+                    operation_name,
+                    *candidate.endpoint.operation_aliases,
+                ]
+                parts.insert(
+                    0,
+                    "Operation: "
+                    + "; ".join(
+                        part.strip()
+                        for part in operation_parts
+                        if part.strip()
+                    ),
+                )
+                operation_class = (
+                    "read-only retrieval"
+                    if candidate.endpoint.read_only is True
+                    else "mutating write"
+                    if candidate.endpoint.read_only is False
+                    else "unclassified"
+                )
+                parts.append("Operation class: " + operation_class)
             if field_labels:
                 parts.append("Fields: " + ", ".join(field_labels))
             description = "\n".join(part for part in parts if part)
@@ -607,7 +649,13 @@ class SchemaPlanner:
             query=request.query,
             options=options,
             max_selections=min(self.candidate_recall_limit, len(options)),
-            context={"surface": "semantic_candidate_recall"},
+            context={
+                "surface": (
+                    "graph_semantic_seed"
+                    if include_operation_semantics
+                    else "semantic_candidate_recall"
+                )
+            },
         )
 
     @staticmethod
@@ -637,6 +685,142 @@ class SchemaPlanner:
             added += 1
         return merged, added
 
+    def _semantic_recall_outcome_sync(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        candidates: list[_Candidate],
+        *,
+        include_operation_semantics: bool = False,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> _SemanticRecallOutcome:
+        if self.candidate_recall_backend is None:
+            return _SemanticRecallOutcome(candidates, [], [], None)
+
+        catalog = self._semantic_recall_catalog(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
+        if not catalog:
+            return _SemanticRecallOutcome(candidates, [], [], None)
+
+        try:
+            result = choose_sync(
+                self.candidate_recall_backend,
+                self._semantic_recall_request(
+                    request,
+                    catalog,
+                    include_operation_semantics=include_operation_semantics,
+                ),
+            )
+        except Exception as exc:
+            return _SemanticRecallOutcome(
+                candidates,
+                [
+                    "semantic candidate recall fallback: "
+                    f"{type(exc).__name__}; retained lexical candidates"
+                ],
+                catalog,
+                None,
+            )
+
+        if result.abstained or not result.selections:
+            return _SemanticRecallOutcome(
+                candidates,
+                ["semantic candidate recall abstained"],
+                catalog,
+                result,
+            )
+
+        selected_indexes = [
+            int(item.option_id.split(":", 1)[1])
+            for item in result.selections
+        ]
+        merged, added = self._merge_semantic_recall(
+            candidates,
+            catalog,
+            selected_indexes,
+        )
+        return _SemanticRecallOutcome(
+            merged,
+            [f"semantic candidate recall added {added} candidate(s)"],
+            catalog,
+            result,
+        )
+
+    async def _semantic_recall_outcome_async(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        candidates: list[_Candidate],
+        *,
+        include_operation_semantics: bool = False,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> _SemanticRecallOutcome:
+        if self.candidate_recall_backend is None:
+            return _SemanticRecallOutcome(candidates, [], [], None)
+
+        catalog = self._semantic_recall_catalog(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
+        if not catalog:
+            return _SemanticRecallOutcome(candidates, [], [], None)
+
+        try:
+            result = await choose_async(
+                self.candidate_recall_backend,
+                self._semantic_recall_request(
+                    request,
+                    catalog,
+                    include_operation_semantics=include_operation_semantics,
+                ),
+            )
+        except Exception as exc:
+            return _SemanticRecallOutcome(
+                candidates,
+                [
+                    "semantic candidate recall fallback: "
+                    f"{type(exc).__name__}; retained lexical candidates"
+                ],
+                catalog,
+                None,
+            )
+
+        if result.abstained or not result.selections:
+            return _SemanticRecallOutcome(
+                candidates,
+                ["semantic candidate recall abstained"],
+                catalog,
+                result,
+            )
+
+        selected_indexes = [
+            int(item.option_id.split(":", 1)[1])
+            for item in result.selections
+        ]
+        merged, added = self._merge_semantic_recall(
+            candidates,
+            catalog,
+            selected_indexes,
+        )
+        return _SemanticRecallOutcome(
+            merged,
+            [f"semantic candidate recall added {added} candidate(s)"],
+            catalog,
+            result,
+        )
+
     def _augment_candidates_with_semantic_recall_sync(
         self,
         request: PlanRequest,
@@ -649,43 +833,13 @@ class SchemaPlanner:
         ]
         | None = None,
     ) -> tuple[list[_Candidate], list[str]]:
-        if self.candidate_recall_backend is None:
-            return candidates, []
-
-        catalog = self._semantic_recall_catalog(
+        outcome = self._semantic_recall_outcome_sync(
             request,
             intent,
+            candidates,
             additional_availability_predicate=additional_availability_predicate,
         )
-        if not catalog:
-            return candidates, []
-
-        try:
-            result = choose_sync(
-                self.candidate_recall_backend,
-                self._semantic_recall_request(request, catalog),
-            )
-        except Exception as exc:
-            return candidates, [
-                "semantic candidate recall fallback: "
-                f"{type(exc).__name__}; retained lexical candidates"
-            ]
-
-        if result.abstained or not result.selections:
-            return candidates, ["semantic candidate recall abstained"]
-
-        selected_indexes = [
-            int(item.option_id.split(":", 1)[1])
-            for item in result.selections
-        ]
-        merged, added = self._merge_semantic_recall(
-            candidates,
-            catalog,
-            selected_indexes,
-        )
-        return merged, [
-            f"semantic candidate recall added {added} candidate(s)"
-        ]
+        return outcome.candidates, outcome.warnings
 
     async def _augment_candidates_with_semantic_recall_async(
         self,
@@ -699,43 +853,84 @@ class SchemaPlanner:
         ]
         | None = None,
     ) -> tuple[list[_Candidate], list[str]]:
-        if self.candidate_recall_backend is None:
-            return candidates, []
-
-        catalog = self._semantic_recall_catalog(
+        outcome = await self._semantic_recall_outcome_async(
             request,
             intent,
+            candidates,
             additional_availability_predicate=additional_availability_predicate,
         )
-        if not catalog:
-            return candidates, []
+        return outcome.candidates, outcome.warnings
 
+    def _apply_graph_semantic_seed(
+        self,
+        request: PlanRequest,
+        outcome: _SemanticRecallOutcome,
+    ) -> tuple[list[_Candidate], list[str], bool]:
+        gate = self.graph_operation_gate
+        if (
+            gate is None
+            or gate.semantic_seed_min_score is None
+            or request.max_calls > 1
+            or request.fallback_scope != "disabled"
+            or outcome.result is None
+            or outcome.result.abstained
+            or not outcome.result.selections
+            or not outcome.catalog
+        ):
+            return [], [], False
+
+        first = outcome.result.selections[0]
         try:
-            result = await choose_async(
-                self.candidate_recall_backend,
-                self._semantic_recall_request(request, catalog),
-            )
-        except Exception as exc:
-            return candidates, [
-                "semantic candidate recall fallback: "
-                f"{type(exc).__name__}; retained lexical candidates"
-            ]
+            selected_index = int(first.option_id.split(":", 1)[1])
+            candidate = outcome.catalog[selected_index]
+        except (ValueError, IndexError):
+            return [], [
+                "graph semantic seed returned an invalid bounded candidate; escalated"
+            ], False
 
-        if result.abstained or not result.selections:
-            return candidates, ["semantic candidate recall abstained"]
+        second_score: float | None = None
+        if len(outcome.result.selections) > 1:
+            second_score = outcome.result.selections[1].score
+        elif len(outcome.catalog) > 1:
+            # Without an observed competing score there is no evidence for a margin.
+            second_score = first.score
 
-        selected_indexes = [
-            int(item.option_id.split(":", 1)[1])
-            for item in result.selections
-        ]
-        merged, added = self._merge_semantic_recall(
-            candidates,
-            catalog,
-            selected_indexes,
+        scoped = gate.assess(
+            query=request.query,
+            graph=self._graph(),
+            tool_key=candidate.tool.key,
+            endpoint_names=tuple(
+                endpoint.name
+                for endpoint in candidate.tool.endpoints
+            ),
         )
-        return merged, [
-            f"semantic candidate recall added {added} candidate(s)"
-        ]
+        if scoped.decision == "reject":
+            return [], [
+                "graph semantic seed rejected after tool-scoped conflict check: "
+                + scoped.reason
+            ], True
+
+        assessment = gate.assess_semantic_route(
+            graph=self._graph(),
+            tool_key=candidate.tool.key,
+            endpoint_name=candidate.endpoint.name,
+            score=first.score,
+            second_score=second_score,
+        )
+        if assessment.decision != "accept":
+            return [], [
+                "graph semantic seed escalated: " + assessment.reason
+            ], False
+
+        selected = replace(
+            candidate,
+            selection_source="graph_semantic",
+        )
+        return [selected], [
+            "graph semantic seed accepted "
+            f"{candidate.tool.key}.{candidate.endpoint.name}: "
+            + assessment.reason
+        ], True
 
     @staticmethod
     def _capability_fit_request(
