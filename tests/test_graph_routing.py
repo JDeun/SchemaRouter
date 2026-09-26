@@ -377,6 +377,37 @@ class _EndpointPreferringAnalyzer:
 
 
 @dataclass
+class _GeometryRouteSelectingBackend:
+    route_id: str
+    top_similarity: float
+    top_margin: float
+    calls: int = 0
+    offered_ids: tuple[str, ...] = ()
+
+    def decide(self, request: DecisionRequest) -> DecisionResult:
+        self.calls += 1
+        self.offered_ids = tuple(option.id for option in request.options)
+        if self.route_id not in self.offered_ids:
+            return DecisionResult(
+                abstained=True,
+                metadata={
+                    "reason": "target_not_offered",
+                    "top_similarity": self.top_similarity,
+                    "top_margin": self.top_margin,
+                },
+            )
+        return DecisionResult(
+            selections=[DecisionSelection(option_id=self.route_id, score=0.90)],
+            metadata={
+                "provider": "test-geometry-seed",
+                "top_similarity": self.top_similarity,
+                "second_similarity": self.top_similarity - self.top_margin,
+                "top_margin": self.top_margin,
+            },
+        )
+
+
+@dataclass
 class _RouteSelectingBackend:
     route_id: str
     calls: int = 0
@@ -532,6 +563,145 @@ async def test_async_semantic_seed_uses_same_authority_boundary() -> None:
     assert plan.calls[0].endpoint == "current"
     assert plan.calls[0].explanation is not None
     assert plan.calls[0].explanation.candidate_selection == "graph_semantic_seed"
+
+
+def test_semantic_seed_high_confidence_bypasses_graph_propagation() -> None:
+    seed = _GeometryRouteSelectingBackend(
+        "weather.forecast",
+        top_similarity=0.60,
+        top_margin=0.20,
+    )
+    propagation = _ExplodingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        graph_semantic_direct_min_similarity=0.55,
+        graph_semantic_direct_min_margin=0.15,
+        graph_semantic_propagation_backend=propagation,
+    )
+
+    plan = planner.plan(PlanRequest(query="Show future conditions around Seoul."))
+
+    assert seed.calls == 1
+    assert propagation.calls == 0
+    assert plan.calls[0].endpoint == "forecast"
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "graph_semantic_seed"
+
+
+def test_semantic_seed_uncertainty_band_is_resolved_inside_tool_graph() -> None:
+    seed = _GeometryRouteSelectingBackend(
+        "weather.forecast",
+        top_similarity=0.50,
+        top_margin=0.12,
+    )
+    propagation = _RouteSelectingBackend("weather.current")
+    downstream = _ExplodingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        graph_semantic_direct_min_similarity=0.55,
+        graph_semantic_direct_min_margin=0.15,
+        graph_semantic_propagation_backend=propagation,
+        candidate_recall_backend=downstream,
+        candidate_fit_backend=downstream,
+        operation_fit_backend=downstream,
+        endpoint_disambiguation_backend=downstream,
+    )
+
+    plan = planner.plan(PlanRequest(query="Tell me the current conditions around Seoul."))
+
+    assert seed.calls == 1
+    assert propagation.calls == 1
+    assert set(propagation.offered_ids) == {"weather.current", "weather.forecast"}
+    assert downstream.calls == 0
+    assert len(plan.calls) == 1
+    assert plan.calls[0].endpoint == "current"
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "graph_propagation"
+    assert any("bounded propagation band" in warning for warning in plan.warnings)
+    assert any("graph propagation accepted" in warning for warning in plan.warnings)
+
+
+def test_graph_propagation_abstention_can_fail_closed_without_downstream() -> None:
+    seed = _GeometryRouteSelectingBackend(
+        "weather.forecast",
+        top_similarity=0.50,
+        top_margin=0.12,
+    )
+    propagation = _AbstainingBackend()
+    downstream = _ExplodingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        graph_semantic_direct_min_similarity=0.55,
+        graph_semantic_direct_min_margin=0.15,
+        graph_semantic_propagation_backend=propagation,
+        graph_semantic_propagation_on_abstain="reject",
+        operation_fit_backend=downstream,
+    )
+
+    plan = planner.plan(PlanRequest(query="Tell me the current conditions around Seoul."))
+
+    assert seed.calls == 1
+    assert propagation.calls == 1
+    assert downstream.calls == 0
+    assert plan.calls == []
+    assert any("graph propagation rejected" in warning for warning in plan.warnings)
+
+
+def test_graph_propagation_abstention_can_fallback_to_existing_stack() -> None:
+    seed = _GeometryRouteSelectingBackend(
+        "weather.forecast",
+        top_similarity=0.50,
+        top_margin=0.12,
+    )
+    propagation = _AbstainingBackend()
+    operation = _AbstainingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        graph_semantic_direct_min_similarity=0.55,
+        graph_semantic_direct_min_margin=0.15,
+        graph_semantic_propagation_backend=propagation,
+        graph_semantic_propagation_on_abstain="fallback",
+        operation_fit_backend=operation,
+    )
+
+    plan = planner.plan(PlanRequest(query="Tell me the current weather around Seoul."))
+
+    assert seed.calls == 1
+    assert propagation.calls == 1
+    assert operation.calls == 1
+    assert plan.calls == []
+    assert any("graph propagation abstained" in warning for warning in plan.warnings)
+
+
+@pytest.mark.parametrize(
+    ("keyword", "value"),
+    [
+        ("graph_semantic_direct_min_similarity", 1.01),
+        ("graph_semantic_direct_min_margin", -0.01),
+    ],
+)
+def test_graph_semantic_direct_thresholds_are_bounded(
+    keyword: str,
+    value: float,
+) -> None:
+    with pytest.raises(ValueError):
+        SchemaPlanner(_registry(), **{keyword: value})
+
+
+def test_graph_propagation_abstention_policy_is_validated() -> None:
+    with pytest.raises(ValueError, match="fallback.*reject"):
+        SchemaPlanner(
+            _registry(),
+            graph_semantic_propagation_on_abstain="invalid",  # type: ignore[arg-type]
+        )
 
 
 def test_graph_feature_is_opt_in_and_default_path_is_unchanged() -> None:
