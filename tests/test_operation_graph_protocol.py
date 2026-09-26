@@ -10,7 +10,14 @@ def test_graph_cycle_is_preregistered_before_implementation() -> None:
     cycle = json.loads(CYCLE.read_text(encoding="utf-8"))
 
     assert cycle["cycle"] == "0.10-operation-graph-projection-v3"
-    assert cycle["status"] == "preregistered_design_only"
+    assert cycle["status"] == "development_hard_graph_rejected_continue_semantic_seed"
+    assert (
+        cycle["development_progress"]["hard_graph_result"]
+        == "benchmarks/operation-fit-0.10-graph-hard-dev-result.json"
+    )
+    assert cycle["development_progress"]["candidate_frozen"] is False
+    assert cycle["development_progress"]["calibration_allowed"] is False
+    assert cycle["methodology_note"]["hard_graph_latency_promotion_evidence_valid"] is False
     assert cycle["reserved_from_main"] == "526d0c588bbec053fba54c55d982cc67d2a74d56"
     assert cycle["candidate_selection_policy"]["blind_corpus_must_not_exist_before_freeze"] is True
     assert cycle["preregistered_gates"]["promotion_requires_all_gates"] is True
