@@ -1,6 +1,6 @@
 {
   "version": "v12",
-  "status": "reserved_unconsumed",
+  "status": "design_known_unconsumed",
   "purpose": "contrastive operation-fit generalization holdout",
   "reserved_from_main": "465f6780178a6d8ac275ef1f4d977664d8227656",
   "case_count": 600,
@@ -20,9 +20,17 @@
   "split": "test",
   "tuning_eligible": false,
   "policy": [
-    "Do not inspect benchmark outcomes or use v12 for model, representation, threshold, margin, hybrid-rule, or architecture selection.",
-    "Develop and calibrate the next candidate only on development/calibration evidence (currently v5 plus explicitly diagnostic consumed corpora where documented).",
-    "Freeze the complete candidate configuration before the first v12 execution.",
-    "After the first sanctioned execution, mark v12 consumed and never reuse it for tuning."
+    "Do not use v12 for model, representation, threshold, margin, hybrid-rule, or architecture selection.",
+    "Do not describe v12 as blind, untouched, or fresh evidence.",
+    "Develop and calibrate the next candidate only on development/calibration evidence.",
+    "Freeze the complete candidate configuration before any post-selection stress evaluation.",
+    "Use a separately generated one-shot corpus for the next fresh-holdout claim."
+  ],
+  "role": "contrastive_stress_validation",
+  "fresh_holdout_eligible": false,
+  "rationale": [
+    "The exact v12 corpus was generated and structurally inspected by the same optimization agent before the next architecture was selected.",
+    "v12 may be used only as a design-known stress/validation set after a candidate is frozen; it must not support a claim of blind fresh-holdout generalization.",
+    "The next blind final evaluation must be generated only after the candidate configuration is frozen and then executed once without intermediate inspection."
   ]
 }
