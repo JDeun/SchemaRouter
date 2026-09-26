@@ -18,10 +18,13 @@ CORPUS_V10 = ROOT / "benchmarks" / "decision-routing-v10-operation-generalizatio
 CORPUS_V11 = ROOT / "benchmarks" / "decision-routing-v11-operation-generalization-holdout.json"
 CORPUS_V12 = ROOT / "benchmarks" / "decision-routing-v12-operation-contrastive-holdout.json"
 V12_RESERVATION = ROOT / "benchmarks" / "decision-routing-v12-reservation.json"
+V13_PROTOCOL = ROOT / "benchmarks" / "decision-routing-v13-blind-protocol.json"
+OPERATION_CYCLE = ROOT / "benchmarks" / "operation-fit-0.10-cycle.json"
 GENERATOR_V2 = ROOT / "scripts" / "generate_decision_routing_v2.py"
 GENERATOR_V3 = ROOT / "scripts" / "generate_decision_routing_v3.py"
 SCRIPT = ROOT / "scripts" / "benchmark_decision_routing.py"
 RESEARCH_WORKFLOW = ROOT / ".github" / "workflows" / "research-benchmark.yml"
+CONTRASTIVE_WORKFLOW = ROOT / ".github" / "workflows" / "research-operation-contrastive.yml"
 
 
 def _benchmark_module():
@@ -699,6 +702,29 @@ def test_v12_reservation_is_unconsumed_and_not_runnable_from_research_workflow()
     assert reservation["tuning_eligible"] is False
     assert reservation["case_count"] == 600
     assert "decision-routing-v12-operation-contrastive-holdout.json" not in workflow
+
+
+def test_operation_contrastive_cycle_uses_dev_only_for_candidate_selection() -> None:
+    protocol = json.loads(OPERATION_CYCLE.read_text(encoding="utf-8"))
+    workflow = CONTRASTIVE_WORKFLOW.read_text(encoding="utf-8")
+
+    assert protocol["status"] == "development_selection"
+    assert protocol["data_policy"]["selection"].endswith("split=dev")
+    assert protocol["data_policy"]["design_known_stress"].startswith("v12")
+    assert protocol["data_policy"]["blind_final"].startswith("v13")
+    assert "--split dev" in workflow
+    assert "--split calibration" not in workflow
+    assert "decision-routing-v12-operation-contrastive-holdout.json" not in workflow
+    assert "decision-routing-v13" not in workflow
+
+
+def test_v13_blind_protocol_has_no_generated_corpus() -> None:
+    protocol = json.loads(V13_PROTOCOL.read_text(encoding="utf-8"))
+
+    assert protocol["status"] == "protocol_reserved_not_generated"
+    assert protocol["corpus_exists"] is False
+    assert protocol["tuning_eligible"] is False
+    assert protocol["generation_timing"] == "only_after_complete_candidate_configuration_is_frozen"
 
 
 def test_pairwise_operation_fit_cli_wires_score_and_margin() -> None:
