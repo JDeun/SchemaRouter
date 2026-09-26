@@ -9,7 +9,8 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
-- reserved a fresh 600-case multilingual v11 operation-generalization holdout before post-0.8 routing optimization; it is test-only, balanced like v10, guarded behind explicit manual workflow dispatch, and must remain unmeasured until the next operation-fit configuration is frozen.
+- added a provider-neutral bounded `PairwiseDecisionBackend` for application-owned cross-encoders/rerankers; pair scores are mapped only to already-authorized opaque option IDs, metadata is not forwarded by default, malformed/out-of-range scores fail closed, and no model/runtime dependency is added to core.
+- consumed the previously reserved 600-case multilingual v11 operation-generalization holdout exactly once with the frozen BGE pairwise candidate, then ran the pre-existing MiniLM 0.40 baseline only as a post-holdout diagnostic on the same consumed corpus. The BGE candidate improved the pre-registered balanced operation objective from 59.115% to 61.589% (+2.474 pp) by raising near-domain unsupported-operation rejection from 77.604% to 97.396%, while supported-operation routed accuracy fell from 40.625% to 25.781%; BGE is therefore not promoted to an unconditional default.
 
 ### Changed
 
