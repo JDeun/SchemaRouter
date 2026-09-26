@@ -410,3 +410,17 @@ out-of-domain cases. Its normalized queries are disjoint from v2 through v7.
 v8 must not be used to design aliases or select the operation-fit threshold. v7 is now diagnostic
 data; implementation and threshold work may use v5 plus the consumed v7 evidence, but v8 remains
 untouched until the alias-aware surface is frozen.
+
+
+### Alias-aware threshold selection rule
+
+After adding trusted `EndpointSpec.operation_aliases`, operation-fit threshold selection uses only
+v5 and the already-consumed v7 diagnostic corpus. For each threshold, compute a balanced operation
+score for each corpus as the arithmetic mean of supported-operation accuracy and near-domain
+unsupported-operation accuracy. The primary robustness score is the lower of the v5 calibration
+balanced score and the v7 diagnostic balanced score.
+
+Freeze the threshold that maximizes this robustness score. Use v5 development balanced accuracy as
+the first tie-breaker, then prefer the lower threshold as the second tie-breaker to preserve
+supported-request recall. The reserved v8 corpus must not participate in threshold selection or
+alias design. After the alias vocabulary and threshold are frozen, v8 is evaluated once.
