@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -17,12 +16,7 @@ from benchmark_decision_routing import (
 )
 
 from schemarouter import EmbeddingDecisionBackend, SchemaPlanner
-from schemarouter.decisions import (
-    DecisionRequest,
-    DecisionResult,
-    DecisionSelection,
-    validate_decision,
-)
+from schemarouter.decisions import DecisionOption, DecisionRequest, DecisionResult, DecisionSelection
 
 
 @dataclass(frozen=True)
@@ -54,22 +48,15 @@ THRESHOLDS: tuple[float, ...] = tuple(index / 100.0 for index in range(100))
 
 
 class SentenceTransformerEmbedder:
-    def __init__(self, model_name: str, *, mode: str = "raw") -> None:
+    def __init__(self, model_name: str) -> None:
         from sentence_transformers import SentenceTransformer
 
         self.model_name = model_name
-        self.mode = mode
         self.model = SentenceTransformer(model_name)
 
     def __call__(self, texts: list[str]) -> list[list[float]]:
-        payload = list(texts)
-        if self.mode == "e5-query-passage":
-            payload = [
-                f"query: {payload[0]}",
-                *(f"passage: {text}" for text in payload[1:]),
-            ]
         vectors = self.model.encode(
-            payload,
+            texts,
             normalize_embeddings=True,
             convert_to_numpy=True,
             show_progress_bar=False,
@@ -77,80 +64,85 @@ class SentenceTransformerEmbedder:
         return vectors.tolist()
 
 
-class MultiEncoderScoreBackend(EmbeddingDecisionBackend):
-    """Permissive operation gate that records scores for multiple encoders."""
+class OperationRequestRecorder:
+    """Accept every authorized operation request while recording its exact fit surface."""
 
-    def __init__(
-        self,
-        baseline_embedder: SentenceTransformerEmbedder,
-        operation_embedders: dict[str, SentenceTransformerEmbedder],
-    ) -> None:
-        super().__init__(baseline_embedder, min_similarity=-1.0, min_margin=0.0)
-        self.operation_embedders = operation_embedders
-        self.similarities: dict[str, dict[str, list[float]]] = {
-            key: {} for key in operation_embedders
-        }
-
-    @classmethod
-    def _ranked_similarities(
-        cls,
-        raw: Iterable[Iterable[float]],
-        *,
-        option_count: int,
-    ) -> tuple[list[list[float]], list[float]]:
-        vectors = cls._coerce_vectors(raw, expected_count=option_count + 1)
-        query_vector, *option_vectors = vectors
-        ranked = sorted(
-            (cls._cosine(query_vector, vector) for vector in option_vectors),
-            reverse=True,
-        )
-        return vectors, ranked
+    def __init__(self) -> None:
+        self.requests: dict[str, DecisionRequest] = {}
 
     def decide(self, request: DecisionRequest) -> DecisionResult:
-        texts = [
-            request.query,
-            *(
-                self.option_text(option)
-                for option in request.options
-            ),
+        self.requests[request.query] = request
+        return DecisionResult(
+            selections=[
+                DecisionSelection(
+                    option_id=request.options[0].id,
+                    score=1.0,
+                )
+            ],
+            metadata={"provider": "operation-request-recorder"},
+        )
+
+
+def _option_text(option: DecisionOption) -> str:
+    label = option.label.strip() or option.id
+    description = option.description.strip()
+    return f"{label}\n{description}" if description else label
+
+
+def _profile_texts(
+    request: DecisionRequest,
+    *,
+    mode: str,
+) -> list[str]:
+    query = request.query
+    options = [_option_text(option) for option in request.options]
+    if mode == "e5-query-passage":
+        return [
+            f"query: {query}",
+            *(f"passage: {option}" for option in options),
         ]
-        baseline_vectors: list[list[float]] | None = None
-        for key, embedder in self.operation_embedders.items():
-            vectors, ranked = self._ranked_similarities(
-                embedder(texts),
-                option_count=len(request.options),
-            )
-            self.similarities[key][request.query] = ranked
-            if key == "minilm-raw":
-                baseline_vectors = vectors
+    return [query, *options]
 
-        if baseline_vectors is None:
-            raise RuntimeError("baseline operation encoder is missing")
 
-        query_vector, *option_vectors = baseline_vectors
-        ranked = sorted(
-            (
-                (index, self._cosine(query_vector, vector))
-                for index, vector in enumerate(option_vectors)
-            ),
-            key=lambda item: (-item[1], item[0]),
-        )
-        selected_index, similarity = ranked[0]
-        return validate_decision(
-            request,
-            DecisionResult(
-                selections=[
-                    DecisionSelection(
-                        option_id=request.options[selected_index].id,
-                        score=(similarity + 1.0) / 2.0,
-                    )
-                ],
-                metadata={
-                    "provider": "operation-encoder-profile",
-                    "encoder_count": len(self.operation_embedders),
-                },
-            ),
-        )
+def _batched_operation_scores(
+    requests: dict[str, DecisionRequest],
+    *,
+    spec: EncoderSpec,
+    existing_model: Any | None = None,
+) -> dict[str, list[float]]:
+    if existing_model is None:
+        from sentence_transformers import SentenceTransformer
+
+        model = SentenceTransformer(spec.model_name)
+    else:
+        model = existing_model
+
+    flattened: list[str] = []
+    spans: dict[str, tuple[int, int]] = {}
+    for query, request in requests.items():
+        start = len(flattened)
+        payload = _profile_texts(request, mode=spec.mode)
+        flattened.extend(payload)
+        spans[query] = (start, len(payload))
+
+    vectors = model.encode(
+        flattened,
+        batch_size=64,
+        normalize_embeddings=True,
+        convert_to_numpy=True,
+        show_progress_bar=False,
+    ).tolist()
+
+    scores: dict[str, list[float]] = {}
+    for query, (start, length) in spans.items():
+        query_vector = vectors[start]
+        option_vectors = vectors[start + 1 : start + length]
+        similarities = [
+            sum(a * b for a, b in zip(query_vector, vector, strict=True))
+            for vector in option_vectors
+        ]
+        scores[query] = sorted(similarities, reverse=True)
+    return scores
 
 
 def _correct(case: BenchmarkCase, predicted: str | None) -> bool:
@@ -272,12 +264,7 @@ async def _profile(corpus: Path) -> dict[str, Any]:
     cases = load_corpus(corpus, allowed_routes=allowed_routes)
 
     upstream = SentenceTransformerEmbedder(ENCODERS[0].model_name)
-    operation_embedders = {
-        spec.key: SentenceTransformerEmbedder(spec.model_name, mode=spec.mode)
-        for spec in ENCODERS
-    }
-    operation = MultiEncoderScoreBackend(upstream, operation_embedders)
-
+    operation = OperationRequestRecorder()
     planner = SchemaPlanner(
         registry,
         candidate_recall_backend=EmbeddingDecisionBackend(upstream),
@@ -300,10 +287,18 @@ async def _profile(corpus: Path) -> dict[str, Any]:
     )
     rows_by_id = {row.case_id: row for row in rows}
 
+    scores_by_encoder: dict[str, dict[str, list[float]]] = {}
+    for spec in ENCODERS:
+        scores_by_encoder[spec.key] = _batched_operation_scores(
+            operation.requests,
+            spec=spec,
+            existing_model=upstream.model if spec.key == "minilm-raw" else None,
+        )
+
     results: list[dict[str, Any]] = []
     per_encoder_winners: dict[str, dict[str, Any]] = {}
     for spec in ENCODERS:
-        scores = operation.similarities[spec.key]
+        scores = scores_by_encoder[spec.key]
         candidates = [
             _candidate(
                 cases,
@@ -343,6 +338,7 @@ async def _profile(corpus: Path) -> dict[str, Any]:
     return {
         "corpus": str(corpus),
         "case_count": len(cases),
+        "operation_request_count": len(operation.requests),
         "encoders": [
             {
                 "key": spec.key,
