@@ -1069,7 +1069,8 @@ async def main() -> None:
         action="store_true",
         help=(
             "Allow unique registered response-field concept paths to resolve an operation in "
-            "the experimental graph planner. Disabled by default for conservative alias-only routing."
+            "the experimental graph planner. Disabled by default for conservative "
+            "alias-only routing."
         ),
     )
     parser.add_argument(
