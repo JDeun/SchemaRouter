@@ -704,18 +704,18 @@ def test_v12_reservation_is_unconsumed_and_not_runnable_from_research_workflow()
     assert "decision-routing-v12-operation-contrastive-holdout.json" not in workflow
 
 
-def test_operation_contrastive_cycle_uses_dev_only_for_candidate_selection() -> None:
+def test_operation_contrastive_cycle_is_closed_and_not_runnable() -> None:
     protocol = json.loads(OPERATION_CYCLE.read_text(encoding="utf-8"))
-    workflow = CONTRASTIVE_WORKFLOW.read_text(encoding="utf-8")
 
-    assert protocol["status"] == "development_selection"
+    assert protocol["status"] == "blind_final_passed_cycle_closed"
     assert protocol["data_policy"]["selection"].endswith("split=dev")
     assert protocol["data_policy"]["design_known_stress"].startswith("v12")
     assert protocol["data_policy"]["blind_final"].startswith("v13")
-    assert "--split dev" in workflow
-    assert "--split calibration" not in workflow
-    assert "decision-routing-v12-operation-contrastive-holdout.json" not in workflow
-    assert "decision-routing-v13" not in workflow
+    assert protocol["final_evidence"]["status"] == "consumed_blind_final"
+    assert protocol["final_evidence"]["tuning_eligible"] is False
+    assert protocol["retirement"]["development_workflow_removed"] is True
+    assert protocol["retirement"]["calibration_workflow_removed"] is True
+    assert not CONTRASTIVE_WORKFLOW.exists()
 
 
 def test_consumed_v13_blind_protocol_is_archived_and_not_tunable() -> None:

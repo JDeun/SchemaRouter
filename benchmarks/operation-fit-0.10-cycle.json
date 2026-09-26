@@ -1,6 +1,6 @@
 {
   "cycle": "0.10-operation-contrastive-v1",
-  "status": "development_selection",
+  "status": "blind_final_passed_cycle_closed",
   "selection_surface": "operation_capability_fit",
   "authority_model": "suppress_only_bounded_sibling_operations",
   "data_policy": {
@@ -47,5 +47,19 @@
     "Freeze beta and all upstream routing parameters before the calibration confirmation run.",
     "Calibration may veto promotion but must not be used to choose a different beta.",
     "Generate and score v13 only after the complete candidate configuration is frozen."
-  ]
+  ],
+  "final_evidence": {
+    "result": "benchmarks/operation-fit-0.10-v13-result.json",
+    "status": "consumed_blind_final",
+    "supported_operation_routed_accuracy": 0.6171875,
+    "near_domain_unsupported_operation_rejection": 0.984375,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "tuning_eligible": false
+  },
+  "retirement": {
+    "development_workflow_removed": true,
+    "calibration_workflow_removed": true,
+    "reason": "The beta=1 candidate completed calibration and the one-shot v13 blind final; the research workflows are consumed and must not rerun during later cycles."
+  }
 }

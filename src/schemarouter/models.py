@@ -495,6 +495,7 @@ class ToolSpec(StrictModel):
     name: str
     namespace: str | None = None
     description: str = ""
+    unsupported_operation_aliases: list[str] = Field(default_factory=list)
     endpoints: list[EndpointSpec]
     source_type: str | None = None
     license: str | None = None
@@ -537,6 +538,20 @@ class ToolSpec(StrictModel):
     @model_validator(mode="after")
     def validate_endpoints(self) -> ToolSpec:
         _validate_execution_metadata(self.execution_metadata)
+        normalized_unsupported_aliases: set[str] = set()
+        for alias in self.unsupported_operation_aliases:
+            if not alias or alias != alias.strip():
+                raise ValueError(
+                    "tool unsupported_operation_aliases must be non-empty and have no "
+                    "surrounding whitespace"
+                )
+            normalized = " ".join(alias.casefold().split())
+            if normalized in normalized_unsupported_aliases:
+                raise ValueError(
+                    f"duplicate unsupported operation alias in tool {self.name!r}: "
+                    f"{alias!r}; unsupported_operation_aliases must be unique"
+                )
+            normalized_unsupported_aliases.add(normalized)
         if self.provider is not None and not self.provider.strip():
             raise ValueError("tool provider must be non-empty when provided")
         if self.access_mode is not None and not self.access_mode.strip():
@@ -661,6 +676,8 @@ FieldSelectionReason = Literal[
 CandidateSelectionSource = Literal[
     "deterministic",
     "semantic_recall",
+    "graph_operation",
+    "graph_semantic_seed",
     "endpoint_disambiguation",
     "decision_backend",
     "decision_recall",

@@ -612,6 +612,33 @@ def compare_tool_specs(old: ToolSpec, new: ToolSpec) -> SchemaDiffReport:
             new=new.execution_metadata,
             message="Transport or binding identity changed and requires execution review.",
         )
+    if old.unsupported_operation_aliases != new.unsupported_operation_aliases:
+        old_aliases = {
+            " ".join(alias.casefold().split())
+            for alias in old.unsupported_operation_aliases
+        }
+        new_aliases = {
+            " ".join(alias.casefold().split())
+            for alias in new.unsupported_operation_aliases
+        }
+        removed_aliases = sorted(old_aliases - new_aliases)
+        severity: SchemaChangeSeverity = (
+            "security" if removed_aliases else "compatible"
+        )
+        _change(
+            changes,
+            path="unsupported_operation_aliases",
+            kind="unsupported_operation_aliases_changed",
+            severity=severity,
+            old=old.unsupported_operation_aliases,
+            new=new.unsupported_operation_aliases,
+            message=(
+                "Previously blocked operation aliases were removed and may broaden "
+                "graph routing authority; review before execution."
+                if removed_aliases
+                else "Additional unsupported operation aliases narrow graph routing authority."
+            ),
+        )
     for attribute in ("source_type", "license"):
         old_value = getattr(old, attribute)
         new_value = getattr(new, attribute)

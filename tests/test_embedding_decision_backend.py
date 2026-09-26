@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 
 from schemarouter import (
+    CachedEmbeddingDecisionBackend,
     DecisionOption,
     DecisionRequest,
     EmbeddingDecisionBackend,
@@ -220,3 +221,105 @@ def test_embedding_backend_accepts_generator_batches() -> None:
     result = choose_sync(EmbeddingDecisionBackend(embed), request())
 
     assert result.selections[0].option_id == "candidate:0"
+
+
+def test_cached_embedding_backend_reuses_static_option_vectors() -> None:
+    calls: list[list[str]] = []
+
+    def embed(texts: list[str]) -> list[list[float]]:
+        calls.append(list(texts))
+        vectors: list[list[float]] = []
+        for text in texts:
+            lowered = text.casefold()
+            if "weather" in lowered:
+                vectors.append([-1.0, 0.0])
+            elif "papers" in lowered or "scientific papers" in lowered:
+                vectors.append([0.0, 1.0])
+            else:
+                vectors.append([1.0, 0.0])
+        return vectors
+
+    backend = CachedEmbeddingDecisionBackend(embed)
+
+    first = choose_sync(backend, request())
+    second = choose_sync(backend, request())
+
+    assert first.selections[0].option_id == "candidate:0"
+    assert second.selections[0].option_id == "candidate:0"
+    assert len(calls[0]) == 4
+    assert calls[1] == ["find material band gap"]
+    assert first.metadata["cache_hits"] == 0
+    assert first.metadata["cache_misses"] == 3
+    assert second.metadata["cache_hits"] == 3
+    assert second.metadata["cache_misses"] == 0
+
+
+def test_cached_embedding_backend_invalidates_changed_option_text() -> None:
+    calls: list[list[str]] = []
+
+    def embed(texts: list[str]) -> list[list[float]]:
+        calls.append(list(texts))
+        return [[1.0, 0.0] for _ in texts]
+
+    backend = CachedEmbeddingDecisionBackend(embed)
+    choose_sync(backend, request())
+
+    changed = request().model_copy(deep=True)
+    changed.options[1].description = "Search scientific papers and citation metadata"
+    result = choose_sync(backend, changed)
+
+    assert len(calls[1]) == 2
+    assert calls[1][0] == "find material band gap"
+    assert "citation metadata" in calls[1][1]
+    assert result.metadata["cache_hits"] == 2
+    assert result.metadata["cache_misses"] == 1
+
+
+def test_cached_embedding_backend_cache_can_be_cleared() -> None:
+    calls: list[int] = []
+
+    def embed(texts: list[str]) -> list[list[float]]:
+        calls.append(len(texts))
+        return [[1.0, 0.0] for _ in texts]
+
+    backend = CachedEmbeddingDecisionBackend(embed)
+    choose_sync(backend, request())
+    choose_sync(backend, request())
+    backend.clear_cache()
+    choose_sync(backend, request())
+
+    assert calls == [4, 1, 4]
+
+
+@pytest.mark.asyncio
+async def test_cached_embedding_backend_supports_async_embedder() -> None:
+    calls: list[int] = []
+
+    async def embed(texts: list[str]) -> list[list[float]]:
+        calls.append(len(texts))
+        return [
+            (
+                [-1.0, 0.0]
+                if "weather" in text.casefold()
+                else [0.0, 1.0]
+                if "papers" in text.casefold() or "scientific papers" in text.casefold()
+                else [1.0, 0.0]
+            )
+            for text in texts
+        ]
+
+    backend = CachedEmbeddingDecisionBackend(embed)
+    first = await choose_async(backend, request())
+    second = await choose_async(backend, request())
+
+    assert first.selections[0].option_id == "candidate:0"
+    assert second.selections[0].option_id == "candidate:0"
+    assert calls == [4, 1]
+
+
+def test_sync_path_rejects_async_cached_embedding_backend() -> None:
+    async def embed(texts: list[str]) -> list[list[float]]:
+        return [[1.0, 0.0] for _ in texts]
+
+    with pytest.raises(PlanningError, match="asynchronous"):
+        choose_sync(CachedEmbeddingDecisionBackend(embed), request())

@@ -1,0 +1,74 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "graph_semantic_seed_development",
+  "status": "development_semantic_seed_no_candidate_passed",
+  "source_revision": "7dcc02713efecc75b23c37047d098f2d60846738",
+  "workflow_run_id": 36259109332,
+  "corpus_sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6",
+  "paired_quality_baseline": {
+    "supported_operation_routed_accuracy": 0.578125,
+    "near_domain_unsupported_operation_rejection": 0.953125,
+    "harmonic_mean_supported_rejection": 0.7197066326530612,
+    "false_routes": 18,
+    "invalid_plan_rate": 0,
+    "errors": 0
+  },
+  "best_quality_mean_latency_candidate": {
+    "tag": "s045-m010",
+    "min_similarity": 0.45,
+    "min_margin": 0.1,
+    "supported_operation_routed_accuracy": 0.6263020833333334,
+    "near_domain_unsupported_operation_rejection": 0.9479166666666666,
+    "harmonic_mean_supported_rejection": 0.7542562724014337,
+    "false_routes": 20,
+    "semantic_seed_accepts": 182,
+    "semantic_seed_accept_precision": 0.8956043956043956,
+    "semantic_seed_unsupported_accepts": 2,
+    "mean_latency_ms": 436.92,
+    "paired_baseline_mean_latency_ms": 542.392,
+    "paired_mean_delta_ms": -105.47204333333333,
+    "paired_mean_delta_bootstrap_ci95_ms": [
+      -121.02819991666667,
+      -91.90210156250001
+    ],
+    "p95_latency_ms": 714.615,
+    "paired_baseline_p95_latency_ms": 706.923,
+    "paired_p95_delta_ms": 7.692000000000121,
+    "gates": {
+      "supported_operation_floor": true,
+      "near_domain_unsupported_rejection_floor": false,
+      "false_route_non_regression": false,
+      "invalid_plan_zero": true,
+      "execution_errors_zero": true,
+      "paired_mean_latency_improvement": true,
+      "paired_p95_latency_non_regression": false
+    }
+  },
+  "safest_semantic_seed_candidate": {
+    "tag": "s055-m015",
+    "min_similarity": 0.55,
+    "min_margin": 0.15,
+    "supported_operation_routed_accuracy": 0.5963541666666666,
+    "near_domain_unsupported_operation_rejection": 0.953125,
+    "false_routes": 18,
+    "semantic_seed_accepts": 56,
+    "semantic_seed_accept_precision": 0.875,
+    "semantic_seed_unsupported_accepts": 0,
+    "paired_mean_delta_ms": -46.13021,
+    "paired_p95_delta_ms": 18.555849999999964,
+    "supported_floor_shortfall_correct_cases": 3
+  },
+  "promotion": {
+    "candidate_frozen": false,
+    "calibration_allowed": false,
+    "blind_v15_allowed": false
+  },
+  "interpretation": [
+    "Semantic graph seeding materially improves supported-operation accuracy and paired mean latency on fresh development data.",
+    "No preregistered candidate passes every safety and tail-latency gate.",
+    "The strongest quality candidate is only two false routes above baseline and one discrete near-domain rejection case below the 0.95 floor.",
+    "The safest candidate preserves baseline false routes and rejection but is three correct supported cases short of the 0.60 floor.",
+    "Proceed to bounded graph propagation with explicit negative evidence and remove duplicated semantic passes on escalation to target both false-positive and p95 failures."
+  ],
+  "next_stage": "graph_bounded_propagation_development"
+}

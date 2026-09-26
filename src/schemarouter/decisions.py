@@ -339,6 +339,183 @@ class EmbeddingDecisionBackend:
         return self._result(request, raw)
 
 
+class _CachedEmbeddingAwaitable:
+    """Awaitable wrapper for cached embedding decisions."""
+
+    def __init__(
+        self,
+        backend: CachedEmbeddingDecisionBackend,
+        request: DecisionRequest,
+        raw: Awaitable[Iterable[Iterable[float]]],
+        option_keys: list[tuple[str, str]],
+        missing_keys: list[tuple[str, str]],
+    ) -> None:
+        self._backend = backend
+        self._request = request
+        self._raw = raw
+        self._option_keys = option_keys
+        self._missing_keys = missing_keys
+
+    def __await__(self):  # type: ignore[no-untyped-def]
+        async def resolve() -> DecisionResult:
+            return self._backend._cached_result(
+                self._request,
+                await self._raw,
+                option_keys=self._option_keys,
+                missing_keys=self._missing_keys,
+            )
+
+        return resolve().__await__()
+
+    def close(self) -> None:
+        close = getattr(self._raw, "close", None)
+        if callable(close):
+            close()
+
+
+class CachedEmbeddingDecisionBackend(EmbeddingDecisionBackend):
+    """Embedding decision backend that caches static option vectors by ID and text.
+
+    This is useful when the authorized option catalog is stable across many queries,
+    such as schema-graph operation nodes. Only option embeddings are cached; every
+    request still embeds the current query. A changed option text uses a new cache key,
+    so schema-description drift cannot silently reuse the previous vector.
+    """
+
+    def __init__(
+        self,
+        embedder: EmbeddingCallable,
+        *,
+        min_similarity: float = -1.0,
+        min_margin: float = 0.0,
+        option_text: DecisionOptionTextCallable | None = None,
+    ) -> None:
+        super().__init__(
+            embedder,
+            min_similarity=min_similarity,
+            min_margin=min_margin,
+            option_text=option_text,
+        )
+        self._option_vector_cache: dict[tuple[str, str], list[float]] = {}
+
+    def clear_cache(self) -> None:
+        self._option_vector_cache.clear()
+
+    def _cached_result(
+        self,
+        request: DecisionRequest,
+        raw: Iterable[Iterable[float]],
+        *,
+        option_keys: list[tuple[str, str]],
+        missing_keys: list[tuple[str, str]],
+    ) -> DecisionResult:
+        vectors = self._coerce_vectors(
+            raw,
+            expected_count=1 + len(missing_keys),
+        )
+        query_vector, *missing_vectors = vectors
+        for key, vector in zip(missing_keys, missing_vectors, strict=True):
+            self._option_vector_cache[key] = vector
+
+        option_vectors = [
+            self._option_vector_cache[key]
+            for key in option_keys
+        ]
+        dimensions = len(query_vector)
+        if any(len(vector) != dimensions for vector in option_vectors):
+            raise PlanningError(
+                "cached embedding option dimensions do not match the query vector"
+            )
+
+        ranked = sorted(
+            (
+                (index, self._cosine(query_vector, vector))
+                for index, vector in enumerate(option_vectors)
+            ),
+            key=lambda item: (-item[1], item[0]),
+        )
+        eligible = [item for item in ranked if item[1] >= self.min_similarity]
+        metadata: dict[str, Any] = {
+            "provider": "embedding-similarity-cached",
+            "dimensions": dimensions,
+            "option_count": len(request.options),
+            "min_similarity": self.min_similarity,
+            "min_margin": self.min_margin,
+            "top_similarity": ranked[0][1],
+            "cache_hits": len(option_keys) - len(missing_keys),
+            "cache_misses": len(missing_keys),
+        }
+        if not eligible:
+            return validate_decision(
+                request,
+                DecisionResult(
+                    abstained=True,
+                    metadata={**metadata, "reason": "below_min_similarity"},
+                ),
+            )
+
+        limit = min(request.max_selections, len(eligible))
+        selected = eligible[:limit]
+        if self.min_margin > 0.0 and len(eligible) > limit:
+            boundary_margin = selected[-1][1] - eligible[limit][1]
+            metadata["boundary_margin"] = boundary_margin
+            if boundary_margin < self.min_margin:
+                return validate_decision(
+                    request,
+                    DecisionResult(
+                        abstained=True,
+                        metadata={**metadata, "reason": "ambiguous_selection_boundary"},
+                    ),
+                )
+
+        return validate_decision(
+            request,
+            DecisionResult(
+                selections=[
+                    DecisionSelection(
+                        option_id=request.options[index].id,
+                        score=(similarity + 1.0) / 2.0,
+                    )
+                    for index, similarity in selected
+                ],
+                metadata=metadata,
+            ),
+        )
+
+    def decide(
+        self,
+        request: DecisionRequest,
+    ) -> DecisionResult | Awaitable[DecisionResult]:
+        option_texts = [self.option_text(option) for option in request.options]
+        texts = [request.query, *option_texts]
+        if any(not isinstance(text, str) or not text.strip() for text in texts):
+            raise PlanningError("embedding decision text must be a non-empty string")
+
+        option_keys = [
+            (option.id, text)
+            for option, text in zip(request.options, option_texts, strict=True)
+        ]
+        missing_keys = [
+            key for key in option_keys if key not in self._option_vector_cache
+        ]
+        missing_texts = [text for _option_id, text in missing_keys]
+        raw = self.embedder([request.query, *missing_texts])
+        if inspect.isawaitable(raw):
+            return _CachedEmbeddingAwaitable(
+                self,
+                request,
+                raw,
+                option_keys,
+                missing_keys,
+            )
+        return self._cached_result(
+            request,
+            raw,
+            option_keys=option_keys,
+            missing_keys=missing_keys,
+        )
+
+
 class FirstOptionDecisionBackend:
     """Deterministic reference backend for tests and integration examples."""
 

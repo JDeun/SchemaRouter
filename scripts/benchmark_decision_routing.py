@@ -27,6 +27,7 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 from schemarouter import (  # noqa: E402
+    CachedEmbeddingDecisionBackend,
     DecisionPolicy,
     EmbeddingDecisionBackend,
     EndpointSpec,
@@ -38,6 +39,7 @@ from schemarouter import (  # noqa: E402
     ToolSpec,
 )
 from schemarouter.analyzers import ModelQueryAnalyzer  # noqa: E402
+from schemarouter.graph_routing import GraphOperationGate  # noqa: E402
 from schemarouter.integrations import (  # noqa: E402
     JevDecisionBackend,
     LayaDecisionBackend,
@@ -82,6 +84,8 @@ class BenchmarkRow:
     estimated_cost: float | None = None
     error: str | None = None
     failure_stage: str | None = None
+    graph_operation_decision: str | None = None
+    graph_semantic_seed_decision: str | None = None
 
 
 SMOKE_CASES = [
@@ -533,6 +537,8 @@ async def benchmark_planner(
                 expected=case.expected,
                 predicted=predicted,
             )
+            graph_operation_decision = _graph_operation_decision(plan.warnings)
+            graph_semantic_seed_decision = _graph_semantic_seed_decision(plan.warnings)
             metadata = getattr(result, "metadata", {}) if result is not None else {}
             input_tokens = metadata.get("input_tokens")
             output_tokens = metadata.get("output_tokens")
@@ -593,6 +599,8 @@ async def benchmark_planner(
                         output_cost_per_million,
                     ),
                     failure_stage=failure_stage,
+                    graph_operation_decision=graph_operation_decision,
+                    graph_semantic_seed_decision=graph_semantic_seed_decision,
                 )
             )
         except Exception as exc:  # noqa: BLE001 - benchmark records provider failures.
@@ -615,6 +623,28 @@ async def benchmark_planner(
                 )
             )
     return rows
+
+
+def _graph_semantic_seed_decision(warnings: list[str]) -> str | None:
+    lowered = [warning.casefold() for warning in warnings]
+    if any("graph semantic seed accepted" in warning for warning in lowered):
+        return "accept"
+    if any("graph semantic seed abstained" in warning for warning in lowered):
+        return "abstain"
+    if any("graph semantic seed fallback" in warning for warning in lowered):
+        return "fallback"
+    return None
+
+
+def _graph_operation_decision(warnings: list[str]) -> str | None:
+    lowered = [warning.casefold() for warning in warnings]
+    if any("graph operation gate rejected" in warning for warning in lowered):
+        return "reject"
+    if any("graph operation gate accepted" in warning for warning in lowered):
+        return "accept"
+    if any("graph operation gate escalated" in warning for warning in lowered):
+        return "escalate"
+    return None
 
 
 def _failure_stage(
@@ -734,6 +764,24 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
                 {row.failure_stage for row in rows if row.failure_stage is not None}
             )
         },
+        "graph_operation_counts": {
+            decision: sum(row.graph_operation_decision == decision for row in rows)
+            for decision in ("accept", "reject", "escalate")
+        },
+        "graph_operation_resolution_rate": (
+            sum(row.graph_operation_decision in {"accept", "reject"} for row in rows) / total
+            if total
+            else 0.0
+        ),
+        "graph_semantic_seed_counts": {
+            decision: sum(row.graph_semantic_seed_decision == decision for row in rows)
+            for decision in ("accept", "abstain", "fallback")
+        },
+        "graph_semantic_seed_resolution_rate": (
+            sum(row.graph_semantic_seed_decision == "accept" for row in rows) / total
+            if total
+            else 0.0
+        ),
         "backend_invocations": sum(row.backend_invoked for row in rows),
         "backend_invocation_rate": (
             sum(row.backend_invoked for row in rows) / total if total else 0.0
@@ -966,6 +1014,15 @@ async def main() -> None:
     parser.add_argument("--corpus", help="JSON corpus path. Omit for the three-case smoke set.")
     parser.add_argument("--max-cases", type=int, default=None)
     parser.add_argument(
+        "--planner-name",
+        action="append",
+        default=[],
+        help=(
+            "Run only the named planner. Repeat for multiple planners. "
+            "Unknown names fail before benchmark execution."
+        ),
+    )
+    parser.add_argument(
         "--split",
         choices=("dev", "calibration", "test"),
         default=None,
@@ -1023,6 +1080,46 @@ async def main() -> None:
         ),
     )
     parser.add_argument("--operation-fit-min-score", type=float, default=0.0)
+    parser.add_argument(
+        "--graph-operation-gate",
+        action="store_true",
+        help=(
+            "Add an experimental graph-first operation planner. Unique trusted graph paths "
+            "resolve locally; ambiguous cases may escalate to the configured operation-fit backend."
+        ),
+    )
+    parser.add_argument(
+        "--graph-operation-field-paths",
+        action="store_true",
+        help=(
+            "Allow unique registered response-field concept paths to resolve an operation in "
+            "the experimental graph planner. Disabled by default for conservative "
+            "alias-only routing."
+        ),
+    )
+    parser.add_argument(
+        "--graph-semantic-seed-embedding-callable",
+        help=(
+            "Optional embedding callable that grounds the query only against registered "
+            "schema-graph operation nodes before downstream semantic routing."
+        ),
+    )
+    parser.add_argument("--graph-semantic-seed-min-similarity", type=float, default=-1.0)
+    parser.add_argument("--graph-semantic-seed-min-margin", type=float, default=0.0)
+    parser.add_argument(
+        "--counterbalanced",
+        action="store_true",
+        help=(
+            "Warm selected planners and interleave planner execution order per case to "
+            "reduce model warm-cache and fixed-order latency bias."
+        ),
+    )
+    parser.add_argument(
+        "--warmup-cases",
+        type=int,
+        default=0,
+        help="Number of corpus cases used to warm each selected planner before timed execution.",
+    )
     parser.add_argument(
         "--endpoint-disambiguation-embedding-callable",
         help=(
@@ -1131,6 +1228,12 @@ async def main() -> None:
         ),
     )
     args = parser.parse_args()
+    if args.graph_operation_field_paths and not args.graph_operation_gate:
+        parser.error("--graph-operation-field-paths requires --graph-operation-gate")
+    if args.graph_semantic_seed_embedding_callable and not args.graph_operation_gate:
+        parser.error("--graph-semantic-seed-embedding-callable requires --graph-operation-gate")
+    if args.warmup_cases < 0:
+        parser.error("--warmup-cases must be >= 0")
 
     if args.repeat < 1:
         raise ValueError("--repeat must be >= 1")
@@ -1232,6 +1335,26 @@ async def main() -> None:
             min_margin=args.operation_fit_min_margin,
         )
 
+    graph_operation_gate = (
+        GraphOperationGate(
+            accept_unique_field_path=args.graph_operation_field_paths,
+        )
+        if args.graph_operation_gate
+        else None
+    )
+
+    graph_semantic_seed_backend = None
+    if args.graph_semantic_seed_embedding_callable:
+        graph_semantic_seed_embedder = load_callable(
+            args.graph_semantic_seed_embedding_callable,
+            option_name="--graph-semantic-seed-embedding-callable",
+        )
+        graph_semantic_seed_backend = CachedEmbeddingDecisionBackend(
+            graph_semantic_seed_embedder,
+            min_similarity=args.graph_semantic_seed_min_similarity,
+            min_margin=args.graph_semantic_seed_min_margin,
+        )
+
     endpoint_disambiguation_backend = None
     if args.endpoint_disambiguation_embedding_callable:
         endpoint_disambiguation_embedder = load_callable(
@@ -1316,6 +1439,35 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
+                    endpoint_disambiguation_backend=endpoint_disambiguation_backend,
+                ),
+                None,
+            )
+        )
+
+    if graph_operation_gate is not None:
+        graph_name_parts = ["keyword", "graph-operation"]
+        if graph_semantic_seed_backend is not None:
+            graph_name_parts.append("graph-semantic-seed")
+        if candidate_recall_backend is not None:
+            graph_name_parts.append("selective-semantic-recall")
+        if candidate_fit_backend is not None:
+            graph_name_parts.append("selective-capability-fit")
+        if operation_fit_backend is not None:
+            graph_name_parts.append("selective-operation-fit")
+        if endpoint_disambiguation_backend is not None:
+            graph_name_parts.append("selective-endpoint-disambiguation")
+        planners.append(
+            (
+                "+".join(graph_name_parts),
+                SchemaPlanner(
+                    registry,
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
+                    graph_operation_gate=graph_operation_gate,
+                    graph_semantic_seed_backend=graph_semantic_seed_backend,
                     operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
@@ -1479,6 +1631,23 @@ async def main() -> None:
             )
         )
 
+    if args.planner_name:
+        requested_planners = set(args.planner_name)
+        available_planners = {name for name, _, _ in planners}
+        unknown_planners = sorted(requested_planners - available_planners)
+        if unknown_planners:
+            raise ValueError(
+                "unknown --planner-name value(s): "
+                + ", ".join(unknown_planners)
+                + "; available: "
+                + ", ".join(sorted(available_planners))
+            )
+        planners = [
+            item
+            for item in planners
+            if item[0] in requested_planners
+        ]
+
     try:
         package_version = version("schemarouter")
     except PackageNotFoundError:
@@ -1521,6 +1690,29 @@ async def main() -> None:
             "min_score": args.operation_fit_min_score,
             "min_margin": args.operation_fit_min_margin,
         },
+        "graph_operation": {
+            "enabled": graph_operation_gate is not None,
+            "accept_unique_field_path": args.graph_operation_field_paths,
+            "authority": "registered-schema-graph-only",
+            "ambiguous_action": (
+                "escalate_to_operation_fit"
+                if operation_fit_backend is not None
+                else "retain_authorized_candidates"
+            ),
+        },
+        "graph_semantic_seed": {
+            "enabled": graph_semantic_seed_backend is not None,
+            "embedding_callable": args.graph_semantic_seed_embedding_callable,
+            "min_similarity": args.graph_semantic_seed_min_similarity,
+            "min_margin": args.graph_semantic_seed_min_margin,
+            "authority": "registered-schema-graph-operation-nodes-only",
+            "abstention_action": "escalate_to_existing_semantic_stack",
+        },
+        "measurement": {
+            "mode": "counterbalanced" if args.counterbalanced else "sequential",
+            "warmup_cases": args.warmup_cases,
+        },
+        "planner_filter": list(args.planner_name),
         "endpoint_disambiguation": {
             "enabled": endpoint_disambiguation_backend is not None,
             "embedding_callable": args.endpoint_disambiguation_embedding_callable,
@@ -1572,19 +1764,55 @@ async def main() -> None:
         "summary": {},
     }
     all_rows: list[BenchmarkRow] = []
-    for name, planner, recorder in planners:
-        rows = await benchmark_planner(
-            name,
-            planner,
-            cases,
-            allowed_routes=allowed_routes,
-            recorder=recorder,
-            input_cost_per_million=args.input_cost_per_million,
-            output_cost_per_million=args.output_cost_per_million,
-        )
-        all_rows.extend(rows)
-        report["rows"].extend(asdict(row) for row in rows)
-        report["summary"][name] = summarize(rows)
+    if args.counterbalanced:
+        warmup_cases = cases[: min(args.warmup_cases, len(cases))]
+        for _name, planner, _recorder in planners:
+            for case in warmup_cases:
+                try:
+                    await planner.aplan(PlanRequest(query=case.query, max_calls=1))
+                except Exception:
+                    pass
+
+        rows_by_name: dict[str, list[BenchmarkRow]] = {
+            name: [] for name, _planner, _recorder in planners
+        }
+        planner_count = len(planners)
+        for case_index, case in enumerate(cases):
+            offset = case_index % planner_count if planner_count else 0
+            ordered = planners[offset:] + planners[:offset]
+            for name, planner, recorder in ordered:
+                row = (
+                    await benchmark_planner(
+                        name,
+                        planner,
+                        [case],
+                        allowed_routes=allowed_routes,
+                        recorder=recorder,
+                        input_cost_per_million=args.input_cost_per_million,
+                        output_cost_per_million=args.output_cost_per_million,
+                    )
+                )[0]
+                rows_by_name[name].append(row)
+
+        for name, _planner, _recorder in planners:
+            rows = rows_by_name[name]
+            all_rows.extend(rows)
+            report["rows"].extend(asdict(row) for row in rows)
+            report["summary"][name] = summarize(rows)
+    else:
+        for name, planner, recorder in planners:
+            rows = await benchmark_planner(
+                name,
+                planner,
+                cases,
+                allowed_routes=allowed_routes,
+                recorder=recorder,
+                input_cost_per_million=args.input_cost_per_million,
+                output_cost_per_million=args.output_cost_per_million,
+            )
+            all_rows.extend(rows)
+            report["rows"].extend(asdict(row) for row in rows)
+            report["summary"][name] = summarize(rows)
 
     output = json.dumps(report, indent=2, ensure_ascii=False)
     if args.json_out:
