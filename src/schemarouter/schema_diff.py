@@ -569,6 +569,19 @@ def compare_tool_specs(old: ToolSpec, new: ToolSpec) -> SchemaDiffReport:
             old=old.description,
             new=new.description,
         )
+    if old.unsupported_operation_aliases != new.unsupported_operation_aliases:
+        _change(
+            changes,
+            path="unsupported_operation_aliases",
+            kind="unsupported_operation_aliases_changed",
+            severity="security",
+            old=old.unsupported_operation_aliases,
+            new=new.unsupported_operation_aliases,
+            message=(
+                "Graph routing deny authority changed and requires routing/security review; "
+                "exact fingerprints require replanning."
+            ),
+        )
     if old.provider != new.provider:
         _change(
             changes,
