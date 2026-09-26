@@ -2942,3 +2942,82 @@ def test_default_coverage_mode_does_not_fan_out_redundant_providers() -> None:
     )
 
     assert len(plan.calls) == 1
+
+
+
+def test_corroborate_mode_rejects_incompatible_units_across_providers() -> None:
+    reg = InMemoryRegistry()
+    for name, unit in (("provider_a", "g/cm3"), ("provider_b", "kg")):
+        reg.register(
+            ToolSpec(
+                name=name,
+                provider=name,
+                endpoints=[
+                    EndpointSpec(
+                        name="lookup",
+                        description="Lookup density",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(
+                                name="density",
+                                semantic_id="density",
+                                aliases=["density"],
+                                json_schema={"type": "number"},
+                                unit=unit,
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="density",
+            concepts=["density"],
+            max_calls=2,
+            retrieval_mode="corroborate",
+        )
+    )
+
+    assert len(plan.calls) == 1
+
+
+def test_corroborate_mode_rejects_incompatible_datatypes() -> None:
+    reg = InMemoryRegistry()
+    for name, schema in (
+        ("provider_a", {"type": "number"}),
+        ("provider_b", {"type": "string"}),
+    ):
+        reg.register(
+            ToolSpec(
+                name=name,
+                provider=name,
+                endpoints=[
+                    EndpointSpec(
+                        name="lookup",
+                        description="Lookup score",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(
+                                name="score",
+                                semantic_id="score",
+                                aliases=["score"],
+                                json_schema=schema,
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="score",
+            concepts=["score"],
+            max_calls=2,
+            retrieval_mode="corroborate",
+        )
+    )
+
+    assert len(plan.calls) == 1
