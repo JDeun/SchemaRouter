@@ -577,3 +577,18 @@ def test_live_inspection_reports_semantic_candidate_recall_configuration() -> No
     assert "Candidate recall" in html
     assert "CallableDecisionBackend" in html
     assert "(top 3)" in html
+
+
+def test_live_inspection_reports_capability_fit_configuration() -> None:
+    router = SchemaRouter()
+    router.planner.candidate_fit_backend = CallableDecisionBackend(
+        lambda request: {"selections": [{"option_id": request.options[0].id}]}
+    )
+
+    snapshot = inspect_router(router)
+
+    assert snapshot.planner.candidate_fit_backend == "CallableDecisionBackend"
+
+    html = render_dashboard(snapshot.registry, live=snapshot)
+    assert "Capability fit" in html
+    assert "CallableDecisionBackend" in html
