@@ -1,8 +1,8 @@
 {
   "version": "v13",
-  "status": "protocol_reserved_not_generated",
+  "status": "consumed_after_blind_final_scoring",
   "role": "blind_final_generalization_holdout",
-  "corpus_exists": false,
+  "corpus_exists": true,
   "tuning_eligible": false,
   "generation_timing": "only_after_complete_candidate_configuration_is_frozen",
   "execution_policy": "generate_and_execute_in_the_same_one_shot_workflow_without_intermediate_corpus_inspection",
@@ -39,5 +39,21 @@
     "operation-fit configuration",
     "endpoint-disambiguation configuration",
     "selection objective"
+  ],
+  "consumed": {
+    "workflow_run_id": 36246386089,
+    "workflow_run_attempt": 1,
+    "source_revision": "07096b7350ba2b7e60bda2ddf04de49db894e75f",
+    "candidate_freeze_revision": "14e1977011c5b926476731736f7a4a9e1876367a",
+    "runtime_seed": "36246386089",
+    "corpus_sha256": "73863c15191d6e75d892a8b0024056abe562aad2ad11d334610871dc5e070596",
+    "artifact_id": 10907304722,
+    "artifact_sha256": "0ca1cb673bee4d64999194252de8ddfe13a408548b7b53f0980c70b2d4719460",
+    "result_manifest": "benchmarks/operation-fit-0.10-v13-result.json",
+    "generation_manifest": "benchmarks/decision-routing-v13-generation.json"
+  },
+  "post_consumption_policy": [
+    "v13 must not be used to select or retune any routing model, representation, beta, threshold, margin, hybrid rule, or upstream parameter.",
+    "Further optimization requires a newly reserved blind-final protocol and a newly generated holdout after the next candidate freeze."
   ]
 }
