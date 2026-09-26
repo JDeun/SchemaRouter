@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.8.0</span>
+<span class="sr-kicker">SchemaRouter 0.9.0</span>
 
 # Put a typed execution boundary between agents and tools
 
@@ -182,21 +182,22 @@ equivalence, convert qualifier values, or synthesize measurement context.
 
 [Read the 0.7.0 release notes →](releases/0.7.0.md)
 
-## 0.8 focus
+## 0.9 focus
 
-Version `0.8.0` adds bounded semantic candidate recall, capability/operation fit gates,
-same-tool endpoint disambiguation, trusted operation aliases, per-field evidence requirements,
-coverage-aware multi-call planning, and explicit multi-provider corroboration/aggregation.
+Version `0.9.0` adds a provider-neutral bounded pairwise decision backend for application-owned
+cross-encoders and rerankers. Pairwise scorers may rank or suppress only already-authorized options;
+they cannot invent tools, routes, credentials, or execution authority.
 
-The release publishes the current routing state without overstating it. On the fresh 600-case v10
-one-shot holdout, the frozen stack reached **55.667% overall accuracy**, **42.188% supported-route
-accuracy**, **77.083% near-domain unsupported-operation rejection**, and **100% ordinary OOD
-rejection**. Most remaining supported-route misses occur at operation-fit, so later tuning must use
-a newly reserved untouched holdout rather than v10.
+The fresh 600-case v11 one-shot showed the trade-off clearly. The selected BGE pairwise candidate
+reached **51.667% overall accuracy**, **25.781% supported-route accuracy**, **97.396% near-domain
+unsupported-operation rejection**, and **100% OOD rejection**. A post-consumption MiniLM baseline
+diagnostic on the same corpus reached **54.833% overall**, **40.625% supported-route accuracy**, and
+**77.604% near-domain rejection**. The pairwise path remains optional rather than becoming the
+default.
 
-[Multi-provider evidence →](guides/multi-provider-evidence.md)
+[Decision routing benchmark →](guides/decision-benchmark.md)
 
-[Read the 0.8.0 release notes →](releases/0.8.0.md)
+[Read the 0.9.0 release notes →](releases/0.9.0.md)
 
 ## Go deeper
 

@@ -65,7 +65,7 @@ Optional decision backends (Laya / Ollama / Jev) plug into SchemaRouter's bounde
 They do not become agents, do not run tool loops, and do not receive execution authority.
 ```
 
-> **Current stable release: 0.8.0** · `pip install schemarouter` · pre-1.0
+> **Current stable release: 0.9.0** · `pip install schemarouter` · pre-1.0
 
 ## Why SchemaRouter
 
@@ -183,27 +183,30 @@ Workflow/DAG semantics, memory, prompt systems, and autonomous tool loops remain
 
 See the [0.7.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.7.0/) for details.
 
-## What 0.8 adds
+## What 0.9 adds
 
-Version `0.8.0` extends field-first routing with bounded semantic recall and explicit
-multi-provider evidence handling while keeping execution authority local:
+Version `0.9.0` adds a provider-neutral bounded pairwise scoring backend for applications that want
+cross-encoder or reranker-style decisions without moving execution authority into the model.
 
-- optional semantic candidate recall plus separate capability-fit, operation-fit, and same-tool
-  endpoint-disambiguation stages;
-- trusted endpoint operation aliases without model-authored capability expansion;
-- per-field evidence requirements and explicit plan coverage reporting;
-- coverage-aware multi-call selection across complementary providers;
-- opt-in corroboration across distinct providers plus provenance-preserving aggregation that keeps
-  independent scientific observations separate instead of silently choosing a value;
-- reproducible multilingual routing corpora with frozen development/calibration/holdout discipline.
+- `PairwiseDecisionBackend` scores only the locally authorized `(query, option)` pairs;
+- opaque option IDs remain local and model/scorer output cannot invent a route;
+- malformed, non-finite, out-of-range, or wrong-length score batches fail closed;
+- sync and async scorers are supported without adding Torch, Transformers, or a specific model to
+  SchemaRouter core;
+- benchmark metadata now records pairwise scoring configuration for reproducibility.
 
-The fresh 600-case v10 one-shot holdout reached **55.667% overall accuracy**, **42.188%
-supported-operation routed accuracy**, **77.083% near-domain unsupported-operation rejection**, and
-**100% ordinary OOD rejection**. Operation-fit remains the dominant recall bottleneck, so v10 is
-treated as consumed regression evidence and will not be reused for tuning.
+The frozen BGE pairwise candidate was evaluated exactly once on the fresh 600-case v11 holdout. It
+reached **51.667% overall accuracy**, **25.781% supported-operation routed accuracy**, **97.396%
+near-domain unsupported-operation rejection**, and **100% ordinary OOD rejection**. A post-consumption
+MiniLM 0.40 diagnostic on the same corpus reached **54.833% overall**, **40.625% supported**, and
+**77.604% near-domain rejection**. BGE improved the equal-weight supported/rejection balanced score,
+but materially reduced supported recall and more than doubled CPU latency, so it is **not** the
+library default.
 
-See the [0.8.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.8.0/) and the
-[multi-provider evidence guide](https://jdeun.github.io/SchemaRouter/guides/multi-provider-evidence/).
+v11 is consumed evidence and is not eligible for further threshold/model selection.
+
+See the [0.9.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.9.0/) and the
+[decision routing benchmark guide](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/).
 
 ## Inspect what SchemaRouter built
 
