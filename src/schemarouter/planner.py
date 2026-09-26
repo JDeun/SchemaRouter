@@ -309,6 +309,7 @@ class SchemaPlanner:
         decision_policy: DecisionPolicy | None = None,
         candidate_recall_backend: DecisionBackend | None = None,
         candidate_recall_limit: int = 4,
+        candidate_fit_backend: DecisionBackend | None = None,
         candidate_index: bool = True,
         availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> None:
@@ -324,6 +325,7 @@ class SchemaPlanner:
         self.decision_policy = decision_policy or DecisionPolicy()
         self.candidate_recall_backend = candidate_recall_backend
         self.candidate_recall_limit = candidate_recall_limit
+        self.candidate_fit_backend = candidate_fit_backend
         self.candidate_index = candidate_index
         self.availability_predicate = availability_predicate
         self._candidate_index: _CandidateIndex | None = None
@@ -703,6 +705,83 @@ class SchemaPlanner:
         return merged, [
             f"semantic candidate recall added {added} candidate(s)"
         ]
+
+    @staticmethod
+    def _capability_fit_request(
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> DecisionRequest:
+        options: list[DecisionOption] = []
+        for index, candidate in enumerate(candidates):
+            field_labels = [
+                field.semantic_id or field.name
+                for field in candidate.endpoint.output_fields
+                if not field.identifier
+            ]
+            parts = [
+                candidate.tool.description.strip(),
+                candidate.endpoint.description.strip(),
+            ]
+            if field_labels:
+                parts.append("Fields: " + ", ".join(field_labels))
+            options.append(
+                DecisionOption(
+                    id=f"fit:{index}",
+                    label=f"{candidate.tool.key}.{candidate.endpoint.name}",
+                    description="\n".join(part for part in parts if part),
+                    metadata={"schema_score": candidate.score},
+                )
+            )
+        return DecisionRequest(
+            query=request.query,
+            options=options,
+            max_selections=1,
+            context={"surface": "capability_fit"},
+        )
+
+    def _apply_capability_fit_sync(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.candidate_fit_backend is None or not candidates:
+            return candidates, []
+        try:
+            result = choose_sync(
+                self.candidate_fit_backend,
+                self._capability_fit_request(request, candidates),
+            )
+        except Exception as exc:
+            return candidates, [
+                "capability fit fallback: "
+                f"{type(exc).__name__}; retained authorized candidates"
+            ]
+        if result.abstained or not result.selections:
+            return [], ["capability fit gate abstained; suppressed candidate routes"]
+        accepted = result.selections[0].option_id
+        return candidates, [f"capability fit gate accepted via {accepted}"]
+
+    async def _apply_capability_fit_async(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.candidate_fit_backend is None or not candidates:
+            return candidates, []
+        try:
+            result = await choose_async(
+                self.candidate_fit_backend,
+                self._capability_fit_request(request, candidates),
+            )
+        except Exception as exc:
+            return candidates, [
+                "capability fit fallback: "
+                f"{type(exc).__name__}; retained authorized candidates"
+            ]
+        if result.abstained or not result.selections:
+            return [], ["capability fit gate abstained; suppressed candidate routes"]
+        accepted = result.selections[0].option_id
+        return candidates, [f"capability fit gate accepted via {accepted}"]
 
     def _decision_request(
         self,
@@ -2019,13 +2098,21 @@ class SchemaPlanner:
             )
         )
         _, required_coverage = self._field_coverage_matrix(request, all_candidates)
-        candidates, decision_warnings = self._select_candidates_sync(
+        fit_candidates, fit_warnings = self._apply_capability_fit_sync(
             request,
             all_candidates,
         )
+        candidates, decision_warnings = self._select_candidates_sync(
+            request,
+            fit_candidates,
+        )
         candidates = self._order_candidates_for_field_coverage(request, candidates)
 
-        warnings: list[str] = [*recall_warnings, *decision_warnings]
+        warnings: list[str] = [
+            *recall_warnings,
+            *fit_warnings,
+            *decision_warnings,
+        ]
         if not candidates:
             coverage = self._plan_coverage(
                 required_coverage,
@@ -2189,12 +2276,16 @@ class SchemaPlanner:
             )
         )
         _, required_coverage = self._field_coverage_matrix(request, all_candidates)
-        candidates, decision_warnings = await self._select_candidates_async(
+        fit_candidates, fit_warnings = await self._apply_capability_fit_async(
             request,
             all_candidates,
         )
+        candidates, decision_warnings = await self._select_candidates_async(
+            request,
+            fit_candidates,
+        )
         candidates = self._order_candidates_for_field_coverage(request, candidates)
-        warnings = [*recall_warnings, *decision_warnings]
+        warnings = [*recall_warnings, *fit_warnings, *decision_warnings]
         if not candidates:
             coverage = self._plan_coverage(
                 required_coverage,
