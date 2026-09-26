@@ -826,8 +826,10 @@ class SchemaPlanner:
             parts = [
                 f"Operation: {operation_name}",
                 endpoint.description.strip(),
-                f"Operation class: {operation_class}",
             ]
+            if endpoint.operation_aliases:
+                parts.append("Operation aliases: " + "; ".join(endpoint.operation_aliases))
+            parts.append(f"Operation class: {operation_class}")
             if endpoint.method:
                 parts.append(f"HTTP method: {endpoint.method.upper()}")
             options.append(

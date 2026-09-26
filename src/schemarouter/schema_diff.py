@@ -333,6 +333,16 @@ def compare_endpoint_specs(old: EndpointSpec, new: EndpointSpec) -> SchemaDiffRe
             old=old.description,
             new=new.description,
         )
+    if old.operation_aliases != new.operation_aliases:
+        _change(
+            changes,
+            path="operation_aliases",
+            kind="operation_aliases_changed",
+            severity="compatible",
+            old=old.operation_aliases,
+            new=new.operation_aliases,
+            message="Trusted planning aliases changed; exact fingerprints still require replanning.",
+        )
     if old.method != new.method:
         old_method = old.method.upper() if isinstance(old.method, str) else None
         new_method = new.method.upper() if isinstance(new.method, str) else None

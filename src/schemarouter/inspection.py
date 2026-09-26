@@ -121,6 +121,7 @@ class EndpointInspection(StrictModel):
     path: str | None = None
     read_only: bool | None = None
     destructive: bool | None = None
+    operation_aliases: list[str] = Field(default_factory=list)
     parameter_count: int = Field(ge=0)
     required_parameter_count: int = Field(ge=0)
     output_field_count: int = Field(ge=0)
@@ -221,6 +222,7 @@ def inspect_tool_spec(tool: ToolSpec) -> ToolInspection:
             path=endpoint.path,
             read_only=endpoint.read_only,
             destructive=endpoint.destructive,
+            operation_aliases=list(endpoint.operation_aliases),
             parameter_count=len(endpoint.parameters),
             required_parameter_count=sum(
                 parameter.required for parameter in endpoint.parameters
