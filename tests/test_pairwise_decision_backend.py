@@ -50,6 +50,9 @@ def test_pairwise_backend_selects_best_bounded_option() -> None:
     assert result.selections[0].score == pytest.approx(0.96)
     assert result.metadata["provider"] == "pairwise-score"
     assert result.metadata["option_count"] == 3
+    assert result.metadata["top_score"] == pytest.approx(0.96)
+    assert result.metadata["second_score"] == pytest.approx(0.45)
+    assert result.metadata["top_margin"] == pytest.approx(0.51)
 
 
 def test_pairwise_backend_never_forwards_option_metadata() -> None:
