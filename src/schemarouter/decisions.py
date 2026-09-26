@@ -293,6 +293,13 @@ class EmbeddingDecisionBackend:
                 if len(ranked) > 1
                 else None
             ),
+            "ranked_options": [
+                {
+                    "option_id": request.options[index].id,
+                    "similarity": similarity,
+                }
+                for index, similarity in ranked
+            ],
         }
         if not eligible:
             return validate_decision(
@@ -454,6 +461,13 @@ class CachedEmbeddingDecisionBackend(EmbeddingDecisionBackend):
                 if len(ranked) > 1
                 else None
             ),
+            "ranked_options": [
+                {
+                    "option_id": request.options[index].id,
+                    "similarity": similarity,
+                }
+                for index, similarity in ranked
+            ],
             "cache_hits": len(option_keys) - len(missing_keys),
             "cache_misses": len(missing_keys),
         }
