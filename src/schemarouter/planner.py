@@ -310,6 +310,7 @@ class SchemaPlanner:
         candidate_recall_backend: DecisionBackend | None = None,
         candidate_recall_limit: int = 4,
         candidate_fit_backend: DecisionBackend | None = None,
+        endpoint_disambiguation_backend: DecisionBackend | None = None,
         candidate_index: bool = True,
         availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> None:
@@ -326,6 +327,7 @@ class SchemaPlanner:
         self.candidate_recall_backend = candidate_recall_backend
         self.candidate_recall_limit = candidate_recall_limit
         self.candidate_fit_backend = candidate_fit_backend
+        self.endpoint_disambiguation_backend = endpoint_disambiguation_backend
         self.candidate_index = candidate_index
         self.availability_predicate = availability_predicate
         self._candidate_index: _CandidateIndex | None = None
@@ -782,6 +784,171 @@ class SchemaPlanner:
             return [], ["capability fit gate abstained; suppressed candidate routes"]
         accepted = result.selections[0].option_id
         return candidates, [f"capability fit gate accepted via {accepted}"]
+
+    @staticmethod
+    def _endpoint_disambiguation_request(
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[DecisionRequest | None, list[int]]:
+        if request.max_calls > 1 or len(candidates) < 2:
+            return None, []
+
+        primary_tool = candidates[0].tool.key
+        sibling_indexes = [
+            index
+            for index, candidate in enumerate(candidates)
+            if candidate.tool.key == primary_tool
+        ]
+        if len(sibling_indexes) < 2:
+            return None, []
+
+        options: list[DecisionOption] = []
+        for local_index, candidate_index in enumerate(sibling_indexes):
+            candidate = candidates[candidate_index]
+            field_labels = [
+                field.semantic_id or field.name
+                for field in candidate.endpoint.output_fields
+                if not field.identifier
+            ]
+            operation = (
+                "read-only retrieval"
+                if candidate.endpoint.read_only is True
+                else "mutating write"
+                if candidate.endpoint.read_only is False
+                else "unclassified operation"
+            )
+            parts = [
+                candidate.endpoint.description.strip(),
+                f"Operation class: {operation}",
+            ]
+            if field_labels:
+                parts.append("Fields: " + ", ".join(field_labels))
+            options.append(
+                DecisionOption(
+                    id=f"endpoint:{local_index}",
+                    label=f"{candidate.tool.key}.{candidate.endpoint.name}",
+                    description="\n".join(part for part in parts if part),
+                    metadata={"candidate_index": candidate_index},
+                )
+            )
+
+        return (
+            DecisionRequest(
+                query=request.query,
+                options=options,
+                max_selections=1,
+                context={
+                    "surface": "endpoint_disambiguation",
+                    "tool": primary_tool,
+                },
+            ),
+            sibling_indexes,
+        )
+
+    @staticmethod
+    def _apply_endpoint_disambiguation_result(
+        candidates: list[_Candidate],
+        sibling_indexes: list[int],
+        option_id: str,
+    ) -> list[_Candidate]:
+        local_index = int(option_id.split(":", 1)[1])
+        chosen_index = sibling_indexes[local_index]
+        chosen = replace(
+            candidates[chosen_index],
+            selection_source="endpoint_disambiguation",
+        )
+        return [
+            chosen,
+            *[
+                candidate
+                for index, candidate in enumerate(candidates)
+                if index != chosen_index
+            ],
+        ]
+
+    def _disambiguate_endpoints_sync(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.endpoint_disambiguation_backend is None or not candidates:
+            return candidates, []
+
+        decision_request, sibling_indexes = self._endpoint_disambiguation_request(
+            request,
+            candidates,
+        )
+        if decision_request is None:
+            return candidates, []
+
+        try:
+            result = choose_sync(
+                self.endpoint_disambiguation_backend,
+                decision_request,
+            )
+        except Exception as exc:
+            return candidates, [
+                "endpoint disambiguation fallback: "
+                f"{type(exc).__name__}; retained candidate order"
+            ]
+
+        if result.abstained or not result.selections:
+            return candidates, [
+                "endpoint disambiguation abstained; retained candidate order"
+            ]
+
+        selected = result.selections[0].option_id
+        reordered = self._apply_endpoint_disambiguation_result(
+            candidates,
+            sibling_indexes,
+            selected,
+        )
+        return reordered, [
+            f"endpoint disambiguation selected {selected} within "
+            f"{candidates[0].tool.key}"
+        ]
+
+    async def _disambiguate_endpoints_async(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.endpoint_disambiguation_backend is None or not candidates:
+            return candidates, []
+
+        decision_request, sibling_indexes = self._endpoint_disambiguation_request(
+            request,
+            candidates,
+        )
+        if decision_request is None:
+            return candidates, []
+
+        try:
+            result = await choose_async(
+                self.endpoint_disambiguation_backend,
+                decision_request,
+            )
+        except Exception as exc:
+            return candidates, [
+                "endpoint disambiguation fallback: "
+                f"{type(exc).__name__}; retained candidate order"
+            ]
+
+        if result.abstained or not result.selections:
+            return candidates, [
+                "endpoint disambiguation abstained; retained candidate order"
+            ]
+
+        selected = result.selections[0].option_id
+        reordered = self._apply_endpoint_disambiguation_result(
+            candidates,
+            sibling_indexes,
+            selected,
+        )
+        return reordered, [
+            f"endpoint disambiguation selected {selected} within "
+            f"{candidates[0].tool.key}"
+        ]
 
     def _decision_request(
         self,
@@ -2102,15 +2269,22 @@ class SchemaPlanner:
             request,
             all_candidates,
         )
+        disambiguated_candidates, disambiguation_warnings = (
+            self._disambiguate_endpoints_sync(
+                request,
+                fit_candidates,
+            )
+        )
         candidates, decision_warnings = self._select_candidates_sync(
             request,
-            fit_candidates,
+            disambiguated_candidates,
         )
         candidates = self._order_candidates_for_field_coverage(request, candidates)
 
         warnings: list[str] = [
             *recall_warnings,
             *fit_warnings,
+            *disambiguation_warnings,
             *decision_warnings,
         ]
         if not candidates:
@@ -2280,12 +2454,23 @@ class SchemaPlanner:
             request,
             all_candidates,
         )
+        disambiguated_candidates, disambiguation_warnings = (
+            await self._disambiguate_endpoints_async(
+                request,
+                fit_candidates,
+            )
+        )
         candidates, decision_warnings = await self._select_candidates_async(
             request,
-            fit_candidates,
+            disambiguated_candidates,
         )
         candidates = self._order_candidates_for_field_coverage(request, candidates)
-        warnings = [*recall_warnings, *fit_warnings, *decision_warnings]
+        warnings = [
+            *recall_warnings,
+            *fit_warnings,
+            *disambiguation_warnings,
+            *decision_warnings,
+        ]
         if not candidates:
             coverage = self._plan_coverage(
                 required_coverage,
