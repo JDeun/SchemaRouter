@@ -800,6 +800,7 @@ async def main() -> None:
     parser.add_argument("--candidate-recall-limit", type=int, default=4)
     parser.add_argument("--candidate-recall-min-similarity", type=float, default=-1.0)
     parser.add_argument("--candidate-recall-min-margin", type=float, default=0.0)
+    parser.add_argument("--candidate-recall-min-lead-margin", type=float, default=0.0)
     parser.add_argument("--min-similarity", type=float, default=-1.0)
     parser.add_argument("--min-margin", type=float, default=0.0)
     parser.add_argument(
@@ -959,6 +960,7 @@ async def main() -> None:
             candidate_recall_embedder,
             min_similarity=args.candidate_recall_min_similarity,
             min_margin=args.candidate_recall_min_margin,
+            min_lead_margin=args.candidate_recall_min_lead_margin,
         )
 
     planners: list[tuple[str, SchemaPlanner, RecordingDecisionBackend | None]] = [
@@ -1145,6 +1147,7 @@ async def main() -> None:
             "limit": args.candidate_recall_limit,
             "min_similarity": args.candidate_recall_min_similarity,
             "min_margin": args.candidate_recall_min_margin,
+            "min_lead_margin": args.candidate_recall_min_lead_margin,
         },
         "reproducibility": {
             "source_revision": source_revision,
