@@ -287,6 +287,12 @@ class EmbeddingDecisionBackend:
             "min_similarity": self.min_similarity,
             "min_margin": self.min_margin,
             "top_similarity": ranked[0][1],
+            "second_similarity": ranked[1][1] if len(ranked) > 1 else None,
+            "top_margin": (
+                ranked[0][1] - ranked[1][1]
+                if len(ranked) > 1
+                else None
+            ),
         }
         if not eligible:
             return validate_decision(
@@ -442,6 +448,12 @@ class CachedEmbeddingDecisionBackend(EmbeddingDecisionBackend):
             "min_similarity": self.min_similarity,
             "min_margin": self.min_margin,
             "top_similarity": ranked[0][1],
+            "second_similarity": ranked[1][1] if len(ranked) > 1 else None,
+            "top_margin": (
+                ranked[0][1] - ranked[1][1]
+                if len(ranked) > 1
+                else None
+            ),
             "cache_hits": len(option_keys) - len(missing_keys),
             "cache_misses": len(missing_keys),
         }
