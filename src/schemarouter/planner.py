@@ -313,6 +313,7 @@ class SchemaPlanner:
         candidate_fit_backend: DecisionBackend | None = None,
         operation_fit_backend: DecisionBackend | None = None,
         graph_operation_gate: GraphOperationGate | None = None,
+        graph_semantic_seed_backend: DecisionBackend | None = None,
         endpoint_disambiguation_backend: DecisionBackend | None = None,
         candidate_index: bool = True,
         availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
@@ -332,6 +333,7 @@ class SchemaPlanner:
         self.candidate_fit_backend = candidate_fit_backend
         self.operation_fit_backend = operation_fit_backend
         self.graph_operation_gate = graph_operation_gate
+        self.graph_semantic_seed_backend = graph_semantic_seed_backend
         self.endpoint_disambiguation_backend = endpoint_disambiguation_backend
         self.candidate_index = candidate_index
         self.availability_predicate = availability_predicate
@@ -954,6 +956,240 @@ class SchemaPlanner:
         return [candidate], [
             "graph operation gate accepted "
             f"{tool.key}.{endpoint.name}: {assessment.reason}"
+        ], False
+
+    def _graph_semantic_seed_request(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> tuple[
+        DecisionRequest | None,
+        dict[str, tuple[ToolSpec, EndpointSpec]],
+    ]:
+        if (
+            self.graph_semantic_seed_backend is None
+            or request.max_calls > 1
+            or request.fallback_scope != "disabled"
+        ):
+            return None, {}
+
+        graph = self._graph()
+        preferred_tools = set(intent.preferred_tools)
+        preferred_endpoints = set(intent.preferred_endpoints)
+        authorized: dict[str, tuple[ToolSpec, EndpointSpec]] = {}
+        options: list[DecisionOption] = []
+
+        for tool_key, endpoint_name in graph.operation_routes():
+            try:
+                tool = self.registry.get(tool_key)
+                endpoint = tool.endpoint(endpoint_name)
+            except KeyError:
+                continue
+
+            if (
+                preferred_tools
+                and tool.key not in preferred_tools
+                and tool.name not in preferred_tools
+            ):
+                continue
+            route_id = f"{tool.key}.{endpoint.name}"
+            if preferred_endpoints and route_id not in preferred_endpoints:
+                continue
+            if (
+                self.availability_predicate is not None
+                and not self.availability_predicate(tool, endpoint)
+            ):
+                continue
+            if (
+                additional_availability_predicate is not None
+                and not additional_availability_predicate(tool, endpoint)
+            ):
+                continue
+
+            field_terms: list[str] = []
+            for field in endpoint.output_fields:
+                if field.identifier:
+                    continue
+                field_terms.extend(
+                    term
+                    for term in [
+                        field.semantic_id or field.name,
+                        *field.aliases,
+                    ]
+                    if term
+                )
+
+            operation_name = endpoint.name.replace("_", " ").replace("-", " ")
+            parts = [
+                f"tool: {tool.name}",
+                tool.description.strip(),
+                f"operation: {operation_name}",
+                *endpoint.operation_aliases,
+                endpoint.description.strip(),
+            ]
+            if field_terms:
+                parts.append("returns: " + ", ".join(dict.fromkeys(field_terms)))
+
+            authorized[route_id] = (tool, endpoint)
+            options.append(
+                DecisionOption(
+                    id=route_id,
+                    label=route_id,
+                    description="\n".join(part for part in parts if part),
+                    metadata={
+                        "tool": tool.key,
+                        "endpoint": endpoint.name,
+                        "surface": "graph_semantic_seed",
+                    },
+                )
+            )
+
+        if not options:
+            return None, {}
+
+        return (
+            DecisionRequest(
+                query=request.query,
+                options=options,
+                max_selections=1,
+                context={
+                    "surface": "graph_semantic_seed",
+                    "authority": "registered_schema_graph_only",
+                },
+            ),
+            authorized,
+        )
+
+    def _graph_semantic_seed_candidates_sync(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> tuple[list[_Candidate], list[str], bool]:
+        decision_request, authorized = self._graph_semantic_seed_request(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
+        if decision_request is None or self.graph_semantic_seed_backend is None:
+            return [], [], True
+
+        try:
+            result = choose_sync(
+                self.graph_semantic_seed_backend,
+                decision_request,
+            )
+        except Exception as exc:
+            return [], [
+                "graph semantic seed fallback: "
+                f"{type(exc).__name__}; escalated to semantic routing"
+            ], True
+
+        if result.abstained or not result.selections:
+            reason = result.metadata.get("reason")
+            suffix = f" ({reason})" if isinstance(reason, str) and reason else ""
+            return [], [
+                "graph semantic seed abstained"
+                + suffix
+                + "; escalated to semantic routing"
+            ], True
+
+        route_id = result.selections[0].option_id
+        target = authorized.get(route_id)
+        if target is None:
+            return [], [
+                "graph semantic seed returned no authorized graph node; escalated"
+            ], True
+
+        tool, endpoint = target
+        candidate = replace(
+            self._score_endpoint(
+                tool,
+                endpoint,
+                request.query,
+                intent,
+            ),
+            selection_source="graph_semantic_seed",
+        )
+        score = result.selections[0].score
+        score_suffix = f" score={score:.6f}" if score is not None else ""
+        return [candidate], [
+            "graph semantic seed accepted "
+            f"{route_id}{score_suffix}; path remained schema-authorized"
+        ], False
+
+    async def _graph_semantic_seed_candidates_async(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> tuple[list[_Candidate], list[str], bool]:
+        decision_request, authorized = self._graph_semantic_seed_request(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
+        if decision_request is None or self.graph_semantic_seed_backend is None:
+            return [], [], True
+
+        try:
+            result = await choose_async(
+                self.graph_semantic_seed_backend,
+                decision_request,
+            )
+        except Exception as exc:
+            return [], [
+                "graph semantic seed fallback: "
+                f"{type(exc).__name__}; escalated to semantic routing"
+            ], True
+
+        if result.abstained or not result.selections:
+            reason = result.metadata.get("reason")
+            suffix = f" ({reason})" if isinstance(reason, str) and reason else ""
+            return [], [
+                "graph semantic seed abstained"
+                + suffix
+                + "; escalated to semantic routing"
+            ], True
+
+        route_id = result.selections[0].option_id
+        target = authorized.get(route_id)
+        if target is None:
+            return [], [
+                "graph semantic seed returned no authorized graph node; escalated"
+            ], True
+
+        tool, endpoint = target
+        candidate = replace(
+            self._score_endpoint(
+                tool,
+                endpoint,
+                request.query,
+                intent,
+            ),
+            selection_source="graph_semantic_seed",
+        )
+        score = result.selections[0].score
+        score_suffix = f" score={score:.6f}" if score is not None else ""
+        return [candidate], [
+            "graph semantic seed accepted "
+            f"{route_id}{score_suffix}; path remained schema-authorized"
         ], False
 
     def _apply_operation_fit_sync(
@@ -2540,28 +2776,43 @@ class SchemaPlanner:
             )
         )
         if graph_escalates:
-            lexical_candidates = self._candidates(
-                request,
-                intent,
-                additional_availability_predicate=additional_availability_predicate,
-            )
-            all_candidates, recall_warnings = (
-                self._augment_candidates_with_semantic_recall_sync(
+            semantic_graph_candidates, semantic_graph_warnings, semantic_graph_escalates = (
+                self._graph_semantic_seed_candidates_sync(
                     request,
                     intent,
-                    lexical_candidates,
                     additional_availability_predicate=additional_availability_predicate,
                 )
             )
-            fit_candidates, fit_warnings = self._apply_capability_fit_sync(
-                request,
-                all_candidates,
-            )
-            operation_candidates, operation_warnings = self._apply_operation_fit_sync(
-                request,
-                fit_candidates,
-            )
+            if semantic_graph_escalates:
+                lexical_candidates = self._candidates(
+                    request,
+                    intent,
+                    additional_availability_predicate=additional_availability_predicate,
+                )
+                all_candidates, recall_warnings = (
+                    self._augment_candidates_with_semantic_recall_sync(
+                        request,
+                        intent,
+                        lexical_candidates,
+                        additional_availability_predicate=additional_availability_predicate,
+                    )
+                )
+                fit_candidates, fit_warnings = self._apply_capability_fit_sync(
+                    request,
+                    all_candidates,
+                )
+                operation_candidates, operation_warnings = self._apply_operation_fit_sync(
+                    request,
+                    fit_candidates,
+                )
+            else:
+                all_candidates = semantic_graph_candidates
+                recall_warnings = []
+                fit_warnings = []
+                operation_candidates = semantic_graph_candidates
+                operation_warnings = []
         else:
+            semantic_graph_warnings = []
             all_candidates = graph_candidates
             recall_warnings = []
             fit_warnings = []
@@ -2582,6 +2833,7 @@ class SchemaPlanner:
 
         warnings: list[str] = [
             *graph_warnings,
+            *semantic_graph_warnings,
             *recall_warnings,
             *fit_warnings,
             *operation_warnings,
@@ -2770,30 +3022,45 @@ class SchemaPlanner:
             )
         )
         if graph_escalates:
-            lexical_candidates = self._candidates(
-                request,
-                intent,
-                additional_availability_predicate=additional_availability_predicate,
-            )
-            all_candidates, recall_warnings = (
-                await self._augment_candidates_with_semantic_recall_async(
+            semantic_graph_candidates, semantic_graph_warnings, semantic_graph_escalates = (
+                await self._graph_semantic_seed_candidates_async(
                     request,
                     intent,
-                    lexical_candidates,
                     additional_availability_predicate=additional_availability_predicate,
                 )
             )
-            fit_candidates, fit_warnings = await self._apply_capability_fit_async(
-                request,
-                all_candidates,
-            )
-            operation_candidates, operation_warnings = (
-                await self._apply_operation_fit_async(
+            if semantic_graph_escalates:
+                lexical_candidates = self._candidates(
                     request,
-                    fit_candidates,
+                    intent,
+                    additional_availability_predicate=additional_availability_predicate,
                 )
-            )
+                all_candidates, recall_warnings = (
+                    await self._augment_candidates_with_semantic_recall_async(
+                        request,
+                        intent,
+                        lexical_candidates,
+                        additional_availability_predicate=additional_availability_predicate,
+                    )
+                )
+                fit_candidates, fit_warnings = await self._apply_capability_fit_async(
+                    request,
+                    all_candidates,
+                )
+                operation_candidates, operation_warnings = (
+                    await self._apply_operation_fit_async(
+                        request,
+                        fit_candidates,
+                    )
+                )
+            else:
+                all_candidates = semantic_graph_candidates
+                recall_warnings = []
+                fit_warnings = []
+                operation_candidates = semantic_graph_candidates
+                operation_warnings = []
         else:
+            semantic_graph_warnings = []
             all_candidates = graph_candidates
             recall_warnings = []
             fit_warnings = []
@@ -2813,6 +3080,7 @@ class SchemaPlanner:
         candidates = self._order_candidates_for_field_coverage(request, candidates)
         warnings = [
             *graph_warnings,
+            *semantic_graph_warnings,
             *recall_warnings,
             *fit_warnings,
             *operation_warnings,
