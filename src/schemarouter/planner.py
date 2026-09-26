@@ -228,7 +228,6 @@ class _CandidateIndex:
                         tool.description,
                         endpoint.name,
                         endpoint.description,
-                        *endpoint.operation_aliases,
                     ]
                 )
                 for token in _tokens(tool_text):
@@ -868,81 +867,93 @@ class SchemaPlanner:
             },
         )
 
-    def _apply_graph_operation_gate(
+    def _graph_first_candidates(
         self,
         request: PlanRequest,
         intent: QueryIntent,
-        candidates: list[_Candidate],
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
     ) -> tuple[list[_Candidate], list[str], bool]:
-        if self.graph_operation_gate is None or request.max_calls > 1 or not candidates:
-            return candidates, [], True
+        if (
+            self.graph_operation_gate is None
+            or request.max_calls > 1
+            or request.fallback_scope != "disabled"
+        ):
+            return [], [], True
 
-        primary_tool = candidates[0].tool
-        primary_tool_key = primary_tool.key
-        assessment = self.graph_operation_gate.assess(
+        assessment = self.graph_operation_gate.assess_global(
             query=request.query,
             graph=self._graph(),
-            tool_key=primary_tool_key,
-            endpoint_names=tuple(
-                endpoint.name
-                for endpoint in primary_tool.endpoints
-            ),
         )
-
         if assessment.decision == "reject":
             return [], [
                 "graph operation gate rejected the route: "
                 + assessment.reason
             ], False
+        if assessment.decision != "accept":
+            return [], [
+                "graph operation gate escalated: " + assessment.reason
+            ], True
 
-        if assessment.decision == "accept":
-            endpoint_name = assessment.endpoint_name
-            chosen = next(
-                (
-                    candidate
-                    for candidate in candidates
-                    if candidate.tool.key == primary_tool_key
-                    and candidate.endpoint.name == endpoint_name
-                ),
-                None,
-            )
-            if chosen is None and endpoint_name is not None:
-                try:
-                    endpoint = primary_tool.endpoint(endpoint_name)
-                except KeyError:
-                    endpoint = None
-                if endpoint is not None:
-                    chosen = self._score_endpoint(
-                        primary_tool,
-                        endpoint,
-                        request.query,
-                        intent,
-                    )
-            if chosen is None:
-                return candidates, [
-                    "graph operation gate produced no authorized candidate; escalated"
-                ], True
+        tool_key = assessment.tool_key
+        endpoint_name = assessment.endpoint_name
+        if not tool_key or endpoint_name is None:
+            return [], [
+                "graph operation gate produced an incomplete authorized path; escalated"
+            ], True
 
-            chosen = replace(
-                chosen,
-                selection_source="graph_operation",
-            )
-            pruned = [
-                chosen,
-                *[
-                    candidate
-                    for candidate in candidates
-                    if candidate.tool.key != primary_tool_key
-                ],
-            ]
-            return pruned, [
-                "graph operation gate accepted "
-                f"{primary_tool_key}.{endpoint_name}: {assessment.reason}"
-            ], False
+        try:
+            tool = self.registry.get(tool_key)
+            endpoint = tool.endpoint(endpoint_name)
+        except KeyError:
+            return [], [
+                "graph operation gate path disappeared from the registry; escalated"
+            ], True
 
-        return candidates, [
-            "graph operation gate escalated: " + assessment.reason
-        ], True
+        preferred_tools = set(intent.preferred_tools)
+        if preferred_tools and tool.key not in preferred_tools and tool.name not in preferred_tools:
+            return [], [
+                "graph operation gate path conflicted with preferred tool constraints; escalated"
+            ], True
+        preferred_endpoints = set(intent.preferred_endpoints)
+        endpoint_key = f"{tool.key}.{endpoint.name}"
+        if preferred_endpoints and endpoint_key not in preferred_endpoints:
+            return [], [
+                "graph operation gate path conflicted with preferred endpoint constraints; escalated"
+            ], True
+
+        if (
+            self.availability_predicate is not None
+            and not self.availability_predicate(tool, endpoint)
+        ):
+            return [], [
+                "graph operation gate path is currently unavailable; escalated"
+            ], True
+        if (
+            additional_availability_predicate is not None
+            and not additional_availability_predicate(tool, endpoint)
+        ):
+            return [], [
+                "graph operation gate path failed runtime availability; escalated"
+            ], True
+
+        candidate = replace(
+            self._score_endpoint(
+                tool,
+                endpoint,
+                request.query,
+                intent,
+            ),
+            selection_source="graph_operation",
+        )
+        return [candidate], [
+            "graph operation gate accepted "
+            f"{tool.key}.{endpoint.name}: {assessment.reason}"
+        ], False
 
     def _apply_operation_fit_sync(
         self,
@@ -2520,19 +2531,19 @@ class SchemaPlanner:
         | None = None,
     ) -> ExecutionPlan:
         del async_decision
-        lexical_candidates = self._candidates(
-            request,
-            intent,
-            additional_availability_predicate=additional_availability_predicate,
-        )
         graph_candidates, graph_warnings, graph_escalates = (
-            self._apply_graph_operation_gate(
+            self._graph_first_candidates(
                 request,
                 intent,
-                lexical_candidates,
+                additional_availability_predicate=additional_availability_predicate,
             )
         )
         if graph_escalates:
+            lexical_candidates = self._candidates(
+                request,
+                intent,
+                additional_availability_predicate=additional_availability_predicate,
+            )
             all_candidates, recall_warnings = (
                 self._augment_candidates_with_semantic_recall_sync(
                     request,
@@ -2750,19 +2761,19 @@ class SchemaPlanner:
         ]
         | None = None,
     ) -> ExecutionPlan:
-        lexical_candidates = self._candidates(
-            request,
-            intent,
-            additional_availability_predicate=additional_availability_predicate,
-        )
         graph_candidates, graph_warnings, graph_escalates = (
-            self._apply_graph_operation_gate(
+            self._graph_first_candidates(
                 request,
                 intent,
-                lexical_candidates,
+                additional_availability_predicate=additional_availability_predicate,
             )
         )
         if graph_escalates:
+            lexical_candidates = self._candidates(
+                request,
+                intent,
+                additional_availability_predicate=additional_availability_predicate,
+            )
             all_candidates, recall_warnings = (
                 await self._augment_candidates_with_semantic_recall_async(
                     request,
