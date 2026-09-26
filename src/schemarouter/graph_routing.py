@@ -114,6 +114,8 @@ class GraphOperationEvidence:
     operation_aliases: tuple[str, ...] = ()
     field_concepts: tuple[str, ...] = ()
     graph_paths: tuple[tuple[str, ...], ...] = ()
+    semantic_score: float | None = None
+    semantic_margin: float | None = None
 
     @property
     def has_operation_alias(self) -> bool:
@@ -434,9 +436,17 @@ class GraphOperationGate:
         *,
         accept_unique_field_path: bool = False,
         reject_explicit_conflicts: bool = True,
+        semantic_seed_min_score: float | None = None,
+        semantic_seed_min_margin: float = 0.0,
     ) -> None:
+        if semantic_seed_min_score is not None and not 0.0 <= semantic_seed_min_score <= 1.0:
+            raise ValueError("semantic_seed_min_score must be between 0 and 1")
+        if not 0.0 <= semantic_seed_min_margin <= 1.0:
+            raise ValueError("semantic_seed_min_margin must be between 0 and 1")
         self.accept_unique_field_path = accept_unique_field_path
         self.reject_explicit_conflicts = reject_explicit_conflicts
+        self.semantic_seed_min_score = semantic_seed_min_score
+        self.semantic_seed_min_margin = semantic_seed_min_margin
 
     def assess_global(
         self,
@@ -583,6 +593,89 @@ class GraphOperationGate:
             decision="escalate",
             tool_key="",
             reason="graph evidence was insufficient for a deterministic operation decision",
+        )
+
+    def assess_semantic_route(
+        self,
+        *,
+        graph: CompiledSchemaGraph,
+        tool_key: str,
+        endpoint_name: str,
+        score: float | None,
+        second_score: float | None,
+    ) -> GraphOperationAssessment:
+        if self.semantic_seed_min_score is None:
+            return GraphOperationAssessment(
+                decision="escalate",
+                tool_key=tool_key,
+                reason="semantic graph seed is disabled",
+            )
+        if score is None:
+            return GraphOperationAssessment(
+                decision="escalate",
+                tool_key=tool_key,
+                reason="semantic graph seed did not provide a bounded score",
+            )
+        margin = 1.0 if second_score is None else score - second_score
+        if score < self.semantic_seed_min_score:
+            return GraphOperationAssessment(
+                decision="escalate",
+                tool_key=tool_key,
+                reason="semantic graph seed score was below the configured threshold",
+                evidence=(
+                    GraphOperationEvidence(
+                        endpoint_name=endpoint_name,
+                        semantic_score=score,
+                        semantic_margin=margin,
+                    ),
+                ),
+            )
+        if margin < self.semantic_seed_min_margin:
+            return GraphOperationAssessment(
+                decision="escalate",
+                tool_key=tool_key,
+                reason="semantic graph seed margin was below the configured threshold",
+                evidence=(
+                    GraphOperationEvidence(
+                        endpoint_name=endpoint_name,
+                        semantic_score=score,
+                        semantic_margin=margin,
+                    ),
+                ),
+            )
+
+        operation_id = f"operation:{tool_key}.{endpoint_name}"
+        if not graph.has_path(
+            f"tool:{tool_key}",
+            operation_id,
+            edge_kinds=frozenset({"HAS_ENDPOINT", "HAS_OPERATION"}),
+            max_depth=2,
+        ):
+            return GraphOperationAssessment(
+                decision="escalate",
+                tool_key=tool_key,
+                reason="semantic graph seed did not resolve to an authorized graph path",
+            )
+
+        return GraphOperationAssessment(
+            decision="accept",
+            tool_key=tool_key,
+            endpoint_name=endpoint_name,
+            reason="semantic evidence seeded a unique authorized graph operation path",
+            evidence=(
+                GraphOperationEvidence(
+                    endpoint_name=endpoint_name,
+                    graph_paths=(
+                        (
+                            f"tool:{tool_key}",
+                            f"endpoint:{tool_key}.{endpoint_name}",
+                            operation_id,
+                        ),
+                    ),
+                    semantic_score=score,
+                    semantic_margin=margin,
+                ),
+            ),
         )
 
     def assess(
