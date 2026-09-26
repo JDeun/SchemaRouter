@@ -1,0 +1,97 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "graph_semantic_seed_development",
+  "status": "candidate_grid_preregistered_before_execution",
+  "tuning_eligible": true,
+  "source_hard_graph_result": "benchmarks/operation-fit-0.10-graph-hard-dev-result.json",
+  "selection_data": {
+    "corpus_role": "fresh_graph_v1_development_only",
+    "case_count": 1200,
+    "corpus_sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6",
+    "forbidden": [
+      "v5 calibration",
+      "v12 design-known stress",
+      "v13 consumed blind final",
+      "retired v14",
+      "future v15"
+    ]
+  },
+  "architecture": {
+    "hard_graph_first": true,
+    "semantic_seed_scope": "registered schema-graph operation nodes only",
+    "option_embedding_cache": true,
+    "semantic_abstention": "escalate to existing semantic recall/capability-fit/BGE stack",
+    "semantic_authority_limit": "semantic evidence may select only an already-authorized graph operation path and cannot create execution authority"
+  },
+  "candidates": [
+    {
+      "min_similarity": 0.25,
+      "min_margin": 0.1,
+      "tag": "s025-m010"
+    },
+    {
+      "min_similarity": 0.35,
+      "min_margin": 0.1,
+      "tag": "s035-m010"
+    },
+    {
+      "min_similarity": 0.45,
+      "min_margin": 0.1,
+      "tag": "s045-m010"
+    },
+    {
+      "min_similarity": 0.35,
+      "min_margin": 0.15,
+      "tag": "s035-m015"
+    },
+    {
+      "min_similarity": 0.45,
+      "min_margin": 0.15,
+      "tag": "s045-m015"
+    },
+    {
+      "min_similarity": 0.55,
+      "min_margin": 0.15,
+      "tag": "s055-m015"
+    }
+  ],
+  "downstream_frozen": {
+    "semantic_recall_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "semantic_recall_top_k": 2,
+    "capability_fit_min_similarity": 0.25,
+    "operation_fit_model": "BAAI/bge-reranker-v2-m3",
+    "operation_fit_contrastive_beta": 1,
+    "operation_fit_min_score": 0.01,
+    "operation_fit_min_margin": 0,
+    "endpoint_disambiguation_min_margin": 0.03
+  },
+  "measurement": {
+    "mode": "counterbalanced paired per case",
+    "warmup_cases": 24,
+    "option_embedding_cache_warmed_before_timing": true,
+    "baseline_and_candidate_order": "alternated by case index",
+    "paired_mean_latency_required_lower": true,
+    "candidate_p95_required_not_above_baseline": true,
+    "paired_mean_delta_bootstrap_samples": 2000
+  },
+  "gates": {
+    "supported_operation_routed_accuracy_min": 0.6,
+    "near_domain_unsupported_rejection_min": 0.95,
+    "false_routes_must_not_exceed_paired_full_bge_baseline": true,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0,
+    "paired_mean_latency_must_be_lower": true,
+    "p95_latency_must_not_regress": true,
+    "promotion_requires_all": true
+  },
+  "selection_rule": {
+    "primary": "highest harmonic mean of supported-operation routed accuracy and near-domain unsupported rejection among all-gate passers",
+    "tie_breakers": [
+      "lower mean latency",
+      "higher semantic-seed direct-accept precision"
+    ],
+    "no_winner": "continue to preregistered graph propagation / negative-evidence development; do not use calibration or v15"
+  },
+  "calibration_allowed": false,
+  "blind_v15_allowed": false
+}
