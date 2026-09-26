@@ -9,6 +9,14 @@ from .adapters.plugins import (
     load_adapter_plugins,
 )
 from .adapters.python import schema_tool, tool_from_callable
+from .aggregation import (
+    AggregatedField,
+    CanonicalEntity,
+    FieldObservation,
+    SourceRecord,
+    aggregate_records,
+    canonical_identity,
+)
 from .analyzers import ModelCallable, ModelQueryAnalyzer
 from .dashboard import render_dashboard, write_dashboard
 from .decision_policy import DecisionFallback, DecisionPolicy
@@ -129,7 +137,13 @@ from .traces import (
 __all__ = [
     "__version__",
     "ADAPTER_ENTRY_POINT_GROUP",
-    "AggregatedField",\n    "CanonicalEntity",\n    "FieldObservation",\n    "SourceRecord",\n    "AdapterContext",
+    "AggregatedField",
+    "CanonicalEntity",
+    "FieldObservation",
+    "SourceRecord",
+    "aggregate_records",
+    "canonical_identity",
+    "AdapterContext",
     "AdapterLoadResult",
     "AdapterPluginInfo",
     "AdapterRegistry",
