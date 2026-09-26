@@ -595,8 +595,6 @@ class SchemaPlanner:
         self,
         request: PlanRequest,
         catalog: list[_Candidate],
-        *,
-        include_operation_semantics: bool = False,
     ) -> DecisionRequest:
         options: list[DecisionOption] = []
         for index, candidate in enumerate(catalog):
@@ -609,31 +607,6 @@ class SchemaPlanner:
                 candidate.tool.description.strip(),
                 candidate.endpoint.description.strip(),
             ]
-            if include_operation_semantics:
-                operation_name = (
-                    candidate.endpoint.name.replace("_", " ").replace("-", " ")
-                )
-                operation_parts = [
-                    operation_name,
-                    *candidate.endpoint.operation_aliases,
-                ]
-                parts.insert(
-                    0,
-                    "Operation: "
-                    + "; ".join(
-                        part.strip()
-                        for part in operation_parts
-                        if part.strip()
-                    ),
-                )
-                operation_class = (
-                    "read-only retrieval"
-                    if candidate.endpoint.read_only is True
-                    else "mutating write"
-                    if candidate.endpoint.read_only is False
-                    else "unclassified"
-                )
-                parts.append("Operation class: " + operation_class)
             if field_labels:
                 parts.append("Fields: " + ", ".join(field_labels))
             description = "\n".join(part for part in parts if part)
@@ -649,13 +622,7 @@ class SchemaPlanner:
             query=request.query,
             options=options,
             max_selections=min(self.candidate_recall_limit, len(options)),
-            context={
-                "surface": (
-                    "graph_semantic_seed"
-                    if include_operation_semantics
-                    else "semantic_candidate_recall"
-                )
-            },
+            context={"surface": "semantic_candidate_recall"},
         )
 
     @staticmethod
@@ -691,7 +658,6 @@ class SchemaPlanner:
         intent: QueryIntent,
         candidates: list[_Candidate],
         *,
-        include_operation_semantics: bool = False,
         additional_availability_predicate: Callable[
             [ToolSpec, EndpointSpec],
             bool,
@@ -712,11 +678,7 @@ class SchemaPlanner:
         try:
             result = choose_sync(
                 self.candidate_recall_backend,
-                self._semantic_recall_request(
-                    request,
-                    catalog,
-                    include_operation_semantics=include_operation_semantics,
-                ),
+                self._semantic_recall_request(request, catalog),
             )
         except Exception as exc:
             return _SemanticRecallOutcome(
@@ -759,7 +721,6 @@ class SchemaPlanner:
         intent: QueryIntent,
         candidates: list[_Candidate],
         *,
-        include_operation_semantics: bool = False,
         additional_availability_predicate: Callable[
             [ToolSpec, EndpointSpec],
             bool,
@@ -780,11 +741,7 @@ class SchemaPlanner:
         try:
             result = await choose_async(
                 self.candidate_recall_backend,
-                self._semantic_recall_request(
-                    request,
-                    catalog,
-                    include_operation_semantics=include_operation_semantics,
-                ),
+                self._semantic_recall_request(request, catalog),
             )
         except Exception as exc:
             return _SemanticRecallOutcome(
@@ -2748,7 +2705,6 @@ class SchemaPlanner:
                 request,
                 intent,
                 lexical_candidates,
-                include_operation_semantics=semantic_seed_enabled,
                 additional_availability_predicate=additional_availability_predicate,
             )
             semantic_candidates, semantic_warnings, semantic_resolved = (
@@ -3000,7 +2956,6 @@ class SchemaPlanner:
                 request,
                 intent,
                 lexical_candidates,
-                include_operation_semantics=semantic_seed_enabled,
                 additional_availability_predicate=additional_availability_predicate,
             )
             semantic_candidates, semantic_warnings, semantic_resolved = (
