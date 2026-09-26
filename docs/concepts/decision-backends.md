@@ -92,6 +92,38 @@ A multilingual embedding model is a natural fit, but SchemaRouter does not depen
 existing `EmbeddingDecisionBackend` can wrap an application-owned SentenceTransformers, FastEmbed,
 remote embedding API, or domain encoder.
 
+### Bounded capability-fit / no-route gate
+
+Semantic recall improves recall but, by itself, may force an in-catalog candidate for an
+out-of-domain query. `SchemaPlanner` therefore also supports an optional
+`candidate_fit_backend` after lexical/semantic recall and before final candidate selection:
+
+```python
+fit = EmbeddingDecisionBackend(
+    multilingual_embed_batch,
+    min_similarity=0.45,
+)
+
+planner = SchemaPlanner(
+    registry,
+    candidate_recall_backend=recall,
+    candidate_recall_limit=2,
+    candidate_fit_backend=fit,
+)
+```
+
+The fit backend receives only the already-authorized bounded candidate set. A concrete selection
+means only “at least one offered capability plausibly fits”; SchemaRouter keeps the complete
+candidate set for the normal downstream ranker. The fit backend therefore cannot choose the final
+route or create execution authority.
+
+Explicit abstention suppresses all candidate routes and produces a no-route plan. Backend exceptions
+do not suppress an otherwise authorized route: SchemaRouter retains the candidate set and emits a
+warning. This makes the gate a quality/abstention boundary rather than a new security authority.
+
+For embedding-based fit gates, calibrate `min_similarity` and `min_margin` on development or
+calibration data. Do not tune these thresholds against a held-out test split.
+
 ### Empty lexical recall
 
 `recall_on_empty=True` is an additional opt-in for candidate selection. It matters when the
