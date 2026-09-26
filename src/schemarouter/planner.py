@@ -816,22 +816,11 @@ class SchemaPlanner:
         for index, candidate in enumerate(sibling_candidates):
             endpoint = candidate.endpoint
             operation_name = endpoint.name.replace("_", " ").replace("-", " ")
-            operation_class = (
-                "read-only retrieval"
-                if endpoint.read_only is True
-                else "mutating write"
-                if endpoint.read_only is False
-                else "unclassified operation"
-            )
-            parts = [
-                f"Operation: {operation_name}",
-                endpoint.description.strip(),
-            ]
+            parts = [operation_name]
             if endpoint.operation_aliases:
-                parts.append("Operation aliases: " + "; ".join(endpoint.operation_aliases))
-            parts.append(f"Operation class: {operation_class}")
-            if endpoint.method:
-                parts.append(f"HTTP method: {endpoint.method.upper()}")
+                parts.extend(endpoint.operation_aliases)
+            if endpoint.description.strip():
+                parts.append(endpoint.description.strip())
             options.append(
                 DecisionOption(
                     id=f"operation:{index}",
