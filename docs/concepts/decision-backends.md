@@ -124,6 +124,56 @@ warning. This makes the gate a quality/abstention boundary rather than a new sec
 For embedding-based fit gates, calibrate `min_similarity` and `min_margin` on development or
 calibration data. Do not tune these thresholds against a held-out test split.
 
+### Bounded operation-capability fit
+
+Broad `candidate_fit_backend` answers whether at least one recalled capability plausibly belongs to
+the query at all. That is not sufficient for near-domain unsupported operations: a request can clearly
+belong to the `users` domain while asking to `delete` an account even though the registry exposes only
+`lookup` and `update`.
+
+For that case, `SchemaPlanner` supports an optional `operation_fit_backend` between broad capability
+fit and same-tool endpoint disambiguation:
+
+```python
+operation_fit = EmbeddingDecisionBackend(
+    multilingual_embed_batch,
+    min_similarity=0.25,
+)
+
+planner = SchemaPlanner(
+    registry,
+    candidate_recall_backend=recall,
+    candidate_recall_limit=2,
+    candidate_fit_backend=fit,
+    operation_fit_backend=operation_fit,
+    endpoint_disambiguation_backend=disambiguator,
+)
+```
+
+The operation-fit surface is intentionally narrower than the broad capability-fit surface. It sees
+only sibling endpoints in the currently leading tool domain and receives endpoint operation names,
+trusted `EndpointSpec.operation_aliases`, endpoint descriptions, operation class, and optional HTTP
+method. Tool descriptions, tool-name labels, and answer-field labels are omitted from the embedding
+text so domain or field similarity alone cannot turn an unsupported action into a supported one. The
+leading tool identity remains available only as local request metadata; it is not part of the default
+embedding option text.
+
+Operation aliases are explicit application-owned routing vocabulary, for example
+`["current conditions", "live conditions"]` or `["create support ticket", "open support case"]`.
+SchemaRouter does not infer them from user input or model output, and ingestion adapters do not
+fabricate them. They are planning hints only: aliases cannot create an endpoint, modify arguments,
+change side-effect classification or policy, or grant execution authority. Alias changes are
+fingerprinted and exposed through inspection/dashboard output.
+
+A positive decision only means that one offered operation plausibly matches the request. The stage
+keeps the candidate order unchanged and therefore cannot choose the final route. Explicit abstention
+suppresses the candidate set; backend failures retain the already-authorized candidates with a
+warning. The stage is skipped for `max_calls > 1`.
+
+As with all model-assisted routing stages, operation-fit thresholds are workload/model specific.
+Calibrate them on development/calibration data and evaluate any claimed improvement on a fresh
+untouched holdout.
+
 ### Bounded same-tool endpoint disambiguation
 
 After semantic recall and capability-fit gating, multiple sibling endpoints from the same leading

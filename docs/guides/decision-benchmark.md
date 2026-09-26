@@ -342,3 +342,100 @@ The reported 95% Wilson intervals quantify binomial sampling uncertainty for the
 They do not account for model/provider drift, correlated repeated cases, hardware variance, or
 distribution shift. Do not infer provider superiority from the three-case smoke set or from a
 single live run.
+
+
+## Operation-capability fit protocol
+
+Near-domain unsupported operations are evaluated separately from ordinary out-of-domain traffic.
+The v5 operation corpus contains 576 multilingual cases: 288 supported route operations and 288
+near-domain unsupported operations, split into 384 development and 192 calibration cases.
+
+The operation-fit threshold must be selected from v5 development/calibration results only. The
+600-case v6 operation holdout contains 384 supported route cases, 192 near-domain unsupported-operation
+negatives, and 24 ordinary out-of-domain negatives, balanced to 100 cases per language group. v6 was
+already evaluated with the earlier operation-fit input representation and is therefore regression
+evidence only; it must not be reused for a new untouched generalization claim.
+
+The protected GitHub Actions holdout job now targets v7 and is deliberately manual-only. It is skipped
+for pull-request runs and ordinary manual benchmark runs. After freezing the label-cleaned threshold
+from v5, explicitly enable `run_operation_holdout` and provide that frozen
+`operation_fit_min_similarity` value to consume v7 once. An empty threshold leaves the holdout job
+skipped.
+
+The frozen upstream stack for this experiment is:
+
+- semantic candidate recall top-k = 2;
+- broad capability-fit min similarity = 0.25;
+- same-tool endpoint disambiguation min margin = 0.03.
+
+Only the operation-fit threshold is varied during v5 calibration. For the label-cleaned
+operation-fit surface, freeze that threshold before evaluating v7 and do not retune it from v7
+results.
+
+For the label-cleaned surface, the v5 sweep over 0.05 through 0.70 froze
+`operation_fit_min_similarity = 0.45` before v7 evaluation. The selection rule is maximum
+calibration accuracy, with dev accuracy used as a stability check. At 0.45, calibration accuracy
+was 65.625% and dev accuracy was 66.667%; adjacent thresholds 0.40 and 0.50 reached 60.938% and
+60.417% calibration accuracy respectively. This frozen value must not be changed based on v7.
+
+The one-shot v7 evaluation at the frozen 0.45 threshold produced 46.833% overall accuracy
+(95% Wilson CI 42.873%–50.834%), 28.646% routed accuracy on supported operations
+(24.353%–33.362%), 76.562% accuracy on near-domain unsupported operations
+(70.086%–81.997%), and 100% accuracy on ordinary out-of-domain cases. This is treated as a
+distribution-shift diagnostic, not as a target for threshold retuning. The v7 holdout is now
+consumed and the workflow guard has been restored to manual-only.
+
+
+### Post-change operation holdout (v7)
+
+`benchmarks/decision-routing-v7-operation-post-change-holdout.json` is a 600-case,
+six-language test-only corpus reserved after removing tool-domain labels from the bounded
+operation-fit embedding surface. It contains 384 supported operations, 192 near-domain unsupported
+operations, and 24 ordinary out-of-domain requests. Its normalized queries are checked to be
+disjoint from v2 through v6.
+
+The corpus was added before measuring the label-cleaned operation-fit implementation. Do not use v7
+to select the operation-fit threshold. Calibrate only on v5; after freezing the threshold, evaluate
+v7 once for the post-change generalization claim. Repeated v6 runs are regression evidence only
+because v6 had already been consumed before the operation-fit input representation changed.
+
+
+### Reserved operation-alias holdout (v8)
+
+`benchmarks/decision-routing-v8-operation-alias-holdout.json` is a fresh 600-case,
+six-language holdout reserved before adding trusted endpoint operation aliases. It contains 384
+supported-operation cases, 192 near-domain unsupported-operation cases, and 24 ordinary
+out-of-domain cases. Its normalized queries are disjoint from v2 through v7.
+
+v8 was reserved before alias implementation, but an early alias-aware calibration workflow
+accidentally referenced v8 from the per-threshold diagnostic step. That exposed v8 across the
+threshold sweep, so v8 is now treated as consumed diagnostic data and must not support an untouched
+generalization claim. The workflow has been corrected to use the already-consumed v7 diagnostic
+corpus during threshold selection.
+
+
+### Alias-aware threshold selection rule
+
+After adding trusted `EndpointSpec.operation_aliases`, operation-fit threshold selection uses only
+v5 and the already-consumed v7 diagnostic corpus. For each threshold, compute a balanced operation
+score for each corpus as the arithmetic mean of supported-operation accuracy and near-domain
+unsupported-operation accuracy. The primary robustness score is the lower of the v5 calibration
+balanced score and the v7 diagnostic balanced score.
+
+Freeze the threshold that maximizes this robustness score. Use v5 development balanced accuracy as
+the first tie-breaker, then prefer the lower threshold as the second tie-breaker to preserve
+supported-request recall. Neither consumed v8 nor reserved v9 may participate in threshold selection or alias design.
+After the alias vocabulary and threshold are frozen from v5 plus the already-consumed v7
+diagnostic, v9 is evaluated once.
+
+
+### Reserved alias-aware holdout (v9)
+
+`benchmarks/decision-routing-v9-operation-alias-holdout.json` is the replacement untouched
+600-case, six-language holdout reserved after discovering the v8 workflow contamination and before
+inspecting alias-aware calibration results. It contains 384 supported operations, 192 near-domain
+unsupported operations, and 24 ordinary out-of-domain requests. Its normalized queries are
+disjoint from v2 through v8.
+
+v9 is manual-only and threshold-gated in GitHub Actions. Do not run it until the alias vocabulary
+and operation-fit threshold are frozen using v5 and the already-consumed v7 diagnostic corpus.

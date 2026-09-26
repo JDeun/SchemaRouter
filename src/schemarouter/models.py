@@ -323,6 +323,7 @@ class FieldSpec(StrictModel):
 class EndpointSpec(StrictModel):
     name: str
     description: str = ""
+    operation_aliases: list[str] = Field(default_factory=list)
     parameters: list[ParameterSpec] = Field(default_factory=list)
     output_fields: list[FieldSpec] = Field(default_factory=list)
     input_schema: dict[str, Any] = Field(default_factory=dict)
@@ -353,6 +354,20 @@ class EndpointSpec(StrictModel):
     @model_validator(mode="after")
     def validate_unique_names(self) -> EndpointSpec:
         _validate_execution_metadata(self.execution_metadata)
+        normalized_operation_aliases: set[str] = set()
+        for alias in self.operation_aliases:
+            if not alias or alias != alias.strip():
+                raise ValueError(
+                    "endpoint operation_aliases must be non-empty and have no "
+                    "surrounding whitespace"
+                )
+            normalized = " ".join(alias.casefold().split())
+            if normalized in normalized_operation_aliases:
+                raise ValueError(
+                    f"duplicate operation alias in endpoint {self.name!r}: {alias!r}; "
+                    "operation_aliases must be unique"
+                )
+            normalized_operation_aliases.add(normalized)
         pnames = [p.name for p in self.parameters]
         fnames = [f.name for f in self.output_fields]
         if len(pnames) != len(set(pnames)):

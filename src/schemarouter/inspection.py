@@ -121,6 +121,7 @@ class EndpointInspection(StrictModel):
     path: str | None = None
     read_only: bool | None = None
     destructive: bool | None = None
+    operation_aliases: list[str] = Field(default_factory=list)
     parameter_count: int = Field(ge=0)
     required_parameter_count: int = Field(ge=0)
     output_field_count: int = Field(ge=0)
@@ -165,6 +166,7 @@ class PlannerInspection(StrictModel):
     candidate_recall_backend: str | None = None
     candidate_recall_limit: int = Field(default=4, ge=1)
     candidate_fit_backend: str | None = None
+    operation_fit_backend: str | None = None
     endpoint_disambiguation_backend: str | None = None
     decision_policy: dict[str, object] = Field(default_factory=dict)
 
@@ -220,6 +222,7 @@ def inspect_tool_spec(tool: ToolSpec) -> ToolInspection:
             path=endpoint.path,
             read_only=endpoint.read_only,
             destructive=endpoint.destructive,
+            operation_aliases=list(endpoint.operation_aliases),
             parameter_count=len(endpoint.parameters),
             required_parameter_count=sum(
                 parameter.required for parameter in endpoint.parameters
@@ -315,6 +318,7 @@ def inspect_router(router: Any) -> RouterInspection:
     backend = planner.decision_backend
     recall_backend = planner.candidate_recall_backend
     fit_backend = planner.candidate_fit_backend
+    operation_fit_backend = planner.operation_fit_backend
     disambiguation_backend = planner.endpoint_disambiguation_backend
     return RouterInspection(
         registry=inspect_registry(router.registry),
@@ -330,6 +334,11 @@ def inspect_router(router: Any) -> RouterInspection:
             candidate_fit_backend=(
                 type(fit_backend).__name__
                 if fit_backend is not None
+                else None
+            ),
+            operation_fit_backend=(
+                type(operation_fit_backend).__name__
+                if operation_fit_backend is not None
                 else None
             ),
             endpoint_disambiguation_backend=(

@@ -98,11 +98,13 @@ def render_dashboard(
                 _field_contract_text(field)
                 for field in endpoint.fields
             )
+            alias_summary = ", ".join(endpoint.operation_aliases)
             search = " ".join(
                 (
                     tool.key,
                     str(adapter),
                     endpoint.name,
+                    alias_summary,
                     endpoint.method or "",
                     endpoint.path or "",
                     field_summary,
@@ -115,6 +117,7 @@ def render_dashboard(
                 f"<td>{escape(str(adapter))}</td>"
                 f"<td>{escape(str(source))}</td>"
                 f"<td>{escape(endpoint.name)}</td>"
+                f"<td>{escape(alias_summary or '—')}</td>"
                 f"<td>{escape(endpoint.method or '—')}</td>"
                 f"<td>{escape(endpoint.path or '—')}</td>"
                 f"<td>{escape(_mode(endpoint.read_only, endpoint.destructive))}</td>"
@@ -166,6 +169,8 @@ def render_dashboard(
 (top {live.planner.candidate_recall_limit})</div>
 <div><strong>Capability fit</strong><br>
 {escape(live.planner.candidate_fit_backend or "none")}</div>
+<div><strong>Operation fit</strong><br>
+{escape(live.planner.operation_fit_backend or "none")}</div>
 <div><strong>Endpoint disambiguation</strong><br>
 {escape(live.planner.endpoint_disambiguation_backend or "none")}</div>
 <div><strong>Bound tools</strong><br>{escape(", ".join(live.execution.bound_tools) or "none")}</div>
@@ -239,7 +244,8 @@ No tool execution, credentials, arbitrary metadata, or trace payload values are 
 <div class="table-wrap">
 <table id="capabilities">
 <thead><tr>
-<th>Tool</th><th>Adapter</th><th>Source</th><th>Endpoint</th><th>Method</th><th>Path</th>
+<th>Tool</th><th>Adapter</th><th>Source</th><th>Endpoint</th>
+<th>Operation aliases</th><th>Method</th><th>Path</th>
 <th>Mode</th><th>Params</th><th>Fields</th><th>Field contracts</th>
 <th>Bound</th><th>Fingerprint</th>
 </tr></thead>

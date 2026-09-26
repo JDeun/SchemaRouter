@@ -40,6 +40,7 @@ def sample_tool() -> ToolSpec:
         endpoints=[
             EndpointSpec(
                 name="current",
+                operation_aliases=["live conditions", "current conditions"],
                 method="GET",
                 path="/weather/current",
                 read_only=True,
@@ -294,6 +295,7 @@ def test_dashboard_uses_safe_inspection_models_only(tmp_path) -> None:
 
     assert "SchemaRouter inspection dashboard" in html
     assert "demo.weather" in html
+    assert "live conditions, current conditions" in html
     assert "https://example.test/openapi.json" in html
     assert "run-dashboard" in html
     assert "must-never-render" not in html
@@ -610,3 +612,41 @@ def test_live_inspection_reports_endpoint_disambiguation_configuration() -> None
     html = render_dashboard(snapshot.registry, live=snapshot)
     assert "Endpoint disambiguation" in html
     assert "CallableDecisionBackend" in html
+
+
+def test_live_inspection_reports_operation_fit_configuration() -> None:
+    router = SchemaRouter()
+    router.planner.operation_fit_backend = CallableDecisionBackend(
+        lambda request: {"selections": [{"option_id": request.options[0].id}]}
+    )
+
+    snapshot = inspect_router(router)
+
+    assert snapshot.planner.operation_fit_backend == "CallableDecisionBackend"
+
+    html = render_dashboard(snapshot.registry, live=snapshot)
+    assert "Operation fit" in html
+    assert "CallableDecisionBackend" in html
+
+
+def test_inspection_exposes_trusted_operation_aliases() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="support",
+            endpoints=[
+                EndpointSpec(
+                    name="create_ticket",
+                    operation_aliases=["open support case", "file support request"],
+                    read_only=False,
+                )
+            ],
+        )
+    )
+
+    snapshot = inspect_registry(registry)
+
+    assert snapshot.tools[0].endpoints[0].operation_aliases == [
+        "open support case",
+        "file support request",
+    ]

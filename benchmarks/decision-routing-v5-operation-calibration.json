@@ -1,0 +1,5186 @@
+[
+  {
+    "id": "v5-weather-current-en-1",
+    "query": "please report the current weather for Seoul",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-weather-current-en-2",
+    "query": "for this operation, report the current weather for Busan",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-weather-current-en-3",
+    "query": "I need you to report the current weather for Tokyo",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-weather-current-ko-1",
+    "query": "부탁인데 Seoul의 현재 날씨 상태를 조회해",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-weather-current-ko-2",
+    "query": "이 작업에서는 Busan의 현재 날씨 상태를 조회해",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-weather-current-ko-3",
+    "query": "다음 동작을 해줘: Tokyo의 현재 날씨 상태를 조회해",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-weather-current-es-1",
+    "query": "por favor, consulta el tiempo actual de Seoul",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-weather-current-es-2",
+    "query": "para esta operación, consulta el tiempo actual de Busan",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-weather-current-es-3",
+    "query": "necesito que consulta el tiempo actual de Tokyo",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-weather-current-ja-1",
+    "query": "お願いします、Seoulの現在の天気を取得して",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-weather-current-ja-2",
+    "query": "この操作ではBusanの現在の天気を取得して",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-weather-current-ja-3",
+    "query": "次の操作をして: Tokyoの現在の天気を取得して",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-weather-current-de-1",
+    "query": "bitte rufe das aktuelle Wetter für Seoul ab",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-weather-current-de-2",
+    "query": "für diese Operation: rufe das aktuelle Wetter für Busan ab",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-weather-current-de-3",
+    "query": "ich brauche Folgendes: rufe das aktuelle Wetter für Tokyo ab",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-weather-current-mixed-1",
+    "query": "please Seoul current weather 상태를 조회해 해줘",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-weather-current-mixed-2",
+    "query": "이 operation에서 Busan current weather 상태를 조회해",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-weather-current-mixed-3",
+    "query": "need this action: Tokyo current weather 상태를 조회해",
+    "expected": "weather.current",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-weather-forecast-en-1",
+    "query": "please show the weather forecast for Seoul tomorrow",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-weather-forecast-en-2",
+    "query": "for this operation, show the weather forecast for Busan weekend",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-weather-forecast-en-3",
+    "query": "I need you to show the weather forecast for Tokyo Monday",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-weather-forecast-ko-1",
+    "query": "부탁인데 Seoul tomorrow 날씨 예보를 조회해",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-weather-forecast-ko-2",
+    "query": "이 작업에서는 Busan weekend 날씨 예보를 조회해",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-weather-forecast-ko-3",
+    "query": "다음 동작을 해줘: Tokyo Monday 날씨 예보를 조회해",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-weather-forecast-es-1",
+    "query": "por favor, muestra el pronóstico para Seoul tomorrow",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-weather-forecast-es-2",
+    "query": "para esta operación, muestra el pronóstico para Busan weekend",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-weather-forecast-es-3",
+    "query": "necesito que muestra el pronóstico para Tokyo Monday",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-weather-forecast-ja-1",
+    "query": "お願いします、Seoul tomorrowの天気予報を取得して",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-weather-forecast-ja-2",
+    "query": "この操作ではBusan weekendの天気予報を取得して",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-weather-forecast-ja-3",
+    "query": "次の操作をして: Tokyo Mondayの天気予報を取得して",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-weather-forecast-de-1",
+    "query": "bitte zeige die Wettervorhersage für Seoul tomorrow",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-weather-forecast-de-2",
+    "query": "für diese Operation: zeige die Wettervorhersage für Busan weekend",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-weather-forecast-de-3",
+    "query": "ich brauche Folgendes: zeige die Wettervorhersage für Tokyo Monday",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-weather-forecast-mixed-1",
+    "query": "please Seoul tomorrow weather forecast를 조회해 해줘",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-weather-forecast-mixed-2",
+    "query": "이 operation에서 Busan weekend weather forecast를 조회해",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-weather-forecast-mixed-3",
+    "query": "need this action: Tokyo Monday weather forecast를 조회해",
+    "expected": "weather.forecast",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-materials-search-en-1",
+    "query": "please search material properties for silicon",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-materials-search-en-2",
+    "query": "for this operation, search material properties for GaN",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-materials-search-en-3",
+    "query": "I need you to search material properties for LiFePO4",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-materials-search-ko-1",
+    "query": "부탁인데 silicon의 재료 물성을 검색해",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-materials-search-ko-2",
+    "query": "이 작업에서는 GaN의 재료 물성을 검색해",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-materials-search-ko-3",
+    "query": "다음 동작을 해줘: LiFePO4의 재료 물성을 검색해",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-materials-search-es-1",
+    "query": "por favor, busca propiedades del material silicon",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-materials-search-es-2",
+    "query": "para esta operación, busca propiedades del material GaN",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-materials-search-es-3",
+    "query": "necesito que busca propiedades del material LiFePO4",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-materials-search-ja-1",
+    "query": "お願いします、siliconの材料物性を検索して",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-materials-search-ja-2",
+    "query": "この操作ではGaNの材料物性を検索して",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-materials-search-ja-3",
+    "query": "次の操作をして: LiFePO4の材料物性を検索して",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-materials-search-de-1",
+    "query": "bitte suche Materialeigenschaften für silicon",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-materials-search-de-2",
+    "query": "für diese Operation: suche Materialeigenschaften für GaN",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-materials-search-de-3",
+    "query": "ich brauche Folgendes: suche Materialeigenschaften für LiFePO4",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-materials-search-mixed-1",
+    "query": "please silicon material properties를 검색해 해줘",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-materials-search-mixed-2",
+    "query": "이 operation에서 GaN material properties를 검색해",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-materials-search-mixed-3",
+    "query": "need this action: LiFePO4 material properties를 검색해",
+    "expected": "materials.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-materials-structure-en-1",
+    "query": "please retrieve the crystal structure for silicon",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-materials-structure-en-2",
+    "query": "for this operation, retrieve the crystal structure for GaN",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-materials-structure-en-3",
+    "query": "I need you to retrieve the crystal structure for LiFePO4",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-materials-structure-ko-1",
+    "query": "부탁인데 silicon의 결정 구조를 조회해",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-materials-structure-ko-2",
+    "query": "이 작업에서는 GaN의 결정 구조를 조회해",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-materials-structure-ko-3",
+    "query": "다음 동작을 해줘: LiFePO4의 결정 구조를 조회해",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-materials-structure-es-1",
+    "query": "por favor, obtén la estructura cristalina de silicon",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-materials-structure-es-2",
+    "query": "para esta operación, obtén la estructura cristalina de GaN",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-materials-structure-es-3",
+    "query": "necesito que obtén la estructura cristalina de LiFePO4",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-materials-structure-ja-1",
+    "query": "お願いします、siliconの結晶構造を取得して",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-materials-structure-ja-2",
+    "query": "この操作ではGaNの結晶構造を取得して",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-materials-structure-ja-3",
+    "query": "次の操作をして: LiFePO4の結晶構造を取得して",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-materials-structure-de-1",
+    "query": "bitte hole die Kristallstruktur von silicon",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-materials-structure-de-2",
+    "query": "für diese Operation: hole die Kristallstruktur von GaN",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-materials-structure-de-3",
+    "query": "ich brauche Folgendes: hole die Kristallstruktur von LiFePO4",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-materials-structure-mixed-1",
+    "query": "please silicon crystal structure를 조회해 해줘",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-materials-structure-mixed-2",
+    "query": "이 operation에서 GaN crystal structure를 조회해",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-materials-structure-mixed-3",
+    "query": "need this action: LiFePO4 crystal structure를 조회해",
+    "expected": "materials.structure",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-papers-search-en-1",
+    "query": "please search papers about agentic RAG",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-papers-search-en-2",
+    "query": "for this operation, search papers about solid electrolytes",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-papers-search-en-3",
+    "query": "I need you to search papers about tool routing",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-papers-search-ko-1",
+    "query": "부탁인데 agentic RAG 관련 논문을 검색해",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-papers-search-ko-2",
+    "query": "이 작업에서는 solid electrolytes 관련 논문을 검색해",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-papers-search-ko-3",
+    "query": "다음 동작을 해줘: tool routing 관련 논문을 검색해",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-papers-search-es-1",
+    "query": "por favor, busca artículos sobre agentic RAG",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-papers-search-es-2",
+    "query": "para esta operación, busca artículos sobre solid electrolytes",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-papers-search-es-3",
+    "query": "necesito que busca artículos sobre tool routing",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-papers-search-ja-1",
+    "query": "お願いします、agentic RAGに関する論文を検索して",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-papers-search-ja-2",
+    "query": "この操作ではsolid electrolytesに関する論文を検索して",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-papers-search-ja-3",
+    "query": "次の操作をして: tool routingに関する論文を検索して",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-papers-search-de-1",
+    "query": "bitte suche Arbeiten zu agentic RAG",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-papers-search-de-2",
+    "query": "für diese Operation: suche Arbeiten zu solid electrolytes",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-papers-search-de-3",
+    "query": "ich brauche Folgendes: suche Arbeiten zu tool routing",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-papers-search-mixed-1",
+    "query": "please agentic RAG 관련 papers를 search해 해줘",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-papers-search-mixed-2",
+    "query": "이 operation에서 solid electrolytes 관련 papers를 search해",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-papers-search-mixed-3",
+    "query": "need this action: tool routing 관련 papers를 search해",
+    "expected": "papers.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-papers-citations-en-1",
+    "query": "please find papers citing DOI 10.2000/a",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-papers-citations-en-2",
+    "query": "for this operation, find papers citing DOI 10.2000/b",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-papers-citations-en-3",
+    "query": "I need you to find papers citing DOI 10.2000/c",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-papers-citations-ko-1",
+    "query": "부탁인데 DOI 10.2000/a를 인용한 논문을 찾아",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-papers-citations-ko-2",
+    "query": "이 작업에서는 DOI 10.2000/b를 인용한 논문을 찾아",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-papers-citations-ko-3",
+    "query": "다음 동작을 해줘: DOI 10.2000/c를 인용한 논문을 찾아",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-papers-citations-es-1",
+    "query": "por favor, encuentra artículos que citan DOI 10.2000/a",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-papers-citations-es-2",
+    "query": "para esta operación, encuentra artículos que citan DOI 10.2000/b",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-papers-citations-es-3",
+    "query": "necesito que encuentra artículos que citan DOI 10.2000/c",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-papers-citations-ja-1",
+    "query": "お願いします、DOI 10.2000/aを引用する論文を探して",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-papers-citations-ja-2",
+    "query": "この操作ではDOI 10.2000/bを引用する論文を探して",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-papers-citations-ja-3",
+    "query": "次の操作をして: DOI 10.2000/cを引用する論文を探して",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-papers-citations-de-1",
+    "query": "bitte finde Arbeiten die DOI 10.2000/a zitieren",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-papers-citations-de-2",
+    "query": "für diese Operation: finde Arbeiten die DOI 10.2000/b zitieren",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-papers-citations-de-3",
+    "query": "ich brauche Folgendes: finde Arbeiten die DOI 10.2000/c zitieren",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-papers-citations-mixed-1",
+    "query": "please DOI 10.2000/a를 cite한 papers를 찾아 해줘",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-papers-citations-mixed-2",
+    "query": "이 operation에서 DOI 10.2000/b를 cite한 papers를 찾아",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-papers-citations-mixed-3",
+    "query": "need this action: DOI 10.2000/c를 cite한 papers를 찾아",
+    "expected": "papers.citations",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-finance-quote-en-1",
+    "query": "please get the latest quote for AAPL",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-finance-quote-en-2",
+    "query": "for this operation, get the latest quote for NVDA",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-finance-quote-en-3",
+    "query": "I need you to get the latest quote for MSFT",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-finance-quote-ko-1",
+    "query": "부탁인데 AAPL의 최신 주가를 조회해",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-finance-quote-ko-2",
+    "query": "이 작업에서는 NVDA의 최신 주가를 조회해",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-finance-quote-ko-3",
+    "query": "다음 동작을 해줘: MSFT의 최신 주가를 조회해",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-finance-quote-es-1",
+    "query": "por favor, obtén la cotización actual de AAPL",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-finance-quote-es-2",
+    "query": "para esta operación, obtén la cotización actual de NVDA",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-finance-quote-es-3",
+    "query": "necesito que obtén la cotización actual de MSFT",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-finance-quote-ja-1",
+    "query": "お願いします、AAPLの最新株価を取得して",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-finance-quote-ja-2",
+    "query": "この操作ではNVDAの最新株価を取得して",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-finance-quote-ja-3",
+    "query": "次の操作をして: MSFTの最新株価を取得して",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-finance-quote-de-1",
+    "query": "bitte hole den aktuellen Kurs von AAPL",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-finance-quote-de-2",
+    "query": "für diese Operation: hole den aktuellen Kurs von NVDA",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-finance-quote-de-3",
+    "query": "ich brauche Folgendes: hole den aktuellen Kurs von MSFT",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-finance-quote-mixed-1",
+    "query": "please AAPL latest stock quote를 조회해 해줘",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-finance-quote-mixed-2",
+    "query": "이 operation에서 NVDA latest stock quote를 조회해",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-finance-quote-mixed-3",
+    "query": "need this action: MSFT latest stock quote를 조회해",
+    "expected": "finance.quote",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-finance-history-en-1",
+    "query": "please retrieve historical prices for AAPL last year",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-finance-history-en-2",
+    "query": "for this operation, retrieve historical prices for NVDA six months",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-finance-history-en-3",
+    "query": "I need you to retrieve historical prices for MSFT since January",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-finance-history-ko-1",
+    "query": "부탁인데 AAPL last year의 과거 주가 기록을 조회해",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-finance-history-ko-2",
+    "query": "이 작업에서는 NVDA six months의 과거 주가 기록을 조회해",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-finance-history-ko-3",
+    "query": "다음 동작을 해줘: MSFT since January의 과거 주가 기록을 조회해",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-finance-history-es-1",
+    "query": "por favor, obtén precios históricos de AAPL last year",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-finance-history-es-2",
+    "query": "para esta operación, obtén precios históricos de NVDA six months",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-finance-history-es-3",
+    "query": "necesito que obtén precios históricos de MSFT since January",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-finance-history-ja-1",
+    "query": "お願いします、AAPL last yearの過去株価を取得して",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-finance-history-ja-2",
+    "query": "この操作ではNVDA six monthsの過去株価を取得して",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-finance-history-ja-3",
+    "query": "次の操作をして: MSFT since Januaryの過去株価を取得して",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-finance-history-de-1",
+    "query": "bitte hole historische Kurse für AAPL last year",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-finance-history-de-2",
+    "query": "für diese Operation: hole historische Kurse für NVDA six months",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-finance-history-de-3",
+    "query": "ich brauche Folgendes: hole historische Kurse für MSFT since January",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-finance-history-mixed-1",
+    "query": "please AAPL last year historical prices를 조회해 해줘",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-finance-history-mixed-2",
+    "query": "이 operation에서 NVDA six months historical prices를 조회해",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-finance-history-mixed-3",
+    "query": "need this action: MSFT since January historical prices를 조회해",
+    "expected": "finance.history",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-calendar-list-en-1",
+    "query": "please list calendar events for today",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-calendar-list-en-2",
+    "query": "for this operation, list calendar events for tomorrow",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-calendar-list-en-3",
+    "query": "I need you to list calendar events for Friday",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-calendar-list-ko-1",
+    "query": "부탁인데 today 캘린더 일정을 조회해",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-calendar-list-ko-2",
+    "query": "이 작업에서는 tomorrow 캘린더 일정을 조회해",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-calendar-list-ko-3",
+    "query": "다음 동작을 해줘: Friday 캘린더 일정을 조회해",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-calendar-list-es-1",
+    "query": "por favor, lista eventos del calendario para today",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-calendar-list-es-2",
+    "query": "para esta operación, lista eventos del calendario para tomorrow",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-calendar-list-es-3",
+    "query": "necesito que lista eventos del calendario para Friday",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-calendar-list-ja-1",
+    "query": "お願いします、todayの予定を一覧表示して",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-calendar-list-ja-2",
+    "query": "この操作ではtomorrowの予定を一覧表示して",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-calendar-list-ja-3",
+    "query": "次の操作をして: Fridayの予定を一覧表示して",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-calendar-list-de-1",
+    "query": "bitte liste Kalendertermine für today",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-calendar-list-de-2",
+    "query": "für diese Operation: liste Kalendertermine für tomorrow",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-calendar-list-de-3",
+    "query": "ich brauche Folgendes: liste Kalendertermine für Friday",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-calendar-list-mixed-1",
+    "query": "please today calendar events를 list해 해줘",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-calendar-list-mixed-2",
+    "query": "이 operation에서 tomorrow calendar events를 list해",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-calendar-list-mixed-3",
+    "query": "need this action: Friday calendar events를 list해",
+    "expected": "calendar.list",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-calendar-create-en-1",
+    "query": "please create a calendar event for team sync at 3",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-calendar-create-en-2",
+    "query": "for this operation, create a calendar event for dentist tomorrow",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-calendar-create-en-3",
+    "query": "I need you to create a calendar event for review Friday",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-calendar-create-ko-1",
+    "query": "부탁인데 team sync at 3 일정을 새로 만들어",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-calendar-create-ko-2",
+    "query": "이 작업에서는 dentist tomorrow 일정을 새로 만들어",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-calendar-create-ko-3",
+    "query": "다음 동작을 해줘: review Friday 일정을 새로 만들어",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-calendar-create-es-1",
+    "query": "por favor, crea un evento de calendario para team sync at 3",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-calendar-create-es-2",
+    "query": "para esta operación, crea un evento de calendario para dentist tomorrow",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-calendar-create-es-3",
+    "query": "necesito que crea un evento de calendario para review Friday",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-calendar-create-ja-1",
+    "query": "お願いします、team sync at 3の予定を作成して",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-calendar-create-ja-2",
+    "query": "この操作ではdentist tomorrowの予定を作成して",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-calendar-create-ja-3",
+    "query": "次の操作をして: review Fridayの予定を作成して",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-calendar-create-de-1",
+    "query": "bitte erstelle einen Kalendereintrag für team sync at 3",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-calendar-create-de-2",
+    "query": "für diese Operation: erstelle einen Kalendereintrag für dentist tomorrow",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-calendar-create-de-3",
+    "query": "ich brauche Folgendes: erstelle einen Kalendereintrag für review Friday",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-calendar-create-mixed-1",
+    "query": "please team sync at 3 calendar event를 create해 해줘",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-calendar-create-mixed-2",
+    "query": "이 operation에서 dentist tomorrow calendar event를 create해",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-calendar-create-mixed-3",
+    "query": "need this action: review Friday calendar event를 create해",
+    "expected": "calendar.create",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-support-search-en-1",
+    "query": "please search support articles for password reset",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-support-search-en-2",
+    "query": "for this operation, search support articles for billing FAQ",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-support-search-en-3",
+    "query": "I need you to search support articles for login issue",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-support-search-ko-1",
+    "query": "부탁인데 password reset 관련 지원 문서를 검색해",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-support-search-ko-2",
+    "query": "이 작업에서는 billing FAQ 관련 지원 문서를 검색해",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-support-search-ko-3",
+    "query": "다음 동작을 해줘: login issue 관련 지원 문서를 검색해",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-support-search-es-1",
+    "query": "por favor, busca artículos de soporte sobre password reset",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-support-search-es-2",
+    "query": "para esta operación, busca artículos de soporte sobre billing FAQ",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-support-search-es-3",
+    "query": "necesito que busca artículos de soporte sobre login issue",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-support-search-ja-1",
+    "query": "お願いします、password resetのサポート記事を検索して",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-support-search-ja-2",
+    "query": "この操作ではbilling FAQのサポート記事を検索して",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-support-search-ja-3",
+    "query": "次の操作をして: login issueのサポート記事を検索して",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-support-search-de-1",
+    "query": "bitte suche Supportartikel zu password reset",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-support-search-de-2",
+    "query": "für diese Operation: suche Supportartikel zu billing FAQ",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-support-search-de-3",
+    "query": "ich brauche Folgendes: suche Supportartikel zu login issue",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-support-search-mixed-1",
+    "query": "please password reset support docs를 search해 해줘",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-support-search-mixed-2",
+    "query": "이 operation에서 billing FAQ support docs를 search해",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-support-search-mixed-3",
+    "query": "need this action: login issue support docs를 search해",
+    "expected": "support.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-support-create_ticket-en-1",
+    "query": "please create a support ticket for login failure",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-support-create_ticket-en-2",
+    "query": "for this operation, create a support ticket for wrong invoice",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-support-create_ticket-en-3",
+    "query": "I need you to create a support ticket for API 500",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-support-create_ticket-ko-1",
+    "query": "부탁인데 login failure 문제로 지원 티켓을 생성해",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-support-create_ticket-ko-2",
+    "query": "이 작업에서는 wrong invoice 문제로 지원 티켓을 생성해",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-support-create_ticket-ko-3",
+    "query": "다음 동작을 해줘: API 500 문제로 지원 티켓을 생성해",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-support-create_ticket-es-1",
+    "query": "por favor, crea un ticket de soporte por login failure",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-support-create_ticket-es-2",
+    "query": "para esta operación, crea un ticket de soporte por wrong invoice",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-support-create_ticket-es-3",
+    "query": "necesito que crea un ticket de soporte por API 500",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-support-create_ticket-ja-1",
+    "query": "お願いします、login failureのサポートチケットを作成して",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-support-create_ticket-ja-2",
+    "query": "この操作ではwrong invoiceのサポートチケットを作成して",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-support-create_ticket-ja-3",
+    "query": "次の操作をして: API 500のサポートチケットを作成して",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-support-create_ticket-de-1",
+    "query": "bitte erstelle ein Support-Ticket für login failure",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-support-create_ticket-de-2",
+    "query": "für diese Operation: erstelle ein Support-Ticket für wrong invoice",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-support-create_ticket-de-3",
+    "query": "ich brauche Folgendes: erstelle ein Support-Ticket für API 500",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-support-create_ticket-mixed-1",
+    "query": "please login failure issue로 support ticket을 create해 해줘",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-support-create_ticket-mixed-2",
+    "query": "이 operation에서 wrong invoice issue로 support ticket을 create해",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-support-create_ticket-mixed-3",
+    "query": "need this action: API 500 issue로 support ticket을 create해",
+    "expected": "support.create_ticket",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-inventory-search-en-1",
+    "query": "please check inventory quantity for SKU-611",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-inventory-search-en-2",
+    "query": "for this operation, check inventory quantity for SKU-622",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-inventory-search-en-3",
+    "query": "I need you to check inventory quantity for SKU-633",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-inventory-search-ko-1",
+    "query": "부탁인데 SKU-611 재고 수량을 조회해",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-inventory-search-ko-2",
+    "query": "이 작업에서는 SKU-622 재고 수량을 조회해",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-inventory-search-ko-3",
+    "query": "다음 동작을 해줘: SKU-633 재고 수량을 조회해",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-inventory-search-es-1",
+    "query": "por favor, consulta el inventario de SKU-611",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-inventory-search-es-2",
+    "query": "para esta operación, consulta el inventario de SKU-622",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-inventory-search-es-3",
+    "query": "necesito que consulta el inventario de SKU-633",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-inventory-search-ja-1",
+    "query": "お願いします、SKU-611の在庫数を確認して",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-inventory-search-ja-2",
+    "query": "この操作ではSKU-622の在庫数を確認して",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-inventory-search-ja-3",
+    "query": "次の操作をして: SKU-633の在庫数を確認して",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-inventory-search-de-1",
+    "query": "bitte prüfe den Bestand von SKU-611",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-inventory-search-de-2",
+    "query": "für diese Operation: prüfe den Bestand von SKU-622",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-inventory-search-de-3",
+    "query": "ich brauche Folgendes: prüfe den Bestand von SKU-633",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-inventory-search-mixed-1",
+    "query": "please SKU-611 inventory quantity를 조회해 해줘",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-inventory-search-mixed-2",
+    "query": "이 operation에서 SKU-622 inventory quantity를 조회해",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-inventory-search-mixed-3",
+    "query": "need this action: SKU-633 inventory quantity를 조회해",
+    "expected": "inventory.search",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-inventory-update-en-1",
+    "query": "please update inventory quantity for SKU-611 to 8",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-inventory-update-en-2",
+    "query": "for this operation, update inventory quantity for SKU-622 to 12",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-inventory-update-en-3",
+    "query": "I need you to update inventory quantity for SKU-633 to 0",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-inventory-update-ko-1",
+    "query": "부탁인데 재고 수량을 SKU-611 to 8로 변경해",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-inventory-update-ko-2",
+    "query": "이 작업에서는 재고 수량을 SKU-622 to 12로 변경해",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-inventory-update-ko-3",
+    "query": "다음 동작을 해줘: 재고 수량을 SKU-633 to 0로 변경해",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-inventory-update-es-1",
+    "query": "por favor, actualiza el inventario de SKU-611 to 8",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-inventory-update-es-2",
+    "query": "para esta operación, actualiza el inventario de SKU-622 to 12",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-inventory-update-es-3",
+    "query": "necesito que actualiza el inventario de SKU-633 to 0",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-inventory-update-ja-1",
+    "query": "お願いします、在庫数をSKU-611 to 8に更新して",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-inventory-update-ja-2",
+    "query": "この操作では在庫数をSKU-622 to 12に更新して",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-inventory-update-ja-3",
+    "query": "次の操作をして: 在庫数をSKU-633 to 0に更新して",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-inventory-update-de-1",
+    "query": "bitte aktualisiere den Bestand für SKU-611 to 8",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-inventory-update-de-2",
+    "query": "für diese Operation: aktualisiere den Bestand für SKU-622 to 12",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-inventory-update-de-3",
+    "query": "ich brauche Folgendes: aktualisiere den Bestand für SKU-633 to 0",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-inventory-update-mixed-1",
+    "query": "please inventory quantity를 SKU-611 to 8로 update해 해줘",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-inventory-update-mixed-2",
+    "query": "이 operation에서 inventory quantity를 SKU-622 to 12로 update해",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-inventory-update-mixed-3",
+    "query": "need this action: inventory quantity를 SKU-633 to 0로 update해",
+    "expected": "inventory.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-users-lookup-en-1",
+    "query": "please look up the user profile for user 611",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-users-lookup-en-2",
+    "query": "for this operation, look up the user profile for alice2@example.com",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-users-lookup-en-3",
+    "query": "I need you to look up the user profile for Kevin Park",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-users-lookup-ko-1",
+    "query": "부탁인데 user 611 사용자 프로필을 조회해",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-users-lookup-ko-2",
+    "query": "이 작업에서는 alice2@example.com 사용자 프로필을 조회해",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-users-lookup-ko-3",
+    "query": "다음 동작을 해줘: Kevin Park 사용자 프로필을 조회해",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-users-lookup-es-1",
+    "query": "por favor, consulta el perfil de usuario de user 611",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-users-lookup-es-2",
+    "query": "para esta operación, consulta el perfil de usuario de alice2@example.com",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-users-lookup-es-3",
+    "query": "necesito que consulta el perfil de usuario de Kevin Park",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-users-lookup-ja-1",
+    "query": "お願いします、user 611のユーザープロフィールを検索して",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-users-lookup-ja-2",
+    "query": "この操作ではalice2@example.comのユーザープロフィールを検索して",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-users-lookup-ja-3",
+    "query": "次の操作をして: Kevin Parkのユーザープロフィールを検索して",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-users-lookup-de-1",
+    "query": "bitte suche das Benutzerprofil für user 611",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-users-lookup-de-2",
+    "query": "für diese Operation: suche das Benutzerprofil für alice2@example.com",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-users-lookup-de-3",
+    "query": "ich brauche Folgendes: suche das Benutzerprofil für Kevin Park",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-users-lookup-mixed-1",
+    "query": "please user 611 user profile을 lookup해 해줘",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-users-lookup-mixed-2",
+    "query": "이 operation에서 alice2@example.com user profile을 lookup해",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-users-lookup-mixed-3",
+    "query": "need this action: Kevin Park user profile을 lookup해",
+    "expected": "users.lookup",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-users-update-en-1",
+    "query": "please update the user profile field for user 611 display name",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-users-update-en-2",
+    "query": "for this operation, update the user profile field for alice2@example.com locale",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-users-update-en-3",
+    "query": "I need you to update the user profile field for Kevin Park title",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-users-update-ko-1",
+    "query": "부탁인데 user 611 display name 사용자 프로필 항목을 수정해",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-users-update-ko-2",
+    "query": "이 작업에서는 alice2@example.com locale 사용자 프로필 항목을 수정해",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-users-update-ko-3",
+    "query": "다음 동작을 해줘: Kevin Park title 사용자 프로필 항목을 수정해",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-users-update-es-1",
+    "query": "por favor, actualiza el perfil de usuario para user 611 display name",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-users-update-es-2",
+    "query": "para esta operación, actualiza el perfil de usuario para alice2@example.com locale",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-users-update-es-3",
+    "query": "necesito que actualiza el perfil de usuario para Kevin Park title",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-users-update-ja-1",
+    "query": "お願いします、user 611 display nameのユーザープロフィールを更新して",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-users-update-ja-2",
+    "query": "この操作ではalice2@example.com localeのユーザープロフィールを更新して",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-users-update-ja-3",
+    "query": "次の操作をして: Kevin Park titleのユーザープロフィールを更新して",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-users-update-de-1",
+    "query": "bitte aktualisiere das Benutzerprofil für user 611 display name",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-users-update-de-2",
+    "query": "für diese Operation: aktualisiere das Benutzerprofil für alice2@example.com locale",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-users-update-de-3",
+    "query": "ich brauche Folgendes: aktualisiere das Benutzerprofil für Kevin Park title",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-users-update-mixed-1",
+    "query": "please user 611 display name user profile field를 update해 해줘",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-users-update-mixed-2",
+    "query": "이 operation에서 alice2@example.com locale user profile field를 update해",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-users-update-mixed-3",
+    "query": "need this action: Kevin Park title user profile field를 update해",
+    "expected": "users.update",
+    "category": "operation_supported",
+    "expect_abstain": false,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-weather-unsupported-en-1",
+    "query": "please subscribe me to severe weather alerts",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-weather-unsupported-en-2",
+    "query": "for this operation, change the configured weather station",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-weather-unsupported-en-3",
+    "query": "I need you to export a climate archive",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-weather-unsupported-en-4",
+    "query": "please set a rain notification",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-weather-unsupported-en-5",
+    "query": "for this operation, subscribe me to severe weather alerts",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-weather-unsupported-en-6",
+    "query": "I need you to change the configured weather station",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-weather-unsupported-ko-1",
+    "query": "부탁인데 악천후 알림을 구독해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-weather-unsupported-ko-2",
+    "query": "이 작업에서는 날씨 관측소 설정을 변경해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-weather-unsupported-ko-3",
+    "query": "다음 동작을 해줘: 기후 기록 파일을 내보내",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-weather-unsupported-ko-4",
+    "query": "부탁인데 비 알림을 설정해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-weather-unsupported-ko-5",
+    "query": "이 작업에서는 악천후 알림을 구독해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-weather-unsupported-ko-6",
+    "query": "다음 동작을 해줘: 날씨 관측소 설정을 변경해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-weather-unsupported-es-1",
+    "query": "por favor, suscríbeme a alertas meteorológicas",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-weather-unsupported-es-2",
+    "query": "para esta operación, cambia la estación meteorológica",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-weather-unsupported-es-3",
+    "query": "necesito que exporta el archivo climático",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-weather-unsupported-es-4",
+    "query": "por favor, configura una alerta de lluvia",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-weather-unsupported-es-5",
+    "query": "para esta operación, suscríbeme a alertas meteorológicas",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-weather-unsupported-es-6",
+    "query": "necesito que cambia la estación meteorológica",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-weather-unsupported-ja-1",
+    "query": "お願いします、悪天候アラートを購読して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-weather-unsupported-ja-2",
+    "query": "この操作では気象観測所を変更して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-weather-unsupported-ja-3",
+    "query": "次の操作をして: 気候履歴をエクスポートして",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-weather-unsupported-ja-4",
+    "query": "お願いします、雨の通知を設定して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-weather-unsupported-ja-5",
+    "query": "この操作では悪天候アラートを購読して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-weather-unsupported-ja-6",
+    "query": "次の操作をして: 気象観測所を変更して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-weather-unsupported-de-1",
+    "query": "bitte abonniere Unwetterwarnungen",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-weather-unsupported-de-2",
+    "query": "für diese Operation: ändere die Wetterstation",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-weather-unsupported-de-3",
+    "query": "ich brauche Folgendes: exportiere das Klimaarchiv",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-weather-unsupported-de-4",
+    "query": "bitte richte eine Regenwarnung ein",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-weather-unsupported-de-5",
+    "query": "für diese Operation: abonniere Unwetterwarnungen",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-weather-unsupported-de-6",
+    "query": "ich brauche Folgendes: ändere die Wetterstation",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-weather-unsupported-mixed-1",
+    "query": "please severe weather alert를 subscribe해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-weather-unsupported-mixed-2",
+    "query": "이 operation에서 weather station 설정을 change해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-weather-unsupported-mixed-3",
+    "query": "need this action: climate archive를 export해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-weather-unsupported-mixed-4",
+    "query": "please rain notification을 set해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-weather-unsupported-mixed-5",
+    "query": "이 operation에서 severe weather alert를 subscribe해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-weather-unsupported-mixed-6",
+    "query": "need this action: weather station 설정을 change해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-materials-unsupported-en-1",
+    "query": "please run a DFT simulation for silicon",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-materials-unsupported-en-2",
+    "query": "for this operation, create a new material record",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-materials-unsupported-en-3",
+    "query": "I need you to edit the stored band gap value",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-materials-unsupported-en-4",
+    "query": "please launch a synthesis workflow",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-materials-unsupported-en-5",
+    "query": "for this operation, run a DFT simulation for silicon",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-materials-unsupported-en-6",
+    "query": "I need you to create a new material record",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-materials-unsupported-ko-1",
+    "query": "부탁인데 실리콘 DFT 시뮬레이션을 실행해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-materials-unsupported-ko-2",
+    "query": "이 작업에서는 새 재료 레코드를 생성해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-materials-unsupported-ko-3",
+    "query": "다음 동작을 해줘: 저장된 밴드갭 값을 수정해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-materials-unsupported-ko-4",
+    "query": "부탁인데 합성 워크플로를 실행해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-materials-unsupported-ko-5",
+    "query": "이 작업에서는 실리콘 DFT 시뮬레이션을 실행해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-materials-unsupported-ko-6",
+    "query": "다음 동작을 해줘: 새 재료 레코드를 생성해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-materials-unsupported-es-1",
+    "query": "por favor, ejecuta una simulación DFT de silicio",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-materials-unsupported-es-2",
+    "query": "para esta operación, crea un nuevo registro de material",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-materials-unsupported-es-3",
+    "query": "necesito que edita la banda prohibida guardada",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-materials-unsupported-es-4",
+    "query": "por favor, inicia un flujo de síntesis",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-materials-unsupported-es-5",
+    "query": "para esta operación, ejecuta una simulación DFT de silicio",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-materials-unsupported-es-6",
+    "query": "necesito que crea un nuevo registro de material",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-materials-unsupported-ja-1",
+    "query": "お願いします、シリコンのDFT計算を実行して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-materials-unsupported-ja-2",
+    "query": "この操作では新しい材料レコードを作成して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-materials-unsupported-ja-3",
+    "query": "次の操作をして: 保存済みバンドギャップを編集して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-materials-unsupported-ja-4",
+    "query": "お願いします、合成ワークフローを開始して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-materials-unsupported-ja-5",
+    "query": "この操作ではシリコンのDFT計算を実行して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-materials-unsupported-ja-6",
+    "query": "次の操作をして: 新しい材料レコードを作成して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-materials-unsupported-de-1",
+    "query": "bitte starte eine DFT-Simulation für Silizium",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-materials-unsupported-de-2",
+    "query": "für diese Operation: erstelle einen neuen Materialdatensatz",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-materials-unsupported-de-3",
+    "query": "ich brauche Folgendes: ändere die gespeicherte Bandlücke",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-materials-unsupported-de-4",
+    "query": "bitte starte einen Synthese-Workflow",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-materials-unsupported-de-5",
+    "query": "für diese Operation: starte eine DFT-Simulation für Silizium",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-materials-unsupported-de-6",
+    "query": "ich brauche Folgendes: erstelle einen neuen Materialdatensatz",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-materials-unsupported-mixed-1",
+    "query": "please silicon DFT simulation을 run해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-materials-unsupported-mixed-2",
+    "query": "이 operation에서 new material record를 create해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-materials-unsupported-mixed-3",
+    "query": "need this action: stored band gap을 edit해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-materials-unsupported-mixed-4",
+    "query": "please synthesis workflow를 launch해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-materials-unsupported-mixed-5",
+    "query": "이 operation에서 silicon DFT simulation을 run해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-materials-unsupported-mixed-6",
+    "query": "need this action: new material record를 create해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-papers-unsupported-en-1",
+    "query": "please download the full PDF of this paper",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-papers-unsupported-en-2",
+    "query": "for this operation, submit a manuscript to the journal",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-papers-unsupported-en-3",
+    "query": "I need you to summarize the entire article",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-papers-unsupported-en-4",
+    "query": "please retract a published paper",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-papers-unsupported-en-5",
+    "query": "for this operation, download the full PDF of this paper",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-papers-unsupported-en-6",
+    "query": "I need you to submit a manuscript to the journal",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-papers-unsupported-ko-1",
+    "query": "부탁인데 이 논문의 PDF 원문을 다운로드해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-papers-unsupported-ko-2",
+    "query": "이 작업에서는 저널에 원고를 제출해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-papers-unsupported-ko-3",
+    "query": "다음 동작을 해줘: 논문 전체를 요약해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-papers-unsupported-ko-4",
+    "query": "부탁인데 출판된 논문을 철회해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-papers-unsupported-ko-5",
+    "query": "이 작업에서는 이 논문의 PDF 원문을 다운로드해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-papers-unsupported-ko-6",
+    "query": "다음 동작을 해줘: 저널에 원고를 제출해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-papers-unsupported-es-1",
+    "query": "por favor, descarga el PDF completo del artículo",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-papers-unsupported-es-2",
+    "query": "para esta operación, envía un manuscrito a la revista",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-papers-unsupported-es-3",
+    "query": "necesito que resume el artículo completo",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-papers-unsupported-es-4",
+    "query": "por favor, retira un artículo publicado",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-papers-unsupported-es-5",
+    "query": "para esta operación, descarga el PDF completo del artículo",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-papers-unsupported-es-6",
+    "query": "necesito que envía un manuscrito a la revista",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-papers-unsupported-ja-1",
+    "query": "お願いします、論文PDF全文をダウンロードして",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-papers-unsupported-ja-2",
+    "query": "この操作では原稿をジャーナルに投稿して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-papers-unsupported-ja-3",
+    "query": "次の操作をして: 論文全体を要約して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-papers-unsupported-ja-4",
+    "query": "お願いします、公開済み論文を撤回して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-papers-unsupported-ja-5",
+    "query": "この操作では論文PDF全文をダウンロードして",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-papers-unsupported-ja-6",
+    "query": "次の操作をして: 原稿をジャーナルに投稿して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-papers-unsupported-de-1",
+    "query": "bitte lade das vollständige PDF herunter",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-papers-unsupported-de-2",
+    "query": "für diese Operation: reiche ein Manuskript ein",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-papers-unsupported-de-3",
+    "query": "ich brauche Folgendes: fasse den ganzen Artikel zusammen",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-papers-unsupported-de-4",
+    "query": "bitte ziehe eine veröffentlichte Arbeit zurück",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-papers-unsupported-de-5",
+    "query": "für diese Operation: lade das vollständige PDF herunter",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-papers-unsupported-de-6",
+    "query": "ich brauche Folgendes: reiche ein Manuskript ein",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-papers-unsupported-mixed-1",
+    "query": "please paper full PDF를 download해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-papers-unsupported-mixed-2",
+    "query": "이 operation에서 manuscript를 submit해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-papers-unsupported-mixed-3",
+    "query": "need this action: article 전체를 summarize해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-papers-unsupported-mixed-4",
+    "query": "please published paper를 retract해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-papers-unsupported-mixed-5",
+    "query": "이 operation에서 paper full PDF를 download해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-papers-unsupported-mixed-6",
+    "query": "need this action: manuscript를 submit해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-finance-unsupported-en-1",
+    "query": "please buy ten shares of NVDA",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-finance-unsupported-en-2",
+    "query": "for this operation, sell my AAPL position",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-finance-unsupported-en-3",
+    "query": "I need you to set a price alert for MSFT",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-finance-unsupported-en-4",
+    "query": "please transfer cash to my brokerage",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-finance-unsupported-en-5",
+    "query": "for this operation, buy ten shares of NVDA",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-finance-unsupported-en-6",
+    "query": "I need you to sell my AAPL position",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-finance-unsupported-ko-1",
+    "query": "부탁인데 NVDA 주식 10주를 매수해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-finance-unsupported-ko-2",
+    "query": "이 작업에서는 AAPL 보유분을 매도해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-finance-unsupported-ko-3",
+    "query": "다음 동작을 해줘: MSFT 가격 알림을 설정해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-finance-unsupported-ko-4",
+    "query": "부탁인데 증권 계좌로 현금을 이체해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-finance-unsupported-ko-5",
+    "query": "이 작업에서는 NVDA 주식 10주를 매수해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-finance-unsupported-ko-6",
+    "query": "다음 동작을 해줘: AAPL 보유분을 매도해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-finance-unsupported-es-1",
+    "query": "por favor, compra diez acciones de NVDA",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-finance-unsupported-es-2",
+    "query": "para esta operación, vende mi posición de AAPL",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-finance-unsupported-es-3",
+    "query": "necesito que configura una alerta de precio de MSFT",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-finance-unsupported-es-4",
+    "query": "por favor, transfiere efectivo al bróker",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-finance-unsupported-es-5",
+    "query": "para esta operación, compra diez acciones de NVDA",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-finance-unsupported-es-6",
+    "query": "necesito que vende mi posición de AAPL",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-finance-unsupported-ja-1",
+    "query": "お願いします、NVDAを10株買って",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-finance-unsupported-ja-2",
+    "query": "この操作ではAAPLの保有株を売って",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-finance-unsupported-ja-3",
+    "query": "次の操作をして: MSFTの価格アラートを設定して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-finance-unsupported-ja-4",
+    "query": "お願いします、証券口座へ送金して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-finance-unsupported-ja-5",
+    "query": "この操作ではNVDAを10株買って",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-finance-unsupported-ja-6",
+    "query": "次の操作をして: AAPLの保有株を売って",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-finance-unsupported-de-1",
+    "query": "bitte kaufe zehn NVDA-Aktien",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-finance-unsupported-de-2",
+    "query": "für diese Operation: verkaufe meine AAPL-Position",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-finance-unsupported-de-3",
+    "query": "ich brauche Folgendes: setze einen Preisalarm für MSFT",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-finance-unsupported-de-4",
+    "query": "bitte überweise Geld zum Broker",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-finance-unsupported-de-5",
+    "query": "für diese Operation: kaufe zehn NVDA-Aktien",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-finance-unsupported-de-6",
+    "query": "ich brauche Folgendes: verkaufe meine AAPL-Position",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-finance-unsupported-mixed-1",
+    "query": "please NVDA 10 shares를 buy해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-finance-unsupported-mixed-2",
+    "query": "이 operation에서 AAPL position을 sell해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-finance-unsupported-mixed-3",
+    "query": "need this action: MSFT price alert를 set해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-finance-unsupported-mixed-4",
+    "query": "please brokerage로 cash를 transfer해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-finance-unsupported-mixed-5",
+    "query": "이 operation에서 NVDA 10 shares를 buy해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-finance-unsupported-mixed-6",
+    "query": "need this action: AAPL position을 sell해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-calendar-unsupported-en-1",
+    "query": "please delete tomorrow's meeting",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-calendar-unsupported-en-2",
+    "query": "for this operation, reschedule Friday's meeting",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-calendar-unsupported-en-3",
+    "query": "I need you to accept the calendar invitation",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-calendar-unsupported-en-4",
+    "query": "please share my calendar with Alex",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-calendar-unsupported-en-5",
+    "query": "for this operation, delete tomorrow's meeting",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-calendar-unsupported-en-6",
+    "query": "I need you to reschedule Friday's meeting",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-calendar-unsupported-ko-1",
+    "query": "부탁인데 내일 회의를 삭제해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-calendar-unsupported-ko-2",
+    "query": "이 작업에서는 금요일 회의를 일정 변경해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-calendar-unsupported-ko-3",
+    "query": "다음 동작을 해줘: 캘린더 초대를 수락해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-calendar-unsupported-ko-4",
+    "query": "부탁인데 Alex에게 캘린더를 공유해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-calendar-unsupported-ko-5",
+    "query": "이 작업에서는 내일 회의를 삭제해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-calendar-unsupported-ko-6",
+    "query": "다음 동작을 해줘: 금요일 회의를 일정 변경해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-calendar-unsupported-es-1",
+    "query": "por favor, elimina la reunión de mañana",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-calendar-unsupported-es-2",
+    "query": "para esta operación, reprograma la reunión del viernes",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-calendar-unsupported-es-3",
+    "query": "necesito que acepta la invitación del calendario",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-calendar-unsupported-es-4",
+    "query": "por favor, comparte mi calendario con Alex",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-calendar-unsupported-es-5",
+    "query": "para esta operación, elimina la reunión de mañana",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-calendar-unsupported-es-6",
+    "query": "necesito que reprograma la reunión del viernes",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-calendar-unsupported-ja-1",
+    "query": "お願いします、明日の会議を削除して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-calendar-unsupported-ja-2",
+    "query": "この操作では金曜の会議を変更して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-calendar-unsupported-ja-3",
+    "query": "次の操作をして: カレンダー招待を承認して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-calendar-unsupported-ja-4",
+    "query": "お願いします、Alexとカレンダーを共有して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-calendar-unsupported-ja-5",
+    "query": "この操作では明日の会議を削除して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-calendar-unsupported-ja-6",
+    "query": "次の操作をして: 金曜の会議を変更して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-calendar-unsupported-de-1",
+    "query": "bitte lösche das morgige Meeting",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-calendar-unsupported-de-2",
+    "query": "für diese Operation: verschiebe das Freitagsmeeting",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-calendar-unsupported-de-3",
+    "query": "ich brauche Folgendes: akzeptiere die Kalendereinladung",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-calendar-unsupported-de-4",
+    "query": "bitte teile meinen Kalender mit Alex",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-calendar-unsupported-de-5",
+    "query": "für diese Operation: lösche das morgige Meeting",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-calendar-unsupported-de-6",
+    "query": "ich brauche Folgendes: verschiebe das Freitagsmeeting",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-calendar-unsupported-mixed-1",
+    "query": "please tomorrow meeting을 delete해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-calendar-unsupported-mixed-2",
+    "query": "이 operation에서 Friday meeting을 reschedule해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-calendar-unsupported-mixed-3",
+    "query": "need this action: calendar invite를 accept해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-calendar-unsupported-mixed-4",
+    "query": "please Alex와 calendar를 share해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-calendar-unsupported-mixed-5",
+    "query": "이 operation에서 tomorrow meeting을 delete해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-calendar-unsupported-mixed-6",
+    "query": "need this action: Friday meeting을 reschedule해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-support-unsupported-en-1",
+    "query": "please close ticket 412",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-support-unsupported-en-2",
+    "query": "for this operation, assign ticket 412 to an agent",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-support-unsupported-en-3",
+    "query": "I need you to issue the refund directly",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-support-unsupported-en-4",
+    "query": "please delete ticket 412",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-support-unsupported-en-5",
+    "query": "for this operation, close ticket 412",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-support-unsupported-en-6",
+    "query": "I need you to assign ticket 412 to an agent",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-support-unsupported-ko-1",
+    "query": "부탁인데 티켓 412를 종료해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-support-unsupported-ko-2",
+    "query": "이 작업에서는 티켓 412를 상담원에게 할당해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-support-unsupported-ko-3",
+    "query": "다음 동작을 해줘: 환불을 직접 처리해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-support-unsupported-ko-4",
+    "query": "부탁인데 티켓 412를 삭제해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-support-unsupported-ko-5",
+    "query": "이 작업에서는 티켓 412를 종료해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-support-unsupported-ko-6",
+    "query": "다음 동작을 해줘: 티켓 412를 상담원에게 할당해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-support-unsupported-es-1",
+    "query": "por favor, cierra el ticket 412",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-support-unsupported-es-2",
+    "query": "para esta operación, asigna el ticket 412 a un agente",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-support-unsupported-es-3",
+    "query": "necesito que emite el reembolso directamente",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-support-unsupported-es-4",
+    "query": "por favor, elimina el ticket 412",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-support-unsupported-es-5",
+    "query": "para esta operación, cierra el ticket 412",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-support-unsupported-es-6",
+    "query": "necesito que asigna el ticket 412 a un agente",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-support-unsupported-ja-1",
+    "query": "お願いします、チケット412をクローズして",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-support-unsupported-ja-2",
+    "query": "この操作ではチケット412を担当者に割り当てて",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-support-unsupported-ja-3",
+    "query": "次の操作をして: 返金を直接実行して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-support-unsupported-ja-4",
+    "query": "お願いします、チケット412を削除して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-support-unsupported-ja-5",
+    "query": "この操作ではチケット412をクローズして",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-support-unsupported-ja-6",
+    "query": "次の操作をして: チケット412を担当者に割り当てて",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-support-unsupported-de-1",
+    "query": "bitte schließe Ticket 412",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-support-unsupported-de-2",
+    "query": "für diese Operation: weise Ticket 412 einem Agenten zu",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-support-unsupported-de-3",
+    "query": "ich brauche Folgendes: führe die Rückerstattung direkt aus",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-support-unsupported-de-4",
+    "query": "bitte lösche Ticket 412",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-support-unsupported-de-5",
+    "query": "für diese Operation: schließe Ticket 412",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-support-unsupported-de-6",
+    "query": "ich brauche Folgendes: weise Ticket 412 einem Agenten zu",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-support-unsupported-mixed-1",
+    "query": "please ticket 412를 close해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-support-unsupported-mixed-2",
+    "query": "이 operation에서 ticket 412를 agent에게 assign해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-support-unsupported-mixed-3",
+    "query": "need this action: refund를 direct issue해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-support-unsupported-mixed-4",
+    "query": "please ticket 412를 delete해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-support-unsupported-mixed-5",
+    "query": "이 operation에서 ticket 412를 close해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-support-unsupported-mixed-6",
+    "query": "need this action: ticket 412를 agent에게 assign해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-inventory-unsupported-en-1",
+    "query": "please create a new SKU 777",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-inventory-unsupported-en-2",
+    "query": "for this operation, delete SKU-611",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-inventory-unsupported-en-3",
+    "query": "I need you to transfer SKU-622 to another warehouse",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-inventory-unsupported-en-4",
+    "query": "please place a purchase order for SKU-633",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-inventory-unsupported-en-5",
+    "query": "for this operation, create a new SKU 777",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-inventory-unsupported-en-6",
+    "query": "I need you to delete SKU-611",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-inventory-unsupported-ko-1",
+    "query": "부탁인데 새 SKU 777을 생성해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-inventory-unsupported-ko-2",
+    "query": "이 작업에서는 SKU-611을 삭제해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-inventory-unsupported-ko-3",
+    "query": "다음 동작을 해줘: SKU-622 재고를 다른 창고로 이동해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-inventory-unsupported-ko-4",
+    "query": "부탁인데 SKU-633 구매 주문을 생성해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-inventory-unsupported-ko-5",
+    "query": "이 작업에서는 새 SKU 777을 생성해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-inventory-unsupported-ko-6",
+    "query": "다음 동작을 해줘: SKU-611을 삭제해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-inventory-unsupported-es-1",
+    "query": "por favor, crea un SKU nuevo 777",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-inventory-unsupported-es-2",
+    "query": "para esta operación, elimina SKU-611",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-inventory-unsupported-es-3",
+    "query": "necesito que transfiere SKU-622 a otro almacén",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-inventory-unsupported-es-4",
+    "query": "por favor, crea una orden de compra para SKU-633",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-inventory-unsupported-es-5",
+    "query": "para esta operación, crea un SKU nuevo 777",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-inventory-unsupported-es-6",
+    "query": "necesito que elimina SKU-611",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-inventory-unsupported-ja-1",
+    "query": "お願いします、新しいSKU 777を作成して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-inventory-unsupported-ja-2",
+    "query": "この操作ではSKU-611を削除して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-inventory-unsupported-ja-3",
+    "query": "次の操作をして: SKU-622を別倉庫へ移動して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-inventory-unsupported-ja-4",
+    "query": "お願いします、SKU-633の発注書を作成して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-inventory-unsupported-ja-5",
+    "query": "この操作では新しいSKU 777を作成して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-inventory-unsupported-ja-6",
+    "query": "次の操作をして: SKU-611を削除して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-inventory-unsupported-de-1",
+    "query": "bitte erstelle eine neue SKU 777",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-inventory-unsupported-de-2",
+    "query": "für diese Operation: lösche SKU-611",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-inventory-unsupported-de-3",
+    "query": "ich brauche Folgendes: verschiebe SKU-622 in ein anderes Lager",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-inventory-unsupported-de-4",
+    "query": "bitte erstelle eine Bestellung für SKU-633",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-inventory-unsupported-de-5",
+    "query": "für diese Operation: erstelle eine neue SKU 777",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-inventory-unsupported-de-6",
+    "query": "ich brauche Folgendes: lösche SKU-611",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-inventory-unsupported-mixed-1",
+    "query": "please new SKU 777을 create해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-inventory-unsupported-mixed-2",
+    "query": "이 operation에서 SKU-611을 delete해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-inventory-unsupported-mixed-3",
+    "query": "need this action: SKU-622를 another warehouse로 transfer해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-inventory-unsupported-mixed-4",
+    "query": "please SKU-633 purchase order를 place해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-inventory-unsupported-mixed-5",
+    "query": "이 operation에서 new SKU 777을 create해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-inventory-unsupported-mixed-6",
+    "query": "need this action: SKU-611을 delete해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-users-unsupported-en-1",
+    "query": "please create a new user account",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-users-unsupported-en-2",
+    "query": "for this operation, delete user 611",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-users-unsupported-en-3",
+    "query": "I need you to reset user 622 password",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-users-unsupported-en-4",
+    "query": "please suspend user 633 account",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "en"
+  },
+  {
+    "id": "v5-users-unsupported-en-5",
+    "query": "for this operation, create a new user account",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-users-unsupported-en-6",
+    "query": "I need you to delete user 611",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "en"
+  },
+  {
+    "id": "v5-users-unsupported-ko-1",
+    "query": "부탁인데 새 사용자 계정을 생성해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-users-unsupported-ko-2",
+    "query": "이 작업에서는 사용자 611을 삭제해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-users-unsupported-ko-3",
+    "query": "다음 동작을 해줘: 사용자 622 비밀번호를 재설정해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-users-unsupported-ko-4",
+    "query": "부탁인데 사용자 633 계정을 정지해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ko"
+  },
+  {
+    "id": "v5-users-unsupported-ko-5",
+    "query": "이 작업에서는 새 사용자 계정을 생성해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-users-unsupported-ko-6",
+    "query": "다음 동작을 해줘: 사용자 611을 삭제해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ko"
+  },
+  {
+    "id": "v5-users-unsupported-es-1",
+    "query": "por favor, crea una nueva cuenta de usuario",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-users-unsupported-es-2",
+    "query": "para esta operación, elimina el usuario 611",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-users-unsupported-es-3",
+    "query": "necesito que restablece la contraseña del usuario 622",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-users-unsupported-es-4",
+    "query": "por favor, suspende la cuenta del usuario 633",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "es"
+  },
+  {
+    "id": "v5-users-unsupported-es-5",
+    "query": "para esta operación, crea una nueva cuenta de usuario",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-users-unsupported-es-6",
+    "query": "necesito que elimina el usuario 611",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "es"
+  },
+  {
+    "id": "v5-users-unsupported-ja-1",
+    "query": "お願いします、新しいユーザーアカウントを作成して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-users-unsupported-ja-2",
+    "query": "この操作ではユーザー611を削除して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-users-unsupported-ja-3",
+    "query": "次の操作をして: ユーザー622のパスワードをリセットして",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-users-unsupported-ja-4",
+    "query": "お願いします、ユーザー633を停止して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "ja"
+  },
+  {
+    "id": "v5-users-unsupported-ja-5",
+    "query": "この操作では新しいユーザーアカウントを作成して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-users-unsupported-ja-6",
+    "query": "次の操作をして: ユーザー611を削除して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "ja"
+  },
+  {
+    "id": "v5-users-unsupported-de-1",
+    "query": "bitte erstelle ein neues Benutzerkonto",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-users-unsupported-de-2",
+    "query": "für diese Operation: lösche Benutzer 611",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-users-unsupported-de-3",
+    "query": "ich brauche Folgendes: setze das Passwort von Benutzer 622 zurück",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-users-unsupported-de-4",
+    "query": "bitte sperre Benutzer 633",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "de"
+  },
+  {
+    "id": "v5-users-unsupported-de-5",
+    "query": "für diese Operation: erstelle ein neues Benutzerkonto",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-users-unsupported-de-6",
+    "query": "ich brauche Folgendes: lösche Benutzer 611",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "de"
+  },
+  {
+    "id": "v5-users-unsupported-mixed-1",
+    "query": "please new user account를 create해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-users-unsupported-mixed-2",
+    "query": "이 operation에서 user 611을 delete해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-users-unsupported-mixed-3",
+    "query": "need this action: user 622 password를 reset해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-users-unsupported-mixed-4",
+    "query": "please user 633 account를 suspend해 해줘",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "dev",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-users-unsupported-mixed-5",
+    "query": "이 operation에서 new user account를 create해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  },
+  {
+    "id": "v5-users-unsupported-mixed-6",
+    "query": "need this action: user 611을 delete해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "calibration",
+    "language": "mixed"
+  }
+]

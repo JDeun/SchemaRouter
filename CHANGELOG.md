@@ -9,6 +9,19 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- reserved a fresh 600-case multilingual v9 alias-aware operation holdout after detecting that v8 had been accidentally consumed by a calibration diagnostic path; corrected calibration to use consumed v7 only and kept v9 manual/threshold-gated;
+- explicit trusted `EndpointSpec.operation_aliases` vocabulary for bounded operation-fit, with validation, fingerprinting, compatible schema-diff reporting, inspection/dashboard visibility, and no automatic/model-authored alias inference;
+- optional bounded `operation_fit_backend` gate for single-call plans that checks only sibling
+  endpoint operations inside the currently leading tool domain, deliberately excluding broad tool
+  descriptions, tool-name labels, and output-field labels; the gate can suppress unsupported operations but cannot add,
+  select, reorder, or switch execution candidates;
+- separate multilingual v5 operation calibration (576 cases) and v6 operation regression holdout
+  (600 cases) corpora for measuring near-domain unsupported-operation rejection without reusing the
+  already-consumed v4 holdout; v6 was consumed before the tool-domain-label cleanup and is retained
+  as regression evidence rather than reused for a new untouched claim;
+- a separate 600-case multilingual v7 post-change operation holdout, reserved before measuring the tool-domain-label-cleaned operation-fit surface so v6 can remain regression evidence rather than be reused for a new untouched claim;
+- recorded the consumed v7 result as distribution-shift evidence and restored the holdout workflow to its manual, explicit-threshold guard after the one-shot run;
+- reserved a fresh 600-case multilingual v8 operation-alias holdout before implementing trusted endpoint operation aliases;
 - optional bounded `endpoint_disambiguation_backend` stage that may reorder only sibling endpoints
   inside the currently leading tool domain for single-call plans, preserving the existing candidate
   order on backend failure/abstention and never switching tools or creating execution authority;

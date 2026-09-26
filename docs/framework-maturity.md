@@ -32,11 +32,11 @@ This document tracks framework-level maturity rather than research metrics.
 | Provider parameter aliases | Trusted exact/alias binding with ambiguity fail-closed behavior and independent fallback compilation | Keep model-generated parameter remapping out of the execution boundary |
 | Access health | Finite passive cooldown + optional trusted background probes with early reopen | Integrate external health sources without model authority |
 | LangChain / LangGraph / LlamaIndex integrations | Implemented optional adapters and native graph node | Expand ecosystem listings |
-| Bounded decision backends | Candidate + field + conservative evidence-sufficiency surfaces, provider-neutral callable/embedding + optional Jev/Laya/Ollama, all opt-in | Gather live decision evidence |
+| Bounded decision backends | Semantic candidate recall, broad capability-fit, operation-fit, same-tool endpoint disambiguation, candidate/field selection, and conservative evidence-sufficiency surfaces; provider-neutral callable/embedding + optional Jev/Laya/Ollama, all opt-in | Gather live decision evidence and keep model authority bounded |
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
 | Local Laya decision provider | Optional local choice adapter with auto language routing, confidence abstention, lazy/preloaded checkpoints, and shared benchmark support | Gather checkpoint/hardware-specific evidence before choosing defaults |
 | Local Ollama decision provider | Implemented over structured-output HTTP API | Benchmark specific local models/hardware before quality claims |
-| Decision benchmark harness | 144-case checked-in corpus + JSON/CSV metrics + single-run and multi-run self-contained HTML summaries | Gather dated live-provider evidence |
+| Decision benchmark harness | 1,200-case multilingual v2 stress corpus plus separate v3 capability-fit, v4 endpoint-disambiguation, v5 operation-fit calibration, v6 regression holdout, and reserved v7 post-change operation holdout corpora; JSON/CSV metrics + Wilson intervals + single-run and multi-run self-contained HTML summaries | Gather dated live-provider evidence and add fresh holdouts when a consumed test set can no longer support an untouched claim |
 | Framework callbacks / exporters | Typed redacted events + optional OpenTelemetry exporter | Add additional trusted sinks as needed |
 | Middleware interception | Trusted ordered before/after execution hooks with detached snapshots | Add organization-specific hook libraries only when needed |
 | Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
@@ -120,7 +120,7 @@ Completed locally:
   and provider veto-only semantics;
 - provider-neutral decision benchmark harness;
 - exact-recall candidate index with registry-version cache invalidation and exhaustive parity tests;
-- 144-case multilingual/adversarial benchmark corpus;
+- 1,200-case multilingual/adversarial v2 benchmark corpus plus separate frozen calibration/holdout corpora for capability-fit, endpoint disambiguation, and operation-fit evaluation;
 - OpenAPI compatibility reporting;
 - opt-in bounded same-origin cross-document OpenAPI reference bundling;
 - authenticated MCP transport boundary;

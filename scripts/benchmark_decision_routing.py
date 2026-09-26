@@ -93,10 +93,17 @@ SMOKE_CASES = [
 ]
 
 
-def _endpoint(name: str, description: str, *fields: str, read_only: bool = True) -> EndpointSpec:
+def _endpoint(
+    name: str,
+    description: str,
+    *fields: str,
+    read_only: bool = True,
+    operation_aliases: tuple[str, ...] = (),
+) -> EndpointSpec:
     return EndpointSpec(
         name=name,
         description=description,
+        operation_aliases=list(operation_aliases),
         read_only=read_only,
         output_fields=[
             FieldSpec(name=field, identifier=field in {"id", "doi", "symbol", "sku"})
@@ -118,8 +125,15 @@ def reference_registry() -> InMemoryRegistry:
                     "Get current city temperature and conditions",
                     "city",
                     "temperature",
+                    operation_aliases=("current weather", "live weather", "weather right now"),
                 ),
-                _endpoint("forecast", "Get future weather forecast for a city", "city", "forecast"),
+                _endpoint(
+                    "forecast",
+                    "Get future weather forecast for a city",
+                    "city",
+                    "forecast",
+                    operation_aliases=("weather forecast", "weather prediction", "future weather"),
+                ),
             ],
         )
     )
@@ -133,12 +147,22 @@ def reference_registry() -> InMemoryRegistry:
                     "Search materials by properties such as band gap",
                     "material_id",
                     "band_gap",
+                    operation_aliases=(
+                        "find material properties",
+                        "look up band gap",
+                        "search material properties",
+                    ),
                 ),
                 _endpoint(
                     "structure",
                     "Retrieve crystal structure and lattice information",
                     "material_id",
                     "structure",
+                    operation_aliases=(
+                        "crystal structure",
+                        "lattice structure",
+                        "retrieve crystal structure",
+                    ),
                 ),
             ],
         )
@@ -148,12 +172,27 @@ def reference_registry() -> InMemoryRegistry:
             name="papers",
             description="Scientific literature and citation database",
             endpoints=[
-                _endpoint("search", "Search research papers and article metadata", "doi", "title"),
+                _endpoint(
+                    "search",
+                    "Search research papers and article metadata",
+                    "doi",
+                    "title",
+                    operation_aliases=(
+                        "search papers",
+                        "find research articles",
+                        "academic paper search",
+                    ),
+                ),
                 _endpoint(
                     "citations",
                     "Find papers that cite a DOI or article",
                     "doi",
                     "citations",
+                    operation_aliases=(
+                        "find citing papers",
+                        "list articles that cite",
+                        "citation lookup",
+                    ),
                 ),
             ],
         )
@@ -163,12 +202,23 @@ def reference_registry() -> InMemoryRegistry:
             name="finance",
             description="Market quotes and historical price data",
             endpoints=[
-                _endpoint("quote", "Get the latest market quote for a ticker", "symbol", "price"),
+                _endpoint(
+                    "quote",
+                    "Get the latest market quote for a ticker",
+                    "symbol",
+                    "price",
+                    operation_aliases=(
+                        "latest stock price",
+                        "current market price",
+                        "latest trading price",
+                    ),
+                ),
                 _endpoint(
                     "history",
                     "Get historical prices for a ticker and date range",
                     "symbol",
                     "history",
+                    operation_aliases=("historical prices", "past price series", "price history"),
                 ),
             ],
         )
@@ -178,8 +228,29 @@ def reference_registry() -> InMemoryRegistry:
             name="calendar",
             description="Calendar event listing and creation",
             endpoints=[
-                _endpoint("list", "List scheduled calendar events", "id", "title"),
-                _endpoint("create", "Create a new calendar event", "id", "title", read_only=False),
+                _endpoint(
+                    "list",
+                    "List scheduled calendar events",
+                    "id",
+                    "title",
+                    operation_aliases=(
+                        "list calendar events",
+                        "show scheduled appointments",
+                        "view calendar",
+                    ),
+                ),
+                _endpoint(
+                    "create",
+                    "Create a new calendar event",
+                    "id",
+                    "title",
+                    read_only=False,
+                    operation_aliases=(
+                        "create calendar event",
+                        "schedule appointment",
+                        "add calendar event",
+                    ),
+                ),
             ],
         )
     )
@@ -188,13 +259,28 @@ def reference_registry() -> InMemoryRegistry:
             name="support",
             description="Customer support knowledge and ticket operations",
             endpoints=[
-                _endpoint("search", "Search support knowledge base articles", "id", "title"),
+                _endpoint(
+                    "search",
+                    "Search support knowledge base articles",
+                    "id",
+                    "title",
+                    operation_aliases=(
+                        "search support knowledge base",
+                        "find help documentation",
+                        "support article lookup",
+                    ),
+                ),
                 _endpoint(
                     "create_ticket",
                     "Create a customer support ticket",
                     "id",
                     "status",
                     read_only=False,
+                    operation_aliases=(
+                        "create support ticket",
+                        "open support case",
+                        "file support request",
+                    ),
                 ),
             ],
         )
@@ -204,13 +290,24 @@ def reference_registry() -> InMemoryRegistry:
             name="inventory",
             description="Inventory lookup and stock update operations",
             endpoints=[
-                _endpoint("search", "Search inventory and stock by SKU", "sku", "quantity"),
+                _endpoint(
+                    "search",
+                    "Search inventory and stock by SKU",
+                    "sku",
+                    "quantity",
+                    operation_aliases=("check inventory", "look up stock", "available stock"),
+                ),
                 _endpoint(
                     "update",
                     "Update inventory quantity for a SKU",
                     "sku",
                     "quantity",
                     read_only=False,
+                    operation_aliases=(
+                        "update inventory quantity",
+                        "set stock count",
+                        "change inventory",
+                    ),
                 ),
             ],
         )
@@ -220,8 +317,29 @@ def reference_registry() -> InMemoryRegistry:
             name="users",
             description="User directory lookup and profile update operations",
             endpoints=[
-                _endpoint("lookup", "Look up a user profile or account", "id", "name"),
-                _endpoint("update", "Update a user profile", "id", "name", read_only=False),
+                _endpoint(
+                    "lookup",
+                    "Look up a user profile or account",
+                    "id",
+                    "name",
+                    operation_aliases=(
+                        "look up user profile",
+                        "find account details",
+                        "retrieve user account",
+                    ),
+                ),
+                _endpoint(
+                    "update",
+                    "Update a user profile",
+                    "id",
+                    "name",
+                    read_only=False,
+                    operation_aliases=(
+                        "update user profile",
+                        "change account details",
+                        "edit user account",
+                    ),
+                ),
             ],
         )
     )
@@ -497,8 +615,10 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
     latencies = [row.latency_ms for row in successful]
     categories = sorted({row.category for row in rows})
     expected_abstentions = [row for row in rows if row.expected is None]
+    routed_rows = [row for row in rows if row.expected is not None]
     confidences = [row.confidence for row in rows if row.confidence is not None]
     correct_count = sum(row.correct for row in rows)
+    routed_correct_count = sum(row.correct for row in routed_rows)
     expected_no_route_count = sum(
         row.predicted is None for row in expected_abstentions
     )
@@ -534,6 +654,15 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
         "cases": total,
         "accuracy": correct_count / total if total else 0.0,
         "accuracy_ci95": _wilson_interval(correct_count, total),
+        "routed_accuracy": (
+            routed_correct_count / len(routed_rows)
+            if routed_rows
+            else None
+        ),
+        "routed_accuracy_ci95": _wilson_interval(
+            routed_correct_count,
+            len(routed_rows),
+        ),
         "invalid_plan_rate": (
             sum(row.invalid_plan for row in rows) / total if total else 0.0
         ),
@@ -810,6 +939,15 @@ async def main() -> None:
     parser.add_argument("--candidate-fit-min-similarity", type=float, default=-1.0)
     parser.add_argument("--candidate-fit-min-margin", type=float, default=0.0)
     parser.add_argument(
+        "--operation-fit-embedding-callable",
+        help=(
+            "Optional embedding callable used only as a bounded operation-capability "
+            "fit/no-route gate within the currently leading tool domain."
+        ),
+    )
+    parser.add_argument("--operation-fit-min-similarity", type=float, default=-1.0)
+    parser.add_argument("--operation-fit-min-margin", type=float, default=0.0)
+    parser.add_argument(
         "--endpoint-disambiguation-embedding-callable",
         help=(
             "Optional embedding callable used only to rerank sibling endpoints within "
@@ -991,6 +1129,18 @@ async def main() -> None:
             min_margin=args.candidate_fit_min_margin,
         )
 
+    operation_fit_backend = None
+    if args.operation_fit_embedding_callable:
+        operation_fit_embedder = load_callable(
+            args.operation_fit_embedding_callable,
+            option_name="--operation-fit-embedding-callable",
+        )
+        operation_fit_backend = EmbeddingDecisionBackend(
+            operation_fit_embedder,
+            min_similarity=args.operation_fit_min_similarity,
+            min_margin=args.operation_fit_min_margin,
+        )
+
     endpoint_disambiguation_backend = None
     if args.endpoint_disambiguation_embedding_callable:
         endpoint_disambiguation_embedder = load_callable(
@@ -1037,12 +1187,35 @@ async def main() -> None:
             )
         )
 
+    if operation_fit_backend is not None:
+        operation_name_parts = ["keyword"]
+        if candidate_recall_backend is not None:
+            operation_name_parts.append("semantic-recall")
+        if candidate_fit_backend is not None:
+            operation_name_parts.append("capability-fit")
+        operation_name_parts.append("operation-fit")
+        planners.append(
+            (
+                "+".join(operation_name_parts),
+                SchemaPlanner(
+                    registry,
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
+                ),
+                None,
+            )
+        )
+
     if endpoint_disambiguation_backend is not None:
         disambiguation_name_parts = ["keyword"]
         if candidate_recall_backend is not None:
             disambiguation_name_parts.append("semantic-recall")
         if candidate_fit_backend is not None:
             disambiguation_name_parts.append("capability-fit")
+        if operation_fit_backend is not None:
+            disambiguation_name_parts.append("operation-fit")
         disambiguation_name_parts.append("endpoint-disambiguation")
         planners.append(
             (
@@ -1052,6 +1225,7 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 None,
@@ -1072,6 +1246,7 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 None,
@@ -1106,6 +1281,7 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1137,6 +1313,7 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1171,6 +1348,7 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1203,6 +1381,7 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1242,6 +1421,12 @@ async def main() -> None:
             "embedding_callable": args.candidate_fit_embedding_callable,
             "min_similarity": args.candidate_fit_min_similarity,
             "min_margin": args.candidate_fit_min_margin,
+        },
+        "operation_capability_fit": {
+            "enabled": operation_fit_backend is not None,
+            "embedding_callable": args.operation_fit_embedding_callable,
+            "min_similarity": args.operation_fit_min_similarity,
+            "min_margin": args.operation_fit_min_margin,
         },
         "endpoint_disambiguation": {
             "enabled": endpoint_disambiguation_backend is not None,
