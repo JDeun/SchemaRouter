@@ -344,7 +344,7 @@ class _CachedEmbeddingAwaitable:
 
     def __init__(
         self,
-        backend: "CachedEmbeddingDecisionBackend",
+        backend: CachedEmbeddingDecisionBackend,
         request: DecisionRequest,
         raw: Awaitable[Iterable[Iterable[float]]],
         option_keys: list[tuple[str, str]],
