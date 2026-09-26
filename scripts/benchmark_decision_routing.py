@@ -30,6 +30,7 @@ from schemarouter import (  # noqa: E402
     DecisionPolicy,
     EmbeddingDecisionBackend,
     EndpointSpec,
+    PairwiseDecisionBackend,
     FieldSpec,
     InMemoryRegistry,
     PlanRequest,
@@ -1014,6 +1015,15 @@ async def main() -> None:
     parser.add_argument("--operation-fit-min-similarity", type=float, default=-1.0)
     parser.add_argument("--operation-fit-min-margin", type=float, default=0.0)
     parser.add_argument(
+        "--operation-fit-pairwise-callable",
+        help=(
+            "Optional pairwise scoring callable used only as the bounded operation-capability "
+            "fit/no-route gate. It receives [(query, option_text), ...] and returns one "
+            "confidence in [0, 1] per pair."
+        ),
+    )
+    parser.add_argument("--operation-fit-min-score", type=float, default=0.0)
+    parser.add_argument(
         "--endpoint-disambiguation-embedding-callable",
         help=(
             "Optional embedding callable used only to rerank sibling endpoints within "
@@ -1196,7 +1206,21 @@ async def main() -> None:
         )
 
     operation_fit_backend = None
-    if args.operation_fit_embedding_callable:
+    if args.operation_fit_embedding_callable and args.operation_fit_pairwise_callable:
+        raise ValueError(
+            "--operation-fit-embedding-callable and --operation-fit-pairwise-callable "
+            "are mutually exclusive"
+        )
+    if args.operation_fit_pairwise_callable:
+        operation_fit_scorer = load_callable(
+            args.operation_fit_pairwise_callable,
+            option_name="--operation-fit-pairwise-callable",
+        )
+        operation_fit_backend = PairwiseDecisionBackend(
+            operation_fit_scorer,
+            min_score=args.operation_fit_min_score,
+        )
+    elif args.operation_fit_embedding_callable:
         operation_fit_embedder = load_callable(
             args.operation_fit_embedding_callable,
             option_name="--operation-fit-embedding-callable",
