@@ -1,0 +1,5402 @@
+[
+  {
+    "id": "v3-weather-current-en-01",
+    "query": "could you check the weather right now in Incheon",
+    "expected": "weather.current",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-current-en-02",
+    "query": "I’m trying to check the weather right now in Jeju",
+    "expected": "weather.current",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-current-en-03",
+    "query": "what I actually need is to check the weather right now in London",
+    "expected": "weather.current",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-current-en-04",
+    "query": "without doing anything else, check the weather right now in Rome",
+    "expected": "weather.current",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-current-en-05",
+    "query": "for a production check, check the weather right now in Munich",
+    "expected": "weather.current",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-current-ko-01",
+    "query": "Incheon의 현재 기상 상태를 확인 해줄래",
+    "expected": "weather.current",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-current-ko-02",
+    "query": "내가 필요한 건 Jeju의 현재 기상 상태를 확인 하는 거야",
+    "expected": "weather.current",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-current-ko-03",
+    "query": "정확히는 London의 현재 기상 상태를 확인 해줘",
+    "expected": "weather.current",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-current-ko-04",
+    "query": "다른 작업 말고 Rome의 현재 기상 상태를 확인만 해줘",
+    "expected": "weather.current",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-current-ko-05",
+    "query": "운영 확인용으로 Munich의 현재 기상 상태를 확인 해줘",
+    "expected": "weather.current",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-current-es-01",
+    "query": "¿podrías consultar el tiempo ahora mismo en Incheon?",
+    "expected": "weather.current",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-current-es-02",
+    "query": "lo que necesito es consultar el tiempo ahora mismo en Jeju",
+    "expected": "weather.current",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-current-es-03",
+    "query": "en concreto, consultar el tiempo ahora mismo en London",
+    "expected": "weather.current",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-current-es-04",
+    "query": "sin hacer nada más, consultar el tiempo ahora mismo en Rome",
+    "expected": "weather.current",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-current-es-05",
+    "query": "para una comprobación, consultar el tiempo ahora mismo en Munich",
+    "expected": "weather.current",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-current-ja-01",
+    "query": "Incheonの今の天気を確認してもらえる？",
+    "expected": "weather.current",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-current-ja-02",
+    "query": "必要なのはJejuの今の天気を確認ことです",
+    "expected": "weather.current",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-current-ja-03",
+    "query": "具体的にはLondonの今の天気を確認して",
+    "expected": "weather.current",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-current-ja-04",
+    "query": "他はせずにRomeの今の天気を確認して",
+    "expected": "weather.current",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-current-ja-05",
+    "query": "確認用にMunichの今の天気を確認して",
+    "expected": "weather.current",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-current-de-01",
+    "query": "kannst du das Wetter jetzt in Incheon prüfen",
+    "expected": "weather.current",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-current-de-02",
+    "query": "ich möchte das Wetter jetzt in Jeju prüfen",
+    "expected": "weather.current",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-current-de-03",
+    "query": "genauer gesagt: das Wetter jetzt in London prüfen",
+    "expected": "weather.current",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-current-de-04",
+    "query": "ohne etwas anderes zu tun, das Wetter jetzt in Rome prüfen",
+    "expected": "weather.current",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-current-de-05",
+    "query": "für eine Prüfung: das Wetter jetzt in Munich prüfen",
+    "expected": "weather.current",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-current-mixed-01",
+    "query": "can you Incheon의 current weather를 check 해줘",
+    "expected": "weather.current",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-current-mixed-02",
+    "query": "내가 need하는 건 Jeju의 current weather를 check",
+    "expected": "weather.current",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-current-mixed-03",
+    "query": "정확히 London의 current weather를 check 부탁",
+    "expected": "weather.current",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-current-mixed-04",
+    "query": "nothing else, Rome의 current weather를 check만",
+    "expected": "weather.current",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-current-mixed-05",
+    "query": "production check로 Munich의 current weather를 check",
+    "expected": "weather.current",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-forecast-en-01",
+    "query": "could you show the upcoming weather for Incheon tomorrow",
+    "expected": "weather.forecast",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-forecast-en-02",
+    "query": "I’m trying to show the upcoming weather for Jeju this weekend",
+    "expected": "weather.forecast",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-forecast-en-03",
+    "query": "what I actually need is to show the upcoming weather for London next Friday",
+    "expected": "weather.forecast",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-forecast-en-04",
+    "query": "without doing anything else, show the upcoming weather for Rome tonight",
+    "expected": "weather.forecast",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-forecast-en-05",
+    "query": "for a production check, show the upcoming weather for Munich next week",
+    "expected": "weather.forecast",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-forecast-ko-01",
+    "query": "Incheon tomorrow의 앞으로 날씨를 확인 해줄래",
+    "expected": "weather.forecast",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-forecast-ko-02",
+    "query": "내가 필요한 건 Jeju this weekend의 앞으로 날씨를 확인 하는 거야",
+    "expected": "weather.forecast",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-forecast-ko-03",
+    "query": "정확히는 London next Friday의 앞으로 날씨를 확인 해줘",
+    "expected": "weather.forecast",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-forecast-ko-04",
+    "query": "다른 작업 말고 Rome tonight의 앞으로 날씨를 확인만 해줘",
+    "expected": "weather.forecast",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-forecast-ko-05",
+    "query": "운영 확인용으로 Munich next week의 앞으로 날씨를 확인 해줘",
+    "expected": "weather.forecast",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-forecast-es-01",
+    "query": "¿podrías mostrar el tiempo previsto para Incheon tomorrow?",
+    "expected": "weather.forecast",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-forecast-es-02",
+    "query": "lo que necesito es mostrar el tiempo previsto para Jeju this weekend",
+    "expected": "weather.forecast",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-forecast-es-03",
+    "query": "en concreto, mostrar el tiempo previsto para London next Friday",
+    "expected": "weather.forecast",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-forecast-es-04",
+    "query": "sin hacer nada más, mostrar el tiempo previsto para Rome tonight",
+    "expected": "weather.forecast",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-forecast-es-05",
+    "query": "para una comprobación, mostrar el tiempo previsto para Munich next week",
+    "expected": "weather.forecast",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-forecast-ja-01",
+    "query": "Incheon tomorrowのこれからの天気を確認してもらえる？",
+    "expected": "weather.forecast",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-forecast-ja-02",
+    "query": "必要なのはJeju this weekendのこれからの天気を確認ことです",
+    "expected": "weather.forecast",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-forecast-ja-03",
+    "query": "具体的にはLondon next Fridayのこれからの天気を確認して",
+    "expected": "weather.forecast",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-forecast-ja-04",
+    "query": "他はせずにRome tonightのこれからの天気を確認して",
+    "expected": "weather.forecast",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-forecast-ja-05",
+    "query": "確認用にMunich next weekのこれからの天気を確認して",
+    "expected": "weather.forecast",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-forecast-de-01",
+    "query": "kannst du die kommende Wetterlage für Incheon tomorrow anzeigen",
+    "expected": "weather.forecast",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-forecast-de-02",
+    "query": "ich möchte die kommende Wetterlage für Jeju this weekend anzeigen",
+    "expected": "weather.forecast",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-forecast-de-03",
+    "query": "genauer gesagt: die kommende Wetterlage für London next Friday anzeigen",
+    "expected": "weather.forecast",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-forecast-de-04",
+    "query": "ohne etwas anderes zu tun, die kommende Wetterlage für Rome tonight anzeigen",
+    "expected": "weather.forecast",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-forecast-de-05",
+    "query": "für eine Prüfung: die kommende Wetterlage für Munich next week anzeigen",
+    "expected": "weather.forecast",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-forecast-mixed-01",
+    "query": "can you Incheon tomorrow의 upcoming forecast를 show 해줘",
+    "expected": "weather.forecast",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-forecast-mixed-02",
+    "query": "내가 need하는 건 Jeju this weekend의 upcoming forecast를 show",
+    "expected": "weather.forecast",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-forecast-mixed-03",
+    "query": "정확히 London next Friday의 upcoming forecast를 show 부탁",
+    "expected": "weather.forecast",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-forecast-mixed-04",
+    "query": "nothing else, Rome tonight의 upcoming forecast를 show만",
+    "expected": "weather.forecast",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-forecast-mixed-05",
+    "query": "production check로 Munich next week의 upcoming forecast를 show",
+    "expected": "weather.forecast",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-search-en-01",
+    "query": "could you look up physical properties such as band gap for MoS2",
+    "expected": "materials.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-search-en-02",
+    "query": "I’m trying to look up physical properties such as band gap for h-BN",
+    "expected": "materials.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-search-en-03",
+    "query": "what I actually need is to look up physical properties such as band gap for InGaN",
+    "expected": "materials.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-search-en-04",
+    "query": "without doing anything else, look up physical properties such as band gap for YSZ",
+    "expected": "materials.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-search-en-05",
+    "query": "for a production check, look up physical properties such as band gap for PZT",
+    "expected": "materials.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-search-ko-01",
+    "query": "MoS2의 밴드갭 같은 물성을 조회 해줄래",
+    "expected": "materials.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-search-ko-02",
+    "query": "내가 필요한 건 h-BN의 밴드갭 같은 물성을 조회 하는 거야",
+    "expected": "materials.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-search-ko-03",
+    "query": "정확히는 InGaN의 밴드갭 같은 물성을 조회 해줘",
+    "expected": "materials.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-search-ko-04",
+    "query": "다른 작업 말고 YSZ의 밴드갭 같은 물성을 조회만 해줘",
+    "expected": "materials.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-search-ko-05",
+    "query": "운영 확인용으로 PZT의 밴드갭 같은 물성을 조회 해줘",
+    "expected": "materials.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-search-es-01",
+    "query": "¿podrías consultar propiedades físicas como la banda prohibida de MoS2?",
+    "expected": "materials.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-search-es-02",
+    "query": "lo que necesito es consultar propiedades físicas como la banda prohibida de h-BN",
+    "expected": "materials.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-search-es-03",
+    "query": "en concreto, consultar propiedades físicas como la banda prohibida de InGaN",
+    "expected": "materials.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-search-es-04",
+    "query": "sin hacer nada más, consultar propiedades físicas como la banda prohibida de YSZ",
+    "expected": "materials.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-search-es-05",
+    "query": "para una comprobación, consultar propiedades físicas como la banda prohibida de PZT",
+    "expected": "materials.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-search-ja-01",
+    "query": "MoS2のバンドギャップなどの物性を検索してもらえる？",
+    "expected": "materials.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-search-ja-02",
+    "query": "必要なのはh-BNのバンドギャップなどの物性を検索ことです",
+    "expected": "materials.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-search-ja-03",
+    "query": "具体的にはInGaNのバンドギャップなどの物性を検索して",
+    "expected": "materials.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-search-ja-04",
+    "query": "他はせずにYSZのバンドギャップなどの物性を検索して",
+    "expected": "materials.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-search-ja-05",
+    "query": "確認用にPZTのバンドギャップなどの物性を検索して",
+    "expected": "materials.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-search-de-01",
+    "query": "kannst du physikalische Eigenschaften wie die Bandlücke von MoS2 nachschlagen",
+    "expected": "materials.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-search-de-02",
+    "query": "ich möchte physikalische Eigenschaften wie die Bandlücke von h-BN nachschlagen",
+    "expected": "materials.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-search-de-03",
+    "query": "genauer gesagt: physikalische Eigenschaften wie die Bandlücke von InGaN nachschlagen",
+    "expected": "materials.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-search-de-04",
+    "query": "ohne etwas anderes zu tun, physikalische Eigenschaften wie die Bandlücke von YSZ nachschlagen",
+    "expected": "materials.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-search-de-05",
+    "query": "für eine Prüfung: physikalische Eigenschaften wie die Bandlücke von PZT nachschlagen",
+    "expected": "materials.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-search-mixed-01",
+    "query": "can you MoS2 band gap 같은 material property를 lookup 해줘",
+    "expected": "materials.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-search-mixed-02",
+    "query": "내가 need하는 건 h-BN band gap 같은 material property를 lookup",
+    "expected": "materials.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-search-mixed-03",
+    "query": "정확히 InGaN band gap 같은 material property를 lookup 부탁",
+    "expected": "materials.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-search-mixed-04",
+    "query": "nothing else, YSZ band gap 같은 material property를 lookup만",
+    "expected": "materials.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-search-mixed-05",
+    "query": "production check로 PZT band gap 같은 material property를 lookup",
+    "expected": "materials.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-structure-en-01",
+    "query": "could you fetch lattice and crystal structure data for MoS2",
+    "expected": "materials.structure",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-structure-en-02",
+    "query": "I’m trying to fetch lattice and crystal structure data for h-BN",
+    "expected": "materials.structure",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-structure-en-03",
+    "query": "what I actually need is to fetch lattice and crystal structure data for InGaN",
+    "expected": "materials.structure",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-structure-en-04",
+    "query": "without doing anything else, fetch lattice and crystal structure data for YSZ",
+    "expected": "materials.structure",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-structure-en-05",
+    "query": "for a production check, fetch lattice and crystal structure data for PZT",
+    "expected": "materials.structure",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-structure-ko-01",
+    "query": "MoS2의 격자와 결정구조 데이터를 조회 해줄래",
+    "expected": "materials.structure",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-structure-ko-02",
+    "query": "내가 필요한 건 h-BN의 격자와 결정구조 데이터를 조회 하는 거야",
+    "expected": "materials.structure",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-structure-ko-03",
+    "query": "정확히는 InGaN의 격자와 결정구조 데이터를 조회 해줘",
+    "expected": "materials.structure",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-structure-ko-04",
+    "query": "다른 작업 말고 YSZ의 격자와 결정구조 데이터를 조회만 해줘",
+    "expected": "materials.structure",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-structure-ko-05",
+    "query": "운영 확인용으로 PZT의 격자와 결정구조 데이터를 조회 해줘",
+    "expected": "materials.structure",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-structure-es-01",
+    "query": "¿podrías obtener red y estructura cristalina de MoS2?",
+    "expected": "materials.structure",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-structure-es-02",
+    "query": "lo que necesito es obtener red y estructura cristalina de h-BN",
+    "expected": "materials.structure",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-structure-es-03",
+    "query": "en concreto, obtener red y estructura cristalina de InGaN",
+    "expected": "materials.structure",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-structure-es-04",
+    "query": "sin hacer nada más, obtener red y estructura cristalina de YSZ",
+    "expected": "materials.structure",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-structure-es-05",
+    "query": "para una comprobación, obtener red y estructura cristalina de PZT",
+    "expected": "materials.structure",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-structure-ja-01",
+    "query": "MoS2の格子と結晶構造データを取得してもらえる？",
+    "expected": "materials.structure",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-structure-ja-02",
+    "query": "必要なのはh-BNの格子と結晶構造データを取得ことです",
+    "expected": "materials.structure",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-structure-ja-03",
+    "query": "具体的にはInGaNの格子と結晶構造データを取得して",
+    "expected": "materials.structure",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-structure-ja-04",
+    "query": "他はせずにYSZの格子と結晶構造データを取得して",
+    "expected": "materials.structure",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-structure-ja-05",
+    "query": "確認用にPZTの格子と結晶構造データを取得して",
+    "expected": "materials.structure",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-structure-de-01",
+    "query": "kannst du Gitter- und Kristallstrukturdaten für MoS2 abrufen",
+    "expected": "materials.structure",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-structure-de-02",
+    "query": "ich möchte Gitter- und Kristallstrukturdaten für h-BN abrufen",
+    "expected": "materials.structure",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-structure-de-03",
+    "query": "genauer gesagt: Gitter- und Kristallstrukturdaten für InGaN abrufen",
+    "expected": "materials.structure",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-structure-de-04",
+    "query": "ohne etwas anderes zu tun, Gitter- und Kristallstrukturdaten für YSZ abrufen",
+    "expected": "materials.structure",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-structure-de-05",
+    "query": "für eine Prüfung: Gitter- und Kristallstrukturdaten für PZT abrufen",
+    "expected": "materials.structure",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-structure-mixed-01",
+    "query": "can you MoS2 lattice랑 crystal structure를 fetch 해줘",
+    "expected": "materials.structure",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-structure-mixed-02",
+    "query": "내가 need하는 건 h-BN lattice랑 crystal structure를 fetch",
+    "expected": "materials.structure",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-structure-mixed-03",
+    "query": "정확히 InGaN lattice랑 crystal structure를 fetch 부탁",
+    "expected": "materials.structure",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-structure-mixed-04",
+    "query": "nothing else, YSZ lattice랑 crystal structure를 fetch만",
+    "expected": "materials.structure",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-structure-mixed-05",
+    "query": "production check로 PZT lattice랑 crystal structure를 fetch",
+    "expected": "materials.structure",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-search-en-01",
+    "query": "could you find scholarly articles on tool-use safety",
+    "expected": "papers.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-search-en-02",
+    "query": "I’m trying to find scholarly articles on sodium-ion batteries",
+    "expected": "papers.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-search-en-03",
+    "query": "what I actually need is to find scholarly articles on retrieval evaluation",
+    "expected": "papers.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-search-en-04",
+    "query": "without doing anything else, find scholarly articles on AI agents for chemistry",
+    "expected": "papers.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-search-en-05",
+    "query": "for a production check, find scholarly articles on multilingual embeddings",
+    "expected": "papers.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-search-ko-01",
+    "query": "tool-use safety 주제의 학술 논문을 검색 해줄래",
+    "expected": "papers.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-search-ko-02",
+    "query": "내가 필요한 건 sodium-ion batteries 주제의 학술 논문을 검색 하는 거야",
+    "expected": "papers.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-search-ko-03",
+    "query": "정확히는 retrieval evaluation 주제의 학술 논문을 검색 해줘",
+    "expected": "papers.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-search-ko-04",
+    "query": "다른 작업 말고 AI agents for chemistry 주제의 학술 논문을 검색만 해줘",
+    "expected": "papers.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-search-ko-05",
+    "query": "운영 확인용으로 multilingual embeddings 주제의 학술 논문을 검색 해줘",
+    "expected": "papers.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-search-es-01",
+    "query": "¿podrías buscar artículos académicos sobre tool-use safety?",
+    "expected": "papers.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-search-es-02",
+    "query": "lo que necesito es buscar artículos académicos sobre sodium-ion batteries",
+    "expected": "papers.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-search-es-03",
+    "query": "en concreto, buscar artículos académicos sobre retrieval evaluation",
+    "expected": "papers.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-search-es-04",
+    "query": "sin hacer nada más, buscar artículos académicos sobre AI agents for chemistry",
+    "expected": "papers.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-search-es-05",
+    "query": "para una comprobación, buscar artículos académicos sobre multilingual embeddings",
+    "expected": "papers.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-search-ja-01",
+    "query": "tool-use safetyに関する学術論文を探すしてもらえる？",
+    "expected": "papers.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-search-ja-02",
+    "query": "必要なのはsodium-ion batteriesに関する学術論文を探すことです",
+    "expected": "papers.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-search-ja-03",
+    "query": "具体的にはretrieval evaluationに関する学術論文を探すして",
+    "expected": "papers.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-search-ja-04",
+    "query": "他はせずにAI agents for chemistryに関する学術論文を探すして",
+    "expected": "papers.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-search-ja-05",
+    "query": "確認用にmultilingual embeddingsに関する学術論文を探すして",
+    "expected": "papers.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-search-de-01",
+    "query": "kannst du wissenschaftliche Artikel zu tool-use safety finden",
+    "expected": "papers.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-search-de-02",
+    "query": "ich möchte wissenschaftliche Artikel zu sodium-ion batteries finden",
+    "expected": "papers.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-search-de-03",
+    "query": "genauer gesagt: wissenschaftliche Artikel zu retrieval evaluation finden",
+    "expected": "papers.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-search-de-04",
+    "query": "ohne etwas anderes zu tun, wissenschaftliche Artikel zu AI agents for chemistry finden",
+    "expected": "papers.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-search-de-05",
+    "query": "für eine Prüfung: wissenschaftliche Artikel zu multilingual embeddings finden",
+    "expected": "papers.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-search-mixed-01",
+    "query": "can you tool-use safety 관련 scholarly papers를 find 해줘",
+    "expected": "papers.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-search-mixed-02",
+    "query": "내가 need하는 건 sodium-ion batteries 관련 scholarly papers를 find",
+    "expected": "papers.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-search-mixed-03",
+    "query": "정확히 retrieval evaluation 관련 scholarly papers를 find 부탁",
+    "expected": "papers.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-search-mixed-04",
+    "query": "nothing else, AI agents for chemistry 관련 scholarly papers를 find만",
+    "expected": "papers.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-search-mixed-05",
+    "query": "production check로 multilingual embeddings 관련 scholarly papers를 find",
+    "expected": "papers.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-citations-en-01",
+    "query": "could you identify works citing 10.5555/alpha.2026",
+    "expected": "papers.citations",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-citations-en-02",
+    "query": "I’m trying to identify works citing 10.5555/beta.2026",
+    "expected": "papers.citations",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-citations-en-03",
+    "query": "what I actually need is to identify works citing 10.5555/gamma.2026",
+    "expected": "papers.citations",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-citations-en-04",
+    "query": "without doing anything else, identify works citing 10.5555/delta.2026",
+    "expected": "papers.citations",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-citations-en-05",
+    "query": "for a production check, identify works citing 10.5555/epsilon.2026",
+    "expected": "papers.citations",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-citations-ko-01",
+    "query": "10.5555/alpha.2026를 인용한 연구를 찾기 해줄래",
+    "expected": "papers.citations",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-citations-ko-02",
+    "query": "내가 필요한 건 10.5555/beta.2026를 인용한 연구를 찾기 하는 거야",
+    "expected": "papers.citations",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-citations-ko-03",
+    "query": "정확히는 10.5555/gamma.2026를 인용한 연구를 찾기 해줘",
+    "expected": "papers.citations",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-citations-ko-04",
+    "query": "다른 작업 말고 10.5555/delta.2026를 인용한 연구를 찾기만 해줘",
+    "expected": "papers.citations",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-citations-ko-05",
+    "query": "운영 확인용으로 10.5555/epsilon.2026를 인용한 연구를 찾기 해줘",
+    "expected": "papers.citations",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-citations-es-01",
+    "query": "¿podrías identificar trabajos que citan 10.5555/alpha.2026?",
+    "expected": "papers.citations",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-citations-es-02",
+    "query": "lo que necesito es identificar trabajos que citan 10.5555/beta.2026",
+    "expected": "papers.citations",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-citations-es-03",
+    "query": "en concreto, identificar trabajos que citan 10.5555/gamma.2026",
+    "expected": "papers.citations",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-citations-es-04",
+    "query": "sin hacer nada más, identificar trabajos que citan 10.5555/delta.2026",
+    "expected": "papers.citations",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-citations-es-05",
+    "query": "para una comprobación, identificar trabajos que citan 10.5555/epsilon.2026",
+    "expected": "papers.citations",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-citations-ja-01",
+    "query": "10.5555/alpha.2026を引用している研究を特定してもらえる？",
+    "expected": "papers.citations",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-citations-ja-02",
+    "query": "必要なのは10.5555/beta.2026を引用している研究を特定ことです",
+    "expected": "papers.citations",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-citations-ja-03",
+    "query": "具体的には10.5555/gamma.2026を引用している研究を特定して",
+    "expected": "papers.citations",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-citations-ja-04",
+    "query": "他はせずに10.5555/delta.2026を引用している研究を特定して",
+    "expected": "papers.citations",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-citations-ja-05",
+    "query": "確認用に10.5555/epsilon.2026を引用している研究を特定して",
+    "expected": "papers.citations",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-citations-de-01",
+    "query": "kannst du Arbeiten ermitteln, die 10.5555/alpha.2026 zitieren",
+    "expected": "papers.citations",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-citations-de-02",
+    "query": "ich möchte Arbeiten ermitteln, die 10.5555/beta.2026 zitieren",
+    "expected": "papers.citations",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-citations-de-03",
+    "query": "genauer gesagt: Arbeiten ermitteln, die 10.5555/gamma.2026 zitieren",
+    "expected": "papers.citations",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-citations-de-04",
+    "query": "ohne etwas anderes zu tun, Arbeiten ermitteln, die 10.5555/delta.2026 zitieren",
+    "expected": "papers.citations",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-citations-de-05",
+    "query": "für eine Prüfung: Arbeiten ermitteln, die 10.5555/epsilon.2026 zitieren",
+    "expected": "papers.citations",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-citations-mixed-01",
+    "query": "can you 10.5555/alpha.2026를 citing한 works를 identify 해줘",
+    "expected": "papers.citations",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-citations-mixed-02",
+    "query": "내가 need하는 건 10.5555/beta.2026를 citing한 works를 identify",
+    "expected": "papers.citations",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-citations-mixed-03",
+    "query": "정확히 10.5555/gamma.2026를 citing한 works를 identify 부탁",
+    "expected": "papers.citations",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-citations-mixed-04",
+    "query": "nothing else, 10.5555/delta.2026를 citing한 works를 identify만",
+    "expected": "papers.citations",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-citations-mixed-05",
+    "query": "production check로 10.5555/epsilon.2026를 citing한 works를 identify",
+    "expected": "papers.citations",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-quote-en-01",
+    "query": "could you retrieve the current market price for ORCL",
+    "expected": "finance.quote",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-quote-en-02",
+    "query": "I’m trying to retrieve the current market price for NFLX",
+    "expected": "finance.quote",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-quote-en-03",
+    "query": "what I actually need is to retrieve the current market price for IBM",
+    "expected": "finance.quote",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-quote-en-04",
+    "query": "without doing anything else, retrieve the current market price for QCOM",
+    "expected": "finance.quote",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-quote-en-05",
+    "query": "for a production check, retrieve the current market price for TSM",
+    "expected": "finance.quote",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-quote-ko-01",
+    "query": "ORCL의 현재 시장 가격을 조회 해줄래",
+    "expected": "finance.quote",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-quote-ko-02",
+    "query": "내가 필요한 건 NFLX의 현재 시장 가격을 조회 하는 거야",
+    "expected": "finance.quote",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-quote-ko-03",
+    "query": "정확히는 IBM의 현재 시장 가격을 조회 해줘",
+    "expected": "finance.quote",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-quote-ko-04",
+    "query": "다른 작업 말고 QCOM의 현재 시장 가격을 조회만 해줘",
+    "expected": "finance.quote",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-quote-ko-05",
+    "query": "운영 확인용으로 TSM의 현재 시장 가격을 조회 해줘",
+    "expected": "finance.quote",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-quote-es-01",
+    "query": "¿podrías obtener el precio de mercado actual de ORCL?",
+    "expected": "finance.quote",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-quote-es-02",
+    "query": "lo que necesito es obtener el precio de mercado actual de NFLX",
+    "expected": "finance.quote",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-quote-es-03",
+    "query": "en concreto, obtener el precio de mercado actual de IBM",
+    "expected": "finance.quote",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-quote-es-04",
+    "query": "sin hacer nada más, obtener el precio de mercado actual de QCOM",
+    "expected": "finance.quote",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-quote-es-05",
+    "query": "para una comprobación, obtener el precio de mercado actual de TSM",
+    "expected": "finance.quote",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-quote-ja-01",
+    "query": "ORCLの現在の市場価格を取得してもらえる？",
+    "expected": "finance.quote",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-quote-ja-02",
+    "query": "必要なのはNFLXの現在の市場価格を取得ことです",
+    "expected": "finance.quote",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-quote-ja-03",
+    "query": "具体的にはIBMの現在の市場価格を取得して",
+    "expected": "finance.quote",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-quote-ja-04",
+    "query": "他はせずにQCOMの現在の市場価格を取得して",
+    "expected": "finance.quote",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-quote-ja-05",
+    "query": "確認用にTSMの現在の市場価格を取得して",
+    "expected": "finance.quote",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-quote-de-01",
+    "query": "kannst du den aktuellen Marktpreis von ORCL abrufen",
+    "expected": "finance.quote",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-quote-de-02",
+    "query": "ich möchte den aktuellen Marktpreis von NFLX abrufen",
+    "expected": "finance.quote",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-quote-de-03",
+    "query": "genauer gesagt: den aktuellen Marktpreis von IBM abrufen",
+    "expected": "finance.quote",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-quote-de-04",
+    "query": "ohne etwas anderes zu tun, den aktuellen Marktpreis von QCOM abrufen",
+    "expected": "finance.quote",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-quote-de-05",
+    "query": "für eine Prüfung: den aktuellen Marktpreis von TSM abrufen",
+    "expected": "finance.quote",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-quote-mixed-01",
+    "query": "can you ORCL current market price를 retrieve 해줘",
+    "expected": "finance.quote",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-quote-mixed-02",
+    "query": "내가 need하는 건 NFLX current market price를 retrieve",
+    "expected": "finance.quote",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-quote-mixed-03",
+    "query": "정확히 IBM current market price를 retrieve 부탁",
+    "expected": "finance.quote",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-quote-mixed-04",
+    "query": "nothing else, QCOM current market price를 retrieve만",
+    "expected": "finance.quote",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-quote-mixed-05",
+    "query": "production check로 TSM current market price를 retrieve",
+    "expected": "finance.quote",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-history-en-01",
+    "query": "could you show historical market prices for ORCL over 18 months",
+    "expected": "finance.history",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-history-en-02",
+    "query": "I’m trying to show historical market prices for NFLX since 2025",
+    "expected": "finance.history",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-history-en-03",
+    "query": "what I actually need is to show historical market prices for IBM for 3 years",
+    "expected": "finance.history",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-history-en-04",
+    "query": "without doing anything else, show historical market prices for QCOM this year",
+    "expected": "finance.history",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-history-en-05",
+    "query": "for a production check, show historical market prices for TSM over 6 months",
+    "expected": "finance.history",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-history-ko-01",
+    "query": "ORCL over 18 months의 과거 시장 가격 추이를 조회 해줄래",
+    "expected": "finance.history",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-history-ko-02",
+    "query": "내가 필요한 건 NFLX since 2025의 과거 시장 가격 추이를 조회 하는 거야",
+    "expected": "finance.history",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-history-ko-03",
+    "query": "정확히는 IBM for 3 years의 과거 시장 가격 추이를 조회 해줘",
+    "expected": "finance.history",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-history-ko-04",
+    "query": "다른 작업 말고 QCOM this year의 과거 시장 가격 추이를 조회만 해줘",
+    "expected": "finance.history",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-history-ko-05",
+    "query": "운영 확인용으로 TSM over 6 months의 과거 시장 가격 추이를 조회 해줘",
+    "expected": "finance.history",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-history-es-01",
+    "query": "¿podrías mostrar precios históricos de mercado de ORCL over 18 months?",
+    "expected": "finance.history",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-history-es-02",
+    "query": "lo que necesito es mostrar precios históricos de mercado de NFLX since 2025",
+    "expected": "finance.history",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-history-es-03",
+    "query": "en concreto, mostrar precios históricos de mercado de IBM for 3 years",
+    "expected": "finance.history",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-history-es-04",
+    "query": "sin hacer nada más, mostrar precios históricos de mercado de QCOM this year",
+    "expected": "finance.history",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-history-es-05",
+    "query": "para una comprobación, mostrar precios históricos de mercado de TSM over 6 months",
+    "expected": "finance.history",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-history-ja-01",
+    "query": "ORCL over 18 monthsの過去の市場価格を表示してもらえる？",
+    "expected": "finance.history",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-history-ja-02",
+    "query": "必要なのはNFLX since 2025の過去の市場価格を表示ことです",
+    "expected": "finance.history",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-history-ja-03",
+    "query": "具体的にはIBM for 3 yearsの過去の市場価格を表示して",
+    "expected": "finance.history",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-history-ja-04",
+    "query": "他はせずにQCOM this yearの過去の市場価格を表示して",
+    "expected": "finance.history",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-history-ja-05",
+    "query": "確認用にTSM over 6 monthsの過去の市場価格を表示して",
+    "expected": "finance.history",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-history-de-01",
+    "query": "kannst du historische Marktpreise für ORCL over 18 months anzeigen",
+    "expected": "finance.history",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-history-de-02",
+    "query": "ich möchte historische Marktpreise für NFLX since 2025 anzeigen",
+    "expected": "finance.history",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-history-de-03",
+    "query": "genauer gesagt: historische Marktpreise für IBM for 3 years anzeigen",
+    "expected": "finance.history",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-history-de-04",
+    "query": "ohne etwas anderes zu tun, historische Marktpreise für QCOM this year anzeigen",
+    "expected": "finance.history",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-history-de-05",
+    "query": "für eine Prüfung: historische Marktpreise für TSM over 6 months anzeigen",
+    "expected": "finance.history",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-history-mixed-01",
+    "query": "can you ORCL over 18 months historical market prices를 show 해줘",
+    "expected": "finance.history",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-history-mixed-02",
+    "query": "내가 need하는 건 NFLX since 2025 historical market prices를 show",
+    "expected": "finance.history",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-history-mixed-03",
+    "query": "정확히 IBM for 3 years historical market prices를 show 부탁",
+    "expected": "finance.history",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-history-mixed-04",
+    "query": "nothing else, QCOM this year historical market prices를 show만",
+    "expected": "finance.history",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-history-mixed-05",
+    "query": "production check로 TSM over 6 months historical market prices를 show",
+    "expected": "finance.history",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-list-en-01",
+    "query": "could you show the events already on my calendar for Wednesday morning",
+    "expected": "calendar.list",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-list-en-02",
+    "query": "I’m trying to show the events already on my calendar for next Thursday",
+    "expected": "calendar.list",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-list-en-03",
+    "query": "what I actually need is to show the events already on my calendar for the rest of today",
+    "expected": "calendar.list",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-list-en-04",
+    "query": "without doing anything else, show the events already on my calendar for October 7",
+    "expected": "calendar.list",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-list-en-05",
+    "query": "for a production check, show the events already on my calendar for next month",
+    "expected": "calendar.list",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-list-ko-01",
+    "query": "Wednesday morning에 이미 잡힌 캘린더 일정을 조회 해줄래",
+    "expected": "calendar.list",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-list-ko-02",
+    "query": "내가 필요한 건 next Thursday에 이미 잡힌 캘린더 일정을 조회 하는 거야",
+    "expected": "calendar.list",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-list-ko-03",
+    "query": "정확히는 the rest of today에 이미 잡힌 캘린더 일정을 조회 해줘",
+    "expected": "calendar.list",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-list-ko-04",
+    "query": "다른 작업 말고 October 7에 이미 잡힌 캘린더 일정을 조회만 해줘",
+    "expected": "calendar.list",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-list-ko-05",
+    "query": "운영 확인용으로 next month에 이미 잡힌 캘린더 일정을 조회 해줘",
+    "expected": "calendar.list",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-list-es-01",
+    "query": "¿podrías mostrar los eventos ya programados para Wednesday morning?",
+    "expected": "calendar.list",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-list-es-02",
+    "query": "lo que necesito es mostrar los eventos ya programados para next Thursday",
+    "expected": "calendar.list",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-list-es-03",
+    "query": "en concreto, mostrar los eventos ya programados para the rest of today",
+    "expected": "calendar.list",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-list-es-04",
+    "query": "sin hacer nada más, mostrar los eventos ya programados para October 7",
+    "expected": "calendar.list",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-list-es-05",
+    "query": "para una comprobación, mostrar los eventos ya programados para next month",
+    "expected": "calendar.list",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-list-ja-01",
+    "query": "Wednesday morningに既に入っている予定を表示してもらえる？",
+    "expected": "calendar.list",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-list-ja-02",
+    "query": "必要なのはnext Thursdayに既に入っている予定を表示ことです",
+    "expected": "calendar.list",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-list-ja-03",
+    "query": "具体的にはthe rest of todayに既に入っている予定を表示して",
+    "expected": "calendar.list",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-list-ja-04",
+    "query": "他はせずにOctober 7に既に入っている予定を表示して",
+    "expected": "calendar.list",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-list-ja-05",
+    "query": "確認用にnext monthに既に入っている予定を表示して",
+    "expected": "calendar.list",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-list-de-01",
+    "query": "kannst du bereits eingetragene Termine für Wednesday morning anzeigen",
+    "expected": "calendar.list",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-list-de-02",
+    "query": "ich möchte bereits eingetragene Termine für next Thursday anzeigen",
+    "expected": "calendar.list",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-list-de-03",
+    "query": "genauer gesagt: bereits eingetragene Termine für the rest of today anzeigen",
+    "expected": "calendar.list",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-list-de-04",
+    "query": "ohne etwas anderes zu tun, bereits eingetragene Termine für October 7 anzeigen",
+    "expected": "calendar.list",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-list-de-05",
+    "query": "für eine Prüfung: bereits eingetragene Termine für next month anzeigen",
+    "expected": "calendar.list",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-list-mixed-01",
+    "query": "can you Wednesday morning에 already scheduled calendar events를 show 해줘",
+    "expected": "calendar.list",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-list-mixed-02",
+    "query": "내가 need하는 건 next Thursday에 already scheduled calendar events를 show",
+    "expected": "calendar.list",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-list-mixed-03",
+    "query": "정확히 the rest of today에 already scheduled calendar events를 show 부탁",
+    "expected": "calendar.list",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-list-mixed-04",
+    "query": "nothing else, October 7에 already scheduled calendar events를 show만",
+    "expected": "calendar.list",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-list-mixed-05",
+    "query": "production check로 next month에 already scheduled calendar events를 show",
+    "expected": "calendar.list",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-create-en-01",
+    "query": "could you add a calendar event for architecture review at 10 AM",
+    "expected": "calendar.create",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-create-en-02",
+    "query": "I’m trying to add a calendar event for coffee chat Friday at 4 PM",
+    "expected": "calendar.create",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-create-en-03",
+    "query": "what I actually need is to add a calendar event for sprint retro Tuesday at 3",
+    "expected": "calendar.create",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-create-en-04",
+    "query": "without doing anything else, add a calendar event for lab sync tomorrow at 11",
+    "expected": "calendar.create",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-create-en-05",
+    "query": "for a production check, add a calendar event for budget review next Monday at 2",
+    "expected": "calendar.create",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-create-ko-01",
+    "query": "architecture review at 10 AM 일정을 캘린더에 추가 해줄래",
+    "expected": "calendar.create",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-create-ko-02",
+    "query": "내가 필요한 건 coffee chat Friday at 4 PM 일정을 캘린더에 추가 하는 거야",
+    "expected": "calendar.create",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-create-ko-03",
+    "query": "정확히는 sprint retro Tuesday at 3 일정을 캘린더에 추가 해줘",
+    "expected": "calendar.create",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-create-ko-04",
+    "query": "다른 작업 말고 lab sync tomorrow at 11 일정을 캘린더에 추가만 해줘",
+    "expected": "calendar.create",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-create-ko-05",
+    "query": "운영 확인용으로 budget review next Monday at 2 일정을 캘린더에 추가 해줘",
+    "expected": "calendar.create",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-create-es-01",
+    "query": "¿podrías añadir un evento de calendario para architecture review at 10 AM?",
+    "expected": "calendar.create",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-create-es-02",
+    "query": "lo que necesito es añadir un evento de calendario para coffee chat Friday at 4 PM",
+    "expected": "calendar.create",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-create-es-03",
+    "query": "en concreto, añadir un evento de calendario para sprint retro Tuesday at 3",
+    "expected": "calendar.create",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-create-es-04",
+    "query": "sin hacer nada más, añadir un evento de calendario para lab sync tomorrow at 11",
+    "expected": "calendar.create",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-create-es-05",
+    "query": "para una comprobación, añadir un evento de calendario para budget review next Monday at 2",
+    "expected": "calendar.create",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-create-ja-01",
+    "query": "architecture review at 10 AMの予定をカレンダーに追加してもらえる？",
+    "expected": "calendar.create",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-create-ja-02",
+    "query": "必要なのはcoffee chat Friday at 4 PMの予定をカレンダーに追加ことです",
+    "expected": "calendar.create",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-create-ja-03",
+    "query": "具体的にはsprint retro Tuesday at 3の予定をカレンダーに追加して",
+    "expected": "calendar.create",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-create-ja-04",
+    "query": "他はせずにlab sync tomorrow at 11の予定をカレンダーに追加して",
+    "expected": "calendar.create",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-create-ja-05",
+    "query": "確認用にbudget review next Monday at 2の予定をカレンダーに追加して",
+    "expected": "calendar.create",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-create-de-01",
+    "query": "kannst du einen Kalendereintrag für architecture review at 10 AM hinzufügen",
+    "expected": "calendar.create",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-create-de-02",
+    "query": "ich möchte einen Kalendereintrag für coffee chat Friday at 4 PM hinzufügen",
+    "expected": "calendar.create",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-create-de-03",
+    "query": "genauer gesagt: einen Kalendereintrag für sprint retro Tuesday at 3 hinzufügen",
+    "expected": "calendar.create",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-create-de-04",
+    "query": "ohne etwas anderes zu tun, einen Kalendereintrag für lab sync tomorrow at 11 hinzufügen",
+    "expected": "calendar.create",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-create-de-05",
+    "query": "für eine Prüfung: einen Kalendereintrag für budget review next Monday at 2 hinzufügen",
+    "expected": "calendar.create",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-create-mixed-01",
+    "query": "can you architecture review at 10 AM calendar event를 add 해줘",
+    "expected": "calendar.create",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-create-mixed-02",
+    "query": "내가 need하는 건 coffee chat Friday at 4 PM calendar event를 add",
+    "expected": "calendar.create",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-create-mixed-03",
+    "query": "정확히 sprint retro Tuesday at 3 calendar event를 add 부탁",
+    "expected": "calendar.create",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-create-mixed-04",
+    "query": "nothing else, lab sync tomorrow at 11 calendar event를 add만",
+    "expected": "calendar.create",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-create-mixed-05",
+    "query": "production check로 budget review next Monday at 2 calendar event를 add",
+    "expected": "calendar.create",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-search-en-01",
+    "query": "could you look through support documentation for SSO setup",
+    "expected": "support.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-search-en-02",
+    "query": "I’m trying to look through support documentation for invoice address change",
+    "expected": "support.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-search-en-03",
+    "query": "what I actually need is to look through support documentation for webhook troubleshooting",
+    "expected": "support.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-search-en-04",
+    "query": "without doing anything else, look through support documentation for account recovery",
+    "expected": "support.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-search-en-05",
+    "query": "for a production check, look through support documentation for API rate limits",
+    "expected": "support.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-search-ko-01",
+    "query": "SSO setup 관련 지원 문서를 찾아보기 해줄래",
+    "expected": "support.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-search-ko-02",
+    "query": "내가 필요한 건 invoice address change 관련 지원 문서를 찾아보기 하는 거야",
+    "expected": "support.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-search-ko-03",
+    "query": "정확히는 webhook troubleshooting 관련 지원 문서를 찾아보기 해줘",
+    "expected": "support.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-search-ko-04",
+    "query": "다른 작업 말고 account recovery 관련 지원 문서를 찾아보기만 해줘",
+    "expected": "support.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-search-ko-05",
+    "query": "운영 확인용으로 API rate limits 관련 지원 문서를 찾아보기 해줘",
+    "expected": "support.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-search-es-01",
+    "query": "¿podrías buscar documentación de soporte sobre SSO setup?",
+    "expected": "support.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-search-es-02",
+    "query": "lo que necesito es buscar documentación de soporte sobre invoice address change",
+    "expected": "support.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-search-es-03",
+    "query": "en concreto, buscar documentación de soporte sobre webhook troubleshooting",
+    "expected": "support.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-search-es-04",
+    "query": "sin hacer nada más, buscar documentación de soporte sobre account recovery",
+    "expected": "support.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-search-es-05",
+    "query": "para una comprobación, buscar documentación de soporte sobre API rate limits",
+    "expected": "support.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-search-ja-01",
+    "query": "SSO setupに関するサポート文書を検索してもらえる？",
+    "expected": "support.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-search-ja-02",
+    "query": "必要なのはinvoice address changeに関するサポート文書を検索ことです",
+    "expected": "support.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-search-ja-03",
+    "query": "具体的にはwebhook troubleshootingに関するサポート文書を検索して",
+    "expected": "support.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-search-ja-04",
+    "query": "他はせずにaccount recoveryに関するサポート文書を検索して",
+    "expected": "support.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-search-ja-05",
+    "query": "確認用にAPI rate limitsに関するサポート文書を検索して",
+    "expected": "support.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-search-de-01",
+    "query": "kannst du Support-Dokumentation zu SSO setup durchsuchen",
+    "expected": "support.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-search-de-02",
+    "query": "ich möchte Support-Dokumentation zu invoice address change durchsuchen",
+    "expected": "support.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-search-de-03",
+    "query": "genauer gesagt: Support-Dokumentation zu webhook troubleshooting durchsuchen",
+    "expected": "support.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-search-de-04",
+    "query": "ohne etwas anderes zu tun, Support-Dokumentation zu account recovery durchsuchen",
+    "expected": "support.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-search-de-05",
+    "query": "für eine Prüfung: Support-Dokumentation zu API rate limits durchsuchen",
+    "expected": "support.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-search-mixed-01",
+    "query": "can you SSO setup 관련 support docs를 lookup 해줘",
+    "expected": "support.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-search-mixed-02",
+    "query": "내가 need하는 건 invoice address change 관련 support docs를 lookup",
+    "expected": "support.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-search-mixed-03",
+    "query": "정확히 webhook troubleshooting 관련 support docs를 lookup 부탁",
+    "expected": "support.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-search-mixed-04",
+    "query": "nothing else, account recovery 관련 support docs를 lookup만",
+    "expected": "support.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-search-mixed-05",
+    "query": "production check로 API rate limits 관련 support docs를 lookup",
+    "expected": "support.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-create-ticket-en-01",
+    "query": "could you open a support ticket because SSO fails after login",
+    "expected": "support.create_ticket",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-create-ticket-en-02",
+    "query": "I’m trying to open a support ticket because invoice address is incorrect",
+    "expected": "support.create_ticket",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-create-ticket-en-03",
+    "query": "what I actually need is to open a support ticket because webhook events are missing",
+    "expected": "support.create_ticket",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-create-ticket-en-04",
+    "query": "without doing anything else, open a support ticket because account recovery is blocked",
+    "expected": "support.create_ticket",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-create-ticket-en-05",
+    "query": "for a production check, open a support ticket because API requests are being rejected",
+    "expected": "support.create_ticket",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-create-ticket-ko-01",
+    "query": "SSO fails after login 문제로 지원 티켓을 생성 해줄래",
+    "expected": "support.create_ticket",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-create-ticket-ko-02",
+    "query": "내가 필요한 건 invoice address is incorrect 문제로 지원 티켓을 생성 하는 거야",
+    "expected": "support.create_ticket",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-create-ticket-ko-03",
+    "query": "정확히는 webhook events are missing 문제로 지원 티켓을 생성 해줘",
+    "expected": "support.create_ticket",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-create-ticket-ko-04",
+    "query": "다른 작업 말고 account recovery is blocked 문제로 지원 티켓을 생성만 해줘",
+    "expected": "support.create_ticket",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-create-ticket-ko-05",
+    "query": "운영 확인용으로 API requests are being rejected 문제로 지원 티켓을 생성 해줘",
+    "expected": "support.create_ticket",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-create-ticket-es-01",
+    "query": "¿podrías abrir un ticket de soporte porque SSO fails after login?",
+    "expected": "support.create_ticket",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-create-ticket-es-02",
+    "query": "lo que necesito es abrir un ticket de soporte porque invoice address is incorrect",
+    "expected": "support.create_ticket",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-create-ticket-es-03",
+    "query": "en concreto, abrir un ticket de soporte porque webhook events are missing",
+    "expected": "support.create_ticket",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-create-ticket-es-04",
+    "query": "sin hacer nada más, abrir un ticket de soporte porque account recovery is blocked",
+    "expected": "support.create_ticket",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-create-ticket-es-05",
+    "query": "para una comprobación, abrir un ticket de soporte porque API requests are being rejected",
+    "expected": "support.create_ticket",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-create-ticket-ja-01",
+    "query": "SSO fails after loginの問題でサポートチケットを作成してもらえる？",
+    "expected": "support.create_ticket",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-create-ticket-ja-02",
+    "query": "必要なのはinvoice address is incorrectの問題でサポートチケットを作成ことです",
+    "expected": "support.create_ticket",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-create-ticket-ja-03",
+    "query": "具体的にはwebhook events are missingの問題でサポートチケットを作成して",
+    "expected": "support.create_ticket",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-create-ticket-ja-04",
+    "query": "他はせずにaccount recovery is blockedの問題でサポートチケットを作成して",
+    "expected": "support.create_ticket",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-create-ticket-ja-05",
+    "query": "確認用にAPI requests are being rejectedの問題でサポートチケットを作成して",
+    "expected": "support.create_ticket",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-create-ticket-de-01",
+    "query": "kannst du ein Support-Ticket eröffnen, weil SSO fails after login",
+    "expected": "support.create_ticket",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-create-ticket-de-02",
+    "query": "ich möchte ein Support-Ticket eröffnen, weil invoice address is incorrect",
+    "expected": "support.create_ticket",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-create-ticket-de-03",
+    "query": "genauer gesagt: ein Support-Ticket eröffnen, weil webhook events are missing",
+    "expected": "support.create_ticket",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-create-ticket-de-04",
+    "query": "ohne etwas anderes zu tun, ein Support-Ticket eröffnen, weil account recovery is blocked",
+    "expected": "support.create_ticket",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-create-ticket-de-05",
+    "query": "für eine Prüfung: ein Support-Ticket eröffnen, weil API requests are being rejected",
+    "expected": "support.create_ticket",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-create-ticket-mixed-01",
+    "query": "can you SSO fails after login 때문에 support ticket을 open 해줘",
+    "expected": "support.create_ticket",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-create-ticket-mixed-02",
+    "query": "내가 need하는 건 invoice address is incorrect 때문에 support ticket을 open",
+    "expected": "support.create_ticket",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-create-ticket-mixed-03",
+    "query": "정확히 webhook events are missing 때문에 support ticket을 open 부탁",
+    "expected": "support.create_ticket",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-create-ticket-mixed-04",
+    "query": "nothing else, account recovery is blocked 때문에 support ticket을 open만",
+    "expected": "support.create_ticket",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-create-ticket-mixed-05",
+    "query": "production check로 API requests are being rejected 때문에 support ticket을 open",
+    "expected": "support.create_ticket",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-search-en-01",
+    "query": "could you read the available stock count for SKU-X11",
+    "expected": "inventory.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-search-en-02",
+    "query": "I’m trying to read the available stock count for SKU-Y22",
+    "expected": "inventory.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-search-en-03",
+    "query": "what I actually need is to read the available stock count for SKU-Z33",
+    "expected": "inventory.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-search-en-04",
+    "query": "without doing anything else, read the available stock count for SKU-M44",
+    "expected": "inventory.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-search-en-05",
+    "query": "for a production check, read the available stock count for SKU-N55",
+    "expected": "inventory.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-search-ko-01",
+    "query": "SKU-X11의 가용 재고 수량을 조회 해줄래",
+    "expected": "inventory.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-search-ko-02",
+    "query": "내가 필요한 건 SKU-Y22의 가용 재고 수량을 조회 하는 거야",
+    "expected": "inventory.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-search-ko-03",
+    "query": "정확히는 SKU-Z33의 가용 재고 수량을 조회 해줘",
+    "expected": "inventory.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-search-ko-04",
+    "query": "다른 작업 말고 SKU-M44의 가용 재고 수량을 조회만 해줘",
+    "expected": "inventory.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-search-ko-05",
+    "query": "운영 확인용으로 SKU-N55의 가용 재고 수량을 조회 해줘",
+    "expected": "inventory.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-search-es-01",
+    "query": "¿podrías consultar el stock disponible de SKU-X11?",
+    "expected": "inventory.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-search-es-02",
+    "query": "lo que necesito es consultar el stock disponible de SKU-Y22",
+    "expected": "inventory.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-search-es-03",
+    "query": "en concreto, consultar el stock disponible de SKU-Z33",
+    "expected": "inventory.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-search-es-04",
+    "query": "sin hacer nada más, consultar el stock disponible de SKU-M44",
+    "expected": "inventory.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-search-es-05",
+    "query": "para una comprobación, consultar el stock disponible de SKU-N55",
+    "expected": "inventory.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-search-ja-01",
+    "query": "SKU-X11の利用可能在庫数を確認してもらえる？",
+    "expected": "inventory.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-search-ja-02",
+    "query": "必要なのはSKU-Y22の利用可能在庫数を確認ことです",
+    "expected": "inventory.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-search-ja-03",
+    "query": "具体的にはSKU-Z33の利用可能在庫数を確認して",
+    "expected": "inventory.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-search-ja-04",
+    "query": "他はせずにSKU-M44の利用可能在庫数を確認して",
+    "expected": "inventory.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-search-ja-05",
+    "query": "確認用にSKU-N55の利用可能在庫数を確認して",
+    "expected": "inventory.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-search-de-01",
+    "query": "kannst du den verfügbaren Bestand für SKU-X11 abfragen",
+    "expected": "inventory.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-search-de-02",
+    "query": "ich möchte den verfügbaren Bestand für SKU-Y22 abfragen",
+    "expected": "inventory.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-search-de-03",
+    "query": "genauer gesagt: den verfügbaren Bestand für SKU-Z33 abfragen",
+    "expected": "inventory.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-search-de-04",
+    "query": "ohne etwas anderes zu tun, den verfügbaren Bestand für SKU-M44 abfragen",
+    "expected": "inventory.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-search-de-05",
+    "query": "für eine Prüfung: den verfügbaren Bestand für SKU-N55 abfragen",
+    "expected": "inventory.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-search-mixed-01",
+    "query": "can you SKU-X11 available stock count를 read 해줘",
+    "expected": "inventory.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-search-mixed-02",
+    "query": "내가 need하는 건 SKU-Y22 available stock count를 read",
+    "expected": "inventory.search",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-search-mixed-03",
+    "query": "정확히 SKU-Z33 available stock count를 read 부탁",
+    "expected": "inventory.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-search-mixed-04",
+    "query": "nothing else, SKU-M44 available stock count를 read만",
+    "expected": "inventory.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-search-mixed-05",
+    "query": "production check로 SKU-N55 available stock count를 read",
+    "expected": "inventory.search",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-update-en-01",
+    "query": "could you set the inventory quantity for SKU-X11 to 9",
+    "expected": "inventory.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-update-en-02",
+    "query": "I’m trying to set the inventory quantity for SKU-Y22 to 21",
+    "expected": "inventory.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-update-en-03",
+    "query": "what I actually need is to set the inventory quantity for SKU-Z33 to 3",
+    "expected": "inventory.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-update-en-04",
+    "query": "without doing anything else, set the inventory quantity for SKU-M44 to 48",
+    "expected": "inventory.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-update-en-05",
+    "query": "for a production check, set the inventory quantity for SKU-N55 to 16",
+    "expected": "inventory.update",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-update-ko-01",
+    "query": "재고 수량을 SKU-X11 to 9로 설정 해줄래",
+    "expected": "inventory.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-update-ko-02",
+    "query": "내가 필요한 건 재고 수량을 SKU-Y22 to 21로 설정 하는 거야",
+    "expected": "inventory.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-update-ko-03",
+    "query": "정확히는 재고 수량을 SKU-Z33 to 3로 설정 해줘",
+    "expected": "inventory.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-update-ko-04",
+    "query": "다른 작업 말고 재고 수량을 SKU-M44 to 48로 설정만 해줘",
+    "expected": "inventory.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-update-ko-05",
+    "query": "운영 확인용으로 재고 수량을 SKU-N55 to 16로 설정 해줘",
+    "expected": "inventory.update",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-update-es-01",
+    "query": "¿podrías establecer la cantidad de inventario de SKU-X11 to 9?",
+    "expected": "inventory.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-update-es-02",
+    "query": "lo que necesito es establecer la cantidad de inventario de SKU-Y22 to 21",
+    "expected": "inventory.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-update-es-03",
+    "query": "en concreto, establecer la cantidad de inventario de SKU-Z33 to 3",
+    "expected": "inventory.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-update-es-04",
+    "query": "sin hacer nada más, establecer la cantidad de inventario de SKU-M44 to 48",
+    "expected": "inventory.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-update-es-05",
+    "query": "para una comprobación, establecer la cantidad de inventario de SKU-N55 to 16",
+    "expected": "inventory.update",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-update-ja-01",
+    "query": "在庫数量をSKU-X11 to 9に設定してもらえる？",
+    "expected": "inventory.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-update-ja-02",
+    "query": "必要なのは在庫数量をSKU-Y22 to 21に設定ことです",
+    "expected": "inventory.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-update-ja-03",
+    "query": "具体的には在庫数量をSKU-Z33 to 3に設定して",
+    "expected": "inventory.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-update-ja-04",
+    "query": "他はせずに在庫数量をSKU-M44 to 48に設定して",
+    "expected": "inventory.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-update-ja-05",
+    "query": "確認用に在庫数量をSKU-N55 to 16に設定して",
+    "expected": "inventory.update",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-update-de-01",
+    "query": "kannst du den Lagerbestand für SKU-X11 to 9 setzen",
+    "expected": "inventory.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-update-de-02",
+    "query": "ich möchte den Lagerbestand für SKU-Y22 to 21 setzen",
+    "expected": "inventory.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-update-de-03",
+    "query": "genauer gesagt: den Lagerbestand für SKU-Z33 to 3 setzen",
+    "expected": "inventory.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-update-de-04",
+    "query": "ohne etwas anderes zu tun, den Lagerbestand für SKU-M44 to 48 setzen",
+    "expected": "inventory.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-update-de-05",
+    "query": "für eine Prüfung: den Lagerbestand für SKU-N55 to 16 setzen",
+    "expected": "inventory.update",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-update-mixed-01",
+    "query": "can you inventory quantity를 SKU-X11 to 9로 set 해줘",
+    "expected": "inventory.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-update-mixed-02",
+    "query": "내가 need하는 건 inventory quantity를 SKU-Y22 to 21로 set",
+    "expected": "inventory.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-update-mixed-03",
+    "query": "정확히 inventory quantity를 SKU-Z33 to 3로 set 부탁",
+    "expected": "inventory.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-update-mixed-04",
+    "query": "nothing else, inventory quantity를 SKU-M44 to 48로 set만",
+    "expected": "inventory.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-update-mixed-05",
+    "query": "production check로 inventory quantity를 SKU-N55 to 16로 set",
+    "expected": "inventory.update",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-lookup-en-01",
+    "query": "could you retrieve the user record for user 314",
+    "expected": "users.lookup",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-lookup-en-02",
+    "query": "I’m trying to retrieve the user record for lee@example.net",
+    "expected": "users.lookup",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-lookup-en-03",
+    "query": "what I actually need is to retrieve the user record for Marta Ruiz",
+    "expected": "users.lookup",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-lookup-en-04",
+    "query": "without doing anything else, retrieve the user record for account 808",
+    "expected": "users.lookup",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-lookup-en-05",
+    "query": "for a production check, retrieve the user record for Kenji Tanaka",
+    "expected": "users.lookup",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-lookup-ko-01",
+    "query": "user 314의 사용자 레코드를 조회 해줄래",
+    "expected": "users.lookup",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-lookup-ko-02",
+    "query": "내가 필요한 건 lee@example.net의 사용자 레코드를 조회 하는 거야",
+    "expected": "users.lookup",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-lookup-ko-03",
+    "query": "정확히는 Marta Ruiz의 사용자 레코드를 조회 해줘",
+    "expected": "users.lookup",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-lookup-ko-04",
+    "query": "다른 작업 말고 account 808의 사용자 레코드를 조회만 해줘",
+    "expected": "users.lookup",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-lookup-ko-05",
+    "query": "운영 확인용으로 Kenji Tanaka의 사용자 레코드를 조회 해줘",
+    "expected": "users.lookup",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-lookup-es-01",
+    "query": "¿podrías obtener el registro de usuario de user 314?",
+    "expected": "users.lookup",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-lookup-es-02",
+    "query": "lo que necesito es obtener el registro de usuario de lee@example.net",
+    "expected": "users.lookup",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-lookup-es-03",
+    "query": "en concreto, obtener el registro de usuario de Marta Ruiz",
+    "expected": "users.lookup",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-lookup-es-04",
+    "query": "sin hacer nada más, obtener el registro de usuario de account 808",
+    "expected": "users.lookup",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-lookup-es-05",
+    "query": "para una comprobación, obtener el registro de usuario de Kenji Tanaka",
+    "expected": "users.lookup",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-lookup-ja-01",
+    "query": "user 314のユーザーレコードを取得してもらえる？",
+    "expected": "users.lookup",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-lookup-ja-02",
+    "query": "必要なのはlee@example.netのユーザーレコードを取得ことです",
+    "expected": "users.lookup",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-lookup-ja-03",
+    "query": "具体的にはMarta Ruizのユーザーレコードを取得して",
+    "expected": "users.lookup",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-lookup-ja-04",
+    "query": "他はせずにaccount 808のユーザーレコードを取得して",
+    "expected": "users.lookup",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-lookup-ja-05",
+    "query": "確認用にKenji Tanakaのユーザーレコードを取得して",
+    "expected": "users.lookup",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-lookup-de-01",
+    "query": "kannst du den Benutzerdatensatz für user 314 abrufen",
+    "expected": "users.lookup",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-lookup-de-02",
+    "query": "ich möchte den Benutzerdatensatz für lee@example.net abrufen",
+    "expected": "users.lookup",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-lookup-de-03",
+    "query": "genauer gesagt: den Benutzerdatensatz für Marta Ruiz abrufen",
+    "expected": "users.lookup",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-lookup-de-04",
+    "query": "ohne etwas anderes zu tun, den Benutzerdatensatz für account 808 abrufen",
+    "expected": "users.lookup",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-lookup-de-05",
+    "query": "für eine Prüfung: den Benutzerdatensatz für Kenji Tanaka abrufen",
+    "expected": "users.lookup",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-lookup-mixed-01",
+    "query": "can you user 314 user record를 retrieve 해줘",
+    "expected": "users.lookup",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-lookup-mixed-02",
+    "query": "내가 need하는 건 lee@example.net user record를 retrieve",
+    "expected": "users.lookup",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-lookup-mixed-03",
+    "query": "정확히 Marta Ruiz user record를 retrieve 부탁",
+    "expected": "users.lookup",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-lookup-mixed-04",
+    "query": "nothing else, account 808 user record를 retrieve만",
+    "expected": "users.lookup",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-lookup-mixed-05",
+    "query": "production check로 Kenji Tanaka user record를 retrieve",
+    "expected": "users.lookup",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-update-en-01",
+    "query": "could you change the user profile field for user 314 timezone",
+    "expected": "users.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-update-en-02",
+    "query": "I’m trying to change the user profile field for lee@example.net display name",
+    "expected": "users.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-update-en-03",
+    "query": "what I actually need is to change the user profile field for Marta Ruiz department",
+    "expected": "users.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-update-en-04",
+    "query": "without doing anything else, change the user profile field for account 808 locale",
+    "expected": "users.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-update-en-05",
+    "query": "for a production check, change the user profile field for Kenji Tanaka title",
+    "expected": "users.update",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-update-ko-01",
+    "query": "user 314 timezone 사용자 프로필 필드를 변경 해줄래",
+    "expected": "users.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-update-ko-02",
+    "query": "내가 필요한 건 lee@example.net display name 사용자 프로필 필드를 변경 하는 거야",
+    "expected": "users.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-update-ko-03",
+    "query": "정확히는 Marta Ruiz department 사용자 프로필 필드를 변경 해줘",
+    "expected": "users.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-update-ko-04",
+    "query": "다른 작업 말고 account 808 locale 사용자 프로필 필드를 변경만 해줘",
+    "expected": "users.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-update-ko-05",
+    "query": "운영 확인용으로 Kenji Tanaka title 사용자 프로필 필드를 변경 해줘",
+    "expected": "users.update",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-update-es-01",
+    "query": "¿podrías cambiar el campo de perfil de usuario de user 314 timezone?",
+    "expected": "users.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-update-es-02",
+    "query": "lo que necesito es cambiar el campo de perfil de usuario de lee@example.net display name",
+    "expected": "users.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-update-es-03",
+    "query": "en concreto, cambiar el campo de perfil de usuario de Marta Ruiz department",
+    "expected": "users.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-update-es-04",
+    "query": "sin hacer nada más, cambiar el campo de perfil de usuario de account 808 locale",
+    "expected": "users.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-update-es-05",
+    "query": "para una comprobación, cambiar el campo de perfil de usuario de Kenji Tanaka title",
+    "expected": "users.update",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-update-ja-01",
+    "query": "user 314 timezoneのユーザープロフィール項目を変更してもらえる？",
+    "expected": "users.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-update-ja-02",
+    "query": "必要なのはlee@example.net display nameのユーザープロフィール項目を変更ことです",
+    "expected": "users.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-update-ja-03",
+    "query": "具体的にはMarta Ruiz departmentのユーザープロフィール項目を変更して",
+    "expected": "users.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-update-ja-04",
+    "query": "他はせずにaccount 808 localeのユーザープロフィール項目を変更して",
+    "expected": "users.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-update-ja-05",
+    "query": "確認用にKenji Tanaka titleのユーザープロフィール項目を変更して",
+    "expected": "users.update",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-update-de-01",
+    "query": "kannst du das Benutzerprofilfeld für user 314 timezone ändern",
+    "expected": "users.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-update-de-02",
+    "query": "ich möchte das Benutzerprofilfeld für lee@example.net display name ändern",
+    "expected": "users.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-update-de-03",
+    "query": "genauer gesagt: das Benutzerprofilfeld für Marta Ruiz department ändern",
+    "expected": "users.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-update-de-04",
+    "query": "ohne etwas anderes zu tun, das Benutzerprofilfeld für account 808 locale ändern",
+    "expected": "users.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-update-de-05",
+    "query": "für eine Prüfung: das Benutzerprofilfeld für Kenji Tanaka title ändern",
+    "expected": "users.update",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-update-mixed-01",
+    "query": "can you user 314 timezone user profile field를 change 해줘",
+    "expected": "users.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-update-mixed-02",
+    "query": "내가 need하는 건 lee@example.net display name user profile field를 change",
+    "expected": "users.update",
+    "category": "novel_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-update-mixed-03",
+    "query": "정확히 Marta Ruiz department user profile field를 change 부탁",
+    "expected": "users.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-update-mixed-04",
+    "query": "nothing else, account 808 locale user profile field를 change만",
+    "expected": "users.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-update-mixed-05",
+    "query": "production check로 Kenji Tanaka title user profile field를 change",
+    "expected": "users.update",
+    "category": "production_style",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-en-01",
+    "query": "could you subscribe me to severe-weather alerts",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-02",
+    "query": "I’m trying to show climate normals from twenty years ago",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-03",
+    "query": "what I actually need is to generate a synthesis protocol for MoS2",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-04",
+    "query": "without doing anything else, download the full PDF of a paper",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-05",
+    "query": "for a production check, place a buy order for ORCL",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-06",
+    "query": "could you cancel an existing calendar event",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-07",
+    "query": "I’m trying to close an existing support ticket",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-08",
+    "query": "what I actually need is to transfer stock between warehouses",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-09",
+    "query": "without doing anything else, delete a user account",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-10",
+    "query": "for a production check, translate a paragraph into French",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-11",
+    "query": "could you subscribe me to severe-weather alerts, only if it is supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-12",
+    "query": "I’m trying to show climate normals from twenty years ago, only if it is supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-13",
+    "query": "what I actually need is to generate a synthesis protocol for MoS2, only if it is supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-14",
+    "query": "without doing anything else, download the full PDF of a paper, only if it is supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-15",
+    "query": "for a production check, place a buy order for ORCL, only if it is supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-16",
+    "query": "could you cancel an existing calendar event, only if it is supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-17",
+    "query": "I’m trying to close an existing support ticket, only if it is supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-18",
+    "query": "what I actually need is to transfer stock between warehouses, only if it is supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-19",
+    "query": "without doing anything else, delete a user account, only if it is supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-20",
+    "query": "for a production check, translate a paragraph into French, only if it is supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-ko-01",
+    "query": "기상 특보 알림을 구독 해줄래",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-02",
+    "query": "내가 필요한 건 20년 전 기후 평년값을 조회 하는 거야",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-03",
+    "query": "정확히는 MoS2 합성 프로토콜을 생성 해줘",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-04",
+    "query": "다른 작업 말고 논문 PDF 원문을 다운로드만 해줘",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-05",
+    "query": "운영 확인용으로 ORCL 매수 주문을 실행 해줘",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-06",
+    "query": "기존 캘린더 일정을 취소 해줄래",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-07",
+    "query": "내가 필요한 건 기존 지원 티켓을 종료 하는 거야",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-08",
+    "query": "정확히는 창고 간 재고를 이동 해줘",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-09",
+    "query": "다른 작업 말고 사용자 계정을 삭제만 해줘",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-10",
+    "query": "운영 확인용으로 문단을 프랑스어로 번역 해줘",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-11",
+    "query": "기상 특보 알림을 구독 해줄래 이 기능이 실제로 지원되는 경우에만",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-12",
+    "query": "내가 필요한 건 20년 전 기후 평년값을 조회 하는 거야 이 기능이 실제로 지원되는 경우에만",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-13",
+    "query": "정확히는 MoS2 합성 프로토콜을 생성 해줘 이 기능이 실제로 지원되는 경우에만",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-14",
+    "query": "다른 작업 말고 논문 PDF 원문을 다운로드만 해줘 이 기능이 실제로 지원되는 경우에만",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-15",
+    "query": "운영 확인용으로 ORCL 매수 주문을 실행 해줘 이 기능이 실제로 지원되는 경우에만",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-16",
+    "query": "기존 캘린더 일정을 취소 해줄래 이 기능이 실제로 지원되는 경우에만",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-17",
+    "query": "내가 필요한 건 기존 지원 티켓을 종료 하는 거야 이 기능이 실제로 지원되는 경우에만",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-18",
+    "query": "정확히는 창고 간 재고를 이동 해줘 이 기능이 실제로 지원되는 경우에만",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-19",
+    "query": "다른 작업 말고 사용자 계정을 삭제만 해줘 이 기능이 실제로 지원되는 경우에만",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-20",
+    "query": "운영 확인용으로 문단을 프랑스어로 번역 해줘 이 기능이 실제로 지원되는 경우에만",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-es-01",
+    "query": "¿podrías suscribirme a alertas meteorológicas graves?",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-02",
+    "query": "lo que necesito es mostrar normales climáticas de hace veinte años",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-03",
+    "query": "en concreto, generar un protocolo de síntesis para MoS2",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-04",
+    "query": "sin hacer nada más, descargar el PDF completo de un artículo",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-05",
+    "query": "para una comprobación, realizar una orden de compra de ORCL",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-06",
+    "query": "¿podrías cancelar un evento existente del calendario?",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-07",
+    "query": "lo que necesito es cerrar un ticket de soporte existente",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-08",
+    "query": "en concreto, transferir inventario entre almacenes",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-09",
+    "query": "sin hacer nada más, eliminar una cuenta de usuario",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-10",
+    "query": "para una comprobación, traducir un párrafo al francés",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-11",
+    "query": "¿podrías suscribirme a alertas meteorológicas graves?, solo si está soportado",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-12",
+    "query": "lo que necesito es mostrar normales climáticas de hace veinte años, solo si está soportado",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-13",
+    "query": "en concreto, generar un protocolo de síntesis para MoS2, solo si está soportado",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-14",
+    "query": "sin hacer nada más, descargar el PDF completo de un artículo, solo si está soportado",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-15",
+    "query": "para una comprobación, realizar una orden de compra de ORCL, solo si está soportado",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-16",
+    "query": "¿podrías cancelar un evento existente del calendario?, solo si está soportado",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-17",
+    "query": "lo que necesito es cerrar un ticket de soporte existente, solo si está soportado",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-18",
+    "query": "en concreto, transferir inventario entre almacenes, solo si está soportado",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-19",
+    "query": "sin hacer nada más, eliminar una cuenta de usuario, solo si está soportado",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-20",
+    "query": "para una comprobación, traducir un párrafo al francés, solo si está soportado",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-ja-01",
+    "query": "気象警報の通知を購読してもらえる？",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-02",
+    "query": "必要なのは20年前の平年気候値を表示ことです",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-03",
+    "query": "具体的にはMoS2の合成手順を生成して",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-04",
+    "query": "他はせずに論文PDF全文をダウンロードして",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-05",
+    "query": "確認用にORCLの買い注文を出すして",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-06",
+    "query": "既存のカレンダー予定をキャンセルしてもらえる？",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-07",
+    "query": "必要なのは既存のサポートチケットを閉じることです",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-08",
+    "query": "具体的には倉庫間で在庫を移動して",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-09",
+    "query": "他はせずにユーザーアカウントを削除して",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-10",
+    "query": "確認用に段落をフランス語に翻訳して",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-11",
+    "query": "気象警報の通知を購読してもらえる？、対応している場合のみ",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-12",
+    "query": "必要なのは20年前の平年気候値を表示ことです、対応している場合のみ",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-13",
+    "query": "具体的にはMoS2の合成手順を生成して、対応している場合のみ",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-14",
+    "query": "他はせずに論文PDF全文をダウンロードして、対応している場合のみ",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-15",
+    "query": "確認用にORCLの買い注文を出すして、対応している場合のみ",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-16",
+    "query": "既存のカレンダー予定をキャンセルしてもらえる？、対応している場合のみ",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-17",
+    "query": "必要なのは既存のサポートチケットを閉じることです、対応している場合のみ",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-18",
+    "query": "具体的には倉庫間で在庫を移動して、対応している場合のみ",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-19",
+    "query": "他はせずにユーザーアカウントを削除して、対応している場合のみ",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-20",
+    "query": "確認用に段落をフランス語に翻訳して、対応している場合のみ",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-de-01",
+    "query": "kannst du Unwetterwarnungen abonnieren",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-02",
+    "query": "ich möchte Klimanormalwerte von vor zwanzig Jahren anzeigen",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-03",
+    "query": "genauer gesagt: ein Syntheseprotokoll für MoS2 erzeugen",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-04",
+    "query": "ohne etwas anderes zu tun, das vollständige PDF eines Papers herunterladen",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-05",
+    "query": "für eine Prüfung: eine Kauforder für ORCL platzieren",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-06",
+    "query": "kannst du einen bestehenden Kalendereintrag absagen",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-07",
+    "query": "ich möchte ein bestehendes Support-Ticket schließen",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-08",
+    "query": "genauer gesagt: Bestand zwischen Lagern verschieben",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-09",
+    "query": "ohne etwas anderes zu tun, ein Benutzerkonto löschen",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-10",
+    "query": "für eine Prüfung: einen Absatz ins Französische übersetzen",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-11",
+    "query": "kannst du Unwetterwarnungen abonnieren, aber nur wenn unterstützt",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-12",
+    "query": "ich möchte Klimanormalwerte von vor zwanzig Jahren anzeigen, aber nur wenn unterstützt",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-13",
+    "query": "genauer gesagt: ein Syntheseprotokoll für MoS2 erzeugen, aber nur wenn unterstützt",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-14",
+    "query": "ohne etwas anderes zu tun, das vollständige PDF eines Papers herunterladen, aber nur wenn unterstützt",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-15",
+    "query": "für eine Prüfung: eine Kauforder für ORCL platzieren, aber nur wenn unterstützt",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-16",
+    "query": "kannst du einen bestehenden Kalendereintrag absagen, aber nur wenn unterstützt",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-17",
+    "query": "ich möchte ein bestehendes Support-Ticket schließen, aber nur wenn unterstützt",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-18",
+    "query": "genauer gesagt: Bestand zwischen Lagern verschieben, aber nur wenn unterstützt",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-19",
+    "query": "ohne etwas anderes zu tun, ein Benutzerkonto löschen, aber nur wenn unterstützt",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-20",
+    "query": "für eine Prüfung: einen Absatz ins Französische übersetzen, aber nur wenn unterstützt",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-mixed-01",
+    "query": "can you severe-weather alert를 subscribe 해줘",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-02",
+    "query": "내가 need하는 건 20년 전 climate normals를 show",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-03",
+    "query": "정확히 MoS2 synthesis protocol을 generate 부탁",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-04",
+    "query": "nothing else, paper full PDF를 download만",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-05",
+    "query": "production check로 ORCL buy order를 place",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-06",
+    "query": "can you existing calendar event를 cancel 해줘",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-07",
+    "query": "내가 need하는 건 support ticket을 close",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-08",
+    "query": "정확히 warehouse 간 inventory를 transfer 부탁",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-09",
+    "query": "nothing else, user account를 delete만",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-10",
+    "query": "production check로 paragraph를 French로 translate",
+    "expected": null,
+    "category": "near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-11",
+    "query": "can you severe-weather alert를 subscribe 해줘 only if supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-12",
+    "query": "내가 need하는 건 20년 전 climate normals를 show only if supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-13",
+    "query": "정확히 MoS2 synthesis protocol을 generate 부탁 only if supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-14",
+    "query": "nothing else, paper full PDF를 download만 only if supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-15",
+    "query": "production check로 ORCL buy order를 place only if supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-16",
+    "query": "can you existing calendar event를 cancel 해줘 only if supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-17",
+    "query": "내가 need하는 건 support ticket을 close only if supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-18",
+    "query": "정확히 warehouse 간 inventory를 transfer 부탁 only if supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-19",
+    "query": "nothing else, user account를 delete만 only if supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-20",
+    "query": "production check로 paragraph를 French로 translate only if supported",
+    "expected": null,
+    "category": "adversarial_near_domain_ood",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  }
+]
