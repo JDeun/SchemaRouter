@@ -342,3 +342,24 @@ The reported 95% Wilson intervals quantify binomial sampling uncertainty for the
 They do not account for model/provider drift, correlated repeated cases, hardware variance, or
 distribution shift. Do not infer provider superiority from the three-case smoke set or from a
 single live run.
+
+
+## Operation-capability fit protocol
+
+Near-domain unsupported operations are evaluated separately from ordinary out-of-domain traffic.
+The v5 operation corpus contains 576 multilingual cases: 288 supported route operations and 288
+near-domain unsupported operations, split into 384 development and 192 calibration cases.
+
+The operation-fit threshold must be selected from v5 development/calibration results only. The
+600-case v6 operation holdout is test-only and remains untouched until the threshold is frozen.
+v6 contains 384 supported route cases, 192 near-domain unsupported-operation negatives, and 24
+ordinary out-of-domain negatives, balanced to 100 cases per language group.
+
+The frozen upstream stack for this experiment is:
+
+- semantic candidate recall top-k = 2;
+- broad capability-fit min similarity = 0.25;
+- same-tool endpoint disambiguation min margin = 0.03.
+
+Only the operation-fit threshold is varied during v5 calibration. Once selected, it must not be
+retuned from v6 results.
