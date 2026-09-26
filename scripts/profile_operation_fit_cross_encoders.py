@@ -4,13 +4,11 @@ import argparse
 import asyncio
 import gc
 import json
-import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 import torch
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from benchmark_decision_routing import (
     BenchmarkCase,
@@ -20,6 +18,8 @@ from benchmark_decision_routing import (
     load_corpus,
     reference_registry,
 )
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
 from schemarouter import EmbeddingDecisionBackend, SchemaPlanner
 from schemarouter.decisions import (
     DecisionRequest,
