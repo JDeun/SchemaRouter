@@ -9,7 +9,7 @@ on:
         type: boolean
         default: false
       run_operation_holdout:
-        description: "Run reserved v11 once after freezing the post-0.8 operation-fit configuration"
+        description: "Consumed v11 holdout; retained as a disabled historical control"
         required: false
         type: boolean
         default: false
@@ -511,8 +511,8 @@ jobs:
       - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
       - run: pip install "sentence-transformers>=3,<6"
       - run: pip install -e ".[dev]"
-      - name: Run frozen operation-fit configuration on reserved v11 operation-generalization holdout
-        env:
+      - name: Consumed v11 holdout is intentionally disabled
+        run: echo "v11 was consumed by run 36239340782; this job is retained only as historical configuration."\n      - name: Run frozen operation-fit configuration on reserved v11 operation-generalization holdout\n        if: ${{ false }}\n        env:
           SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
           SCHEMAROUTER_BENCHMARK_RERANKER_MODEL: "BAAI/bge-reranker-v2-m3"
         run: |
