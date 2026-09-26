@@ -592,3 +592,21 @@ def test_live_inspection_reports_capability_fit_configuration() -> None:
     html = render_dashboard(snapshot.registry, live=snapshot)
     assert "Capability fit" in html
     assert "CallableDecisionBackend" in html
+
+
+def test_live_inspection_reports_endpoint_disambiguation_configuration() -> None:
+    router = SchemaRouter()
+    router.planner.endpoint_disambiguation_backend = CallableDecisionBackend(
+        lambda request: {"selections": [{"option_id": request.options[0].id}]}
+    )
+
+    snapshot = inspect_router(router)
+
+    assert (
+        snapshot.planner.endpoint_disambiguation_backend
+        == "CallableDecisionBackend"
+    )
+
+    html = render_dashboard(snapshot.registry, live=snapshot)
+    assert "Endpoint disambiguation" in html
+    assert "CallableDecisionBackend" in html
