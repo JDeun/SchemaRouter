@@ -84,6 +84,7 @@ class BenchmarkRow:
     error: str | None = None
     failure_stage: str | None = None
     graph_operation_decision: str | None = None
+    graph_semantic_decision: str | None = None
 
 
 SMOKE_CASES = [
@@ -536,6 +537,7 @@ async def benchmark_planner(
                 predicted=predicted,
             )
             graph_operation_decision = _graph_operation_decision(plan.warnings)
+            graph_semantic_decision = _graph_semantic_decision(plan.warnings)
             metadata = getattr(result, "metadata", {}) if result is not None else {}
             input_tokens = metadata.get("input_tokens")
             output_tokens = metadata.get("output_tokens")
@@ -597,6 +599,7 @@ async def benchmark_planner(
                     ),
                     failure_stage=failure_stage,
                     graph_operation_decision=graph_operation_decision,
+                    graph_semantic_decision=graph_semantic_decision,
                 )
             )
         except Exception as exc:  # noqa: BLE001 - benchmark records provider failures.
@@ -628,6 +631,17 @@ def _graph_operation_decision(warnings: list[str]) -> str | None:
     if any("graph operation gate accepted" in warning for warning in lowered):
         return "accept"
     if any("graph operation gate escalated" in warning for warning in lowered):
+        return "escalate"
+    return None
+
+
+def _graph_semantic_decision(warnings: list[str]) -> str | None:
+    lowered = [warning.casefold() for warning in warnings]
+    if any("graph semantic seed rejected" in warning for warning in lowered):
+        return "reject"
+    if any("graph semantic seed accepted" in warning for warning in lowered):
+        return "accept"
+    if any("graph semantic seed escalated" in warning for warning in lowered):
         return "escalate"
     return None
 
@@ -755,6 +769,15 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
         },
         "graph_operation_resolution_rate": (
             sum(row.graph_operation_decision in {"accept", "reject"} for row in rows) / total
+            if total
+            else 0.0
+        ),
+        "graph_semantic_counts": {
+            decision: sum(row.graph_semantic_decision == decision for row in rows)
+            for decision in ("accept", "reject", "escalate")
+        },
+        "graph_semantic_resolution_rate": (
+            sum(row.graph_semantic_decision in {"accept", "reject"} for row in rows) / total
             if total
             else 0.0
         ),
@@ -1074,6 +1097,23 @@ async def main() -> None:
         ),
     )
     parser.add_argument(
+        "--graph-semantic-seed-min-score",
+        type=float,
+        default=None,
+        help=(
+            "Experimental normalized [0,1] minimum score for reusing the semantic-recall "
+            "top candidate as a bounded graph seed. Omit to disable semantic graph acceptance."
+        ),
+    )
+    parser.add_argument(
+        "--graph-semantic-seed-min-margin",
+        type=float,
+        default=0.0,
+        help=(
+            "Minimum normalized score margin between the top two semantic graph seeds."
+        ),
+    )
+    parser.add_argument(
         "--endpoint-disambiguation-embedding-callable",
         help=(
             "Optional embedding callable used only to rerank sibling endpoints within "
@@ -1183,6 +1223,21 @@ async def main() -> None:
     args = parser.parse_args()
     if args.graph_operation_field_paths and not args.graph_operation_gate:
         parser.error("--graph-operation-field-paths requires --graph-operation-gate")
+    if args.graph_semantic_seed_min_score is not None and not args.graph_operation_gate:
+        parser.error("--graph-semantic-seed-min-score requires --graph-operation-gate")
+    if (
+        args.graph_semantic_seed_min_score is not None
+        and not args.candidate_recall_embedding_callable
+    ):
+        parser.error(
+            "--graph-semantic-seed-min-score requires "
+            "--candidate-recall-embedding-callable"
+        )
+    if (
+        args.graph_semantic_seed_min_score is not None
+        and args.candidate_recall_limit < 2
+    ):
+        parser.error("--graph-semantic-seed-min-score requires --candidate-recall-limit >= 2")
 
     if args.repeat < 1:
         raise ValueError("--repeat must be >= 1")
@@ -1287,6 +1342,8 @@ async def main() -> None:
     graph_operation_gate = (
         GraphOperationGate(
             accept_unique_field_path=args.graph_operation_field_paths,
+            semantic_seed_min_score=args.graph_semantic_seed_min_score,
+            semantic_seed_min_margin=args.graph_semantic_seed_min_margin,
         )
         if args.graph_operation_gate
         else None
@@ -1390,6 +1447,8 @@ async def main() -> None:
         if candidate_fit_backend is not None:
             graph_name_parts.append("capability-fit")
         graph_name_parts.append("graph-operation")
+        if args.graph_semantic_seed_min_score is not None:
+            graph_name_parts.append("semantic-seed")
         if operation_fit_backend is not None:
             graph_name_parts.append("selective-operation-fit")
         if endpoint_disambiguation_backend is not None:
@@ -1634,6 +1693,13 @@ async def main() -> None:
                 if operation_fit_backend is not None
                 else "retain_authorized_candidates"
             ),
+        },
+        "graph_semantic_seed": {
+            "enabled": args.graph_semantic_seed_min_score is not None,
+            "min_score": args.graph_semantic_seed_min_score,
+            "min_margin": args.graph_semantic_seed_min_margin,
+            "semantic_source": "reused_candidate_recall",
+            "authority": "accept-existing-graph-path-only",
         },
         "planner_filter": list(args.planner_name),
         "endpoint_disambiguation": {
