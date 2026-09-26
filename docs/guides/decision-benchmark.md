@@ -356,13 +356,10 @@ negatives, and 24 ordinary out-of-domain negatives, balanced to 100 cases per la
 already evaluated with the earlier operation-fit input representation and is therefore regression
 evidence only; it must not be reused for a new untouched generalization claim.
 
-The protected GitHub Actions holdout job now targets v9 and remains deliberately manual-only. It is
-skipped for pull-request runs and ordinary manual benchmark runs. v6 and v7 are consumed regression
-evidence; v8 was accidentally consumed by a calibration diagnostic path and therefore cannot support
-an untouched claim. v9 was reserved before the alias-aware operation-fit implementation was evaluated.
-After the alias-aware v5 threshold was frozen at 0.40, v9 was consumed exactly once on 2026-09-26.
-The permanent workflow guard remains manual/threshold-gated so the consumed corpus cannot be
-silently presented as a fresh holdout.
+Earlier operation holdouts v6 through v10 are consumed evidence. v8 was accidentally consumed by a
+calibration diagnostic path; v9 and v10 were later consumed by explicit one-shot evaluations after
+their configurations were frozen. Consumed corpora may be used only as regression/diagnostic evidence,
+not for fresh generalization claims or threshold/model selection.
 
 The frozen upstream stack for this experiment is:
 
