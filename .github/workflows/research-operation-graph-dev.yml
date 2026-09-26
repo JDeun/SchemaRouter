@@ -9,6 +9,7 @@ on:
       - "src/schemarouter/models.py"
       - "scripts/benchmark_decision_routing.py"
       - "scripts/generate_decision_routing_graph_v1.py"
+      - "scripts/compare_graph_development.py"
       - "benchmarks/operation-fit-0.10-graph-cycle.json"
       - "benchmarks/decision-routing-v15-blind-protocol.json"
       - "tests/test_graph_routing.py"
@@ -65,6 +66,11 @@ jobs:
           BASELINE="keyword+semantic-recall+capability-fit+operation-fit+endpoint-disambiguation"
           GRAPH="keyword+semantic-recall+capability-fit+graph-operation+selective-operation-fit+selective-endpoint-disambiguation"
           python scripts/benchmark_decision_routing.py             --corpus "${OUT}/corpus.json"             --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed             --candidate-recall-limit 2             --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed             --candidate-fit-min-similarity 0.25             --operation-fit-pairwise-callable benchmarks.bge_contrastive:score_pairs             --operation-fit-min-score 0.01             --operation-fit-min-margin 0.0             --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed             --endpoint-disambiguation-min-margin 0.03             --graph-operation-gate             --graph-operation-field-paths             --planner-name "${BASELINE}"             --planner-name "${GRAPH}"             --hardware-label "GitHub Actions ubuntu-latest x64 CPU"             --json-out "${OUT}/field-path-report.json"             --csv-out "${OUT}/field-path-rows.csv"             --html-out "${OUT}/field-path-report.html"
+
+      - name: Apply preregistered development gates
+        run: |
+          OUT="artifacts/operation-graph/development"
+          python scripts/compare_graph_development.py --alias-report "${OUT}/alias-only-report.json" --field-report "${OUT}/field-path-report.json" --out "${OUT}/comparison.json"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
