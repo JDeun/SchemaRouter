@@ -16,6 +16,8 @@ CORPUS_V8 = ROOT / "benchmarks" / "decision-routing-v8-operation-alias-holdout.j
 CORPUS_V9 = ROOT / "benchmarks" / "decision-routing-v9-operation-alias-holdout.json"
 CORPUS_V10 = ROOT / "benchmarks" / "decision-routing-v10-operation-generalization-holdout.json"
 CORPUS_V11 = ROOT / "benchmarks" / "decision-routing-v11-operation-generalization-holdout.json"
+CORPUS_V12 = ROOT / "benchmarks" / "decision-routing-v12-operation-contrastive-holdout.json"
+V12_RESERVATION = ROOT / "benchmarks" / "decision-routing-v12-reservation.json"
 GENERATOR_V2 = ROOT / "scripts" / "generate_decision_routing_v2.py"
 GENERATOR_V3 = ROOT / "scripts" / "generate_decision_routing_v3.py"
 SCRIPT = ROOT / "scripts" / "benchmark_decision_routing.py"
@@ -627,6 +629,75 @@ def test_v5_v6_are_disjoint_from_prior_corpora_and_each_other() -> None:
     assert v5.isdisjoint(prior)
     assert v6.isdisjoint(prior)
     assert v5.isdisjoint(v6)
+
+
+def test_v12_contrastive_holdout_is_reserved_balanced_and_nonoverlapping() -> None:
+    import re
+
+    cases = json.loads(CORPUS_V12.read_text(encoding="utf-8"))
+    prior_cases = []
+    for path in (
+        CORPUS_V2,
+        CORPUS_V3,
+        CORPUS_V4,
+        CORPUS_V5,
+        CORPUS_V6,
+        CORPUS_V7,
+        CORPUS_V8,
+        CORPUS_V9,
+        CORPUS_V10,
+        CORPUS_V11,
+    ):
+        prior_cases.extend(json.loads(path.read_text(encoding="utf-8")))
+
+    assert len(cases) == 600
+    assert len({case["id"] for case in cases}) == 600
+    assert sum(case["expected"] is not None for case in cases) == 384
+    assert sum(
+        case["category"] == "near_domain_unsupported_operation"
+        for case in cases
+    ) == 192
+    assert sum(case["category"] == "out_of_domain" for case in cases) == 24
+    assert all(case["split"] == "test" for case in cases)
+
+    language_counts = {
+        language: sum(case["language"] == language for case in cases)
+        for language in {"de", "en", "es", "ja", "ko", "mixed"}
+    }
+    assert language_counts == {
+        "de": 100,
+        "en": 100,
+        "es": 100,
+        "ja": 100,
+        "ko": 100,
+        "mixed": 100,
+    }
+
+    route_counts = {
+        route: sum(case["expected"] == route for case in cases)
+        for route in {case["expected"] for case in cases if case["expected"]}
+    }
+    assert len(route_counts) == 16
+    assert all(count == 24 for count in route_counts.values())
+
+    def normalized(query: str) -> str:
+        return re.sub(r"[^\w]+", "", query.casefold())
+
+    previous_queries = {normalized(case["query"]) for case in prior_cases}
+    v12_queries = [normalized(case["query"]) for case in cases]
+    assert len(v12_queries) == len(set(v12_queries))
+    assert not (previous_queries & set(v12_queries))
+
+
+def test_v12_reservation_is_unconsumed_and_not_runnable_from_research_workflow() -> None:
+    reservation = json.loads(V12_RESERVATION.read_text(encoding="utf-8"))
+    workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
+
+    assert reservation["status"] == "reserved_unconsumed"
+    assert reservation["tuning_eligible"] is False
+    assert reservation["case_count"] == 600
+    assert "decision-routing-v12-operation-contrastive-holdout.json" not in workflow
+
 
 def test_consumed_v11_is_not_runnable_from_research_workflow() -> None:
     workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")

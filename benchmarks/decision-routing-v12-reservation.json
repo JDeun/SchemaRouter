@@ -1,0 +1,28 @@
+{
+  "version": "v12",
+  "status": "reserved_unconsumed",
+  "purpose": "contrastive operation-fit generalization holdout",
+  "reserved_from_main": "465f6780178a6d8ac275ef1f4d977664d8227656",
+  "case_count": 600,
+  "supported_operation_cases": 384,
+  "near_domain_unsupported_operation_cases": 192,
+  "out_of_domain_cases": 24,
+  "languages": {
+    "en": 100,
+    "ko": 100,
+    "es": 100,
+    "ja": 100,
+    "de": 100,
+    "mixed": 100
+  },
+  "route_count": 16,
+  "cases_per_supported_route": 24,
+  "split": "test",
+  "tuning_eligible": false,
+  "policy": [
+    "Do not inspect benchmark outcomes or use v12 for model, representation, threshold, margin, hybrid-rule, or architecture selection.",
+    "Develop and calibrate the next candidate only on development/calibration evidence (currently v5 plus explicitly diagnostic consumed corpora where documented).",
+    "Freeze the complete candidate configuration before the first v12 execution.",
+    "After the first sanctioned execution, mark v12 consumed and never reuse it for tuning."
+  ]
+}
