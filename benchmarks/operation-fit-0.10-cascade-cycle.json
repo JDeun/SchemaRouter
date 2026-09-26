@@ -52,7 +52,7 @@
         "accept_margin": 0.05
       }
     ],
-    "baseline": "rerun the frozen full beta=1 sibling-contrastive BGE profile on the same v5 dev split for same-runner latency comparison",
+    "baseline": "rerun the frozen full beta=1 sibling-contrastive BGE profile in the same workflow environment; dev jobs may land on different GitHub-hosted runners, so latency deltas require same-job confirmation",
     "completed_run_id": 36248873541,
     "completed_source_revision": "f542fbd92bd55432eff6b508e0577eef1d71866c",
     "result_manifest": "benchmarks/operation-fit-0.10-cascade-dev-result.json",
@@ -71,7 +71,8 @@
     "corpus": "benchmarks/decision-routing-v5-operation-calibration.json",
     "split": "calibration",
     "rule": "freeze the selected dev winner, then run that unchanged candidate once; both quality floors must still pass",
-    "candidate_changes_allowed": false
+    "candidate_changes_allowed": false,
+    "latency_rule": "run the frozen cascade candidate and full-BGE baseline sequentially in one calibration job; promotion requires both quality floors and a lower candidate mean latency in that paired environment"
   },
   "blind_final": {
     "protocol": "benchmarks/decision-routing-v14-blind-protocol.json",
