@@ -414,7 +414,6 @@ jobs:
 
 
   operation-fit-calibration-cpu:
-    if: ${{ false }}  # temporary isolated operation-fit experiment
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -485,6 +484,7 @@ jobs:
 
 
   routing-stage-profile-devcal:
+    if: ${{ false }}  # completed representation comparison
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
