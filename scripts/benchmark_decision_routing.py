@@ -976,6 +976,14 @@ async def main() -> None:
     parser.add_argument("--csv-out", default=None)
     parser.add_argument("--html-out", default=None)
     parser.add_argument(
+        "--planner-name",
+        default=None,
+        help=(
+            "Optional exact planner name to execute after the benchmark stack is built. "
+            "Useful for focused research runs that do not need intermediate planner rows."
+        ),
+    )
+    parser.add_argument(
         "--model-callable",
         help="Optional ModelQueryAnalyzer callable in module:function form.",
     )
@@ -1493,6 +1501,18 @@ async def main() -> None:
             )
         )
 
+    if args.planner_name is not None:
+        matched_planners = [
+            entry for entry in planners
+            if entry[0] == args.planner_name
+        ]
+        if not matched_planners:
+            available = ", ".join(name for name, _, _ in planners)
+            raise ValueError(
+                f"unknown --planner-name {args.planner_name!r}; available: {available}"
+            )
+        planners = matched_planners
+
     try:
         package_version = version("schemarouter")
     except PackageNotFoundError:
@@ -1514,6 +1534,7 @@ async def main() -> None:
         "decision_recall_on_empty": args.decision_recall_on_empty,
         "candidate_abstention": args.candidate_abstention,
         "split_filter": args.split,
+        "planner_filter": args.planner_name,
         "semantic_candidate_recall": {
             "enabled": candidate_recall_backend is not None,
             "embedding_callable": args.candidate_recall_embedding_callable,
