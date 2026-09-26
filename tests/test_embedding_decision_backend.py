@@ -57,6 +57,8 @@ def test_embedding_backend_selects_best_bounded_option() -> None:
     assert 0.99 < result.selections[0].score <= 1.0
     assert result.metadata["provider"] == "embedding-similarity"
     assert result.metadata["dimensions"] == 2
+    assert result.metadata["top_similarity"] > result.metadata["second_similarity"]
+    assert result.metadata["top_margin"] > 0.0
 
 
 def test_embedding_backend_never_forwards_option_metadata() -> None:
@@ -252,6 +254,8 @@ def test_cached_embedding_backend_reuses_static_option_vectors() -> None:
     assert first.metadata["cache_misses"] == 3
     assert second.metadata["cache_hits"] == 3
     assert second.metadata["cache_misses"] == 0
+    assert second.metadata["second_similarity"] is not None
+    assert second.metadata["top_margin"] is not None
 
 
 def test_cached_embedding_backend_invalidates_changed_option_text() -> None:
