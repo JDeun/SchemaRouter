@@ -1,0 +1,63 @@
+{
+  "cycle": "0.10-operation-cascade-v2",
+  "status": "calibration_rejected",
+  "tuning_eligible": false,
+  "workflow_run_id": 36250085815,
+  "source_revision": "dc29721ec0435439a25e8b50c32aae96ad82ea5f",
+  "artifact": {
+    "id": 10909210789,
+    "sha256": "64b6513ce39808aaf51f120b4b12c1edca526256f03ce432eb19a7e3c26c788d"
+  },
+  "data": {
+    "corpus": "benchmarks/decision-routing-v5-operation-calibration.json",
+    "split": "calibration",
+    "cases": 192
+  },
+  "preregistered_requirements": {
+    "supported_operation_floor": 0.6,
+    "near_domain_unsupported_rejection_floor": 0.95,
+    "latency_requirement": "cascade mean latency must be lower than full-BGE in the paired same-job run"
+  },
+  "full_bge_baseline": {
+    "overall_accuracy": 0.8020833333333334,
+    "supported_operation_routed_accuracy": 0.625,
+    "near_domain_unsupported_operation_rejection": 0.9791666666666666,
+    "harmonic_mean": 0.762987012987013,
+    "mean_latency_ms": 572.215,
+    "p50_latency_ms": 601.475,
+    "p95_latency_ms": 698.117,
+    "false_routes": 2,
+    "missed_routes": 28,
+    "wrong_endpoints": 8,
+    "errors": 0
+  },
+  "cascade_candidate": {
+    "name": "r030-a060-m005",
+    "overall_accuracy": 0.78125,
+    "supported_operation_routed_accuracy": 0.6145833333333334,
+    "near_domain_unsupported_operation_rejection": 0.9479166666666666,
+    "harmonic_mean": 0.7456944444444444,
+    "mean_latency_ms": 489.348,
+    "p50_latency_ms": 586.436,
+    "p95_latency_ms": 732.036,
+    "false_routes": 5,
+    "missed_routes": 29,
+    "wrong_endpoints": 8,
+    "errors": 0,
+    "latency_reduction_vs_full_bge_fraction": 0.14481794430415143,
+    "telemetry": {
+      "operation_fit_batches": 356,
+      "reranker": 236,
+      "fast_reject": 94,
+      "fast_accept": 26
+    }
+  },
+  "decision": {
+    "supported_floor_passed": true,
+    "unsupported_rejection_floor_passed": false,
+    "latency_requirement_passed": true,
+    "promotion_status": "rejected_at_calibration",
+    "v14_blind_final_allowed": false,
+    "reason": "The frozen cascade reduced paired mean latency by 14.48% but near-domain unsupported-operation rejection was 94.792%, below the preregistered 95% floor. The candidate is rejected without retuning."
+  }
+}
