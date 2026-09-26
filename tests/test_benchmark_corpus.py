@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "benchmarks" / "decision-routing-v1.json"
 CORPUS_V2 = ROOT / "benchmarks" / "decision-routing-v2.json"
 CORPUS_V3 = ROOT / "benchmarks" / "decision-routing-v3.json"
+CORPUS_V4 = ROOT / "benchmarks" / "decision-routing-v4-operation-holdout.json"
 GENERATOR_V2 = ROOT / "scripts" / "generate_decision_routing_v2.py"
 GENERATOR_V3 = ROOT / "scripts" / "generate_decision_routing_v3.py"
 SCRIPT = ROOT / "scripts" / "benchmark_decision_routing.py"
@@ -421,3 +422,81 @@ def test_v3_generator_reproduces_checked_in_holdout_exactly() -> None:
     checked_in = json.loads(CORPUS_V3.read_text(encoding="utf-8"))
 
     assert generated == checked_in
+
+
+def test_v4_operation_holdout_is_balanced_multilingual_and_test_only() -> None:
+    cases = json.loads(CORPUS_V4.read_text(encoding="utf-8"))
+
+    assert len(cases) == 600
+    assert len({case["id"] for case in cases}) == 600
+
+    route_counts: dict[str, int] = {}
+    language_counts: dict[str, int] = {}
+    category_counts: dict[str, int] = {}
+    for case in cases:
+        route = case["expected"] or "NO_ROUTE"
+        route_counts[route] = route_counts.get(route, 0) + 1
+        language_counts[case["language"]] = language_counts.get(case["language"], 0) + 1
+        category_counts[case["category"]] = category_counts.get(case["category"], 0) + 1
+        assert case["split"] == "test"
+
+    assert route_counts["NO_ROUTE"] == 120
+    assert all(
+        count == 30
+        for route, count in route_counts.items()
+        if route != "NO_ROUTE"
+    )
+    assert language_counts == {
+        "en": 100,
+        "ko": 100,
+        "es": 100,
+        "ja": 100,
+        "de": 100,
+        "mixed": 100,
+    }
+    assert category_counts["near_domain_unsupported_operation"] == 96
+    assert category_counts["out_of_domain"] == 24
+
+
+def test_v4_operation_holdout_has_no_normalized_query_duplicates() -> None:
+    import re
+
+    cases = json.loads(CORPUS_V4.read_text(encoding="utf-8"))
+    normalized = [
+        re.sub(r"[^\w]+", "", case["query"].casefold())
+        for case in cases
+    ]
+
+    assert len(normalized) == len(set(normalized))
+
+
+def test_v4_operation_holdout_loads_against_reference_catalog() -> None:
+    module = _benchmark_module()
+    registry = module.reference_registry()
+    allowed = {
+        f"{tool.key}.{endpoint.name}"
+        for tool in registry.tools()
+        for endpoint in tool.endpoints
+    }
+
+    cases = module.load_corpus(CORPUS_V4, allowed_routes=allowed)
+
+    assert len(cases) == 600
+    assert sum(case.expect_abstain for case in cases) == 120
+    assert all(case.split == "test" for case in cases)
+
+
+def test_v4_operation_holdout_has_no_normalized_overlap_with_v2_or_v3() -> None:
+    import re
+
+    def normalized_queries(path: Path) -> set[str]:
+        cases = json.loads(path.read_text(encoding="utf-8"))
+        return {
+            re.sub(r"[^\w]+", "", case["query"].casefold())
+            for case in cases
+        }
+
+    v4 = normalized_queries(CORPUS_V4)
+
+    assert v4.isdisjoint(normalized_queries(CORPUS_V2))
+    assert v4.isdisjoint(normalized_queries(CORPUS_V3))

@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- optional bounded `endpoint_disambiguation_backend` stage that may reorder only sibling endpoints
+  inside the currently leading tool domain for single-call plans, preserving the existing candidate
+  order on backend failure/abstention and never switching tools or creating execution authority;
 - optional bounded `candidate_fit_backend` gate after lexical/semantic candidate recall, allowing
   explicit no-route abstention without selecting the final route or creating execution authority;
   backend failures retain the already-authorized candidates and live inspection/dashboard expose the
