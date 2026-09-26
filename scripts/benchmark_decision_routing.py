@@ -609,6 +609,36 @@ async def benchmark_planner(
     return rows
 
 
+def _error_taxonomy(rows: list[BenchmarkRow]) -> dict[str, int]:
+    taxonomy = {
+        "correct": 0,
+        "false_route": 0,
+        "missed_route": 0,
+        "wrong_tool": 0,
+        "wrong_endpoint": 0,
+        "execution_error": 0,
+    }
+    for row in rows:
+        if row.error is not None:
+            taxonomy["execution_error"] += 1
+        elif row.correct:
+            taxonomy["correct"] += 1
+        elif row.expected is None and row.predicted is not None:
+            taxonomy["false_route"] += 1
+        elif row.expected is not None and row.predicted is None:
+            taxonomy["missed_route"] += 1
+        elif row.expected is not None and row.predicted is not None:
+            expected_tool, _, expected_endpoint = row.expected.partition(".")
+            predicted_tool, _, predicted_endpoint = row.predicted.partition(".")
+            if expected_tool != predicted_tool:
+                taxonomy["wrong_tool"] += 1
+            elif expected_endpoint != predicted_endpoint:
+                taxonomy["wrong_endpoint"] += 1
+            else:
+                taxonomy["execution_error"] += 1
+    return taxonomy
+
+
 def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
     total = len(rows)
     successful = [row for row in rows if row.error is None]
@@ -667,6 +697,7 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
             sum(row.invalid_plan for row in rows) / total if total else 0.0
         ),
         "errors": sum(row.error is not None for row in rows),
+        "error_taxonomy": _error_taxonomy(rows),
         "backend_invocations": sum(row.backend_invoked for row in rows),
         "backend_invocation_rate": (
             sum(row.backend_invoked for row in rows) / total if total else 0.0
