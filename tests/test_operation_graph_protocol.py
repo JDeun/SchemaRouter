@@ -23,6 +23,17 @@ def test_graph_cycle_is_preregistered_before_implementation() -> None:
         cycle["development_progress"]["semantic_seed_status"]
         == "no_candidate_passed_all_preregistered_gates"
     )
+    assert (
+        cycle["development_progress"]["next_stage"]
+        == "graph + bounded propagation + negative evidence"
+    )
+    assert (ROOT / "benchmarks" / "operation-fit-0.10-graph-propagation-dev-plan.json").exists()
+    assert not (
+        ROOT / ".github" / "workflows" / "research-operation-graph-semantic-seed.yml"
+    ).exists()
+    assert (
+        ROOT / ".github" / "workflows" / "research-operation-graph-propagation.yml"
+    ).exists()
     assert cycle["development_progress"]["candidate_frozen"] is False
     assert cycle["development_progress"]["calibration_allowed"] is False
     assert cycle["methodology_note"]["hard_graph_latency_promotion_evidence_valid"] is False
