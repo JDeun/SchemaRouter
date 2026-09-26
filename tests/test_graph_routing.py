@@ -223,7 +223,8 @@ def test_field_concept_accept_is_opt_in() -> None:
     assert default.decision == "escalate"
     assert projected.decision == "accept"
     assert projected.endpoint_name == "current"
-    assert projected.evidence[0].field_concepts == ("air temperature",)
+    assert "air temperature" in projected.evidence[0].field_concepts
+    assert "temperature" in projected.evidence[0].field_concepts
 
 
 def test_empty_or_unknown_candidate_surface_escalates() -> None:
