@@ -101,12 +101,12 @@ from .models import (
     ToolSpec,
     UnitNormalizationSpec,
 )
-from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
 from .openapi_compatibility import (
     OpenAPICompatibilityIssue,
     OpenAPICompatibilityReport,
     analyze_openapi_compatibility,
 )
+from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
 from .policy import (
     ApprovalCallback,
