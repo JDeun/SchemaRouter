@@ -2565,7 +2565,7 @@ def test_endpoint_disambiguation_reorders_only_within_primary_tool() -> None:
         selected = next(
             option
             for option in request.options
-            if option.label == "update"
+            if option.label == "inventory.update"
         )
         return {"selections": [{"option_id": selected.id, "score": 0.9}]}
 
@@ -2729,7 +2729,7 @@ def test_operation_fit_gate_acceptance_does_not_select_or_reorder_endpoint() -> 
         selected = next(
             option
             for option in request.options
-            if option.label == "inventory.update"
+            if option.label == "update"
         )
         return {"selections": [{"option_id": selected.id, "score": 0.99}]}
 
