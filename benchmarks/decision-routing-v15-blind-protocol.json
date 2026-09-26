@@ -1,0 +1,55 @@
+{
+  "version": "v15",
+  "cycle": "0.10-operation-graph-projection-v3",
+  "status": "reserved_not_generated",
+  "role": "blind_final_generalization_holdout",
+  "corpus_exists": false,
+  "tuning_eligible": false,
+  "generation_timing": "only after the complete graph-first candidate configuration is frozen and the fresh calibration promotion gate passes",
+  "execution_policy": "one-shot scoring after freeze; permanently consumed after first completed run",
+  "research_question": "Can graph-first operation routing, where schema topology owns execution authority and semantic models contribute only bounded soft evidence, preserve or improve safe rejection while reducing paired mean and tail CPU latency versus the frozen full-BGE operation-fit baseline?",
+  "target_shape": {
+    "case_count": 1200,
+    "supported_operation_cases": 768,
+    "near_domain_unsupported_operation_cases": 384,
+    "out_of_domain_cases": 48,
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ]
+  },
+  "candidate_family": {
+    "architecture": "graph-first typed schema routing with bounded semantic evidence and selective pairwise escalation",
+    "graph_authority": "all routeable entities and legal transitions must already exist in the registered schema graph",
+    "semantic_role": "seed/weight authorized nodes or edges only; no direct route creation",
+    "escalation_role": "frozen pairwise BGE only for unresolved authorized sibling operations"
+  },
+  "selection_policy": {
+    "development_data": "fresh graph-v1 development corpus only",
+    "confirmation_data": "fresh graph-v1 calibration corpus only after candidate freeze",
+    "forbidden_for_selection": [
+      "v5 cascade calibration",
+      "v12 design-known stress corpus",
+      "v13 consumed blind-final corpus",
+      "retired v14 reservation",
+      "any generated v15 corpus or result"
+    ],
+    "supported_operation_floor": 0.6,
+    "near_domain_unsupported_rejection_floor": 0.95,
+    "false_route_non_regression_vs_paired_full_bge": true,
+    "paired_mean_latency_improvement_required": true,
+    "paired_p95_latency_non_regression_required": true
+  },
+  "isolation_requirements": [
+    "No normalized exact-query overlap with earlier checked-in routing corpora.",
+    "The v15 corpus must not exist before candidate freeze and calibration promotion.",
+    "Generator, candidate config, graph scoring policy, and evaluation code must be committed before generation.",
+    "A runtime seed and source revision must be recorded.",
+    "The generated corpus must not be previewed or used for configuration changes before scoring completes.",
+    "After the first completed scoring run, v15 is permanently consumed and may only support reporting or clearly labeled diagnostics."
+  ]
+}
