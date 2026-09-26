@@ -234,6 +234,23 @@ def test_explicit_graph_conflict_fails_closed() -> None:
     assert "unsupported" in assessment.reason
 
 
+def test_global_conflict_overrides_supported_alias_path() -> None:
+    graph = CompiledSchemaGraph.from_registry(_registry(conflicts=True))
+
+    assessment = GraphOperationGate().assess_global(
+        query="Show the weather forecast and weather alerts for Seoul.",
+        graph=graph,
+    )
+
+    assert assessment.decision == "reject"
+    assert assessment.tool_key == "weather"
+    assert assessment.endpoint_name is None
+    assert any(
+        evidence.operation_aliases == ("weather alerts",)
+        for evidence in assessment.evidence
+    )
+
+
 def test_conflict_rejection_can_be_disabled_for_ablation() -> None:
     graph = CompiledSchemaGraph.from_registry(_registry(conflicts=True))
 
