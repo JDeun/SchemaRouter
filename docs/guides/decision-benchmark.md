@@ -378,6 +378,13 @@ calibration accuracy, with dev accuracy used as a stability check. At 0.45, cali
 was 65.625% and dev accuracy was 66.667%; adjacent thresholds 0.40 and 0.50 reached 60.938% and
 60.417% calibration accuracy respectively. This frozen value must not be changed based on v7.
 
+The one-shot v7 evaluation at the frozen 0.45 threshold produced 46.833% overall accuracy
+(95% Wilson CI 42.873%–50.834%), 28.646% routed accuracy on supported operations
+(24.353%–33.362%), 76.562% accuracy on near-domain unsupported operations
+(70.086%–81.997%), and 100% accuracy on ordinary out-of-domain cases. This is treated as a
+distribution-shift diagnostic, not as a target for threshold retuning. The v7 holdout is now
+consumed and the workflow guard has been restored to manual-only.
+
 
 ### Post-change operation holdout (v7)
 
