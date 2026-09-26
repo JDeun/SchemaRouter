@@ -3,52 +3,50 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CYCLE = ROOT / "benchmarks" / "operation-fit-0.10-cascade-cycle.json"
-WORKFLOW = ROOT / ".github" / "workflows" / "research-operation-cascade-calibration.yml"
+RESULT = ROOT / "benchmarks" / "operation-fit-0.10-cascade-calibration-result.json"
+CALIBRATION_WORKFLOW = (
+    ROOT / ".github" / "workflows" / "research-operation-cascade-calibration.yml"
+)
+DEV_WORKFLOW = ROOT / ".github" / "workflows" / "research-operation-cascade.yml"
 
 
-def test_cascade_candidate_is_frozen_before_calibration() -> None:
+def test_rejected_cascade_cycle_is_closed_without_retuning() -> None:
     cycle = json.loads(CYCLE.read_text(encoding="utf-8"))
-    selected = cycle["selection"]["selected_candidate"]
+    result = json.loads(RESULT.read_text(encoding="utf-8"))
 
-    assert cycle["status"] == "candidate_selected_and_frozen_before_calibration"
+    assert cycle["status"] == "paired_calibration_rejected_cycle_closed"
     assert cycle["selection"]["selection_locked"] is True
-    assert selected == {
-        "name": "r030-a060-m005",
-        "reject_below": 0.3,
-        "accept_above": 0.6,
-        "accept_margin": 0.05,
-        "bge_beta": 1,
-        "pairwise_min_score": 0.01,
-        "pairwise_min_margin": 0,
-    }
     assert cycle["confirmation"]["candidate_changes_allowed"] is False
-
-
-def test_calibration_is_v5_only_and_uses_one_paired_job() -> None:
-    workflow = WORKFLOW.read_text(encoding="utf-8")
-
-    assert "paired-calibration:" in workflow
-    assert "benchmarks/decision-routing-v5-operation-calibration.json" in workflow
-    assert workflow.count("--split calibration") == 2
-    assert "--split dev" not in workflow
-    assert "decision-routing-v12" not in workflow
-    assert "decision-routing-v13" not in workflow
-    assert "decision-routing-v14" not in workflow
-    assert "Run full-BGE v5 calibration baseline" in workflow
-    assert "Run frozen cascade v5 calibration candidate" in workflow
-    assert workflow.index("Run full-BGE v5 calibration baseline") < workflow.index(
-        "Run frozen cascade v5 calibration candidate"
+    assert cycle["confirmation"]["completed"] is True
+    assert cycle["confirmation"]["promotion_passed"] is False
+    assert cycle["confirmation"]["result_manifest"] == (
+        "benchmarks/operation-fit-0.10-cascade-calibration-result.json"
     )
 
+    assert result["status"] == "paired_calibration_rejected"
+    assert result["tuning_eligible"] is False
+    assert result["frozen_candidate"]["name"] == "r030-a060-m005"
+    assert result["workflow_run_id"] == 36251542594
+    assert result["artifact_id"] == 10909651834
+    assert result["decision"]["promotion_passed"] is False
+    assert result["decision"]["blind_final_allowed"] is False
 
-def test_calibration_locks_exact_candidate_and_promotion_gates() -> None:
-    workflow = WORKFLOW.read_text(encoding="utf-8")
 
-    assert 'SCHEMAROUTER_BENCHMARK_CASCADE_REJECT_BELOW: "0.30"' in workflow
-    assert 'SCHEMAROUTER_BENCHMARK_CASCADE_ACCEPT_ABOVE: "0.60"' in workflow
-    assert 'SCHEMAROUTER_BENCHMARK_CASCADE_ACCEPT_MARGIN: "0.05"' in workflow
-    assert 'SCHEMAROUTER_BENCHMARK_CONTRASTIVE_BETA: "1.00"' in workflow
-    assert "supported_floor = 0.60" in workflow
-    assert "rejection_floor = 0.95" in workflow
-    assert 'candidate["mean_latency_ms"] < baseline["mean_latency_ms"]' in workflow
-    assert "promotion_passed = bool(quality_passed and latency_passed)" in workflow
+def test_paired_calibration_confirmed_speed_but_failed_quality_floor() -> None:
+    result = json.loads(RESULT.read_text(encoding="utf-8"))
+    baseline = result["full_bge_baseline"]
+    candidate = result["frozen_cascade_candidate"]
+
+    assert candidate["supported_operation_routed_accuracy"] >= 0.60
+    assert candidate["near_domain_unsupported_operation_rejection"] == 91 / 96
+    assert candidate["near_domain_unsupported_operation_rejection"] < 0.95
+    assert baseline["near_domain_unsupported_operation_rejection"] == 94 / 96
+    assert candidate["mean_latency_ms"] < baseline["mean_latency_ms"]
+    assert result["mean_latency_reduction_vs_full_bge_fraction"] > 0.14
+    assert result["decision"]["latency_gate_passed"] is True
+    assert result["decision"]["quality_gate_passed"] is False
+
+
+def test_consumed_cascade_workflows_are_retired() -> None:
+    assert not CALIBRATION_WORKFLOW.exists()
+    assert not DEV_WORKFLOW.exists()
