@@ -650,6 +650,26 @@ def test_v11_operation_holdout_workflow_is_manual_and_frozen() -> None:
     )
 
 
+def test_research_matrix_requires_explicit_full_matrix_dispatch() -> None:
+    workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
+    assert "run_full_research_matrix:" in workflow
+    assert 'default: false' in workflow
+
+    holdout_marker = "  operation-fit-v11-heldout-cpu:"
+    before_holdout, holdout_job = workflow.split(holdout_marker, 1)
+
+    assert before_holdout.count(
+        "if: ${{ github.event_name == 'workflow_dispatch' "
+        "&& inputs.run_full_research_matrix }}"
+    ) == 9
+    assert "inputs.run_full_research_matrix" not in holdout_job.split("\n  ", 1)[0]
+    assert (
+        "if: ${{ github.event_name == 'workflow_dispatch' "
+        "&& inputs.run_operation_holdout }}"
+        in holdout_job
+    )
+
+
 def test_alias_aware_operation_calibration_uses_consumed_v7_as_diagnostic_only() -> None:
     workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
     marker = "  operation-fit-calibration-cpu:"
