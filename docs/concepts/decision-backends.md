@@ -320,7 +320,7 @@ The optional backends serve different deployment goals:
 
 | Backend | Best fit | Trade-off |
 | --- | --- | --- |
-| Deterministic / embedding | Zero provider dependency and predictable local behavior | Lower semantic flexibility on ambiguous language |
+| Deterministic / embedding | Zero provider dependency and predictable local behavior | Lower semantic flexibility on ambiguous language |\n| Pairwise scorer / reranker | Direct query-option relevance scoring with bounded local authority | Application owns model/runtime and score calibration |
 | Hosted general LLM via `CallableDecisionBackend` | Reuse an existing GPT, Gemini, Claude, or other cloud-model client | Provider latency/cost; application owns structured-output prompting and credentials |
 | Laya | Fast local finite decisions, including Apple Silicon through PyTorch MPS/Metal | Single-selection adapter today; quality is checkpoint/domain dependent |
 | Ollama | Reuse a general local LLM that is already deployed for other application tasks | Autoregressive generation is heavier and slower than a purpose-built decision model |
@@ -411,6 +411,37 @@ abstain on weak matches; `min_margin` can abstain when the selection boundary is
 
 For asymmetric retrieval encoders, wrap the callable so the first input (the query) uses the
 encoder's query path and option texts use its passage/document path.
+
+## Pairwise query-option scoring
+
+`PairwiseDecisionBackend` is a provider-neutral path for cross-encoders, rerankers, or any
+application-owned model that directly scores a query against each authorized option.
+
+```python
+from schemarouter import PairwiseDecisionBackend
+
+backend = PairwiseDecisionBackend(
+    score_pairs,
+    min_score=0.20,
+    min_margin=0.05,
+)
+```
+
+The scorer receives a batch of `(query, option_text)` pairs and returns exactly one confidence
+score in `[0, 1]` for each pair. SchemaRouter ranks those scores locally and maps positions back
+to the original opaque option IDs. The backend can therefore be used for `operation_fit_backend`,
+`candidate_fit_backend`, endpoint disambiguation, or final bounded decision surfaces without
+giving the scorer authority to invent a route.
+
+The default formatter forwards only the option label and description, never
+`DecisionOption.metadata`. Wrong batch size, malformed values, NaN/Infinity, or scores outside
+`[0, 1]` fail closed. Async scorers are supported through the normal async planning path.
+
+SchemaRouter intentionally does not depend on Transformers, Torch, a particular reranker, or a
+hosted ranking API. Applications own the scoring model and any score calibration. If a model emits
+unbounded logits, convert them to a calibrated or otherwise explicitly defined `[0, 1]` confidence
+before returning them to this backend. Thresholds remain model- and workload-specific and should be
+chosen on development/calibration data, not held-out evaluation data.
 
 ## Jev / TypeSafe System One
 
