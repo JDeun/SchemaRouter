@@ -3,6 +3,11 @@ name: Research Benchmark
 on:
   workflow_dispatch:
     inputs:
+      run_full_research_matrix:
+        description: "Run the historical calibration and diagnostic research suites"
+        required: false
+        type: boolean
+        default: false
       run_operation_holdout:
         description: "Run reserved v11 once after freezing the post-0.8 operation-fit configuration"
         required: false
@@ -37,7 +42,7 @@ jobs:
       - run: pytest -q tests/test_benchmark_corpus.py
 
   deterministic-full:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_research_matrix }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -68,7 +73,7 @@ jobs:
           retention-days: 30
 
   laya-full-cpu:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_research_matrix }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -153,7 +158,7 @@ jobs:
           retention-days: 30
 
   semantic-recall-calibration-cpu:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_research_matrix }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -208,7 +213,7 @@ jobs:
 
 
   semantic-recall-heldout-cpu:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_research_matrix }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -252,7 +257,7 @@ jobs:
 
 
   capability-fit-calibration-cpu:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_research_matrix }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     continue-on-error: true
@@ -296,7 +301,7 @@ jobs:
           retention-days: 30
 
   capability-fit-v3-heldout-cpu:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_research_matrix }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -334,7 +339,7 @@ jobs:
           retention-days: 30
 
   endpoint-disambiguation-calibration-cpu:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_research_matrix }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     continue-on-error: true
@@ -381,7 +386,7 @@ jobs:
           retention-days: 30
 
   endpoint-disambiguation-v4-heldout-cpu:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_research_matrix }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -422,7 +427,7 @@ jobs:
 
 
   operation-fit-calibration-cpu:
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_research_matrix }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
