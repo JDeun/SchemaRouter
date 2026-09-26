@@ -643,7 +643,10 @@ def test_v11_operation_holdout_workflow_is_manual_and_threshold_gated() -> None:
     assert "OPERATION_FIT_MIN_SIMILARITY: ${{ inputs.operation_fit_min_similarity }}" in holdout_job
     assert '--operation-fit-min-similarity "${OPERATION_FIT_MIN_SIMILARITY}"' in holdout_job
     assert "benchmarks/decision-routing-v11-operation-generalization-holdout.json" in holdout_job
-    assert "benchmarks/decision-routing-v10-operation-generalization-holdout.json" not in holdout_job
+    assert (
+        "benchmarks/decision-routing-v10-operation-generalization-holdout.json"
+        not in holdout_job
+    )
 
 
 def test_alias_aware_operation_calibration_uses_consumed_v7_as_diagnostic_only() -> None:
@@ -657,8 +660,14 @@ def test_alias_aware_operation_calibration_uses_consumed_v7_as_diagnostic_only()
     assert "diagnostic-v7" in calibration_job
     assert "benchmarks/decision-routing-v8-operation-alias-holdout.json" not in calibration_job
     assert "benchmarks/decision-routing-v9-operation-alias-holdout.json" not in calibration_job
-    assert "benchmarks/decision-routing-v10-operation-generalization-holdout.json" not in calibration_job
-    assert "benchmarks/decision-routing-v11-operation-generalization-holdout.json" not in calibration_job
+    assert (
+        "benchmarks/decision-routing-v10-operation-generalization-holdout.json"
+        not in calibration_job
+    )
+    assert (
+        "benchmarks/decision-routing-v11-operation-generalization-holdout.json"
+        not in calibration_job
+    )
 
 
 
