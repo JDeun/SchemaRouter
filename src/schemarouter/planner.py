@@ -823,12 +823,21 @@ class SchemaPlanner:
                 if endpoint.read_only is False
                 else "unclassified operation"
             )
-            parts = [
-                f"Operation: {operation_name}",
+            # Repeat the operation surface as natural-language alternatives rather
+            # than one metadata-heavy blob. Multilingual embedding backends otherwise
+            # underweight short supported verbs (for example "search" or "lookup")
+            # against descriptive boilerplate, causing false abstentions.
+            operation_phrases = [
+                operation_name,
                 endpoint.description.strip(),
+                *endpoint.operation_aliases,
             ]
-            if endpoint.operation_aliases:
-                parts.append("Operation aliases: " + "; ".join(endpoint.operation_aliases))
+            parts = [
+                "Supported operation: " + phrase
+                for phrase in dict.fromkeys(
+                    phrase.strip() for phrase in operation_phrases if phrase.strip()
+                )
+            ]
             parts.append(f"Operation class: {operation_class}")
             if endpoint.method:
                 parts.append(f"HTTP method: {endpoint.method.upper()}")
