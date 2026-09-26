@@ -65,7 +65,7 @@ optional decision backend일 뿐입니다.
 에이전트가 되지 않으며, tool loop를 실행하지 않고, 실행 권한도 받지 않습니다.
 ```
 
-> **현재 안정판: 0.7.0** · `pip install schemarouter` · pre-1.0
+> **현재 안정판: 0.8.0** · `pip install schemarouter` · pre-1.0
 
 ## 왜 필요한가
 
@@ -205,6 +205,28 @@ parameter/output field 수, schema fingerprint를 확인할 수 있고, trace �
 DAG/workflow, memory, prompt system, autonomous tool loop는 계속 범위 밖에 둡니다.
 
 자세한 내용은 [0.7.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.7.0/)를 참고하세요.
+
+## 0.8에서 달라진 점
+
+`0.8.0`은 field-first 실행 경계를 유지하면서 bounded semantic routing과 다중 provider
+evidence 처리를 확장한 릴리스입니다.
+
+- semantic candidate recall과 별도의 capability-fit / operation-fit / same-tool endpoint
+  disambiguation 단계;
+- 모델이 실행 권한을 확장할 수 없는 trusted endpoint operation alias;
+- field별 evidence requirement와 명시적인 plan coverage 보고;
+- 서로 다른 provider가 보완하는 field를 우선하는 coverage-aware multi-call selection;
+- 서로 다른 provider의 독립 근거를 선택적으로 수집하는 corroboration mode와, 과학 값의
+  충돌을 임의로 하나로 합치지 않고 observation/provenance를 보존하는 aggregation;
+- 개발/보정/holdout을 분리한 재현 가능한 multilingual routing benchmark.
+
+새 600-case v10 one-shot holdout에서는 **전체 55.667%**, **지원 operation route 42.188%**,
+**near-domain 미지원 operation 거부 77.083%**, **일반 OOD 거부 100%**를 기록했습니다.
+operation-fit이 여전히 가장 큰 recall 병목이므로 v10은 이미 소비된 regression evidence로
+취급하며 이후 튜닝에 재사용하지 않습니다.
+
+자세한 내용은 [0.8.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.8.0/)와
+[multi-provider evidence 가이드](https://jdeun.github.io/SchemaRouter/guides/multi-provider-evidence/)를 참고하세요.
 
 ## 문서
 
