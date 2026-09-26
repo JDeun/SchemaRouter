@@ -593,3 +593,27 @@ def test_operation_aliases_reject_invalid_or_normalized_duplicate_values(aliases
     payload["operation_aliases"] = aliases
     with pytest.raises(ValueError, match="operation_alias"):
         EndpointSpec.model_validate(payload)
+
+
+def test_unsupported_operation_alias_drift_requires_security_review() -> None:
+    old = ToolSpec(
+        name="weather",
+        unsupported_operation_aliases=["weather alerts"],
+        endpoints=[endpoint()],
+    )
+    new = ToolSpec(
+        name="weather",
+        unsupported_operation_aliases=[],
+        endpoints=[endpoint()],
+    )
+
+    report = compare_tool_specs(old, new)
+
+    assert report.compatibility == "security_review"
+    assert report.old_fingerprint != report.new_fingerprint
+    assert any(
+        change.kind == "unsupported_operation_aliases_changed"
+        and change.path == "unsupported_operation_aliases"
+        and change.severity == "security"
+        for change in report.changes
+    )
