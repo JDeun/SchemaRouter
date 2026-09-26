@@ -591,6 +591,7 @@ async def benchmark_planner(
                         input_cost_per_million,
                         output_cost_per_million,
                     ),
+                    failure_stage=failure_stage,
                 )
             )
         except Exception as exc:  # noqa: BLE001 - benchmark records provider failures.
