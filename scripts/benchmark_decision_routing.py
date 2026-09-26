@@ -810,6 +810,15 @@ async def main() -> None:
     parser.add_argument("--candidate-fit-min-similarity", type=float, default=-1.0)
     parser.add_argument("--candidate-fit-min-margin", type=float, default=0.0)
     parser.add_argument(
+        "--operation-fit-embedding-callable",
+        help=(
+            "Optional embedding callable used only as a bounded operation-capability "
+            "fit/no-route gate within the currently leading tool domain."
+        ),
+    )
+    parser.add_argument("--operation-fit-min-similarity", type=float, default=-1.0)
+    parser.add_argument("--operation-fit-min-margin", type=float, default=0.0)
+    parser.add_argument(
         "--endpoint-disambiguation-embedding-callable",
         help=(
             "Optional embedding callable used only to rerank sibling endpoints within "
@@ -991,6 +1000,18 @@ async def main() -> None:
             min_margin=args.candidate_fit_min_margin,
         )
 
+    operation_fit_backend = None
+    if args.operation_fit_embedding_callable:
+        operation_fit_embedder = load_callable(
+            args.operation_fit_embedding_callable,
+            option_name="--operation-fit-embedding-callable",
+        )
+        operation_fit_backend = EmbeddingDecisionBackend(
+            operation_fit_embedder,
+            min_similarity=args.operation_fit_min_similarity,
+            min_margin=args.operation_fit_min_margin,
+        )
+
     endpoint_disambiguation_backend = None
     if args.endpoint_disambiguation_embedding_callable:
         endpoint_disambiguation_embedder = load_callable(
@@ -1037,12 +1058,35 @@ async def main() -> None:
             )
         )
 
+    if operation_fit_backend is not None:
+        operation_name_parts = ["keyword"]
+        if candidate_recall_backend is not None:
+            operation_name_parts.append("semantic-recall")
+        if candidate_fit_backend is not None:
+            operation_name_parts.append("capability-fit")
+        operation_name_parts.append("operation-fit")
+        planners.append(
+            (
+                "+".join(operation_name_parts),
+                SchemaPlanner(
+                    registry,
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
+                ),
+                None,
+            )
+        )
+
     if endpoint_disambiguation_backend is not None:
         disambiguation_name_parts = ["keyword"]
         if candidate_recall_backend is not None:
             disambiguation_name_parts.append("semantic-recall")
         if candidate_fit_backend is not None:
             disambiguation_name_parts.append("capability-fit")
+        if operation_fit_backend is not None:
+            disambiguation_name_parts.append("operation-fit")
         disambiguation_name_parts.append("endpoint-disambiguation")
         planners.append(
             (
@@ -1052,6 +1096,7 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 None,
@@ -1072,6 +1117,7 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 None,
@@ -1106,6 +1152,7 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1137,6 +1184,7 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1171,6 +1219,7 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1203,6 +1252,7 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1242,6 +1292,12 @@ async def main() -> None:
             "embedding_callable": args.candidate_fit_embedding_callable,
             "min_similarity": args.candidate_fit_min_similarity,
             "min_margin": args.candidate_fit_min_margin,
+        },
+        "operation_capability_fit": {
+            "enabled": operation_fit_backend is not None,
+            "embedding_callable": args.operation_fit_embedding_callable,
+            "min_similarity": args.operation_fit_min_similarity,
+            "min_margin": args.operation_fit_min_margin,
         },
         "endpoint_disambiguation": {
             "enabled": endpoint_disambiguation_backend is not None,
