@@ -1984,6 +1984,48 @@ class SchemaPlanner:
         return tuple(semantics)
 
     @classmethod
+    def _corroboration_semantics_compatible(
+        cls,
+        selected_candidate: _Candidate,
+        selected_call: ToolCall,
+        candidate: _Candidate,
+        candidate_call: ToolCall,
+    ) -> bool:
+        """Require at least one genuinely comparable answer field across providers."""
+
+        selected = cls._field_semantics(
+            selected_candidate.endpoint,
+            tuple(selected_call.fields),
+        )
+        available = cls._field_semantics(
+            candidate.endpoint,
+            tuple(candidate_call.fields),
+        )
+        for left in selected:
+            for right in available:
+                if left.semantic_id is not None and right.semantic_id is not None:
+                    if left.semantic_id != right.semantic_id:
+                        continue
+                elif left.names.isdisjoint(right.names):
+                    continue
+                if left.qualifiers != right.qualifiers:
+                    continue
+                if not json_schemas_compatible(left.json_schema, right.json_schema):
+                    continue
+                if (left.unit is None) != (right.unit is None):
+                    continue
+                if left.unit is not None:
+                    if left.unit_dimension or right.unit_dimension:
+                        if not left.unit_dimension or left.unit_dimension != right.unit_dimension:
+                            continue
+                        if not left.canonical_unit or left.canonical_unit != right.canonical_unit:
+                            continue
+                    elif left.unit != right.unit:
+                        continue
+                return True
+        return False
+
+    @classmethod
     def _fallback_semantics_compatible(
         cls,
         primary_candidate: _Candidate,
@@ -2489,6 +2531,20 @@ class SchemaPlanner:
                 )
                 if call is None:
                     continue
+                if (
+                    request.retrieval_mode == "corroborate"
+                    and primary_pairs
+                    and not any(
+                        self._corroboration_semantics_compatible(
+                            selected_candidate,
+                            selected_call,
+                            candidate,
+                            call,
+                        )
+                        for selected_candidate, selected_call in primary_pairs
+                    )
+                ):
+                    continue
                 primary_pairs.append((candidate, call))
                 selected_providers.add(provider_key)
                 if required_coverage:
@@ -2690,6 +2746,20 @@ class SchemaPlanner:
                     warnings,
                 )
                 if call is None:
+                    continue
+                if (
+                    request.retrieval_mode == "corroborate"
+                    and primary_pairs
+                    and not any(
+                        self._corroboration_semantics_compatible(
+                            selected_candidate,
+                            selected_call,
+                            candidate,
+                            call,
+                        )
+                        for selected_candidate, selected_call in primary_pairs
+                    )
+                ):
                     continue
                 primary_pairs.append((candidate, call))
                 selected_providers.add(provider_key)
