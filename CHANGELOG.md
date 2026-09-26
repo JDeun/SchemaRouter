@@ -5,7 +5,7 @@ All notable changes to SchemaRouter are documented here.
 The project is pre-1.0 and follows the compatibility rules in
 [`docs/versioning.md`](docs/versioning.md).
 
-## Unreleased
+## 0.9.0 - 2026-09-26
 
 ### Added
 
@@ -14,7 +14,7 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
-- post-release development has resumed as `0.9.0.dev0`; published `0.8.0` artifacts remain immutable.
+- benchmark reporting now records pairwise operation-fit callable and score-threshold configuration explicitly, so consumed holdout evidence preserves the scoring path used for evaluation.
 
 ## 0.8.0 - 2026-09-26
 
