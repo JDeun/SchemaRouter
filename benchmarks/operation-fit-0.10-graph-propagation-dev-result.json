@@ -1,0 +1,92 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "graph_bounded_propagation_development",
+  "status": "development_propagation_no_candidate_passed",
+  "source_revision": "530054b0ca4e6dd57d6ccfc452dc886b45f37ce6",
+  "workflow_run_id": 36278193345,
+  "corpus_sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6",
+  "fallback": {
+    "supported_operation_routed_accuracy": 0.6158854166666666,
+    "near_domain_unsupported_operation_rejection": 0.953125,
+    "out_of_domain_rejection": 1,
+    "harmonic_mean_supported_rejection": 0.7482624481327801,
+    "false_routes": 18,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "direct_seed_accepts": 15,
+    "direct_seed_accept_precision": 1,
+    "propagation_accepts": 125,
+    "propagation_accept_precision": 0.992,
+    "propagation_unsupported_accepts": 0,
+    "propagation_abstains": 42,
+    "paired_baseline_mean_latency_ms": 303.768125,
+    "paired_candidate_mean_latency_ms": 292.93643,
+    "paired_mean_delta_ms": -10.831695,
+    "paired_mean_delta_bootstrap_ci95_ms": [
+      -17.0699456875,
+      -4.82518125
+    ],
+    "baseline_p95_ms": 391.1598,
+    "candidate_p95_ms": 417.65525,
+    "p95_delta_ms": 26.49545,
+    "candidate_gains": 29,
+    "candidate_losses": 0,
+    "gates": {
+      "supported_operation_floor": true,
+      "near_domain_unsupported_rejection_floor": true,
+      "false_route_non_regression": true,
+      "invalid_plan_zero": true,
+      "execution_errors_zero": true,
+      "paired_mean_latency_improvement": true,
+      "paired_p95_latency_non_regression": false
+    }
+  },
+  "reject": {
+    "supported_operation_routed_accuracy": 0.5950520833333334,
+    "near_domain_unsupported_operation_rejection": 0.953125,
+    "out_of_domain_rejection": 1,
+    "harmonic_mean_supported_rejection": 0.7326797729184188,
+    "false_routes": 18,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "direct_seed_accepts": 15,
+    "direct_seed_accept_precision": 1,
+    "propagation_accepts": 125,
+    "propagation_accept_precision": 0.992,
+    "propagation_unsupported_accepts": 0,
+    "propagation_rejects": 42,
+    "paired_baseline_mean_latency_ms": 610.6241575,
+    "paired_candidate_mean_latency_ms": 564.7178958333333,
+    "paired_mean_delta_ms": -45.906261666666666,
+    "paired_mean_delta_bootstrap_ci95_ms": [
+      -57.189975791666654,
+      -35.80898904166668
+    ],
+    "baseline_p95_ms": 788.97015,
+    "candidate_p95_ms": 800.23615,
+    "p95_delta_ms": 11.266,
+    "candidate_gains": 29,
+    "candidate_losses": 16,
+    "gates": {
+      "supported_operation_floor": false,
+      "near_domain_unsupported_rejection_floor": true,
+      "false_route_non_regression": true,
+      "invalid_plan_zero": true,
+      "execution_errors_zero": true,
+      "paired_mean_latency_improvement": true,
+      "paired_p95_latency_non_regression": false
+    }
+  },
+  "diagnosis": {
+    "fallback_tail": "The highest-latency cases are dominated by the 42 propagation abstentions that then repeat the existing semantic recall/capability-fit/BGE path.",
+    "fallback_quality": "Fallback improves supported correctness by 29 cases with zero paired correctness losses and keeps false routes equal to the full-BGE baseline.",
+    "reject_tradeoff": "Fail-closed propagation removes the fallback rescue path and loses 16 previously correct cases, dropping supported accuracy below the 0.60 floor, while still failing the p95 gate.",
+    "next_hypothesis": "Reuse the already-computed semantic graph ranking as the bounded recall candidate set after propagation abstention, skip duplicate semantic recall and capability-fit, and retain BGE verification over authorized routes."
+  },
+  "promotion": {
+    "candidate_frozen": false,
+    "calibration_allowed": false,
+    "blind_v15_allowed": false
+  },
+  "next_stage": "graph_semantic_ranking_reuse_development"
+}
