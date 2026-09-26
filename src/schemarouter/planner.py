@@ -921,7 +921,7 @@ class SchemaPlanner:
                 *[
                     candidate
                     for index, candidate in enumerate(candidates)
-                    if index != chosen_index
+                    if index != chosen_index and candidate.tool.key != primary_tool
                 ],
             ]
             return reordered, [
