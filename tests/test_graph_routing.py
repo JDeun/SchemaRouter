@@ -672,7 +672,7 @@ def test_graph_propagation_abstention_can_fallback_to_existing_stack() -> None:
         operation_fit_backend=operation,
     )
 
-    plan = planner.plan(PlanRequest(query="Tell me the current weather around Seoul."))
+    plan = planner.plan(PlanRequest(query="Show severe weather conditions around Seoul."))
 
     assert seed.calls == 1
     assert propagation.calls == 1
