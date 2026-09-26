@@ -18,10 +18,10 @@ def _registry(*, conflicts: bool = False) -> InMemoryRegistry:
             description="Weather observations and forecasts",
             source_type="observational",
             license="example-license",
-            metadata=(
-                {"unsupported_operation_aliases": ["weather alerts"]}
+            unsupported_operation_aliases=(
+                ["weather alerts"]
                 if conflicts
-                else {}
+                else []
             ),
             endpoints=[
                 EndpointSpec(
