@@ -10,6 +10,7 @@ from .decision_policy import DecisionPolicy
 from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
 from .errors import PlanningError
 from .evidence import available_evidence, field_evidence_status, global_evidence_status
+from .graph_routing import CompiledSchemaGraph, GraphOperationGate
 from .models import (
     CandidateSelectionSource,
     EndpointSpec,
@@ -311,6 +312,7 @@ class SchemaPlanner:
         candidate_recall_limit: int = 4,
         candidate_fit_backend: DecisionBackend | None = None,
         operation_fit_backend: DecisionBackend | None = None,
+        graph_operation_gate: GraphOperationGate | None = None,
         endpoint_disambiguation_backend: DecisionBackend | None = None,
         candidate_index: bool = True,
         availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
@@ -329,10 +331,12 @@ class SchemaPlanner:
         self.candidate_recall_limit = candidate_recall_limit
         self.candidate_fit_backend = candidate_fit_backend
         self.operation_fit_backend = operation_fit_backend
+        self.graph_operation_gate = graph_operation_gate
         self.endpoint_disambiguation_backend = endpoint_disambiguation_backend
         self.candidate_index = candidate_index
         self.availability_predicate = availability_predicate
         self._candidate_index: _CandidateIndex | None = None
+        self._compiled_schema_graph: CompiledSchemaGraph | None = None
         if self.decision_policy.enabled and self.decision_backend is None:
             raise PlanningError("decision policy is enabled but no decision backend is configured")
 
@@ -447,6 +451,29 @@ class SchemaPlanner:
 
         raise PlanningError(
             "registry changed repeatedly while building the candidate index"
+        )
+
+    def _graph(self) -> CompiledSchemaGraph:
+        current_version = self.registry.version
+        if (
+            self._compiled_schema_graph is not None
+            and self._compiled_schema_graph.version == current_version
+        ):
+            return self._compiled_schema_graph
+
+        for _ in range(4):
+            before = self.registry.version
+            tools = self.registry.tools()
+            after = self.registry.version
+            if before == after:
+                self._compiled_schema_graph = CompiledSchemaGraph.compile(
+                    version=after,
+                    tools=tools,
+                )
+                return self._compiled_schema_graph
+
+        raise PlanningError(
+            "registry changed repeatedly while compiling the schema graph"
         )
 
     def _candidates(
@@ -840,17 +867,88 @@ class SchemaPlanner:
             },
         )
 
+    def _apply_graph_operation_gate(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str], bool]:
+        if self.graph_operation_gate is None or request.max_calls > 1 or not candidates:
+            return candidates, [], True
+
+        primary_tool = candidates[0].tool.key
+        sibling_indexes = [
+            index
+            for index, candidate in enumerate(candidates)
+            if candidate.tool.key == primary_tool
+        ]
+        assessment = self.graph_operation_gate.assess(
+            query=request.query,
+            graph=self._graph(),
+            tool_key=primary_tool,
+            endpoint_names=tuple(
+                candidates[index].endpoint.name
+                for index in sibling_indexes
+            ),
+        )
+
+        if assessment.decision == "reject":
+            return [], [
+                "graph operation gate rejected the route: "
+                + assessment.reason
+            ], False
+
+        if assessment.decision == "accept":
+            endpoint_name = assessment.endpoint_name
+            chosen_index = next(
+                (
+                    index
+                    for index in sibling_indexes
+                    if candidates[index].endpoint.name == endpoint_name
+                ),
+                None,
+            )
+            if chosen_index is None:
+                return candidates, [
+                    "graph operation gate produced no authorized candidate; escalated"
+                ], True
+
+            chosen = replace(
+                candidates[chosen_index],
+                selection_source="graph_operation",
+            )
+            reordered = [
+                chosen,
+                *[
+                    candidate
+                    for index, candidate in enumerate(candidates)
+                    if index != chosen_index
+                ],
+            ]
+            return reordered, [
+                "graph operation gate accepted "
+                f"{primary_tool}.{endpoint_name}: {assessment.reason}"
+            ], False
+
+        return candidates, [
+            "graph operation gate escalated: " + assessment.reason
+        ], True
+
     def _apply_operation_fit_sync(
         self,
         request: PlanRequest,
         candidates: list[_Candidate],
     ) -> tuple[list[_Candidate], list[str]]:
+        candidates, graph_warnings, should_escalate = (
+            self._apply_graph_operation_gate(request, candidates)
+        )
+        if not should_escalate:
+            return candidates, graph_warnings
         if self.operation_fit_backend is None or not candidates:
-            return candidates, []
+            return candidates, graph_warnings
 
         decision_request = self._operation_fit_request(request, candidates)
         if decision_request is None:
-            return candidates, []
+            return candidates, graph_warnings
 
         try:
             result = choose_sync(
@@ -859,19 +957,22 @@ class SchemaPlanner:
             )
         except Exception as exc:
             return candidates, [
+                *graph_warnings,
                 "operation capability fit fallback: "
-                f"{type(exc).__name__}; retained authorized candidates"
+                f"{type(exc).__name__}; retained authorized candidates",
             ]
 
         if result.abstained or not result.selections:
             return [], [
+                *graph_warnings,
                 "operation capability fit gate abstained; "
-                "suppressed candidate routes"
+                "suppressed candidate routes",
             ]
 
         accepted = result.selections[0].option_id
         return candidates, [
-            f"operation capability fit gate accepted via {accepted}"
+            *graph_warnings,
+            f"operation capability fit gate accepted via {accepted}",
         ]
 
     async def _apply_operation_fit_async(
@@ -879,12 +980,17 @@ class SchemaPlanner:
         request: PlanRequest,
         candidates: list[_Candidate],
     ) -> tuple[list[_Candidate], list[str]]:
+        candidates, graph_warnings, should_escalate = (
+            self._apply_graph_operation_gate(request, candidates)
+        )
+        if not should_escalate:
+            return candidates, graph_warnings
         if self.operation_fit_backend is None or not candidates:
-            return candidates, []
+            return candidates, graph_warnings
 
         decision_request = self._operation_fit_request(request, candidates)
         if decision_request is None:
-            return candidates, []
+            return candidates, graph_warnings
 
         try:
             result = await choose_async(
@@ -893,19 +999,22 @@ class SchemaPlanner:
             )
         except Exception as exc:
             return candidates, [
+                *graph_warnings,
                 "operation capability fit fallback: "
-                f"{type(exc).__name__}; retained authorized candidates"
+                f"{type(exc).__name__}; retained authorized candidates",
             ]
 
         if result.abstained or not result.selections:
             return [], [
+                *graph_warnings,
                 "operation capability fit gate abstained; "
-                "suppressed candidate routes"
+                "suppressed candidate routes",
             ]
 
         accepted = result.selections[0].option_id
         return candidates, [
-            f"operation capability fit gate accepted via {accepted}"
+            *graph_warnings,
+            f"operation capability fit gate accepted via {accepted}",
         ]
 
     @staticmethod
