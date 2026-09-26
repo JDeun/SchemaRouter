@@ -1,0 +1,113 @@
+name: Research operation sentinel once
+
+on:
+  push:
+    branches:
+      - research/operation-explicit-abstention
+    paths:
+      - .github/workflows/research-operation-sentinel-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  operation-sentinel-v5-cpu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "sentence-transformers>=3,<6"
+      - run: pip install -e ".[dev]"
+      - name: Compare frozen BGE baseline and explicit-abstention candidate on v5 only
+        env:
+          SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+          SCHEMAROUTER_BENCHMARK_RERANKER_MODEL: BAAI/bge-reranker-v2-m3
+        run: |
+          set -euo pipefail
+          for SPLIT in dev calibration; do
+            BASE="artifacts/operation-sentinel/baseline/${SPLIT}"
+            SENTINEL="artifacts/operation-sentinel/explicit-abstention/${SPLIT}"
+            mkdir -p "${BASE}" "${SENTINEL}"
+
+            python scripts/benchmark_decision_routing.py \
+              --corpus benchmarks/decision-routing-v5-operation-calibration.json \
+              --split "${SPLIT}" \
+              --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
+              --candidate-recall-limit 2 \
+              --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed \
+              --candidate-fit-min-similarity 0.25 \
+              --operation-fit-pairwise-callable benchmarks.bge_reranker:score_pairs \
+              --operation-fit-min-score 0.01 \
+              --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed \
+              --endpoint-disambiguation-min-margin 0.03 \
+              --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+              --json-out "${BASE}/report.json" \
+              --csv-out "${BASE}/rows.csv" \
+              --html-out "${BASE}/report.html"
+
+            python scripts/benchmark_decision_routing.py \
+              --corpus benchmarks/decision-routing-v5-operation-calibration.json \
+              --split "${SPLIT}" \
+              --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
+              --candidate-recall-limit 2 \
+              --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed \
+              --candidate-fit-min-similarity 0.25 \
+              --operation-fit-pairwise-callable benchmarks.bge_reranker:score_pairs \
+              --operation-fit-min-score 0.0 \
+              --operation-fit-explicit-abstention \
+              --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed \
+              --endpoint-disambiguation-min-margin 0.03 \
+              --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+              --json-out "${SENTINEL}/report.json" \
+              --csv-out "${SENTINEL}/rows.csv" \
+              --html-out "${SENTINEL}/report.html"
+          done
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          backend = "keyword+semantic-recall+capability-fit+operation-fit+endpoint-disambiguation"
+          rows = []
+          for variant in ("baseline", "explicit-abstention"):
+              for split in ("dev", "calibration"):
+                  path = Path("artifacts/operation-sentinel") / variant / split / "report.json"
+                  report = json.loads(path.read_text())
+                  summary = report["summary"][backend]
+                  case_rows = [row for row in report["rows"] if row["backend"] == backend]
+                  supported = [row for row in case_rows if row["expected"] is not None]
+                  near = [
+                      row for row in case_rows
+                      if row["category"] == "near_domain_unsupported_operation"
+                  ]
+                  supported_acc = sum(row["correct"] for row in supported) / len(supported)
+                  reject_acc = sum(row["correct"] for row in near) / len(near)
+                  rows.append({
+                      "variant": variant,
+                      "split": split,
+                      "overall_accuracy": summary["accuracy"],
+                      "supported_routed_accuracy": supported_acc,
+                      "near_domain_rejection": reject_acc,
+                      "balanced_operation_score": (supported_acc + reject_acc) / 2,
+                      "mean_latency_ms": summary["mean_latency_ms"],
+                      "failure_stage_counts": summary.get("failure_stage_counts", {}),
+                      "error_taxonomy": summary.get("error_taxonomy", {}),
+                  })
+          output = {"backend": backend, "comparisons": rows}
+          Path("artifacts/operation-sentinel/comparison.json").write_text(
+              json.dumps(output, indent=2) + "\n"
+          )
+          print(json.dumps(output, indent=2))
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: operation-sentinel-v5-${{ github.run_id }}
+          path: artifacts/operation-sentinel/
+          if-no-files-found: error
+          retention-days: 30
