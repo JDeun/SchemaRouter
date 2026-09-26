@@ -1,7 +1,7 @@
 {
   "version": "v14",
   "cycle": "0.10-operation-cascade-v2",
-  "status": "protocol_reserved_not_generated",
+  "status": "retired_without_generation",
   "role": "blind_final_generalization_holdout",
   "corpus_exists": false,
   "tuning_eligible": false,
@@ -34,7 +34,7 @@
       "any v14 generated corpus or result"
     ],
     "primary_objective": "minimize mean CPU latency among candidates meeting both quality floors",
-    "supported_operation_floor": 0.60,
+    "supported_operation_floor": 0.6,
     "near_domain_unsupported_rejection_floor": 0.95,
     "tie_breaker": "higher harmonic mean of supported-operation routed accuracy and near-domain unsupported-operation rejection"
   },
@@ -51,5 +51,7 @@
     "A runtime seed must be recorded with the generated corpus and result artifact.",
     "The generated corpus must not be opened, previewed, summarized, or used for any configuration change before scoring completes.",
     "After the first completed scoring run, v14 is permanently consumed and may be used only for reporting or clearly labeled diagnostics."
-  ]
+  ],
+  "retired_reason": "The frozen cascade candidate failed the preregistered v5 calibration unsupported-operation rejection floor (94.792% < 95%), so blind-final generation was prohibited.",
+  "execution_performed": false
 }
