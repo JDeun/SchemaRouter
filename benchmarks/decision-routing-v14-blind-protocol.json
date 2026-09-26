@@ -1,0 +1,55 @@
+{
+  "version": "v14",
+  "cycle": "0.10-operation-cascade-v2",
+  "status": "protocol_reserved_not_generated",
+  "role": "blind_final_generalization_holdout",
+  "corpus_exists": false,
+  "tuning_eligible": false,
+  "generation_timing": "only_after_complete_cascade_candidate_configuration_is_frozen",
+  "execution_policy": "generate_and_execute_in_the_same_one_shot_workflow_without_intermediate_corpus_inspection",
+  "research_question": "Can a bounded cheap-first operation-fit cascade reduce CPU routing latency while preserving supported-operation recall and near-domain unsupported-operation rejection?",
+  "target_shape": {
+    "case_count": 600,
+    "supported_operation_cases": 384,
+    "near_domain_unsupported_operation_cases": 192,
+    "out_of_domain_cases": 24,
+    "supported_route_count": 16,
+    "cases_per_supported_route": 24,
+    "languages": {
+      "en": 100,
+      "ko": 100,
+      "es": 100,
+      "ja": 100,
+      "de": 100,
+      "mixed": 100
+    },
+    "split": "test"
+  },
+  "selection_policy": {
+    "candidate_selection_data": "v5 development split only",
+    "candidate_confirmation_data": "v5 calibration split only after candidate freeze",
+    "forbidden_for_selection": [
+      "v12 design-known stress corpus",
+      "v13 consumed blind-final corpus",
+      "any v14 generated corpus or result"
+    ],
+    "primary_objective": "minimize mean CPU latency among candidates meeting both quality floors",
+    "supported_operation_floor": 0.60,
+    "near_domain_unsupported_rejection_floor": 0.95,
+    "tie_breaker": "higher harmonic mean of supported-operation routed accuracy and near-domain unsupported-operation rejection"
+  },
+  "candidate_family": {
+    "architecture": "bounded cheap-first operation-fit cascade",
+    "primary_stage": "multilingual MiniLM operation similarity triage",
+    "escalation_stage": "frozen beta=1 sibling-contrastive BGE",
+    "authority_constraint": "both stages receive only already-authorized sibling operation choices and cannot add tools, endpoints, credentials, arguments, or side effects"
+  },
+  "isolation_requirements": [
+    "No normalized exact-query overlap with v2-v13.",
+    "The v14 corpus must not exist before the complete cascade candidate is frozen.",
+    "The generator and frozen candidate configuration must be committed before the one-shot run starts.",
+    "A runtime seed must be recorded with the generated corpus and result artifact.",
+    "The generated corpus must not be opened, previewed, summarized, or used for any configuration change before scoring completes.",
+    "After the first completed scoring run, v14 is permanently consumed and may be used only for reporting or clearly labeled diagnostics."
+  ]
+}
