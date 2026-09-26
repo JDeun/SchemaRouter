@@ -1,0 +1,88 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "graph_bounded_propagation_development",
+  "status": "propagation_policy_preregistered_before_execution",
+  "tuning_eligible": true,
+  "source_semantic_seed_result": "benchmarks/operation-fit-0.10-graph-semantic-seed-dev-result.json",
+  "rationale": {
+    "strict_safe_boundary": {
+      "min_similarity": 0.55,
+      "min_margin": 0.15
+    },
+    "lower_quality_boundary": {
+      "min_similarity": 0.45,
+      "min_margin": 0.1
+    },
+    "observation": "The strict boundary preserved baseline false routes and near-domain rejection but missed the supported floor by three correct cases; the lower boundary exceeded the supported floor and improved mean latency but added two false routes and regressed p95.",
+    "design_response": "Use the lower boundary only to seed a registered tool subgraph. Direct execution still requires the strict boundary. Intermediate cases must be resolved by BGE across registered sibling operations."
+  },
+  "selection_data": {
+    "corpus_role": "fresh_graph_v1_development_only",
+    "case_count": 1200,
+    "corpus_sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6",
+    "forbidden": [
+      "v5 calibration",
+      "v12 design-known stress",
+      "v13 consumed blind final",
+      "retired v14",
+      "future v15"
+    ]
+  },
+  "architecture": {
+    "hard_graph_first": true,
+    "semantic_seed_min_similarity": 0.45,
+    "semantic_seed_min_margin": 0.1,
+    "direct_accept_min_similarity": 0.55,
+    "direct_accept_min_margin": 0.15,
+    "propagation_scope": "seed-selected tool's registered sibling operation nodes only",
+    "propagation_backend": "BAAI/bge-reranker-v2-m3 via bounded PairwiseDecisionBackend",
+    "semantic_authority_limit": "Neither semantic seed nor propagation may create tools, endpoints, fields, arguments, credentials, or side effects."
+  },
+  "candidates": [
+    {
+      "tag": "prop-fallback",
+      "propagation_on_abstain": "fallback"
+    },
+    {
+      "tag": "prop-reject",
+      "propagation_on_abstain": "reject"
+    }
+  ],
+  "downstream_frozen": {
+    "semantic_recall_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "semantic_recall_top_k": 2,
+    "capability_fit_min_similarity": 0.25,
+    "operation_fit_model": "BAAI/bge-reranker-v2-m3",
+    "operation_fit_contrastive_beta": 1,
+    "operation_fit_min_score": 0.01,
+    "operation_fit_min_margin": 0,
+    "endpoint_disambiguation_min_margin": 0.03
+  },
+  "measurement": {
+    "mode": "counterbalanced paired per case",
+    "warmup_cases": 24,
+    "paired_mean_delta_bootstrap_samples": 2000
+  },
+  "gates": {
+    "supported_operation_routed_accuracy_min": 0.6,
+    "near_domain_unsupported_rejection_min": 0.95,
+    "false_routes_must_not_exceed_paired_full_bge_baseline": true,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0,
+    "paired_mean_latency_must_be_lower": true,
+    "p95_latency_must_not_regress": true,
+    "promotion_requires_all": true
+  },
+  "selection_rule": {
+    "primary": "highest harmonic mean of supported-operation routed accuracy and near-domain unsupported rejection among all-gate passers",
+    "tie_breakers": [
+      "lower paired candidate mean latency",
+      "lower candidate p95 latency",
+      "higher propagation direct precision"
+    ],
+    "no_winner": "Continue development on graph-derived corroboration / negative evidence and semantic-pass reuse. Do not use calibration or v15."
+  },
+  "candidate_frozen": false,
+  "calibration_allowed": false,
+  "blind_v15_allowed": false
+}
