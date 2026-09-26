@@ -9,6 +9,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- optional `EmbeddingDecisionBackend.min_lead_margin` abstention that measures the cosine gap
+  between the best and runner-up semantic matches, providing a bounded capability-fit/no-route gate
+  distinct from the existing selected-set boundary `min_margin`;
 - optional bounded semantic candidate recall through a separate `candidate_recall_backend` and
   `candidate_recall_limit`, allowing lexical candidates to be unioned with multilingual semantic
   top-k recall before the existing final bounded decision/policy/execution path; live inspection and
