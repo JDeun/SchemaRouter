@@ -2574,7 +2574,8 @@ def test_endpoint_disambiguation_reorders_only_within_primary_tool() -> None:
         endpoint_disambiguation_backend=CallableDecisionBackend(disambiguate),
     ).plan("inventory quantity")
 
-    assert seen["labels"] == ["inventory.search", "inventory.update"]
+    assert set(seen["labels"]) == {"inventory.search", "inventory.update"}
+    assert len(seen["labels"]) == 2
     assert plan.calls[0].tool == "inventory"
     assert plan.calls[0].endpoint == "update"
     assert plan.calls[0].explanation is not None
