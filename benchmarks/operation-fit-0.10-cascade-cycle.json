@@ -1,6 +1,6 @@
 {
   "cycle": "0.10-operation-cascade-v2",
-  "status": "development_sweep_preregistered",
+  "status": "candidate_selected_and_frozen_before_calibration",
   "reserved_from_main": "ecc6ba6f313df45545590297c7130a4abadf93f1",
   "v14_reservation_main_revision": "5d7c972c8b13d03934c9cc88de3dc9e14159bcd5",
   "predecessor": {
@@ -14,25 +14,64 @@
   "selection": {
     "corpus": "benchmarks/decision-routing-v5-operation-calibration.json",
     "split": "dev",
-    "supported_operation_floor": 0.60,
+    "supported_operation_floor": 0.6,
     "near_domain_unsupported_rejection_floor": 0.95,
     "objective": "lowest mean CPU latency among candidates meeting both floors",
     "tie_breaker": "higher supported/rejection harmonic mean",
     "fixed_accept_margin": 0.03,
     "candidate_grid": [
-      {"name": "r025-a055", "reject_below": 0.25, "accept_above": 0.55},
-      {"name": "r030-a055", "reject_below": 0.30, "accept_above": 0.55},
-      {"name": "r030-a060", "reject_below": 0.30, "accept_above": 0.60},
-      {"name": "r035-a060", "reject_below": 0.35, "accept_above": 0.60},
-      {"name": "r035-a065", "reject_below": 0.35, "accept_above": 0.65},
-      {"name": "r030-a060-m005", "reject_below": 0.30, "accept_above": 0.60, "accept_margin": 0.05}
+      {
+        "name": "r025-a055",
+        "reject_below": 0.25,
+        "accept_above": 0.55
+      },
+      {
+        "name": "r030-a055",
+        "reject_below": 0.3,
+        "accept_above": 0.55
+      },
+      {
+        "name": "r030-a060",
+        "reject_below": 0.3,
+        "accept_above": 0.6
+      },
+      {
+        "name": "r035-a060",
+        "reject_below": 0.35,
+        "accept_above": 0.6
+      },
+      {
+        "name": "r035-a065",
+        "reject_below": 0.35,
+        "accept_above": 0.65
+      },
+      {
+        "name": "r030-a060-m005",
+        "reject_below": 0.3,
+        "accept_above": 0.6,
+        "accept_margin": 0.05
+      }
     ],
-    "baseline": "rerun the frozen full beta=1 sibling-contrastive BGE profile on the same v5 dev split for same-runner latency comparison"
+    "baseline": "rerun the frozen full beta=1 sibling-contrastive BGE profile on the same v5 dev split for same-runner latency comparison",
+    "completed_run_id": 36248873541,
+    "completed_source_revision": "f542fbd92bd55432eff6b508e0577eef1d71866c",
+    "result_manifest": "benchmarks/operation-fit-0.10-cascade-dev-result.json",
+    "selected_candidate": {
+      "name": "r030-a060-m005",
+      "reject_below": 0.3,
+      "accept_above": 0.6,
+      "accept_margin": 0.05,
+      "bge_beta": 1,
+      "pairwise_min_score": 0.01,
+      "pairwise_min_margin": 0
+    },
+    "selection_locked": true
   },
   "confirmation": {
     "corpus": "benchmarks/decision-routing-v5-operation-calibration.json",
     "split": "calibration",
-    "rule": "freeze the selected dev winner, then run that unchanged candidate once; both quality floors must still pass"
+    "rule": "freeze the selected dev winner, then run that unchanged candidate once; both quality floors must still pass",
+    "candidate_changes_allowed": false
   },
   "blind_final": {
     "protocol": "benchmarks/decision-routing-v14-blind-protocol.json",
@@ -44,6 +83,7 @@
     "Do not change semantic recall, capability-fit, or endpoint-disambiguation configuration during the cascade study.",
     "Keep BGE beta=1.0, pairwise min score 0.01, and pairwise min margin 0.0 fixed when the escalation stage is invoked.",
     "The cascade may only suppress, preserve, or rank among already-authorized sibling operations; it cannot create new execution authority.",
-    "Only candidates in the preregistered grid are eligible for selection in this development sweep."
+    "Only candidates in the preregistered grid are eligible for selection in this development sweep.",
+    "The development winner is frozen as r030-a060-m005 before any calibration result is observed."
   ]
 }
