@@ -414,7 +414,7 @@ jobs:
 
 
   operation-fit-calibration-cpu:
-    if: ${{ false }}  # frozen at 0.40 after v5 dev/cal calibration
+    if: ${{ github.event_name == 'pull_request' }}  # recalibrate concise surface on v5 only
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -458,23 +458,6 @@ jobs:
               --html-out "${OUT}/report.html"
           done
 
-          OUT="artifacts/operation-fit/sim-${SAFE_T}/diagnostic-v7"
-          mkdir -p "${OUT}"
-          python scripts/benchmark_decision_routing.py \
-            --corpus benchmarks/decision-routing-v7-operation-post-change-holdout.json \
-            --split test \
-            --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
-            --candidate-recall-limit 2 \
-            --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed \
-            --candidate-fit-min-similarity 0.25 \
-            --operation-fit-embedding-callable benchmarks.multilingual_embedder:embed \
-            --operation-fit-min-similarity "${T}" \
-            --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed \
-            --endpoint-disambiguation-min-margin 0.03 \
-            --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
-            --json-out "${OUT}/report.json" \
-            --csv-out "${OUT}/rows.csv" \
-            --html-out "${OUT}/report.html"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
