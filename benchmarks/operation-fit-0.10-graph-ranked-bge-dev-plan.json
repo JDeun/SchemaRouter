@@ -1,0 +1,80 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "graph_ranked_selective_bge_development",
+  "status": "ranked_selective_bge_preregistered_before_execution",
+  "tuning_eligible": true,
+  "source_propagation_result": "benchmarks/operation-fit-0.10-graph-propagation-dev-result.json",
+  "rationale": {
+    "observed_best": "Sibling propagation with fallback passed supported accuracy, near-domain rejection, false-route, invalid/error, and paired mean-latency gates, gaining 29 correct cases with zero paired losses.",
+    "remaining_failure": "Its only failed gate was p95 latency because 42 propagation abstentions invoked the existing semantic/capability/BGE stack after an initial BGE call.",
+    "design_response": "Reuse the already-computed global semantic graph ranking and score top-ranked authorized routes plus seed-tool siblings in one selective BGE batch. If that bounded BGE abstains, fail closed instead of invoking a second BGE path."
+  },
+  "selection_data": {
+    "corpus_role": "fresh_graph_v1_development_only",
+    "case_count": 1200,
+    "corpus_sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6",
+    "forbidden": [
+      "v5 calibration",
+      "v12 design-known stress",
+      "v13 consumed blind final",
+      "retired v14",
+      "future v15"
+    ]
+  },
+  "frozen_geometry": {
+    "semantic_seed_min_similarity": 0.45,
+    "semantic_seed_min_margin": 0.1,
+    "direct_accept_min_similarity": 0.55,
+    "direct_accept_min_margin": 0.15,
+    "selective_bge_model": "BAAI/bge-reranker-v2-m3",
+    "selective_bge_contrastive_beta": 1,
+    "selective_bge_min_score": 0.01,
+    "selective_bge_min_margin": 0,
+    "propagation_scope": "semantic-ranked registered routes plus seed-tool siblings",
+    "propagation_on_abstain": "reject"
+  },
+  "candidates": [
+    {
+      "tag": "ranked-k2",
+      "ranked_limit": 2
+    },
+    {
+      "tag": "ranked-k4",
+      "ranked_limit": 4
+    }
+  ],
+  "downstream_frozen": {
+    "semantic_recall_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "semantic_recall_top_k": 2,
+    "capability_fit_min_similarity": 0.25,
+    "endpoint_disambiguation_min_margin": 0.03
+  },
+  "measurement": {
+    "mode": "counterbalanced paired per case",
+    "warmup_cases": 24,
+    "paired_mean_delta_bootstrap_samples": 2000,
+    "note": "The selective BGE batch is a single call over the bounded ranked graph surface; no existing-stack fallback is permitted after its abstention."
+  },
+  "gates": {
+    "supported_operation_routed_accuracy_min": 0.6,
+    "near_domain_unsupported_rejection_min": 0.95,
+    "false_routes_must_not_exceed_paired_full_bge_baseline": true,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0,
+    "paired_mean_latency_must_be_lower": true,
+    "p95_latency_must_not_regress": true,
+    "promotion_requires_all": true
+  },
+  "selection_rule": {
+    "primary": "highest harmonic mean of supported-operation routed accuracy and near-domain unsupported rejection among all-gate passers",
+    "tie_breakers": [
+      "lower candidate p95 latency",
+      "lower paired candidate mean latency",
+      "higher selective-BGE accept precision"
+    ],
+    "no_winner": "Proceed to explicit graph negative-evidence/corroboration development. Do not generate calibration or v15."
+  },
+  "candidate_frozen": false,
+  "calibration_allowed": false,
+  "blind_v15_allowed": false
+}
