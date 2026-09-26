@@ -8,6 +8,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "benchmarks" / "decision-routing-v1.json"
 CORPUS_V2 = ROOT / "benchmarks" / "decision-routing-v2.json"
 GENERATOR_V2 = ROOT / "scripts" / "generate_decision_routing_v2.py"
+CORPUS_V3 = ROOT / "benchmarks" / "decision-routing-v3-holdout.json"
+GENERATOR_V3 = ROOT / "scripts" / "generate_decision_routing_v3_holdout.py"
 SCRIPT = ROOT / "scripts" / "benchmark_decision_routing.py"
 
 
@@ -357,3 +359,61 @@ def test_benchmark_summary_tracks_split_and_language_accuracy() -> None:
 
     assert summary["split_accuracy"] == {"dev": 1.0, "test": 0.0}
     assert summary["language_accuracy"] == {"en": 1.0, "ko": 0.0}
+
+
+def test_v3_holdout_is_balanced_multilingual_and_fresh() -> None:
+    cases = json.loads(CORPUS_V3.read_text(encoding="utf-8"))
+
+    assert len(cases) == 720
+    assert len({case["id"] for case in cases}) == 720
+    assert {case["split"] for case in cases} == {"fresh_holdout"}
+
+    route_counts: dict[str, int] = {}
+    language_counts: dict[str, int] = {}
+    for case in cases:
+        route = case["expected"] or "NO_ROUTE"
+        route_counts[route] = route_counts.get(route, 0) + 1
+        language_counts[case["language"]] = language_counts.get(case["language"], 0) + 1
+
+    assert route_counts["NO_ROUTE"] == 240
+    assert all(
+        count == 30
+        for route, count in route_counts.items()
+        if route != "NO_ROUTE"
+    )
+    assert language_counts == {
+        "en": 120,
+        "ko": 120,
+        "es": 120,
+        "ja": 120,
+        "de": 120,
+        "mixed": 120,
+    }
+
+
+def test_v3_holdout_has_no_normalized_query_duplicates() -> None:
+    import re
+
+    cases = json.loads(CORPUS_V3.read_text(encoding="utf-8"))
+    normalized = [
+        re.sub(r"[^\w]+", "", case["query"].casefold())
+        for case in cases
+    ]
+
+    assert len(normalized) == len(set(normalized))
+
+
+def test_v3_generator_reproduces_checked_in_holdout_exactly() -> None:
+    spec = importlib.util.spec_from_file_location(
+        "generate_decision_routing_v3_holdout",
+        GENERATOR_V3,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    generated = module.build()
+    module.validate(generated)
+    checked_in = json.loads(CORPUS_V3.read_text(encoding="utf-8"))
+
+    assert generated == checked_in
