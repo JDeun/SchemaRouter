@@ -5,7 +5,11 @@ from dataclasses import dataclass
 import pytest
 
 from schemarouter import EndpointSpec, FieldSpec, InMemoryRegistry, PlanRequest, ToolSpec
-from schemarouter.decisions import DecisionRequest, DecisionResult
+from schemarouter.decisions import (
+    DecisionRequest,
+    DecisionResult,
+    DecisionSelection,
+)
 from schemarouter.graph_routing import CompiledSchemaGraph, GraphOperationGate
 from schemarouter.planner import SchemaPlanner
 
@@ -428,6 +432,198 @@ def test_empty_or_unknown_candidate_surface_escalates() -> None:
         tool_key="weather",
         endpoint_names=("not_registered",),
     ).decision == "escalate"
+
+
+def test_semantic_seed_policy_requires_score_and_margin() -> None:
+    graph = CompiledSchemaGraph.from_registry(_registry())
+    gate = GraphOperationGate(
+        semantic_seed_min_score=0.90,
+        semantic_seed_min_margin=0.10,
+    )
+
+    accepted = gate.assess_semantic_route(
+        graph=graph,
+        tool_key="weather",
+        endpoint_name="forecast",
+        score=0.95,
+        second_score=0.70,
+    )
+    low_score = gate.assess_semantic_route(
+        graph=graph,
+        tool_key="weather",
+        endpoint_name="forecast",
+        score=0.89,
+        second_score=0.50,
+    )
+    low_margin = gate.assess_semantic_route(
+        graph=graph,
+        tool_key="weather",
+        endpoint_name="forecast",
+        score=0.95,
+        second_score=0.90,
+    )
+
+    assert accepted.decision == "accept"
+    assert accepted.endpoint_name == "forecast"
+    assert accepted.evidence[0].semantic_score == pytest.approx(0.95)
+    assert accepted.evidence[0].semantic_margin == pytest.approx(0.25)
+    assert low_score.decision == "escalate"
+    assert low_margin.decision == "escalate"
+
+
+@pytest.mark.parametrize(
+    ("score", "margin"),
+    [
+        (-0.01, 0.0),
+        (1.01, 0.0),
+        (0.5, -0.01),
+        (0.5, 1.01),
+    ],
+)
+def test_semantic_seed_policy_thresholds_are_bounded(
+    score: float,
+    margin: float,
+) -> None:
+    with pytest.raises(ValueError):
+        GraphOperationGate(
+            semantic_seed_min_score=score,
+            semantic_seed_min_margin=margin,
+        )
+
+
+@dataclass
+class _SemanticSeedBackend:
+    top_index: int
+    top_score: float
+    second_index: int
+    second_score: float
+    calls: int = 0
+
+    def decide(self, request: DecisionRequest) -> DecisionResult:
+        self.calls += 1
+        return DecisionResult(
+            selections=[
+                DecisionSelection(
+                    option_id=f"recall:{self.top_index}",
+                    score=self.top_score,
+                ),
+                DecisionSelection(
+                    option_id=f"recall:{self.second_index}",
+                    score=self.second_score,
+                ),
+            ]
+        )
+
+
+@dataclass
+class _CountingAbstainingBackend:
+    calls: int = 0
+
+    def decide(self, request: DecisionRequest) -> DecisionResult:
+        self.calls += 1
+        return DecisionResult(abstained=True)
+
+
+def test_semantic_graph_seed_reuses_recall_and_skips_bge() -> None:
+    recall = _SemanticSeedBackend(
+        top_index=1,
+        top_score=0.96,
+        second_index=0,
+        second_score=0.70,
+    )
+    operation = _ExplodingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(
+            semantic_seed_min_score=0.90,
+            semantic_seed_min_margin=0.10,
+        ),
+        candidate_recall_backend=recall,
+        candidate_recall_limit=2,
+        operation_fit_backend=operation,
+    )
+
+    plan = planner.plan(
+        PlanRequest(
+            query="What should the weather be tomorrow in Seoul?",
+            preferred_tools=["weather"],
+        )
+    )
+
+    assert recall.calls == 1
+    assert operation.calls == 0
+    assert len(plan.calls) == 1
+    assert plan.calls[0].endpoint == "forecast"
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "graph_semantic"
+    assert any("graph semantic seed accepted" in warning for warning in plan.warnings)
+
+
+def test_semantic_graph_seed_escalates_without_second_embedding_call() -> None:
+    recall = _SemanticSeedBackend(
+        top_index=1,
+        top_score=0.88,
+        second_index=0,
+        second_score=0.70,
+    )
+    operation = _CountingAbstainingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(
+            semantic_seed_min_score=0.90,
+            semantic_seed_min_margin=0.10,
+        ),
+        candidate_recall_backend=recall,
+        candidate_recall_limit=2,
+        operation_fit_backend=operation,
+    )
+
+    plan = planner.plan(
+        PlanRequest(
+            query="What should conditions be tomorrow in Seoul?",
+            preferred_tools=["weather"],
+        )
+    )
+
+    assert recall.calls == 1
+    assert operation.calls == 1
+    assert plan.calls == []
+    assert any("graph semantic seed escalated" in warning for warning in plan.warnings)
+
+
+def test_semantic_graph_seed_respects_tool_scoped_conflict() -> None:
+    recall = _SemanticSeedBackend(
+        top_index=1,
+        top_score=0.99,
+        second_index=0,
+        second_score=0.50,
+    )
+    operation = _ExplodingBackend()
+    planner = SchemaPlanner(
+        _registry(conflicts=True),
+        graph_operation_gate=GraphOperationGate(
+            semantic_seed_min_score=0.90,
+            semantic_seed_min_margin=0.10,
+        ),
+        candidate_recall_backend=recall,
+        candidate_recall_limit=2,
+        operation_fit_backend=operation,
+    )
+
+    plan = planner.plan(
+        PlanRequest(
+            query="Show weather alerts around Seoul tomorrow.",
+            preferred_tools=["weather"],
+        )
+    )
+
+    assert recall.calls == 1
+    assert operation.calls == 0
+    assert plan.calls == []
+    assert any(
+        "tool-scoped conflict check" in warning
+        for warning in plan.warnings
+    )
 
 
 @dataclass
