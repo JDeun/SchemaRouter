@@ -56,6 +56,10 @@ def test_embedding_backend_selects_best_bounded_option() -> None:
     assert 0.99 < result.selections[0].score <= 1.0
     assert result.metadata["provider"] == "embedding-similarity"
     assert result.metadata["dimensions"] == 2
+    assert result.metadata["top_similarity"] > result.metadata["second_similarity"]
+    assert result.metadata["top_margin"] == pytest.approx(
+        result.metadata["top_similarity"] - result.metadata["second_similarity"]
+    )
 
 
 def test_embedding_backend_never_forwards_option_metadata() -> None:
