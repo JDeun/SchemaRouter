@@ -625,3 +625,26 @@ def test_live_inspection_reports_operation_fit_configuration() -> None:
     html = render_dashboard(snapshot.registry, live=snapshot)
     assert "Operation fit" in html
     assert "CallableDecisionBackend" in html
+
+
+def test_inspection_exposes_trusted_operation_aliases() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="support",
+            endpoints=[
+                EndpointSpec(
+                    name="create_ticket",
+                    operation_aliases=["open support case", "file support request"],
+                    read_only=False,
+                )
+            ],
+        )
+    )
+
+    snapshot = inspect_registry(registry)
+
+    assert snapshot.tools[0].endpoints[0].operation_aliases == [
+        "open support case",
+        "file support request",
+    ]

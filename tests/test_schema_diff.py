@@ -545,3 +545,19 @@ def test_field_unit_normalization_change_is_breaking() -> None:
         change.kind == "unit_normalization_changed"
         for change in report.changes
     )
+
+
+def test_operation_alias_change_is_planning_compatible_but_changes_fingerprint() -> None:
+    old = endpoint()
+    new = endpoint(operation_aliases=["find materials", "look up material properties"])
+
+    report = compare_endpoint_specs(old, new)
+
+    assert report.compatibility == "compatible"
+    assert report.old_fingerprint != report.new_fingerprint
+    assert any(
+        change.kind == "operation_aliases_changed"
+        and change.path == "operation_aliases"
+        and change.severity == "compatible"
+        for change in report.changes
+    )

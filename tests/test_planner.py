@@ -2799,3 +2799,51 @@ async def test_async_operation_fit_gate_can_suppress_candidates() -> None:
         in warning
         for warning in plan.warnings
     )
+
+
+def test_operation_fit_includes_trusted_endpoint_aliases_without_tool_domain_text() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="support",
+            description="Customer support domain",
+            endpoints=[
+                EndpointSpec(
+                    name="create_ticket",
+                    description="Create a customer support ticket",
+                    operation_aliases=["open support case", "file support request"],
+                    read_only=False,
+                ),
+                EndpointSpec(
+                    name="search",
+                    description="Search support documentation",
+                    operation_aliases=["find help documentation"],
+                    read_only=True,
+                ),
+            ],
+        )
+    )
+    seen: dict[str, list[str]] = {}
+
+    def fit(request):
+        seen["descriptions"] = [option.description for option in request.options]
+        return {"selections": [{"option_id": request.options[0].id}]}
+
+    SchemaPlanner(
+        registry,
+        operation_fit_backend=CallableDecisionBackend(fit),
+    ).plan("file a support request")
+
+    rendered = "\n".join(seen["descriptions"])
+    assert "file support request" in rendered
+    assert "open support case" in rendered
+    assert "Customer support domain" not in rendered
+
+
+def test_endpoint_operation_aliases_reject_empty_duplicate_or_padded_values() -> None:
+    with pytest.raises(ValueError, match="operation_aliases"):
+        EndpointSpec(name="search", operation_aliases=[""])
+    with pytest.raises(ValueError, match="operation_aliases"):
+        EndpointSpec(name="search", operation_aliases=[" find data"])
+    with pytest.raises(ValueError, match="duplicate operation alias"):
+        EndpointSpec(name="search", operation_aliases=["Find data", "find data"])
