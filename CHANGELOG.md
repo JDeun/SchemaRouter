@@ -13,9 +13,10 @@ The project is pre-1.0 and follows the compatibility rules in
   endpoint operations inside the currently leading tool domain, deliberately excluding broad tool
   descriptions, tool-name labels, and output-field labels; the gate can suppress unsupported operations but cannot add,
   select, reorder, or switch execution candidates;
-- separate multilingual v5 operation calibration (576 cases) and untouched v6 operation holdout
+- separate multilingual v5 operation calibration (576 cases) and v6 operation regression holdout
   (600 cases) corpora for measuring near-domain unsupported-operation rejection without reusing the
-  already-consumed v4 holdout;
+  already-consumed v4 holdout; v6 was consumed before the tool-domain-label cleanup and is retained
+  as regression evidence rather than reused for a new untouched claim;
 - a separate 600-case multilingual v7 post-change operation holdout, reserved before measuring the tool-domain-label-cleaned operation-fit surface so v6 can remain regression evidence rather than be reused for a new untouched claim;
 - optional bounded `endpoint_disambiguation_backend` stage that may reorder only sibling endpoints
   inside the currently leading tool domain for single-call plans, preserving the existing candidate

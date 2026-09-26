@@ -351,11 +351,16 @@ The v5 operation corpus contains 576 multilingual cases: 288 supported route ope
 near-domain unsupported operations, split into 384 development and 192 calibration cases.
 
 The operation-fit threshold must be selected from v5 development/calibration results only. The
-600-case v6 operation holdout is test-only and remains untouched until the threshold is frozen.
-v6 contains 384 supported route cases, 192 near-domain unsupported-operation negatives, and 24
-ordinary out-of-domain negatives, balanced to 100 cases per language group.
+600-case v6 operation holdout contains 384 supported route cases, 192 near-domain unsupported-operation
+negatives, and 24 ordinary out-of-domain negatives, balanced to 100 cases per language group. v6 was
+already evaluated with the earlier operation-fit input representation and is therefore regression
+evidence only; it must not be reused for a new untouched generalization claim.
 
-The GitHub Actions v6 holdout job is deliberately manual-only. It is skipped for pull-request runs and ordinary manual benchmark runs. To consume v6, explicitly enable `run_operation_holdout` and provide the already-frozen `operation_fit_min_similarity` value. An empty threshold leaves the holdout job skipped.
+The protected GitHub Actions holdout job now targets v7 and is deliberately manual-only. It is skipped
+for pull-request runs and ordinary manual benchmark runs. After freezing the label-cleaned threshold
+from v5, explicitly enable `run_operation_holdout` and provide that frozen
+`operation_fit_min_similarity` value to consume v7 once. An empty threshold leaves the holdout job
+skipped.
 
 The frozen upstream stack for this experiment is:
 
@@ -363,8 +368,9 @@ The frozen upstream stack for this experiment is:
 - broad capability-fit min similarity = 0.25;
 - same-tool endpoint disambiguation min margin = 0.03.
 
-Only the operation-fit threshold is varied during v5 calibration. Once selected, it must not be
-retuned from v6 results.
+Only the operation-fit threshold is varied during v5 calibration. For the label-cleaned
+operation-fit surface, freeze that threshold before evaluating v7 and do not retune it from v7
+results.
 
 
 ### Post-change operation holdout (v7)
