@@ -83,6 +83,7 @@ class BenchmarkRow:
     estimated_cost: float | None = None
     error: str | None = None
     failure_stage: str | None = None
+    graph_operation_decision: str | None = None
 
 
 SMOKE_CASES = [
@@ -534,6 +535,7 @@ async def benchmark_planner(
                 expected=case.expected,
                 predicted=predicted,
             )
+            graph_operation_decision = _graph_operation_decision(plan.warnings)
             metadata = getattr(result, "metadata", {}) if result is not None else {}
             input_tokens = metadata.get("input_tokens")
             output_tokens = metadata.get("output_tokens")
@@ -594,6 +596,7 @@ async def benchmark_planner(
                         output_cost_per_million,
                     ),
                     failure_stage=failure_stage,
+                    graph_operation_decision=graph_operation_decision,
                 )
             )
         except Exception as exc:  # noqa: BLE001 - benchmark records provider failures.
@@ -616,6 +619,17 @@ async def benchmark_planner(
                 )
             )
     return rows
+
+
+def _graph_operation_decision(warnings: list[str]) -> str | None:
+    lowered = [warning.casefold() for warning in warnings]
+    if any("graph operation gate rejected" in warning for warning in lowered):
+        return "reject"
+    if any("graph operation gate accepted" in warning for warning in lowered):
+        return "accept"
+    if any("graph operation gate escalated" in warning for warning in lowered):
+        return "escalate"
+    return None
 
 
 def _failure_stage(
@@ -735,6 +749,15 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
                 {row.failure_stage for row in rows if row.failure_stage is not None}
             )
         },
+        "graph_operation_counts": {
+            decision: sum(row.graph_operation_decision == decision for row in rows)
+            for decision in ("accept", "reject", "escalate")
+        },
+        "graph_operation_resolution_rate": (
+            sum(row.graph_operation_decision in {"accept", "reject"} for row in rows) / total
+            if total
+            else 0.0
+        ),
         "backend_invocations": sum(row.backend_invoked for row in rows),
         "backend_invocation_rate": (
             sum(row.backend_invoked for row in rows) / total if total else 0.0
