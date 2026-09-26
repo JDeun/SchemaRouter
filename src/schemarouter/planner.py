@@ -307,13 +307,23 @@ class SchemaPlanner:
         *,
         decision_backend: DecisionBackend | None = None,
         decision_policy: DecisionPolicy | None = None,
+        candidate_recall_backend: DecisionBackend | None = None,
+        candidate_recall_limit: int = 4,
         candidate_index: bool = True,
         availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> None:
+        if (
+            not isinstance(candidate_recall_limit, int)
+            or isinstance(candidate_recall_limit, bool)
+            or candidate_recall_limit < 1
+        ):
+            raise ValueError("candidate_recall_limit must be an integer >= 1")
         self.registry = registry
         self.analyzer = analyzer or KeywordAnalyzer()
         self.decision_backend = decision_backend
         self.decision_policy = decision_policy or DecisionPolicy()
+        self.candidate_recall_backend = candidate_recall_backend
+        self.candidate_recall_limit = candidate_recall_limit
         self.candidate_index = candidate_index
         self.availability_predicate = availability_predicate
         self._candidate_index: _CandidateIndex | None = None
@@ -484,6 +494,7 @@ class SchemaPlanner:
         if (
             not candidates
             and self.decision_policy.candidate_recall_on_empty_enabled
+            and self.candidate_recall_backend is None
         ):
             candidates = [
                 _Candidate(tool, endpoint, 0.0, ())
@@ -500,6 +511,198 @@ class SchemaPlanner:
             )
         )
         return candidates
+
+    def _semantic_recall_catalog(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> list[_Candidate]:
+        def is_available(tool: ToolSpec, endpoint: EndpointSpec) -> bool:
+            if (
+                self.availability_predicate is not None
+                and not self.availability_predicate(tool, endpoint)
+            ):
+                return False
+            if (
+                additional_availability_predicate is not None
+                and not additional_availability_predicate(tool, endpoint)
+            ):
+                return False
+            return True
+
+        return [
+            self._score_endpoint(tool, endpoint, request.query, intent)
+            for tool in self.registry.tools()
+            for endpoint in tool.endpoints
+            if is_available(tool, endpoint)
+        ]
+
+    def _semantic_recall_request(
+        self,
+        request: PlanRequest,
+        catalog: list[_Candidate],
+    ) -> DecisionRequest:
+        options: list[DecisionOption] = []
+        for index, candidate in enumerate(catalog):
+            field_labels = [
+                field.semantic_id or field.name
+                for field in candidate.endpoint.output_fields
+                if not field.identifier
+            ]
+            parts = [
+                candidate.tool.description.strip(),
+                candidate.endpoint.description.strip(),
+            ]
+            if field_labels:
+                parts.append("Fields: " + ", ".join(field_labels))
+            description = "\n".join(part for part in parts if part)
+            options.append(
+                DecisionOption(
+                    id=f"recall:{index}",
+                    label=f"{candidate.tool.key}.{candidate.endpoint.name}",
+                    description=description,
+                    metadata={"schema_score": candidate.score},
+                )
+            )
+        return DecisionRequest(
+            query=request.query,
+            options=options,
+            max_selections=min(self.candidate_recall_limit, len(options)),
+            context={"surface": "semantic_candidate_recall"},
+        )
+
+    @staticmethod
+    def _merge_semantic_recall(
+        candidates: list[_Candidate],
+        catalog: list[_Candidate],
+        selected_indexes: list[int],
+    ) -> tuple[list[_Candidate], int]:
+        existing = {
+            (candidate.tool.key, candidate.endpoint.name)
+            for candidate in candidates
+        }
+        merged = list(candidates)
+        added = 0
+        for index in selected_indexes:
+            candidate = catalog[index]
+            key = (candidate.tool.key, candidate.endpoint.name)
+            if key in existing:
+                continue
+            merged.append(
+                replace(
+                    candidate,
+                    selection_source="semantic_recall",
+                )
+            )
+            existing.add(key)
+            added += 1
+        return merged, added
+
+    def _augment_candidates_with_semantic_recall_sync(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        candidates: list[_Candidate],
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.candidate_recall_backend is None:
+            return candidates, []
+
+        catalog = self._semantic_recall_catalog(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
+        if not catalog:
+            return candidates, []
+
+        try:
+            result = choose_sync(
+                self.candidate_recall_backend,
+                self._semantic_recall_request(request, catalog),
+            )
+        except Exception as exc:
+            return candidates, [
+                "semantic candidate recall fallback: "
+                f"{type(exc).__name__}; retained lexical candidates"
+            ]
+
+        if result.abstained or not result.selections:
+            return candidates, ["semantic candidate recall abstained"]
+
+        selected_indexes = [
+            int(item.option_id.split(":", 1)[1])
+            for item in result.selections
+        ]
+        merged, added = self._merge_semantic_recall(
+            candidates,
+            catalog,
+            selected_indexes,
+        )
+        return merged, [
+            f"semantic candidate recall added {added} candidate(s)"
+        ]
+
+    async def _augment_candidates_with_semantic_recall_async(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        candidates: list[_Candidate],
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.candidate_recall_backend is None:
+            return candidates, []
+
+        catalog = self._semantic_recall_catalog(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
+        if not catalog:
+            return candidates, []
+
+        try:
+            result = await choose_async(
+                self.candidate_recall_backend,
+                self._semantic_recall_request(request, catalog),
+            )
+        except Exception as exc:
+            return candidates, [
+                "semantic candidate recall fallback: "
+                f"{type(exc).__name__}; retained lexical candidates"
+            ]
+
+        if result.abstained or not result.selections:
+            return candidates, ["semantic candidate recall abstained"]
+
+        selected_indexes = [
+            int(item.option_id.split(":", 1)[1])
+            for item in result.selections
+        ]
+        merged, added = self._merge_semantic_recall(
+            candidates,
+            catalog,
+            selected_indexes,
+        )
+        return merged, [
+            f"semantic candidate recall added {added} candidate(s)"
+        ]
 
     def _decision_request(
         self,
@@ -528,7 +731,13 @@ class SchemaPlanner:
         if not candidates or not self.decision_policy.candidate_selection_enabled:
             return candidates, []
         assert self.decision_backend is not None
-        recall_expanded = all(candidate.score <= 0 for candidate in candidates)
+        recall_expanded = (
+            all(candidate.score <= 0 for candidate in candidates)
+            and all(
+                candidate.selection_source != "semantic_recall"
+                for candidate in candidates
+            )
+        )
         try:
             result = choose_sync(
                 self.decision_backend,
@@ -600,7 +809,13 @@ class SchemaPlanner:
         if not candidates or not self.decision_policy.candidate_selection_enabled:
             return candidates, []
         assert self.decision_backend is not None
-        recall_expanded = all(candidate.score <= 0 for candidate in candidates)
+        recall_expanded = (
+            all(candidate.score <= 0 for candidate in candidates)
+            and all(
+                candidate.selection_source != "semantic_recall"
+                for candidate in candidates
+            )
+        )
         try:
             result = await choose_async(
                 self.decision_backend,
@@ -1790,10 +2005,18 @@ class SchemaPlanner:
         | None = None,
     ) -> ExecutionPlan:
         del async_decision
-        all_candidates = self._candidates(
+        lexical_candidates = self._candidates(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
+        )
+        all_candidates, recall_warnings = (
+            self._augment_candidates_with_semantic_recall_sync(
+                request,
+                intent,
+                lexical_candidates,
+                additional_availability_predicate=additional_availability_predicate,
+            )
         )
         _, required_coverage = self._field_coverage_matrix(request, all_candidates)
         candidates, decision_warnings = self._select_candidates_sync(
@@ -1802,7 +2025,7 @@ class SchemaPlanner:
         )
         candidates = self._order_candidates_for_field_coverage(request, candidates)
 
-        warnings: list[str] = list(decision_warnings)
+        warnings: list[str] = [*recall_warnings, *decision_warnings]
         if not candidates:
             coverage = self._plan_coverage(
                 required_coverage,
@@ -1952,10 +2175,18 @@ class SchemaPlanner:
         ]
         | None = None,
     ) -> ExecutionPlan:
-        all_candidates = self._candidates(
+        lexical_candidates = self._candidates(
             request,
             intent,
             additional_availability_predicate=additional_availability_predicate,
+        )
+        all_candidates, recall_warnings = (
+            await self._augment_candidates_with_semantic_recall_async(
+                request,
+                intent,
+                lexical_candidates,
+                additional_availability_predicate=additional_availability_predicate,
+            )
         )
         _, required_coverage = self._field_coverage_matrix(request, all_candidates)
         candidates, decision_warnings = await self._select_candidates_async(
@@ -1963,7 +2194,7 @@ class SchemaPlanner:
             all_candidates,
         )
         candidates = self._order_candidates_for_field_coverage(request, candidates)
-        warnings = list(decision_warnings)
+        warnings = [*recall_warnings, *decision_warnings]
         if not candidates:
             coverage = self._plan_coverage(
                 required_coverage,

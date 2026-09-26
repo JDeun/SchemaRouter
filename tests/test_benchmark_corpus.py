@@ -6,6 +6,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "benchmarks" / "decision-routing-v1.json"
+CORPUS_V2 = ROOT / "benchmarks" / "decision-routing-v2.json"
+GENERATOR_V2 = ROOT / "scripts" / "generate_decision_routing_v2.py"
 SCRIPT = ROOT / "scripts" / "benchmark_decision_routing.py"
 
 
@@ -235,3 +237,123 @@ def test_benchmark_summary_includes_binomial_confidence_intervals() -> None:
     assert summary["expected_no_route_recall_ci95"] == [0.230724, 0.882379]
     assert summary["category_accuracy_ci95"]["normal"] == [0.565518, 1.0]
     assert summary["category_accuracy_ci95"]["adversarial"] == [0.230724, 0.882379]
+
+
+def test_v2_corpus_is_large_balanced_split_and_multilingual() -> None:
+    cases = json.loads(CORPUS_V2.read_text(encoding="utf-8"))
+
+    assert len(cases) == 1200
+    assert len({case["id"] for case in cases}) == 1200
+
+    route_counts: dict[str, int] = {}
+    split_counts: dict[str, int] = {}
+    language_counts: dict[str, int] = {}
+    for case in cases:
+        route = case["expected"] or "NO_ROUTE"
+        route_counts[route] = route_counts.get(route, 0) + 1
+        split_counts[case["split"]] = split_counts.get(case["split"], 0) + 1
+        language_counts[case["language"]] = language_counts.get(case["language"], 0) + 1
+
+    assert route_counts["NO_ROUTE"] == 240
+    assert all(
+        count == 60
+        for route, count in route_counts.items()
+        if route != "NO_ROUTE"
+    )
+    assert split_counts == {"dev": 720, "calibration": 240, "test": 240}
+    assert language_counts == {
+        "en": 200,
+        "ko": 200,
+        "es": 200,
+        "ja": 200,
+        "de": 200,
+        "mixed": 200,
+    }
+
+
+def test_v2_corpus_has_no_normalized_query_duplicates() -> None:
+    import re
+
+    cases = json.loads(CORPUS_V2.read_text(encoding="utf-8"))
+    normalized = [
+        re.sub(r"[^\w]+", "", case["query"].casefold())
+        for case in cases
+    ]
+
+    assert len(normalized) == len(set(normalized))
+
+
+def test_v2_loader_preserves_split_and_language() -> None:
+    module = _benchmark_module()
+    registry = module.reference_registry()
+    allowed = {
+        f"{tool.key}.{endpoint.name}"
+        for tool in registry.tools()
+        for endpoint in tool.endpoints
+    }
+
+    cases = module.load_corpus(CORPUS_V2, allowed_routes=allowed)
+
+    assert len(cases) == 1200
+    assert {case.split for case in cases} == {"dev", "calibration", "test"}
+    assert {case.language for case in cases} == {
+        "en",
+        "ko",
+        "es",
+        "ja",
+        "de",
+        "mixed",
+    }
+
+
+def test_v2_generator_reproduces_checked_in_corpus_exactly() -> None:
+    spec = importlib.util.spec_from_file_location(
+        "generate_decision_routing_v2",
+        GENERATOR_V2,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    generated = module.build()
+    module.validate(generated)
+    checked_in = json.loads(CORPUS_V2.read_text(encoding="utf-8"))
+
+    assert generated == checked_in
+
+
+def test_benchmark_summary_tracks_split_and_language_accuracy() -> None:
+    module = _benchmark_module()
+    rows = [
+        module.BenchmarkRow(
+            backend="bounded",
+            case_id="en-dev",
+            category="normal",
+            split="dev",
+            language="en",
+            query="query",
+            expected="weather.current",
+            predicted="weather.current",
+            correct=True,
+            invalid_plan=False,
+            latency_ms=1.0,
+        ),
+        module.BenchmarkRow(
+            backend="bounded",
+            case_id="ko-test",
+            category="normal",
+            split="test",
+            language="ko",
+            query="질문",
+            expected="weather.current",
+            predicted=None,
+            correct=False,
+            invalid_plan=False,
+            latency_ms=1.0,
+        ),
+    ]
+
+    summary = module.summarize(rows)
+
+    assert summary["split_accuracy"] == {"dev": 1.0, "test": 0.0}
+    assert summary["language_accuracy"] == {"en": 1.0, "ko": 0.0}

@@ -3,6 +3,7 @@ import pytest
 from schemarouter import (
     CallableDecisionBackend,
     DecisionPolicy,
+    EmbeddingDecisionBackend,
     EndpointSpec,
     EvidenceRequirements,
     FieldSpec,
@@ -2210,3 +2211,177 @@ def test_compiled_call_records_only_matching_local_field_requirements() -> None:
         "gap_ev": EvidenceRequirements(units=True),
     }
     assert call.evidence.units is False
+
+
+def _semantic_recall_registry() -> InMemoryRegistry:
+    reg = InMemoryRegistry()
+    for tool_name, endpoint_name, description, field_name in (
+        ("weather", "current", "Get current weather and temperature", "temperature"),
+        ("materials", "search", "Search material properties including band gap", "band_gap"),
+        ("papers", "search", "Search scientific papers by topic", "title"),
+        ("finance", "quote", "Get the latest stock market quote", "price"),
+    ):
+        reg.register(
+            ToolSpec(
+                name=tool_name,
+                description=description,
+                endpoints=[
+                    EndpointSpec(
+                        name=endpoint_name,
+                        description=description,
+                        read_only=True,
+                        output_fields=[FieldSpec(name=field_name)],
+                    )
+                ],
+            )
+        )
+    return reg
+
+
+def _semantic_material_embedder(texts: list[str]) -> list[list[float]]:
+    vectors = [[1.0, 0.0]]
+    for text in texts[1:]:
+        vectors.append(
+            [1.0, 0.0]
+            if "materials.search" in text
+            else [0.0, 1.0]
+        )
+    return vectors
+
+
+def test_semantic_candidate_recall_recovers_cross_language_empty_lexical_query() -> None:
+    plan = SchemaPlanner(
+        _semantic_recall_registry(),
+        candidate_recall_backend=EmbeddingDecisionBackend(
+            _semantic_material_embedder
+        ),
+        candidate_recall_limit=1,
+    ).plan("실리콘의 밴드갭 물성을 찾아줘")
+
+    assert len(plan.calls) == 1
+    assert plan.calls[0].tool == "materials"
+    assert plan.calls[0].endpoint == "search"
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "semantic_recall"
+    assert any(
+        "semantic candidate recall added 1 candidate" in warning
+        for warning in plan.warnings
+    )
+
+
+@pytest.mark.asyncio
+async def test_async_semantic_candidate_recall_supports_async_embedder() -> None:
+    async def embed(texts: list[str]) -> list[list[float]]:
+        return _semantic_material_embedder(texts)
+
+    plan = await SchemaPlanner(
+        _semantic_recall_registry(),
+        candidate_recall_backend=EmbeddingDecisionBackend(embed),
+        candidate_recall_limit=1,
+    ).aplan("실리콘의 밴드갭 물성을 찾아줘")
+
+    assert plan.calls[0].tool == "materials"
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "semantic_recall"
+
+
+def test_semantic_candidate_recall_is_bounded_before_final_decision() -> None:
+    recall_seen = {}
+    final_seen = {}
+
+    def recall(request):
+        recall_seen["options"] = len(request.options)
+        recall_seen["max"] = request.max_selections
+        selected = [
+            option
+            for option in request.options
+            if option.label in {"materials.search", "papers.search"}
+        ]
+        return {
+            "selections": [
+                {"option_id": option.id, "score": 0.9}
+                for option in selected
+            ]
+        }
+
+    def final(request):
+        final_seen["options"] = [option.label for option in request.options]
+        selected = next(
+            option for option in request.options
+            if option.label == "materials.search"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.95}]}
+
+    plan = SchemaPlanner(
+        _semantic_recall_registry(),
+        decision_backend=CallableDecisionBackend(final),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+            recall_on_empty=True,
+        ),
+        candidate_recall_backend=CallableDecisionBackend(recall),
+        candidate_recall_limit=2,
+    ).plan("완전히 어휘가 겹치지 않는 물성 질문")
+
+    assert recall_seen == {"options": 4, "max": 2}
+    assert final_seen["options"] == ["materials.search", "papers.search"]
+    assert plan.calls[0].tool == "materials"
+    assert not any(
+        "expanded an empty lexical candidate set" in warning
+        for warning in plan.warnings
+    )
+
+
+def test_semantic_candidate_recall_unions_with_existing_lexical_candidates() -> None:
+    final_seen = {}
+
+    def final(request):
+        final_seen["options"] = {option.label for option in request.options}
+        selected = next(
+            option for option in request.options
+            if option.label == "materials.search"
+        )
+        return {"selections": [{"option_id": selected.id}]}
+
+    plan = SchemaPlanner(
+        _semantic_recall_registry(),
+        decision_backend=CallableDecisionBackend(final),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+        ),
+        candidate_recall_backend=EmbeddingDecisionBackend(
+            _semantic_material_embedder
+        ),
+        candidate_recall_limit=1,
+    ).plan("weather 그리고 실리콘 밴드갭")
+
+    assert "weather.current" in final_seen["options"]
+    assert "materials.search" in final_seen["options"]
+    assert plan.calls[0].tool == "materials"
+
+
+def test_semantic_candidate_recall_failure_retains_lexical_candidates() -> None:
+    def fail(_request):
+        raise RuntimeError("embedding unavailable")
+
+    plan = SchemaPlanner(
+        _semantic_recall_registry(),
+        candidate_recall_backend=CallableDecisionBackend(fail),
+    ).plan("current weather")
+
+    assert plan.calls[0].tool == "weather"
+    assert any(
+        "semantic candidate recall fallback: RuntimeError" in warning
+        for warning in plan.warnings
+    )
+
+
+@pytest.mark.parametrize("limit", [0, -1, True, 1.5])
+def test_semantic_candidate_recall_limit_must_be_positive_integer(limit) -> None:
+    with pytest.raises(ValueError, match="candidate_recall_limit"):
+        SchemaPlanner(
+            _semantic_recall_registry(),
+            candidate_recall_limit=limit,
+        )

@@ -162,6 +162,8 @@ class PlannerInspection(StrictModel):
 
     analyzer: str
     decision_backend: str | None = None
+    candidate_recall_backend: str | None = None
+    candidate_recall_limit: int = Field(default=4, ge=1)
     decision_policy: dict[str, object] = Field(default_factory=dict)
 
 
@@ -309,11 +311,18 @@ def inspect_router(router: Any) -> RouterInspection:
 
     planner = router.planner
     backend = planner.decision_backend
+    recall_backend = planner.candidate_recall_backend
     return RouterInspection(
         registry=inspect_registry(router.registry),
         planner=PlannerInspection(
             analyzer=type(planner.analyzer).__name__,
             decision_backend=type(backend).__name__ if backend is not None else None,
+            candidate_recall_backend=(
+                type(recall_backend).__name__
+                if recall_backend is not None
+                else None
+            ),
+            candidate_recall_limit=planner.candidate_recall_limit,
             decision_policy=planner.decision_policy.model_dump(mode="json"),
         ),
         execution=ExecutionInspection(
