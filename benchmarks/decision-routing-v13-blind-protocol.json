@@ -1,0 +1,43 @@
+{
+  "version": "v13",
+  "status": "protocol_reserved_not_generated",
+  "role": "blind_final_generalization_holdout",
+  "corpus_exists": false,
+  "tuning_eligible": false,
+  "generation_timing": "only_after_complete_candidate_configuration_is_frozen",
+  "execution_policy": "generate_and_execute_in_the_same_one_shot_workflow_without_intermediate_corpus_inspection",
+  "target_shape": {
+    "case_count": 600,
+    "supported_operation_cases": 384,
+    "near_domain_unsupported_operation_cases": 192,
+    "out_of_domain_cases": 24,
+    "supported_route_count": 16,
+    "cases_per_supported_route": 24,
+    "languages": {
+      "en": 100,
+      "ko": 100,
+      "es": 100,
+      "ja": 100,
+      "de": 100,
+      "mixed": 100
+    },
+    "split": "test"
+  },
+  "isolation_requirements": [
+    "No normalized exact-query overlap with v2-v12.",
+    "The generator and the frozen candidate configuration must be committed before the one-shot run starts.",
+    "A runtime seed must be recorded with the generated corpus and result artifact.",
+    "The generated corpus must not be opened, previewed, summarized, or used for any configuration change before scoring completes.",
+    "After the first completed scoring run, v13 is permanently consumed and may be used only for reporting/diagnostics."
+  ],
+  "freeze_record_required": [
+    "source commit SHA",
+    "candidate architecture",
+    "model/scorer identifiers",
+    "candidate recall configuration",
+    "capability-fit configuration",
+    "operation-fit configuration",
+    "endpoint-disambiguation configuration",
+    "selection objective"
+  ]
+}
