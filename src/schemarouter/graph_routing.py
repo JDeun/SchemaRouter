@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections import deque
 from dataclasses import dataclass
 from typing import Literal
@@ -39,31 +40,57 @@ GraphEdgeKind = Literal[
 ]
 GraphOperationDecision = Literal["accept", "reject", "escalate"]
 
-_TOKEN_RE = re.compile(r"[A-Za-z0-9_]+|[가-힣]+")
-_SPACE_RE = re.compile(r"[^\w가-힣]+", re.UNICODE)
+_TOKEN_RE = re.compile(r"\w+", re.UNICODE)
+_SPACE_RE = re.compile(r"[^\w]+", re.UNICODE)
+
+
+def _normalize_unicode(text: str) -> str:
+    return unicodedata.normalize("NFKC", text).casefold()
 
 
 def _normalize_phrase(text: str) -> str:
-    return " ".join(part for part in _SPACE_RE.sub(" ", text.casefold()).split() if part)
+    normalized = _normalize_unicode(text)
+    return " ".join(part for part in _SPACE_RE.sub(" ", normalized).split() if part)
 
 
 def _tokens(text: str) -> tuple[str, ...]:
     values: list[str] = []
-    for raw in _TOKEN_RE.findall(text.casefold()):
+    for raw in _TOKEN_RE.findall(_normalize_unicode(text)):
         values.extend(part for part in raw.replace("_", " ").split() if part)
     return tuple(values)
+
+
+def _contains_cjk(text: str) -> bool:
+    return any(
+        "\u3040" <= char <= "\u30ff"
+        or "\u3400" <= char <= "\u4dbf"
+        or "\u4e00" <= char <= "\u9fff"
+        for char in text
+    )
 
 
 def _contains_token_phrase(query: str, phrase: str) -> bool:
     query_tokens = _tokens(query)
     phrase_tokens = _tokens(phrase)
-    if not query_tokens or not phrase_tokens or len(phrase_tokens) > len(query_tokens):
+    if not query_tokens or not phrase_tokens:
         return False
-    width = len(phrase_tokens)
-    return any(
-        query_tokens[index : index + width] == phrase_tokens
-        for index in range(len(query_tokens) - width + 1)
-    )
+    if len(phrase_tokens) <= len(query_tokens):
+        width = len(phrase_tokens)
+        if any(
+            query_tokens[index : index + width] == phrase_tokens
+            for index in range(len(query_tokens) - width + 1)
+        ):
+            return True
+
+    # Japanese and Chinese commonly omit whitespace, so token equality alone can
+    # collapse the complete sentence into one token. Literal schema aliases may
+    # still match as an exact normalized substring without granting fuzzy authority.
+    normalized_phrase = _normalize_phrase(phrase)
+    if _contains_cjk(normalized_phrase):
+        compact_phrase = normalized_phrase.replace(" ", "")
+        compact_query = _normalize_phrase(query).replace(" ", "")
+        return bool(compact_phrase) and compact_phrase in compact_query
+    return False
 
 
 @dataclass(frozen=True, slots=True)
@@ -424,37 +451,6 @@ class GraphOperationGate:
                 reason="empty query",
             )
 
-        if self.reject_explicit_conflicts:
-            conflicts: list[tuple[str, str]] = []
-            seen_tools: set[str] = set()
-            for tool_key, _endpoint_name in graph.operation_routes():
-                if tool_key in seen_tools:
-                    continue
-                seen_tools.add(tool_key)
-                for alias in graph.unsupported_operation_aliases(tool_key):
-                    if _contains_token_phrase(query, alias):
-                        conflicts.append((tool_key, alias))
-            conflicts = list(dict.fromkeys(conflicts))
-            if conflicts:
-                tools = {tool_key for tool_key, _alias in conflicts}
-                return GraphOperationAssessment(
-                    decision="reject",
-                    tool_key=next(iter(tools)) if len(tools) == 1 else "",
-                    reason=(
-                        "query matched an explicitly unsupported graph operation"
-                        if len(conflicts) == 1
-                        else "query matched explicit unsupported graph operations"
-                    ),
-                    evidence=tuple(
-                        GraphOperationEvidence(
-                            endpoint_name="",
-                            operation_aliases=(alias,),
-                            graph_paths=((f"tool:{tool_key}", "CONFLICTS_WITH"),),
-                        )
-                        for tool_key, alias in conflicts
-                    ),
-                )
-
         positive: dict[tuple[str, str], GraphOperationEvidence] = {}
         for tool_key, endpoint_name in graph.operation_routes():
             matched_aliases = tuple(
@@ -504,8 +500,45 @@ class GraphOperationGate:
                     ),
                 )
 
+        conflicts: list[tuple[str, str]] = []
+        if self.reject_explicit_conflicts:
+            seen_tools: set[str] = set()
+            for tool_key, _endpoint_name in graph.operation_routes():
+                if tool_key in seen_tools:
+                    continue
+                seen_tools.add(tool_key)
+                for alias in graph.unsupported_operation_aliases(tool_key):
+                    if _contains_token_phrase(query, alias):
+                        conflicts.append((tool_key, alias))
+            conflicts = list(dict.fromkeys(conflicts))
+
         if len(positive) == 1:
             (tool_key, endpoint_name), evidence = next(iter(positive.items()))
+            same_tool_conflicts = [
+                alias
+                for conflict_tool, alias in conflicts
+                if conflict_tool == tool_key
+            ]
+            if same_tool_conflicts:
+                return GraphOperationAssessment(
+                    decision="reject",
+                    tool_key=tool_key,
+                    reason=(
+                        "query matched an explicitly unsupported operation for the "
+                        "same graph-authorized tool"
+                    ),
+                    evidence=(
+                        evidence,
+                        *(
+                            GraphOperationEvidence(
+                                endpoint_name="",
+                                operation_aliases=(alias,),
+                                graph_paths=((f"tool:{tool_key}", "CONFLICTS_WITH"),),
+                            )
+                            for alias in same_tool_conflicts
+                        ),
+                    ),
+                )
             reason = (
                 "unique registered operation alias path matched"
                 if evidence.operation_aliases
@@ -518,6 +551,7 @@ class GraphOperationGate:
                 reason=reason,
                 evidence=(evidence,),
             )
+
         if len(positive) > 1:
             tools = {tool_key for tool_key, _ in positive}
             return GraphOperationAssessment(
@@ -525,6 +559,24 @@ class GraphOperationGate:
                 tool_key=next(iter(tools)) if len(tools) == 1 else "",
                 reason="multiple registered graph operation paths matched",
                 evidence=tuple(positive.values()),
+            )
+
+        if conflicts:
+            return GraphOperationAssessment(
+                decision="escalate",
+                tool_key="",
+                reason=(
+                    "explicit unsupported graph evidence requires deterministic "
+                    "tool grounding before rejection"
+                ),
+                evidence=tuple(
+                    GraphOperationEvidence(
+                        endpoint_name="",
+                        operation_aliases=(alias,),
+                        graph_paths=((f"tool:{tool_key}", "CONFLICTS_WITH"),),
+                    )
+                    for tool_key, alias in conflicts
+                ),
             )
 
         return GraphOperationAssessment(
