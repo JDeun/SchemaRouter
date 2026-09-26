@@ -82,6 +82,11 @@ class BenchmarkRow:
     estimated_cost: float | None = None
     error: str | None = None
     failure_stage: str | None = None
+    operation_fit_invoked: bool = False
+    operation_fit_abstained: bool = False
+    operation_fit_top_score: float | None = None
+    operation_fit_second_score: float | None = None
+    operation_fit_top_margin: float | None = None
 
 
 SMOKE_CASES = [
@@ -504,6 +509,7 @@ async def benchmark_planner(
     *,
     allowed_routes: set[str],
     recorder: RecordingDecisionBackend | None = None,
+    operation_recorder: RecordingDecisionBackend | None = None,
     input_cost_per_million: float | None = None,
     output_cost_per_million: float | None = None,
 ) -> list[BenchmarkRow]:
@@ -512,6 +518,9 @@ async def benchmark_planner(
         if recorder is not None:
             recorder.last_result = None
             recorder.last_invoked = False
+        if operation_recorder is not None:
+            operation_recorder.last_result = None
+            operation_recorder.last_invoked = False
 
         started = time.perf_counter()
         try:
@@ -556,6 +565,28 @@ async def benchmark_planner(
                 else None
             )
             abstained = bool(getattr(result, "abstained", False))
+
+            operation_result = (
+                operation_recorder.last_result
+                if operation_recorder is not None
+                else None
+            )
+            operation_metadata = (
+                getattr(operation_result, "metadata", {})
+                if operation_result is not None
+                else {}
+            )
+
+            def operation_float(name: str) -> float | None:
+                value = operation_metadata.get(name)
+                if (
+                    isinstance(value, (int, float))
+                    and not isinstance(value, bool)
+                    and math.isfinite(float(value))
+                ):
+                    return float(value)
+                return None
+
             invalid_plan = predicted is not None and predicted not in allowed_routes
             correct = (
                 predicted is None
@@ -593,6 +624,15 @@ async def benchmark_planner(
                         output_cost_per_million,
                     ),
                     failure_stage=failure_stage,
+                    operation_fit_invoked=bool(
+                        operation_recorder and operation_recorder.last_invoked
+                    ),
+                    operation_fit_abstained=bool(
+                        getattr(operation_result, "abstained", False)
+                    ),
+                    operation_fit_top_score=operation_float("top_score"),
+                    operation_fit_second_score=operation_float("second_score"),
+                    operation_fit_top_margin=operation_float("top_margin"),
                 )
             )
         except Exception as exc:  # noqa: BLE001 - benchmark records provider failures.
@@ -976,6 +1016,14 @@ async def main() -> None:
     parser.add_argument("--csv-out", default=None)
     parser.add_argument("--html-out", default=None)
     parser.add_argument(
+        "--planner-name",
+        default=None,
+        help=(
+            "Optional exact planner name to execute after the benchmark stack is built. "
+            "Useful for focused research runs that do not need intermediate planner rows."
+        ),
+    )
+    parser.add_argument(
         "--model-callable",
         help="Optional ModelQueryAnalyzer callable in module:function form.",
     )
@@ -1206,6 +1254,7 @@ async def main() -> None:
         )
 
     operation_fit_backend = None
+    operation_fit_recorder = None
     if args.operation_fit_embedding_callable and args.operation_fit_pairwise_callable:
         raise ValueError(
             "--operation-fit-embedding-callable and --operation-fit-pairwise-callable "
@@ -1216,20 +1265,27 @@ async def main() -> None:
             args.operation_fit_pairwise_callable,
             option_name="--operation-fit-pairwise-callable",
         )
-        operation_fit_backend = PairwiseDecisionBackend(
-            operation_fit_scorer,
-            min_score=args.operation_fit_min_score,
+        operation_fit_recorder = RecordingDecisionBackend(
+            PairwiseDecisionBackend(
+                operation_fit_scorer,
+                min_score=args.operation_fit_min_score,
+                min_margin=args.operation_fit_min_margin,
+            )
         )
+        operation_fit_backend = operation_fit_recorder
     elif args.operation_fit_embedding_callable:
         operation_fit_embedder = load_callable(
             args.operation_fit_embedding_callable,
             option_name="--operation-fit-embedding-callable",
         )
-        operation_fit_backend = EmbeddingDecisionBackend(
-            operation_fit_embedder,
-            min_similarity=args.operation_fit_min_similarity,
-            min_margin=args.operation_fit_min_margin,
+        operation_fit_recorder = RecordingDecisionBackend(
+            EmbeddingDecisionBackend(
+                operation_fit_embedder,
+                min_similarity=args.operation_fit_min_similarity,
+                min_margin=args.operation_fit_min_margin,
+            )
         )
+        operation_fit_backend = operation_fit_recorder
 
     endpoint_disambiguation_backend = None
     if args.endpoint_disambiguation_embedding_callable:
@@ -1478,6 +1534,18 @@ async def main() -> None:
             )
         )
 
+    if args.planner_name is not None:
+        matched_planners = [
+            entry for entry in planners
+            if entry[0] == args.planner_name
+        ]
+        if not matched_planners:
+            available = ", ".join(name for name, _, _ in planners)
+            raise ValueError(
+                f"unknown --planner-name {args.planner_name!r}; available: {available}"
+            )
+        planners = matched_planners
+
     try:
         package_version = version("schemarouter")
     except PackageNotFoundError:
@@ -1499,6 +1567,7 @@ async def main() -> None:
         "decision_recall_on_empty": args.decision_recall_on_empty,
         "candidate_abstention": args.candidate_abstention,
         "split_filter": args.split,
+        "planner_filter": args.planner_name,
         "semantic_candidate_recall": {
             "enabled": candidate_recall_backend is not None,
             "embedding_callable": args.candidate_recall_embedding_callable,
@@ -1578,6 +1647,7 @@ async def main() -> None:
             cases,
             allowed_routes=allowed_routes,
             recorder=recorder,
+            operation_recorder=operation_fit_recorder,
             input_cost_per_million=args.input_cost_per_million,
             output_cost_per_million=args.output_cost_per_million,
         )
