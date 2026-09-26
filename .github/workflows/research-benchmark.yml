@@ -528,7 +528,7 @@ jobs:
 
 
   operation-fit-v9-heldout-cpu:
-    if: ${{ false }}  # temporary isolated operation-fit experiment
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_operation_holdout && inputs.operation_fit_min_similarity != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
