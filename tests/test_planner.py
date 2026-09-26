@@ -2700,13 +2700,15 @@ def test_operation_fit_gate_sees_only_primary_tool_operations() -> None:
     assert set(seen["labels"]) == {"search", "update"}
     assert all("inventory" not in label for label in seen["labels"])
     assert any(
-        "Operation aliases: find stock; check quantity" in description
+        "find stock" in description and "check quantity" in description
         for description in seen["descriptions"]
     )
     assert any(
-        "Operation aliases: change quantity; set stock count" in description
+        "change quantity" in description and "set stock count" in description
         for description in seen["descriptions"]
     )
+    assert all("Operation class:" not in description for description in seen["descriptions"])
+    assert all("HTTP method:" not in description for description in seen["descriptions"])
     assert all("Fields:" not in description for description in seen["descriptions"])
     assert all(
         "Inventory lookup and stock update operations" not in description
