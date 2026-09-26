@@ -2732,6 +2732,86 @@ def test_operation_fit_gate_abstention_suppresses_near_domain_candidates() -> No
     )
 
 
+def test_operation_fit_explicit_abstention_sentinel_is_bounded_and_suppresses() -> None:
+    seen = {}
+
+    def fit(request):
+        seen["ids"] = [option.id for option in request.options]
+        sentinel = next(
+            option for option in request.options
+            if option.id == "operation:unsupported"
+        )
+        seen["sentinel"] = sentinel
+        return {"selections": [{"option_id": sentinel.id, "score": 0.9}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fit),
+        operation_fit_explicit_abstention=True,
+    ).plan("delete inventory SKU-101")
+
+    assert plan.calls == []
+    assert seen["ids"][-1] == "operation:unsupported"
+    assert seen["sentinel"].label == "unsupported operation"
+    assert seen["sentinel"].metadata == {"tool": "inventory", "sentinel": True}
+    assert "Different unsupported inventory operation" in seen["sentinel"].description
+    assert "find stock" in seen["sentinel"].description
+    assert "change quantity" in seen["sentinel"].description
+    assert any(
+        "selected explicit unsupported sentinel; suppressed candidate routes"
+        in warning
+        for warning in plan.warnings
+    )
+
+
+def test_operation_fit_explicit_abstention_does_not_change_supported_selection_authority() -> None:
+    baseline = SchemaPlanner(_endpoint_disambiguation_registry()).plan("inventory quantity")
+
+    def fit(request):
+        assert request.options[-1].id == "operation:unsupported"
+        selected = next(option for option in request.options if option.label == "update")
+        return {"selections": [{"option_id": selected.id, "score": 0.9}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fit),
+        operation_fit_explicit_abstention=True,
+    ).plan("inventory quantity")
+
+    assert plan.calls[0].tool == baseline.calls[0].tool
+    assert plan.calls[0].endpoint == baseline.calls[0].endpoint
+
+
+def test_operation_fit_explicit_abstention_requires_boolean_configuration() -> None:
+    with pytest.raises(TypeError, match="operation_fit_explicit_abstention"):
+        SchemaPlanner(
+            _endpoint_disambiguation_registry(),
+            operation_fit_explicit_abstention="yes",  # type: ignore[arg-type]
+        )
+
+
+@pytest.mark.asyncio
+async def test_async_operation_fit_explicit_abstention_sentinel_suppresses() -> None:
+    async def fit(request):
+        sentinel = next(
+            option for option in request.options
+            if option.id == "operation:unsupported"
+        )
+        return {"selections": [{"option_id": sentinel.id, "score": 0.8}]}
+
+    plan = await SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fit),
+        operation_fit_explicit_abstention=True,
+    ).aplan("delete inventory SKU-101")
+
+    assert plan.calls == []
+    assert any(
+        "selected explicit unsupported sentinel" in warning
+        for warning in plan.warnings
+    )
+
+
 def test_operation_fit_gate_acceptance_does_not_select_or_reorder_endpoint() -> None:
     baseline = SchemaPlanner(
         _endpoint_disambiguation_registry()
