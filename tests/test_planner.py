@@ -2510,3 +2510,166 @@ def test_capability_fit_gate_abstention_keeps_required_coverage_visible() -> Non
     assert plan.coverage is not None
     assert plan.coverage.complete is False
     assert plan.coverage.uncovered
+
+
+def _endpoint_disambiguation_registry() -> InMemoryRegistry:
+    reg = InMemoryRegistry()
+    reg.register(
+        ToolSpec(
+            name="inventory",
+            description="Inventory lookup and stock update operations",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    description="Search inventory and stock by SKU",
+                    read_only=True,
+                    output_fields=[FieldSpec(name="quantity")],
+                ),
+                EndpointSpec(
+                    name="update",
+                    description="Update inventory quantity for a SKU",
+                    read_only=False,
+                    output_fields=[FieldSpec(name="quantity")],
+                ),
+            ],
+        )
+    )
+    reg.register(
+        ToolSpec(
+            name="users",
+            description="User lookup and profile update operations",
+            endpoints=[
+                EndpointSpec(
+                    name="lookup",
+                    description="Look up a user profile",
+                    read_only=True,
+                    output_fields=[FieldSpec(name="display_name")],
+                ),
+                EndpointSpec(
+                    name="update",
+                    description="Update a user profile",
+                    read_only=False,
+                    output_fields=[FieldSpec(name="display_name")],
+                ),
+            ],
+        )
+    )
+    return reg
+
+
+def test_endpoint_disambiguation_reorders_only_within_primary_tool() -> None:
+    seen = {}
+
+    def disambiguate(request):
+        seen["labels"] = [option.label for option in request.options]
+        selected = next(
+            option
+            for option in request.options
+            if option.label == "inventory.update"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.9}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        endpoint_disambiguation_backend=CallableDecisionBackend(disambiguate),
+    ).plan("inventory quantity")
+
+    assert seen["labels"] == ["inventory.search", "inventory.update"]
+    assert plan.calls[0].tool == "inventory"
+    assert plan.calls[0].endpoint == "update"
+    assert plan.calls[0].explanation is not None
+    assert (
+        plan.calls[0].explanation.candidate_selection
+        == "endpoint_disambiguation"
+    )
+
+
+def test_endpoint_disambiguation_cannot_switch_tool_domain() -> None:
+    seen = {}
+
+    def disambiguate(request):
+        seen["labels"] = [option.label for option in request.options]
+        assert all(label.startswith("inventory.") for label in seen["labels"])
+        return {"selections": [{"option_id": request.options[0].id}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        endpoint_disambiguation_backend=CallableDecisionBackend(disambiguate),
+    ).plan("inventory user update")
+
+    assert plan.calls[0].tool == "inventory"
+    assert all(label.startswith("inventory.") for label in seen["labels"])
+
+
+def test_endpoint_disambiguation_abstention_retains_candidate_order() -> None:
+    baseline = SchemaPlanner(
+        _endpoint_disambiguation_registry()
+    ).plan("inventory quantity")
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        endpoint_disambiguation_backend=CallableDecisionBackend(
+            lambda _request: {"abstained": True}
+        ),
+    ).plan("inventory quantity")
+
+    assert plan.calls[0].tool == baseline.calls[0].tool
+    assert plan.calls[0].endpoint == baseline.calls[0].endpoint
+    assert any(
+        "endpoint disambiguation abstained; retained candidate order" in warning
+        for warning in plan.warnings
+    )
+
+
+def test_endpoint_disambiguation_failure_retains_candidate_order() -> None:
+    def fail(_request):
+        raise RuntimeError("disambiguator unavailable")
+
+    baseline = SchemaPlanner(
+        _endpoint_disambiguation_registry()
+    ).plan("inventory quantity")
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        endpoint_disambiguation_backend=CallableDecisionBackend(fail),
+    ).plan("inventory quantity")
+
+    assert plan.calls[0].endpoint == baseline.calls[0].endpoint
+    assert any(
+        "endpoint disambiguation fallback: RuntimeError" in warning
+        for warning in plan.warnings
+    )
+
+
+def test_endpoint_disambiguation_skips_multi_call_plans() -> None:
+    invoked = False
+
+    def disambiguate(_request):
+        nonlocal invoked
+        invoked = True
+        return {"selections": [{"option_id": "endpoint:0"}]}
+
+    SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        endpoint_disambiguation_backend=CallableDecisionBackend(disambiguate),
+    ).plan(PlanRequest(query="inventory quantity", max_calls=2))
+
+    assert invoked is False
+
+
+@pytest.mark.asyncio
+async def test_async_endpoint_disambiguation_reorders_same_tool_siblings() -> None:
+    async def disambiguate(request):
+        selected = next(
+            option
+            for option in request.options
+            if option.label == "inventory.update"
+        )
+        return {"selections": [{"option_id": selected.id}]}
+
+    plan = await SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        endpoint_disambiguation_backend=CallableDecisionBackend(disambiguate),
+    ).aplan("inventory quantity")
+
+    assert plan.calls[0].tool == "inventory"
+    assert plan.calls[0].endpoint == "update"
