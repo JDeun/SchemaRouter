@@ -2463,6 +2463,7 @@ class SchemaPlanner:
                 candidates,
             )
             uncovered_coverage = set(required_coverage)
+            selected_providers: set[str] = set()
             for candidate, potential_coverage in zip(
                 candidates,
                 candidate_coverage,
@@ -2470,7 +2471,13 @@ class SchemaPlanner:
             ):
                 if len(primary_pairs) >= request.max_calls:
                     break
-                if required_coverage and not (
+                provider_key = candidate.tool.provider or candidate.tool.key
+                if request.retrieval_mode == "corroborate":
+                    if required_coverage and not (potential_coverage & required_coverage):
+                        continue
+                    if provider_key in selected_providers:
+                        continue
+                elif required_coverage and not (
                     potential_coverage & uncovered_coverage
                 ):
                     continue
@@ -2483,6 +2490,7 @@ class SchemaPlanner:
                 if call is None:
                     continue
                 primary_pairs.append((candidate, call))
+                selected_providers.add(provider_key)
                 if required_coverage:
                     selected_coverage = self._coverage_requirements_for_candidate(
                         candidate,
@@ -2492,7 +2500,10 @@ class SchemaPlanner:
                     uncovered_coverage.difference_update(
                         selected_coverage & potential_coverage
                     )
-                    if not uncovered_coverage:
+                    if (
+                        request.retrieval_mode == "coverage"
+                        and not uncovered_coverage
+                    ):
                         break
 
         calls = [call for _, call in primary_pairs]
@@ -2654,6 +2665,7 @@ class SchemaPlanner:
                 candidates,
             )
             uncovered_coverage = set(required_coverage)
+            selected_providers: set[str] = set()
             for candidate, potential_coverage in zip(
                 candidates,
                 candidate_coverage,
@@ -2661,7 +2673,13 @@ class SchemaPlanner:
             ):
                 if len(primary_pairs) >= request.max_calls:
                     break
-                if required_coverage and not (
+                provider_key = candidate.tool.provider or candidate.tool.key
+                if request.retrieval_mode == "corroborate":
+                    if required_coverage and not (potential_coverage & required_coverage):
+                        continue
+                    if provider_key in selected_providers:
+                        continue
+                elif required_coverage and not (
                     potential_coverage & uncovered_coverage
                 ):
                     continue
@@ -2674,6 +2692,7 @@ class SchemaPlanner:
                 if call is None:
                     continue
                 primary_pairs.append((candidate, call))
+                selected_providers.add(provider_key)
                 if required_coverage:
                     selected_coverage = self._coverage_requirements_for_candidate(
                         candidate,
@@ -2683,7 +2702,10 @@ class SchemaPlanner:
                     uncovered_coverage.difference_update(
                         selected_coverage & potential_coverage
                     )
-                    if not uncovered_coverage:
+                    if (
+                        request.retrieval_mode == "coverage"
+                        and not uncovered_coverage
+                    ):
                         break
 
         calls = [call for _, call in primary_pairs]
