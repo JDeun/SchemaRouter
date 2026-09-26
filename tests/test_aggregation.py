@@ -124,3 +124,32 @@ def test_field_mode_can_override_entity_default() -> None:
     assert field.mode == "preserve_observations"
     assert [item.value for item in field.observations] == [10, 13]
     assert field.agreement is False
+
+
+def test_identity_resolution_is_transitive_across_identifier_types() -> None:
+    records = [
+        SourceRecord(
+            provider="crossref",
+            entity_kind="document",
+            identifiers={"doi": "10.1000/paper"},
+            fields={"title": "Paper"},
+        ),
+        SourceRecord(
+            provider="openalex",
+            entity_kind="document",
+            identifiers={"doi": "10.1000/paper", "arxiv": "2609.12345"},
+            fields={"cited_by_count": 5},
+        ),
+        SourceRecord(
+            provider="arxiv",
+            entity_kind="document",
+            identifiers={"arxiv": "arXiv:2609.12345"},
+            fields={"abstract": "Abstract"},
+        ),
+    ]
+
+    entities = aggregate_records(records)
+
+    assert len(entities) == 1
+    assert entities[0].providers == ["crossref", "openalex", "arxiv"]
+    assert entities[0].canonical_key == "document:doi:10.1000/paper"
