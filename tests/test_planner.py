@@ -2752,9 +2752,10 @@ def test_operation_fit_explicit_abstention_sentinel_is_bounded_and_suppresses() 
 
     assert plan.calls == []
     assert seen["ids"][-1] == "operation:unsupported"
-    assert seen["sentinel"].label == "unsupported operation"
+    assert seen["sentinel"].label == "none of the declared operations"
     assert seen["sentinel"].metadata == {"tool": "inventory", "sentinel": True}
-    assert "Different unsupported inventory operation" in seen["sentinel"].description
+    assert "different operation" in seen["sentinel"].description
+    assert "inventory" not in seen["sentinel"].description
     assert "find stock" in seen["sentinel"].description
     assert "change quantity" in seen["sentinel"].description
     assert any(
