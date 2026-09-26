@@ -7,6 +7,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+### Added
+
+- reserved a fresh 600-case multilingual v11 operation-generalization holdout before post-0.8 routing optimization; it is test-only, balanced like v10, guarded behind explicit manual workflow dispatch, and must remain unmeasured until the next operation-fit configuration is frozen.
+
 ### Changed
 
 - post-release development has resumed as `0.9.0.dev0`; published `0.8.0` artifacts remain immutable.
