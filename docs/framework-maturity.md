@@ -116,6 +116,8 @@ Completed locally:
 - optional local Laya decision provider with bounded choice validation and shared benchmark support;
 - provider-neutral embedding-similarity decision backend with threshold/margin abstention and
   malformed-vector fail-closed validation;
+- provider-neutral pairwise query-option decision backend for application-owned rerankers, with
+  bounded `[0, 1]` scoring, sync/async support, threshold/margin abstention, and fail-closed validation;
 - bounded field-selection contract with identifier preservation and deterministic fallback;
 - conservative evidence-sufficiency contract with local provenance/license/unit/source-type precheck
   and provider veto-only semantics;
@@ -144,7 +146,7 @@ Completed locally:
 Still external or follow-up work:
 
 - upstream ecosystem listing/discussion requests;
-- broader live benchmark evidence;
+- broader live hosted-provider benchmark evidence; local/open operation-fit evidence now includes consumed v10 MiniLM and v11 pairwise-BGE holdouts;
 - dynamic OpenAPI/JSON-Schema reference semantics and automatic planner-side schema-variant selection.
 
 ### Gate C — production operations
