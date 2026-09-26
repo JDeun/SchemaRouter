@@ -1,0 +1,73 @@
+name: V13 MiniLM Post-consumption Diagnostic
+
+on:
+  push:
+    branches:
+      - research/v13-minilm-diagnostic
+    paths:
+      - ".github/workflows/research-v13-minilm-diagnostic.yml"
+
+permissions:
+  contents: read
+
+env:
+  SCHEMAROUTER_SOURCE_REVISION: ${{ github.sha }}
+  SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
+jobs:
+  diagnostic:
+    if: ${{ github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "sentence-transformers>=3,<6"
+      - run: pip install -e ".[dev]"
+
+      - name: Verify v13 is already consumed
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = json.loads(Path("benchmarks/decision-routing-v13-blind-protocol.json").read_text())
+          assert p["status"] == "consumed_blind_final"
+          assert p["tuning_eligible"] is False
+          assert p["consumed_run_id"] == 36246386089
+          PY
+
+      - name: Run frozen prior MiniLM profile on consumed v13
+        run: |
+          OUT="artifacts/v13-minilm-diagnostic"
+          mkdir -p "${OUT}"
+          python scripts/benchmark_decision_routing.py \
+            --corpus benchmarks/decision-routing-v13-operation-contrastive-holdout.json \
+            --split test \
+            --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
+            --candidate-recall-limit 2 \
+            --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed \
+            --candidate-fit-min-similarity 0.25 \
+            --operation-fit-embedding-callable benchmarks.multilingual_embedder:embed \
+            --operation-fit-min-similarity 0.40 \
+            --operation-fit-min-margin 0.0 \
+            --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed \
+            --endpoint-disambiguation-min-margin 0.03 \
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+            --json-out "${OUT}/report.json" \
+            --csv-out "${OUT}/rows.csv" \
+            --html-out "${OUT}/report.html"
+          (
+            cd "${OUT}"
+            sha256sum report.json rows.csv report.html > SHA256SUMS.txt
+          )
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: v13-minilm-diagnostic-${{ github.run_id }}
+          path: artifacts/v13-minilm-diagnostic/
+          if-no-files-found: error
+          retention-days: 30
