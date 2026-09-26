@@ -1,4 +1,4 @@
-name: Consume V11 Holdout Once
+name: Diagnose V11 Frozen Baseline Once
 
 on:
   push:
@@ -11,11 +11,11 @@ permissions:
   contents: read
 
 concurrency:
-  group: consume-v11-holdout-once
+  group: diagnose-v11-baseline-once
   cancel-in-progress: false
 
 jobs:
-  frozen-v11:
+  frozen-baseline-v11:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -27,10 +27,9 @@ jobs:
       - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
       - run: pip install "sentence-transformers>=3,<6"
       - run: pip install -e ".[dev]"
-      - name: Consume frozen v11 operation-generalization holdout
+      - name: Diagnose existing frozen MiniLM operation-fit baseline on consumed v11
         env:
           SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-          SCHEMAROUTER_BENCHMARK_RERANKER_MODEL: "BAAI/bge-reranker-v2-m3"
         run: |
           mkdir -p artifacts/operation-fit/heldout-v11
           python scripts/benchmark_decision_routing.py \
@@ -40,8 +39,8 @@ jobs:
             --candidate-recall-limit 2 \
             --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed \
             --candidate-fit-min-similarity 0.25 \
-            --operation-fit-pairwise-callable benchmarks.bge_reranker:score_pairs \
-            --operation-fit-min-score 0.01 \
+            --operation-fit-embedding-callable benchmarks.multilingual_embedder:embed \
+            --operation-fit-min-similarity 0.40 \
             --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed \
             --endpoint-disambiguation-min-margin 0.03 \
             --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
@@ -51,7 +50,7 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
-          name: benchmark-operation-fit-v11-heldout-${{ github.run_id }}
+          name: benchmark-operation-fit-v11-baseline-diagnostic-${{ github.run_id }}
           path: artifacts/operation-fit/heldout-v11/
           if-no-files-found: error
           retention-days: 30
