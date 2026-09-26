@@ -144,14 +144,22 @@ Controls:
 - `--candidate-recall-embedding-callable module:function`;
 - `--candidate-recall-limit N`;
 - `--candidate-recall-min-similarity FLOAT`;
+- `--candidate-recall-min-lead-margin FLOAT`;
 - `--candidate-recall-min-margin FLOAT`.
+
+For semantic capability-fit gating, `min-lead-margin` is the top1-versus-top2 cosine gap. The older
+`min-margin` is the selected-set boundary (for top-2 recall, second-versus-third) and should not be
+treated as the same signal. A useful research protocol is to calibrate absolute similarity and lead
+margin on development data, then freeze both before evaluating a new holdout.
 
 The checked-in research callable uses
 `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` only in benchmark environments;
 `sentence-transformers` is not a SchemaRouter package dependency.
 
 The Research Benchmark compares recall widths on the calibration split first and sweeps confidence
-thresholds offline. The held-out test split is evaluated only after a configuration is selected.
+thresholds offline. Once a held-out split has been evaluated, treat it as a frozen regression /
+diagnostic set rather than tuning further on it. Any subsequent capability-fit rule should be frozen
+before evaluating a newly generated untouched holdout.
 
 ## Jev
 
