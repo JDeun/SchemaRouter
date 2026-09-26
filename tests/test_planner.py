@@ -2857,3 +2857,167 @@ def test_endpoint_operation_aliases_reject_empty_duplicate_or_padded_values() ->
         EndpointSpec(name="search", operation_aliases=[" find data"])
     with pytest.raises(ValueError, match="duplicate operation alias"):
         EndpointSpec(name="search", operation_aliases=["Find data", "find data"])
+
+
+def test_corroborate_mode_selects_same_semantic_field_from_distinct_providers() -> None:
+    reg = InMemoryRegistry()
+    for name, provider in (
+        ("materials_project", "materials_project"),
+        ("cod", "cod"),
+        ("pubchem", "pubchem"),
+    ):
+        reg.register(
+            ToolSpec(
+                name=name,
+                provider=provider,
+                endpoints=[
+                    EndpointSpec(
+                        name="lookup",
+                        description="Lookup material density",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(name="record_id", identifier=True),
+                            FieldSpec(
+                                name="density",
+                                semantic_id="density",
+                                aliases=["density"],
+                                json_schema={"type": "number"},
+                                unit="g/cm3",
+                            ),
+                        ],
+                    )
+                ],
+            )
+        )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="density",
+            concepts=["density"],
+            max_calls=3,
+            retrieval_mode="corroborate",
+        )
+    )
+
+    assert len(plan.calls) == 3
+    assert {call.tool for call in plan.calls} == {
+        "materials_project",
+        "cod",
+        "pubchem",
+    }
+
+
+def test_default_coverage_mode_does_not_fan_out_redundant_providers() -> None:
+    reg = InMemoryRegistry()
+    for name in ("provider_a", "provider_b"):
+        reg.register(
+            ToolSpec(
+                name=name,
+                provider=name,
+                endpoints=[
+                    EndpointSpec(
+                        name="lookup",
+                        description="Lookup density",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(
+                                name="density",
+                                semantic_id="density",
+                                aliases=["density"],
+                                json_schema={"type": "number"},
+                                unit="g/cm3",
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="density",
+            concepts=["density"],
+            max_calls=2,
+        )
+    )
+
+    assert len(plan.calls) == 1
+
+
+
+def test_corroborate_mode_rejects_incompatible_units_across_providers() -> None:
+    reg = InMemoryRegistry()
+    for name, unit in (("provider_a", "g/cm3"), ("provider_b", "kg")):
+        reg.register(
+            ToolSpec(
+                name=name,
+                provider=name,
+                endpoints=[
+                    EndpointSpec(
+                        name="lookup",
+                        description="Lookup density",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(
+                                name="density",
+                                semantic_id="density",
+                                aliases=["density"],
+                                json_schema={"type": "number"},
+                                unit=unit,
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="density",
+            concepts=["density"],
+            max_calls=2,
+            retrieval_mode="corroborate",
+        )
+    )
+
+    assert len(plan.calls) == 1
+
+
+def test_corroborate_mode_rejects_incompatible_datatypes() -> None:
+    reg = InMemoryRegistry()
+    for name, schema in (
+        ("provider_a", {"type": "number"}),
+        ("provider_b", {"type": "string"}),
+    ):
+        reg.register(
+            ToolSpec(
+                name=name,
+                provider=name,
+                endpoints=[
+                    EndpointSpec(
+                        name="lookup",
+                        description="Lookup score",
+                        read_only=True,
+                        output_fields=[
+                            FieldSpec(
+                                name="score",
+                                semantic_id="score",
+                                aliases=["score"],
+                                json_schema=schema,
+                            )
+                        ],
+                    )
+                ],
+            )
+        )
+
+    plan = SchemaPlanner(reg).plan(
+        PlanRequest(
+            query="score",
+            concepts=["score"],
+            max_calls=2,
+            retrieval_mode="corroborate",
+        )
+    )
+
+    assert len(plan.calls) == 1

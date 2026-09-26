@@ -4,6 +4,13 @@ import schemarouter
 def test_public_framework_exports_are_intentional_and_stable() -> None:
     expected = {
         "__version__",
+        "AggregatedField",
+        "CanonicalEntity",
+        "FieldObservation",
+        "RetrievalMode",
+        "SourceRecord",
+        "aggregate_records",
+        "canonical_identity",
         "AccessHealthMonitor",
         "ADAPTER_ENTRY_POINT_GROUP",
         "AdapterContext",

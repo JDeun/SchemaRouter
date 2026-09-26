@@ -1984,6 +1984,48 @@ class SchemaPlanner:
         return tuple(semantics)
 
     @classmethod
+    def _corroboration_semantics_compatible(
+        cls,
+        selected_candidate: _Candidate,
+        selected_call: ToolCall,
+        candidate: _Candidate,
+        candidate_call: ToolCall,
+    ) -> bool:
+        """Require at least one genuinely comparable answer field across providers."""
+
+        selected = cls._field_semantics(
+            selected_candidate.endpoint,
+            tuple(selected_call.fields),
+        )
+        available = cls._field_semantics(
+            candidate.endpoint,
+            tuple(candidate_call.fields),
+        )
+        for left in selected:
+            for right in available:
+                if left.semantic_id is not None and right.semantic_id is not None:
+                    if left.semantic_id != right.semantic_id:
+                        continue
+                elif left.names.isdisjoint(right.names):
+                    continue
+                if left.qualifiers != right.qualifiers:
+                    continue
+                if not json_schemas_compatible(left.json_schema, right.json_schema):
+                    continue
+                if (left.unit is None) != (right.unit is None):
+                    continue
+                if left.unit is not None:
+                    if left.unit_dimension or right.unit_dimension:
+                        if not left.unit_dimension or left.unit_dimension != right.unit_dimension:
+                            continue
+                        if not left.canonical_unit or left.canonical_unit != right.canonical_unit:
+                            continue
+                    elif left.unit != right.unit:
+                        continue
+                return True
+        return False
+
+    @classmethod
     def _fallback_semantics_compatible(
         cls,
         primary_candidate: _Candidate,
@@ -2463,6 +2505,7 @@ class SchemaPlanner:
                 candidates,
             )
             uncovered_coverage = set(required_coverage)
+            selected_providers: set[str] = set()
             for candidate, potential_coverage in zip(
                 candidates,
                 candidate_coverage,
@@ -2470,7 +2513,13 @@ class SchemaPlanner:
             ):
                 if len(primary_pairs) >= request.max_calls:
                     break
-                if required_coverage and not (
+                provider_key = candidate.tool.provider or candidate.tool.key
+                if request.retrieval_mode == "corroborate":
+                    if required_coverage and not (potential_coverage & required_coverage):
+                        continue
+                    if provider_key in selected_providers:
+                        continue
+                elif required_coverage and not (
                     potential_coverage & uncovered_coverage
                 ):
                     continue
@@ -2482,7 +2531,22 @@ class SchemaPlanner:
                 )
                 if call is None:
                     continue
+                if (
+                    request.retrieval_mode == "corroborate"
+                    and primary_pairs
+                    and not any(
+                        self._corroboration_semantics_compatible(
+                            selected_candidate,
+                            selected_call,
+                            candidate,
+                            call,
+                        )
+                        for selected_candidate, selected_call in primary_pairs
+                    )
+                ):
+                    continue
                 primary_pairs.append((candidate, call))
+                selected_providers.add(provider_key)
                 if required_coverage:
                     selected_coverage = self._coverage_requirements_for_candidate(
                         candidate,
@@ -2492,7 +2556,10 @@ class SchemaPlanner:
                     uncovered_coverage.difference_update(
                         selected_coverage & potential_coverage
                     )
-                    if not uncovered_coverage:
+                    if (
+                        request.retrieval_mode == "coverage"
+                        and not uncovered_coverage
+                    ):
                         break
 
         calls = [call for _, call in primary_pairs]
@@ -2654,6 +2721,7 @@ class SchemaPlanner:
                 candidates,
             )
             uncovered_coverage = set(required_coverage)
+            selected_providers: set[str] = set()
             for candidate, potential_coverage in zip(
                 candidates,
                 candidate_coverage,
@@ -2661,7 +2729,13 @@ class SchemaPlanner:
             ):
                 if len(primary_pairs) >= request.max_calls:
                     break
-                if required_coverage and not (
+                provider_key = candidate.tool.provider or candidate.tool.key
+                if request.retrieval_mode == "corroborate":
+                    if required_coverage and not (potential_coverage & required_coverage):
+                        continue
+                    if provider_key in selected_providers:
+                        continue
+                elif required_coverage and not (
                     potential_coverage & uncovered_coverage
                 ):
                     continue
@@ -2673,7 +2747,22 @@ class SchemaPlanner:
                 )
                 if call is None:
                     continue
+                if (
+                    request.retrieval_mode == "corroborate"
+                    and primary_pairs
+                    and not any(
+                        self._corroboration_semantics_compatible(
+                            selected_candidate,
+                            selected_call,
+                            candidate,
+                            call,
+                        )
+                        for selected_candidate, selected_call in primary_pairs
+                    )
+                ):
+                    continue
                 primary_pairs.append((candidate, call))
+                selected_providers.add(provider_key)
                 if required_coverage:
                     selected_coverage = self._coverage_requirements_for_candidate(
                         candidate,
@@ -2683,7 +2772,10 @@ class SchemaPlanner:
                     uncovered_coverage.difference_update(
                         selected_coverage & potential_coverage
                     )
-                    if not uncovered_coverage:
+                    if (
+                        request.retrieval_mode == "coverage"
+                        and not uncovered_coverage
+                    ):
                         break
 
         calls = [call for _, call in primary_pairs]

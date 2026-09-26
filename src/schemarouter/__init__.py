@@ -9,6 +9,14 @@ from .adapters.plugins import (
     load_adapter_plugins,
 )
 from .adapters.python import schema_tool, tool_from_callable
+from .aggregation import (
+    AggregatedField,
+    CanonicalEntity,
+    FieldObservation,
+    SourceRecord,
+    aggregate_records,
+    canonical_identity,
+)
 from .analyzers import ModelCallable, ModelQueryAnalyzer
 from .dashboard import render_dashboard, write_dashboard
 from .decision_policy import DecisionFallback, DecisionPolicy
@@ -84,6 +92,7 @@ from .models import (
     PlanRequest,
     QueryIntent,
     ResultFieldContract,
+    RetrievalMode,
     ScoreComponent,
     SemanticFieldRequirement,
     ServerProjectionSpec,
@@ -128,6 +137,12 @@ from .traces import (
 __all__ = [
     "__version__",
     "ADAPTER_ENTRY_POINT_GROUP",
+    "AggregatedField",
+    "CanonicalEntity",
+    "FieldObservation",
+    "SourceRecord",
+    "aggregate_records",
+    "canonical_identity",
     "AdapterContext",
     "AdapterLoadResult",
     "AdapterPluginInfo",
@@ -203,6 +218,7 @@ __all__ = [
     "QueryAnalyzer",
     "QueryIntent",
     "ResultFieldContract",
+    "RetrievalMode",
     "RegistrationError",
     "RegistryExecutor",
     "RetryPolicy",
@@ -237,7 +253,9 @@ __all__ = [
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
+    "aggregate_records",
     "analyze_openapi_compatibility",
+    "canonical_identity",
     "choose_async",
     "choose_sync",
     "compare_endpoint_specs",
