@@ -310,6 +310,7 @@ class SchemaPlanner:
         candidate_recall_backend: DecisionBackend | None = None,
         candidate_recall_limit: int = 4,
         candidate_fit_backend: DecisionBackend | None = None,
+        operation_fit_backend: DecisionBackend | None = None,
         endpoint_disambiguation_backend: DecisionBackend | None = None,
         candidate_index: bool = True,
         availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
@@ -327,6 +328,7 @@ class SchemaPlanner:
         self.candidate_recall_backend = candidate_recall_backend
         self.candidate_recall_limit = candidate_recall_limit
         self.candidate_fit_backend = candidate_fit_backend
+        self.operation_fit_backend = operation_fit_backend
         self.endpoint_disambiguation_backend = endpoint_disambiguation_backend
         self.candidate_index = candidate_index
         self.availability_predicate = availability_predicate
@@ -784,6 +786,136 @@ class SchemaPlanner:
             return [], ["capability fit gate abstained; suppressed candidate routes"]
         accepted = result.selections[0].option_id
         return candidates, [f"capability fit gate accepted via {accepted}"]
+
+    @staticmethod
+    def _operation_fit_request(
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> DecisionRequest | None:
+        """Build a narrow operation-only fit surface for the leading tool domain.
+
+        This gate deliberately excludes the tool description and output-field labels so
+        domain similarity cannot by itself turn an unsupported operation into a match.
+        It can only suppress the already-authorized candidate set; it never selects,
+        adds, or reorders execution candidates.
+        """
+
+        if request.max_calls > 1 or not candidates:
+            return None
+
+        primary_tool = candidates[0].tool.key
+        sibling_candidates = [
+            candidate
+            for candidate in candidates
+            if candidate.tool.key == primary_tool
+        ]
+        if not sibling_candidates:
+            return None
+
+        options: list[DecisionOption] = []
+        for index, candidate in enumerate(sibling_candidates):
+            endpoint = candidate.endpoint
+            operation_name = endpoint.name.replace("_", " ").replace("-", " ")
+            operation_class = (
+                "read-only retrieval"
+                if endpoint.read_only is True
+                else "mutating write"
+                if endpoint.read_only is False
+                else "unclassified operation"
+            )
+            parts = [
+                f"Operation: {operation_name}",
+                endpoint.description.strip(),
+                f"Operation class: {operation_class}",
+            ]
+            if endpoint.method:
+                parts.append(f"HTTP method: {endpoint.method.upper()}")
+            options.append(
+                DecisionOption(
+                    id=f"operation:{index}",
+                    label=f"{candidate.tool.key}.{endpoint.name}",
+                    description="\n".join(part for part in parts if part),
+                    metadata={"tool": primary_tool},
+                )
+            )
+
+        return DecisionRequest(
+            query=request.query,
+            options=options,
+            max_selections=1,
+            context={
+                "surface": "operation_capability_fit",
+                "tool": primary_tool,
+            },
+        )
+
+    def _apply_operation_fit_sync(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.operation_fit_backend is None or not candidates:
+            return candidates, []
+
+        decision_request = self._operation_fit_request(request, candidates)
+        if decision_request is None:
+            return candidates, []
+
+        try:
+            result = choose_sync(
+                self.operation_fit_backend,
+                decision_request,
+            )
+        except Exception as exc:
+            return candidates, [
+                "operation capability fit fallback: "
+                f"{type(exc).__name__}; retained authorized candidates"
+            ]
+
+        if result.abstained or not result.selections:
+            return [], [
+                "operation capability fit gate abstained; "
+                "suppressed candidate routes"
+            ]
+
+        accepted = result.selections[0].option_id
+        return candidates, [
+            f"operation capability fit gate accepted via {accepted}"
+        ]
+
+    async def _apply_operation_fit_async(
+        self,
+        request: PlanRequest,
+        candidates: list[_Candidate],
+    ) -> tuple[list[_Candidate], list[str]]:
+        if self.operation_fit_backend is None or not candidates:
+            return candidates, []
+
+        decision_request = self._operation_fit_request(request, candidates)
+        if decision_request is None:
+            return candidates, []
+
+        try:
+            result = await choose_async(
+                self.operation_fit_backend,
+                decision_request,
+            )
+        except Exception as exc:
+            return candidates, [
+                "operation capability fit fallback: "
+                f"{type(exc).__name__}; retained authorized candidates"
+            ]
+
+        if result.abstained or not result.selections:
+            return [], [
+                "operation capability fit gate abstained; "
+                "suppressed candidate routes"
+            ]
+
+        accepted = result.selections[0].option_id
+        return candidates, [
+            f"operation capability fit gate accepted via {accepted}"
+        ]
 
     @staticmethod
     def _endpoint_disambiguation_request(
@@ -2269,10 +2401,14 @@ class SchemaPlanner:
             request,
             all_candidates,
         )
+        operation_candidates, operation_warnings = self._apply_operation_fit_sync(
+            request,
+            fit_candidates,
+        )
         disambiguated_candidates, disambiguation_warnings = (
             self._disambiguate_endpoints_sync(
                 request,
-                fit_candidates,
+                operation_candidates,
             )
         )
         candidates, decision_warnings = self._select_candidates_sync(
@@ -2284,6 +2420,7 @@ class SchemaPlanner:
         warnings: list[str] = [
             *recall_warnings,
             *fit_warnings,
+            *operation_warnings,
             *disambiguation_warnings,
             *decision_warnings,
         ]
@@ -2454,10 +2591,16 @@ class SchemaPlanner:
             request,
             all_candidates,
         )
+        operation_candidates, operation_warnings = (
+            await self._apply_operation_fit_async(
+                request,
+                fit_candidates,
+            )
+        )
         disambiguated_candidates, disambiguation_warnings = (
             await self._disambiguate_endpoints_async(
                 request,
-                fit_candidates,
+                operation_candidates,
             )
         )
         candidates, decision_warnings = await self._select_candidates_async(
@@ -2468,6 +2611,7 @@ class SchemaPlanner:
         warnings = [
             *recall_warnings,
             *fit_warnings,
+            *operation_warnings,
             *disambiguation_warnings,
             *decision_warnings,
         ]
