@@ -1,0 +1,87 @@
+{
+  "cycle": "0.10-operation-cascade-v2",
+  "status": "paired_calibration_rejected",
+  "tuning_eligible": false,
+  "source_revision": "83fb748ffc525d8ab57ec979cb0f8251fe280d1b",
+  "workflow_run_id": 36251542594,
+  "workflow_conclusion": "failure_by_preregistered_promotion_gate",
+  "artifact_id": 10909651834,
+  "artifact_sha256": "61d9fc86d50c30c37e4cb74a440bfd3d04f9eb16f8a738a772e5d179e637b8b8",
+  "corpus": "benchmarks/decision-routing-v5-operation-calibration.json",
+  "corpus_sha256": "7bda42ee0e5eafdeaa2bdd3ade882d9fa90f5178eedd37b699a72372a4cbae39",
+  "split": "calibration",
+  "case_count": 192,
+  "frozen_candidate": {
+    "name": "r030-a060-m005",
+    "reject_below": 0.3,
+    "accept_above": 0.6,
+    "accept_margin": 0.05,
+    "bge_beta": 1.0,
+    "operation_fit_min_score": 0.01,
+    "operation_fit_min_margin": 0.0
+  },
+  "preregistered_gates": {
+    "supported_operation_floor": 0.6,
+    "near_domain_unsupported_rejection_floor": 0.95,
+    "candidate_must_be_faster_than_full_bge_in_same_job": true,
+    "invalid_plan_rate_must_be_zero": true,
+    "execution_errors_must_be_zero": true
+  },
+  "full_bge_baseline": {
+    "overall_accuracy": 0.8020833333333334,
+    "supported_operation_routed_accuracy": 0.625,
+    "near_domain_unsupported_operation_rejection": 0.9791666666666666,
+    "mean_latency_ms": 504.541,
+    "p50_latency_ms": 530.806,
+    "p95_latency_ms": 614.868,
+    "invalid_plan_rate": 0.0,
+    "errors": 0,
+    "error_taxonomy": {
+      "correct": 154,
+      "false_route": 2,
+      "missed_route": 28,
+      "wrong_endpoint": 8,
+      "wrong_tool": 0,
+      "execution_error": 0
+    }
+  },
+  "frozen_cascade_candidate": {
+    "overall_accuracy": 0.78125,
+    "supported_operation_routed_accuracy": 0.6145833333333334,
+    "near_domain_unsupported_operation_rejection": 0.9479166666666666,
+    "mean_latency_ms": 428.946,
+    "p50_latency_ms": 509.219,
+    "p95_latency_ms": 643.436,
+    "invalid_plan_rate": 0.0,
+    "errors": 0,
+    "error_taxonomy": {
+      "correct": 150,
+      "false_route": 5,
+      "missed_route": 29,
+      "wrong_endpoint": 8,
+      "wrong_tool": 0,
+      "execution_error": 0
+    }
+  },
+  "cascade_telemetry_events": {
+    "fast_accept": 26,
+    "fast_reject": 94,
+    "reranker": 236
+  },
+  "mean_latency_reduction_vs_full_bge_fraction": 0.14982925074473624,
+  "decision": {
+    "supported_operation_gate_passed": true,
+    "near_domain_unsupported_rejection_gate_passed": false,
+    "latency_gate_passed": true,
+    "quality_gate_passed": false,
+    "promotion_passed": false,
+    "blind_final_allowed": false
+  },
+  "interpretation": "The frozen cascade reproduced a 14.983% lower mean latency than full BGE in the same sequential GitHub-hosted CPU job, but near-domain unsupported-operation rejection fell to 94.792% (91/96), below the preregistered 95% floor by one case. The candidate is rejected rather than retuned on calibration data.",
+  "post_result_policy": [
+    "Do not tune cascade thresholds, model choice, representation, or architecture against this calibration result.",
+    "Do not generate or execute the reserved v14 blind-final corpus for this rejected candidate.",
+    "Retain this result as consumed confirmation evidence for the closed cascade-v2 cycle.",
+    "Any future cascade study must reserve a new cycle and fresh blind-final protocol before implementation."
+  ]
+}

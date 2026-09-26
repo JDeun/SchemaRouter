@@ -1,12 +1,12 @@
 {
   "version": "v14",
   "cycle": "0.10-operation-cascade-v2",
-  "status": "protocol_reserved_not_generated",
+  "status": "retired_not_generated_after_candidate_rejection",
   "role": "blind_final_generalization_holdout",
   "corpus_exists": false,
   "tuning_eligible": false,
   "generation_timing": "only_after_complete_cascade_candidate_configuration_is_frozen",
-  "execution_policy": "generate_and_execute_in_the_same_one_shot_workflow_without_intermediate_corpus_inspection",
+  "execution_policy": "not_executed; the prerequisite paired calibration promotion gate failed",
   "research_question": "Can a bounded cheap-first operation-fit cascade reduce CPU routing latency while preserving supported-operation recall and near-domain unsupported-operation rejection?",
   "target_shape": {
     "case_count": 600,
@@ -34,7 +34,7 @@
       "any v14 generated corpus or result"
     ],
     "primary_objective": "minimize mean CPU latency among candidates meeting both quality floors",
-    "supported_operation_floor": 0.60,
+    "supported_operation_floor": 0.6,
     "near_domain_unsupported_rejection_floor": 0.95,
     "tie_breaker": "higher harmonic mean of supported-operation routed accuracy and near-domain unsupported-operation rejection"
   },
@@ -50,6 +50,15 @@
     "The generator and frozen candidate configuration must be committed before the one-shot run starts.",
     "A runtime seed must be recorded with the generated corpus and result artifact.",
     "The generated corpus must not be opened, previewed, summarized, or used for any configuration change before scoring completes.",
-    "After the first completed scoring run, v14 is permanently consumed and may be used only for reporting or clearly labeled diagnostics."
-  ]
+    "After the first completed scoring run, v14 is permanently consumed and may be used only for reporting or clearly labeled diagnostics.",
+    "This protocol reservation is retired with the closed cascade-v2 cycle and must not be reused for a future candidate."
+  ],
+  "retirement": {
+    "reason": "frozen cascade failed the preregistered v5 paired calibration quality gate",
+    "calibration_result": "benchmarks/operation-fit-0.10-cascade-calibration-result.json",
+    "workflow_run_id": 36251542594,
+    "corpus_generated": false,
+    "blind_final_executed": false,
+    "reusable_for_future_cycle": false
+  }
 }

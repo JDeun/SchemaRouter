@@ -1,6 +1,6 @@
 {
   "cycle": "0.10-operation-cascade-v2",
-  "status": "candidate_selected_and_frozen_before_calibration",
+  "status": "paired_calibration_rejected_cycle_closed",
   "reserved_from_main": "ecc6ba6f313df45545590297c7130a4abadf93f1",
   "v14_reservation_main_revision": "5d7c972c8b13d03934c9cc88de3dc9e14159bcd5",
   "predecessor": {
@@ -72,12 +72,24 @@
     "split": "calibration",
     "rule": "freeze the selected dev winner, then run that unchanged candidate once; both quality floors must still pass",
     "candidate_changes_allowed": false,
-    "latency_rule": "run the frozen cascade candidate and full-BGE baseline sequentially in one calibration job; promotion requires both quality floors and a lower candidate mean latency in that paired environment"
+    "latency_rule": "run the frozen cascade candidate and full-BGE baseline sequentially in one calibration job; promotion requires both quality floors and a lower candidate mean latency in that paired environment",
+    "completed": true,
+    "workflow_run_id": 36251542594,
+    "source_revision": "83fb748ffc525d8ab57ec979cb0f8251fe280d1b",
+    "artifact_id": 10909651834,
+    "artifact_sha256": "61d9fc86d50c30c37e4cb74a440bfd3d04f9eb16f8a738a772e5d179e637b8b8",
+    "result_manifest": "benchmarks/operation-fit-0.10-cascade-calibration-result.json",
+    "quality_passed": false,
+    "latency_passed": true,
+    "promotion_passed": false,
+    "rejection_reason": "near-domain unsupported-operation rejection was 0.9479166666666666 (91/96), below the preregistered 0.95 floor; candidate was not retuned"
   },
   "blind_final": {
     "protocol": "benchmarks/decision-routing-v14-blind-protocol.json",
     "corpus_exists": false,
-    "run_allowed_only_after_candidate_freeze": true
+    "run_allowed_only_after_candidate_freeze": true,
+    "run_allowed": false,
+    "disposition": "retired_without_generation_after_calibration_rejection"
   },
   "guardrails": [
     "Do not use v12, v13, or v14 for threshold, architecture, model, representation, or cascade-policy selection.",
@@ -85,6 +97,7 @@
     "Keep BGE beta=1.0, pairwise min score 0.01, and pairwise min margin 0.0 fixed when the escalation stage is invoked.",
     "The cascade may only suppress, preserve, or rank among already-authorized sibling operations; it cannot create new execution authority.",
     "Only candidates in the preregistered grid are eligible for selection in this development sweep.",
-    "The development winner is frozen as r030-a060-m005 before any calibration result is observed."
+    "The development winner is frozen as r030-a060-m005 before any calibration result is observed.",
+    "The paired calibration rejected r030-a060-m005; do not retune it against calibration evidence and do not generate v14 for this cycle."
   ]
 }
