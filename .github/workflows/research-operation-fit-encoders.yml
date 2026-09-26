@@ -1,0 +1,40 @@
+name: Operation Fit Encoder Research
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-operation-fit-encoders.yml"
+      - "scripts/profile_operation_fit_encoders.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: operation-fit-encoders-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  v5-devcal-encoders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "sentence-transformers>=3,<6"
+      - run: pip install -e ".[dev]"
+      - name: Compare operation-fit encoders on v5 dev/cal only
+        run: |
+          mkdir -p artifacts/operation-fit-encoders
+          python scripts/profile_operation_fit_encoders.py \
+            --corpus benchmarks/decision-routing-v5-operation-calibration.json \
+            --json-out artifacts/operation-fit-encoders/report.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: operation-fit-encoders-${{ github.run_id }}
+          path: artifacts/operation-fit-encoders/
+          if-no-files-found: error
+          retention-days: 14
