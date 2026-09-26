@@ -1,6 +1,6 @@
 {
   "cycle": "0.10-operation-cascade-v2",
-  "status": "candidate_selected_and_frozen_before_calibration",
+  "status": "calibration_rejected",
   "reserved_from_main": "ecc6ba6f313df45545590297c7130a4abadf93f1",
   "v14_reservation_main_revision": "5d7c972c8b13d03934c9cc88de3dc9e14159bcd5",
   "predecessor": {
@@ -72,12 +72,21 @@
     "split": "calibration",
     "rule": "freeze the selected dev winner, then run that unchanged candidate once; both quality floors must still pass",
     "candidate_changes_allowed": false,
-    "latency_rule": "run the frozen cascade candidate and full-BGE baseline sequentially in one calibration job; promotion requires both quality floors and a lower candidate mean latency in that paired environment"
+    "latency_rule": "run the frozen cascade candidate and full-BGE baseline sequentially in one calibration job; promotion requires both quality floors and a lower candidate mean latency in that paired environment",
+    "result_manifest": "benchmarks/operation-fit-0.10-cascade-calibration-result.json",
+    "workflow_run_id": 36250085815,
+    "supported_operation_routed_accuracy": 0.6145833333333334,
+    "near_domain_unsupported_operation_rejection": 0.9479166666666666,
+    "full_bge_mean_latency_ms": 572.215,
+    "cascade_mean_latency_ms": 489.348,
+    "quality_floors_passed": false,
+    "latency_requirement_passed": true
   },
   "blind_final": {
     "protocol": "benchmarks/decision-routing-v14-blind-protocol.json",
     "corpus_exists": false,
-    "run_allowed_only_after_candidate_freeze": true
+    "run_allowed_only_after_candidate_freeze": false,
+    "status": "blocked_candidate_rejected_at_calibration"
   },
   "guardrails": [
     "Do not use v12, v13, or v14 for threshold, architecture, model, representation, or cascade-policy selection.",
