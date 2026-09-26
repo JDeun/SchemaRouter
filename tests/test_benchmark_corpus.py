@@ -628,9 +628,9 @@ def test_v5_v6_are_disjoint_from_prior_corpora_and_each_other() -> None:
     assert v6.isdisjoint(prior)
     assert v5.isdisjoint(v6)
 
-def test_v9_operation_holdout_workflow_is_manual_and_threshold_gated() -> None:
+def test_v11_operation_holdout_workflow_is_manual_and_threshold_gated() -> None:
     workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
-    marker = "  operation-fit-v9-heldout-cpu:"
+    marker = "  operation-fit-v11-heldout-cpu:"
     assert marker in workflow
     holdout_job = workflow.split(marker, 1)[1]
 
@@ -642,21 +642,23 @@ def test_v9_operation_holdout_workflow_is_manual_and_threshold_gated() -> None:
     )
     assert "OPERATION_FIT_MIN_SIMILARITY: ${{ inputs.operation_fit_min_similarity }}" in holdout_job
     assert '--operation-fit-min-similarity "${OPERATION_FIT_MIN_SIMILARITY}"' in holdout_job
-    assert "benchmarks/decision-routing-v9-operation-alias-holdout.json" in holdout_job
-    assert "benchmarks/decision-routing-v8-operation-alias-holdout.json" not in holdout_job
+    assert "benchmarks/decision-routing-v11-operation-generalization-holdout.json" in holdout_job
+    assert "benchmarks/decision-routing-v10-operation-generalization-holdout.json" not in holdout_job
 
 
 def test_alias_aware_operation_calibration_uses_consumed_v7_as_diagnostic_only() -> None:
     workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
     marker = "  operation-fit-calibration-cpu:"
     assert marker in workflow
-    calibration_job = workflow.split(marker, 1)[1].split("  operation-fit-v9-heldout-cpu:", 1)[0]
+    calibration_job = workflow.split(marker, 1)[1].split("  operation-fit-v11-heldout-cpu:", 1)[0]
 
     assert "benchmarks/decision-routing-v5-operation-calibration.json" in calibration_job
     assert "benchmarks/decision-routing-v7-operation-post-change-holdout.json" in calibration_job
     assert "diagnostic-v7" in calibration_job
     assert "benchmarks/decision-routing-v8-operation-alias-holdout.json" not in calibration_job
     assert "benchmarks/decision-routing-v9-operation-alias-holdout.json" not in calibration_job
+    assert "benchmarks/decision-routing-v10-operation-generalization-holdout.json" not in calibration_job
+    assert "benchmarks/decision-routing-v11-operation-generalization-holdout.json" not in calibration_job
 
 
 
