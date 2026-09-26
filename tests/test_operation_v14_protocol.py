@@ -38,8 +38,7 @@ def test_v14_has_no_checked_in_corpus_or_workflow_path() -> None:
         ROOT / "benchmarks" / "decision-routing-v14-operation-cascade-holdout.json"
     ).exists()
 
-    workflows = "
-".join(
+    workflows = "\n".join(
         path.read_text(encoding="utf-8")
         for path in sorted((ROOT / ".github" / "workflows").glob("*.yml"))
     )
