@@ -1219,6 +1219,7 @@ async def main() -> None:
         operation_fit_backend = PairwiseDecisionBackend(
             operation_fit_scorer,
             min_score=args.operation_fit_min_score,
+            min_margin=args.operation_fit_min_margin,
         )
     elif args.operation_fit_embedding_callable:
         operation_fit_embedder = load_callable(

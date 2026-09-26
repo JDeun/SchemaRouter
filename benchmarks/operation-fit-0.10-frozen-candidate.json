@@ -1,0 +1,45 @@
+{
+  "cycle": "0.10-operation-contrastive-v1",
+  "status": "candidate_frozen_before_calibration",
+  "frozen_from_dev_run": {
+    "workflow_run_id": 36244752578,
+    "source_revision": "dd1016c693b774c14e3e405b0a8a0d88b2e995eb",
+    "selected_artifact_id": 10906539444,
+    "selected_artifact_sha256": "81ad5f1a385ab61d58c9424c125ef38b24667272d194c7c271a3481570723ccc",
+    "selection_split": "dev"
+  },
+  "selection_rule": "maximum harmonic mean of supported-operation routed accuracy and near-domain unsupported-operation rejection among candidates meeting both preregistered floors",
+  "selected_candidate": {
+    "architecture": "sibling-contrastive BGE operation-fit",
+    "reranker_model": "BAAI/bge-reranker-v2-m3",
+    "transform": "sigmoid(raw_i + beta * (raw_i - max_sibling_raw))",
+    "beta": 1,
+    "operation_fit_min_score": 0.01,
+    "operation_fit_min_margin": 0,
+    "semantic_recall_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "semantic_recall_top_k": 2,
+    "capability_fit_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "capability_fit_min_similarity": 0.25,
+    "endpoint_disambiguation_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "endpoint_disambiguation_min_margin": 0.03
+  },
+  "dev_result": {
+    "cases": 384,
+    "overall_accuracy": 0.8072916666666666,
+    "supported_operation_routed_accuracy": 0.65625,
+    "near_domain_unsupported_operation_rejection": 0.9583333333333334,
+    "harmonic_mean": 0.779032258064516,
+    "mean_latency_ms": 584.561,
+    "false_routes": 8,
+    "missed_routes": 46,
+    "wrong_endpoints": 20,
+    "errors": 0
+  },
+  "next_step": "Run exactly this frozen candidate on v5 calibration only. Calibration may veto promotion but may not select another beta.",
+  "prohibited_before_calibration_result": [
+    "No beta reselection.",
+    "No threshold or representation change.",
+    "Do not run or inspect v12.",
+    "Do not generate or run v13."
+  ]
+}

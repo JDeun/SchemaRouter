@@ -1,0 +1,51 @@
+{
+  "cycle": "0.10-operation-contrastive-v1",
+  "status": "development_selection",
+  "selection_surface": "operation_capability_fit",
+  "authority_model": "suppress_only_bounded_sibling_operations",
+  "data_policy": {
+    "selection": "benchmarks/decision-routing-v5-operation-calibration.json split=dev",
+    "confirmation": "same corpus split=calibration, selected candidate only after dev freeze",
+    "design_known_stress": "v12, never eligible for selection",
+    "blind_final": "v13 protocol, generate only after full candidate freeze"
+  },
+  "baseline": {
+    "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "semantic_recall_top_k": 2,
+    "capability_fit_min_similarity": 0.25,
+    "endpoint_disambiguation_min_margin": 0.03,
+    "prior_minilm_dev_supported_accuracy": 0.552083,
+    "prior_minilm_dev_unsupported_rejection": 0.84375
+  },
+  "candidate": {
+    "reranker_model": "BAAI/bge-reranker-v2-m3",
+    "transform": "sigmoid(raw_i + beta * (raw_i - max_sibling_raw))",
+    "beta_values": [
+      0,
+      0.25,
+      0.5,
+      1,
+      2
+    ],
+    "operation_fit_min_score": 0.01,
+    "operation_fit_min_margin": 0
+  },
+  "selection_rule": {
+    "hard_floor_supported_accuracy": 0.532083,
+    "hard_floor_unsupported_rejection": 0.82375,
+    "primary": "maximize harmonic mean of supported-operation routed accuracy and near-domain unsupported-operation rejection among candidates meeting both floors",
+    "tie_breakers": [
+      "higher supported-operation routed accuracy",
+      "higher unsupported-operation rejection",
+      "lower mean latency"
+    ],
+    "no_promotion": "If no candidate meets both floors and improves the prior MiniLM harmonic mean, retain the existing MiniLM profile."
+  },
+  "hygiene": [
+    "Do not inspect v12 or generate v13 during development selection.",
+    "Do not inspect calibration results for non-selected beta values.",
+    "Freeze beta and all upstream routing parameters before the calibration confirmation run.",
+    "Calibration may veto promotion but must not be used to choose a different beta.",
+    "Generate and score v13 only after the complete candidate configuration is frozen."
+  ]
+}
