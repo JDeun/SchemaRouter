@@ -228,6 +228,7 @@ class _CandidateIndex:
                         tool.description,
                         endpoint.name,
                         endpoint.description,
+                        *endpoint.operation_aliases,
                     ]
                 )
                 for token in _tokens(tool_text):
@@ -870,24 +871,21 @@ class SchemaPlanner:
     def _apply_graph_operation_gate(
         self,
         request: PlanRequest,
+        intent: QueryIntent,
         candidates: list[_Candidate],
     ) -> tuple[list[_Candidate], list[str], bool]:
         if self.graph_operation_gate is None or request.max_calls > 1 or not candidates:
             return candidates, [], True
 
-        primary_tool = candidates[0].tool.key
-        sibling_indexes = [
-            index
-            for index, candidate in enumerate(candidates)
-            if candidate.tool.key == primary_tool
-        ]
+        primary_tool = candidates[0].tool
+        primary_tool_key = primary_tool.key
         assessment = self.graph_operation_gate.assess(
             query=request.query,
             graph=self._graph(),
-            tool_key=primary_tool,
+            tool_key=primary_tool_key,
             endpoint_names=tuple(
-                candidates[index].endpoint.name
-                for index in sibling_indexes
+                endpoint.name
+                for endpoint in primary_tool.endpoints
             ),
         )
 
@@ -899,34 +897,47 @@ class SchemaPlanner:
 
         if assessment.decision == "accept":
             endpoint_name = assessment.endpoint_name
-            chosen_index = next(
+            chosen = next(
                 (
-                    index
-                    for index in sibling_indexes
-                    if candidates[index].endpoint.name == endpoint_name
+                    candidate
+                    for candidate in candidates
+                    if candidate.tool.key == primary_tool_key
+                    and candidate.endpoint.name == endpoint_name
                 ),
                 None,
             )
-            if chosen_index is None:
+            if chosen is None and endpoint_name is not None:
+                try:
+                    endpoint = primary_tool.endpoint(endpoint_name)
+                except KeyError:
+                    endpoint = None
+                if endpoint is not None:
+                    chosen = self._score_endpoint(
+                        primary_tool,
+                        endpoint,
+                        request.query,
+                        intent,
+                    )
+            if chosen is None:
                 return candidates, [
                     "graph operation gate produced no authorized candidate; escalated"
                 ], True
 
             chosen = replace(
-                candidates[chosen_index],
+                chosen,
                 selection_source="graph_operation",
             )
-            reordered = [
+            pruned = [
                 chosen,
                 *[
                     candidate
-                    for index, candidate in enumerate(candidates)
-                    if index != chosen_index and candidate.tool.key != primary_tool
+                    for candidate in candidates
+                    if candidate.tool.key != primary_tool_key
                 ],
             ]
-            return reordered, [
+            return pruned, [
                 "graph operation gate accepted "
-                f"{primary_tool}.{endpoint_name}: {assessment.reason}"
+                f"{primary_tool_key}.{endpoint_name}: {assessment.reason}"
             ], False
 
         return candidates, [
@@ -938,17 +949,12 @@ class SchemaPlanner:
         request: PlanRequest,
         candidates: list[_Candidate],
     ) -> tuple[list[_Candidate], list[str]]:
-        candidates, graph_warnings, should_escalate = (
-            self._apply_graph_operation_gate(request, candidates)
-        )
-        if not should_escalate:
-            return candidates, graph_warnings
         if self.operation_fit_backend is None or not candidates:
-            return candidates, graph_warnings
+            return candidates, []
 
         decision_request = self._operation_fit_request(request, candidates)
         if decision_request is None:
-            return candidates, graph_warnings
+            return candidates, []
 
         try:
             result = choose_sync(
@@ -957,22 +963,19 @@ class SchemaPlanner:
             )
         except Exception as exc:
             return candidates, [
-                *graph_warnings,
                 "operation capability fit fallback: "
-                f"{type(exc).__name__}; retained authorized candidates",
+                f"{type(exc).__name__}; retained authorized candidates"
             ]
 
         if result.abstained or not result.selections:
             return [], [
-                *graph_warnings,
                 "operation capability fit gate abstained; "
-                "suppressed candidate routes",
+                "suppressed candidate routes"
             ]
 
         accepted = result.selections[0].option_id
         return candidates, [
-            *graph_warnings,
-            f"operation capability fit gate accepted via {accepted}",
+            f"operation capability fit gate accepted via {accepted}"
         ]
 
     async def _apply_operation_fit_async(
@@ -980,17 +983,12 @@ class SchemaPlanner:
         request: PlanRequest,
         candidates: list[_Candidate],
     ) -> tuple[list[_Candidate], list[str]]:
-        candidates, graph_warnings, should_escalate = (
-            self._apply_graph_operation_gate(request, candidates)
-        )
-        if not should_escalate:
-            return candidates, graph_warnings
         if self.operation_fit_backend is None or not candidates:
-            return candidates, graph_warnings
+            return candidates, []
 
         decision_request = self._operation_fit_request(request, candidates)
         if decision_request is None:
-            return candidates, graph_warnings
+            return candidates, []
 
         try:
             result = await choose_async(
@@ -999,22 +997,19 @@ class SchemaPlanner:
             )
         except Exception as exc:
             return candidates, [
-                *graph_warnings,
                 "operation capability fit fallback: "
-                f"{type(exc).__name__}; retained authorized candidates",
+                f"{type(exc).__name__}; retained authorized candidates"
             ]
 
         if result.abstained or not result.selections:
             return [], [
-                *graph_warnings,
                 "operation capability fit gate abstained; "
-                "suppressed candidate routes",
+                "suppressed candidate routes"
             ]
 
         accepted = result.selections[0].option_id
         return candidates, [
-            *graph_warnings,
-            f"operation capability fit gate accepted via {accepted}",
+            f"operation capability fit gate accepted via {accepted}"
         ]
 
     @staticmethod
@@ -2530,23 +2525,37 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
         )
-        all_candidates, recall_warnings = (
-            self._augment_candidates_with_semantic_recall_sync(
+        graph_candidates, graph_warnings, graph_escalates = (
+            self._apply_graph_operation_gate(
                 request,
                 intent,
                 lexical_candidates,
-                additional_availability_predicate=additional_availability_predicate,
             )
         )
+        if graph_escalates:
+            all_candidates, recall_warnings = (
+                self._augment_candidates_with_semantic_recall_sync(
+                    request,
+                    intent,
+                    lexical_candidates,
+                    additional_availability_predicate=additional_availability_predicate,
+                )
+            )
+            fit_candidates, fit_warnings = self._apply_capability_fit_sync(
+                request,
+                all_candidates,
+            )
+            operation_candidates, operation_warnings = self._apply_operation_fit_sync(
+                request,
+                fit_candidates,
+            )
+        else:
+            all_candidates = graph_candidates
+            recall_warnings = []
+            fit_warnings = []
+            operation_candidates = graph_candidates
+            operation_warnings = []
         _, required_coverage = self._field_coverage_matrix(request, all_candidates)
-        fit_candidates, fit_warnings = self._apply_capability_fit_sync(
-            request,
-            all_candidates,
-        )
-        operation_candidates, operation_warnings = self._apply_operation_fit_sync(
-            request,
-            fit_candidates,
-        )
         disambiguated_candidates, disambiguation_warnings = (
             self._disambiguate_endpoints_sync(
                 request,
@@ -2560,6 +2569,7 @@ class SchemaPlanner:
         candidates = self._order_candidates_for_field_coverage(request, candidates)
 
         warnings: list[str] = [
+            *graph_warnings,
             *recall_warnings,
             *fit_warnings,
             *operation_warnings,
@@ -2745,25 +2755,39 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
         )
-        all_candidates, recall_warnings = (
-            await self._augment_candidates_with_semantic_recall_async(
+        graph_candidates, graph_warnings, graph_escalates = (
+            self._apply_graph_operation_gate(
                 request,
                 intent,
                 lexical_candidates,
-                additional_availability_predicate=additional_availability_predicate,
             )
         )
-        _, required_coverage = self._field_coverage_matrix(request, all_candidates)
-        fit_candidates, fit_warnings = await self._apply_capability_fit_async(
-            request,
-            all_candidates,
-        )
-        operation_candidates, operation_warnings = (
-            await self._apply_operation_fit_async(
+        if graph_escalates:
+            all_candidates, recall_warnings = (
+                await self._augment_candidates_with_semantic_recall_async(
+                    request,
+                    intent,
+                    lexical_candidates,
+                    additional_availability_predicate=additional_availability_predicate,
+                )
+            )
+            fit_candidates, fit_warnings = await self._apply_capability_fit_async(
                 request,
-                fit_candidates,
+                all_candidates,
             )
-        )
+            operation_candidates, operation_warnings = (
+                await self._apply_operation_fit_async(
+                    request,
+                    fit_candidates,
+                )
+            )
+        else:
+            all_candidates = graph_candidates
+            recall_warnings = []
+            fit_warnings = []
+            operation_candidates = graph_candidates
+            operation_warnings = []
+        _, required_coverage = self._field_coverage_matrix(request, all_candidates)
         disambiguated_candidates, disambiguation_warnings = (
             await self._disambiguate_endpoints_async(
                 request,
@@ -2776,6 +2800,7 @@ class SchemaPlanner:
         )
         candidates = self._order_candidates_for_field_coverage(request, candidates)
         warnings = [
+            *graph_warnings,
             *recall_warnings,
             *fit_warnings,
             *operation_warnings,
