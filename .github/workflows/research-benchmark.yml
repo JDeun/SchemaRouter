@@ -512,7 +512,10 @@ jobs:
       - run: pip install "sentence-transformers>=3,<6"
       - run: pip install -e ".[dev]"
       - name: Consumed v11 holdout is intentionally disabled
-        run: echo "v11 was consumed by run 36239340782 and is retained only as historical configuration."\n      - name: Run frozen operation-fit configuration on reserved v11 operation-generalization holdout\n        if: ${{ false }}\n        env:
+        run: echo "v11 was consumed by run 36239340782 and is retained only as historical configuration."
+      - name: Run frozen operation-fit configuration on reserved v11 operation-generalization holdout
+        if: ${{ false }}
+        env:
           SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
           SCHEMAROUTER_BENCHMARK_RERANKER_MODEL: "BAAI/bge-reranker-v2-m3"
         run: |
