@@ -4,9 +4,14 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 
-from generate_decision_routing_v3_holdout import CONFIG as BASE_CONFIG
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+
+from generate_decision_routing_v3_holdout import CONFIG as BASE_CONFIG  # noqa: E402
 
 V4 = json.loads(r'''{
   "wrappers": {
