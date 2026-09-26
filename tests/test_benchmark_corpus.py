@@ -892,3 +892,69 @@ def test_v10_generalization_holdout_is_frozen_balanced_and_test_only() -> None:
         for route in {case["expected"] for case in cases if case["expected"]}
     }
     assert all(count == 24 for count in route_counts.values())
+
+
+
+def test_benchmark_failure_stage_attributes_gate_suppression() -> None:
+    module = _benchmark_module()
+
+    assert module._failure_stage(
+        ["operation capability fit gate abstained; suppressed candidate routes"],
+        expected="users.lookup",
+        predicted=None,
+    ) == "operation_fit"
+    assert module._failure_stage(
+        ["capability fit gate abstained; suppressed candidate routes"],
+        expected="users.lookup",
+        predicted=None,
+    ) == "capability_fit"
+    assert module._failure_stage(
+        ["semantic candidate recall abstained; no candidate routes"],
+        expected="users.lookup",
+        predicted=None,
+    ) == "candidate_recall"
+    assert module._failure_stage(
+        [],
+        expected="users.lookup",
+        predicted=None,
+    ) == "deterministic_recall_or_coverage"
+    assert module._failure_stage(
+        ["operation capability fit gate abstained; suppressed candidate routes"],
+        expected=None,
+        predicted=None,
+    ) is None
+
+
+def test_benchmark_summary_counts_failure_stages() -> None:
+    module = _benchmark_module()
+    rows = [
+        module.BenchmarkRow(
+            "x",
+            "a",
+            "c",
+            "q",
+            "users.lookup",
+            None,
+            False,
+            False,
+            1.0,
+            failure_stage="operation_fit",
+        ),
+        module.BenchmarkRow(
+            "x",
+            "b",
+            "c",
+            "q",
+            "users.lookup",
+            None,
+            False,
+            False,
+            1.0,
+            failure_stage="candidate_recall",
+        ),
+    ]
+
+    assert module.summarize(rows)["failure_stage_counts"] == {
+        "candidate_recall": 1,
+        "operation_fit": 1,
+    }
