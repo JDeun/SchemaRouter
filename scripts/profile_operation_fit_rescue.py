@@ -3,8 +3,9 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from benchmark_decision_routing import (
     BenchmarkCase,
@@ -14,6 +15,7 @@ from benchmark_decision_routing import (
     load_corpus,
     reference_registry,
 )
+
 from schemarouter import EmbeddingDecisionBackend, SchemaPlanner
 from schemarouter.decisions import DecisionRequest, DecisionResult
 
