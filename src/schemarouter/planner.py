@@ -2740,22 +2740,44 @@ class SchemaPlanner:
                 intent,
                 additional_availability_predicate=additional_availability_predicate,
             )
-            all_candidates, recall_warnings = (
-                self._augment_candidates_with_semantic_recall_sync(
+            semantic_seed_enabled = (
+                self.graph_operation_gate is not None
+                and self.graph_operation_gate.semantic_seed_min_score is not None
+            )
+            recall_outcome = self._semantic_recall_outcome_sync(
+                request,
+                intent,
+                lexical_candidates,
+                include_operation_semantics=semantic_seed_enabled,
+                additional_availability_predicate=additional_availability_predicate,
+            )
+            semantic_candidates, semantic_warnings, semantic_resolved = (
+                self._apply_graph_semantic_seed(
                     request,
-                    intent,
-                    lexical_candidates,
-                    additional_availability_predicate=additional_availability_predicate,
+                    recall_outcome,
                 )
             )
-            fit_candidates, fit_warnings = self._apply_capability_fit_sync(
-                request,
-                all_candidates,
-            )
-            operation_candidates, operation_warnings = self._apply_operation_fit_sync(
-                request,
-                fit_candidates,
-            )
+            recall_warnings = [
+                *recall_outcome.warnings,
+                *semantic_warnings,
+            ]
+            if semantic_resolved:
+                all_candidates = semantic_candidates
+                fit_warnings = []
+                operation_candidates = semantic_candidates
+                operation_warnings = []
+            else:
+                all_candidates = recall_outcome.candidates
+                fit_candidates, fit_warnings = self._apply_capability_fit_sync(
+                    request,
+                    all_candidates,
+                )
+                operation_candidates, operation_warnings = (
+                    self._apply_operation_fit_sync(
+                        request,
+                        fit_candidates,
+                    )
+                )
         else:
             all_candidates = graph_candidates
             recall_warnings = []
@@ -2970,24 +2992,44 @@ class SchemaPlanner:
                 intent,
                 additional_availability_predicate=additional_availability_predicate,
             )
-            all_candidates, recall_warnings = (
-                await self._augment_candidates_with_semantic_recall_async(
-                    request,
-                    intent,
-                    lexical_candidates,
-                    additional_availability_predicate=additional_availability_predicate,
-                )
+            semantic_seed_enabled = (
+                self.graph_operation_gate is not None
+                and self.graph_operation_gate.semantic_seed_min_score is not None
             )
-            fit_candidates, fit_warnings = await self._apply_capability_fit_async(
+            recall_outcome = await self._semantic_recall_outcome_async(
                 request,
-                all_candidates,
+                intent,
+                lexical_candidates,
+                include_operation_semantics=semantic_seed_enabled,
+                additional_availability_predicate=additional_availability_predicate,
             )
-            operation_candidates, operation_warnings = (
-                await self._apply_operation_fit_async(
+            semantic_candidates, semantic_warnings, semantic_resolved = (
+                self._apply_graph_semantic_seed(
                     request,
-                    fit_candidates,
+                    recall_outcome,
                 )
             )
+            recall_warnings = [
+                *recall_outcome.warnings,
+                *semantic_warnings,
+            ]
+            if semantic_resolved:
+                all_candidates = semantic_candidates
+                fit_warnings = []
+                operation_candidates = semantic_candidates
+                operation_warnings = []
+            else:
+                all_candidates = recall_outcome.candidates
+                fit_candidates, fit_warnings = await self._apply_capability_fit_async(
+                    request,
+                    all_candidates,
+                )
+                operation_candidates, operation_warnings = (
+                    await self._apply_operation_fit_async(
+                        request,
+                        fit_candidates,
+                    )
+                )
         else:
             all_candidates = graph_candidates
             recall_warnings = []
