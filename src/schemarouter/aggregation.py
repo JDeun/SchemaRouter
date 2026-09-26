@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from collections import defaultdict
 import hashlib
 import json
 import re
-from collections import defaultdict
 from typing import Any, Literal
 
 from pydantic import Field, model_validator
