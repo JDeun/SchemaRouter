@@ -136,6 +136,9 @@ class PairwiseDecisionBackend:
             "min_margin": self.min_margin,
             "top_score": ranked[0][1],
         }
+        if len(ranked) > 1:
+            metadata["second_score"] = ranked[1][1]
+            metadata["top_margin"] = ranked[0][1] - ranked[1][1]
         if not eligible:
             return validate_decision(
                 request,
