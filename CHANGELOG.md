@@ -10,6 +10,7 @@ The project is pre-1.0 and follows the compatibility rules in
 ### Added
 
 - reserved a 600-case multilingual v12 contrastive operation stress set, then explicitly classified it as design-known rather than blind evidence because its exact construction was inspected before architecture selection; v12 remains ineligible for tuning. A separate v13 protocol now requires the next fresh corpus to be generated only after the candidate is frozen and scored in the same one-shot run without intermediate inspection.
+- selected sibling-contrastive BGE with `beta=1.0` on v5 development data only, then confirmed the unchanged candidate on the v5 calibration split at 80.208% overall accuracy, 62.5% supported-operation routed accuracy, and 97.917% near-domain unsupported-operation rejection; the complete candidate is frozen before any v13 blind-final generation.
 
 ### Changed
 
