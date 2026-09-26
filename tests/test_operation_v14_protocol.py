@@ -27,7 +27,7 @@ def test_v14_protocol_is_reserved_before_cascade_implementation() -> None:
     assert v14["selection_policy"]["supported_operation_floor"] == 0.60
     assert v14["selection_policy"]["near_domain_unsupported_rejection_floor"] == 0.95
 
-    assert cycle["status"] == "development_sweep_preregistered"
+    assert cycle["status"] == "candidate_selected_and_frozen_before_calibration"
     assert cycle["selection"]["split"] == "dev"
     assert len(cycle["selection"]["candidate_grid"]) == 6
     assert cycle["confirmation"]["split"] == "calibration"
