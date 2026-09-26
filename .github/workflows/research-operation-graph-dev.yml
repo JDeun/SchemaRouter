@@ -14,6 +14,7 @@ on:
       - "benchmarks/decision-routing-v15-blind-protocol.json"
       - "tests/test_graph_routing.py"
       - "tests/test_graph_dev_generator.py"
+      - "tests/test_graph_dev_comparison.py"
       - "tests/test_operation_graph_protocol.py"
 
 permissions:
@@ -45,7 +46,7 @@ jobs:
 
       - name: Validate graph research contracts
         run: |
-          pytest -q tests/test_graph_routing.py tests/test_graph_dev_generator.py tests/test_operation_graph_protocol.py tests/test_operation_contrastive_protocol.py
+          pytest -q tests/test_graph_routing.py tests/test_graph_dev_generator.py tests/test_graph_dev_comparison.py tests/test_operation_graph_protocol.py tests/test_operation_contrastive_protocol.py
 
       - name: Generate fresh graph-v1 development corpus
         run: |
