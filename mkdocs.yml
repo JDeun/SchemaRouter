@@ -120,6 +120,7 @@ nav:
       - Batch, streaming, and events: guides/runtime.md
       - Execution policy: guides/execution-policy.md
       - Provider-aware fallback: guides/provider-fallback.md
+      - Multi-provider evidence: guides/multi-provider-evidence.md
       - Schema drift analysis: guides/schema-drift.md
       - Retry policy: guides/retry.md
       - Trusted execution hooks: guides/execution-hooks.md
@@ -152,6 +153,7 @@ nav:
   - Project:
       - Versioning: versioning.md
       - Release notes:
+          - 0.8.0: releases/0.8.0.md
           - 0.7.0: releases/0.7.0.md
           - 0.6.0: releases/0.6.0.md
           - 0.5.0: releases/0.5.0.md
