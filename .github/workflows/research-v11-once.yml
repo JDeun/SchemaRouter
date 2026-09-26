@@ -1,0 +1,13 @@
+name: Consumed V11 Diagnostic Archive
+
+on: {}
+
+permissions:
+  contents: read
+
+jobs:
+  archived:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "v11 holdout and baseline diagnostic were completed on 2026-09-26; this workflow is archived and intentionally non-runnable."
