@@ -813,33 +813,34 @@ class SchemaPlanner:
             return None
 
         options: list[DecisionOption] = []
-        for index, candidate in enumerate(sibling_candidates):
+        for candidate_index, candidate in enumerate(sibling_candidates):
             endpoint = candidate.endpoint
             operation_name = endpoint.name.replace("_", " ").replace("-", " ")
-            operation_class = (
-                "read-only retrieval"
-                if endpoint.read_only is True
-                else "mutating write"
-                if endpoint.read_only is False
-                else "unclassified operation"
-            )
-            parts = [
-                f"Operation: {operation_name}",
+            operation_phrases = [
+                operation_name,
                 endpoint.description.strip(),
+                *endpoint.operation_aliases,
             ]
-            if endpoint.operation_aliases:
-                parts.append("Operation aliases: " + "; ".join(endpoint.operation_aliases))
-            parts.append(f"Operation class: {operation_class}")
-            if endpoint.method:
-                parts.append(f"HTTP method: {endpoint.method.upper()}")
-            options.append(
-                DecisionOption(
-                    id=f"operation:{index}",
-                    label=endpoint.name,
-                    description="\n".join(part for part in parts if part),
-                    metadata={"tool": primary_tool},
+            normalized_phrases = list(
+                dict.fromkeys(
+                    phrase.strip()
+                    for phrase in operation_phrases
+                    if phrase.strip()
                 )
             )
+            for phrase_index, phrase in enumerate(normalized_phrases):
+                options.append(
+                    DecisionOption(
+                        id=f"operation:{candidate_index}:{phrase_index}",
+                        label=endpoint.name,
+                        description=phrase,
+                        metadata={
+                            "tool": primary_tool,
+                            "endpoint": endpoint.name,
+                            "variant": phrase_index,
+                        },
+                    )
+                )
 
         return DecisionRequest(
             query=request.query,
