@@ -444,6 +444,7 @@ jobs:
             python scripts/benchmark_decision_routing.py \
               --corpus benchmarks/decision-routing-v5-operation-calibration.json \
               --split "${SPLIT}" \
+              --final-stack-only \
               --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
               --candidate-recall-limit 2 \
               --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed \
