@@ -400,6 +400,46 @@ weaker than unsupported-operation rejection. v9 is now consumed and must not be 
 retuning.
 
 
+### Post-v9 concise surface and v10 generalization holdout
+
+After the v9 one-shot result, stage-attributed v5 dev/calibration profiling showed that operation-fit
+abstention remained the dominant supported-route suppression stage. Three representation variants
+were compared at the already-frozen 0.40 threshold using **v5 development/calibration only**:
+
+- concise endpoint name + trusted aliases + endpoint description: 69.792% balanced operation score
+  on both dev and calibration after endpoint disambiguation;
+- repeated natural-language `Supported operation:` phrases: 64.062% dev / 63.542% calibration;
+- independent max-over-alias variants: 59.635% dev / 60.417% calibration.
+
+The concise representation was selected before inspecting v10. A fresh threshold sweep from 0.05
+through 0.70 then used v5 dev/calibration only. The robustness score was the lower of the dev and
+calibration balanced operation scores. The selected threshold remained
+`operation_fit_min_similarity = 0.40`: 0.35 reached 67.188% robustness, 0.40 reached 69.792%,
+and 0.45 reached 67.708%.
+
+`benchmarks/decision-routing-v10-operation-generalization-holdout.json` is a 600-case,
+six-language test-only generalization corpus frozen before this representation optimization. It
+contains 384 supported operations, 192 near-domain unsupported operations, and 24 ordinary
+out-of-domain requests.
+
+With the representation and threshold frozen, v10 was evaluated exactly once on 2026-09-26 using
+semantic recall top-k 2, capability-fit 0.25, operation-fit 0.40, and endpoint-disambiguation margin
+0.03. The final stack produced:
+
+- 55.667% overall accuracy (95% Wilson CI 51.668%–59.593%);
+- 42.188% supported-operation routed accuracy (37.349%–47.181%);
+- 77.083% near-domain unsupported-operation rejection (70.642%–82.462%);
+- 100% ordinary out-of-domain rejection (86.202%–100%);
+- 0 provider/planner errors and 0 invalid plans;
+- language-group accuracy from 47% (Korean) to 61% (Japanese).
+
+The final v10 error taxonomy contained 199 missed routes, 44 false routes, and 23 wrong-endpoint
+routes. Of the missed routes, 162 were attributed to operation-fit and 37 to capability-fit. This is
+retained as a limitation signal, not a reason to retune against v10. Any further operation-fit
+optimization must reserve a new untouched holdout before implementation; v10 is now consumed
+regression evidence.
+
+
 ### Post-change operation holdout (v7)
 
 `benchmarks/decision-routing-v7-operation-post-change-holdout.json` is a 600-case,
