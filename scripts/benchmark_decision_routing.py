@@ -965,6 +965,14 @@ async def main() -> None:
     parser.add_argument("--corpus", help="JSON corpus path. Omit for the three-case smoke set.")
     parser.add_argument("--max-cases", type=int, default=None)
     parser.add_argument(
+        "--final-stack-only",
+        action="store_true",
+        help=(
+            "Skip intermediate progressive baseline planners and benchmark only the "
+            "most fully configured routing stack. Explicit model/provider backends remain enabled."
+        ),
+    )
+    parser.add_argument(
         "--split",
         choices=("dev", "calibration", "test"),
         default=None,
@@ -1297,6 +1305,9 @@ async def main() -> None:
                 None,
             )
         )
+
+    if args.final_stack_only and planners:
+        planners = [planners[-1]]
 
     if args.model_callable:
         model_callable = load_callable(
