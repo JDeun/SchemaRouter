@@ -913,6 +913,42 @@ def test_v9_operation_alias_holdout_loads_against_reference_catalog() -> None:
 
 
 
+
+def test_benchmark_planner_name_filters_execution(monkeypatch, capsys) -> None:
+    import asyncio
+    import sys
+
+    module = _benchmark_module()
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["benchmark_decision_routing.py", "--planner-name", "keyword"],
+    )
+
+    asyncio.run(module.main())
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["planner_filter"] == "keyword"
+    assert list(report["summary"]) == ["keyword"]
+    assert {row["backend"] for row in report["rows"]} == {"keyword"}
+
+
+def test_benchmark_planner_name_rejects_unknown_name(monkeypatch) -> None:
+    import asyncio
+    import sys
+
+    module = _benchmark_module()
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["benchmark_decision_routing.py", "--planner-name", "missing"],
+    )
+
+    with pytest.raises(ValueError, match="unknown --planner-name"):
+        asyncio.run(module.main())
+
+
+
 def test_benchmark_summary_classifies_route_failures() -> None:
     module = _benchmark_module()
     rows = [
