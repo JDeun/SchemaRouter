@@ -845,11 +845,10 @@ class SchemaPlanner:
             options.append(
                 DecisionOption(
                     id="operation:unsupported",
-                    label="unsupported operation",
+                    label="none of the declared operations",
                     description=(
-                        f"Different unsupported {primary_tool} operation. "
-                        "The requested action belongs to this tool domain but is not any "
-                        f"declared operation: {declared}"
+                        "The requested action is a different operation and is not any "
+                        f"declared operation listed here: {declared}"
                     ),
                     metadata={"tool": primary_tool, "sentinel": True},
                 )
