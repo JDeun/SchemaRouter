@@ -36,11 +36,15 @@ def test_graph_cycle_is_preregistered_before_implementation() -> None:
         == "graph semantic ranking reuse + selective BGE"
     )
     assert (ROOT / "benchmarks" / "operation-fit-0.10-graph-propagation-dev-plan.json").exists()
+    assert (ROOT / "benchmarks" / "operation-fit-0.10-graph-ranked-bge-dev-plan.json").exists()
     assert not (
         ROOT / ".github" / "workflows" / "research-operation-graph-semantic-seed.yml"
     ).exists()
     assert not (
         ROOT / ".github" / "workflows" / "research-operation-graph-propagation.yml"
+    ).exists()
+    assert (
+        ROOT / ".github" / "workflows" / "research-operation-graph-ranked-bge.yml"
     ).exists()
     assert cycle["development_progress"]["candidate_frozen"] is False
     assert cycle["development_progress"]["calibration_allowed"] is False
