@@ -192,6 +192,7 @@ class EmbeddingDecisionBackend:
         *,
         min_similarity: float = -1.0,
         min_margin: float = 0.0,
+        min_lead_margin: float = 0.0,
         option_text: DecisionOptionTextCallable | None = None,
     ) -> None:
         if not callable(embedder):
@@ -200,9 +201,15 @@ class EmbeddingDecisionBackend:
             raise ValueError("min_similarity must be finite and between -1 and 1")
         if not math.isfinite(min_margin) or not 0.0 <= min_margin <= 2.0:
             raise ValueError("min_margin must be finite and between 0 and 2")
+        if (
+            not math.isfinite(min_lead_margin)
+            or not 0.0 <= min_lead_margin <= 2.0
+        ):
+            raise ValueError("min_lead_margin must be finite and between 0 and 2")
         self.embedder = embedder
         self.min_similarity = min_similarity
         self.min_margin = min_margin
+        self.min_lead_margin = min_lead_margin
         self.option_text = option_text or self._default_option_text
 
     @staticmethod
@@ -286,6 +293,7 @@ class EmbeddingDecisionBackend:
             "option_count": len(request.options),
             "min_similarity": self.min_similarity,
             "min_margin": self.min_margin,
+            "min_lead_margin": self.min_lead_margin,
             "top_similarity": ranked[0][1],
         }
         if not eligible:
@@ -296,6 +304,18 @@ class EmbeddingDecisionBackend:
                     metadata={**metadata, "reason": "below_min_similarity"},
                 ),
             )
+
+        if self.min_lead_margin > 0.0 and len(ranked) > 1:
+            lead_margin = ranked[0][1] - ranked[1][1]
+            metadata["lead_margin"] = lead_margin
+            if lead_margin < self.min_lead_margin:
+                return validate_decision(
+                    request,
+                    DecisionResult(
+                        abstained=True,
+                        metadata={**metadata, "reason": "ambiguous_top_match"},
+                    ),
+                )
 
         limit = min(request.max_selections, len(eligible))
         selected = eligible[:limit]
