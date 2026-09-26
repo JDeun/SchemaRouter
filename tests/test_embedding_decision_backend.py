@@ -116,6 +116,47 @@ def test_embedding_backend_abstains_when_selection_boundary_is_ambiguous() -> No
     assert result.metadata["boundary_margin"] < 0.05
 
 
+def test_embedding_backend_abstains_when_top_match_is_not_distinct() -> None:
+    def embed(_: list[str]) -> list[list[float]]:
+        return [
+            [1.0, 0.0],
+            [0.80, 0.60],
+            [0.79, 0.61],
+            [0.0, 1.0],
+        ]
+
+    result = choose_sync(
+        EmbeddingDecisionBackend(embed, min_lead_margin=0.05),
+        request(max_selections=2),
+    )
+
+    assert result.abstained is True
+    assert result.metadata["reason"] == "ambiguous_top_match"
+    assert result.metadata["lead_margin"] < 0.05
+
+
+def test_embedding_backend_lead_margin_does_not_reduce_multi_selection_bound() -> None:
+    def embed(_: list[str]) -> list[list[float]]:
+        return [
+            [1.0, 0.0],
+            [1.0, 0.0],
+            [0.6, 0.8],
+            [0.0, 1.0],
+        ]
+
+    result = choose_sync(
+        EmbeddingDecisionBackend(embed, min_lead_margin=0.10),
+        request(max_selections=2),
+    )
+
+    assert result.abstained is False
+    assert [selection.option_id for selection in result.selections] == [
+        "candidate:0",
+        "candidate:1",
+    ]
+    assert result.metadata["lead_margin"] >= 0.10
+
+
 def test_embedding_backend_supports_bounded_multi_selection() -> None:
     def embed(_: list[str]) -> list[list[float]]:
         return [
@@ -194,6 +235,12 @@ def test_embedding_similarity_threshold_must_be_bounded(threshold: float) -> Non
 def test_embedding_margin_must_be_bounded(margin: float) -> None:
     with pytest.raises(ValueError, match="min_margin"):
         EmbeddingDecisionBackend(lambda _: [], min_margin=margin)
+
+
+@pytest.mark.parametrize("margin", [-0.01, 2.01, math.nan, math.inf])
+def test_embedding_lead_margin_must_be_bounded(margin: float) -> None:
+    with pytest.raises(ValueError, match="min_lead_margin"):
+        EmbeddingDecisionBackend(lambda _: [], min_lead_margin=margin)
 
 
 def test_embedding_backend_rejects_empty_custom_option_text() -> None:
