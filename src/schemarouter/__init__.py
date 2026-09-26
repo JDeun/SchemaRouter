@@ -21,6 +21,7 @@ from .analyzers import ModelCallable, ModelQueryAnalyzer
 from .dashboard import render_dashboard, write_dashboard
 from .decision_policy import DecisionFallback, DecisionPolicy
 from .decisions import (
+    CachedEmbeddingDecisionBackend,
     CallableDecisionBackend,
     DecisionBackend,
     DecisionCallable,
@@ -155,6 +156,7 @@ __all__ = [
     "BeforeExecutionHook",
     "BindingDriftError",
     "ConfiguredSchemaRouter",
+    "CachedEmbeddingDecisionBackend",
     "CallableDecisionBackend",
     "DecisionBackend",
     "DecisionFallback",
