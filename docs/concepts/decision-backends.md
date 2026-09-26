@@ -124,6 +124,36 @@ warning. This makes the gate a quality/abstention boundary rather than a new sec
 For embedding-based fit gates, calibrate `min_similarity` and `min_margin` on development or
 calibration data. Do not tune these thresholds against a held-out test split.
 
+### Bounded same-tool endpoint disambiguation
+
+After semantic recall and capability-fit gating, multiple sibling endpoints from the same leading
+tool may still remain plausible. `SchemaPlanner` can optionally use
+`endpoint_disambiguation_backend` to reorder only those sibling endpoints:
+
+```python
+disambiguator = EmbeddingDecisionBackend(multilingual_embed_batch)
+
+planner = SchemaPlanner(
+    registry,
+    candidate_recall_backend=recall,
+    candidate_recall_limit=2,
+    candidate_fit_backend=fit,
+    endpoint_disambiguation_backend=disambiguator,
+)
+```
+
+This stage is deliberately narrower than normal candidate selection. It receives only endpoints
+belonging to the already-leading tool domain and may move one of those siblings to the front. It
+cannot switch to another tool, add or remove candidates, create arguments or fields, or grant
+execution authority. Backend failure or abstention preserves the existing candidate order.
+
+The stage is skipped for `max_calls > 1`, where semantic field coverage rather than single-route
+ordering should control selection. Endpoint descriptions include the trusted read-only/mutating
+operation class and declared answer-field labels so a generic semantic backend can distinguish
+pairs such as `search/update`, `lookup/update`, `list/create`, and `current/forecast`.
+
+As with the recall and fit stages, evaluate disambiguation on development/calibration data and use a
+fresh untouched holdout for any claimed improvement.
 ### Empty lexical recall
 
 `recall_on_empty=True` is an additional opt-in for candidate selection. It matters when the
