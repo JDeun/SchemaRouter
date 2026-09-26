@@ -34,7 +34,7 @@ def test_material_values_are_preserved_as_independent_observations() -> None:
         SourceRecord(
             provider="materials-project",
             entity_kind="material",
-            identifiers={"formula": "GaAs"},
+            identifiers={"canonical_material_id": "gaas-zincblende"},
             fields={"density": 5.32},
             field_units={"density": "g/cm^3"},
             qualifiers={"method": "computed"},
