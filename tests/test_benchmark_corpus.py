@@ -915,6 +915,85 @@ def test_v9_operation_alias_holdout_loads_against_reference_catalog() -> None:
 
 
 
+
+def test_benchmark_planner_name_filters_execution(monkeypatch, capsys) -> None:
+    import asyncio
+
+    module = _benchmark_module()
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["benchmark_decision_routing.py", "--planner-name", "keyword"],
+    )
+
+    asyncio.run(module.main())
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["planner_filter"] == "keyword"
+    assert list(report["summary"]) == ["keyword"]
+    assert {row["backend"] for row in report["rows"]} == {"keyword"}
+
+
+def test_pairwise_operation_margin_is_wired_and_score_geometry_is_recorded(
+    monkeypatch,
+    capsys,
+) -> None:
+    import asyncio
+
+    module = _benchmark_module()
+    real_backend = module.PairwiseDecisionBackend
+    captured: dict[str, float] = {}
+
+    def backend_factory(scorer, *, min_score=0.0, min_margin=0.0, option_text=None):
+        captured["min_score"] = min_score
+        captured["min_margin"] = min_margin
+        return real_backend(
+            scorer,
+            min_score=min_score,
+            min_margin=min_margin,
+            option_text=option_text,
+        )
+
+    def fake_loader(_spec, *, option_name):
+        assert option_name == "--operation-fit-pairwise-callable"
+        return lambda pairs: [0.9 - 0.1 * index for index, _ in enumerate(pairs)]
+
+    monkeypatch.setattr(module, "PairwiseDecisionBackend", backend_factory)
+    monkeypatch.setattr(module, "load_callable", fake_loader)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "benchmark_decision_routing.py",
+            "--operation-fit-pairwise-callable",
+            "fake:score",
+            "--operation-fit-min-score",
+            "0.0",
+            "--operation-fit-min-margin",
+            "0.05",
+            "--planner-name",
+            "keyword+operation-fit",
+        ],
+    )
+
+    asyncio.run(module.main())
+    report = json.loads(capsys.readouterr().out)
+
+    assert captured == {"min_score": 0.0, "min_margin": 0.05}
+    assert report["planner_filter"] == "keyword+operation-fit"
+    assert report["operation_capability_fit"]["min_margin"] == 0.05
+    assert report["rows"]
+    invoked = [row for row in report["rows"] if row["operation_fit_invoked"]]
+    assert invoked
+    assert all(row["operation_fit_top_score"] is not None for row in invoked)
+    assert all(
+        row["operation_fit_top_margin"] is None
+        or row["operation_fit_top_margin"] >= 0.0
+        for row in invoked
+    )
+
+
+
 def test_benchmark_summary_classifies_route_failures() -> None:
     module = _benchmark_module()
     rows = [
