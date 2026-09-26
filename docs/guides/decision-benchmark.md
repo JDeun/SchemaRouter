@@ -70,6 +70,19 @@ capability-fit threshold only on v2 `dev` / `calibration`, freeze the chosen thr
 evaluate v3 exactly once. After that first evaluation, v3 becomes a frozen regression set too.
 
 
+### v4 untouched operation-disambiguation holdout
+
+`benchmarks/decision-routing-v4-operation-holdout.json` is a separate **600-case** holdout created
+after v3 analysis identified same-domain operation confusion as the main remaining routed-error
+source. It contains 480 routed cases and 120 no-route cases across the same six language groups.
+The routed cases deliberately stress endpoint pairs such as current/forecast, search/citations,
+quote/history, list/create, search/create-ticket, search/update, and lookup/update.
+
+v4 is not used to choose the reranking strategy. Final embedding reranking is first evaluated only
+on the existing v2 calibration split with semantic recall fixed at top-k=2 and capability-fit fixed
+at min_similarity=0.25. A configuration is frozen before v4 is evaluated once.
+
+
 ## Persist results
 
 ```bash
@@ -141,6 +154,12 @@ benchmark contract.
 
 The threshold values are workload/model specific. Do not reuse a threshold measured for a different
 embedding model without recalibration.
+
+
+The embedding backend can also act as the final bounded endpoint reranker after semantic recall and
+capability-fit. This does not expand authority: it can choose only among the candidates already
+recalled and accepted by the local planning boundary. The operation-disambiguation experiment uses
+this existing final-decision surface before considering any new core routing primitive.
 
 ### Semantic top-k recall before final decision
 
