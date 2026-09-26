@@ -836,11 +836,29 @@ def test_v9_operation_alias_holdout_loads_against_reference_catalog() -> None:
 def test_benchmark_summary_classifies_route_failures() -> None:
     module = _benchmark_module()
     rows = [
-        module.BenchmarkRow("x", "ok", "c", "q", "weather.current", "weather.current", True, False, 1.0),
-        module.BenchmarkRow("x", "false", "c", "q", None, "weather.current", False, False, 1.0),
-        module.BenchmarkRow("x", "miss", "c", "q", "weather.current", None, False, False, 1.0),
-        module.BenchmarkRow("x", "tool", "c", "q", "weather.current", "finance.quote", False, False, 1.0),
-        module.BenchmarkRow("x", "endpoint", "c", "q", "weather.current", "weather.forecast", False, False, 1.0),
+        module.BenchmarkRow(
+            "x", "ok", "c", "q", "weather.current", "weather.current", True, False, 1.0
+        ),
+        module.BenchmarkRow(
+            "x", "false", "c", "q", None, "weather.current", False, False, 1.0
+        ),
+        module.BenchmarkRow(
+            "x", "miss", "c", "q", "weather.current", None, False, False, 1.0
+        ),
+        module.BenchmarkRow(
+            "x", "tool", "c", "q", "weather.current", "finance.quote", False, False, 1.0
+        ),
+        module.BenchmarkRow(
+            "x",
+            "endpoint",
+            "c",
+            "q",
+            "weather.current",
+            "weather.forecast",
+            False,
+            False,
+            1.0,
+        ),
     ]
 
     assert module.summarize(rows)["error_taxonomy"] == {
@@ -860,7 +878,12 @@ def test_v10_generalization_holdout_is_frozen_balanced_and_test_only() -> None:
     assert len({case["id"] for case in cases}) == 600
     assert sum(case["expected"] is None for case in cases) == 216
     assert {case["language"] for case in cases} == {
-        "en", "ko", "es", "ja", "de", "mixed"
+        "de",
+        "en",
+        "es",
+        "ja",
+        "ko",
+        "mixed",
     }
     assert all(case["split"] == "test" for case in cases)
 
