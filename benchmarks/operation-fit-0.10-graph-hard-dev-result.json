@@ -1,0 +1,131 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "hard_graph_development",
+  "status": "development_hard_graph_no_candidate_passed_continue_semantic_seed",
+  "tuning_eligible": true,
+  "source_revision": "772caeb9bbe7159f07dc18b3cd0c13874549e40c",
+  "workflow_run_id": 36256684758,
+  "workflow_conclusion": "success",
+  "corpus": {
+    "role": "fresh_graph_v1_development",
+    "case_count": 1200,
+    "supported_operation_cases": 768,
+    "near_domain_unsupported_operation_cases": 384,
+    "out_of_domain_cases": 48,
+    "sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6",
+    "exact_normalized_overlap_with_prior_corpora": 0
+  },
+  "artifacts": {
+    "alias_only": {
+      "artifact_id": 10911550902,
+      "zip_sha256": "95c05ca35f9c2176a84d5906a7a571be624d897566c33d185b5eb571dc732563"
+    },
+    "field_path": {
+      "artifact_id": 10911351864,
+      "zip_sha256": "351707c88c2c149ee8598a526b72cdd17b038742e799f824cbf1d9dd53aa2863"
+    },
+    "comparison": {
+      "artifact_id": 10911506542,
+      "zip_sha256": "0b0718b38bef7408783f5e9b5ebef5eadb93d71047f79a86eb7c01b30d9be314"
+    }
+  },
+  "paired_quality_baseline": {
+    "supported_operation_routed_accuracy": 0.578125,
+    "near_domain_unsupported_operation_rejection": 0.953125,
+    "out_of_domain_rejection": 1,
+    "harmonic_mean_supported_rejection": 0.7197066326530612,
+    "false_routes": 18,
+    "missed_routes": 233,
+    "wrong_tools": 1,
+    "wrong_endpoints": 90,
+    "invalid_plan_rate": 0,
+    "errors": 0
+  },
+  "candidates": {
+    "graph_alias_only": {
+      "supported_operation_routed_accuracy": 0.5833333333333334,
+      "near_domain_unsupported_operation_rejection": 0.953125,
+      "out_of_domain_rejection": 1,
+      "harmonic_mean_supported_rejection": 0.7237288135593221,
+      "false_routes": 18,
+      "missed_routes": 230,
+      "wrong_tools": 1,
+      "wrong_endpoints": 89,
+      "invalid_plan_rate": 0,
+      "errors": 0,
+      "graph_accept": 64,
+      "graph_reject": 0,
+      "graph_escalate": 1136,
+      "graph_resolution_rate": 0.05333333333333334,
+      "direct_graph_accept_precision": 1,
+      "baseline_errors_rescued": 4,
+      "gates": {
+        "supported_operation_floor": false,
+        "near_domain_unsupported_rejection_floor": true,
+        "false_route_non_regression": true,
+        "invalid_plan_zero": true,
+        "execution_errors_zero": true
+      }
+    },
+    "graph_field_path": {
+      "quality_identical_to_alias_only": true,
+      "unique_additional_direct_accepts": 0,
+      "supported_operation_routed_accuracy": 0.5833333333333334,
+      "near_domain_unsupported_operation_rejection": 0.953125,
+      "false_routes": 18,
+      "graph_resolution_rate": 0.05333333333333334,
+      "gates": {
+        "supported_operation_floor": false,
+        "near_domain_unsupported_rejection_floor": true,
+        "false_route_non_regression": true,
+        "invalid_plan_zero": true,
+        "execution_errors_zero": true
+      }
+    }
+  },
+  "failure_analysis": {
+    "supported_floor_required_accuracy": 0.6,
+    "current_supported_correct": 448,
+    "minimum_supported_correct_for_floor": 461,
+    "additional_correct_cases_required": 13,
+    "near_domain_false_routes": {
+      "count": 18,
+      "predicted_route": "support.create_ticket",
+      "language_counts": {
+        "ko": 8,
+        "en": 6,
+        "es": 3,
+        "mixed": 1
+      }
+    }
+  },
+  "latency_evidence": {
+    "valid_for_promotion": false,
+    "reason": "The benchmark executed complete planner blocks sequentially with the full-BGE baseline before the graph candidate. Escalated graph cases appeared materially faster despite adding graph work and following the same downstream path, demonstrating model warm-cache/order bias. Apparent mean/p95 improvements are retained only as diagnostic observations.",
+    "alias_only_diagnostic_ms": {
+      "baseline_mean": 561.177,
+      "candidate_mean": 498.21,
+      "baseline_p95": 693.4,
+      "candidate_p95": 681.117
+    },
+    "field_path_diagnostic_ms": {
+      "baseline_mean": 351.485,
+      "candidate_mean": 304.028,
+      "baseline_p95": 414.556,
+      "candidate_p95": 411.987
+    },
+    "required_next_method": "warm models before timing and interleave/counterbalance baseline and candidate execution per case; analyze paired latency deltas"
+  },
+  "promotion": {
+    "candidate_frozen": false,
+    "calibration_allowed": false,
+    "blind_v15_allowed": false
+  },
+  "interpretation": [
+    "Hard graph routing is safe on this development corpus: all 64 direct accepts were correct and false routes did not regress.",
+    "Hard alias/field evidence is too sparse to meet the preregistered supported-operation floor.",
+    "Field-path matching added ambiguity but no additional unique direct accepts on this corpus.",
+    "Proceed to the preregistered semantic-seed ablation while preserving graph authority and selective BGE escalation."
+  ],
+  "next_stage": "graph_semantic_seed_development"
+}
