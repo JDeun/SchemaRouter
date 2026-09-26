@@ -9,7 +9,7 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
-- reserved a fresh 600-case multilingual v11 operation-generalization holdout before post-0.8 routing optimization; it is test-only, balanced like v10, guarded behind explicit manual workflow dispatch, and must remain unmeasured until the next operation-fit configuration is frozen.
+- added a provider-neutral `PairwiseDecisionBackend` for bounded query-option scoring with sync/async scorers, calibrated score/margin abstention, strict `[0, 1]` validation, metadata non-disclosure by default, and no model/runtime dependency in core;\n- consumed the frozen 600-case multilingual v11 operation-generalization holdout exactly once with the v5-selected BGE pairwise configuration: 51.667% overall accuracy, 25.781% supported-operation routed accuracy, 97.396% near-domain unsupported-operation rejection, and 100% ordinary out-of-domain rejection. The BGE configuration is therefore not promoted to a default; v11 is now consumed evidence and cannot be used for retuning.
 
 ### Changed
 
