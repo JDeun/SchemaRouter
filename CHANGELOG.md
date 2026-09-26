@@ -9,7 +9,7 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
-- reserved a new 600-case multilingual v12 contrastive operation-generalization holdout before the 0.10 optimization cycle; it remains test-only, unconsumed, disjoint from v2-v11 by normalized exact query, and explicitly ineligible for tuning until the next candidate configuration is frozen.
+- reserved a 600-case multilingual v12 contrastive operation stress set, then explicitly classified it as design-known rather than blind evidence because its exact construction was inspected before architecture selection; v12 remains ineligible for tuning. A separate v13 protocol now requires the next fresh corpus to be generated only after the candidate is frozen and scored in the same one-shot run without intermediate inspection.
 
 ### Changed
 

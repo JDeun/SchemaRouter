@@ -693,7 +693,9 @@ def test_v12_reservation_is_unconsumed_and_not_runnable_from_research_workflow()
     reservation = json.loads(V12_RESERVATION.read_text(encoding="utf-8"))
     workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
 
-    assert reservation["status"] == "reserved_unconsumed"
+    assert reservation["status"] == "design_known_unconsumed"
+    assert reservation["role"] == "contrastive_stress_validation"
+    assert reservation["fresh_holdout_eligible"] is False
     assert reservation["tuning_eligible"] is False
     assert reservation["case_count"] == 600
     assert "decision-routing-v12-operation-contrastive-holdout.json" not in workflow
