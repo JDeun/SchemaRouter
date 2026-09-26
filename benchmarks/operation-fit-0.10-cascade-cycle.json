@@ -1,7 +1,8 @@
 {
   "cycle": "0.10-operation-cascade-v2",
-  "status": "design_reserved_before_implementation",
+  "status": "development_sweep_preregistered",
   "reserved_from_main": "ecc6ba6f313df45545590297c7130a4abadf93f1",
+  "v14_reservation_main_revision": "5d7c972c8b13d03934c9cc88de3dc9e14159bcd5",
   "predecessor": {
     "cycle": "0.10-operation-contrastive-v1",
     "candidate_manifest": "benchmarks/operation-fit-0.10-confirmed-candidate.json",
@@ -16,12 +17,22 @@
     "supported_operation_floor": 0.60,
     "near_domain_unsupported_rejection_floor": 0.95,
     "objective": "lowest mean CPU latency among candidates meeting both floors",
-    "tie_breaker": "higher supported/rejection harmonic mean"
+    "tie_breaker": "higher supported/rejection harmonic mean",
+    "fixed_accept_margin": 0.03,
+    "candidate_grid": [
+      {"name": "r025-a055", "reject_below": 0.25, "accept_above": 0.55},
+      {"name": "r030-a055", "reject_below": 0.30, "accept_above": 0.55},
+      {"name": "r030-a060", "reject_below": 0.30, "accept_above": 0.60},
+      {"name": "r035-a060", "reject_below": 0.35, "accept_above": 0.60},
+      {"name": "r035-a065", "reject_below": 0.35, "accept_above": 0.65},
+      {"name": "r030-a060-m005", "reject_below": 0.30, "accept_above": 0.60, "accept_margin": 0.05}
+    ],
+    "baseline": "rerun the frozen full beta=1 sibling-contrastive BGE profile on the same v5 dev split for same-runner latency comparison"
   },
   "confirmation": {
     "corpus": "benchmarks/decision-routing-v5-operation-calibration.json",
     "split": "calibration",
-    "rule": "run the selected candidate unchanged once; both quality floors must still pass"
+    "rule": "freeze the selected dev winner, then run that unchanged candidate once; both quality floors must still pass"
   },
   "blind_final": {
     "protocol": "benchmarks/decision-routing-v14-blind-protocol.json",
@@ -32,6 +43,7 @@
     "Do not use v12, v13, or v14 for threshold, architecture, model, representation, or cascade-policy selection.",
     "Do not change semantic recall, capability-fit, or endpoint-disambiguation configuration during the cascade study.",
     "Keep BGE beta=1.0, pairwise min score 0.01, and pairwise min margin 0.0 fixed when the escalation stage is invoked.",
-    "The cascade may only suppress, preserve, or rank among already-authorized sibling operations; it cannot create new execution authority."
+    "The cascade may only suppress, preserve, or rank among already-authorized sibling operations; it cannot create new execution authority.",
+    "Only candidates in the preregistered grid are eligible for selection in this development sweep."
   ]
 }
