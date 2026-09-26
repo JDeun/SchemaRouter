@@ -9,6 +9,7 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- froze a new 600-case multilingual v10 operation-generalization holdout before post-v9 routing-surface optimization; after selecting a concise operation-fit representation and retaining the 0.40 threshold from v5 development/calibration only, consumed v10 exactly once at 55.667% overall accuracy, 42.188% supported-operation routed accuracy, 77.083% near-domain unsupported-operation rejection, and 100% ordinary out-of-domain rejection; v10 is now consumed regression evidence and is not eligible for retuning;
 - reserved a fresh 600-case multilingual v9 alias-aware operation holdout after detecting that v8 had been accidentally consumed by a calibration diagnostic path; corrected calibration to use consumed v7 only and kept v9 manual/threshold-gated;
 - froze the alias-aware operation-fit threshold at 0.40 from v5 development/calibration only and consumed v9 exactly once: 51.167% overall accuracy, 38.281% supported-operation routed accuracy, 70.833% near-domain unsupported-operation rejection, and 100% ordinary out-of-domain rejection; v9 is now regression evidence and is not eligible for retuning;
 - explicit trusted `EndpointSpec.operation_aliases` vocabulary for bounded operation-fit, with validation, fingerprinting, compatible schema-diff reporting, inspection/dashboard visibility, and no automatic/model-authored alias inference;
@@ -58,6 +59,7 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
+- simplified the bounded operation-fit embedding surface to the endpoint operation name, trusted operation aliases, and endpoint description while removing generic operation-class / HTTP-method boilerplate; a v5 dev/cal representation comparison selected this concise surface, and a 0.05–0.70 v5-only sweep retained `operation_fit_min_similarity = 0.40` with a 69.792% balanced supported/near-domain score on both development and calibration;
 - global provenance evidence now applies consistently to the entire selected answer surface: a
   tool-level source type covers the route, otherwise every selected answer field must declare source
   provenance; active unknown `field_evidence` semantic IDs now fail closed during planning instead of
