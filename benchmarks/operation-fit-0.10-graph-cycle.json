@@ -1,0 +1,184 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "status": "preregistered_design_only",
+  "reserved_from_main": "526d0c588bbec053fba54c55d982cc67d2a74d56",
+  "predecessor": {
+    "cycle": "0.10-operation-cascade-v2",
+    "result": "benchmarks/operation-fit-0.10-cascade-calibration-result.json",
+    "status": "paired_calibration_rejected_cycle_closed",
+    "historical_observation_only": "The predecessor reduced paired mean latency by 14.983% but increased false routes and missed the near-domain rejection floor. Its calibration rows are consumed and are not tuning data for this cycle."
+  },
+  "research_question": "Can graph-first operation routing, where schema topology owns execution authority and semantic models contribute only bounded soft evidence, preserve or improve safe rejection while reducing paired mean and tail CPU latency versus the frozen full-BGE operation-fit baseline?",
+  "hypothesis": "A typed schema graph can resolve deterministic and relational evidence before semantic escalation. Embeddings should seed or weight authorized graph nodes, not directly accept routes. Ambiguous sibling operations may escalate to the frozen pairwise reranker.",
+  "architectural_principles": [
+    "Graph topology is the routing authority; semantic scores cannot create tools, endpoints, fields, arguments, credentials, or side effects.",
+    "Exact aliases, declared schema relations, policy, mutation class, field/unit/qualifier constraints, provider identity, and health are evaluated before semantic escalation.",
+    "Vector or classifier outputs are soft evidence attached to already-authorized nodes or edges only.",
+    "Positive routing requires a graph-consistent path from the query concept seed to an authorized operation.",
+    "Negative evidence and unresolved graph conflicts may abstain early.",
+    "Only an explicit uncertainty band may invoke the expensive pairwise reranker.",
+    "No automatic graph traversal may broaden required fields or execution authority."
+  ],
+  "proposed_pipeline": [
+    "query normalization and deterministic exact/alias evidence",
+    "authorized schema-graph candidate construction",
+    "concept-to-node soft evidence attachment",
+    "bounded graph propagation and path consistency scoring",
+    "asymmetric safe-reject / uncertain / high-confidence graph decision",
+    "pairwise BGE escalation only for unresolved authorized sibling operations",
+    "final policy and schema validation before execution"
+  ],
+  "graph_model": {
+    "node_types": [
+      "Tool",
+      "Endpoint",
+      "Operation",
+      "Parameter",
+      "ResponseField",
+      "DomainConcept",
+      "Unit",
+      "Qualifier",
+      "SourceType",
+      "LicensePolicy",
+      "HealthState"
+    ],
+    "edge_types": [
+      "HAS_ENDPOINT",
+      "HAS_OPERATION",
+      "ACCEPTS_PARAMETER",
+      "RETURNS_FIELD",
+      "MAPS_TO_CONCEPT",
+      "HAS_UNIT",
+      "HAS_QUALIFIER",
+      "HAS_SOURCE_TYPE",
+      "LICENSED_AS",
+      "REQUIRES",
+      "DEPENDS_ON",
+      "ALIASED_AS",
+      "NORMALIZED_TO",
+      "FALLBACK_TO",
+      "CONFLICTS_WITH"
+    ],
+    "hard_edges": [
+      "HAS_ENDPOINT",
+      "HAS_OPERATION",
+      "ACCEPTS_PARAMETER",
+      "RETURNS_FIELD",
+      "REQUIRES",
+      "LICENSED_AS"
+    ],
+    "soft_edges_or_signals": [
+      "MAPS_TO_CONCEPT",
+      "ALIASED_AS",
+      "NORMALIZED_TO",
+      "concept semantic similarity",
+      "sibling contrast",
+      "negative prototype support"
+    ]
+  },
+  "candidate_selection_policy": {
+    "existing_consumed_evidence_forbidden_for_tuning": [
+      "v12 design-known stress corpus",
+      "v13 consumed blind-final corpus",
+      "v5 calibration split from cascade-v2",
+      "retired v14 reservation"
+    ],
+    "historical_evidence_allowed_only_for_problem_definition": [
+      "published/checked-in aggregate metrics",
+      "predecessor aggregate false-route and latency behavior"
+    ],
+    "fresh_development_corpus": "benchmarks/decision-routing-graph-v1-development.json",
+    "fresh_calibration_corpus": "benchmarks/decision-routing-graph-v1-calibration.json",
+    "blind_protocol": "benchmarks/decision-routing-v15-blind-protocol.json",
+    "blind_corpus_must_not_exist_before_freeze": true
+  },
+  "target_corpus_shapes": {
+    "development": {
+      "case_count": 1200,
+      "supported_operation_cases": 768,
+      "near_domain_unsupported_operation_cases": 384,
+      "out_of_domain_cases": 48,
+      "languages": [
+        "en",
+        "ko",
+        "es",
+        "ja",
+        "de",
+        "mixed"
+      ]
+    },
+    "calibration": {
+      "case_count": 600,
+      "supported_operation_cases": 384,
+      "near_domain_unsupported_operation_cases": 192,
+      "out_of_domain_cases": 24,
+      "languages": [
+        "en",
+        "ko",
+        "es",
+        "ja",
+        "de",
+        "mixed"
+      ]
+    },
+    "blind_final": {
+      "case_count": 1200,
+      "supported_operation_cases": 768,
+      "near_domain_unsupported_operation_cases": 384,
+      "out_of_domain_cases": 48,
+      "languages": [
+        "en",
+        "ko",
+        "es",
+        "ja",
+        "de",
+        "mixed"
+      ]
+    }
+  },
+  "preregistered_gates": {
+    "supported_operation_routed_accuracy_min": 0.6,
+    "near_domain_unsupported_rejection_min": 0.95,
+    "false_route_count_must_not_exceed_paired_full_bge_baseline": true,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0,
+    "paired_mean_latency_must_be_lower_than_full_bge": true,
+    "paired_p95_latency_must_not_exceed_full_bge": true,
+    "primary_quality_summary": "harmonic mean of supported-operation routed accuracy and near-domain unsupported-operation rejection",
+    "promotion_requires_all_gates": true
+  },
+  "optimization_scope": {
+    "eligible": [
+      "graph path scoring",
+      "bounded propagation depth",
+      "hard-vs-soft edge treatment",
+      "uncertainty-band policy",
+      "semantic seed representation",
+      "negative evidence representation",
+      "reranker escalation policy"
+    ],
+    "ineligible": [
+      "changing execution policy to improve benchmark labels",
+      "using blind or calibration rows for architecture or threshold selection",
+      "adding model-authored routes outside the registered graph",
+      "broadening tools/endpoints/fields during routing",
+      "retuning the rejected cascade-v2 candidate"
+    ]
+  },
+  "planned_ablations": [
+    "graph-only deterministic/lexical",
+    "graph + semantic seed without propagation",
+    "graph + bounded propagation",
+    "graph + bounded propagation + negative evidence",
+    "graph + bounded propagation + selective BGE escalation",
+    "full-BGE predecessor baseline"
+  ],
+  "next_steps": [
+    "implement graph observability and score geometry without changing default routing behavior",
+    "generate fresh development and calibration corpora with overlap guards",
+    "implement graph-first candidates behind an experimental backend or policy flag",
+    "select only on fresh development",
+    "freeze winner before fresh calibration",
+    "reserve/generate v15 blind corpus only after candidate freeze and calibration promotion"
+  ]
+}
