@@ -389,6 +389,12 @@ class CompiledSchemaGraph:
     ) -> tuple[str, ...]:
         return self._operation_aliases.get((tool_key, endpoint_name), ())
 
+    def operation_routes(self) -> tuple[tuple[str, str], ...]:
+        return tuple(sorted(self._operation_aliases))
+
+    def field_routes(self) -> tuple[tuple[str, str], ...]:
+        return tuple(sorted(self._field_concepts))
+
     def field_concepts(
         self,
         tool_key: str,
@@ -416,6 +422,125 @@ class GraphOperationGate:
     ) -> None:
         self.accept_unique_field_path = accept_unique_field_path
         self.reject_explicit_conflicts = reject_explicit_conflicts
+
+    def assess_global(
+        self,
+        *,
+        query: str,
+        graph: CompiledSchemaGraph,
+    ) -> GraphOperationAssessment:
+        if not query.strip():
+            return GraphOperationAssessment(
+                decision="escalate",
+                tool_key="",
+                reason="empty query",
+            )
+
+        positive: dict[tuple[str, str], GraphOperationEvidence] = {}
+        for tool_key, endpoint_name in graph.operation_routes():
+            matched_aliases = tuple(
+                alias
+                for alias in graph.operation_aliases(tool_key, endpoint_name)
+                if _contains_token_phrase(query, alias)
+            )
+            if matched_aliases:
+                positive[(tool_key, endpoint_name)] = GraphOperationEvidence(
+                    endpoint_name=endpoint_name,
+                    operation_aliases=matched_aliases,
+                    graph_paths=(
+                        (
+                            f"tool:{tool_key}",
+                            f"endpoint:{tool_key}.{endpoint_name}",
+                            f"operation:{tool_key}.{endpoint_name}",
+                        ),
+                    ),
+                )
+
+        if self.accept_unique_field_path:
+            for tool_key, endpoint_name in graph.field_routes():
+                matched_fields = tuple(
+                    concept
+                    for concept in graph.field_concepts(tool_key, endpoint_name)
+                    if _contains_token_phrase(query, concept)
+                )
+                if not matched_fields:
+                    continue
+                previous = positive.get((tool_key, endpoint_name))
+                positive[(tool_key, endpoint_name)] = GraphOperationEvidence(
+                    endpoint_name=endpoint_name,
+                    operation_aliases=(
+                        previous.operation_aliases
+                        if previous is not None
+                        else ()
+                    ),
+                    field_concepts=matched_fields,
+                    graph_paths=(
+                        *(previous.graph_paths if previous is not None else ()),
+                        (
+                            f"tool:{tool_key}",
+                            f"endpoint:{tool_key}.{endpoint_name}",
+                            "RETURNS_FIELD",
+                            "MAPS_TO_CONCEPT",
+                        ),
+                    ),
+                )
+
+        if len(positive) == 1:
+            (tool_key, endpoint_name), evidence = next(iter(positive.items()))
+            reason = (
+                "unique registered operation alias path matched"
+                if evidence.operation_aliases
+                else "unique registered field-concept path matched"
+            )
+            return GraphOperationAssessment(
+                decision="accept",
+                tool_key=tool_key,
+                endpoint_name=endpoint_name,
+                reason=reason,
+                evidence=(evidence,),
+            )
+        if len(positive) > 1:
+            tools = {tool_key for tool_key, _ in positive}
+            return GraphOperationAssessment(
+                decision="escalate",
+                tool_key=next(iter(tools)) if len(tools) == 1 else "",
+                reason="multiple registered graph operation paths matched",
+                evidence=tuple(positive.values()),
+            )
+
+        if self.reject_explicit_conflicts:
+            conflicts: list[tuple[str, str]] = []
+            for tool_key, _endpoint_name in graph.operation_routes():
+                for alias in graph.unsupported_operation_aliases(tool_key):
+                    if _contains_token_phrase(query, alias):
+                        conflicts.append((tool_key, alias))
+            conflicts = list(dict.fromkeys(conflicts))
+            if len(conflicts) == 1:
+                tool_key, alias = conflicts[0]
+                return GraphOperationAssessment(
+                    decision="reject",
+                    tool_key=tool_key,
+                    reason="query matched an explicitly unsupported graph operation",
+                    evidence=(
+                        GraphOperationEvidence(
+                            endpoint_name="",
+                            operation_aliases=(alias,),
+                            graph_paths=((f"tool:{tool_key}", "CONFLICTS_WITH"),),
+                        ),
+                    ),
+                )
+            if len(conflicts) > 1:
+                return GraphOperationAssessment(
+                    decision="escalate",
+                    tool_key="",
+                    reason="multiple explicit unsupported graph paths matched",
+                )
+
+        return GraphOperationAssessment(
+            decision="escalate",
+            tool_key="",
+            reason="graph evidence was insufficient for a deterministic operation decision",
+        )
 
     def assess(
         self,
