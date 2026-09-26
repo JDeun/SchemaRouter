@@ -106,7 +106,8 @@ def canonical_identity(record: SourceRecord) -> str:
         default=str,
         separators=(",", ":"),
     )
-    return f"{record.entity_kind}:unresolved:{__import__('hashlib').sha256(payload.encode()).hexdigest()}"
+    digest = __import__("hashlib").sha256(payload.encode()).hexdigest()
+    return f"{record.entity_kind}:unresolved:{digest}"
 
 
 def _default_merge_mode(entity_kind: EntityKind, field: str) -> MergeMode:
