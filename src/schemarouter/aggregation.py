@@ -64,7 +64,30 @@ class CanonicalEntity(StrictModel):
 
 
 _DOCUMENT_IDENTIFIER_PRIORITY = ("doi", "pmid", "pmcid", "arxiv")
+_MATERIAL_IDENTITY_TYPES = {
+    "material_id",
+    "structure_id",
+    "structure_hash",
+    "crystal_id",
+}
+_CHEMICAL_IDENTITY_TYPES = {
+    "inchikey",
+    "inchi",
+    "canonical_smiles",
+    "isomeric_smiles",
+    "cid",
+}
 _SCIENTIFIC_KINDS = {"material", "chemical"}
+
+
+def _trusted_identity_types(entity_kind: EntityKind) -> set[str] | None:
+    if entity_kind == "document":
+        return set(_DOCUMENT_IDENTIFIER_PRIORITY)
+    if entity_kind == "material":
+        return _MATERIAL_IDENTITY_TYPES
+    if entity_kind == "chemical":
+        return _CHEMICAL_IDENTITY_TYPES
+    return None
 
 
 def _normalise_identifier(kind: str, value: str) -> str:
@@ -85,13 +108,19 @@ def canonical_identity(record: SourceRecord) -> str:
         key.casefold(): _normalise_identifier(key, value)
         for key, value in record.identifiers.items()
     }
+    trusted = _trusted_identity_types(record.entity_kind)
+    eligible = {
+        key: value
+        for key, value in normalized.items()
+        if trusted is None or key in trusted
+    }
     priority = (
         _DOCUMENT_IDENTIFIER_PRIORITY
         if record.entity_kind == "document"
-        else tuple(sorted(normalized))
+        else tuple(sorted(eligible))
     )
     for identifier_type in priority:
-        value = normalized.get(identifier_type)
+        value = eligible.get(identifier_type)
         if value:
             return f"{record.entity_kind}:{identifier_type}:{value}"
 
@@ -117,10 +146,11 @@ def _default_merge_mode(entity_kind: EntityKind, field: str) -> MergeMode:
 
 
 def _identifier_tokens(record: SourceRecord) -> set[tuple[str, str]]:
+    trusted = _trusted_identity_types(record.entity_kind)
     return {
         (kind.casefold(), _normalise_identifier(kind, value))
         for kind, value in record.identifiers.items()
-        if value.strip()
+        if value.strip() and (trusted is None or kind.casefold() in trusted)
     }
 
 
