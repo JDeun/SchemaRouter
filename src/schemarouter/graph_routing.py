@@ -66,16 +66,6 @@ def _contains_token_phrase(query: str, phrase: str) -> bool:
     )
 
 
-def _metadata_strings(value: object) -> tuple[str, ...]:
-    if not isinstance(value, (list, tuple)):
-        return ()
-    cleaned: list[str] = []
-    for item in value:
-        if isinstance(item, str) and item.strip():
-            cleaned.append(item.strip())
-    return tuple(dict.fromkeys(cleaned))
-
-
 @dataclass(frozen=True, slots=True)
 class SchemaGraphNode:
     id: str
@@ -182,9 +172,7 @@ class CompiledSchemaGraph:
 
         for tool in tools:
             tool_id = add_node(f"tool:{tool.key}", "tool", tool.key)
-            tool_unsupported = _metadata_strings(
-                tool.metadata.get("unsupported_operation_aliases")
-            )
+            tool_unsupported = tuple(tool.unsupported_operation_aliases)
             unsupported_aliases[tool.key] = tool_unsupported
             for alias in tool_unsupported:
                 conflict_id = add_node(
