@@ -1,0 +1,5402 @@
+[
+  {
+    "id": "v7-weather-current-en-1",
+    "query": "Process this exact action: report live weather conditions for Reykjavik",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-weather-current-en-2",
+    "query": "Requested operation — report live weather conditions for Cape Town",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-weather-current-en-3",
+    "query": "For this turn only, report live weather conditions for Vancouver",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-weather-current-en-4",
+    "query": "Do nothing else; report live weather conditions for Bangkok",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-weather-current-ko-1",
+    "query": "이 동작을 정확히 처리해: Reykjavik의 실시간 날씨 상태를 보여줘",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-weather-current-ko-2",
+    "query": "요청한 동작은 이거야: Cape Town의 실시간 날씨 상태를 보여줘",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-weather-current-ko-3",
+    "query": "이번 요청에서는 Vancouver의 실시간 날씨 상태를 보여줘",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-weather-current-ko-4",
+    "query": "다른 작업은 하지 말고 Bangkok의 실시간 날씨 상태를 보여줘",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-weather-current-es-1",
+    "query": "Procesa exactamente esta acción: informa del tiempo en vivo para Reykjavik",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-weather-current-es-2",
+    "query": "La operación solicitada es: informa del tiempo en vivo para Cape Town",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-weather-current-es-3",
+    "query": "Solo para esta solicitud, informa del tiempo en vivo para Vancouver",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-weather-current-es-4",
+    "query": "No hagas nada más; informa del tiempo en vivo para Bangkok",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-weather-current-ja-1",
+    "query": "この操作を正確に処理して: Reykjavikのリアルタイムの天気状況を表示して",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-weather-current-ja-2",
+    "query": "依頼した操作はこれです: Cape Townのリアルタイムの天気状況を表示して",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-weather-current-ja-3",
+    "query": "今回の依頼ではVancouverのリアルタイムの天気状況を表示して",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-weather-current-ja-4",
+    "query": "他の操作はせずにBangkokのリアルタイムの天気状況を表示して",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-weather-current-de-1",
+    "query": "Führe genau diese Aktion aus: melde die aktuellen Wetterbedingungen für Reykjavik",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-weather-current-de-2",
+    "query": "Die angeforderte Operation ist: melde die aktuellen Wetterbedingungen für Cape Town",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-weather-current-de-3",
+    "query": "Nur für diese Anfrage: melde die aktuellen Wetterbedingungen für Vancouver",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-weather-current-de-4",
+    "query": "Tue nichts anderes; melde die aktuellen Wetterbedingungen für Bangkok",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-weather-current-mixed-1",
+    "query": "이 exact action만 처리해: Reykjavik live weather 상태를 보여줘",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-weather-current-mixed-2",
+    "query": "requested operation은 Cape Town live weather 상태를 보여줘",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-weather-current-mixed-3",
+    "query": "이번 request에서는 Vancouver live weather 상태를 보여줘",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-weather-current-mixed-4",
+    "query": "nothing else 하지 말고 Bangkok live weather 상태를 보여줘",
+    "expected": "weather.current",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-weather-forecast-en-1",
+    "query": "Process this exact action: show the upcoming weather outlook for Reykjavik tomorrow morning",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-weather-forecast-en-2",
+    "query": "Requested operation — show the upcoming weather outlook for Cape Town next weekend",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-weather-forecast-en-3",
+    "query": "For this turn only, show the upcoming weather outlook for Vancouver on Tuesday",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-weather-forecast-en-4",
+    "query": "Do nothing else; show the upcoming weather outlook for Bangkok later this week",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-weather-forecast-ko-1",
+    "query": "이 동작을 정확히 처리해: Reykjavik tomorrow morning의 앞으로의 날씨 전망을 보여줘",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-weather-forecast-ko-2",
+    "query": "요청한 동작은 이거야: Cape Town next weekend의 앞으로의 날씨 전망을 보여줘",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-weather-forecast-ko-3",
+    "query": "이번 요청에서는 Vancouver on Tuesday의 앞으로의 날씨 전망을 보여줘",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-weather-forecast-ko-4",
+    "query": "다른 작업은 하지 말고 Bangkok later this week의 앞으로의 날씨 전망을 보여줘",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-weather-forecast-es-1",
+    "query": "Procesa exactamente esta acción: muestra la previsión meteorológica próxima para Reykjavik tomorrow morning",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-weather-forecast-es-2",
+    "query": "La operación solicitada es: muestra la previsión meteorológica próxima para Cape Town next weekend",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-weather-forecast-es-3",
+    "query": "Solo para esta solicitud, muestra la previsión meteorológica próxima para Vancouver on Tuesday",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-weather-forecast-es-4",
+    "query": "No hagas nada más; muestra la previsión meteorológica próxima para Bangkok later this week",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-weather-forecast-ja-1",
+    "query": "この操作を正確に処理して: Reykjavik tomorrow morningの今後の天気見通しを表示して",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-weather-forecast-ja-2",
+    "query": "依頼した操作はこれです: Cape Town next weekendの今後の天気見通しを表示して",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-weather-forecast-ja-3",
+    "query": "今回の依頼ではVancouver on Tuesdayの今後の天気見通しを表示して",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-weather-forecast-ja-4",
+    "query": "他の操作はせずにBangkok later this weekの今後の天気見通しを表示して",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-weather-forecast-de-1",
+    "query": "Führe genau diese Aktion aus: zeige die kommende Wetterprognose für Reykjavik tomorrow morning",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-weather-forecast-de-2",
+    "query": "Die angeforderte Operation ist: zeige die kommende Wetterprognose für Cape Town next weekend",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-weather-forecast-de-3",
+    "query": "Nur für diese Anfrage: zeige die kommende Wetterprognose für Vancouver on Tuesday",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-weather-forecast-de-4",
+    "query": "Tue nichts anderes; zeige die kommende Wetterprognose für Bangkok later this week",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-weather-forecast-mixed-1",
+    "query": "이 exact action만 처리해: Reykjavik tomorrow morning upcoming weather outlook을 보여줘",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-weather-forecast-mixed-2",
+    "query": "requested operation은 Cape Town next weekend upcoming weather outlook을 보여줘",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-weather-forecast-mixed-3",
+    "query": "이번 request에서는 Vancouver on Tuesday upcoming weather outlook을 보여줘",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-weather-forecast-mixed-4",
+    "query": "nothing else 하지 말고 Bangkok later this week upcoming weather outlook을 보여줘",
+    "expected": "weather.forecast",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-materials-search-en-1",
+    "query": "Process this exact action: look up material properties including the band gap for MoS2",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-materials-search-en-2",
+    "query": "Requested operation — look up material properties including the band gap for ZnO",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-materials-search-en-3",
+    "query": "For this turn only, look up material properties including the band gap for NiO",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-materials-search-en-4",
+    "query": "Do nothing else; look up material properties including the band gap for MgB2",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-materials-search-ko-1",
+    "query": "이 동작을 정확히 처리해: MoS2의 밴드갭을 포함한 재료 물성을 조회해",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-materials-search-ko-2",
+    "query": "요청한 동작은 이거야: ZnO의 밴드갭을 포함한 재료 물성을 조회해",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-materials-search-ko-3",
+    "query": "이번 요청에서는 NiO의 밴드갭을 포함한 재료 물성을 조회해",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-materials-search-ko-4",
+    "query": "다른 작업은 하지 말고 MgB2의 밴드갭을 포함한 재료 물성을 조회해",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-materials-search-es-1",
+    "query": "Procesa exactamente esta acción: consulta propiedades del material, incluida la banda prohibida, para MoS2",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-materials-search-es-2",
+    "query": "La operación solicitada es: consulta propiedades del material, incluida la banda prohibida, para ZnO",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-materials-search-es-3",
+    "query": "Solo para esta solicitud, consulta propiedades del material, incluida la banda prohibida, para NiO",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-materials-search-es-4",
+    "query": "No hagas nada más; consulta propiedades del material, incluida la banda prohibida, para MgB2",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-materials-search-ja-1",
+    "query": "この操作を正確に処理して: MoS2のバンドギャップを含む材料物性を調べて",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-materials-search-ja-2",
+    "query": "依頼した操作はこれです: ZnOのバンドギャップを含む材料物性を調べて",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-materials-search-ja-3",
+    "query": "今回の依頼ではNiOのバンドギャップを含む材料物性を調べて",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-materials-search-ja-4",
+    "query": "他の操作はせずにMgB2のバンドギャップを含む材料物性を調べて",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-materials-search-de-1",
+    "query": "Führe genau diese Aktion aus: suche Materialeigenschaften einschließlich Bandlücke für MoS2",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-materials-search-de-2",
+    "query": "Die angeforderte Operation ist: suche Materialeigenschaften einschließlich Bandlücke für ZnO",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-materials-search-de-3",
+    "query": "Nur für diese Anfrage: suche Materialeigenschaften einschließlich Bandlücke für NiO",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-materials-search-de-4",
+    "query": "Tue nichts anderes; suche Materialeigenschaften einschließlich Bandlücke für MgB2",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-materials-search-mixed-1",
+    "query": "이 exact action만 처리해: MoS2 band gap 포함 material properties를 조회해",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-materials-search-mixed-2",
+    "query": "requested operation은 ZnO band gap 포함 material properties를 조회해",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-materials-search-mixed-3",
+    "query": "이번 request에서는 NiO band gap 포함 material properties를 조회해",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-materials-search-mixed-4",
+    "query": "nothing else 하지 말고 MgB2 band gap 포함 material properties를 조회해",
+    "expected": "materials.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-materials-structure-en-1",
+    "query": "Process this exact action: show crystal lattice and structure data for MoS2",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-materials-structure-en-2",
+    "query": "Requested operation — show crystal lattice and structure data for ZnO",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-materials-structure-en-3",
+    "query": "For this turn only, show crystal lattice and structure data for NiO",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-materials-structure-en-4",
+    "query": "Do nothing else; show crystal lattice and structure data for MgB2",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-materials-structure-ko-1",
+    "query": "이 동작을 정확히 처리해: MoS2의 결정 격자와 구조 데이터를 보여줘",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-materials-structure-ko-2",
+    "query": "요청한 동작은 이거야: ZnO의 결정 격자와 구조 데이터를 보여줘",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-materials-structure-ko-3",
+    "query": "이번 요청에서는 NiO의 결정 격자와 구조 데이터를 보여줘",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-materials-structure-ko-4",
+    "query": "다른 작업은 하지 말고 MgB2의 결정 격자와 구조 데이터를 보여줘",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-materials-structure-es-1",
+    "query": "Procesa exactamente esta acción: muestra datos de red y estructura cristalina para MoS2",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-materials-structure-es-2",
+    "query": "La operación solicitada es: muestra datos de red y estructura cristalina para ZnO",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-materials-structure-es-3",
+    "query": "Solo para esta solicitud, muestra datos de red y estructura cristalina para NiO",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-materials-structure-es-4",
+    "query": "No hagas nada más; muestra datos de red y estructura cristalina para MgB2",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-materials-structure-ja-1",
+    "query": "この操作を正確に処理して: MoS2の結晶格子と構造データを表示して",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-materials-structure-ja-2",
+    "query": "依頼した操作はこれです: ZnOの結晶格子と構造データを表示して",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-materials-structure-ja-3",
+    "query": "今回の依頼ではNiOの結晶格子と構造データを表示して",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-materials-structure-ja-4",
+    "query": "他の操作はせずにMgB2の結晶格子と構造データを表示して",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-materials-structure-de-1",
+    "query": "Führe genau diese Aktion aus: zeige Kristallgitter- und Strukturdaten für MoS2",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-materials-structure-de-2",
+    "query": "Die angeforderte Operation ist: zeige Kristallgitter- und Strukturdaten für ZnO",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-materials-structure-de-3",
+    "query": "Nur für diese Anfrage: zeige Kristallgitter- und Strukturdaten für NiO",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-materials-structure-de-4",
+    "query": "Tue nichts anderes; zeige Kristallgitter- und Strukturdaten für MgB2",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-materials-structure-mixed-1",
+    "query": "이 exact action만 처리해: MoS2 crystal lattice와 structure data를 보여줘",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-materials-structure-mixed-2",
+    "query": "requested operation은 ZnO crystal lattice와 structure data를 보여줘",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-materials-structure-mixed-3",
+    "query": "이번 request에서는 NiO crystal lattice와 structure data를 보여줘",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-materials-structure-mixed-4",
+    "query": "nothing else 하지 말고 MgB2 crystal lattice와 structure data를 보여줘",
+    "expected": "materials.structure",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-papers-search-en-1",
+    "query": "Process this exact action: find scholarly articles about vector databases",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-papers-search-en-2",
+    "query": "Requested operation — find scholarly articles about solid-state batteries",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-papers-search-en-3",
+    "query": "For this turn only, find scholarly articles about tool use in LLMs",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-papers-search-en-4",
+    "query": "Do nothing else; find scholarly articles about materials informatics",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-papers-search-ko-1",
+    "query": "이 동작을 정확히 처리해: vector databases 주제의 학술 논문을 찾아줘",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-papers-search-ko-2",
+    "query": "요청한 동작은 이거야: solid-state batteries 주제의 학술 논문을 찾아줘",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-papers-search-ko-3",
+    "query": "이번 요청에서는 tool use in LLMs 주제의 학술 논문을 찾아줘",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-papers-search-ko-4",
+    "query": "다른 작업은 하지 말고 materials informatics 주제의 학술 논문을 찾아줘",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-papers-search-es-1",
+    "query": "Procesa exactamente esta acción: encuentra artículos académicos sobre vector databases",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-papers-search-es-2",
+    "query": "La operación solicitada es: encuentra artículos académicos sobre solid-state batteries",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-papers-search-es-3",
+    "query": "Solo para esta solicitud, encuentra artículos académicos sobre tool use in LLMs",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-papers-search-es-4",
+    "query": "No hagas nada más; encuentra artículos académicos sobre materials informatics",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-papers-search-ja-1",
+    "query": "この操作を正確に処理して: vector databasesに関する学術論文を探して",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-papers-search-ja-2",
+    "query": "依頼した操作はこれです: solid-state batteriesに関する学術論文を探して",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-papers-search-ja-3",
+    "query": "今回の依頼ではtool use in LLMsに関する学術論文を探して",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-papers-search-ja-4",
+    "query": "他の操作はせずにmaterials informaticsに関する学術論文を探して",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-papers-search-de-1",
+    "query": "Führe genau diese Aktion aus: finde wissenschaftliche Artikel über vector databases",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-papers-search-de-2",
+    "query": "Die angeforderte Operation ist: finde wissenschaftliche Artikel über solid-state batteries",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-papers-search-de-3",
+    "query": "Nur für diese Anfrage: finde wissenschaftliche Artikel über tool use in LLMs",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-papers-search-de-4",
+    "query": "Tue nichts anderes; finde wissenschaftliche Artikel über materials informatics",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-papers-search-mixed-1",
+    "query": "이 exact action만 처리해: vector databases 주제 scholarly articles를 찾아줘",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-papers-search-mixed-2",
+    "query": "requested operation은 solid-state batteries 주제 scholarly articles를 찾아줘",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-papers-search-mixed-3",
+    "query": "이번 request에서는 tool use in LLMs 주제 scholarly articles를 찾아줘",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-papers-search-mixed-4",
+    "query": "nothing else 하지 말고 materials informatics 주제 scholarly articles를 찾아줘",
+    "expected": "papers.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-papers-citations-en-1",
+    "query": "Process this exact action: show publications that reference 10.2000/lambda",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-papers-citations-en-2",
+    "query": "Requested operation — show publications that reference 10.2000/mu",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-papers-citations-en-3",
+    "query": "For this turn only, show publications that reference 10.2000/nu",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-papers-citations-en-4",
+    "query": "Do nothing else; show publications that reference 10.2000/xi",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-papers-citations-ko-1",
+    "query": "이 동작을 정확히 처리해: 10.2000/lambda를 참고문헌으로 인용한 출판물을 보여줘",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-papers-citations-ko-2",
+    "query": "요청한 동작은 이거야: 10.2000/mu를 참고문헌으로 인용한 출판물을 보여줘",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-papers-citations-ko-3",
+    "query": "이번 요청에서는 10.2000/nu를 참고문헌으로 인용한 출판물을 보여줘",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-papers-citations-ko-4",
+    "query": "다른 작업은 하지 말고 10.2000/xi를 참고문헌으로 인용한 출판물을 보여줘",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-papers-citations-es-1",
+    "query": "Procesa exactamente esta acción: muestra publicaciones que hacen referencia a 10.2000/lambda",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-papers-citations-es-2",
+    "query": "La operación solicitada es: muestra publicaciones que hacen referencia a 10.2000/mu",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-papers-citations-es-3",
+    "query": "Solo para esta solicitud, muestra publicaciones que hacen referencia a 10.2000/nu",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-papers-citations-es-4",
+    "query": "No hagas nada más; muestra publicaciones que hacen referencia a 10.2000/xi",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-papers-citations-ja-1",
+    "query": "この操作を正確に処理して: 10.2000/lambdaを参照している出版物を表示して",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-papers-citations-ja-2",
+    "query": "依頼した操作はこれです: 10.2000/muを参照している出版物を表示して",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-papers-citations-ja-3",
+    "query": "今回の依頼では10.2000/nuを参照している出版物を表示して",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-papers-citations-ja-4",
+    "query": "他の操作はせずに10.2000/xiを参照している出版物を表示して",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-papers-citations-de-1",
+    "query": "Führe genau diese Aktion aus: zeige Publikationen, die 10.2000/lambda referenzieren",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-papers-citations-de-2",
+    "query": "Die angeforderte Operation ist: zeige Publikationen, die 10.2000/mu referenzieren",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-papers-citations-de-3",
+    "query": "Nur für diese Anfrage: zeige Publikationen, die 10.2000/nu referenzieren",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-papers-citations-de-4",
+    "query": "Tue nichts anderes; zeige Publikationen, die 10.2000/xi referenzieren",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-papers-citations-mixed-1",
+    "query": "이 exact action만 처리해: 10.2000/lambda를 reference한 publications를 보여줘",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-papers-citations-mixed-2",
+    "query": "requested operation은 10.2000/mu를 reference한 publications를 보여줘",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-papers-citations-mixed-3",
+    "query": "이번 request에서는 10.2000/nu를 reference한 publications를 보여줘",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-papers-citations-mixed-4",
+    "query": "nothing else 하지 말고 10.2000/xi를 reference한 publications를 보여줘",
+    "expected": "papers.citations",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-finance-quote-en-1",
+    "query": "Process this exact action: report the most recent market price for ORCL",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-finance-quote-en-2",
+    "query": "Requested operation — report the most recent market price for IBM",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-finance-quote-en-3",
+    "query": "For this turn only, report the most recent market price for NFLX",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-finance-quote-en-4",
+    "query": "Do nothing else; report the most recent market price for QCOM",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-finance-quote-ko-1",
+    "query": "이 동작을 정확히 처리해: ORCL의 가장 최근 시장 가격을 알려줘",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-finance-quote-ko-2",
+    "query": "요청한 동작은 이거야: IBM의 가장 최근 시장 가격을 알려줘",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-finance-quote-ko-3",
+    "query": "이번 요청에서는 NFLX의 가장 최근 시장 가격을 알려줘",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-finance-quote-ko-4",
+    "query": "다른 작업은 하지 말고 QCOM의 가장 최근 시장 가격을 알려줘",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-finance-quote-es-1",
+    "query": "Procesa exactamente esta acción: informa del precio de mercado más reciente de ORCL",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-finance-quote-es-2",
+    "query": "La operación solicitada es: informa del precio de mercado más reciente de IBM",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-finance-quote-es-3",
+    "query": "Solo para esta solicitud, informa del precio de mercado más reciente de NFLX",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-finance-quote-es-4",
+    "query": "No hagas nada más; informa del precio de mercado más reciente de QCOM",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-finance-quote-ja-1",
+    "query": "この操作を正確に処理して: ORCLの直近の市場価格を教えて",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-finance-quote-ja-2",
+    "query": "依頼した操作はこれです: IBMの直近の市場価格を教えて",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-finance-quote-ja-3",
+    "query": "今回の依頼ではNFLXの直近の市場価格を教えて",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-finance-quote-ja-4",
+    "query": "他の操作はせずにQCOMの直近の市場価格を教えて",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-finance-quote-de-1",
+    "query": "Führe genau diese Aktion aus: melde den neuesten Marktpreis für ORCL",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-finance-quote-de-2",
+    "query": "Die angeforderte Operation ist: melde den neuesten Marktpreis für IBM",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-finance-quote-de-3",
+    "query": "Nur für diese Anfrage: melde den neuesten Marktpreis für NFLX",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-finance-quote-de-4",
+    "query": "Tue nichts anderes; melde den neuesten Marktpreis für QCOM",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-finance-quote-mixed-1",
+    "query": "이 exact action만 처리해: ORCL most recent market price를 알려줘",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-finance-quote-mixed-2",
+    "query": "requested operation은 IBM most recent market price를 알려줘",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-finance-quote-mixed-3",
+    "query": "이번 request에서는 NFLX most recent market price를 알려줘",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-finance-quote-mixed-4",
+    "query": "nothing else 하지 말고 QCOM most recent market price를 알려줘",
+    "expected": "finance.quote",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-finance-history-en-1",
+    "query": "Process this exact action: show past market prices for ORCL for the past 45 days",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-finance-history-en-2",
+    "query": "Requested operation — show past market prices for IBM since March",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-finance-history-en-3",
+    "query": "For this turn only, show past market prices for NFLX over the last two quarters",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-finance-history-en-4",
+    "query": "Do nothing else; show past market prices for QCOM for the past three years",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-finance-history-ko-1",
+    "query": "이 동작을 정확히 처리해: ORCL for the past 45 days의 과거 시장 가격을 보여줘",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-finance-history-ko-2",
+    "query": "요청한 동작은 이거야: IBM since March의 과거 시장 가격을 보여줘",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-finance-history-ko-3",
+    "query": "이번 요청에서는 NFLX over the last two quarters의 과거 시장 가격을 보여줘",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-finance-history-ko-4",
+    "query": "다른 작업은 하지 말고 QCOM for the past three years의 과거 시장 가격을 보여줘",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-finance-history-es-1",
+    "query": "Procesa exactamente esta acción: muestra precios de mercado anteriores para ORCL for the past 45 days",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-finance-history-es-2",
+    "query": "La operación solicitada es: muestra precios de mercado anteriores para IBM since March",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-finance-history-es-3",
+    "query": "Solo para esta solicitud, muestra precios de mercado anteriores para NFLX over the last two quarters",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-finance-history-es-4",
+    "query": "No hagas nada más; muestra precios de mercado anteriores para QCOM for the past three years",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-finance-history-ja-1",
+    "query": "この操作を正確に処理して: ORCL for the past 45 daysの過去の市場価格を表示して",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-finance-history-ja-2",
+    "query": "依頼した操作はこれです: IBM since Marchの過去の市場価格を表示して",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-finance-history-ja-3",
+    "query": "今回の依頼ではNFLX over the last two quartersの過去の市場価格を表示して",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-finance-history-ja-4",
+    "query": "他の操作はせずにQCOM for the past three yearsの過去の市場価格を表示して",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-finance-history-de-1",
+    "query": "Führe genau diese Aktion aus: zeige frühere Marktpreise für ORCL for the past 45 days",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-finance-history-de-2",
+    "query": "Die angeforderte Operation ist: zeige frühere Marktpreise für IBM since March",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-finance-history-de-3",
+    "query": "Nur für diese Anfrage: zeige frühere Marktpreise für NFLX over the last two quarters",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-finance-history-de-4",
+    "query": "Tue nichts anderes; zeige frühere Marktpreise für QCOM for the past three years",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-finance-history-mixed-1",
+    "query": "이 exact action만 처리해: ORCL for the past 45 days past market prices를 보여줘",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-finance-history-mixed-2",
+    "query": "requested operation은 IBM since March past market prices를 보여줘",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-finance-history-mixed-3",
+    "query": "이번 request에서는 NFLX over the last two quarters past market prices를 보여줘",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-finance-history-mixed-4",
+    "query": "nothing else 하지 말고 QCOM for the past three years past market prices를 보여줘",
+    "expected": "finance.history",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-calendar-list-en-1",
+    "query": "Process this exact action: show scheduled calendar entries for Wednesday morning",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-calendar-list-en-2",
+    "query": "Requested operation — show scheduled calendar entries for next Thursday",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-calendar-list-en-3",
+    "query": "For this turn only, show scheduled calendar entries for October 12",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-calendar-list-en-4",
+    "query": "Do nothing else; show scheduled calendar entries for the next two days",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-calendar-list-ko-1",
+    "query": "이 동작을 정확히 처리해: Wednesday morning의 예정된 캘린더 항목을 보여줘",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-calendar-list-ko-2",
+    "query": "요청한 동작은 이거야: next Thursday의 예정된 캘린더 항목을 보여줘",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-calendar-list-ko-3",
+    "query": "이번 요청에서는 October 12의 예정된 캘린더 항목을 보여줘",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-calendar-list-ko-4",
+    "query": "다른 작업은 하지 말고 the next two days의 예정된 캘린더 항목을 보여줘",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-calendar-list-es-1",
+    "query": "Procesa exactamente esta acción: muestra las entradas programadas del calendario para Wednesday morning",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-calendar-list-es-2",
+    "query": "La operación solicitada es: muestra las entradas programadas del calendario para next Thursday",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-calendar-list-es-3",
+    "query": "Solo para esta solicitud, muestra las entradas programadas del calendario para October 12",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-calendar-list-es-4",
+    "query": "No hagas nada más; muestra las entradas programadas del calendario para the next two days",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-calendar-list-ja-1",
+    "query": "この操作を正確に処理して: Wednesday morningの予定済みカレンダー項目を表示して",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-calendar-list-ja-2",
+    "query": "依頼した操作はこれです: next Thursdayの予定済みカレンダー項目を表示して",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-calendar-list-ja-3",
+    "query": "今回の依頼ではOctober 12の予定済みカレンダー項目を表示して",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-calendar-list-ja-4",
+    "query": "他の操作はせずにthe next two daysの予定済みカレンダー項目を表示して",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-calendar-list-de-1",
+    "query": "Führe genau diese Aktion aus: zeige geplante Kalendereinträge für Wednesday morning",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-calendar-list-de-2",
+    "query": "Die angeforderte Operation ist: zeige geplante Kalendereinträge für next Thursday",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-calendar-list-de-3",
+    "query": "Nur für diese Anfrage: zeige geplante Kalendereinträge für October 12",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-calendar-list-de-4",
+    "query": "Tue nichts anderes; zeige geplante Kalendereinträge für the next two days",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-calendar-list-mixed-1",
+    "query": "이 exact action만 처리해: Wednesday morning scheduled calendar entries를 보여줘",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-calendar-list-mixed-2",
+    "query": "requested operation은 next Thursday scheduled calendar entries를 보여줘",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-calendar-list-mixed-3",
+    "query": "이번 request에서는 October 12 scheduled calendar entries를 보여줘",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-calendar-list-mixed-4",
+    "query": "nothing else 하지 말고 the next two days scheduled calendar entries를 보여줘",
+    "expected": "calendar.list",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-calendar-create-en-1",
+    "query": "Process this exact action: add a calendar appointment for architecture review at 2 PM",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-calendar-create-en-2",
+    "query": "Requested operation — add a calendar appointment for physio appointment Friday at 11",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-calendar-create-en-3",
+    "query": "For this turn only, add a calendar appointment for customer demo Tuesday at 4",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-calendar-create-en-4",
+    "query": "Do nothing else; add a calendar appointment for planning session Monday at 8",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-calendar-create-ko-1",
+    "query": "이 동작을 정확히 처리해: architecture review at 2 PM 일정을 캘린더에 추가해줘",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-calendar-create-ko-2",
+    "query": "요청한 동작은 이거야: physio appointment Friday at 11 일정을 캘린더에 추가해줘",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-calendar-create-ko-3",
+    "query": "이번 요청에서는 customer demo Tuesday at 4 일정을 캘린더에 추가해줘",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-calendar-create-ko-4",
+    "query": "다른 작업은 하지 말고 planning session Monday at 8 일정을 캘린더에 추가해줘",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-calendar-create-es-1",
+    "query": "Procesa exactamente esta acción: añade una cita al calendario para architecture review at 2 PM",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-calendar-create-es-2",
+    "query": "La operación solicitada es: añade una cita al calendario para physio appointment Friday at 11",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-calendar-create-es-3",
+    "query": "Solo para esta solicitud, añade una cita al calendario para customer demo Tuesday at 4",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-calendar-create-es-4",
+    "query": "No hagas nada más; añade una cita al calendario para planning session Monday at 8",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-calendar-create-ja-1",
+    "query": "この操作を正確に処理して: architecture review at 2 PMの予定をカレンダーに追加して",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-calendar-create-ja-2",
+    "query": "依頼した操作はこれです: physio appointment Friday at 11の予定をカレンダーに追加して",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-calendar-create-ja-3",
+    "query": "今回の依頼ではcustomer demo Tuesday at 4の予定をカレンダーに追加して",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-calendar-create-ja-4",
+    "query": "他の操作はせずにplanning session Monday at 8の予定をカレンダーに追加して",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-calendar-create-de-1",
+    "query": "Führe genau diese Aktion aus: füge einen Kalendertermin für architecture review at 2 PM hinzu",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-calendar-create-de-2",
+    "query": "Die angeforderte Operation ist: füge einen Kalendertermin für physio appointment Friday at 11 hinzu",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-calendar-create-de-3",
+    "query": "Nur für diese Anfrage: füge einen Kalendertermin für customer demo Tuesday at 4 hinzu",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-calendar-create-de-4",
+    "query": "Tue nichts anderes; füge einen Kalendertermin für planning session Monday at 8 hinzu",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-calendar-create-mixed-1",
+    "query": "이 exact action만 처리해: architecture review at 2 PM calendar appointment를 add해",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-calendar-create-mixed-2",
+    "query": "requested operation은 physio appointment Friday at 11 calendar appointment를 add해",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-calendar-create-mixed-3",
+    "query": "이번 request에서는 customer demo Tuesday at 4 calendar appointment를 add해",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-calendar-create-mixed-4",
+    "query": "nothing else 하지 말고 planning session Monday at 8 calendar appointment를 add해",
+    "expected": "calendar.create",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-support-search-en-1",
+    "query": "Process this exact action: find help-center guidance about SSO setup",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-support-search-en-2",
+    "query": "Requested operation — find help-center guidance about invoice download",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-support-search-en-3",
+    "query": "For this turn only, find help-center guidance about API rate limit",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-support-search-en-4",
+    "query": "Do nothing else; find help-center guidance about email delivery",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-support-search-ko-1",
+    "query": "이 동작을 정확히 처리해: SSO setup에 대한 고객지원 도움말을 찾아줘",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-support-search-ko-2",
+    "query": "요청한 동작은 이거야: invoice download에 대한 고객지원 도움말을 찾아줘",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-support-search-ko-3",
+    "query": "이번 요청에서는 API rate limit에 대한 고객지원 도움말을 찾아줘",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-support-search-ko-4",
+    "query": "다른 작업은 하지 말고 email delivery에 대한 고객지원 도움말을 찾아줘",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-support-search-es-1",
+    "query": "Procesa exactamente esta acción: encuentra ayuda del centro de soporte sobre SSO setup",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-support-search-es-2",
+    "query": "La operación solicitada es: encuentra ayuda del centro de soporte sobre invoice download",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-support-search-es-3",
+    "query": "Solo para esta solicitud, encuentra ayuda del centro de soporte sobre API rate limit",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-support-search-es-4",
+    "query": "No hagas nada más; encuentra ayuda del centro de soporte sobre email delivery",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-support-search-ja-1",
+    "query": "この操作を正確に処理して: SSO setupについてヘルプセンターの案内を探して",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-support-search-ja-2",
+    "query": "依頼した操作はこれです: invoice downloadについてヘルプセンターの案内を探して",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-support-search-ja-3",
+    "query": "今回の依頼ではAPI rate limitについてヘルプセンターの案内を探して",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-support-search-ja-4",
+    "query": "他の操作はせずにemail deliveryについてヘルプセンターの案内を探して",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-support-search-de-1",
+    "query": "Führe genau diese Aktion aus: finde Hilfe-Center-Anleitungen zu SSO setup",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-support-search-de-2",
+    "query": "Die angeforderte Operation ist: finde Hilfe-Center-Anleitungen zu invoice download",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-support-search-de-3",
+    "query": "Nur für diese Anfrage: finde Hilfe-Center-Anleitungen zu API rate limit",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-support-search-de-4",
+    "query": "Tue nichts anderes; finde Hilfe-Center-Anleitungen zu email delivery",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-support-search-mixed-1",
+    "query": "이 exact action만 처리해: SSO setup 관련 help-center guidance를 찾아줘",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-support-search-mixed-2",
+    "query": "requested operation은 invoice download 관련 help-center guidance를 찾아줘",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-support-search-mixed-3",
+    "query": "이번 request에서는 API rate limit 관련 help-center guidance를 찾아줘",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-support-search-mixed-4",
+    "query": "nothing else 하지 말고 email delivery 관련 help-center guidance를 찾아줘",
+    "expected": "support.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-support-create-ticket-en-1",
+    "query": "Process this exact action: open a support case because SSO login loops",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-support-create-ticket-en-2",
+    "query": "Requested operation — open a support case because invoice PDF is missing",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-support-create-ticket-en-3",
+    "query": "For this turn only, open a support case because API rate limit is wrong",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-support-create-ticket-en-4",
+    "query": "Do nothing else; open a support case because email notifications do not arrive",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-support-create-ticket-ko-1",
+    "query": "이 동작을 정확히 처리해: SSO login loops 때문에 고객지원 문의를 접수해줘",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-support-create-ticket-ko-2",
+    "query": "요청한 동작은 이거야: invoice PDF is missing 때문에 고객지원 문의를 접수해줘",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-support-create-ticket-ko-3",
+    "query": "이번 요청에서는 API rate limit is wrong 때문에 고객지원 문의를 접수해줘",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-support-create-ticket-ko-4",
+    "query": "다른 작업은 하지 말고 email notifications do not arrive 때문에 고객지원 문의를 접수해줘",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-support-create-ticket-es-1",
+    "query": "Procesa exactamente esta acción: abre un caso de soporte porque SSO login loops",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-support-create-ticket-es-2",
+    "query": "La operación solicitada es: abre un caso de soporte porque invoice PDF is missing",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-support-create-ticket-es-3",
+    "query": "Solo para esta solicitud, abre un caso de soporte porque API rate limit is wrong",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-support-create-ticket-es-4",
+    "query": "No hagas nada más; abre un caso de soporte porque email notifications do not arrive",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-support-create-ticket-ja-1",
+    "query": "この操作を正確に処理して: SSO login loopsのためサポートケースを起票して",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-support-create-ticket-ja-2",
+    "query": "依頼した操作はこれです: invoice PDF is missingのためサポートケースを起票して",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-support-create-ticket-ja-3",
+    "query": "今回の依頼ではAPI rate limit is wrongのためサポートケースを起票して",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-support-create-ticket-ja-4",
+    "query": "他の操作はせずにemail notifications do not arriveのためサポートケースを起票して",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-support-create-ticket-de-1",
+    "query": "Führe genau diese Aktion aus: eröffne einen Supportfall, weil SSO login loops",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-support-create-ticket-de-2",
+    "query": "Die angeforderte Operation ist: eröffne einen Supportfall, weil invoice PDF is missing",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-support-create-ticket-de-3",
+    "query": "Nur für diese Anfrage: eröffne einen Supportfall, weil API rate limit is wrong",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-support-create-ticket-de-4",
+    "query": "Tue nichts anderes; eröffne einen Supportfall, weil email notifications do not arrive",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-support-create-ticket-mixed-1",
+    "query": "이 exact action만 처리해: SSO login loops 때문에 support case를 open해",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-support-create-ticket-mixed-2",
+    "query": "requested operation은 invoice PDF is missing 때문에 support case를 open해",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-support-create-ticket-mixed-3",
+    "query": "이번 request에서는 API rate limit is wrong 때문에 support case를 open해",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-support-create-ticket-mixed-4",
+    "query": "nothing else 하지 말고 email notifications do not arrive 때문에 support case를 open해",
+    "expected": "support.create_ticket",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-inventory-search-en-1",
+    "query": "Process this exact action: report stock on hand for SKU-F71",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-inventory-search-en-2",
+    "query": "Requested operation — report stock on hand for SKU-G82",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-inventory-search-en-3",
+    "query": "For this turn only, report stock on hand for SKU-H93",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-inventory-search-en-4",
+    "query": "Do nothing else; report stock on hand for SKU-J14",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-inventory-search-ko-1",
+    "query": "이 동작을 정확히 처리해: SKU-F71의 현재 보유 재고를 알려줘",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-inventory-search-ko-2",
+    "query": "요청한 동작은 이거야: SKU-G82의 현재 보유 재고를 알려줘",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-inventory-search-ko-3",
+    "query": "이번 요청에서는 SKU-H93의 현재 보유 재고를 알려줘",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-inventory-search-ko-4",
+    "query": "다른 작업은 하지 말고 SKU-J14의 현재 보유 재고를 알려줘",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-inventory-search-es-1",
+    "query": "Procesa exactamente esta acción: informa del stock disponible de SKU-F71",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-inventory-search-es-2",
+    "query": "La operación solicitada es: informa del stock disponible de SKU-G82",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-inventory-search-es-3",
+    "query": "Solo para esta solicitud, informa del stock disponible de SKU-H93",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-inventory-search-es-4",
+    "query": "No hagas nada más; informa del stock disponible de SKU-J14",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-inventory-search-ja-1",
+    "query": "この操作を正確に処理して: SKU-F71の手持ち在庫数を教えて",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-inventory-search-ja-2",
+    "query": "依頼した操作はこれです: SKU-G82の手持ち在庫数を教えて",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-inventory-search-ja-3",
+    "query": "今回の依頼ではSKU-H93の手持ち在庫数を教えて",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-inventory-search-ja-4",
+    "query": "他の操作はせずにSKU-J14の手持ち在庫数を教えて",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-inventory-search-de-1",
+    "query": "Führe genau diese Aktion aus: melde den verfügbaren Lagerbestand für SKU-F71",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-inventory-search-de-2",
+    "query": "Die angeforderte Operation ist: melde den verfügbaren Lagerbestand für SKU-G82",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-inventory-search-de-3",
+    "query": "Nur für diese Anfrage: melde den verfügbaren Lagerbestand für SKU-H93",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-inventory-search-de-4",
+    "query": "Tue nichts anderes; melde den verfügbaren Lagerbestand für SKU-J14",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-inventory-search-mixed-1",
+    "query": "이 exact action만 처리해: SKU-F71 stock on hand를 알려줘",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-inventory-search-mixed-2",
+    "query": "requested operation은 SKU-G82 stock on hand를 알려줘",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-inventory-search-mixed-3",
+    "query": "이번 request에서는 SKU-H93 stock on hand를 알려줘",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-inventory-search-mixed-4",
+    "query": "nothing else 하지 말고 SKU-J14 stock on hand를 알려줘",
+    "expected": "inventory.search",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-inventory-update-en-1",
+    "query": "Process this exact action: change the stock count for SKU-F71 to 26",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-inventory-update-en-2",
+    "query": "Requested operation — change the stock count for SKU-G82 to 9",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-inventory-update-en-3",
+    "query": "For this turn only, change the stock count for SKU-H93 to 41",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-inventory-update-en-4",
+    "query": "Do nothing else; change the stock count for SKU-J14 to 3",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-inventory-update-ko-1",
+    "query": "이 동작을 정확히 처리해: SKU-F71 to 26의 재고 수량을 변경해줘",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-inventory-update-ko-2",
+    "query": "요청한 동작은 이거야: SKU-G82 to 9의 재고 수량을 변경해줘",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-inventory-update-ko-3",
+    "query": "이번 요청에서는 SKU-H93 to 41의 재고 수량을 변경해줘",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-inventory-update-ko-4",
+    "query": "다른 작업은 하지 말고 SKU-J14 to 3의 재고 수량을 변경해줘",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-inventory-update-es-1",
+    "query": "Procesa exactamente esta acción: cambia la cantidad de stock de SKU-F71 to 26",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-inventory-update-es-2",
+    "query": "La operación solicitada es: cambia la cantidad de stock de SKU-G82 to 9",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-inventory-update-es-3",
+    "query": "Solo para esta solicitud, cambia la cantidad de stock de SKU-H93 to 41",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-inventory-update-es-4",
+    "query": "No hagas nada más; cambia la cantidad de stock de SKU-J14 to 3",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-inventory-update-ja-1",
+    "query": "この操作を正確に処理して: SKU-F71 to 26の在庫数を変更して",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-inventory-update-ja-2",
+    "query": "依頼した操作はこれです: SKU-G82 to 9の在庫数を変更して",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-inventory-update-ja-3",
+    "query": "今回の依頼ではSKU-H93 to 41の在庫数を変更して",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-inventory-update-ja-4",
+    "query": "他の操作はせずにSKU-J14 to 3の在庫数を変更して",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-inventory-update-de-1",
+    "query": "Führe genau diese Aktion aus: ändere den Lagerbestand für SKU-F71 to 26",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-inventory-update-de-2",
+    "query": "Die angeforderte Operation ist: ändere den Lagerbestand für SKU-G82 to 9",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-inventory-update-de-3",
+    "query": "Nur für diese Anfrage: ändere den Lagerbestand für SKU-H93 to 41",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-inventory-update-de-4",
+    "query": "Tue nichts anderes; ändere den Lagerbestand für SKU-J14 to 3",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-inventory-update-mixed-1",
+    "query": "이 exact action만 처리해: SKU-F71 to 26 stock count를 change해",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-inventory-update-mixed-2",
+    "query": "requested operation은 SKU-G82 to 9 stock count를 change해",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-inventory-update-mixed-3",
+    "query": "이번 request에서는 SKU-H93 to 41 stock count를 change해",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-inventory-update-mixed-4",
+    "query": "nothing else 하지 말고 SKU-J14 to 3 stock count를 change해",
+    "expected": "inventory.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-users-lookup-en-1",
+    "query": "Process this exact action: retrieve the account profile for user 144",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-users-lookup-en-2",
+    "query": "Requested operation — retrieve the account profile for nora@example.com",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-users-lookup-en-3",
+    "query": "For this turn only, retrieve the account profile for account 2468",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-users-lookup-en-4",
+    "query": "Do nothing else; retrieve the account profile for Lee Min",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-users-lookup-ko-1",
+    "query": "이 동작을 정확히 처리해: user 144의 계정 프로필을 가져와",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-users-lookup-ko-2",
+    "query": "요청한 동작은 이거야: nora@example.com의 계정 프로필을 가져와",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-users-lookup-ko-3",
+    "query": "이번 요청에서는 account 2468의 계정 프로필을 가져와",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-users-lookup-ko-4",
+    "query": "다른 작업은 하지 말고 Lee Min의 계정 프로필을 가져와",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-users-lookup-es-1",
+    "query": "Procesa exactamente esta acción: recupera el perfil de cuenta de user 144",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-users-lookup-es-2",
+    "query": "La operación solicitada es: recupera el perfil de cuenta de nora@example.com",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-users-lookup-es-3",
+    "query": "Solo para esta solicitud, recupera el perfil de cuenta de account 2468",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-users-lookup-es-4",
+    "query": "No hagas nada más; recupera el perfil de cuenta de Lee Min",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-users-lookup-ja-1",
+    "query": "この操作を正確に処理して: user 144のアカウントプロフィールを取得して",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-users-lookup-ja-2",
+    "query": "依頼した操作はこれです: nora@example.comのアカウントプロフィールを取得して",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-users-lookup-ja-3",
+    "query": "今回の依頼ではaccount 2468のアカウントプロフィールを取得して",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-users-lookup-ja-4",
+    "query": "他の操作はせずにLee Minのアカウントプロフィールを取得して",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-users-lookup-de-1",
+    "query": "Führe genau diese Aktion aus: rufe das Kontoprofil für user 144 ab",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-users-lookup-de-2",
+    "query": "Die angeforderte Operation ist: rufe das Kontoprofil für nora@example.com ab",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-users-lookup-de-3",
+    "query": "Nur für diese Anfrage: rufe das Kontoprofil für account 2468 ab",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-users-lookup-de-4",
+    "query": "Tue nichts anderes; rufe das Kontoprofil für Lee Min ab",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-users-lookup-mixed-1",
+    "query": "이 exact action만 처리해: user 144 account profile을 retrieve해",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-users-lookup-mixed-2",
+    "query": "requested operation은 nora@example.com account profile을 retrieve해",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-users-lookup-mixed-3",
+    "query": "이번 request에서는 account 2468 account profile을 retrieve해",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-users-lookup-mixed-4",
+    "query": "nothing else 하지 말고 Lee Min account profile을 retrieve해",
+    "expected": "users.lookup",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-users-update-en-1",
+    "query": "Process this exact action: edit the account profile for user 144 locale",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-users-update-en-2",
+    "query": "Requested operation — edit the account profile for nora@example.com display name",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-users-update-en-3",
+    "query": "For this turn only, edit the account profile for account 2468 department",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-users-update-en-4",
+    "query": "Do nothing else; edit the account profile for Lee Min timezone",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-users-update-ko-1",
+    "query": "이 동작을 정확히 처리해: user 144 locale의 계정 프로필을 수정해줘",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-users-update-ko-2",
+    "query": "요청한 동작은 이거야: nora@example.com display name의 계정 프로필을 수정해줘",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-users-update-ko-3",
+    "query": "이번 요청에서는 account 2468 department의 계정 프로필을 수정해줘",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-users-update-ko-4",
+    "query": "다른 작업은 하지 말고 Lee Min timezone의 계정 프로필을 수정해줘",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-users-update-es-1",
+    "query": "Procesa exactamente esta acción: edita el perfil de cuenta de user 144 locale",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-users-update-es-2",
+    "query": "La operación solicitada es: edita el perfil de cuenta de nora@example.com display name",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-users-update-es-3",
+    "query": "Solo para esta solicitud, edita el perfil de cuenta de account 2468 department",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-users-update-es-4",
+    "query": "No hagas nada más; edita el perfil de cuenta de Lee Min timezone",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-users-update-ja-1",
+    "query": "この操作を正確に処理して: user 144 localeのアカウントプロフィールを編集して",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-users-update-ja-2",
+    "query": "依頼した操作はこれです: nora@example.com display nameのアカウントプロフィールを編集して",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-users-update-ja-3",
+    "query": "今回の依頼ではaccount 2468 departmentのアカウントプロフィールを編集して",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-users-update-ja-4",
+    "query": "他の操作はせずにLee Min timezoneのアカウントプロフィールを編集して",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-users-update-de-1",
+    "query": "Führe genau diese Aktion aus: bearbeite das Kontoprofil für user 144 locale",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-users-update-de-2",
+    "query": "Die angeforderte Operation ist: bearbeite das Kontoprofil für nora@example.com display name",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-users-update-de-3",
+    "query": "Nur für diese Anfrage: bearbeite das Kontoprofil für account 2468 department",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-users-update-de-4",
+    "query": "Tue nichts anderes; bearbeite das Kontoprofil für Lee Min timezone",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-users-update-mixed-1",
+    "query": "이 exact action만 처리해: user 144 locale account profile을 edit해",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-users-update-mixed-2",
+    "query": "requested operation은 nora@example.com display name account profile을 edit해",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-users-update-mixed-3",
+    "query": "이번 request에서는 account 2468 department account profile을 edit해",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-users-update-mixed-4",
+    "query": "nothing else 하지 말고 Lee Min timezone account profile을 edit해",
+    "expected": "users.update",
+    "category": "operation_supported_post_change_holdout",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-weather-unsupported-en-1",
+    "query": "Process this exact action: change the configured weather station",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-weather-unsupported-en-2",
+    "query": "Requested operation — export a climate archive",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-weather-unsupported-en-3",
+    "query": "For this turn only, set a rain notification",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-weather-unsupported-en-4",
+    "query": "Do nothing else; subscribe me to severe weather alerts",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-weather-unsupported-ko-1",
+    "query": "이 동작을 정확히 처리해: 날씨 관측소 설정을 변경해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-weather-unsupported-ko-2",
+    "query": "요청한 동작은 이거야: 기후 기록 파일을 내보내",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-weather-unsupported-ko-3",
+    "query": "이번 요청에서는 비 알림을 설정해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-weather-unsupported-ko-4",
+    "query": "다른 작업은 하지 말고 악천후 알림을 구독해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-weather-unsupported-es-1",
+    "query": "Procesa exactamente esta acción: cambia la estación meteorológica",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-weather-unsupported-es-2",
+    "query": "La operación solicitada es: exporta el archivo climático",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-weather-unsupported-es-3",
+    "query": "Solo para esta solicitud, configura una alerta de lluvia",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-weather-unsupported-es-4",
+    "query": "No hagas nada más; suscríbeme a alertas meteorológicas",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-weather-unsupported-ja-1",
+    "query": "この操作を正確に処理して: 気象観測所を変更して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-weather-unsupported-ja-2",
+    "query": "依頼した操作はこれです: 気候履歴をエクスポートして",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-weather-unsupported-ja-3",
+    "query": "今回の依頼では雨の通知を設定して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-weather-unsupported-ja-4",
+    "query": "他の操作はせずに悪天候アラートを購読して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-weather-unsupported-de-1",
+    "query": "Führe genau diese Aktion aus: ändere die Wetterstation",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-weather-unsupported-de-2",
+    "query": "Die angeforderte Operation ist: exportiere das Klimaarchiv",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-weather-unsupported-de-3",
+    "query": "Nur für diese Anfrage: richte eine Regenwarnung ein",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-weather-unsupported-de-4",
+    "query": "Tue nichts anderes; abonniere Unwetterwarnungen",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-weather-unsupported-mixed-1",
+    "query": "이 exact action만 처리해: weather station 설정을 change해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-weather-unsupported-mixed-2",
+    "query": "requested operation은 climate archive를 export해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-weather-unsupported-mixed-3",
+    "query": "이번 request에서는 rain notification을 set해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-weather-unsupported-mixed-4",
+    "query": "nothing else 하지 말고 severe weather alert를 subscribe해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-materials-unsupported-en-1",
+    "query": "Process this exact action: create a new material record",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-materials-unsupported-en-2",
+    "query": "Requested operation — edit the stored band gap value",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-materials-unsupported-en-3",
+    "query": "For this turn only, launch a synthesis workflow",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-materials-unsupported-en-4",
+    "query": "Do nothing else; run a DFT simulation for GaN",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-materials-unsupported-ko-1",
+    "query": "이 동작을 정확히 처리해: 새 재료 레코드를 생성해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-materials-unsupported-ko-2",
+    "query": "요청한 동작은 이거야: 저장된 밴드갭 값을 수정해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-materials-unsupported-ko-3",
+    "query": "이번 요청에서는 합성 워크플로를 실행해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-materials-unsupported-ko-4",
+    "query": "다른 작업은 하지 말고 실리콘 DFT 시뮬레이션을 실행해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-materials-unsupported-es-1",
+    "query": "Procesa exactamente esta acción: crea un nuevo registro de material",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-materials-unsupported-es-2",
+    "query": "La operación solicitada es: edita la banda prohibida guardada",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-materials-unsupported-es-3",
+    "query": "Solo para esta solicitud, inicia un flujo de síntesis",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-materials-unsupported-es-4",
+    "query": "No hagas nada más; ejecuta una simulación DFT de silicio",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-materials-unsupported-ja-1",
+    "query": "この操作を正確に処理して: 新しい材料レコードを作成して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-materials-unsupported-ja-2",
+    "query": "依頼した操作はこれです: 保存済みバンドギャップを編集して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-materials-unsupported-ja-3",
+    "query": "今回の依頼では合成ワークフローを開始して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-materials-unsupported-ja-4",
+    "query": "他の操作はせずにシリコンのDFT計算を実行して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-materials-unsupported-de-1",
+    "query": "Führe genau diese Aktion aus: erstelle einen neuen Materialdatensatz",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-materials-unsupported-de-2",
+    "query": "Die angeforderte Operation ist: ändere die gespeicherte Bandlücke",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-materials-unsupported-de-3",
+    "query": "Nur für diese Anfrage: starte einen Synthese-Workflow",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-materials-unsupported-de-4",
+    "query": "Tue nichts anderes; starte eine DFT-Simulation für Silizium",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-materials-unsupported-mixed-1",
+    "query": "이 exact action만 처리해: new material record를 create해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-materials-unsupported-mixed-2",
+    "query": "requested operation은 stored band gap을 edit해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-materials-unsupported-mixed-3",
+    "query": "이번 request에서는 synthesis workflow를 launch해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-materials-unsupported-mixed-4",
+    "query": "nothing else 하지 말고 GaN DFT simulation을 run해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-papers-unsupported-en-1",
+    "query": "Process this exact action: submit a manuscript to the journal",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-papers-unsupported-en-2",
+    "query": "Requested operation — summarize the entire article",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-papers-unsupported-en-3",
+    "query": "For this turn only, retract a published paper",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-papers-unsupported-en-4",
+    "query": "Do nothing else; download the full PDF of this paper",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-papers-unsupported-ko-1",
+    "query": "이 동작을 정확히 처리해: 저널에 원고를 제출해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-papers-unsupported-ko-2",
+    "query": "요청한 동작은 이거야: 논문 전체를 요약해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-papers-unsupported-ko-3",
+    "query": "이번 요청에서는 출판된 논문을 철회해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-papers-unsupported-ko-4",
+    "query": "다른 작업은 하지 말고 이 논문의 PDF 원문을 다운로드해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-papers-unsupported-es-1",
+    "query": "Procesa exactamente esta acción: envía un manuscrito a la revista",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-papers-unsupported-es-2",
+    "query": "La operación solicitada es: resume el artículo completo",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-papers-unsupported-es-3",
+    "query": "Solo para esta solicitud, retira un artículo publicado",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-papers-unsupported-es-4",
+    "query": "No hagas nada más; descarga el PDF completo del artículo",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-papers-unsupported-ja-1",
+    "query": "この操作を正確に処理して: 原稿をジャーナルに投稿して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-papers-unsupported-ja-2",
+    "query": "依頼した操作はこれです: 論文全体を要約して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-papers-unsupported-ja-3",
+    "query": "今回の依頼では公開済み論文を撤回して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-papers-unsupported-ja-4",
+    "query": "他の操作はせずに論文PDF全文をダウンロードして",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-papers-unsupported-de-1",
+    "query": "Führe genau diese Aktion aus: reiche ein Manuskript ein",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-papers-unsupported-de-2",
+    "query": "Die angeforderte Operation ist: fasse den ganzen Artikel zusammen",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-papers-unsupported-de-3",
+    "query": "Nur für diese Anfrage: ziehe eine veröffentlichte Arbeit zurück",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-papers-unsupported-de-4",
+    "query": "Tue nichts anderes; lade das vollständige PDF herunter",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-papers-unsupported-mixed-1",
+    "query": "이 exact action만 처리해: manuscript를 submit해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-papers-unsupported-mixed-2",
+    "query": "requested operation은 article 전체를 summarize해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-papers-unsupported-mixed-3",
+    "query": "이번 request에서는 published paper를 retract해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-papers-unsupported-mixed-4",
+    "query": "nothing else 하지 말고 paper full PDF를 download해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-finance-unsupported-en-1",
+    "query": "Process this exact action: sell my AMD position",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-finance-unsupported-en-2",
+    "query": "Requested operation — set a price alert for META",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-finance-unsupported-en-3",
+    "query": "For this turn only, transfer cash to my brokerage",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-finance-unsupported-en-4",
+    "query": "Do nothing else; buy ten shares of TSLA",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-finance-unsupported-ko-1",
+    "query": "이 동작을 정확히 처리해: AMD 보유분을 매도해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-finance-unsupported-ko-2",
+    "query": "요청한 동작은 이거야: META 가격 알림을 설정해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-finance-unsupported-ko-3",
+    "query": "이번 요청에서는 증권 계좌로 현금을 이체해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-finance-unsupported-ko-4",
+    "query": "다른 작업은 하지 말고 TSLA 주식 10주를 매수해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-finance-unsupported-es-1",
+    "query": "Procesa exactamente esta acción: vende mi posición de AMD",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-finance-unsupported-es-2",
+    "query": "La operación solicitada es: configura una alerta de precio de META",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-finance-unsupported-es-3",
+    "query": "Solo para esta solicitud, transfiere efectivo al bróker",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-finance-unsupported-es-4",
+    "query": "No hagas nada más; compra diez acciones de TSLA",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-finance-unsupported-ja-1",
+    "query": "この操作を正確に処理して: AMDの保有株を売って",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-finance-unsupported-ja-2",
+    "query": "依頼した操作はこれです: METAの価格アラートを設定して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-finance-unsupported-ja-3",
+    "query": "今回の依頼では証券口座へ送金して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-finance-unsupported-ja-4",
+    "query": "他の操作はせずにTSLAを10株買って",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-finance-unsupported-de-1",
+    "query": "Führe genau diese Aktion aus: verkaufe meine AMD-Position",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-finance-unsupported-de-2",
+    "query": "Die angeforderte Operation ist: setze einen Preisalarm für META",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-finance-unsupported-de-3",
+    "query": "Nur für diese Anfrage: überweise Geld zum Broker",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-finance-unsupported-de-4",
+    "query": "Tue nichts anderes; kaufe zehn TSLA-Aktien",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-finance-unsupported-mixed-1",
+    "query": "이 exact action만 처리해: AMD position을 sell해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-finance-unsupported-mixed-2",
+    "query": "requested operation은 META price alert를 set해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-finance-unsupported-mixed-3",
+    "query": "이번 request에서는 brokerage로 cash를 transfer해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-finance-unsupported-mixed-4",
+    "query": "nothing else 하지 말고 TSLA 10 shares를 buy해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-calendar-unsupported-en-1",
+    "query": "Process this exact action: reschedule Monday's meeting",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-calendar-unsupported-en-2",
+    "query": "Requested operation — accept the calendar invitation",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-calendar-unsupported-en-3",
+    "query": "For this turn only, share my calendar with Jordan",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-calendar-unsupported-en-4",
+    "query": "Do nothing else; delete next week's meeting",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-calendar-unsupported-ko-1",
+    "query": "이 동작을 정확히 처리해: 금요일 회의를 일정 변경해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-calendar-unsupported-ko-2",
+    "query": "요청한 동작은 이거야: 캘린더 초대를 수락해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-calendar-unsupported-ko-3",
+    "query": "이번 요청에서는 Jordan에게 캘린더를 공유해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-calendar-unsupported-ko-4",
+    "query": "다른 작업은 하지 말고 내일 회의를 삭제해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-calendar-unsupported-es-1",
+    "query": "Procesa exactamente esta acción: reprograma la reunión del viernes",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-calendar-unsupported-es-2",
+    "query": "La operación solicitada es: acepta la invitación del calendario",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-calendar-unsupported-es-3",
+    "query": "Solo para esta solicitud, comparte mi calendario con Jordan",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-calendar-unsupported-es-4",
+    "query": "No hagas nada más; elimina la reunión de mañana",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-calendar-unsupported-ja-1",
+    "query": "この操作を正確に処理して: 金曜の会議を変更して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-calendar-unsupported-ja-2",
+    "query": "依頼した操作はこれです: カレンダー招待を承認して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-calendar-unsupported-ja-3",
+    "query": "今回の依頼ではJordanとカレンダーを共有して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-calendar-unsupported-ja-4",
+    "query": "他の操作はせずに明日の会議を削除して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-calendar-unsupported-de-1",
+    "query": "Führe genau diese Aktion aus: verschiebe das Freitagsmeeting",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-calendar-unsupported-de-2",
+    "query": "Die angeforderte Operation ist: akzeptiere die Kalendereinladung",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-calendar-unsupported-de-3",
+    "query": "Nur für diese Anfrage: teile meinen Kalender mit Jordan",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-calendar-unsupported-de-4",
+    "query": "Tue nichts anderes; lösche das morgige Meeting",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-calendar-unsupported-mixed-1",
+    "query": "이 exact action만 처리해: Monday meeting을 reschedule해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-calendar-unsupported-mixed-2",
+    "query": "requested operation은 calendar invite를 accept해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-calendar-unsupported-mixed-3",
+    "query": "이번 request에서는 Jordan와 calendar를 share해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-calendar-unsupported-mixed-4",
+    "query": "nothing else 하지 말고 next week meeting을 delete해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-support-unsupported-en-1",
+    "query": "Process this exact action: assign ticket 731 to an agent",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-support-unsupported-en-2",
+    "query": "Requested operation — issue the refund directly",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-support-unsupported-en-3",
+    "query": "For this turn only, delete ticket 731",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-support-unsupported-en-4",
+    "query": "Do nothing else; close ticket 731",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-support-unsupported-ko-1",
+    "query": "이 동작을 정확히 처리해: 티켓 731를 상담원에게 할당해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-support-unsupported-ko-2",
+    "query": "요청한 동작은 이거야: 환불을 직접 처리해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-support-unsupported-ko-3",
+    "query": "이번 요청에서는 티켓 731를 삭제해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-support-unsupported-ko-4",
+    "query": "다른 작업은 하지 말고 티켓 731를 종료해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-support-unsupported-es-1",
+    "query": "Procesa exactamente esta acción: asigna el ticket 731 a un agente",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-support-unsupported-es-2",
+    "query": "La operación solicitada es: emite el reembolso directamente",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-support-unsupported-es-3",
+    "query": "Solo para esta solicitud, elimina el ticket 731",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-support-unsupported-es-4",
+    "query": "No hagas nada más; cierra el ticket 731",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-support-unsupported-ja-1",
+    "query": "この操作を正確に処理して: チケット731を担当者に割り当てて",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-support-unsupported-ja-2",
+    "query": "依頼した操作はこれです: 返金を直接実行して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-support-unsupported-ja-3",
+    "query": "今回の依頼ではチケット731を削除して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-support-unsupported-ja-4",
+    "query": "他の操作はせずにチケット731をクローズして",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-support-unsupported-de-1",
+    "query": "Führe genau diese Aktion aus: weise Ticket 731 einem Agenten zu",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-support-unsupported-de-2",
+    "query": "Die angeforderte Operation ist: führe die Rückerstattung direkt aus",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-support-unsupported-de-3",
+    "query": "Nur für diese Anfrage: lösche Ticket 731",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-support-unsupported-de-4",
+    "query": "Tue nichts anderes; schließe Ticket 731",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-support-unsupported-mixed-1",
+    "query": "이 exact action만 처리해: ticket 731를 agent에게 assign해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-support-unsupported-mixed-2",
+    "query": "requested operation은 refund를 direct issue해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-support-unsupported-mixed-3",
+    "query": "이번 request에서는 ticket 731를 delete해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-support-unsupported-mixed-4",
+    "query": "nothing else 하지 말고 ticket 731를 close해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-inventory-unsupported-en-1",
+    "query": "Process this exact action: delete SKU-811",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-inventory-unsupported-en-2",
+    "query": "Requested operation — transfer SKU-822 to another warehouse",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-inventory-unsupported-en-3",
+    "query": "For this turn only, place a purchase order for SKU-833",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-inventory-unsupported-en-4",
+    "query": "Do nothing else; create a new SKU 977",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-inventory-unsupported-ko-1",
+    "query": "이 동작을 정확히 처리해: SKU-811을 삭제해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-inventory-unsupported-ko-2",
+    "query": "요청한 동작은 이거야: SKU-822 재고를 다른 창고로 이동해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-inventory-unsupported-ko-3",
+    "query": "이번 요청에서는 SKU-833 구매 주문을 생성해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-inventory-unsupported-ko-4",
+    "query": "다른 작업은 하지 말고 새 SKU 977을 생성해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-inventory-unsupported-es-1",
+    "query": "Procesa exactamente esta acción: elimina SKU-811",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-inventory-unsupported-es-2",
+    "query": "La operación solicitada es: transfiere SKU-822 a otro almacén",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-inventory-unsupported-es-3",
+    "query": "Solo para esta solicitud, crea una orden de compra para SKU-833",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-inventory-unsupported-es-4",
+    "query": "No hagas nada más; crea un SKU nuevo 977",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-inventory-unsupported-ja-1",
+    "query": "この操作を正確に処理して: SKU-811を削除して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-inventory-unsupported-ja-2",
+    "query": "依頼した操作はこれです: SKU-822を別倉庫へ移動して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-inventory-unsupported-ja-3",
+    "query": "今回の依頼ではSKU-833の発注書を作成して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-inventory-unsupported-ja-4",
+    "query": "他の操作はせずに新しいSKU 977を作成して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-inventory-unsupported-de-1",
+    "query": "Führe genau diese Aktion aus: lösche SKU-811",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-inventory-unsupported-de-2",
+    "query": "Die angeforderte Operation ist: verschiebe SKU-822 in ein anderes Lager",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-inventory-unsupported-de-3",
+    "query": "Nur für diese Anfrage: erstelle eine Bestellung für SKU-833",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-inventory-unsupported-de-4",
+    "query": "Tue nichts anderes; erstelle eine neue SKU 977",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-inventory-unsupported-mixed-1",
+    "query": "이 exact action만 처리해: SKU-811을 delete해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-inventory-unsupported-mixed-2",
+    "query": "requested operation은 SKU-822를 another warehouse로 transfer해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-inventory-unsupported-mixed-3",
+    "query": "이번 request에서는 SKU-833 purchase order를 place해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-inventory-unsupported-mixed-4",
+    "query": "nothing else 하지 말고 new SKU 977을 create해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-users-unsupported-en-1",
+    "query": "Process this exact action: delete user 811",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-users-unsupported-en-2",
+    "query": "Requested operation — reset user 822 password",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-users-unsupported-en-3",
+    "query": "For this turn only, suspend user 833 account",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-users-unsupported-en-4",
+    "query": "Do nothing else; create a new user account",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-users-unsupported-ko-1",
+    "query": "이 동작을 정확히 처리해: 사용자 811을 삭제해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-users-unsupported-ko-2",
+    "query": "요청한 동작은 이거야: 사용자 822 비밀번호를 재설정해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-users-unsupported-ko-3",
+    "query": "이번 요청에서는 사용자 833 계정을 정지해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-users-unsupported-ko-4",
+    "query": "다른 작업은 하지 말고 새 사용자 계정을 생성해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-users-unsupported-es-1",
+    "query": "Procesa exactamente esta acción: elimina el usuario 811",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-users-unsupported-es-2",
+    "query": "La operación solicitada es: restablece la contraseña del usuario 822",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-users-unsupported-es-3",
+    "query": "Solo para esta solicitud, suspende la cuenta del usuario 833",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-users-unsupported-es-4",
+    "query": "No hagas nada más; crea una nueva cuenta de usuario",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-users-unsupported-ja-1",
+    "query": "この操作を正確に処理して: ユーザー811を削除して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-users-unsupported-ja-2",
+    "query": "依頼した操作はこれです: ユーザー822のパスワードをリセットして",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-users-unsupported-ja-3",
+    "query": "今回の依頼ではユーザー833を停止して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-users-unsupported-ja-4",
+    "query": "他の操作はせずに新しいユーザーアカウントを作成して",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-users-unsupported-de-1",
+    "query": "Führe genau diese Aktion aus: lösche Benutzer 811",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-users-unsupported-de-2",
+    "query": "Die angeforderte Operation ist: setze das Passwort von Benutzer 822 zurück",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-users-unsupported-de-3",
+    "query": "Nur für diese Anfrage: sperre Benutzer 833",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-users-unsupported-de-4",
+    "query": "Tue nichts anderes; erstelle ein neues Benutzerkonto",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-users-unsupported-mixed-1",
+    "query": "이 exact action만 처리해: user 811을 delete해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-users-unsupported-mixed-2",
+    "query": "requested operation은 user 822 password를 reset해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-users-unsupported-mixed-3",
+    "query": "이번 request에서는 user 833 account를 suspend해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-users-unsupported-mixed-4",
+    "query": "nothing else 하지 말고 new user account를 create해",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-ood-en-1",
+    "query": "Process this exact action: translate this paragraph into French",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-ood-en-2",
+    "query": "Requested operation — generate a logo for my startup",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-ood-en-3",
+    "query": "For this turn only, solve this differential equation",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-ood-en-4",
+    "query": "Do nothing else; recommend a dinner recipe",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v7-ood-ko-1",
+    "query": "이 동작을 정확히 처리해: 이 문단을 프랑스어로 번역해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-ood-ko-2",
+    "query": "요청한 동작은 이거야: 내 스타트업 로고를 생성해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-ood-ko-3",
+    "query": "이번 요청에서는 이 미분방정식을 풀어줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-ood-ko-4",
+    "query": "다른 작업은 하지 말고 저녁 요리 레시피를 추천해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v7-ood-es-1",
+    "query": "Procesa exactamente esta acción: traduce este párrafo al francés",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-ood-es-2",
+    "query": "La operación solicitada es: genera un logotipo para mi startup",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-ood-es-3",
+    "query": "Solo para esta solicitud, resuelve esta ecuación diferencial",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-ood-es-4",
+    "query": "No hagas nada más; recomienda una receta para la cena",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v7-ood-ja-1",
+    "query": "この操作を正確に処理して: この段落をフランス語に翻訳して",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-ood-ja-2",
+    "query": "依頼した操作はこれです: スタートアップのロゴを生成して",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-ood-ja-3",
+    "query": "今回の依頼ではこの微分方程式を解いて",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-ood-ja-4",
+    "query": "他の操作はせずに夕食のレシピを提案して",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v7-ood-de-1",
+    "query": "Führe genau diese Aktion aus: übersetze diesen Absatz ins Französische",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-ood-de-2",
+    "query": "Die angeforderte Operation ist: erstelle ein Logo für mein Startup",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-ood-de-3",
+    "query": "Nur für diese Anfrage: löse diese Differentialgleichung",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-ood-de-4",
+    "query": "Tue nichts anderes; empfiehl ein Rezept fürs Abendessen",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v7-ood-mixed-1",
+    "query": "이 exact action만 처리해: 이 paragraph를 French로 translate해",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-ood-mixed-2",
+    "query": "requested operation은 내 startup logo를 generate해",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-ood-mixed-3",
+    "query": "이번 request에서는 이 differential equation을 solve해",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v7-ood-mixed-4",
+    "query": "nothing else 하지 말고 dinner recipe를 recommend해",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  }
+]

@@ -365,3 +365,17 @@ The frozen upstream stack for this experiment is:
 
 Only the operation-fit threshold is varied during v5 calibration. Once selected, it must not be
 retuned from v6 results.
+
+
+### Post-change operation holdout (v7)
+
+`benchmarks/decision-routing-v7-operation-post-change-holdout.json` is a 600-case,
+six-language test-only corpus reserved after removing tool-domain labels from the bounded
+operation-fit embedding surface. It contains 384 supported operations, 192 near-domain unsupported
+operations, and 24 ordinary out-of-domain requests. Its normalized queries are checked to be
+disjoint from v2 through v6.
+
+The corpus was added before measuring the label-cleaned operation-fit implementation. Do not use v7
+to select the operation-fit threshold. Calibrate only on v5; after freezing the threshold, evaluate
+v7 once for the post-change generalization claim. Repeated v6 runs are regression evidence only
+because v6 had already been consumed before the operation-fit input representation changed.

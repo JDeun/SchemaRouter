@@ -11,6 +11,7 @@ CORPUS_V3 = ROOT / "benchmarks" / "decision-routing-v3.json"
 CORPUS_V4 = ROOT / "benchmarks" / "decision-routing-v4-operation-holdout.json"
 CORPUS_V5 = ROOT / "benchmarks" / "decision-routing-v5-operation-calibration.json"
 CORPUS_V6 = ROOT / "benchmarks" / "decision-routing-v6-operation-holdout.json"
+CORPUS_V7 = ROOT / "benchmarks" / "decision-routing-v7-operation-post-change-holdout.json"
 GENERATOR_V2 = ROOT / "scripts" / "generate_decision_routing_v2.py"
 GENERATOR_V3 = ROOT / "scripts" / "generate_decision_routing_v3.py"
 SCRIPT = ROOT / "scripts" / "benchmark_decision_routing.py"
@@ -639,3 +640,66 @@ def test_v6_operation_holdout_workflow_is_manual_and_threshold_gated() -> None:
     assert '--operation-fit-min-similarity "${OPERATION_FIT_MIN_SIMILARITY}"' in holdout_job
     assert "--operation-fit-min-similarity 0.40" not in holdout_job
 
+
+
+def test_v7_operation_post_change_holdout_is_balanced_multilingual_and_test_only() -> None:
+    cases = json.loads(CORPUS_V7.read_text(encoding="utf-8"))
+
+    assert len(cases) == 600
+    assert len({case["id"] for case in cases}) == 600
+    assert all(case["split"] == "test" for case in cases)
+
+    language_counts: dict[str, int] = {}
+    category_counts: dict[str, int] = {}
+    route_counts: dict[str, int] = {}
+    for case in cases:
+        language_counts[case["language"]] = language_counts.get(case["language"], 0) + 1
+        category_counts[case["category"]] = category_counts.get(case["category"], 0) + 1
+        route = case["expected"] or "NO_ROUTE"
+        route_counts[route] = route_counts.get(route, 0) + 1
+
+    assert language_counts == {
+        "en": 100,
+        "ko": 100,
+        "es": 100,
+        "ja": 100,
+        "de": 100,
+        "mixed": 100,
+    }
+    assert category_counts == {
+        "operation_supported_post_change_holdout": 384,
+        "near_domain_unsupported_operation": 192,
+        "out_of_domain": 24,
+    }
+    assert route_counts["NO_ROUTE"] == 216
+    assert all(count == 24 for route, count in route_counts.items() if route != "NO_ROUTE")
+
+
+def test_v7_operation_post_change_holdout_loads_and_is_disjoint_from_prior_corpora() -> None:
+    import re
+
+    module = _benchmark_module()
+    registry = module.reference_registry()
+    allowed = {
+        f"{tool.key}.{endpoint.name}"
+        for tool in registry.tools()
+        for endpoint in tool.endpoints
+    }
+    cases = module.load_corpus(CORPUS_V7, allowed_routes=allowed)
+
+    def normalized_queries(path: Path) -> set[str]:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        return {
+            re.sub(r"[^\w]+", "", case["query"].casefold())
+            for case in raw
+        }
+
+    v7 = normalized_queries(CORPUS_V7)
+    prior: set[str] = set()
+    for path in (CORPUS_V2, CORPUS_V3, CORPUS_V4, CORPUS_V5, CORPUS_V6):
+        prior.update(normalized_queries(path))
+
+    assert len(cases) == 600
+    assert sum(case.expect_abstain for case in cases) == 216
+    assert len(v7) == 600
+    assert v7.isdisjoint(prior)
