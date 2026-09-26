@@ -923,7 +923,8 @@ class SchemaPlanner:
         endpoint_key = f"{tool.key}.{endpoint.name}"
         if preferred_endpoints and endpoint_key not in preferred_endpoints:
             return [], [
-                "graph operation gate path conflicted with preferred endpoint constraints; escalated"
+                "graph operation gate path conflicted with preferred endpoint "
+                "constraints; escalated"
             ], True
 
         if (
