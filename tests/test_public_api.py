@@ -73,6 +73,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "NonRetryableInvocationError",
         "OpenAPICompatibilityIssue",
         "OpenAPICompatibilityReport",
+        "PairwiseDecisionBackend",
+        "PairwiseScoreCallable",
         "ParameterSpec",
         "PlanCoverage",
         "PlanExplanation",
