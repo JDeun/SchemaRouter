@@ -1,0 +1,67 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "semantic_seed_development_sweep",
+  "status": "preregistered_before_semantic_geometry",
+  "selection_data": "fresh graph-v1 development corpus only",
+  "corpus_sha256_expected": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6",
+  "hard_graph_base": "alias-only deterministic graph; field-path ablation produced no additional unique direct accepts",
+  "semantic_source": {
+    "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "representation": "unchanged existing semantic_candidate_recall option text",
+    "role": "seed an already-authorized Tool->Endpoint->Operation path only",
+    "rejection_authority": false,
+    "execution_authority": false,
+    "candidate_recall_top_k": 2
+  },
+  "threshold_grid": {
+    "min_score": [
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      0.9,
+      0.93,
+      0.95,
+      0.97
+    ],
+    "min_margin": [
+      0.02,
+      0.04,
+      0.06,
+      0.08,
+      0.1,
+      0.15,
+      0.2
+    ]
+  },
+  "hard_gates": {
+    "supported_operation_routed_accuracy_min": 0.6,
+    "near_domain_unsupported_rejection_min": 0.95,
+    "false_routes_must_not_exceed_baseline": true,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0
+  },
+  "additional_development_guard": {
+    "direct_graph_accept_precision_min": 0.98,
+    "note": "This guard only makes development selection more conservative; it does not relax preregistered calibration or blind gates."
+  },
+  "selection_rule": [
+    "discard any threshold pair failing a hard gate or direct-accept precision guard",
+    "maximize total hard+semantic graph resolution rate among remaining candidates",
+    "tie-break by higher harmonic mean of supported accuracy and near-domain rejection",
+    "then higher supported-operation accuracy",
+    "then higher min_score",
+    "then higher min_margin"
+  ],
+  "efficiency_validation": {
+    "threshold_sweep_uses_latency": false,
+    "reason": "Initial hard-graph sequential benchmark exposed warm-cache/order bias.",
+    "selected_candidate_requires_counterbalanced_paired_runtime": true
+  },
+  "forbidden": [
+    "no tuning on v5 calibration, v12, consumed v13, retired v14, fresh calibration, or v15",
+    "no semantic seed may create a route absent from the compiled registered graph",
+    "no semantic seed may directly reject a route",
+    "do not change threshold grid after semantic geometry is observed"
+  ]
+}
