@@ -1,0 +1,5402 @@
+[
+  {
+    "id": "v4-weather-current-en-01",
+    "query": "For this request, report the present weather conditions in Taipei.",
+    "expected": "weather.current",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-current-en-02",
+    "query": "The exact action I need is to report the present weather conditions in Lisbon.",
+    "expected": "weather.current",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-current-en-03",
+    "query": "Please only report the present weather conditions in Vancouver.",
+    "expected": "weather.current",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-current-en-04",
+    "query": "What I want here is to report the present weather conditions in Zurich.",
+    "expected": "weather.current",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-current-en-05",
+    "query": "Handle this task by trying to report the present weather conditions in Singapore.",
+    "expected": "weather.current",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-current-ko-01",
+    "query": "이번 요청에서는 Taipei의 지금 기상 상태를 조회.",
+    "expected": "weather.current",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-current-ko-02",
+    "query": "정확히 필요한 작업은 Lisbon의 지금 기상 상태를 조회 하는 거야.",
+    "expected": "weather.current",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-current-ko-03",
+    "query": "다른 건 하지 말고 Vancouver의 지금 기상 상태를 조회.",
+    "expected": "weather.current",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-current-ko-04",
+    "query": "여기서 원하는 건 Zurich의 지금 기상 상태를 조회 하는 거야.",
+    "expected": "weather.current",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-current-ko-05",
+    "query": "이 작업은 Singapore의 지금 기상 상태를 조회 방식으로 처리해줘.",
+    "expected": "weather.current",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-current-es-01",
+    "query": "En esta solicitud, consultar las condiciones meteorológicas actuales en Taipei.",
+    "expected": "weather.current",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-current-es-02",
+    "query": "La acción exacta que necesito es consultar las condiciones meteorológicas actuales en Lisbon.",
+    "expected": "weather.current",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-current-es-03",
+    "query": "Por favor, solo consultar las condiciones meteorológicas actuales en Vancouver.",
+    "expected": "weather.current",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-current-es-04",
+    "query": "Lo que quiero aquí es consultar las condiciones meteorológicas actuales en Zurich.",
+    "expected": "weather.current",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-current-es-05",
+    "query": "Gestiona esta tarea intentando consultar las condiciones meteorológicas actuales en Singapore.",
+    "expected": "weather.current",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-current-ja-01",
+    "query": "この依頼ではTaipeiの現在の気象状況を確認する。",
+    "expected": "weather.current",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-current-ja-02",
+    "query": "必要な操作はLisbonの現在の気象状況を確認することです。",
+    "expected": "weather.current",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-current-ja-03",
+    "query": "他はせずにVancouverの現在の気象状況を確認する。",
+    "expected": "weather.current",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-current-ja-04",
+    "query": "ここで欲しいのはZurichの現在の気象状況を確認することです。",
+    "expected": "weather.current",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-current-ja-05",
+    "query": "この作業はSingaporeの現在の気象状況を確認するように処理して。",
+    "expected": "weather.current",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-current-de-01",
+    "query": "Bei dieser Anfrage bitte die aktuellen Wetterbedingungen in Taipei abrufen.",
+    "expected": "weather.current",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-current-de-02",
+    "query": "Die genaue Aktion ist: die aktuellen Wetterbedingungen in Lisbon abrufen.",
+    "expected": "weather.current",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-current-de-03",
+    "query": "Bitte nur die aktuellen Wetterbedingungen in Vancouver abrufen.",
+    "expected": "weather.current",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-current-de-04",
+    "query": "Hier möchte ich die aktuellen Wetterbedingungen in Zurich abrufen.",
+    "expected": "weather.current",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-current-de-05",
+    "query": "Bearbeite die Aufgabe, indem du die aktuellen Wetterbedingungen in Singapore abrufen.",
+    "expected": "weather.current",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-current-mixed-01",
+    "query": "이번 request에서는 Taipei의 present weather conditions를 report.",
+    "expected": "weather.current",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-current-mixed-02",
+    "query": "정확한 action은 Lisbon의 present weather conditions를 report.",
+    "expected": "weather.current",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-current-mixed-03",
+    "query": "nothing else, Vancouver의 present weather conditions를 report만.",
+    "expected": "weather.current",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-current-mixed-04",
+    "query": "여기서 want하는 건 Zurich의 present weather conditions를 report.",
+    "expected": "weather.current",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-current-mixed-05",
+    "query": "이 task는 Singapore의 present weather conditions를 report 방식으로 handle해.",
+    "expected": "weather.current",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-forecast-en-01",
+    "query": "For this request, retrieve the future weather outlook for Taipei tomorrow.",
+    "expected": "weather.forecast",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-forecast-en-02",
+    "query": "The exact action I need is to retrieve the future weather outlook for Lisbon next weekend.",
+    "expected": "weather.forecast",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-forecast-en-03",
+    "query": "Please only retrieve the future weather outlook for Vancouver Friday.",
+    "expected": "weather.forecast",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-forecast-en-04",
+    "query": "What I want here is to retrieve the future weather outlook for Zurich tonight.",
+    "expected": "weather.forecast",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-forecast-en-05",
+    "query": "Handle this task by trying to retrieve the future weather outlook for Singapore next week.",
+    "expected": "weather.forecast",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-weather-forecast-ko-01",
+    "query": "이번 요청에서는 Taipei tomorrow의 앞으로 기상 전망을 조회.",
+    "expected": "weather.forecast",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-forecast-ko-02",
+    "query": "정확히 필요한 작업은 Lisbon next weekend의 앞으로 기상 전망을 조회 하는 거야.",
+    "expected": "weather.forecast",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-forecast-ko-03",
+    "query": "다른 건 하지 말고 Vancouver Friday의 앞으로 기상 전망을 조회.",
+    "expected": "weather.forecast",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-forecast-ko-04",
+    "query": "여기서 원하는 건 Zurich tonight의 앞으로 기상 전망을 조회 하는 거야.",
+    "expected": "weather.forecast",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-forecast-ko-05",
+    "query": "이 작업은 Singapore next week의 앞으로 기상 전망을 조회 방식으로 처리해줘.",
+    "expected": "weather.forecast",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-weather-forecast-es-01",
+    "query": "En esta solicitud, obtener la previsión meteorológica futura para Taipei tomorrow.",
+    "expected": "weather.forecast",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-forecast-es-02",
+    "query": "La acción exacta que necesito es obtener la previsión meteorológica futura para Lisbon next weekend.",
+    "expected": "weather.forecast",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-forecast-es-03",
+    "query": "Por favor, solo obtener la previsión meteorológica futura para Vancouver Friday.",
+    "expected": "weather.forecast",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-forecast-es-04",
+    "query": "Lo que quiero aquí es obtener la previsión meteorológica futura para Zurich tonight.",
+    "expected": "weather.forecast",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-forecast-es-05",
+    "query": "Gestiona esta tarea intentando obtener la previsión meteorológica futura para Singapore next week.",
+    "expected": "weather.forecast",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-weather-forecast-ja-01",
+    "query": "この依頼ではTaipei tomorrowの今後の天気予報を取得する。",
+    "expected": "weather.forecast",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-forecast-ja-02",
+    "query": "必要な操作はLisbon next weekendの今後の天気予報を取得することです。",
+    "expected": "weather.forecast",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-forecast-ja-03",
+    "query": "他はせずにVancouver Fridayの今後の天気予報を取得する。",
+    "expected": "weather.forecast",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-forecast-ja-04",
+    "query": "ここで欲しいのはZurich tonightの今後の天気予報を取得することです。",
+    "expected": "weather.forecast",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-forecast-ja-05",
+    "query": "この作業はSingapore next weekの今後の天気予報を取得するように処理して。",
+    "expected": "weather.forecast",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-weather-forecast-de-01",
+    "query": "Bei dieser Anfrage bitte die zukünftige Wettervorhersage für Taipei tomorrow abrufen.",
+    "expected": "weather.forecast",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-forecast-de-02",
+    "query": "Die genaue Aktion ist: die zukünftige Wettervorhersage für Lisbon next weekend abrufen.",
+    "expected": "weather.forecast",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-forecast-de-03",
+    "query": "Bitte nur die zukünftige Wettervorhersage für Vancouver Friday abrufen.",
+    "expected": "weather.forecast",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-forecast-de-04",
+    "query": "Hier möchte ich die zukünftige Wettervorhersage für Zurich tonight abrufen.",
+    "expected": "weather.forecast",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-forecast-de-05",
+    "query": "Bearbeite die Aufgabe, indem du die zukünftige Wettervorhersage für Singapore next week abrufen.",
+    "expected": "weather.forecast",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-weather-forecast-mixed-01",
+    "query": "이번 request에서는 Taipei tomorrow의 future weather outlook을 retrieve.",
+    "expected": "weather.forecast",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-forecast-mixed-02",
+    "query": "정확한 action은 Lisbon next weekend의 future weather outlook을 retrieve.",
+    "expected": "weather.forecast",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-forecast-mixed-03",
+    "query": "nothing else, Vancouver Friday의 future weather outlook을 retrieve만.",
+    "expected": "weather.forecast",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-forecast-mixed-04",
+    "query": "여기서 want하는 건 Zurich tonight의 future weather outlook을 retrieve.",
+    "expected": "weather.forecast",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-weather-forecast-mixed-05",
+    "query": "이 task는 Singapore next week의 future weather outlook을 retrieve 방식으로 handle해.",
+    "expected": "weather.forecast",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-search-en-01",
+    "query": "For this request, look up material properties such as the band gap of WS2.",
+    "expected": "materials.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-search-en-02",
+    "query": "The exact action I need is to look up material properties such as the band gap of LiCoO2.",
+    "expected": "materials.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-search-en-03",
+    "query": "Please only look up material properties such as the band gap of BaTiO3.",
+    "expected": "materials.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-search-en-04",
+    "query": "What I want here is to look up material properties such as the band gap of InP.",
+    "expected": "materials.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-search-en-05",
+    "query": "Handle this task by trying to look up material properties such as the band gap of MgO.",
+    "expected": "materials.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-search-ko-01",
+    "query": "이번 요청에서는 WS2의 밴드갭 같은 재료 물성을 검색.",
+    "expected": "materials.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-search-ko-02",
+    "query": "정확히 필요한 작업은 LiCoO2의 밴드갭 같은 재료 물성을 검색 하는 거야.",
+    "expected": "materials.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-search-ko-03",
+    "query": "다른 건 하지 말고 BaTiO3의 밴드갭 같은 재료 물성을 검색.",
+    "expected": "materials.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-search-ko-04",
+    "query": "여기서 원하는 건 InP의 밴드갭 같은 재료 물성을 검색 하는 거야.",
+    "expected": "materials.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-search-ko-05",
+    "query": "이 작업은 MgO의 밴드갭 같은 재료 물성을 검색 방식으로 처리해줘.",
+    "expected": "materials.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-search-es-01",
+    "query": "En esta solicitud, consultar propiedades del material como la banda prohibida de WS2.",
+    "expected": "materials.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-search-es-02",
+    "query": "La acción exacta que necesito es consultar propiedades del material como la banda prohibida de LiCoO2.",
+    "expected": "materials.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-search-es-03",
+    "query": "Por favor, solo consultar propiedades del material como la banda prohibida de BaTiO3.",
+    "expected": "materials.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-search-es-04",
+    "query": "Lo que quiero aquí es consultar propiedades del material como la banda prohibida de InP.",
+    "expected": "materials.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-search-es-05",
+    "query": "Gestiona esta tarea intentando consultar propiedades del material como la banda prohibida de MgO.",
+    "expected": "materials.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-search-ja-01",
+    "query": "この依頼ではWS2のバンドギャップなどの材料物性を検索する。",
+    "expected": "materials.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-search-ja-02",
+    "query": "必要な操作はLiCoO2のバンドギャップなどの材料物性を検索することです。",
+    "expected": "materials.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-search-ja-03",
+    "query": "他はせずにBaTiO3のバンドギャップなどの材料物性を検索する。",
+    "expected": "materials.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-search-ja-04",
+    "query": "ここで欲しいのはInPのバンドギャップなどの材料物性を検索することです。",
+    "expected": "materials.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-search-ja-05",
+    "query": "この作業はMgOのバンドギャップなどの材料物性を検索するように処理して。",
+    "expected": "materials.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-search-de-01",
+    "query": "Bei dieser Anfrage bitte Materialeigenschaften wie die Bandlücke von WS2 nachschlagen.",
+    "expected": "materials.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-search-de-02",
+    "query": "Die genaue Aktion ist: Materialeigenschaften wie die Bandlücke von LiCoO2 nachschlagen.",
+    "expected": "materials.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-search-de-03",
+    "query": "Bitte nur Materialeigenschaften wie die Bandlücke von BaTiO3 nachschlagen.",
+    "expected": "materials.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-search-de-04",
+    "query": "Hier möchte ich Materialeigenschaften wie die Bandlücke von InP nachschlagen.",
+    "expected": "materials.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-search-de-05",
+    "query": "Bearbeite die Aufgabe, indem du Materialeigenschaften wie die Bandlücke von MgO nachschlagen.",
+    "expected": "materials.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-search-mixed-01",
+    "query": "이번 request에서는 WS2의 band gap 같은 material properties를 look up.",
+    "expected": "materials.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-search-mixed-02",
+    "query": "정확한 action은 LiCoO2의 band gap 같은 material properties를 look up.",
+    "expected": "materials.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-search-mixed-03",
+    "query": "nothing else, BaTiO3의 band gap 같은 material properties를 look up만.",
+    "expected": "materials.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-search-mixed-04",
+    "query": "여기서 want하는 건 InP의 band gap 같은 material properties를 look up.",
+    "expected": "materials.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-search-mixed-05",
+    "query": "이 task는 MgO의 band gap 같은 material properties를 look up 방식으로 handle해.",
+    "expected": "materials.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-structure-en-01",
+    "query": "For this request, retrieve the lattice and crystal structure for WS2.",
+    "expected": "materials.structure",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-structure-en-02",
+    "query": "The exact action I need is to retrieve the lattice and crystal structure for LiCoO2.",
+    "expected": "materials.structure",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-structure-en-03",
+    "query": "Please only retrieve the lattice and crystal structure for BaTiO3.",
+    "expected": "materials.structure",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-structure-en-04",
+    "query": "What I want here is to retrieve the lattice and crystal structure for InP.",
+    "expected": "materials.structure",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-structure-en-05",
+    "query": "Handle this task by trying to retrieve the lattice and crystal structure for MgO.",
+    "expected": "materials.structure",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-materials-structure-ko-01",
+    "query": "이번 요청에서는 WS2의 격자와 결정 구조를 조회.",
+    "expected": "materials.structure",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-structure-ko-02",
+    "query": "정확히 필요한 작업은 LiCoO2의 격자와 결정 구조를 조회 하는 거야.",
+    "expected": "materials.structure",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-structure-ko-03",
+    "query": "다른 건 하지 말고 BaTiO3의 격자와 결정 구조를 조회.",
+    "expected": "materials.structure",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-structure-ko-04",
+    "query": "여기서 원하는 건 InP의 격자와 결정 구조를 조회 하는 거야.",
+    "expected": "materials.structure",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-structure-ko-05",
+    "query": "이 작업은 MgO의 격자와 결정 구조를 조회 방식으로 처리해줘.",
+    "expected": "materials.structure",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-materials-structure-es-01",
+    "query": "En esta solicitud, obtener la red y la estructura cristalina de WS2.",
+    "expected": "materials.structure",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-structure-es-02",
+    "query": "La acción exacta que necesito es obtener la red y la estructura cristalina de LiCoO2.",
+    "expected": "materials.structure",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-structure-es-03",
+    "query": "Por favor, solo obtener la red y la estructura cristalina de BaTiO3.",
+    "expected": "materials.structure",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-structure-es-04",
+    "query": "Lo que quiero aquí es obtener la red y la estructura cristalina de InP.",
+    "expected": "materials.structure",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-structure-es-05",
+    "query": "Gestiona esta tarea intentando obtener la red y la estructura cristalina de MgO.",
+    "expected": "materials.structure",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-materials-structure-ja-01",
+    "query": "この依頼ではWS2の格子と結晶構造を取得する。",
+    "expected": "materials.structure",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-structure-ja-02",
+    "query": "必要な操作はLiCoO2の格子と結晶構造を取得することです。",
+    "expected": "materials.structure",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-structure-ja-03",
+    "query": "他はせずにBaTiO3の格子と結晶構造を取得する。",
+    "expected": "materials.structure",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-structure-ja-04",
+    "query": "ここで欲しいのはInPの格子と結晶構造を取得することです。",
+    "expected": "materials.structure",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-structure-ja-05",
+    "query": "この作業はMgOの格子と結晶構造を取得するように処理して。",
+    "expected": "materials.structure",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-materials-structure-de-01",
+    "query": "Bei dieser Anfrage bitte Gitter und Kristallstruktur von WS2 abrufen.",
+    "expected": "materials.structure",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-structure-de-02",
+    "query": "Die genaue Aktion ist: Gitter und Kristallstruktur von LiCoO2 abrufen.",
+    "expected": "materials.structure",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-structure-de-03",
+    "query": "Bitte nur Gitter und Kristallstruktur von BaTiO3 abrufen.",
+    "expected": "materials.structure",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-structure-de-04",
+    "query": "Hier möchte ich Gitter und Kristallstruktur von InP abrufen.",
+    "expected": "materials.structure",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-structure-de-05",
+    "query": "Bearbeite die Aufgabe, indem du Gitter und Kristallstruktur von MgO abrufen.",
+    "expected": "materials.structure",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-materials-structure-mixed-01",
+    "query": "이번 request에서는 WS2의 lattice와 crystal structure를 retrieve.",
+    "expected": "materials.structure",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-structure-mixed-02",
+    "query": "정확한 action은 LiCoO2의 lattice와 crystal structure를 retrieve.",
+    "expected": "materials.structure",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-structure-mixed-03",
+    "query": "nothing else, BaTiO3의 lattice와 crystal structure를 retrieve만.",
+    "expected": "materials.structure",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-structure-mixed-04",
+    "query": "여기서 want하는 건 InP의 lattice와 crystal structure를 retrieve.",
+    "expected": "materials.structure",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-materials-structure-mixed-05",
+    "query": "이 task는 MgO의 lattice와 crystal structure를 retrieve 방식으로 handle해.",
+    "expected": "materials.structure",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-search-en-01",
+    "query": "For this request, discover research publications about tool calling evaluation.",
+    "expected": "papers.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-search-en-02",
+    "query": "The exact action I need is to discover research publications about agent reliability.",
+    "expected": "papers.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-search-en-03",
+    "query": "Please only discover research publications about lithium sulfur batteries.",
+    "expected": "papers.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-search-en-04",
+    "query": "What I want here is to discover research publications about scientific RAG.",
+    "expected": "papers.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-search-en-05",
+    "query": "Handle this task by trying to discover research publications about multilingual retrieval.",
+    "expected": "papers.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-search-ko-01",
+    "query": "이번 요청에서는 tool calling evaluation에 관한 연구 논문을 찾아보기.",
+    "expected": "papers.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-search-ko-02",
+    "query": "정확히 필요한 작업은 agent reliability에 관한 연구 논문을 찾아보기 하는 거야.",
+    "expected": "papers.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-search-ko-03",
+    "query": "다른 건 하지 말고 lithium sulfur batteries에 관한 연구 논문을 찾아보기.",
+    "expected": "papers.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-search-ko-04",
+    "query": "여기서 원하는 건 scientific RAG에 관한 연구 논문을 찾아보기 하는 거야.",
+    "expected": "papers.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-search-ko-05",
+    "query": "이 작업은 multilingual retrieval에 관한 연구 논문을 찾아보기 방식으로 처리해줘.",
+    "expected": "papers.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-search-es-01",
+    "query": "En esta solicitud, buscar publicaciones de investigación sobre tool calling evaluation.",
+    "expected": "papers.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-search-es-02",
+    "query": "La acción exacta que necesito es buscar publicaciones de investigación sobre agent reliability.",
+    "expected": "papers.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-search-es-03",
+    "query": "Por favor, solo buscar publicaciones de investigación sobre lithium sulfur batteries.",
+    "expected": "papers.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-search-es-04",
+    "query": "Lo que quiero aquí es buscar publicaciones de investigación sobre scientific RAG.",
+    "expected": "papers.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-search-es-05",
+    "query": "Gestiona esta tarea intentando buscar publicaciones de investigación sobre multilingual retrieval.",
+    "expected": "papers.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-search-ja-01",
+    "query": "この依頼ではtool calling evaluationに関する研究論文を探す。",
+    "expected": "papers.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-search-ja-02",
+    "query": "必要な操作はagent reliabilityに関する研究論文を探すことです。",
+    "expected": "papers.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-search-ja-03",
+    "query": "他はせずにlithium sulfur batteriesに関する研究論文を探す。",
+    "expected": "papers.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-search-ja-04",
+    "query": "ここで欲しいのはscientific RAGに関する研究論文を探すことです。",
+    "expected": "papers.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-search-ja-05",
+    "query": "この作業はmultilingual retrievalに関する研究論文を探すように処理して。",
+    "expected": "papers.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-search-de-01",
+    "query": "Bei dieser Anfrage bitte Forschungsarbeiten zu tool calling evaluation finden.",
+    "expected": "papers.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-search-de-02",
+    "query": "Die genaue Aktion ist: Forschungsarbeiten zu agent reliability finden.",
+    "expected": "papers.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-search-de-03",
+    "query": "Bitte nur Forschungsarbeiten zu lithium sulfur batteries finden.",
+    "expected": "papers.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-search-de-04",
+    "query": "Hier möchte ich Forschungsarbeiten zu scientific RAG finden.",
+    "expected": "papers.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-search-de-05",
+    "query": "Bearbeite die Aufgabe, indem du Forschungsarbeiten zu multilingual retrieval finden.",
+    "expected": "papers.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-search-mixed-01",
+    "query": "이번 request에서는 tool calling evaluation 관련 research publications를 discover.",
+    "expected": "papers.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-search-mixed-02",
+    "query": "정확한 action은 agent reliability 관련 research publications를 discover.",
+    "expected": "papers.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-search-mixed-03",
+    "query": "nothing else, lithium sulfur batteries 관련 research publications를 discover만.",
+    "expected": "papers.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-search-mixed-04",
+    "query": "여기서 want하는 건 scientific RAG 관련 research publications를 discover.",
+    "expected": "papers.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-search-mixed-05",
+    "query": "이 task는 multilingual retrieval 관련 research publications를 discover 방식으로 handle해.",
+    "expected": "papers.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-citations-en-01",
+    "query": "For this request, retrieve the works that cite 10.7777/route.alpha.",
+    "expected": "papers.citations",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-citations-en-02",
+    "query": "The exact action I need is to retrieve the works that cite 10.7777/route.beta.",
+    "expected": "papers.citations",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-citations-en-03",
+    "query": "Please only retrieve the works that cite 10.7777/route.gamma.",
+    "expected": "papers.citations",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-citations-en-04",
+    "query": "What I want here is to retrieve the works that cite 10.7777/route.delta.",
+    "expected": "papers.citations",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-citations-en-05",
+    "query": "Handle this task by trying to retrieve the works that cite 10.7777/route.epsilon.",
+    "expected": "papers.citations",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-papers-citations-ko-01",
+    "query": "이번 요청에서는 10.7777/route.alpha를 인용한 연구들을 조회.",
+    "expected": "papers.citations",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-citations-ko-02",
+    "query": "정확히 필요한 작업은 10.7777/route.beta를 인용한 연구들을 조회 하는 거야.",
+    "expected": "papers.citations",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-citations-ko-03",
+    "query": "다른 건 하지 말고 10.7777/route.gamma를 인용한 연구들을 조회.",
+    "expected": "papers.citations",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-citations-ko-04",
+    "query": "여기서 원하는 건 10.7777/route.delta를 인용한 연구들을 조회 하는 거야.",
+    "expected": "papers.citations",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-citations-ko-05",
+    "query": "이 작업은 10.7777/route.epsilon를 인용한 연구들을 조회 방식으로 처리해줘.",
+    "expected": "papers.citations",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-papers-citations-es-01",
+    "query": "En esta solicitud, obtener los trabajos que citan 10.7777/route.alpha.",
+    "expected": "papers.citations",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-citations-es-02",
+    "query": "La acción exacta que necesito es obtener los trabajos que citan 10.7777/route.beta.",
+    "expected": "papers.citations",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-citations-es-03",
+    "query": "Por favor, solo obtener los trabajos que citan 10.7777/route.gamma.",
+    "expected": "papers.citations",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-citations-es-04",
+    "query": "Lo que quiero aquí es obtener los trabajos que citan 10.7777/route.delta.",
+    "expected": "papers.citations",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-citations-es-05",
+    "query": "Gestiona esta tarea intentando obtener los trabajos que citan 10.7777/route.epsilon.",
+    "expected": "papers.citations",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-papers-citations-ja-01",
+    "query": "この依頼では10.7777/route.alphaを引用している研究を取得する。",
+    "expected": "papers.citations",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-citations-ja-02",
+    "query": "必要な操作は10.7777/route.betaを引用している研究を取得することです。",
+    "expected": "papers.citations",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-citations-ja-03",
+    "query": "他はせずに10.7777/route.gammaを引用している研究を取得する。",
+    "expected": "papers.citations",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-citations-ja-04",
+    "query": "ここで欲しいのは10.7777/route.deltaを引用している研究を取得することです。",
+    "expected": "papers.citations",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-citations-ja-05",
+    "query": "この作業は10.7777/route.epsilonを引用している研究を取得するように処理して。",
+    "expected": "papers.citations",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-papers-citations-de-01",
+    "query": "Bei dieser Anfrage bitte Arbeiten abrufen, die 10.7777/route.alpha zitieren.",
+    "expected": "papers.citations",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-citations-de-02",
+    "query": "Die genaue Aktion ist: Arbeiten abrufen, die 10.7777/route.beta zitieren.",
+    "expected": "papers.citations",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-citations-de-03",
+    "query": "Bitte nur Arbeiten abrufen, die 10.7777/route.gamma zitieren.",
+    "expected": "papers.citations",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-citations-de-04",
+    "query": "Hier möchte ich Arbeiten abrufen, die 10.7777/route.delta zitieren.",
+    "expected": "papers.citations",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-citations-de-05",
+    "query": "Bearbeite die Aufgabe, indem du Arbeiten abrufen, die 10.7777/route.epsilon zitieren.",
+    "expected": "papers.citations",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-papers-citations-mixed-01",
+    "query": "이번 request에서는 10.7777/route.alpha를 cite하는 works를 retrieve.",
+    "expected": "papers.citations",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-citations-mixed-02",
+    "query": "정확한 action은 10.7777/route.beta를 cite하는 works를 retrieve.",
+    "expected": "papers.citations",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-citations-mixed-03",
+    "query": "nothing else, 10.7777/route.gamma를 cite하는 works를 retrieve만.",
+    "expected": "papers.citations",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-citations-mixed-04",
+    "query": "여기서 want하는 건 10.7777/route.delta를 cite하는 works를 retrieve.",
+    "expected": "papers.citations",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-papers-citations-mixed-05",
+    "query": "이 task는 10.7777/route.epsilon를 cite하는 works를 retrieve 방식으로 handle해.",
+    "expected": "papers.citations",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-quote-en-01",
+    "query": "For this request, read the latest market quote for SAP.",
+    "expected": "finance.quote",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-quote-en-02",
+    "query": "The exact action I need is to read the latest market quote for ADBE.",
+    "expected": "finance.quote",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-quote-en-03",
+    "query": "Please only read the latest market quote for CRM.",
+    "expected": "finance.quote",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-quote-en-04",
+    "query": "What I want here is to read the latest market quote for SONY.",
+    "expected": "finance.quote",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-quote-en-05",
+    "query": "Handle this task by trying to read the latest market quote for ASML.",
+    "expected": "finance.quote",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-quote-ko-01",
+    "query": "이번 요청에서는 SAP의 최신 시장 가격을 조회.",
+    "expected": "finance.quote",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-quote-ko-02",
+    "query": "정확히 필요한 작업은 ADBE의 최신 시장 가격을 조회 하는 거야.",
+    "expected": "finance.quote",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-quote-ko-03",
+    "query": "다른 건 하지 말고 CRM의 최신 시장 가격을 조회.",
+    "expected": "finance.quote",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-quote-ko-04",
+    "query": "여기서 원하는 건 SONY의 최신 시장 가격을 조회 하는 거야.",
+    "expected": "finance.quote",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-quote-ko-05",
+    "query": "이 작업은 ASML의 최신 시장 가격을 조회 방식으로 처리해줘.",
+    "expected": "finance.quote",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-quote-es-01",
+    "query": "En esta solicitud, consultar la cotización de mercado más reciente de SAP.",
+    "expected": "finance.quote",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-quote-es-02",
+    "query": "La acción exacta que necesito es consultar la cotización de mercado más reciente de ADBE.",
+    "expected": "finance.quote",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-quote-es-03",
+    "query": "Por favor, solo consultar la cotización de mercado más reciente de CRM.",
+    "expected": "finance.quote",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-quote-es-04",
+    "query": "Lo que quiero aquí es consultar la cotización de mercado más reciente de SONY.",
+    "expected": "finance.quote",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-quote-es-05",
+    "query": "Gestiona esta tarea intentando consultar la cotización de mercado más reciente de ASML.",
+    "expected": "finance.quote",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-quote-ja-01",
+    "query": "この依頼ではSAPの最新の市場価格を確認する。",
+    "expected": "finance.quote",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-quote-ja-02",
+    "query": "必要な操作はADBEの最新の市場価格を確認することです。",
+    "expected": "finance.quote",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-quote-ja-03",
+    "query": "他はせずにCRMの最新の市場価格を確認する。",
+    "expected": "finance.quote",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-quote-ja-04",
+    "query": "ここで欲しいのはSONYの最新の市場価格を確認することです。",
+    "expected": "finance.quote",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-quote-ja-05",
+    "query": "この作業はASMLの最新の市場価格を確認するように処理して。",
+    "expected": "finance.quote",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-quote-de-01",
+    "query": "Bei dieser Anfrage bitte den neuesten Marktpreis von SAP abrufen.",
+    "expected": "finance.quote",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-quote-de-02",
+    "query": "Die genaue Aktion ist: den neuesten Marktpreis von ADBE abrufen.",
+    "expected": "finance.quote",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-quote-de-03",
+    "query": "Bitte nur den neuesten Marktpreis von CRM abrufen.",
+    "expected": "finance.quote",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-quote-de-04",
+    "query": "Hier möchte ich den neuesten Marktpreis von SONY abrufen.",
+    "expected": "finance.quote",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-quote-de-05",
+    "query": "Bearbeite die Aufgabe, indem du den neuesten Marktpreis von ASML abrufen.",
+    "expected": "finance.quote",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-quote-mixed-01",
+    "query": "이번 request에서는 SAP의 latest market quote를 read.",
+    "expected": "finance.quote",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-quote-mixed-02",
+    "query": "정확한 action은 ADBE의 latest market quote를 read.",
+    "expected": "finance.quote",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-quote-mixed-03",
+    "query": "nothing else, CRM의 latest market quote를 read만.",
+    "expected": "finance.quote",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-quote-mixed-04",
+    "query": "여기서 want하는 건 SONY의 latest market quote를 read.",
+    "expected": "finance.quote",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-quote-mixed-05",
+    "query": "이 task는 ASML의 latest market quote를 read 방식으로 handle해.",
+    "expected": "finance.quote",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-history-en-01",
+    "query": "For this request, retrieve the historical price series for SAP over 2 years.",
+    "expected": "finance.history",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-history-en-02",
+    "query": "The exact action I need is to retrieve the historical price series for ADBE since last June.",
+    "expected": "finance.history",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-history-en-03",
+    "query": "Please only retrieve the historical price series for CRM for 180 days.",
+    "expected": "finance.history",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-history-en-04",
+    "query": "What I want here is to retrieve the historical price series for SONY since 2023.",
+    "expected": "finance.history",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-history-en-05",
+    "query": "Handle this task by trying to retrieve the historical price series for ASML over 5 years.",
+    "expected": "finance.history",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-finance-history-ko-01",
+    "query": "이번 요청에서는 SAP over 2 years의 과거 가격 시계열을 조회.",
+    "expected": "finance.history",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-history-ko-02",
+    "query": "정확히 필요한 작업은 ADBE since last June의 과거 가격 시계열을 조회 하는 거야.",
+    "expected": "finance.history",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-history-ko-03",
+    "query": "다른 건 하지 말고 CRM for 180 days의 과거 가격 시계열을 조회.",
+    "expected": "finance.history",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-history-ko-04",
+    "query": "여기서 원하는 건 SONY since 2023의 과거 가격 시계열을 조회 하는 거야.",
+    "expected": "finance.history",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-history-ko-05",
+    "query": "이 작업은 ASML over 5 years의 과거 가격 시계열을 조회 방식으로 처리해줘.",
+    "expected": "finance.history",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-finance-history-es-01",
+    "query": "En esta solicitud, obtener la serie histórica de precios de SAP over 2 years.",
+    "expected": "finance.history",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-history-es-02",
+    "query": "La acción exacta que necesito es obtener la serie histórica de precios de ADBE since last June.",
+    "expected": "finance.history",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-history-es-03",
+    "query": "Por favor, solo obtener la serie histórica de precios de CRM for 180 days.",
+    "expected": "finance.history",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-history-es-04",
+    "query": "Lo que quiero aquí es obtener la serie histórica de precios de SONY since 2023.",
+    "expected": "finance.history",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-history-es-05",
+    "query": "Gestiona esta tarea intentando obtener la serie histórica de precios de ASML over 5 years.",
+    "expected": "finance.history",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-finance-history-ja-01",
+    "query": "この依頼ではSAP over 2 yearsの過去の価格推移を取得する。",
+    "expected": "finance.history",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-history-ja-02",
+    "query": "必要な操作はADBE since last Juneの過去の価格推移を取得することです。",
+    "expected": "finance.history",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-history-ja-03",
+    "query": "他はせずにCRM for 180 daysの過去の価格推移を取得する。",
+    "expected": "finance.history",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-history-ja-04",
+    "query": "ここで欲しいのはSONY since 2023の過去の価格推移を取得することです。",
+    "expected": "finance.history",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-history-ja-05",
+    "query": "この作業はASML over 5 yearsの過去の価格推移を取得するように処理して。",
+    "expected": "finance.history",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-finance-history-de-01",
+    "query": "Bei dieser Anfrage bitte die historische Kursreihe für SAP over 2 years abrufen.",
+    "expected": "finance.history",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-history-de-02",
+    "query": "Die genaue Aktion ist: die historische Kursreihe für ADBE since last June abrufen.",
+    "expected": "finance.history",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-history-de-03",
+    "query": "Bitte nur die historische Kursreihe für CRM for 180 days abrufen.",
+    "expected": "finance.history",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-history-de-04",
+    "query": "Hier möchte ich die historische Kursreihe für SONY since 2023 abrufen.",
+    "expected": "finance.history",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-history-de-05",
+    "query": "Bearbeite die Aufgabe, indem du die historische Kursreihe für ASML over 5 years abrufen.",
+    "expected": "finance.history",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-finance-history-mixed-01",
+    "query": "이번 request에서는 SAP over 2 years historical price series를 retrieve.",
+    "expected": "finance.history",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-history-mixed-02",
+    "query": "정확한 action은 ADBE since last June historical price series를 retrieve.",
+    "expected": "finance.history",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-history-mixed-03",
+    "query": "nothing else, CRM for 180 days historical price series를 retrieve만.",
+    "expected": "finance.history",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-history-mixed-04",
+    "query": "여기서 want하는 건 SONY since 2023 historical price series를 retrieve.",
+    "expected": "finance.history",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-finance-history-mixed-05",
+    "query": "이 task는 ASML over 5 years historical price series를 retrieve 방식으로 handle해.",
+    "expected": "finance.history",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-list-en-01",
+    "query": "For this request, show the events already scheduled for Thursday afternoon.",
+    "expected": "calendar.list",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-list-en-02",
+    "query": "The exact action I need is to show the events already scheduled for next Tuesday morning.",
+    "expected": "calendar.list",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-list-en-03",
+    "query": "Please only show the events already scheduled for the rest of the week.",
+    "expected": "calendar.list",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-list-en-04",
+    "query": "What I want here is to show the events already scheduled for November 3.",
+    "expected": "calendar.list",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-list-en-05",
+    "query": "Handle this task by trying to show the events already scheduled for next Friday.",
+    "expected": "calendar.list",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-list-ko-01",
+    "query": "이번 요청에서는 Thursday afternoon에 이미 등록된 일정을 조회.",
+    "expected": "calendar.list",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-list-ko-02",
+    "query": "정확히 필요한 작업은 next Tuesday morning에 이미 등록된 일정을 조회 하는 거야.",
+    "expected": "calendar.list",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-list-ko-03",
+    "query": "다른 건 하지 말고 the rest of the week에 이미 등록된 일정을 조회.",
+    "expected": "calendar.list",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-list-ko-04",
+    "query": "여기서 원하는 건 November 3에 이미 등록된 일정을 조회 하는 거야.",
+    "expected": "calendar.list",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-list-ko-05",
+    "query": "이 작업은 next Friday에 이미 등록된 일정을 조회 방식으로 처리해줘.",
+    "expected": "calendar.list",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-list-es-01",
+    "query": "En esta solicitud, mostrar los eventos ya programados para Thursday afternoon.",
+    "expected": "calendar.list",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-list-es-02",
+    "query": "La acción exacta que necesito es mostrar los eventos ya programados para next Tuesday morning.",
+    "expected": "calendar.list",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-list-es-03",
+    "query": "Por favor, solo mostrar los eventos ya programados para the rest of the week.",
+    "expected": "calendar.list",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-list-es-04",
+    "query": "Lo que quiero aquí es mostrar los eventos ya programados para November 3.",
+    "expected": "calendar.list",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-list-es-05",
+    "query": "Gestiona esta tarea intentando mostrar los eventos ya programados para next Friday.",
+    "expected": "calendar.list",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-list-ja-01",
+    "query": "この依頼ではThursday afternoonにすでに登録されている予定を表示する。",
+    "expected": "calendar.list",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-list-ja-02",
+    "query": "必要な操作はnext Tuesday morningにすでに登録されている予定を表示することです。",
+    "expected": "calendar.list",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-list-ja-03",
+    "query": "他はせずにthe rest of the weekにすでに登録されている予定を表示する。",
+    "expected": "calendar.list",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-list-ja-04",
+    "query": "ここで欲しいのはNovember 3にすでに登録されている予定を表示することです。",
+    "expected": "calendar.list",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-list-ja-05",
+    "query": "この作業はnext Fridayにすでに登録されている予定を表示するように処理して。",
+    "expected": "calendar.list",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-list-de-01",
+    "query": "Bei dieser Anfrage bitte die bereits geplanten Termine für Thursday afternoon anzeigen.",
+    "expected": "calendar.list",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-list-de-02",
+    "query": "Die genaue Aktion ist: die bereits geplanten Termine für next Tuesday morning anzeigen.",
+    "expected": "calendar.list",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-list-de-03",
+    "query": "Bitte nur die bereits geplanten Termine für the rest of the week anzeigen.",
+    "expected": "calendar.list",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-list-de-04",
+    "query": "Hier möchte ich die bereits geplanten Termine für November 3 anzeigen.",
+    "expected": "calendar.list",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-list-de-05",
+    "query": "Bearbeite die Aufgabe, indem du die bereits geplanten Termine für next Friday anzeigen.",
+    "expected": "calendar.list",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-list-mixed-01",
+    "query": "이번 request에서는 Thursday afternoon에 already scheduled events를 show.",
+    "expected": "calendar.list",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-list-mixed-02",
+    "query": "정확한 action은 next Tuesday morning에 already scheduled events를 show.",
+    "expected": "calendar.list",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-list-mixed-03",
+    "query": "nothing else, the rest of the week에 already scheduled events를 show만.",
+    "expected": "calendar.list",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-list-mixed-04",
+    "query": "여기서 want하는 건 November 3에 already scheduled events를 show.",
+    "expected": "calendar.list",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-list-mixed-05",
+    "query": "이 task는 next Friday에 already scheduled events를 show 방식으로 handle해.",
+    "expected": "calendar.list",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-create-en-01",
+    "query": "For this request, schedule a new calendar event for design review at 2 PM.",
+    "expected": "calendar.create",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-create-en-02",
+    "query": "The exact action I need is to schedule a new calendar event for customer call tomorrow at 11.",
+    "expected": "calendar.create",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-create-en-03",
+    "query": "Please only schedule a new calendar event for team retro Monday at 4.",
+    "expected": "calendar.create",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-create-en-04",
+    "query": "What I want here is to schedule a new calendar event for lab review Friday at 10.",
+    "expected": "calendar.create",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-create-en-05",
+    "query": "Handle this task by trying to schedule a new calendar event for planning session next Wednesday at 3.",
+    "expected": "calendar.create",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-calendar-create-ko-01",
+    "query": "이번 요청에서는 design review at 2 PM 새 일정을 캘린더에 생성.",
+    "expected": "calendar.create",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-create-ko-02",
+    "query": "정확히 필요한 작업은 customer call tomorrow at 11 새 일정을 캘린더에 생성 하는 거야.",
+    "expected": "calendar.create",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-create-ko-03",
+    "query": "다른 건 하지 말고 team retro Monday at 4 새 일정을 캘린더에 생성.",
+    "expected": "calendar.create",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-create-ko-04",
+    "query": "여기서 원하는 건 lab review Friday at 10 새 일정을 캘린더에 생성 하는 거야.",
+    "expected": "calendar.create",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-create-ko-05",
+    "query": "이 작업은 planning session next Wednesday at 3 새 일정을 캘린더에 생성 방식으로 처리해줘.",
+    "expected": "calendar.create",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-calendar-create-es-01",
+    "query": "En esta solicitud, programar un nuevo evento de calendario para design review at 2 PM.",
+    "expected": "calendar.create",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-create-es-02",
+    "query": "La acción exacta que necesito es programar un nuevo evento de calendario para customer call tomorrow at 11.",
+    "expected": "calendar.create",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-create-es-03",
+    "query": "Por favor, solo programar un nuevo evento de calendario para team retro Monday at 4.",
+    "expected": "calendar.create",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-create-es-04",
+    "query": "Lo que quiero aquí es programar un nuevo evento de calendario para lab review Friday at 10.",
+    "expected": "calendar.create",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-create-es-05",
+    "query": "Gestiona esta tarea intentando programar un nuevo evento de calendario para planning session next Wednesday at 3.",
+    "expected": "calendar.create",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-calendar-create-ja-01",
+    "query": "この依頼ではdesign review at 2 PMの新しい予定をカレンダーに作成する。",
+    "expected": "calendar.create",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-create-ja-02",
+    "query": "必要な操作はcustomer call tomorrow at 11の新しい予定をカレンダーに作成することです。",
+    "expected": "calendar.create",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-create-ja-03",
+    "query": "他はせずにteam retro Monday at 4の新しい予定をカレンダーに作成する。",
+    "expected": "calendar.create",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-create-ja-04",
+    "query": "ここで欲しいのはlab review Friday at 10の新しい予定をカレンダーに作成することです。",
+    "expected": "calendar.create",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-create-ja-05",
+    "query": "この作業はplanning session next Wednesday at 3の新しい予定をカレンダーに作成するように処理して。",
+    "expected": "calendar.create",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-calendar-create-de-01",
+    "query": "Bei dieser Anfrage bitte einen neuen Kalendereintrag für design review at 2 PM erstellen.",
+    "expected": "calendar.create",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-create-de-02",
+    "query": "Die genaue Aktion ist: einen neuen Kalendereintrag für customer call tomorrow at 11 erstellen.",
+    "expected": "calendar.create",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-create-de-03",
+    "query": "Bitte nur einen neuen Kalendereintrag für team retro Monday at 4 erstellen.",
+    "expected": "calendar.create",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-create-de-04",
+    "query": "Hier möchte ich einen neuen Kalendereintrag für lab review Friday at 10 erstellen.",
+    "expected": "calendar.create",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-create-de-05",
+    "query": "Bearbeite die Aufgabe, indem du einen neuen Kalendereintrag für planning session next Wednesday at 3 erstellen.",
+    "expected": "calendar.create",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-calendar-create-mixed-01",
+    "query": "이번 request에서는 design review at 2 PM new calendar event를 schedule.",
+    "expected": "calendar.create",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-create-mixed-02",
+    "query": "정확한 action은 customer call tomorrow at 11 new calendar event를 schedule.",
+    "expected": "calendar.create",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-create-mixed-03",
+    "query": "nothing else, team retro Monday at 4 new calendar event를 schedule만.",
+    "expected": "calendar.create",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-create-mixed-04",
+    "query": "여기서 want하는 건 lab review Friday at 10 new calendar event를 schedule.",
+    "expected": "calendar.create",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-calendar-create-mixed-05",
+    "query": "이 task는 planning session next Wednesday at 3 new calendar event를 schedule 방식으로 handle해.",
+    "expected": "calendar.create",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-search-en-01",
+    "query": "For this request, find support guidance about OAuth setup.",
+    "expected": "support.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-search-en-02",
+    "query": "The exact action I need is to find support guidance about billing cycle policy.",
+    "expected": "support.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-search-en-03",
+    "query": "Please only find support guidance about webhook retries.",
+    "expected": "support.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-search-en-04",
+    "query": "What I want here is to find support guidance about login recovery.",
+    "expected": "support.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-search-en-05",
+    "query": "Handle this task by trying to find support guidance about API quota.",
+    "expected": "support.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-search-ko-01",
+    "query": "이번 요청에서는 OAuth setup 관련 고객지원 안내를 검색.",
+    "expected": "support.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-search-ko-02",
+    "query": "정확히 필요한 작업은 billing cycle policy 관련 고객지원 안내를 검색 하는 거야.",
+    "expected": "support.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-search-ko-03",
+    "query": "다른 건 하지 말고 webhook retries 관련 고객지원 안내를 검색.",
+    "expected": "support.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-search-ko-04",
+    "query": "여기서 원하는 건 login recovery 관련 고객지원 안내를 검색 하는 거야.",
+    "expected": "support.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-search-ko-05",
+    "query": "이 작업은 API quota 관련 고객지원 안내를 검색 방식으로 처리해줘.",
+    "expected": "support.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-search-es-01",
+    "query": "En esta solicitud, buscar orientación de soporte sobre OAuth setup.",
+    "expected": "support.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-search-es-02",
+    "query": "La acción exacta que necesito es buscar orientación de soporte sobre billing cycle policy.",
+    "expected": "support.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-search-es-03",
+    "query": "Por favor, solo buscar orientación de soporte sobre webhook retries.",
+    "expected": "support.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-search-es-04",
+    "query": "Lo que quiero aquí es buscar orientación de soporte sobre login recovery.",
+    "expected": "support.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-search-es-05",
+    "query": "Gestiona esta tarea intentando buscar orientación de soporte sobre API quota.",
+    "expected": "support.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-search-ja-01",
+    "query": "この依頼ではOAuth setupに関するサポート案内を検索する。",
+    "expected": "support.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-search-ja-02",
+    "query": "必要な操作はbilling cycle policyに関するサポート案内を検索することです。",
+    "expected": "support.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-search-ja-03",
+    "query": "他はせずにwebhook retriesに関するサポート案内を検索する。",
+    "expected": "support.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-search-ja-04",
+    "query": "ここで欲しいのはlogin recoveryに関するサポート案内を検索することです。",
+    "expected": "support.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-search-ja-05",
+    "query": "この作業はAPI quotaに関するサポート案内を検索するように処理して。",
+    "expected": "support.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-search-de-01",
+    "query": "Bei dieser Anfrage bitte Support-Hinweise zu OAuth setup finden.",
+    "expected": "support.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-search-de-02",
+    "query": "Die genaue Aktion ist: Support-Hinweise zu billing cycle policy finden.",
+    "expected": "support.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-search-de-03",
+    "query": "Bitte nur Support-Hinweise zu webhook retries finden.",
+    "expected": "support.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-search-de-04",
+    "query": "Hier möchte ich Support-Hinweise zu login recovery finden.",
+    "expected": "support.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-search-de-05",
+    "query": "Bearbeite die Aufgabe, indem du Support-Hinweise zu API quota finden.",
+    "expected": "support.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-search-mixed-01",
+    "query": "이번 request에서는 OAuth setup 관련 support guidance를 find.",
+    "expected": "support.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-search-mixed-02",
+    "query": "정확한 action은 billing cycle policy 관련 support guidance를 find.",
+    "expected": "support.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-search-mixed-03",
+    "query": "nothing else, webhook retries 관련 support guidance를 find만.",
+    "expected": "support.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-search-mixed-04",
+    "query": "여기서 want하는 건 login recovery 관련 support guidance를 find.",
+    "expected": "support.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-search-mixed-05",
+    "query": "이 task는 API quota 관련 support guidance를 find 방식으로 handle해.",
+    "expected": "support.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-create-ticket-en-01",
+    "query": "For this request, file a support case because OAuth login fails.",
+    "expected": "support.create_ticket",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-create-ticket-en-02",
+    "query": "The exact action I need is to file a support case because billing date is wrong.",
+    "expected": "support.create_ticket",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-create-ticket-en-03",
+    "query": "Please only file a support case because webhooks arrive late.",
+    "expected": "support.create_ticket",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-create-ticket-en-04",
+    "query": "What I want here is to file a support case because recovery code is missing.",
+    "expected": "support.create_ticket",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-create-ticket-en-05",
+    "query": "Handle this task by trying to file a support case because API quota is incorrect.",
+    "expected": "support.create_ticket",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-support-create-ticket-ko-01",
+    "query": "이번 요청에서는 OAuth login fails 문제 때문에 고객지원 티켓을 접수.",
+    "expected": "support.create_ticket",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-create-ticket-ko-02",
+    "query": "정확히 필요한 작업은 billing date is wrong 문제 때문에 고객지원 티켓을 접수 하는 거야.",
+    "expected": "support.create_ticket",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-create-ticket-ko-03",
+    "query": "다른 건 하지 말고 webhooks arrive late 문제 때문에 고객지원 티켓을 접수.",
+    "expected": "support.create_ticket",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-create-ticket-ko-04",
+    "query": "여기서 원하는 건 recovery code is missing 문제 때문에 고객지원 티켓을 접수 하는 거야.",
+    "expected": "support.create_ticket",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-create-ticket-ko-05",
+    "query": "이 작업은 API quota is incorrect 문제 때문에 고객지원 티켓을 접수 방식으로 처리해줘.",
+    "expected": "support.create_ticket",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-support-create-ticket-es-01",
+    "query": "En esta solicitud, abrir un caso de soporte porque OAuth login fails.",
+    "expected": "support.create_ticket",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-create-ticket-es-02",
+    "query": "La acción exacta que necesito es abrir un caso de soporte porque billing date is wrong.",
+    "expected": "support.create_ticket",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-create-ticket-es-03",
+    "query": "Por favor, solo abrir un caso de soporte porque webhooks arrive late.",
+    "expected": "support.create_ticket",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-create-ticket-es-04",
+    "query": "Lo que quiero aquí es abrir un caso de soporte porque recovery code is missing.",
+    "expected": "support.create_ticket",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-create-ticket-es-05",
+    "query": "Gestiona esta tarea intentando abrir un caso de soporte porque API quota is incorrect.",
+    "expected": "support.create_ticket",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-support-create-ticket-ja-01",
+    "query": "この依頼ではOAuth login failsの問題でサポートケースを作成する。",
+    "expected": "support.create_ticket",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-create-ticket-ja-02",
+    "query": "必要な操作はbilling date is wrongの問題でサポートケースを作成することです。",
+    "expected": "support.create_ticket",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-create-ticket-ja-03",
+    "query": "他はせずにwebhooks arrive lateの問題でサポートケースを作成する。",
+    "expected": "support.create_ticket",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-create-ticket-ja-04",
+    "query": "ここで欲しいのはrecovery code is missingの問題でサポートケースを作成することです。",
+    "expected": "support.create_ticket",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-create-ticket-ja-05",
+    "query": "この作業はAPI quota is incorrectの問題でサポートケースを作成するように処理して。",
+    "expected": "support.create_ticket",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-support-create-ticket-de-01",
+    "query": "Bei dieser Anfrage bitte einen Support-Fall eröffnen, weil OAuth login fails.",
+    "expected": "support.create_ticket",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-create-ticket-de-02",
+    "query": "Die genaue Aktion ist: einen Support-Fall eröffnen, weil billing date is wrong.",
+    "expected": "support.create_ticket",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-create-ticket-de-03",
+    "query": "Bitte nur einen Support-Fall eröffnen, weil webhooks arrive late.",
+    "expected": "support.create_ticket",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-create-ticket-de-04",
+    "query": "Hier möchte ich einen Support-Fall eröffnen, weil recovery code is missing.",
+    "expected": "support.create_ticket",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-create-ticket-de-05",
+    "query": "Bearbeite die Aufgabe, indem du einen Support-Fall eröffnen, weil API quota is incorrect.",
+    "expected": "support.create_ticket",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-support-create-ticket-mixed-01",
+    "query": "이번 request에서는 OAuth login fails 문제로 support case를 file.",
+    "expected": "support.create_ticket",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-create-ticket-mixed-02",
+    "query": "정확한 action은 billing date is wrong 문제로 support case를 file.",
+    "expected": "support.create_ticket",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-create-ticket-mixed-03",
+    "query": "nothing else, webhooks arrive late 문제로 support case를 file만.",
+    "expected": "support.create_ticket",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-create-ticket-mixed-04",
+    "query": "여기서 want하는 건 recovery code is missing 문제로 support case를 file.",
+    "expected": "support.create_ticket",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-support-create-ticket-mixed-05",
+    "query": "이 task는 API quota is incorrect 문제로 support case를 file 방식으로 handle해.",
+    "expected": "support.create_ticket",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-search-en-01",
+    "query": "For this request, read the current stock level for PART-A17.",
+    "expected": "inventory.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-search-en-02",
+    "query": "The exact action I need is to read the current stock level for PART-B28.",
+    "expected": "inventory.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-search-en-03",
+    "query": "Please only read the current stock level for PART-C39.",
+    "expected": "inventory.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-search-en-04",
+    "query": "What I want here is to read the current stock level for PART-D40.",
+    "expected": "inventory.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-search-en-05",
+    "query": "Handle this task by trying to read the current stock level for PART-E51.",
+    "expected": "inventory.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-search-ko-01",
+    "query": "이번 요청에서는 PART-A17의 현재 재고 수량을 조회.",
+    "expected": "inventory.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-search-ko-02",
+    "query": "정확히 필요한 작업은 PART-B28의 현재 재고 수량을 조회 하는 거야.",
+    "expected": "inventory.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-search-ko-03",
+    "query": "다른 건 하지 말고 PART-C39의 현재 재고 수량을 조회.",
+    "expected": "inventory.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-search-ko-04",
+    "query": "여기서 원하는 건 PART-D40의 현재 재고 수량을 조회 하는 거야.",
+    "expected": "inventory.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-search-ko-05",
+    "query": "이 작업은 PART-E51의 현재 재고 수량을 조회 방식으로 처리해줘.",
+    "expected": "inventory.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-search-es-01",
+    "query": "En esta solicitud, consultar el nivel actual de existencias de PART-A17.",
+    "expected": "inventory.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-search-es-02",
+    "query": "La acción exacta que necesito es consultar el nivel actual de existencias de PART-B28.",
+    "expected": "inventory.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-search-es-03",
+    "query": "Por favor, solo consultar el nivel actual de existencias de PART-C39.",
+    "expected": "inventory.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-search-es-04",
+    "query": "Lo que quiero aquí es consultar el nivel actual de existencias de PART-D40.",
+    "expected": "inventory.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-search-es-05",
+    "query": "Gestiona esta tarea intentando consultar el nivel actual de existencias de PART-E51.",
+    "expected": "inventory.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-search-ja-01",
+    "query": "この依頼ではPART-A17の現在の在庫数を確認する。",
+    "expected": "inventory.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-search-ja-02",
+    "query": "必要な操作はPART-B28の現在の在庫数を確認することです。",
+    "expected": "inventory.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-search-ja-03",
+    "query": "他はせずにPART-C39の現在の在庫数を確認する。",
+    "expected": "inventory.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-search-ja-04",
+    "query": "ここで欲しいのはPART-D40の現在の在庫数を確認することです。",
+    "expected": "inventory.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-search-ja-05",
+    "query": "この作業はPART-E51の現在の在庫数を確認するように処理して。",
+    "expected": "inventory.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-search-de-01",
+    "query": "Bei dieser Anfrage bitte den aktuellen Lagerbestand für PART-A17 abfragen.",
+    "expected": "inventory.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-search-de-02",
+    "query": "Die genaue Aktion ist: den aktuellen Lagerbestand für PART-B28 abfragen.",
+    "expected": "inventory.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-search-de-03",
+    "query": "Bitte nur den aktuellen Lagerbestand für PART-C39 abfragen.",
+    "expected": "inventory.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-search-de-04",
+    "query": "Hier möchte ich den aktuellen Lagerbestand für PART-D40 abfragen.",
+    "expected": "inventory.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-search-de-05",
+    "query": "Bearbeite die Aufgabe, indem du den aktuellen Lagerbestand für PART-E51 abfragen.",
+    "expected": "inventory.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-search-mixed-01",
+    "query": "이번 request에서는 PART-A17 current stock level을 read.",
+    "expected": "inventory.search",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-search-mixed-02",
+    "query": "정확한 action은 PART-B28 current stock level을 read.",
+    "expected": "inventory.search",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-search-mixed-03",
+    "query": "nothing else, PART-C39 current stock level을 read만.",
+    "expected": "inventory.search",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-search-mixed-04",
+    "query": "여기서 want하는 건 PART-D40 current stock level을 read.",
+    "expected": "inventory.search",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-search-mixed-05",
+    "query": "이 task는 PART-E51 current stock level을 read 방식으로 handle해.",
+    "expected": "inventory.search",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-update-en-01",
+    "query": "For this request, set the stock quantity for PART-A17 to 14.",
+    "expected": "inventory.update",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-update-en-02",
+    "query": "The exact action I need is to set the stock quantity for PART-B28 to 6.",
+    "expected": "inventory.update",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-update-en-03",
+    "query": "Please only set the stock quantity for PART-C39 to 27.",
+    "expected": "inventory.update",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-update-en-04",
+    "query": "What I want here is to set the stock quantity for PART-D40 to 1.",
+    "expected": "inventory.update",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-update-en-05",
+    "query": "Handle this task by trying to set the stock quantity for PART-E51 to 42.",
+    "expected": "inventory.update",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-inventory-update-ko-01",
+    "query": "이번 요청에서는 재고 수량을 PART-A17 to 14로 변경.",
+    "expected": "inventory.update",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-update-ko-02",
+    "query": "정확히 필요한 작업은 재고 수량을 PART-B28 to 6로 변경 하는 거야.",
+    "expected": "inventory.update",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-update-ko-03",
+    "query": "다른 건 하지 말고 재고 수량을 PART-C39 to 27로 변경.",
+    "expected": "inventory.update",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-update-ko-04",
+    "query": "여기서 원하는 건 재고 수량을 PART-D40 to 1로 변경 하는 거야.",
+    "expected": "inventory.update",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-update-ko-05",
+    "query": "이 작업은 재고 수량을 PART-E51 to 42로 변경 방식으로 처리해줘.",
+    "expected": "inventory.update",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-inventory-update-es-01",
+    "query": "En esta solicitud, establecer la cantidad de existencias de PART-A17 to 14.",
+    "expected": "inventory.update",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-update-es-02",
+    "query": "La acción exacta que necesito es establecer la cantidad de existencias de PART-B28 to 6.",
+    "expected": "inventory.update",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-update-es-03",
+    "query": "Por favor, solo establecer la cantidad de existencias de PART-C39 to 27.",
+    "expected": "inventory.update",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-update-es-04",
+    "query": "Lo que quiero aquí es establecer la cantidad de existencias de PART-D40 to 1.",
+    "expected": "inventory.update",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-update-es-05",
+    "query": "Gestiona esta tarea intentando establecer la cantidad de existencias de PART-E51 to 42.",
+    "expected": "inventory.update",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-inventory-update-ja-01",
+    "query": "この依頼では在庫数量をPART-A17 to 14に変更する。",
+    "expected": "inventory.update",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-update-ja-02",
+    "query": "必要な操作は在庫数量をPART-B28 to 6に変更することです。",
+    "expected": "inventory.update",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-update-ja-03",
+    "query": "他はせずに在庫数量をPART-C39 to 27に変更する。",
+    "expected": "inventory.update",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-update-ja-04",
+    "query": "ここで欲しいのは在庫数量をPART-D40 to 1に変更することです。",
+    "expected": "inventory.update",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-update-ja-05",
+    "query": "この作業は在庫数量をPART-E51 to 42に変更するように処理して。",
+    "expected": "inventory.update",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-inventory-update-de-01",
+    "query": "Bei dieser Anfrage bitte den Lagerbestand für PART-A17 to 14 setzen.",
+    "expected": "inventory.update",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-update-de-02",
+    "query": "Die genaue Aktion ist: den Lagerbestand für PART-B28 to 6 setzen.",
+    "expected": "inventory.update",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-update-de-03",
+    "query": "Bitte nur den Lagerbestand für PART-C39 to 27 setzen.",
+    "expected": "inventory.update",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-update-de-04",
+    "query": "Hier möchte ich den Lagerbestand für PART-D40 to 1 setzen.",
+    "expected": "inventory.update",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-update-de-05",
+    "query": "Bearbeite die Aufgabe, indem du den Lagerbestand für PART-E51 to 42 setzen.",
+    "expected": "inventory.update",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-inventory-update-mixed-01",
+    "query": "이번 request에서는 stock quantity를 PART-A17 to 14로 set.",
+    "expected": "inventory.update",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-update-mixed-02",
+    "query": "정확한 action은 stock quantity를 PART-B28 to 6로 set.",
+    "expected": "inventory.update",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-update-mixed-03",
+    "query": "nothing else, stock quantity를 PART-C39 to 27로 set만.",
+    "expected": "inventory.update",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-update-mixed-04",
+    "query": "여기서 want하는 건 stock quantity를 PART-D40 to 1로 set.",
+    "expected": "inventory.update",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-inventory-update-mixed-05",
+    "query": "이 task는 stock quantity를 PART-E51 to 42로 set 방식으로 handle해.",
+    "expected": "inventory.update",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-lookup-en-01",
+    "query": "For this request, fetch the user account details for user 515.",
+    "expected": "users.lookup",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-lookup-en-02",
+    "query": "The exact action I need is to fetch the user account details for park@example.org.",
+    "expected": "users.lookup",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-lookup-en-03",
+    "query": "Please only fetch the user account details for Elena García.",
+    "expected": "users.lookup",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-lookup-en-04",
+    "query": "What I want here is to fetch the user account details for account 2048.",
+    "expected": "users.lookup",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-lookup-en-05",
+    "query": "Handle this task by trying to fetch the user account details for Taro Suzuki.",
+    "expected": "users.lookup",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-lookup-ko-01",
+    "query": "이번 요청에서는 user 515의 사용자 계정 정보를 조회.",
+    "expected": "users.lookup",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-lookup-ko-02",
+    "query": "정확히 필요한 작업은 park@example.org의 사용자 계정 정보를 조회 하는 거야.",
+    "expected": "users.lookup",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-lookup-ko-03",
+    "query": "다른 건 하지 말고 Elena García의 사용자 계정 정보를 조회.",
+    "expected": "users.lookup",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-lookup-ko-04",
+    "query": "여기서 원하는 건 account 2048의 사용자 계정 정보를 조회 하는 거야.",
+    "expected": "users.lookup",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-lookup-ko-05",
+    "query": "이 작업은 Taro Suzuki의 사용자 계정 정보를 조회 방식으로 처리해줘.",
+    "expected": "users.lookup",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-lookup-es-01",
+    "query": "En esta solicitud, obtener los datos de la cuenta de usuario de user 515.",
+    "expected": "users.lookup",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-lookup-es-02",
+    "query": "La acción exacta que necesito es obtener los datos de la cuenta de usuario de park@example.org.",
+    "expected": "users.lookup",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-lookup-es-03",
+    "query": "Por favor, solo obtener los datos de la cuenta de usuario de Elena García.",
+    "expected": "users.lookup",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-lookup-es-04",
+    "query": "Lo que quiero aquí es obtener los datos de la cuenta de usuario de account 2048.",
+    "expected": "users.lookup",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-lookup-es-05",
+    "query": "Gestiona esta tarea intentando obtener los datos de la cuenta de usuario de Taro Suzuki.",
+    "expected": "users.lookup",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-lookup-ja-01",
+    "query": "この依頼ではuser 515のユーザーアカウント情報を取得する。",
+    "expected": "users.lookup",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-lookup-ja-02",
+    "query": "必要な操作はpark@example.orgのユーザーアカウント情報を取得することです。",
+    "expected": "users.lookup",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-lookup-ja-03",
+    "query": "他はせずにElena Garcíaのユーザーアカウント情報を取得する。",
+    "expected": "users.lookup",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-lookup-ja-04",
+    "query": "ここで欲しいのはaccount 2048のユーザーアカウント情報を取得することです。",
+    "expected": "users.lookup",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-lookup-ja-05",
+    "query": "この作業はTaro Suzukiのユーザーアカウント情報を取得するように処理して。",
+    "expected": "users.lookup",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-lookup-de-01",
+    "query": "Bei dieser Anfrage bitte die Benutzerkontodaten für user 515 abrufen.",
+    "expected": "users.lookup",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-lookup-de-02",
+    "query": "Die genaue Aktion ist: die Benutzerkontodaten für park@example.org abrufen.",
+    "expected": "users.lookup",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-lookup-de-03",
+    "query": "Bitte nur die Benutzerkontodaten für Elena García abrufen.",
+    "expected": "users.lookup",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-lookup-de-04",
+    "query": "Hier möchte ich die Benutzerkontodaten für account 2048 abrufen.",
+    "expected": "users.lookup",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-lookup-de-05",
+    "query": "Bearbeite die Aufgabe, indem du die Benutzerkontodaten für Taro Suzuki abrufen.",
+    "expected": "users.lookup",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-lookup-mixed-01",
+    "query": "이번 request에서는 user 515 user account details를 fetch.",
+    "expected": "users.lookup",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-lookup-mixed-02",
+    "query": "정확한 action은 park@example.org user account details를 fetch.",
+    "expected": "users.lookup",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-lookup-mixed-03",
+    "query": "nothing else, Elena García user account details를 fetch만.",
+    "expected": "users.lookup",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-lookup-mixed-04",
+    "query": "여기서 want하는 건 account 2048 user account details를 fetch.",
+    "expected": "users.lookup",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-lookup-mixed-05",
+    "query": "이 task는 Taro Suzuki user account details를 fetch 방식으로 handle해.",
+    "expected": "users.lookup",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-update-en-01",
+    "query": "For this request, modify the user profile attribute for user 515 locale.",
+    "expected": "users.update",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-update-en-02",
+    "query": "The exact action I need is to modify the user profile attribute for park@example.org job title.",
+    "expected": "users.update",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-update-en-03",
+    "query": "Please only modify the user profile attribute for Elena García department.",
+    "expected": "users.update",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-update-en-04",
+    "query": "What I want here is to modify the user profile attribute for account 2048 timezone.",
+    "expected": "users.update",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-update-en-05",
+    "query": "Handle this task by trying to modify the user profile attribute for Taro Suzuki display name.",
+    "expected": "users.update",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-users-update-ko-01",
+    "query": "이번 요청에서는 user 515 locale의 사용자 프로필 속성을 수정.",
+    "expected": "users.update",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-update-ko-02",
+    "query": "정확히 필요한 작업은 park@example.org job title의 사용자 프로필 속성을 수정 하는 거야.",
+    "expected": "users.update",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-update-ko-03",
+    "query": "다른 건 하지 말고 Elena García department의 사용자 프로필 속성을 수정.",
+    "expected": "users.update",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-update-ko-04",
+    "query": "여기서 원하는 건 account 2048 timezone의 사용자 프로필 속성을 수정 하는 거야.",
+    "expected": "users.update",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-update-ko-05",
+    "query": "이 작업은 Taro Suzuki display name의 사용자 프로필 속성을 수정 방식으로 처리해줘.",
+    "expected": "users.update",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-users-update-es-01",
+    "query": "En esta solicitud, modificar el atributo del perfil de usuario de user 515 locale.",
+    "expected": "users.update",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-update-es-02",
+    "query": "La acción exacta que necesito es modificar el atributo del perfil de usuario de park@example.org job title.",
+    "expected": "users.update",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-update-es-03",
+    "query": "Por favor, solo modificar el atributo del perfil de usuario de Elena García department.",
+    "expected": "users.update",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-update-es-04",
+    "query": "Lo que quiero aquí es modificar el atributo del perfil de usuario de account 2048 timezone.",
+    "expected": "users.update",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-update-es-05",
+    "query": "Gestiona esta tarea intentando modificar el atributo del perfil de usuario de Taro Suzuki display name.",
+    "expected": "users.update",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-users-update-ja-01",
+    "query": "この依頼ではuser 515 localeのユーザープロフィール属性を変更する。",
+    "expected": "users.update",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-update-ja-02",
+    "query": "必要な操作はpark@example.org job titleのユーザープロフィール属性を変更することです。",
+    "expected": "users.update",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-update-ja-03",
+    "query": "他はせずにElena García departmentのユーザープロフィール属性を変更する。",
+    "expected": "users.update",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-update-ja-04",
+    "query": "ここで欲しいのはaccount 2048 timezoneのユーザープロフィール属性を変更することです。",
+    "expected": "users.update",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-update-ja-05",
+    "query": "この作業はTaro Suzuki display nameのユーザープロフィール属性を変更するように処理して。",
+    "expected": "users.update",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-users-update-de-01",
+    "query": "Bei dieser Anfrage bitte das Benutzerprofilattribut für user 515 locale ändern.",
+    "expected": "users.update",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-update-de-02",
+    "query": "Die genaue Aktion ist: das Benutzerprofilattribut für park@example.org job title ändern.",
+    "expected": "users.update",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-update-de-03",
+    "query": "Bitte nur das Benutzerprofilattribut für Elena García department ändern.",
+    "expected": "users.update",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-update-de-04",
+    "query": "Hier möchte ich das Benutzerprofilattribut für account 2048 timezone ändern.",
+    "expected": "users.update",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-update-de-05",
+    "query": "Bearbeite die Aufgabe, indem du das Benutzerprofilattribut für Taro Suzuki display name ändern.",
+    "expected": "users.update",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-users-update-mixed-01",
+    "query": "이번 request에서는 user 515 locale user profile attribute를 modify.",
+    "expected": "users.update",
+    "category": "operation_direct",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-update-mixed-02",
+    "query": "정확한 action은 park@example.org job title user profile attribute를 modify.",
+    "expected": "users.update",
+    "category": "operation_explicit",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-update-mixed-03",
+    "query": "nothing else, Elena García department user profile attribute를 modify만.",
+    "expected": "users.update",
+    "category": "operation_only",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-update-mixed-04",
+    "query": "여기서 want하는 건 account 2048 timezone user profile attribute를 modify.",
+    "expected": "users.update",
+    "category": "operation_indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-users-update-mixed-05",
+    "query": "이 task는 Taro Suzuki display name user profile attribute를 modify 방식으로 handle해.",
+    "expected": "users.update",
+    "category": "operation_production",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-en-01",
+    "query": "For this request, subscribe to push notifications for severe weather.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-02",
+    "query": "The exact action I need is to retrieve archived weather observations from 1999.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-03",
+    "query": "Please only predict a new material property with a simulation.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-04",
+    "query": "What I want here is to generate a laboratory synthesis procedure.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-05",
+    "query": "Handle this task by trying to download the full-text PDF of an article.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-06",
+    "query": "For this request, withdraw or retract a published paper.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-07",
+    "query": "The exact action I need is to place a market buy order for SAP.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-08",
+    "query": "Please only rebalance an investment portfolio.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-09",
+    "query": "What I want here is to delete an existing calendar event.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-10",
+    "query": "Handle this task by trying to respond yes to a calendar invitation.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-11",
+    "query": "For this request, close an existing support ticket.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-12",
+    "query": "The exact action I need is to issue a customer refund.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-13",
+    "query": "Please only move inventory between two warehouses.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-14",
+    "query": "What I want here is to reserve stock for an order.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-15",
+    "query": "Handle this task by trying to delete a user account.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-16",
+    "query": "For this request, reset a user's password.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-17",
+    "query": "The exact action I need is to send an email to a colleague.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-18",
+    "query": "Please only translate a document into Italian.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-19",
+    "query": "What I want here is to generate an image of a crystal.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-en-20",
+    "query": "Handle this task by trying to book a hotel room.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v4-no-route-ko-01",
+    "query": "이번 요청에서는 기상 특보 푸시 알림을 구독.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-02",
+    "query": "정확히 필요한 작업은 1999년의 과거 기상 관측값을 조회 하는 거야.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-03",
+    "query": "다른 건 하지 말고 시뮬레이션으로 새로운 재료 물성을 예측.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-04",
+    "query": "여기서 원하는 건 실험실 합성 절차를 생성 하는 거야.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-05",
+    "query": "이 작업은 논문 원문 PDF를 다운로드 방식으로 처리해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-06",
+    "query": "이번 요청에서는 출판된 논문을 철회.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-07",
+    "query": "정확히 필요한 작업은 SAP 주식 매수 주문을 실행 하는 거야.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-08",
+    "query": "다른 건 하지 말고 투자 포트폴리오를 리밸런싱.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-09",
+    "query": "여기서 원하는 건 기존 캘린더 일정을 삭제 하는 거야.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-10",
+    "query": "이 작업은 캘린더 초대에 참석으로 응답 방식으로 처리해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-11",
+    "query": "이번 요청에서는 기존 고객지원 티켓을 종료.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-12",
+    "query": "정확히 필요한 작업은 고객 환불을 실행 하는 거야.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-13",
+    "query": "다른 건 하지 말고 두 창고 사이에 재고를 이동.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-14",
+    "query": "여기서 원하는 건 주문용 재고를 예약 하는 거야.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-15",
+    "query": "이 작업은 사용자 계정을 삭제 방식으로 처리해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-16",
+    "query": "이번 요청에서는 사용자 비밀번호를 재설정.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-17",
+    "query": "정확히 필요한 작업은 동료에게 이메일을 발송 하는 거야.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-18",
+    "query": "다른 건 하지 말고 문서를 이탈리아어로 번역.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-19",
+    "query": "여기서 원하는 건 결정 구조 이미지를 생성 하는 거야.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-ko-20",
+    "query": "이 작업은 호텔 객실을 예약 방식으로 처리해줘.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v4-no-route-es-01",
+    "query": "En esta solicitud, suscribirme a notificaciones push de clima severo.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-02",
+    "query": "La acción exacta que necesito es consultar observaciones meteorológicas archivadas de 1999.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-03",
+    "query": "Por favor, solo predecir una propiedad nueva de material mediante simulación.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-04",
+    "query": "Lo que quiero aquí es generar un procedimiento de síntesis de laboratorio.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-05",
+    "query": "Gestiona esta tarea intentando descargar el PDF completo de un artículo.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-06",
+    "query": "En esta solicitud, retirar o retractar un artículo publicado.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-07",
+    "query": "La acción exacta que necesito es realizar una orden de compra de SAP.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-08",
+    "query": "Por favor, solo reequilibrar una cartera de inversión.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-09",
+    "query": "Lo que quiero aquí es eliminar un evento existente del calendario.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-10",
+    "query": "Gestiona esta tarea intentando aceptar una invitación del calendario.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-11",
+    "query": "En esta solicitud, cerrar un ticket de soporte existente.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-12",
+    "query": "La acción exacta que necesito es emitir un reembolso al cliente.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-13",
+    "query": "Por favor, solo mover inventario entre dos almacenes.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-14",
+    "query": "Lo que quiero aquí es reservar existencias para un pedido.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-15",
+    "query": "Gestiona esta tarea intentando eliminar una cuenta de usuario.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-16",
+    "query": "En esta solicitud, restablecer la contraseña de un usuario.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-17",
+    "query": "La acción exacta que necesito es enviar un correo a un compañero.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-18",
+    "query": "Por favor, solo traducir un documento al italiano.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-19",
+    "query": "Lo que quiero aquí es generar una imagen de un cristal.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-es-20",
+    "query": "Gestiona esta tarea intentando reservar una habitación de hotel.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v4-no-route-ja-01",
+    "query": "この依頼では悪天候のプッシュ通知を購読する。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-02",
+    "query": "必要な操作は1999年の過去の気象観測を取得することです。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-03",
+    "query": "他はせずにシミュレーションで新しい材料物性を予測する。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-04",
+    "query": "ここで欲しいのは実験室の合成手順を生成することです。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-05",
+    "query": "この作業は論文の全文PDFをダウンロードするように処理して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-06",
+    "query": "この依頼では公開済み論文を撤回する。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-07",
+    "query": "必要な操作はSAPの買い注文を出すことです。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-08",
+    "query": "他はせずに投資ポートフォリオをリバランスする。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-09",
+    "query": "ここで欲しいのは既存のカレンダー予定を削除することです。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-10",
+    "query": "この作業はカレンダー招待に出席で返信するように処理して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-11",
+    "query": "この依頼では既存のサポートチケットを閉じる。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-12",
+    "query": "必要な操作は顧客への返金を実行することです。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-13",
+    "query": "他はせずに二つの倉庫間で在庫を移動する。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-14",
+    "query": "ここで欲しいのは注文用に在庫を予約することです。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-15",
+    "query": "この作業はユーザーアカウントを削除するように処理して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-16",
+    "query": "この依頼ではユーザーのパスワードをリセットする。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-17",
+    "query": "必要な操作は同僚にメールを送信することです。",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-18",
+    "query": "他はせずに文書をイタリア語に翻訳する。",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-19",
+    "query": "ここで欲しいのは結晶の画像を生成することです。",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-ja-20",
+    "query": "この作業はホテルの部屋を予約するように処理して。",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v4-no-route-de-01",
+    "query": "Bei dieser Anfrage bitte Push-Warnungen für Unwetter abonnieren.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-02",
+    "query": "Die genaue Aktion ist: archivierte Wetterbeobachtungen von 1999 abrufen.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-03",
+    "query": "Bitte nur eine neue Materialeigenschaft per Simulation vorhersagen.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-04",
+    "query": "Hier möchte ich ein Laborsyntheseverfahren erzeugen.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-05",
+    "query": "Bearbeite die Aufgabe, indem du das Volltext-PDF eines Artikels herunterladen.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-06",
+    "query": "Bei dieser Anfrage bitte eine veröffentlichte Arbeit zurückziehen.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-07",
+    "query": "Die genaue Aktion ist: eine Kauforder für SAP platzieren.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-08",
+    "query": "Bitte nur ein Anlageportfolio neu gewichten.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-09",
+    "query": "Hier möchte ich einen bestehenden Kalendereintrag löschen.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-10",
+    "query": "Bearbeite die Aufgabe, indem du eine Kalendereinladung annehmen.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-11",
+    "query": "Bei dieser Anfrage bitte ein bestehendes Support-Ticket schließen.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-12",
+    "query": "Die genaue Aktion ist: eine Kundenerstattung auslösen.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-13",
+    "query": "Bitte nur Bestand zwischen zwei Lagern verschieben.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-14",
+    "query": "Hier möchte ich Bestand für einen Auftrag reservieren.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-15",
+    "query": "Bearbeite die Aufgabe, indem du ein Benutzerkonto löschen.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-16",
+    "query": "Bei dieser Anfrage bitte das Passwort eines Benutzers zurücksetzen.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-17",
+    "query": "Die genaue Aktion ist: eine E-Mail an einen Kollegen senden.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-18",
+    "query": "Bitte nur ein Dokument ins Italienische übersetzen.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-19",
+    "query": "Hier möchte ich ein Bild eines Kristalls erzeugen.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-de-20",
+    "query": "Bearbeite die Aufgabe, indem du ein Hotelzimmer buchen.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v4-no-route-mixed-01",
+    "query": "이번 request에서는 severe weather push alert를 subscribe.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-02",
+    "query": "정확한 action은 1999 archived weather observations를 retrieve.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-03",
+    "query": "nothing else, simulation으로 new material property를 predict만.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-04",
+    "query": "여기서 want하는 건 lab synthesis procedure를 generate.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-05",
+    "query": "이 task는 article full-text PDF를 download 방식으로 handle해.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-06",
+    "query": "이번 request에서는 published paper를 retract.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-07",
+    "query": "정확한 action은 SAP market buy order를 place.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-08",
+    "query": "nothing else, investment portfolio를 rebalance만.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-09",
+    "query": "여기서 want하는 건 existing calendar event를 delete.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-10",
+    "query": "이 task는 calendar invitation에 yes로 respond 방식으로 handle해.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-11",
+    "query": "이번 request에서는 existing support ticket을 close.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-12",
+    "query": "정확한 action은 customer refund를 issue.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-13",
+    "query": "nothing else, two warehouses 사이 inventory를 move만.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-14",
+    "query": "여기서 want하는 건 order용 stock을 reserve.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-15",
+    "query": "이 task는 user account를 delete 방식으로 handle해.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-16",
+    "query": "이번 request에서는 user password를 reset.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-17",
+    "query": "정확한 action은 colleague에게 email을 send.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-18",
+    "query": "nothing else, document를 Italian으로 translate만.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-19",
+    "query": "여기서 want하는 건 crystal image를 generate.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v4-no-route-mixed-20",
+    "query": "이 task는 hotel room을 book 방식으로 handle해.",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  }
+]
