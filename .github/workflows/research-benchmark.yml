@@ -23,7 +23,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  config-smoke:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - run: pytest -q tests/test_benchmark_corpus.py
+
   deterministic-full:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -54,6 +68,7 @@ jobs:
           retention-days: 30
 
   laya-full-cpu:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -138,6 +153,7 @@ jobs:
           retention-days: 30
 
   semantic-recall-calibration-cpu:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -192,6 +208,7 @@ jobs:
 
 
   semantic-recall-heldout-cpu:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -235,6 +252,7 @@ jobs:
 
 
   capability-fit-calibration-cpu:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     continue-on-error: true
@@ -278,6 +296,7 @@ jobs:
           retention-days: 30
 
   capability-fit-v3-heldout-cpu:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -315,6 +334,7 @@ jobs:
           retention-days: 30
 
   endpoint-disambiguation-calibration-cpu:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     continue-on-error: true
@@ -361,6 +381,7 @@ jobs:
           retention-days: 30
 
   endpoint-disambiguation-v4-heldout-cpu:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -401,6 +422,7 @@ jobs:
 
 
   operation-fit-calibration-cpu:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
