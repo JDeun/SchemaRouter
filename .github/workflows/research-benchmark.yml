@@ -1,4 +1,5 @@
 name: Research Benchmark
+# Diagnostic runner isolation for semantic-fit signal analysis.
 
 on:
   workflow_dispatch:
