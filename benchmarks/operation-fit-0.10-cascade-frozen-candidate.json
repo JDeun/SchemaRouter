@@ -1,6 +1,6 @@
 {
   "cycle": "0.10-operation-cascade-v2",
-  "status": "candidate_frozen_before_calibration",
+  "status": "calibration_rejected",
   "v14_protocol": "benchmarks/decision-routing-v14-blind-protocol.json",
   "frozen_from_dev_run": {
     "workflow_run_id": 36248873541,
@@ -37,5 +37,24 @@
     "Calibration may veto the candidate but may not select an alternative.",
     "Do not inspect v12 or v13 for tuning.",
     "Do not generate, inspect, or execute v14 before calibration confirmation is recorded and the complete blind-final configuration is frozen."
-  ]
+  ],
+  "calibration_result": {
+    "manifest": "benchmarks/operation-fit-0.10-cascade-calibration-result.json",
+    "workflow_run_id": 36250085815,
+    "source_revision": "dc29721ec0435439a25e8b50c32aae96ad82ea5f",
+    "artifact_id": 10909210789,
+    "artifact_sha256": "64b6513ce39808aaf51f120b4b12c1edca526256f03ce432eb19a7e3c26c788d",
+    "supported_operation_routed_accuracy": 0.6145833333333334,
+    "near_domain_unsupported_operation_rejection": 0.9479166666666666,
+    "mean_latency_ms": 489.348,
+    "full_bge_mean_latency_ms": 572.215,
+    "latency_reduction_fraction": 0.14481794430415143
+  },
+  "decision": {
+    "promotion_status": "rejected_at_calibration",
+    "supported_floor_passed": true,
+    "unsupported_rejection_floor_passed": false,
+    "latency_requirement_passed": true,
+    "v14_blind_final_allowed": false
+  }
 }
