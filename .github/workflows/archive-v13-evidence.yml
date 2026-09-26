@@ -213,7 +213,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add             CHANGELOG.md             benchmarks/decision-routing-v13-operation-contrastive-holdout.json             benchmarks/decision-routing-v13-generation.json             benchmarks/decision-routing-v13-artifact-SHA256SUMS.txt             benchmarks/decision-routing-v13-blind-protocol.json             benchmarks/operation-fit-0.10-v13-result.json             benchmarks/operation-fit-0.10-v13-run.json             scripts/generate_decision_routing_v13.py             tests/test_operation_final_freeze.py
+          git add             CHANGELOG.md             benchmarks/decision-routing-v13-operation-contrastive-holdout.json             benchmarks/decision-routing-v13-generation.json             benchmarks/decision-routing-v13-artifact-SHA256SUMS.txt             benchmarks/decision-routing-v13-blind-protocol.json             benchmarks/operation-fit-0.10-v13-result.json             benchmarks/operation-fit-0.10-v13-run.json             scripts/generate_decision_routing_v13.py             tests/test_operation_final_freeze.py \\
             tests/test_benchmark_corpus.py
           git rm .github/workflows/research-v13-once.yml
           git rm .github/workflows/archive-v13-evidence.yml
