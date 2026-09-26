@@ -2,6 +2,17 @@ name: Research Benchmark
 
 on:
   workflow_dispatch:
+    inputs:
+      run_operation_holdout:
+        description: "Run v6 only after freezing the operation-fit threshold"
+        required: false
+        type: boolean
+        default: false
+      operation_fit_min_similarity:
+        description: "Frozen threshold for the v6 operation holdout (required when enabled)"
+        required: false
+        type: string
+        default: ""
   pull_request:
     paths:
       - ".github/workflows/research-benchmark.yml"
@@ -447,6 +458,7 @@ jobs:
 
 
   operation-fit-v6-heldout-cpu:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_operation_holdout && inputs.operation_fit_min_similarity != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     continue-on-error: true
@@ -462,6 +474,7 @@ jobs:
       - name: Run frozen operation-fit configuration on untouched v6 holdout
         env:
           SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+          OPERATION_FIT_MIN_SIMILARITY: ${{ inputs.operation_fit_min_similarity }}
         run: |
           mkdir -p artifacts/operation-fit/heldout-v6
           python scripts/benchmark_decision_routing.py \
@@ -472,7 +485,7 @@ jobs:
             --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed \
             --candidate-fit-min-similarity 0.25 \
             --operation-fit-embedding-callable benchmarks.multilingual_embedder:embed \
-            --operation-fit-min-similarity 0.40 \
+            --operation-fit-min-similarity "${OPERATION_FIT_MIN_SIMILARITY}" \
             --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed \
             --endpoint-disambiguation-min-margin 0.03 \
             --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
