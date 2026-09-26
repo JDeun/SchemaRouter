@@ -1032,7 +1032,6 @@ async def main() -> None:
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
-                    endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 None,
             )
