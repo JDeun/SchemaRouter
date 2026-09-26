@@ -319,6 +319,8 @@ class SchemaPlanner:
         graph_semantic_direct_min_margin: float | None = None,
         graph_semantic_propagation_backend: DecisionBackend | None = None,
         graph_semantic_propagation_on_abstain: Literal["fallback", "reject"] = "fallback",
+        graph_semantic_propagation_scope: Literal["siblings", "ranked"] = "siblings",
+        graph_semantic_propagation_limit: int = 4,
         endpoint_disambiguation_backend: DecisionBackend | None = None,
         candidate_index: bool = True,
         availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
@@ -357,6 +359,16 @@ class SchemaPlanner:
             raise ValueError(
                 "graph_semantic_propagation_on_abstain must be 'fallback' or 'reject'"
             )
+        if graph_semantic_propagation_scope not in {"siblings", "ranked"}:
+            raise ValueError(
+                "graph_semantic_propagation_scope must be 'siblings' or 'ranked'"
+            )
+        if (
+            not isinstance(graph_semantic_propagation_limit, int)
+            or isinstance(graph_semantic_propagation_limit, bool)
+            or graph_semantic_propagation_limit < 1
+        ):
+            raise ValueError("graph_semantic_propagation_limit must be an integer >= 1")
         self.registry = registry
         self.analyzer = analyzer or KeywordAnalyzer()
         self.decision_backend = decision_backend
@@ -373,6 +385,8 @@ class SchemaPlanner:
         self.graph_semantic_propagation_on_abstain = (
             graph_semantic_propagation_on_abstain
         )
+        self.graph_semantic_propagation_scope = graph_semantic_propagation_scope
+        self.graph_semantic_propagation_limit = graph_semantic_propagation_limit
         self.endpoint_disambiguation_backend = endpoint_disambiguation_backend
         self.candidate_index = candidate_index
         self.availability_predicate = availability_predicate
