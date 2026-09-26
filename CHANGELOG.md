@@ -16,6 +16,9 @@ The project is pre-1.0 and follows the compatibility rules in
 - a reproducible 1,200-case decision-routing v2 stress corpus with six language groups, balanced
   per-route coverage, explicit no-route cases, fixed dev/calibration/test splits, exact generator
   reproducibility tests, and benchmark split/language metrics;
+- a frozen 600-case v3 capability-fit holdout with six language groups and 120 near-domain
+  no-route cases, plus Research Benchmark similarity-threshold calibration that tunes semantic
+  candidate abstention on v2 calibration data before any v3 evaluation;
 - runtime evidence revalidation with separate `ToolCall.required_evidence` and route-available
   `ToolCall.evidence`, shared planner/executor evidence checks, fail-closed rejection of forged
   evidence overclaims, unmet global/per-field requirements, unselected field requirements, and
