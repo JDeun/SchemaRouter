@@ -135,6 +135,19 @@ class PairwiseDecisionBackend:
             "min_score": self.min_score,
             "min_margin": self.min_margin,
             "top_score": ranked[0][1],
+            "second_score": ranked[1][1] if len(ranked) > 1 else None,
+            "top_margin": (
+                ranked[0][1] - ranked[1][1]
+                if len(ranked) > 1
+                else None
+            ),
+            "ranked_options": [
+                {
+                    "option_id": request.options[index].id,
+                    "score": score,
+                }
+                for index, score in ranked
+            ],
         }
         if not eligible:
             return validate_decision(
