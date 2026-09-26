@@ -15,6 +15,9 @@ The project is pre-1.0 and follows the compatibility rules in
   configured fit backend;
 - a reproducible 600-case multilingual v3 untouched holdout for capability-fit evaluation, kept
   separate from the already-consumed v2 test split and checked for normalized exact-query overlap;
+- a frozen 600-case v4 operation-disambiguation holdout that targets same-domain endpoint pairs
+  after v3 error analysis, plus a calibration path for reusing the existing embedding decision
+  backend as the final bounded reranker before introducing any new core routing abstraction;
 - optional bounded semantic candidate recall through a separate `candidate_recall_backend` and
   `candidate_recall_limit`, allowing lexical candidates to be unioned with multilingual semantic
   top-k recall before the existing final bounded decision/policy/execution path; live inspection and
