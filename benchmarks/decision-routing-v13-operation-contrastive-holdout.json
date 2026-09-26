@@ -1,0 +1,5402 @@
+[
+  {
+    "id": "v13-weather-forecast-en-03",
+    "query": "Please route this by the requested action, then get the weather forecast for New York this weekend.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-inventory-mixed-04",
+    "query": "same domain이지만 필요한 건 product catalog에서 SKU-778을 delete해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-inventory-search-en-02",
+    "query": "Use the matching operation for this action only: check current inventory quantity for SKU-E60.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-support-create-ticket-es-04",
+    "query": "Usa solo la operación que corresponde a esta acción: crea un ticket de soporte porque subscription was duplicated.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-calendar-mixed-04",
+    "query": "이 tool 관련이지만 requested action은 내일 team sync를 calendar에서 delete해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-weather-ja-04",
+    "query": "同じドメインですが、必要なのはソウルの気象警報を表示して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-calendar-ja-02",
+    "query": "このツールに関連していますが、要求された操作は明日のチームミーティングをカレンダーから削除して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-materials-search-es-04",
+    "query": "El resultado que necesito es específicamente este: busca la banda prohibida o propiedades de silicon.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-ood-mixed-02",
+    "query": "jazz piano 4-bar voicing을 만들어줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-materials-de-03",
+    "query": "Ersetze es nicht durch eine ähnliche unterstützte Operation; sage Synthesebedingungen für LiFePO4 voraus.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-finance-es-03",
+    "query": "No sustituyas una operación compatible parecida; coloca una orden de compra a mercado para AAPL.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-materials-search-es-01",
+    "query": "Enruta según la acción solicitada y después busca la banda prohibida o propiedades de perovskite.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-create-ja-04",
+    "query": "この依頼だけを正確に処理して: parent meeting Thursday at 5の予定をカレンダーに作成して。",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-users-update-mixed-04",
+    "query": "이 action에 맞는 operation만 써서 Bob Kim title user profile을 update해.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-finance-ko-04",
+    "query": "비슷한 지원 동작으로 바꾸지 말고 AAPL 시장가 매수 주문을 넣어줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-inventory-de-02",
+    "query": "Die exakt benötigte Aktion lautet: lösche SKU-778 aus dem Produktkatalog.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-calendar-create-ja-03",
+    "query": "要求された操作に基づいてルーティングし、team sync at 3 PMの予定をカレンダーに作成して。",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-support-search-es-04",
+    "query": "Usa solo la operación que corresponde a esta acción: busca en la base de soporte información sobre account verification.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-list-de-03",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: zeige meine Kalendertermine für this afternoon.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-weather-forecast-ja-04",
+    "query": "必要な結果はこれだけです: Daejeon tomorrowの天気予報を調べて。",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-users-lookup-mixed-02",
+    "query": "이 request만 정확히 처리해: Kevin Cho user profile을 lookup해.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-support-search-ko-01",
+    "query": "내가 필요한 결과는 이것뿐이야: subscription change 관련 고객지원 문서를 검색해줘.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-weather-current-ja-04",
+    "query": "この操作に合う機能だけを使ってHamburgの現在の天気を調べて。",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-materials-search-en-04",
+    "query": "The result I need is specifically this: find the band gap or material properties of diamond.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-calendar-create-mixed-01",
+    "query": "requested action 기준으로 route한 뒤 demo next Monday at 4 calendar event를 create해.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-materials-en-02",
+    "query": "Do not substitute a nearby supported operation; predict synthesis conditions for LiFePO4.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-users-lookup-en-02",
+    "query": "Use the matching operation for this action only: look up the user profile for Yuki Sato.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-calendar-ko-04",
+    "query": "이 도구와 관련은 있지만 필요한 동작은 내일 팀 미팅을 캘린더에서 삭제해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-papers-search-ko-01",
+    "query": "요청한 동작 기준으로 라우팅해서 solid electrolytes 관련 논문을 검색해줘.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-support-ko-04",
+    "query": "같은 도메인 요청이지만 고객지원 티켓 4821을 해결됨으로 종료해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-support-create-ticket-ko-02",
+    "query": "이 동작에 맞는 기능만 사용해서 account is locked 문제로 고객지원 티켓을 만들어줘.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-inventory-search-ko-03",
+    "query": "이 요청만 정확히 처리해줘: SKU-505의 현재 재고 수량을 확인해줘.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-papers-citations-en-02",
+    "query": "Use the matching operation for this action only: find papers that cite 10.1000/delta.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-support-create-ticket-ko-01",
+    "query": "내가 필요한 결과는 이것뿐이야: mobile app crashes 문제로 고객지원 티켓을 만들어줘.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-calendar-ja-01",
+    "query": "同じドメインですが、必要なのは明日のチームミーティングをカレンダーから削除して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-materials-de-02",
+    "query": "Im selben Bereich brauche ich, dass du sage Synthesebedingungen für LiFePO4 voraus.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-weather-current-mixed-04",
+    "query": "내가 필요한 result는 이것뿐이야: Osaka 지금 weather를 확인해.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-support-search-de-04",
+    "query": "Route nach der angeforderten Aktion und dann suche in der Support-Wissensbasis nach two-factor setup.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-users-mixed-03",
+    "query": "이 tool 관련이지만 requested action은 user account 314를 delete해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-weather-current-ko-01",
+    "query": "이 요청만 정확히 처리해줘: Busan의 지금 날씨를 알려줘.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-papers-mixed-04",
+    "query": "exact action은 DOI 10.5555/example full-text PDF를 download해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-users-update-de-04",
+    "query": "Route nach der angeforderten Aktion und dann aktualisiere das Benutzerprofil für account 73 display name.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-papers-de-04",
+    "query": "Die exakt benötigte Aktion lautet: lade das Volltext-PDF für DOI 10.5555/example herunter.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-papers-mixed-03",
+    "query": "이 tool 관련이지만 requested action은 DOI 10.5555/example full-text PDF를 download해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-materials-es-01",
+    "query": "La acción exacta requerida es predice las condiciones de síntesis de LiFePO4.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-users-en-01",
+    "query": "This is related to the tool, but the requested action is to delete user account 314.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-materials-ko-04",
+    "query": "비슷한 지원 동작으로 바꾸지 말고 LiFePO4의 합성 조건을 예측해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-users-ja-02",
+    "query": "このツールに関連していますが、要求された操作はユーザーアカウント314を削除して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-weather-ko-03",
+    "query": "같은 도메인 요청이지만 서울의 기상 특보를 보여줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-finance-ja-02",
+    "query": "このツールに関連していますが、要求された操作はAAPLの成行買い注文を出して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-inventory-mixed-01",
+    "query": "이 tool 관련이지만 requested action은 product catalog에서 SKU-778을 delete해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-papers-citations-ko-04",
+    "query": "이 동작에 맞는 기능만 사용해서 10.1000/theta를 인용한 논문을 찾아줘.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-materials-search-en-02",
+    "query": "Please route this by the requested action, then find the band gap or material properties of GaN.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-materials-en-04",
+    "query": "Within this same domain, I need you to predict synthesis conditions for LiFePO4.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-support-ja-03",
+    "query": "正確に必要な操作はサポートチケット4821を解決済みとして閉じて。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-calendar-create-ko-02",
+    "query": "내가 필요한 결과는 이것뿐이야: design sync Tuesday at 1 일정을 캘린더에 만들어줘.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-ood-ko-03",
+    "query": "빵집 로고 콘셉트를 디자인해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-finance-quote-en-04",
+    "query": "Handle exactly this request: get the latest stock quote for MSFT.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-finance-mixed-03",
+    "query": "exact action은 AAPL market buy order를 place해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-inventory-es-01",
+    "query": "No sustituyas una operación compatible parecida; elimina SKU-778 del catálogo de productos.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-users-es-04",
+    "query": "La acción exacta requerida es elimina la cuenta de usuario 314.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-ood-es-02",
+    "query": "traduce este proverbio al latín",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-create-ko-04",
+    "query": "요청한 동작 기준으로 라우팅해서 dentist tomorrow at 10 일정을 캘린더에 만들어줘.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-users-en-02",
+    "query": "Do not substitute a nearby supported operation; delete user account 314.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-papers-search-es-04",
+    "query": "El resultado que necesito es específicamente este: busca artículos de investigación sobre perovskite solar cells.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-calendar-mixed-01",
+    "query": "exact action은 내일 team sync를 calendar에서 delete해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-finance-quote-de-01",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: hole den aktuellen Aktienkurs von GOOGL.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-finance-history-ko-02",
+    "query": "요청한 동작 기준으로 라우팅해서 TSLA for 30 days의 과거 주가 기록을 가져와.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-calendar-ko-03",
+    "query": "비슷한 지원 동작으로 바꾸지 말고 내일 팀 미팅을 캘린더에서 삭제해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-inventory-update-ko-03",
+    "query": "요청한 동작 기준으로 라우팅해서 재고를 SKU-101 to 12로 업데이트해줘.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-finance-history-mixed-04",
+    "query": "이 request만 정확히 처리해: GOOGL over five years historical price history를 보여줘.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-finance-quote-ko-03",
+    "query": "이 동작에 맞는 기능만 사용해서 AMD의 현재 주가를 알려줘.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-calendar-list-ja-02",
+    "query": "この依頼だけを正確に処理して: next weekendの予定一覧を表示して。",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-papers-search-ko-04",
+    "query": "내가 필요한 결과는 이것뿐이야: tool routing 관련 논문을 검색해줘.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-users-de-01",
+    "query": "Es gehört zum selben Tool, aber die angeforderte Aktion ist: lösche Benutzerkonto 314.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-materials-search-mixed-01",
+    "query": "이 action에 맞는 operation만 써서 LiFePO4 band gap이나 material property를 찾아줘.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-users-lookup-es-02",
+    "query": "El resultado que necesito es específicamente este: busca el perfil de usuario de account 1007.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-support-de-04",
+    "query": "Es gehört zum selben Tool, aber die angeforderte Aktion ist: schließe Support-Ticket 4821 als gelöst.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-weather-ko-02",
+    "query": "비슷한 지원 동작으로 바꾸지 말고 서울의 기상 특보를 보여줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-calendar-list-mixed-04",
+    "query": "이 request만 정확히 처리해: next Monday calendar events를 list해.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-calendar-en-03",
+    "query": "Within this same domain, I need you to delete tomorrow's team sync from my calendar.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-inventory-update-en-02",
+    "query": "Use the matching operation for this action only: update inventory quantity for SKU-303 to 30.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-support-create-ticket-en-02",
+    "query": "The result I need is specifically this: create a support ticket because invoice is wrong.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-papers-citations-ko-03",
+    "query": "요청한 동작 기준으로 라우팅해서 10.1000/epsilon를 인용한 논문을 찾아줘.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-weather-ja-02",
+    "query": "このツールに関連していますが、要求された操作はソウルの気象警報を表示して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-materials-search-en-01",
+    "query": "Handle exactly this request: find the band gap or material properties of TiO2.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-inventory-update-mixed-02",
+    "query": "이 request만 정확히 처리해: inventory를 SKU-C36 to 2로 update해.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-support-search-en-02",
+    "query": "Please route this by the requested action, then search the support knowledge base for refund policy.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-papers-es-01",
+    "query": "La acción exacta requerida es descarga el PDF de texto completo del DOI 10.5555/example.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-users-update-mixed-02",
+    "query": "requested action 기준으로 route한 뒤 Yuki Sato department user profile을 update해.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-finance-en-04",
+    "query": "Within this same domain, I need you to place a market buy order for AAPL.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-support-ko-01",
+    "query": "이 도구와 관련은 있지만 필요한 동작은 고객지원 티켓 4821을 해결됨으로 종료해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-calendar-list-es-02",
+    "query": "Usa solo la operación que corresponde a esta acción: muestra mis eventos del calendario para the morning.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-support-search-mixed-01",
+    "query": "requested action 기준으로 route한 뒤 API timeout 관련 support KB를 search해.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-inventory-update-ko-02",
+    "query": "이 요청만 정확히 처리해줘: 재고를 SKU-202 to 4로 업데이트해줘.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-weather-forecast-es-01",
+    "query": "Usa solo la operación que corresponde a esta acción: obtén el pronóstico del tiempo para Busan this weekend.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-create-ja-02",
+    "query": "この操作に合う機能だけを使ってweekly planning Monday at 9の予定をカレンダーに作成して。",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-calendar-create-mixed-04",
+    "query": "이 action에 맞는 operation만 써서 focus time at 9 AM calendar event를 create해.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-papers-search-mixed-04",
+    "query": "requested action 기준으로 route한 뒤 multimodal models 관련 research paper를 search해.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-weather-current-ko-03",
+    "query": "내가 필요한 결과는 이것뿐이야: Daejeon의 지금 날씨를 알려줘.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-users-lookup-ja-01",
+    "query": "必要な結果はこれだけです: user 9001のユーザープロフィールを検索して。",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-weather-en-01",
+    "query": "Do not substitute a nearby supported operation; show severe weather alerts for Seoul.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-calendar-list-de-04",
+    "query": "Bearbeite genau diese Anfrage: zeige meine Kalendertermine für next Monday.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-papers-search-es-01",
+    "query": "Usa solo la operación que corresponde a esta acción: busca artículos de investigación sobre agentic RAG.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-support-search-ja-02",
+    "query": "この依頼だけを正確に処理して: two-factor setupについてサポート記事を検索して。",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-ood-ko-01",
+    "query": "이 속담을 라틴어로 번역해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-inventory-en-01",
+    "query": "The exact action is unsupported unless the tool can delete SKU-778 from the product catalog.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-calendar-list-ja-01",
+    "query": "この操作に合う機能だけを使ってnext Mondayの予定一覧を表示して。",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-ood-mixed-01",
+    "query": "long flight용 stretching routine을 추천해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-ood-en-03",
+    "query": "translate this proverb into Latin",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-inventory-search-mixed-02",
+    "query": "내가 필요한 result는 이것뿐이야: SKU-A12 current inventory quantity를 확인해.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-calendar-ja-03",
+    "query": "近い対応操作に置き換えず、明日のチームミーティングをカレンダーから削除して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-weather-forecast-de-03",
+    "query": "Bearbeite genau diese Anfrage: hole die Wettervorhersage für Osaka tonight.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-papers-citations-ja-02",
+    "query": "この依頼だけを正確に処理して: 10.1000/gammaを引用している論文を探して。",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-weather-forecast-ko-04",
+    "query": "내가 필요한 결과는 이것뿐이야: Hamburg next week 날씨 예보를 알려줘.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-support-es-02",
+    "query": "No sustituyas una operación compatible parecida; cierra el ticket de soporte 4821 como resuelto.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-weather-forecast-es-04",
+    "query": "Enruta según la acción solicitada y después obtén el pronóstico del tiempo para Madrid tomorrow.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-create-en-04",
+    "query": "The result I need is specifically this: create a calendar event for parent meeting Thursday at 5.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-finance-quote-mixed-03",
+    "query": "내가 필요한 result는 이것뿐이야: AAPL current stock quote를 알려줘.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-weather-current-es-01",
+    "query": "Usa solo la operación que corresponde a esta acción: obtén el clima actual en Seoul.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-inventory-update-ja-02",
+    "query": "要求された操作に基づいてルーティングし、在庫数量をSKU-D48 to 81に更新して。",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-ood-ja-01",
+    "query": "ジャズピアノの4小節のボイシングを作って",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-papers-citations-es-03",
+    "query": "Gestiona exactamente esta solicitud: encuentra artículos que citan 10.1000/alpha.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-create-ko-01",
+    "query": "이 요청만 정확히 처리해줘: project review Friday at 2 일정을 캘린더에 만들어줘.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-users-lookup-en-04",
+    "query": "The result I need is specifically this: look up the user profile for user 42.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-weather-de-01",
+    "query": "Die exakt benötigte Aktion lautet: zeige Unwetterwarnungen für Seoul.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-users-update-en-03",
+    "query": "The result I need is specifically this: update the user profile for alice@example.com phone number.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-users-ko-04",
+    "query": "비슷한 지원 동작으로 바꾸지 말고 사용자 계정 314를 삭제해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-weather-forecast-mixed-01",
+    "query": "이 action에 맞는 operation만 써서 Paris next Tuesday weather forecast를 보여줘.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-materials-search-ko-04",
+    "query": "요청한 동작 기준으로 라우팅해서 SiC의 밴드갭이나 물성을 찾아줘.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-finance-es-02",
+    "query": "Dentro del mismo dominio, necesito que coloca una orden de compra a mercado para AAPL.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-inventory-update-ja-01",
+    "query": "必要な結果はこれだけです: 在庫数量をSKU-202 to 4に更新して。",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-materials-ja-01",
+    "query": "同じドメインですが、必要なのはLiFePO4の合成条件を予測して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-finance-quote-de-04",
+    "query": "Route nach der angeforderten Aktion und dann hole den aktuellen Aktienkurs von AMZN.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-support-create-ticket-mixed-04",
+    "query": "이 action에 맞는 operation만 써서 refund has not arrived 문제로 support ticket을 create해.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-papers-ko-03",
+    "query": "비슷한 지원 동작으로 바꾸지 말고 DOI 10.5555/example 논문의 원문 PDF를 다운로드해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-inventory-update-es-04",
+    "query": "El resultado que necesito es específicamente este: actualiza la cantidad de inventario de SKU-303 to 30.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-ood-ko-04",
+    "query": "가상의 탐정 소설 줄거리를 요약해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-users-lookup-ko-03",
+    "query": "내가 필요한 결과는 이것뿐이야: account 1007 사용자 프로필을 조회해줘.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-support-create-ticket-de-01",
+    "query": "Route nach der angeforderten Aktion und dann erstelle ein Support-Ticket, weil mobile app crashes.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-calendar-create-es-04",
+    "query": "Enruta según la acción solicitada y después crea un evento de calendario para project review Friday at 2.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-inventory-update-ko-01",
+    "query": "이 동작에 맞는 기능만 사용해서 재고를 SKU-B24 to 19로 업데이트해줘.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-calendar-create-de-01",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: erstelle einen Kalendereintrag für release review at 11.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-calendar-es-02",
+    "query": "Dentro del mismo dominio, necesito que elimina la reunión de equipo de mañana de mi calendario.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-users-update-es-03",
+    "query": "El resultado que necesito es específicamente este: actualiza el perfil de usuario de user 9001 timezone.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-list-ko-01",
+    "query": "내가 필요한 결과는 이것뿐이야: tomorrow 일정 목록을 보여줘.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-weather-ko-01",
+    "query": "이 도구와 관련은 있지만 필요한 동작은 서울의 기상 특보를 보여줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-inventory-update-en-01",
+    "query": "Handle exactly this request: update inventory quantity for SKU-B24 to 19.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-weather-forecast-ko-03",
+    "query": "이 동작에 맞는 기능만 사용해서 Seoul tomorrow 날씨 예보를 알려줘.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-calendar-ko-01",
+    "query": "같은 도메인 요청이지만 내일 팀 미팅을 캘린더에서 삭제해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-support-mixed-03",
+    "query": "exact action은 support ticket 4821을 resolved로 close해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-support-search-en-03",
+    "query": "Handle exactly this request: search the support knowledge base for account verification.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-inventory-es-02",
+    "query": "La acción exacta requerida es elimina SKU-778 del catálogo de productos.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-users-lookup-en-03",
+    "query": "Please route this by the requested action, then look up the user profile for user 9001.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-materials-search-ja-04",
+    "query": "この依頼だけを正確に処理して: grapheneのバンドギャップや物性を探して。",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-users-ja-04",
+    "query": "同じドメインですが、必要なのはユーザーアカウント314を削除して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-support-create-ticket-de-02",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: erstelle ein Support-Ticket, weil notification bug.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-weather-current-ja-01",
+    "query": "この依頼だけを正確に処理して: Parisの現在の天気を調べて。",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-materials-mixed-04",
+    "query": "이 tool 관련이지만 requested action은 LiFePO4 synthesis condition을 predict해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-calendar-create-de-04",
+    "query": "Bearbeite genau diese Anfrage: erstelle einen Kalendereintrag für demo next Monday at 4.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-ood-en-02",
+    "query": "design a logo concept for a bakery",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-inventory-update-de-02",
+    "query": "Route nach der angeforderten Aktion und dann aktualisiere den Lagerbestand für SKU-B24 to 19.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-papers-search-de-02",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: suche Forschungsarbeiten zu battery materials.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-users-ja-01",
+    "query": "正確に必要な操作はユーザーアカウント314を削除して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-calendar-list-ko-04",
+    "query": "이 요청만 정확히 처리해줘: this week 일정 목록을 보여줘.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-users-update-en-04",
+    "query": "Handle exactly this request: update the user profile for Kevin Cho display name.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-calendar-create-es-02",
+    "query": "Usa solo la operación que corresponde a esta acción: crea un evento de calendario para lunch with Alex at noon.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-finance-quote-es-02",
+    "query": "El resultado que necesito es específicamente este: obtén la cotización actual de AMZN.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-finance-history-de-04",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: hole historische Kurse für KO over the last decade.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-calendar-ko-02",
+    "query": "정확히 필요한 동작은 내일 팀 미팅을 캘린더에서 삭제해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-materials-search-mixed-03",
+    "query": "requested action 기준으로 route한 뒤 copper band gap이나 material property를 찾아줘.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-materials-es-04",
+    "query": "Está relacionado con la herramienta, pero la acción solicitada es predice las condiciones de síntesis de LiFePO4.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-finance-quote-mixed-04",
+    "query": "이 action에 맞는 operation만 써서 MSFT current stock quote를 알려줘.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-finance-quote-ko-04",
+    "query": "요청한 동작 기준으로 라우팅해서 META의 현재 주가를 알려줘.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-inventory-ko-04",
+    "query": "이 도구와 관련은 있지만 필요한 동작은 상품 카탈로그에서 SKU-778을 삭제해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-support-create-ticket-ko-03",
+    "query": "이 요청만 정확히 처리해줘: verification email missing 문제로 고객지원 티켓을 만들어줘.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-papers-citations-mixed-02",
+    "query": "이 action에 맞는 operation만 써서 10.1000/theta를 cite한 papers를 찾아줘.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-users-es-03",
+    "query": "Dentro del mismo dominio, necesito que elimina la cuenta de usuario 314.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-weather-ja-01",
+    "query": "近い対応操作に置き換えず、ソウルの気象警報を表示して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-inventory-search-ja-02",
+    "query": "必要な結果はこれだけです: SKU-D48の現在庫数を確認して。",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-ood-de-04",
+    "query": "übersetze dieses Sprichwort ins Lateinische",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-users-ko-01",
+    "query": "정확히 필요한 동작은 사용자 계정 314를 삭제해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-users-de-03",
+    "query": "Im selben Bereich brauche ich, dass du lösche Benutzerkonto 314.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-weather-current-mixed-02",
+    "query": "이 request만 정확히 처리해: Seoul 지금 weather를 확인해.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-support-create-ticket-en-01",
+    "query": "Please route this by the requested action, then create a support ticket because account is locked.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-papers-citations-ja-04",
+    "query": "要求された操作に基づいてルーティングし、10.1000/deltaを引用している論文を探して。",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-materials-structure-es-03",
+    "query": "Enruta según la acción solicitada y después obtén la estructura cristalina y red de diamond.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-inventory-mixed-02",
+    "query": "비슷한 supported operation으로 바꾸지 말고 product catalog에서 SKU-778을 delete해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-calendar-mixed-02",
+    "query": "비슷한 supported operation으로 바꾸지 말고 내일 team sync를 calendar에서 delete해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-papers-search-de-01",
+    "query": "Route nach der angeforderten Aktion und dann suche Forschungsarbeiten zu solid electrolytes.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-users-update-en-02",
+    "query": "Please route this by the requested action, then update the user profile for Yuki Sato department.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-finance-ko-02",
+    "query": "이 도구와 관련은 있지만 필요한 동작은 AAPL 시장가 매수 주문을 넣어줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-users-update-ko-01",
+    "query": "이 동작에 맞는 기능만 사용해서 user 9001 timezone 사용자 프로필을 수정해줘.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-weather-es-02",
+    "query": "Está relacionado con la herramienta, pero la acción solicitada es muestra las alertas meteorológicas severas de Seúl.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-users-update-mixed-01",
+    "query": "이 request만 정확히 처리해: alice@example.com phone number user profile을 update해.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-users-update-ko-02",
+    "query": "내가 필요한 결과는 이것뿐이야: Yuki Sato department 사용자 프로필을 수정해줘.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-weather-current-es-04",
+    "query": "Enruta según la acción solicitada y después obtén el clima actual en Madrid.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-papers-citations-ja-03",
+    "query": "必要な結果はこれだけです: 10.1000/kappaを引用している論文を探して。",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-support-search-en-04",
+    "query": "The result I need is specifically this: search the support knowledge base for data export.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-support-create-ticket-ja-03",
+    "query": "この依頼だけを正確に処理して: notification bugの問題でサポートチケットを作成して。",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-materials-structure-es-01",
+    "query": "El resultado que necesito es específicamente este: obtén la estructura cristalina y red de silicon.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-weather-forecast-mixed-04",
+    "query": "이 request만 정확히 처리해: Osaka tonight weather forecast를 보여줘.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-finance-en-03",
+    "query": "The exact action is unsupported unless the tool can place a market buy order for AAPL.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-weather-forecast-es-03",
+    "query": "Gestiona exactamente esta solicitud: obtén el pronóstico del tiempo para Daejeon tomorrow.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-materials-search-en-03",
+    "query": "Use the matching operation for this action only: find the band gap or material properties of perovskite.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-finance-history-es-03",
+    "query": "Usa solo la operación que corresponde a esta acción: obtén precios históricos de AMZN this quarter.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-list-en-01",
+    "query": "Handle exactly this request: list my calendar events for this week.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-inventory-update-es-03",
+    "query": "Usa solo la operación que corresponde a esta acción: actualiza la cantidad de inventario de SKU-D48 to 81.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-create-mixed-02",
+    "query": "이 request만 정확히 처리해: weekly planning Monday at 9 calendar event를 create해.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-finance-history-de-03",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: hole historische Kurse für META for two years.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-users-lookup-de-04",
+    "query": "Route nach der angeforderten Aktion und dann suche das Benutzerprofil für account 73.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-ood-es-04",
+    "query": "explica por qué ocurren las mareas oceánicas",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-users-en-03",
+    "query": "The exact action is unsupported unless the tool can delete user account 314.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-finance-quote-ko-01",
+    "query": "이 요청만 정확히 처리해줘: NVDA의 현재 주가를 알려줘.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-support-search-mixed-02",
+    "query": "이 action에 맞는 operation만 써서 subscription change 관련 support KB를 search해.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-materials-search-de-04",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: suche Bandlücke oder Materialeigenschaften von diamond.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-materials-search-ko-01",
+    "query": "이 동작에 맞는 기능만 사용해서 Al2O3의 밴드갭이나 물성을 찾아줘.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-support-es-03",
+    "query": "La acción exacta requerida es cierra el ticket de soporte 4821 como resuelto.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-support-create-ticket-en-04",
+    "query": "Use the matching operation for this action only: create a support ticket because mobile app crashes.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-papers-search-de-04",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: suche Forschungsarbeiten zu small language models.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-users-lookup-de-02",
+    "query": "Bearbeite genau diese Anfrage: suche das Benutzerprofil für Kevin Cho.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-calendar-list-en-04",
+    "query": "The result I need is specifically this: list my calendar events for September 30.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-materials-structure-de-02",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: hole Kristallstruktur und Gitter von SiC.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-calendar-list-de-01",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: zeige meine Kalendertermine für the morning.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-support-search-de-03",
+    "query": "Bearbeite genau diese Anfrage: suche in der Support-Wissensbasis nach billing FAQ.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-support-create-ticket-ko-04",
+    "query": "요청한 동작 기준으로 라우팅해서 login keeps failing 문제로 고객지원 티켓을 만들어줘.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-inventory-search-mixed-03",
+    "query": "이 action에 맞는 operation만 써서 SKU-101 current inventory quantity를 확인해.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-papers-search-ja-04",
+    "query": "要求された操作に基づいてルーティングし、multimodal modelsに関する研究論文を検索して。",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-weather-mixed-01",
+    "query": "exact action은 서울 severe weather alert를 보여줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-finance-quote-ko-02",
+    "query": "내가 필요한 결과는 이것뿐이야: MSFT의 현재 주가를 알려줘.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-weather-mixed-02",
+    "query": "이 tool 관련이지만 requested action은 서울 severe weather alert를 보여줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-support-search-de-01",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: suche in der Support-Wissensbasis nach API timeout.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-finance-quote-ja-01",
+    "query": "この操作に合う機能だけを使ってAAPLの最新株価を取得して。",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-papers-ko-04",
+    "query": "이 도구와 관련은 있지만 필요한 동작은 DOI 10.5555/example 논문의 원문 PDF를 다운로드해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-inventory-es-04",
+    "query": "Está relacionado con la herramienta, pero la acción solicitada es elimina SKU-778 del catálogo de productos.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-inventory-ko-03",
+    "query": "같은 도메인 요청이지만 상품 카탈로그에서 SKU-778을 삭제해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-papers-search-es-02",
+    "query": "Gestiona exactamente esta solicitud: busca artículos de investigación sobre graph neural networks.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-papers-en-02",
+    "query": "Within this same domain, I need you to download the full text PDF for DOI 10.5555/example.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-users-lookup-mixed-01",
+    "query": "requested action 기준으로 route한 뒤 account 1007 user profile을 lookup해.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-ood-ko-02",
+    "query": "재즈 피아노 4마디 보이싱을 만들어줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-finance-quote-mixed-02",
+    "query": "requested action 기준으로 route한 뒤 NVDA current stock quote를 알려줘.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-weather-forecast-mixed-02",
+    "query": "requested action 기준으로 route한 뒤 Hamburg next week weather forecast를 보여줘.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-papers-citations-ko-02",
+    "query": "이 요청만 정확히 처리해줘: 10.1000/delta를 인용한 논문을 찾아줘.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-papers-search-ja-02",
+    "query": "この操作に合う機能だけを使ってgraph neural networksに関する研究論文を検索して。",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-calendar-list-de-02",
+    "query": "Route nach der angeforderten Aktion und dann zeige meine Kalendertermine für September 30.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-support-search-ja-01",
+    "query": "この操作に合う機能だけを使ってnotification settingsについてサポート記事を検索して。",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-materials-ja-02",
+    "query": "このツールに関連していますが、要求された操作はLiFePO4の合成条件を予測して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-papers-search-de-03",
+    "query": "Bearbeite genau diese Anfrage: suche Forschungsarbeiten zu perovskite solar cells.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-finance-history-ja-04",
+    "query": "この操作に合う機能だけを使ってKO over the last decadeの過去の株価履歴を取得して。",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-papers-citations-de-03",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: finde Arbeiten, die 10.1000/beta zitieren.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-finance-history-mixed-03",
+    "query": "이 action에 맞는 operation만 써서 MSFT since January historical price history를 보여줘.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-finance-quote-es-03",
+    "query": "Usa solo la operación que corresponde a esta acción: obtén la cotización actual de GOOGL.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-support-search-ja-04",
+    "query": "要求された操作に基づいてルーティングし、data exportについてサポート記事を検索して。",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-materials-search-es-03",
+    "query": "Usa solo la operación que corresponde a esta acción: busca la banda prohibida o propiedades de GaN.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-papers-citations-de-04",
+    "query": "Bearbeite genau diese Anfrage: finde Arbeiten, die 10.1000/epsilon zitieren.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-weather-forecast-mixed-03",
+    "query": "내가 필요한 result는 이것뿐이야: Madrid tomorrow weather forecast를 보여줘.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-materials-en-03",
+    "query": "This is related to the tool, but the requested action is to predict synthesis conditions for LiFePO4.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-support-create-ticket-ja-01",
+    "query": "必要な結果はこれだけです: API returns 500の問題でサポートチケットを作成して。",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-support-de-02",
+    "query": "Im selben Bereich brauche ich, dass du schließe Support-Ticket 4821 als gelöst.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-weather-current-en-01",
+    "query": "Please route this by the requested action, then get the current weather in Busan.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-weather-current-ko-04",
+    "query": "이 동작에 맞는 기능만 사용해서 New York의 지금 날씨를 알려줘.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-ood-es-01",
+    "query": "resume la trama de una novela detectivesca ficticia",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-finance-ko-03",
+    "query": "같은 도메인 요청이지만 AAPL 시장가 매수 주문을 넣어줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-inventory-search-mixed-01",
+    "query": "requested action 기준으로 route한 뒤 SKU-B24 current inventory quantity를 확인해.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-papers-ko-01",
+    "query": "같은 도메인 요청이지만 DOI 10.5555/example 논문의 원문 PDF를 다운로드해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-users-es-01",
+    "query": "No sustituyas una operación compatible parecida; elimina la cuenta de usuario 314.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-finance-history-en-02",
+    "query": "Please route this by the requested action, then retrieve historical prices for TSLA for 30 days.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-finance-history-es-02",
+    "query": "El resultado que necesito es específicamente este: obtén precios históricos de INTC for 90 days.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-inventory-update-ja-04",
+    "query": "この操作に合う機能だけを使って在庫数量をSKU-A12 to 7に更新して。",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-inventory-en-04",
+    "query": "This is related to the tool, but the requested action is to delete SKU-778 from the product catalog.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-ood-en-01",
+    "query": "explain why ocean tides occur",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-support-search-ja-03",
+    "query": "必要な結果はこれだけです: billing FAQについてサポート記事を検索して。",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-calendar-de-04",
+    "query": "Ersetze es nicht durch eine ähnliche unterstützte Operation; lösche den Team-Termin morgen aus meinem Kalender.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-finance-history-ja-02",
+    "query": "要求された操作に基づいてルーティングし、AAPL over the last yearの過去の株価履歴を取得して。",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-ood-en-04",
+    "query": "summarize the plot of a fictional detective novel",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-materials-ja-03",
+    "query": "近い対応操作に置き換えず、LiFePO4の合成条件を予測して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-finance-quote-es-01",
+    "query": "Enruta según la acción solicitada y después obtén la cotización actual de MSFT.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-materials-de-01",
+    "query": "Es gehört zum selben Tool, aber die angeforderte Aktion ist: sage Synthesebedingungen für LiFePO4 voraus.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-inventory-search-ja-01",
+    "query": "この操作に合う機能だけを使ってSKU-A12の現在庫数を確認して。",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-inventory-update-ja-03",
+    "query": "この依頼だけを正確に処理して: 在庫数量をSKU-404 to 0に更新して。",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-inventory-search-en-04",
+    "query": "Handle exactly this request: check current inventory quantity for SKU-101.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-users-de-04",
+    "query": "Ersetze es nicht durch eine ähnliche unterstützte Operation; lösche Benutzerkonto 314.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-inventory-ko-02",
+    "query": "정확히 필요한 동작은 상품 카탈로그에서 SKU-778을 삭제해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-support-create-ticket-mixed-02",
+    "query": "이 request만 정확히 처리해: notification bug 문제로 support ticket을 create해.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-weather-forecast-de-02",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: hole die Wettervorhersage für Madrid tomorrow.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-calendar-create-ko-03",
+    "query": "이 동작에 맞는 기능만 사용해서 weekly planning Monday at 9 일정을 캘린더에 만들어줘.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-support-create-ticket-mixed-03",
+    "query": "requested action 기준으로 route한 뒤 export failed 문제로 support ticket을 create해.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-papers-de-02",
+    "query": "Im selben Bereich brauche ich, dass du lade das Volltext-PDF für DOI 10.5555/example herunter.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-users-mixed-02",
+    "query": "same domain이지만 필요한 건 user account 314를 delete해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-finance-history-de-01",
+    "query": "Route nach der angeforderten Aktion und dann hole historische Kurse für INTC for 90 days.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-materials-structure-ja-03",
+    "query": "この操作に合う機能だけを使ってperovskiteの結晶構造と格子情報を取得して。",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-inventory-update-mixed-03",
+    "query": "requested action 기준으로 route한 뒤 inventory를 SKU-B24 to 19로 update해.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-users-lookup-ja-02",
+    "query": "この依頼だけを正確に処理して: alice@example.comのユーザープロフィールを検索して。",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-support-create-ticket-es-02",
+    "query": "El resultado que necesito es específicamente este: crea un ticket de soporte porque API returns 500.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-finance-quote-en-02",
+    "query": "The result I need is specifically this: get the latest stock quote for AMD.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-weather-current-ja-03",
+    "query": "要求された操作に基づいてルーティングし、Seoulの現在の天気を調べて。",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-finance-history-de-02",
+    "query": "Bearbeite genau diese Anfrage: hole historische Kurse für NVDA for six months.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-calendar-es-04",
+    "query": "No sustituyas una operación compatible parecida; elimina la reunión de equipo de mañana de mi calendario.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-inventory-search-es-04",
+    "query": "Usa solo la operación que corresponde a esta acción: consulta la cantidad actual en inventario de SKU-101.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-papers-de-03",
+    "query": "Es gehört zum selben Tool, aber die angeforderte Aktion ist: lade das Volltext-PDF für DOI 10.5555/example herunter.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-finance-history-ja-03",
+    "query": "この依頼だけを正確に処理して: META for two yearsの過去の株価履歴を取得して。",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-inventory-search-de-03",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: prüfe den aktuellen Bestand von SKU-C36.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-support-create-ticket-es-03",
+    "query": "Enruta según la acción solicitada y después crea un ticket de soporte porque invoice is wrong.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-inventory-ja-01",
+    "query": "正確に必要な操作は商品カタログからSKU-778を削除して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-papers-search-ja-01",
+    "query": "必要な結果はこれだけです: tool routingに関する研究論文を検索して。",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-calendar-en-04",
+    "query": "This is related to the tool, but the requested action is to delete tomorrow's team sync from my calendar.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-materials-structure-en-03",
+    "query": "Please route this by the requested action, then retrieve the crystal structure and lattice for Al2O3.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-users-update-es-04",
+    "query": "Usa solo la operación que corresponde a esta acción: actualiza el perfil de usuario de user 42 name to Alice.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-inventory-search-es-02",
+    "query": "El resultado que necesito es específicamente este: consulta la cantidad actual en inventario de SKU-C36.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-support-es-04",
+    "query": "Está relacionado con la herramienta, pero la acción solicitada es cierra el ticket de soporte 4821 como resuelto.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-list-ja-04",
+    "query": "必要な結果はこれだけです: this afternoonの予定一覧を表示して。",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-papers-es-02",
+    "query": "No sustituyas una operación compatible parecida; descarga el PDF de texto completo del DOI 10.5555/example.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-users-mixed-04",
+    "query": "exact action은 user account 314를 delete해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-calendar-mixed-03",
+    "query": "same domain이지만 필요한 건 내일 team sync를 calendar에서 delete해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-weather-en-03",
+    "query": "Within this same domain, I need you to show severe weather alerts for Seoul.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-users-update-ko-03",
+    "query": "이 요청만 정확히 처리해줘: Bob Kim title 사용자 프로필을 수정해줘.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-weather-current-de-02",
+    "query": "Bearbeite genau diese Anfrage: ermittle das aktuelle Wetter in Madrid.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-papers-citations-ko-01",
+    "query": "내가 필요한 결과는 이것뿐이야: 10.1000/eta를 인용한 논문을 찾아줘.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-inventory-ja-02",
+    "query": "このツールに関連していますが、要求された操作は商品カタログからSKU-778を削除して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-support-en-02",
+    "query": "This is related to the tool, but the requested action is to close support ticket 4821 as resolved.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-materials-search-ko-02",
+    "query": "내가 필요한 결과는 이것뿐이야: GaN의 밴드갭이나 물성을 찾아줘.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-users-lookup-de-03",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: suche das Benutzerprofil für alice@example.com.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-inventory-update-es-02",
+    "query": "Gestiona exactamente esta solicitud: actualiza la cantidad de inventario de SKU-C36 to 2.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-inventory-search-ja-03",
+    "query": "この依頼だけを正確に処理して: SKU-404の現在庫数を確認して。",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-finance-history-es-04",
+    "query": "Gestiona exactamente esta solicitud: obtén precios históricos de TSLA for 30 days.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-ood-ja-02",
+    "query": "パン屋のロゴコンセプトを考えて",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-materials-ja-04",
+    "query": "正確に必要な操作はLiFePO4の合成条件を予測して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-support-mixed-01",
+    "query": "비슷한 supported operation으로 바꾸지 말고 support ticket 4821을 resolved로 close해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-calendar-es-01",
+    "query": "La acción exacta requerida es elimina la reunión de equipo de mañana de mi calendario.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-calendar-en-02",
+    "query": "The exact action is unsupported unless the tool can delete tomorrow's team sync from my calendar.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-support-create-ticket-ja-02",
+    "query": "要求された操作に基づいてルーティングし、login keeps failingの問題でサポートチケットを作成して。",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-materials-search-ja-03",
+    "query": "必要な結果はこれだけです: siliconのバンドギャップや物性を探して。",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-weather-current-ja-02",
+    "query": "必要な結果はこれだけです: Daejeonの現在の天気を調べて。",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-users-ko-03",
+    "query": "같은 도메인 요청이지만 사용자 계정 314를 삭제해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-calendar-create-mixed-03",
+    "query": "내가 필요한 result는 이것뿐이야: project review Friday at 2 calendar event를 create해.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-users-update-ja-04",
+    "query": "この操作に合う機能だけを使ってuser 9001 timezoneのユーザープロフィールを更新して。",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-weather-forecast-en-01",
+    "query": "Handle exactly this request: get the weather forecast for Berlin next week.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-calendar-create-es-03",
+    "query": "El resultado que necesito es específicamente este: crea un evento de calendario para weekly planning Monday at 9.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-list-es-04",
+    "query": "El resultado que necesito es específicamente este: muestra mis eventos del calendario para next Monday.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-inventory-search-mixed-04",
+    "query": "이 request만 정확히 처리해: SKU-303 current inventory quantity를 확인해.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-calendar-de-02",
+    "query": "Im selben Bereich brauche ich, dass du lösche den Team-Termin morgen aus meinem Kalender.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-weather-ja-03",
+    "query": "正確に必要な操作はソウルの気象警報を表示して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-papers-citations-es-01",
+    "query": "Enruta según la acción solicitada y después encuentra artículos que citan 10.1000/epsilon.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-finance-history-en-01",
+    "query": "Handle exactly this request: retrieve historical prices for NVDA for six months.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-users-mixed-01",
+    "query": "비슷한 supported operation으로 바꾸지 말고 user account 314를 delete해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-calendar-list-mixed-01",
+    "query": "이 action에 맞는 operation만 써서 tomorrow calendar events를 list해.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-support-en-03",
+    "query": "Do not substitute a nearby supported operation; close support ticket 4821 as resolved.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-finance-history-es-01",
+    "query": "Enruta según la acción solicitada y después obtén precios históricos de AMD since 2024.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-create-de-02",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: erstelle einen Kalendereintrag für design sync Tuesday at 1.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-weather-de-02",
+    "query": "Es gehört zum selben Tool, aber die angeforderte Aktion ist: zeige Unwetterwarnungen für Seoul.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-weather-current-en-02",
+    "query": "The result I need is specifically this: get the current weather in Berlin.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-users-update-es-01",
+    "query": "Enruta según la acción solicitada y después actualiza el perfil de usuario de alice@example.com phone number.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-list-ko-02",
+    "query": "이 동작에 맞는 기능만 사용해서 next weekend 일정 목록을 보여줘.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-inventory-es-03",
+    "query": "Dentro del mismo dominio, necesito que elimina SKU-778 del catálogo de productos.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-materials-structure-ko-02",
+    "query": "이 동작에 맞는 기능만 사용해서 silicon의 결정구조와 격자 정보를 가져와.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-support-create-ticket-de-03",
+    "query": "Bearbeite genau diese Anfrage: erstelle ein Support-Ticket, weil subscription was duplicated.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-materials-structure-ja-04",
+    "query": "要求された操作に基づいてルーティングし、SiCの結晶構造と格子情報を取得して。",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-materials-structure-ko-04",
+    "query": "요청한 동작 기준으로 라우팅해서 perovskite의 결정구조와 격자 정보를 가져와.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-support-search-es-01",
+    "query": "El resultado que necesito es específicamente este: busca en la base de soporte información sobre password reset.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-users-ja-03",
+    "query": "近い対応操作に置き換えず、ユーザーアカウント314を削除して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-calendar-create-en-03",
+    "query": "Handle exactly this request: create a calendar event for team sync at 3 PM.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-papers-citations-es-04",
+    "query": "Usa solo la operación que corresponde a esta acción: encuentra artículos que citan 10.1000/gamma.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-finance-de-04",
+    "query": "Die exakt benötigte Aktion lautet: platziere eine Market-Kauforder für AAPL.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-users-update-de-02",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: aktualisiere das Benutzerprofil für user 9001 timezone.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-finance-quote-ja-03",
+    "query": "この依頼だけを正確に処理して: METAの最新株価を取得して。",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-papers-citations-es-02",
+    "query": "El resultado que necesito es específicamente este: encuentra artículos que citan 10.1000/theta.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-support-create-ticket-mixed-01",
+    "query": "내가 필요한 result는 이것뿐이야: invoice is wrong 문제로 support ticket을 create해.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-weather-de-03",
+    "query": "Ersetze es nicht durch eine ähnliche unterstützte Operation; zeige Unwetterwarnungen für Seoul.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-ood-de-03",
+    "query": "erkläre, warum Meeresgezeiten entstehen",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-finance-es-04",
+    "query": "Está relacionado con la herramienta, pero la acción solicitada es coloca una orden de compra a mercado para AAPL.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-weather-current-de-01",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: ermittle das aktuelle Wetter in Paris.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-finance-history-ko-04",
+    "query": "내가 필요한 결과는 이것뿐이야: GOOGL over five years의 과거 주가 기록을 가져와.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-inventory-ko-01",
+    "query": "비슷한 지원 동작으로 바꾸지 말고 상품 카탈로그에서 SKU-778을 삭제해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-weather-es-03",
+    "query": "Dentro del mismo dominio, necesito que muestra las alertas meteorológicas severas de Seúl.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-papers-es-04",
+    "query": "Está relacionado con la herramienta, pero la acción solicitada es descarga el PDF de texto completo del DOI 10.5555/example.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-list-es-03",
+    "query": "Gestiona exactamente esta solicitud: muestra mis eventos del calendario para next weekend.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-users-update-en-01",
+    "query": "Use the matching operation for this action only: update the user profile for Hans Müller nickname.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-materials-structure-en-04",
+    "query": "The result I need is specifically this: retrieve the crystal structure and lattice for TiO2.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-materials-search-ja-01",
+    "query": "この操作に合う機能だけを使ってcopperのバンドギャップや物性を探して。",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-calendar-ja-04",
+    "query": "正確に必要な操作は明日のチームミーティングをカレンダーから削除して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-weather-current-en-03",
+    "query": "Use the matching operation for this action only: get the current weather in Osaka.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-users-update-de-03",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: aktualisiere das Benutzerprofil für user 42 name to Alice.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-finance-en-02",
+    "query": "Do not substitute a nearby supported operation; place a market buy order for AAPL.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-weather-current-de-04",
+    "query": "Route nach der angeforderten Aktion und dann ermittle das aktuelle Wetter in Berlin.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-users-update-mixed-03",
+    "query": "내가 필요한 result는 이것뿐이야: user 42 name to Alice user profile을 update해.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-papers-citations-mixed-01",
+    "query": "내가 필요한 result는 이것뿐이야: 10.1000/zeta를 cite한 papers를 찾아줘.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-inventory-search-ko-02",
+    "query": "이 동작에 맞는 기능만 사용해서 SKU-404의 현재 재고 수량을 확인해줘.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-papers-citations-de-02",
+    "query": "Route nach der angeforderten Aktion und dann finde Arbeiten, die 10.1000/eta zitieren.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-support-ko-03",
+    "query": "비슷한 지원 동작으로 바꾸지 말고 고객지원 티켓 4821을 해결됨으로 종료해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-weather-es-04",
+    "query": "No sustituyas una operación compatible parecida; muestra las alertas meteorológicas severas de Seúl.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-papers-en-04",
+    "query": "Do not substitute a nearby supported operation; download the full text PDF for DOI 10.5555/example.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-materials-structure-mixed-01",
+    "query": "내가 필요한 result는 이것뿐이야: GaN crystal structure와 lattice를 가져와.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-inventory-search-ko-01",
+    "query": "내가 필요한 결과는 이것뿐이야: SKU-E60의 현재 재고 수량을 확인해줘.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-users-lookup-ko-01",
+    "query": "이 동작에 맞는 기능만 사용해서 Yuki Sato 사용자 프로필을 조회해줘.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-materials-ko-02",
+    "query": "이 도구와 관련은 있지만 필요한 동작은 LiFePO4의 합성 조건을 예측해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-papers-en-01",
+    "query": "This is related to the tool, but the requested action is to download the full text PDF for DOI 10.5555/example.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-ood-es-03",
+    "query": "diseña un concepto de logotipo para una panadería",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-inventory-update-mixed-01",
+    "query": "이 action에 맞는 operation만 써서 inventory를 SKU-202 to 4로 update해.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-materials-structure-de-04",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: hole Kristallstruktur und Gitter von diamond.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-weather-forecast-en-02",
+    "query": "Use the matching operation for this action only: get the weather forecast for Daejeon tomorrow.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-finance-history-en-04",
+    "query": "Use the matching operation for this action only: retrieve historical prices for KO over the last decade.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-weather-ko-04",
+    "query": "정확히 필요한 동작은 서울의 기상 특보를 보여줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-support-search-ko-02",
+    "query": "이 동작에 맞는 기능만 사용해서 API timeout 관련 고객지원 문서를 검색해줘.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-materials-search-de-02",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: suche Bandlücke oder Materialeigenschaften von silicon.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-finance-es-01",
+    "query": "La acción exacta requerida es coloca una orden de compra a mercado para AAPL.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-list-es-01",
+    "query": "Enruta según la acción solicitada y después muestra mis eventos del calendario para September 30.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-inventory-de-03",
+    "query": "Es gehört zum selben Tool, aber die angeforderte Aktion ist: lösche SKU-778 aus dem Produktkatalog.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-weather-de-04",
+    "query": "Im selben Bereich brauche ich, dass du zeige Unwetterwarnungen für Seoul.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-users-lookup-es-04",
+    "query": "Enruta según la acción solicitada y después busca el perfil de usuario de user 9001.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-list-ko-03",
+    "query": "요청한 동작 기준으로 라우팅해서 today 일정 목록을 보여줘.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-finance-ja-04",
+    "query": "同じドメインですが、必要なのはAAPLの成行買い注文を出して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-calendar-list-ja-03",
+    "query": "要求された操作に基づいてルーティングし、Fridayの予定一覧を表示して。",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-papers-ko-02",
+    "query": "정확히 필요한 동작은 DOI 10.5555/example 논문의 원문 PDF를 다운로드해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-support-ja-01",
+    "query": "近い対応操作に置き換えず、サポートチケット4821を解決済みとして閉じて。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-inventory-ja-04",
+    "query": "近い対応操作に置き換えず、商品カタログからSKU-778を削除して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-weather-forecast-ja-03",
+    "query": "要求された操作に基づいてルーティングし、Madrid tomorrowの天気予報を調べて。",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-papers-de-01",
+    "query": "Ersetze es nicht durch eine ähnliche unterstützte Operation; lade das Volltext-PDF für DOI 10.5555/example herunter.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-ood-ja-03",
+    "query": "架空の推理小説のあらすじを要約して",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-support-search-mixed-04",
+    "query": "내가 필요한 result는 이것뿐이야: account verification 관련 support KB를 search해.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-materials-structure-es-04",
+    "query": "Gestiona exactamente esta solicitud: obtén la estructura cristalina y red de LiFePO4.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-weather-mixed-03",
+    "query": "비슷한 supported operation으로 바꾸지 말고 서울 severe weather alert를 보여줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-materials-search-mixed-02",
+    "query": "내가 필요한 result는 이것뿐이야: diamond band gap이나 material property를 찾아줘.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-inventory-update-de-03",
+    "query": "Bearbeite genau diese Anfrage: aktualisiere den Lagerbestand für SKU-404 to 0.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-finance-mixed-01",
+    "query": "비슷한 supported operation으로 바꾸지 말고 AAPL market buy order를 place해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-finance-mixed-04",
+    "query": "same domain이지만 필요한 건 AAPL market buy order를 place해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-finance-mixed-02",
+    "query": "이 tool 관련이지만 requested action은 AAPL market buy order를 place해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-finance-de-03",
+    "query": "Es gehört zum selben Tool, aber die angeforderte Aktion ist: platziere eine Market-Kauforder für AAPL.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-inventory-search-en-03",
+    "query": "Please route this by the requested action, then check current inventory quantity for SKU-B24.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-papers-ja-02",
+    "query": "このツールに関連していますが、要求された操作はDOI 10.5555/example の全文PDFをダウンロードして。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-materials-structure-en-02",
+    "query": "Handle exactly this request: retrieve the crystal structure and lattice for copper.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-inventory-de-04",
+    "query": "Im selben Bereich brauche ich, dass du lösche SKU-778 aus dem Produktkatalog.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-materials-search-es-02",
+    "query": "Gestiona exactamente esta solicitud: busca la banda prohibida o propiedades de SiC.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-support-create-ticket-ja-04",
+    "query": "この操作に合う機能だけを使ってexport failedの問題でサポートチケットを作成して。",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-support-ko-02",
+    "query": "정확히 필요한 동작은 고객지원 티켓 4821을 해결됨으로 종료해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-papers-citations-en-04",
+    "query": "Please route this by the requested action, then find papers that cite 10.1000/beta.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-materials-structure-es-02",
+    "query": "Usa solo la operación que corresponde a esta acción: obtén la estructura cristalina y red de graphene.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-materials-es-03",
+    "query": "No sustituyas una operación compatible parecida; predice las condiciones de síntesis de LiFePO4.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-materials-structure-mixed-03",
+    "query": "이 request만 정확히 처리해: diamond crystal structure와 lattice를 가져와.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-materials-de-04",
+    "query": "Die exakt benötigte Aktion lautet: sage Synthesebedingungen für LiFePO4 voraus.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-papers-citations-de-01",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: finde Arbeiten, die 10.1000/zeta zitieren.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-papers-mixed-02",
+    "query": "비슷한 supported operation으로 바꾸지 말고 DOI 10.5555/example full-text PDF를 download해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-materials-search-ja-02",
+    "query": "要求された操作に基づいてルーティングし、SiCのバンドギャップや物性を探して。",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-users-lookup-mixed-03",
+    "query": "내가 필요한 result는 이것뿐이야: Hans Müller user profile을 lookup해.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-materials-mixed-03",
+    "query": "exact action은 LiFePO4 synthesis condition을 predict해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-support-create-ticket-de-04",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: erstelle ein Support-Ticket, weil API returns 500.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-users-lookup-de-01",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: suche das Benutzerprofil für user 42.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-users-en-04",
+    "query": "Within this same domain, I need you to delete user account 314.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-support-de-03",
+    "query": "Ersetze es nicht durch eine ähnliche unterstützte Operation; schließe Support-Ticket 4821 als gelöst.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-users-lookup-ko-04",
+    "query": "이 요청만 정확히 처리해줘: user 42 사용자 프로필을 조회해줘.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-materials-ko-03",
+    "query": "같은 도메인 요청이지만 LiFePO4의 합성 조건을 예측해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-calendar-de-01",
+    "query": "Es gehört zum selben Tool, aber die angeforderte Aktion ist: lösche den Team-Termin morgen aus meinem Kalender.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-support-search-mixed-03",
+    "query": "이 request만 정확히 처리해: data export 관련 support KB를 search해.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-support-search-es-03",
+    "query": "Enruta según la acción solicitada y después busca en la base de soporte información sobre billing FAQ.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-finance-de-02",
+    "query": "Im selben Bereich brauche ich, dass du platziere eine Market-Kauforder für AAPL.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-inventory-search-ko-04",
+    "query": "요청한 동작 기준으로 라우팅해서 SKU-B24의 현재 재고 수량을 확인해줘.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-inventory-update-de-04",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: aktualisiere den Lagerbestand für SKU-101 to 12.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-papers-search-ko-02",
+    "query": "이 동작에 맞는 기능만 사용해서 battery materials 관련 논문을 검색해줘.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-finance-de-01",
+    "query": "Ersetze es nicht durch eine ähnliche unterstützte Operation; platziere eine Market-Kauforder für AAPL.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-finance-history-en-03",
+    "query": "The result I need is specifically this: retrieve historical prices for INTC for 90 days.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-materials-ko-01",
+    "query": "정확히 필요한 동작은 LiFePO4의 합성 조건을 예측해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-users-update-ko-04",
+    "query": "요청한 동작 기준으로 라우팅해서 Kevin Cho display name 사용자 프로필을 수정해줘.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-materials-search-mixed-04",
+    "query": "이 request만 정확히 처리해: perovskite band gap이나 material property를 찾아줘.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-finance-en-01",
+    "query": "This is related to the tool, but the requested action is to place a market buy order for AAPL.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-papers-search-mixed-02",
+    "query": "내가 필요한 result는 이것뿐이야: perovskite solar cells 관련 research paper를 search해.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-materials-structure-ja-02",
+    "query": "必要な結果はこれだけです: LiFePO4の結晶構造と格子情報を取得して。",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-materials-mixed-02",
+    "query": "비슷한 supported operation으로 바꾸지 말고 LiFePO4 synthesis condition을 predict해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-support-ja-04",
+    "query": "同じドメインですが、必要なのはサポートチケット4821を解決済みとして閉じて。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-inventory-de-01",
+    "query": "Ersetze es nicht durch eine ähnliche unterstützte Operation; lösche SKU-778 aus dem Produktkatalog.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-weather-mixed-04",
+    "query": "same domain이지만 필요한 건 서울 severe weather alert를 보여줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-finance-quote-de-03",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: hole den aktuellen Aktienkurs von AMD.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-materials-structure-ja-01",
+    "query": "この依頼だけを正確に処理して: grapheneの結晶構造と格子情報を取得して。",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-calendar-list-mixed-03",
+    "query": "requested action 기준으로 route한 뒤 the morning calendar events를 list해.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-finance-quote-en-03",
+    "query": "Use the matching operation for this action only: get the latest stock quote for NVDA.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-inventory-en-02",
+    "query": "Do not substitute a nearby supported operation; delete SKU-778 from the product catalog.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-papers-search-en-04",
+    "query": "The result I need is specifically this: search research papers about retrieval augmented generation.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-finance-quote-es-04",
+    "query": "Gestiona exactamente esta solicitud: obtén la cotización actual de META.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-calendar-es-03",
+    "query": "Está relacionado con la herramienta, pero la acción solicitada es elimina la reunión de equipo de mañana de mi calendario.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-materials-search-de-01",
+    "query": "Route nach der angeforderten Aktion und dann suche Bandlücke oder Materialeigenschaften von Al2O3.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-support-search-ko-04",
+    "query": "요청한 동작 기준으로 라우팅해서 two-factor setup 관련 고객지원 문서를 검색해줘.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-users-lookup-es-03",
+    "query": "Gestiona exactamente esta solicitud: busca el perfil de usuario de Kevin Cho.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-weather-forecast-en-04",
+    "query": "The result I need is specifically this: get the weather forecast for Madrid tomorrow.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-support-search-en-01",
+    "query": "Use the matching operation for this action only: search the support knowledge base for notification settings.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-finance-quote-mixed-01",
+    "query": "이 request만 정확히 처리해: AMZN current stock quote를 알려줘.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-materials-structure-ko-01",
+    "query": "내가 필요한 결과는 이것뿐이야: SiC의 결정구조와 격자 정보를 가져와.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-materials-structure-de-03",
+    "query": "Route nach der angeforderten Aktion und dann hole Kristallstruktur und Gitter von GaN.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-papers-es-03",
+    "query": "Dentro del mismo dominio, necesito que descarga el PDF de texto completo del DOI 10.5555/example.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-users-lookup-mixed-04",
+    "query": "이 action에 맞는 operation만 써서 account 73 user profile을 lookup해.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-users-update-ja-03",
+    "query": "この依頼だけを正確に処理して: user 42 name to Aliceのユーザープロフィールを更新して。",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-papers-search-mixed-03",
+    "query": "이 action에 맞는 operation만 써서 retrieval augmented generation 관련 research paper를 search해.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-calendar-create-ja-01",
+    "query": "必要な結果はこれだけです: project review Friday at 2の予定をカレンダーに作成して。",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-inventory-search-de-01",
+    "query": "Route nach der angeforderten Aktion und dann prüfe den aktuellen Bestand von SKU-B24.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-users-update-ja-02",
+    "query": "必要な結果はこれだけです: Kevin Cho display nameのユーザープロフィールを更新して。",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-users-lookup-ja-03",
+    "query": "この操作に合う機能だけを使ってaccount 1007のユーザープロフィールを検索して。",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-papers-search-en-03",
+    "query": "Use the matching operation for this action only: search research papers about quantum materials.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-weather-forecast-ja-01",
+    "query": "この操作に合う機能だけを使ってSeoul tomorrowの天気予報を調べて。",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-support-ja-02",
+    "query": "このツールに関連していますが、要求された操作はサポートチケット4821を解決済みとして閉じて。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-ood-ja-04",
+    "query": "海の潮汐が起こる理由を説明して",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-finance-history-mixed-02",
+    "query": "requested action 기준으로 route한 뒤 AMZN this quarter historical price history를 보여줘.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-weather-current-de-03",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: ermittle das aktuelle Wetter in Busan.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-papers-citations-en-03",
+    "query": "The result I need is specifically this: find papers that cite 10.1000/iota.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-calendar-de-03",
+    "query": "Die exakt benötigte Aktion lautet: lösche den Team-Termin morgen aus meinem Kalender.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-papers-ja-03",
+    "query": "同じドメインですが、必要なのはDOI 10.5555/example の全文PDFをダウンロードして。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-inventory-update-ko-04",
+    "query": "내가 필요한 결과는 이것뿐이야: 재고를 SKU-505 to 55로 업데이트해줘.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-papers-mixed-01",
+    "query": "same domain이지만 필요한 건 DOI 10.5555/example full-text PDF를 download해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-users-ko-02",
+    "query": "이 도구와 관련은 있지만 필요한 동작은 사용자 계정 314를 삭제해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-finance-history-ja-01",
+    "query": "必要な結果はこれだけです: MSFT since Januaryの過去の株価履歴を取得して。",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-weather-forecast-ja-02",
+    "query": "この依頼だけを正確に処理して: Osaka tonightの天気予報を調べて。",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-users-update-es-02",
+    "query": "Gestiona exactamente esta solicitud: actualiza el perfil de usuario de Bob Kim title.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-ood-de-02",
+    "query": "komponiere vier Takte Jazz-Piano-Voicings",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-papers-citations-mixed-04",
+    "query": "이 request만 정확히 처리해: 10.1000/beta를 cite한 papers를 찾아줘.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-weather-forecast-de-01",
+    "query": "Nutze nur die zu dieser Aktion passende Operation: hole die Wettervorhersage für Seoul tomorrow.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-papers-search-es-03",
+    "query": "Enruta según la acción solicitada y después busca artículos de investigación sobre retrieval augmented generation.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-ood-mixed-04",
+    "query": "bakery logo concept을 design해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-inventory-search-es-01",
+    "query": "Gestiona exactamente esta solicitud: consulta la cantidad actual en inventario de SKU-B24.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-papers-ja-01",
+    "query": "近い対応操作に置き換えず、DOI 10.5555/example の全文PDFをダウンロードして。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-inventory-search-de-04",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: prüfe den aktuellen Bestand von SKU-101.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-support-en-04",
+    "query": "Within this same domain, I need you to close support ticket 4821 as resolved.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-weather-forecast-ko-01",
+    "query": "요청한 동작 기준으로 라우팅해서 Daejeon tomorrow 날씨 예보를 알려줘.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-finance-history-ko-03",
+    "query": "이 요청만 정확히 처리해줘: NVDA for six months의 과거 주가 기록을 가져와.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-near-support-en-01",
+    "query": "The exact action is unsupported unless the tool can close support ticket 4821 as resolved.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-support-create-ticket-en-03",
+    "query": "Handle exactly this request: create a support ticket because refund has not arrived.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-users-es-02",
+    "query": "Está relacionado con la herramienta, pero la acción solicitada es elimina la cuenta de usuario 314.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-papers-citations-mixed-03",
+    "query": "requested action 기준으로 route한 뒤 10.1000/iota를 cite한 papers를 찾아줘.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-calendar-create-de-03",
+    "query": "Route nach der angeforderten Aktion und dann erstelle einen Kalendereintrag für weekly planning Monday at 9.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-weather-current-es-03",
+    "query": "Gestiona exactamente esta solicitud: obtén el clima actual en New York.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-papers-ja-04",
+    "query": "正確に必要な操作はDOI 10.5555/example の全文PDFをダウンロードして。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-calendar-list-mixed-02",
+    "query": "내가 필요한 result는 이것뿐이야: October 1 calendar events를 list해.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-inventory-en-03",
+    "query": "Within this same domain, I need you to delete SKU-778 from the product catalog.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-finance-quote-ja-02",
+    "query": "必要な結果はこれだけです: TSLAの最新株価を取得して。",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-materials-structure-mixed-04",
+    "query": "requested action 기준으로 route한 뒤 TiO2 crystal structure와 lattice를 가져와.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-finance-ja-03",
+    "query": "近い対応操作に置き換えず、AAPLの成行買い注文を出して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-finance-ja-01",
+    "query": "正確に必要な操作はAAPLの成行買い注文を出して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-finance-quote-de-02",
+    "query": "Bearbeite genau diese Anfrage: hole den aktuellen Aktienkurs von NVDA.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-users-lookup-es-01",
+    "query": "Usa solo la operación que corresponde a esta acción: busca el perfil de usuario de user 42.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-support-mixed-02",
+    "query": "same domain이지만 필요한 건 support ticket 4821을 resolved로 close해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-materials-search-ko-03",
+    "query": "이 요청만 정확히 처리해줘: graphene의 밴드갭이나 물성을 찾아줘.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-finance-quote-ja-04",
+    "query": "要求された操作に基づいてルーティングし、KOの最新株価を取得して。",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-inventory-search-ja-04",
+    "query": "要求された操作に基づいてルーティングし、SKU-101の現在庫数を確認して。",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-weather-current-mixed-03",
+    "query": "requested action 기준으로 route한 뒤 Daejeon 지금 weather를 확인해.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-support-create-ticket-es-01",
+    "query": "Gestiona exactamente esta solicitud: crea un ticket de soporte porque export failed.",
+    "expected": "support.create_ticket",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-weather-forecast-de-04",
+    "query": "Route nach der angeforderten Aktion und dann hole die Wettervorhersage für Busan this weekend.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-materials-es-02",
+    "query": "Dentro del mismo dominio, necesito que predice las condiciones de síntesis de LiFePO4.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-weather-en-02",
+    "query": "The exact action is unsupported unless the tool can show severe weather alerts for Seoul.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-finance-quote-en-01",
+    "query": "Please route this by the requested action, then get the latest stock quote for KO.",
+    "expected": "finance.quote",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-weather-es-01",
+    "query": "La acción exacta requerida es muestra las alertas meteorológicas severas de Seúl.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-weather-current-ko-02",
+    "query": "요청한 동작 기준으로 라우팅해서 Berlin의 지금 날씨를 알려줘.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-materials-structure-de-01",
+    "query": "Bearbeite genau diese Anfrage: hole Kristallstruktur und Gitter von LiFePO4.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-materials-search-de-03",
+    "query": "Bearbeite genau diese Anfrage: suche Bandlücke oder Materialeigenschaften von TiO2.",
+    "expected": "materials.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-support-mixed-04",
+    "query": "이 tool 관련이지만 requested action은 support ticket 4821을 resolved로 close해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-materials-en-01",
+    "query": "The exact action is unsupported unless the tool can predict synthesis conditions for LiFePO4.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-calendar-list-en-02",
+    "query": "Use the matching operation for this action only: list my calendar events for Friday.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-inventory-search-en-01",
+    "query": "The result I need is specifically this: check current inventory quantity for SKU-C36.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-calendar-list-en-03",
+    "query": "Please route this by the requested action, then list my calendar events for next weekend.",
+    "expected": "calendar.list",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-calendar-en-01",
+    "query": "Do not substitute a nearby supported operation; delete tomorrow's team sync from my calendar.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-inventory-search-es-03",
+    "query": "Enruta según la acción solicitada y después consulta la cantidad actual en inventario de SKU-404.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-finance-history-ko-01",
+    "query": "이 동작에 맞는 기능만 사용해서 MSFT since January의 과거 주가 기록을 가져와.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-inventory-search-de-02",
+    "query": "Bearbeite genau diese Anfrage: prüfe den aktuellen Bestand von SKU-A12.",
+    "expected": "inventory.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-papers-citations-en-01",
+    "query": "Handle exactly this request: find papers that cite 10.1000/eta.",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-inventory-update-en-04",
+    "query": "The result I need is specifically this: update inventory quantity for SKU-A12 to 7.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-users-lookup-en-01",
+    "query": "Handle exactly this request: look up the user profile for account 73.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-calendar-create-es-01",
+    "query": "Gestiona exactamente esta solicitud: crea un evento de calendario para team sync at 3 PM.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-users-de-02",
+    "query": "Die exakt benötigte Aktion lautet: lösche Benutzerkonto 314.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-finance-ko-01",
+    "query": "정확히 필요한 동작은 AAPL 시장가 매수 주문을 넣어줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-papers-search-en-02",
+    "query": "Please route this by the requested action, then search research papers about graph neural networks.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-calendar-create-en-02",
+    "query": "Use the matching operation for this action only: create a calendar event for focus time at 9 AM.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-inventory-mixed-03",
+    "query": "exact action은 product catalog에서 SKU-778을 delete해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-support-search-ko-03",
+    "query": "이 요청만 정확히 처리해줘: refund policy 관련 고객지원 문서를 검색해줘.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-users-update-ja-01",
+    "query": "要求された操作に基づいてルーティングし、maria@example.com localeのユーザープロフィールを更新して。",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-near-materials-mixed-01",
+    "query": "same domain이지만 필요한 건 LiFePO4 synthesis condition을 predict해줘.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-support-search-es-02",
+    "query": "Gestiona exactamente esta solicitud: busca en la base de soporte información sobre login failure.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-near-papers-en-03",
+    "query": "The exact action is unsupported unless the tool can download the full text PDF for DOI 10.5555/example.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-inventory-update-de-01",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: aktualisiere den Lagerbestand für SKU-A12 to 7.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-ood-de-01",
+    "query": "entwirf ein Logo-Konzept für eine Bäckerei",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-materials-structure-en-01",
+    "query": "Use the matching operation for this action only: retrieve the crystal structure and lattice for graphene.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-near-inventory-ja-03",
+    "query": "同じドメインですが、必要なのは商品カタログからSKU-778を削除して。",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-weather-forecast-es-02",
+    "query": "El resultado que necesito es específicamente este: obtén el pronóstico del tiempo para Osaka tonight.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-papers-search-ja-03",
+    "query": "この依頼だけを正確に処理して: small language modelsに関する研究論文を検索して。",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-papers-search-ko-03",
+    "query": "이 요청만 정확히 처리해줘: perovskite solar cells 관련 논문을 검색해줘.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-materials-structure-ko-03",
+    "query": "이 요청만 정확히 처리해줘: graphene의 결정구조와 격자 정보를 가져와.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-inventory-update-mixed-04",
+    "query": "내가 필요한 result는 이것뿐이야: inventory를 SKU-303 to 30로 update해.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-papers-search-en-01",
+    "query": "Handle exactly this request: search research papers about tool routing.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-weather-forecast-ko-02",
+    "query": "이 요청만 정확히 처리해줘: Paris next Tuesday 날씨 예보를 알려줘.",
+    "expected": "weather.forecast",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-weather-current-mixed-01",
+    "query": "이 action에 맞는 operation만 써서 New York 지금 weather를 확인해.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-support-de-01",
+    "query": "Die exakt benötigte Aktion lautet: schließe Support-Ticket 4821 als gelöst.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-inventory-update-es-01",
+    "query": "Enruta según la acción solicitada y después actualiza la cantidad de inventario de SKU-505 to 55.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-calendar-create-en-01",
+    "query": "Please route this by the requested action, then create a calendar event for design sync Tuesday at 1.",
+    "expected": "calendar.create",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-users-lookup-ko-02",
+    "query": "요청한 동작 기준으로 라우팅해서 maria@example.com 사용자 프로필을 조회해줘.",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v13-weather-current-es-02",
+    "query": "El resultado que necesito es específicamente este: obtén el clima actual en Daejeon.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-users-update-de-01",
+    "query": "Bearbeite genau diese Anfrage: aktualisiere das Benutzerprofil für alice@example.com phone number.",
+    "expected": "users.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-weather-current-en-04",
+    "query": "Handle exactly this request: get the current weather in Seoul.",
+    "expected": "weather.current",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-finance-history-mixed-01",
+    "query": "내가 필요한 result는 이것뿐이야: AAPL over the last year historical price history를 보여줘.",
+    "expected": "finance.history",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-papers-citations-ja-01",
+    "query": "この操作に合う機能だけを使って10.1000/etaを引用している論文を探して。",
+    "expected": "papers.citations",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-users-lookup-ja-04",
+    "query": "要求された操作に基づいてルーティングし、Kevin Choのユーザープロフィールを検索して。",
+    "expected": "users.lookup",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v13-inventory-update-en-03",
+    "query": "Please route this by the requested action, then update inventory quantity for SKU-404 to 0.",
+    "expected": "inventory.update",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-support-search-de-02",
+    "query": "Ich brauche ausdrücklich nur dieses Ergebnis: suche in der Support-Wissensbasis nach login failure.",
+    "expected": "support.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v13-near-support-es-01",
+    "query": "Dentro del mismo dominio, necesito que cierra el ticket de soporte 4821 como resuelto.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v13-materials-structure-mixed-02",
+    "query": "이 action에 맞는 operation만 써서 silicon crystal structure와 lattice를 가져와.",
+    "expected": "materials.structure",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-papers-search-mixed-01",
+    "query": "이 request만 정확히 처리해: small language models 관련 research paper를 search해.",
+    "expected": "papers.search",
+    "category": "blind_operation_generalization",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v13-near-weather-en-04",
+    "query": "This is related to the tool, but the requested action is to show severe weather alerts for Seoul.",
+    "expected": null,
+    "category": "near_domain_unsupported_operation",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v13-ood-mixed-03",
+    "query": "이 proverb를 Latin으로 translate해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  }
+]

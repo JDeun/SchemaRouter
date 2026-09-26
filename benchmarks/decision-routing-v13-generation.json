@@ -1,0 +1,25 @@
+{
+  "version": "v13",
+  "status": "generated_for_one_shot_scoring",
+  "role": "blind_final_generalization_holdout",
+  "seed": "36246386089",
+  "source_revision": "07096b7350ba2b7e60bda2ddf04de49db894e75f",
+  "candidate_freeze_revision": "14e1977011c5b926476731736f7a4a9e1876367a",
+  "corpus_sha256": "73863c15191d6e75d892a8b0024056abe562aad2ad11d334610871dc5e070596",
+  "case_count": 600,
+  "supported_operation_cases": 384,
+  "near_domain_unsupported_operation_cases": 192,
+  "out_of_domain_cases": 24,
+  "languages": {
+    "en": 100,
+    "ko": 100,
+    "es": 100,
+    "ja": 100,
+    "de": 100,
+    "mixed": 100
+  },
+  "supported_route_count": 16,
+  "cases_per_supported_route": 24,
+  "normalized_exact_overlap_with_v1_v12": 0,
+  "tuning_eligible": false
+}

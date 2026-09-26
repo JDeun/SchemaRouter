@@ -1,0 +1,64 @@
+{
+  "cycle": "0.10-operation-contrastive-v1",
+  "status": "consumed_blind_final",
+  "tuning_eligible": false,
+  "candidate_freeze_revision": "14e1977011c5b926476731736f7a4a9e1876367a",
+  "source_revision": "07096b7350ba2b7e60bda2ddf04de49db894e75f",
+  "workflow_run_id": 36246386089,
+  "workflow_run_conclusion": "success",
+  "workflow_completed_at": "2026-09-26T14:05:57Z",
+  "artifact_id": 10907304722,
+  "artifact_sha256": "0ca1cb673bee4d64999194252de8ddfe13a408548b7b53f0980c70b2d4719460",
+  "seed": "36246386089",
+  "corpus_sha256": "73863c15191d6e75d892a8b0024056abe562aad2ad11d334610871dc5e070596",
+  "case_count": 600,
+  "overall_accuracy": 0.75,
+  "overall_accuracy_ci95": [
+    0.713836,
+    0.782983
+  ],
+  "supported_operation_routed_accuracy": 0.6171875,
+  "supported_operation_routed_accuracy_ci95": [
+    0.567638,
+    0.664416
+  ],
+  "near_domain_unsupported_operation_rejection": 0.984375,
+  "near_domain_unsupported_operation_rejection_ci95": [
+    0.955076,
+    0.994672
+  ],
+  "out_of_domain_rejection": 1.0,
+  "out_of_domain_rejection_ci95": [
+    0.862024,
+    1.0
+  ],
+  "harmonic_mean_supported_rejection": 0.7586890243902439,
+  "expected_no_route_recall": 0.9861111111111112,
+  "invalid_plan_rate": 0.0,
+  "errors": 0,
+  "mean_latency_ms": 612.435,
+  "p50_latency_ms": 664.195,
+  "p95_latency_ms": 757.382,
+  "language_accuracy": {
+    "de": 0.69,
+    "en": 0.91,
+    "es": 0.65,
+    "ja": 0.73,
+    "ko": 0.71,
+    "mixed": 0.81
+  },
+  "error_taxonomy": {
+    "correct": 450,
+    "false_route": 3,
+    "missed_route": 109,
+    "wrong_tool": 1,
+    "wrong_endpoint": 37,
+    "execution_error": 0
+  },
+  "failure_stage_counts": {
+    "capability_fit": 14,
+    "operation_fit": 95
+  },
+  "interpretation": "The frozen beta=1 sibling-contrastive BGE candidate preserved supported-route accuracy near calibration while maintaining very high near-domain unsupported-operation rejection on the first blind-final v13 run.",
+  "post_consumption_policy": "v13 is permanently consumed and may be used only for reporting or clearly labeled diagnostics; it must never be used for tuning."
+}
