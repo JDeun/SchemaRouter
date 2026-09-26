@@ -311,6 +311,7 @@ class SchemaPlanner:
         candidate_recall_limit: int = 4,
         candidate_fit_backend: DecisionBackend | None = None,
         operation_fit_backend: DecisionBackend | None = None,
+        operation_fit_explicit_abstention: bool = False,
         endpoint_disambiguation_backend: DecisionBackend | None = None,
         candidate_index: bool = True,
         availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
@@ -329,6 +330,9 @@ class SchemaPlanner:
         self.candidate_recall_limit = candidate_recall_limit
         self.candidate_fit_backend = candidate_fit_backend
         self.operation_fit_backend = operation_fit_backend
+        if not isinstance(operation_fit_explicit_abstention, bool):
+            raise TypeError("operation_fit_explicit_abstention must be a bool")
+        self.operation_fit_explicit_abstention = operation_fit_explicit_abstention
         self.endpoint_disambiguation_backend = endpoint_disambiguation_backend
         self.candidate_index = candidate_index
         self.availability_predicate = availability_predicate
@@ -787,8 +791,8 @@ class SchemaPlanner:
         accepted = result.selections[0].option_id
         return candidates, [f"capability fit gate accepted via {accepted}"]
 
-    @staticmethod
     def _operation_fit_request(
+        self,
         request: PlanRequest,
         candidates: list[_Candidate],
     ) -> DecisionRequest | None:
@@ -796,8 +800,10 @@ class SchemaPlanner:
 
         This gate deliberately excludes the tool description and output-field labels so
         domain similarity cannot by itself turn an unsupported operation into a match.
-        It can only suppress the already-authorized candidate set; it never selects,
-        adds, or reorders execution candidates.
+        When explicit abstention is enabled, one local sentinel may represent a same-domain
+        operation outside the declared endpoint set. The sentinel grants no execution
+        authority and can only suppress the already-authorized candidate set. This gate
+        never selects, adds, or reorders executable candidates.
         """
 
         if request.max_calls > 1 or not candidates:
@@ -813,6 +819,7 @@ class SchemaPlanner:
             return None
 
         options: list[DecisionOption] = []
+        declared_operation_phrases: list[str] = []
         for index, candidate in enumerate(sibling_candidates):
             endpoint = candidate.endpoint
             operation_name = endpoint.name.replace("_", " ").replace("-", " ")
@@ -821,12 +828,30 @@ class SchemaPlanner:
                 parts.extend(endpoint.operation_aliases)
             if endpoint.description.strip():
                 parts.append(endpoint.description.strip())
+            declared_operation_phrases.extend(
+                part for part in [operation_name, *endpoint.operation_aliases] if part
+            )
             options.append(
                 DecisionOption(
                     id=f"operation:{index}",
                     label=endpoint.name,
                     description="\n".join(part for part in parts if part),
                     metadata={"tool": primary_tool},
+                )
+            )
+
+        if self.operation_fit_explicit_abstention:
+            declared = ", ".join(dict.fromkeys(declared_operation_phrases))
+            options.append(
+                DecisionOption(
+                    id="operation:unsupported",
+                    label="unsupported operation",
+                    description=(
+                        f"Different unsupported {primary_tool} operation. "
+                        "The requested action belongs to this tool domain but is not any "
+                        f"declared operation: {declared}"
+                    ),
+                    metadata={"tool": primary_tool, "sentinel": True},
                 )
             )
 
@@ -870,6 +895,11 @@ class SchemaPlanner:
             ]
 
         accepted = result.selections[0].option_id
+        if accepted == "operation:unsupported":
+            return [], [
+                "operation capability fit gate selected explicit unsupported sentinel; "
+                "suppressed candidate routes"
+            ]
         return candidates, [
             f"operation capability fit gate accepted via {accepted}"
         ]
@@ -904,6 +934,11 @@ class SchemaPlanner:
             ]
 
         accepted = result.selections[0].option_id
+        if accepted == "operation:unsupported":
+            return [], [
+                "operation capability fit gate selected explicit unsupported sentinel; "
+                "suppressed candidate routes"
+            ]
         return candidates, [
             f"operation capability fit gate accepted via {accepted}"
         ]
