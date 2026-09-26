@@ -282,7 +282,7 @@ from schemarouter import EmbeddingDecisionBackend
 backend = EmbeddingDecisionBackend(
     embed_batch,
     min_similarity=0.35,
-    min_margin=0.05,
+    min_lead_margin=0.05,
 )
 ```
 
@@ -294,8 +294,13 @@ those packages to SchemaRouter's core dependency graph.
 The default option-text formatter does not pass `DecisionOption.metadata` to the embedder. A
 custom `option_text` callback is trusted application code and may intentionally choose a different
 data boundary. A zero-norm vector, NaN/Infinity, dimension mismatch, wrong batch size, or malformed
-vector fails closed. `min_similarity` can
-abstain on weak matches; `min_margin` can abstain when the selection boundary is ambiguous.
+vector fails closed. `min_similarity` can abstain on weak matches. `min_lead_margin` can abstain when the best
+semantic match is not sufficiently distinct from the runner-up, which is useful as a conservative
+capability-fit/no-route gate. `min_margin` is different: it measures the boundary between the last
+selected option and the next option (for example, second-versus-third when selecting top-2) and is
+therefore a multi-selection stability control rather than a top-match capability-fit signal. All
+three thresholds are opt-in and default to non-blocking values; calibrate them on representative
+traffic instead of treating example values as universal defaults.
 
 For asymmetric retrieval encoders, wrap the callable so the first input (the query) uses the
 encoder's query path and option texts use its passage/document path.
