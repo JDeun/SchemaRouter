@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections import defaultdict
@@ -135,7 +136,7 @@ def canonical_identity(record: SourceRecord) -> str:
         default=str,
         separators=(",", ":"),
     )
-    digest = __import__("hashlib").sha256(payload.encode()).hexdigest()
+    digest = hashlib.sha256(payload.encode()).hexdigest()
     return f"{record.entity_kind}:unresolved:{digest}"
 
 
