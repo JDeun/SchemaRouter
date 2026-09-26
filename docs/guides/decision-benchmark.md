@@ -355,6 +355,8 @@ The operation-fit threshold must be selected from v5 development/calibration res
 v6 contains 384 supported route cases, 192 near-domain unsupported-operation negatives, and 24
 ordinary out-of-domain negatives, balanced to 100 cases per language group.
 
+The GitHub Actions v6 holdout job is deliberately manual-only. It is skipped for pull-request runs and ordinary manual benchmark runs. To consume v6, explicitly enable `run_operation_holdout` and provide the already-frozen `operation_fit_min_similarity` value. An empty threshold leaves the holdout job skipped.
+
 The frozen upstream stack for this experiment is:
 
 - semantic candidate recall top-k = 2;
