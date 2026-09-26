@@ -517,3 +517,49 @@ jobs:
           path: artifacts/operation-fit/heldout-v9/
           if-no-files-found: warn
           retention-days: 30
+
+  # BEGIN ONE-SHOT V9 FREEZE VALIDATION
+  operation-fit-v9-heldout-freeze-cpu:
+    if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' && github.head_ref == 'research/freeze-operation-fit-v9' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "sentence-transformers>=3,<6"
+      - run: pip install -e ".[dev]"
+      - name: Run one-shot frozen 0.40 operation-fit configuration on reserved v9 holdout
+        env:
+          SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+          OPERATION_FIT_MIN_SIMILARITY: "0.40"
+        run: |
+          mkdir -p artifacts/operation-fit/heldout-v9
+          python scripts/benchmark_decision_routing.py \
+            --corpus benchmarks/decision-routing-v9-operation-alias-holdout.json \
+            --split test \
+            --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
+            --candidate-recall-limit 2 \
+            --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed \
+            --candidate-fit-min-similarity 0.25 \
+            --operation-fit-embedding-callable benchmarks.multilingual_embedder:embed \
+            --operation-fit-min-similarity "${OPERATION_FIT_MIN_SIMILARITY}" \
+            --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed \
+            --endpoint-disambiguation-min-margin 0.03 \
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+            --json-out artifacts/operation-fit/heldout-v9/report.json \
+            --csv-out artifacts/operation-fit/heldout-v9/rows.csv \
+            --html-out artifacts/operation-fit/heldout-v9/report.html
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: benchmark-operation-fit-v9-heldout-freeze-${{ github.run_id }}
+          path: artifacts/operation-fit/heldout-v9/
+          if-no-files-found: warn
+          retention-days: 30
+
+  # END ONE-SHOT V9 FREEZE VALIDATION
