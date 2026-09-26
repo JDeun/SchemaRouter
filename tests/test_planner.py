@@ -2674,3 +2674,128 @@ async def test_async_endpoint_disambiguation_reorders_same_tool_siblings() -> No
 
     assert plan.calls[0].tool == "inventory"
     assert plan.calls[0].endpoint == "update"
+
+
+def test_operation_fit_gate_sees_only_primary_tool_operations() -> None:
+    seen = {}
+
+    def fit(request):
+        seen["context"] = request.context
+        seen["labels"] = [option.label for option in request.options]
+        seen["descriptions"] = [option.description for option in request.options]
+        return {"selections": [{"option_id": request.options[0].id}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fit),
+    ).plan("inventory quantity")
+
+    assert plan.calls
+    assert seen["context"] == {
+        "surface": "operation_capability_fit",
+        "tool": "inventory",
+    }
+    assert set(seen["labels"]) == {"inventory.search", "inventory.update"}
+    assert all(label.startswith("inventory.") for label in seen["labels"])
+    assert all("Fields:" not in description for description in seen["descriptions"])
+    assert all(
+        "Inventory lookup and stock update operations" not in description
+        for description in seen["descriptions"]
+    )
+
+
+def test_operation_fit_gate_abstention_suppresses_near_domain_candidates() -> None:
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(
+            lambda _request: {"abstained": True}
+        ),
+    ).plan("delete inventory SKU-101")
+
+    assert plan.calls == []
+    assert any(
+        "operation capability fit gate abstained; suppressed candidate routes"
+        in warning
+        for warning in plan.warnings
+    )
+
+
+def test_operation_fit_gate_acceptance_does_not_select_or_reorder_endpoint() -> None:
+    baseline = SchemaPlanner(
+        _endpoint_disambiguation_registry()
+    ).plan("inventory quantity")
+
+    def fit(request):
+        selected = next(
+            option
+            for option in request.options
+            if option.label == "inventory.update"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.99}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fit),
+    ).plan("inventory quantity")
+
+    assert plan.calls[0].tool == baseline.calls[0].tool
+    assert plan.calls[0].endpoint == baseline.calls[0].endpoint
+    assert any(
+        "operation capability fit gate accepted via operation:"
+        in warning
+        for warning in plan.warnings
+    )
+
+
+def test_operation_fit_gate_failure_retains_authorized_candidates() -> None:
+    def fail(_request):
+        raise RuntimeError("operation fit unavailable")
+
+    baseline = SchemaPlanner(
+        _endpoint_disambiguation_registry()
+    ).plan("inventory quantity")
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fail),
+    ).plan("inventory quantity")
+
+    assert plan.calls[0].endpoint == baseline.calls[0].endpoint
+    assert any(
+        "operation capability fit fallback: RuntimeError"
+        in warning
+        for warning in plan.warnings
+    )
+
+
+def test_operation_fit_gate_skips_multi_call_plans() -> None:
+    invoked = False
+
+    def fit(_request):
+        nonlocal invoked
+        invoked = True
+        return {"abstained": True}
+
+    SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fit),
+    ).plan(PlanRequest(query="inventory quantity", max_calls=2))
+
+    assert invoked is False
+
+
+@pytest.mark.asyncio
+async def test_async_operation_fit_gate_can_suppress_candidates() -> None:
+    async def fit(_request):
+        return {"abstained": True}
+
+    plan = await SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fit),
+    ).aplan("delete inventory SKU-101")
+
+    assert plan.calls == []
+    assert any(
+        "operation capability fit gate abstained"
+        in warning
+        for warning in plan.warnings
+    )
