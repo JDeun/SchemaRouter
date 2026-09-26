@@ -72,6 +72,39 @@ def _registry(*, conflicts: bool = False) -> InMemoryRegistry:
     return registry
 
 
+def _multi_registry() -> InMemoryRegistry:
+    registry = _registry()
+    registry.register(
+        ToolSpec(
+            name="papers",
+            description="Scientific literature database",
+            endpoints=[
+                EndpointSpec(
+                    name="search",
+                    description="Search research papers and article metadata",
+                    operation_aliases=["search papers", "find research articles"],
+                    output_fields=[
+                        FieldSpec(name="doi", identifier=True),
+                        FieldSpec(name="title"),
+                    ],
+                    read_only=True,
+                ),
+                EndpointSpec(
+                    name="citations",
+                    description="Find papers that cite an article",
+                    operation_aliases=["find citing papers", "citation lookup"],
+                    output_fields=[
+                        FieldSpec(name="doi", identifier=True),
+                        FieldSpec(name="citations"),
+                    ],
+                    read_only=True,
+                ),
+            ],
+        )
+    )
+    return registry
+
+
 def test_unsupported_operation_aliases_are_typed_and_fingerprinted() -> None:
     base = ToolSpec(
         name="weather",
@@ -381,12 +414,29 @@ class _GeometryRouteSelectingBackend:
     route_id: str
     top_similarity: float
     top_margin: float
+    ranked_ids: tuple[str, ...] = ()
     calls: int = 0
     offered_ids: tuple[str, ...] = ()
 
     def decide(self, request: DecisionRequest) -> DecisionResult:
         self.calls += 1
         self.offered_ids = tuple(option.id for option in request.options)
+        ranking = self.ranked_ids or (
+            self.route_id,
+            *(
+                option_id
+                for option_id in self.offered_ids
+                if option_id != self.route_id
+            ),
+        )
+        ranked_options = [
+            {
+                "option_id": option_id,
+                "similarity": self.top_similarity - (index * 0.01),
+            }
+            for index, option_id in enumerate(ranking)
+            if option_id in self.offered_ids
+        ]
         if self.route_id not in self.offered_ids:
             return DecisionResult(
                 abstained=True,
@@ -394,6 +444,7 @@ class _GeometryRouteSelectingBackend:
                     "reason": "target_not_offered",
                     "top_similarity": self.top_similarity,
                     "top_margin": self.top_margin,
+                    "ranked_options": ranked_options,
                 },
             )
         return DecisionResult(
@@ -403,6 +454,7 @@ class _GeometryRouteSelectingBackend:
                 "top_similarity": self.top_similarity,
                 "second_similarity": self.top_similarity - self.top_margin,
                 "top_margin": self.top_margin,
+                "ranked_options": ranked_options,
             },
         )
 
@@ -625,6 +677,89 @@ def test_semantic_seed_uncertainty_band_is_resolved_inside_tool_graph() -> None:
     assert any("graph propagation accepted" in warning for warning in plan.warnings)
 
 
+def test_ranked_graph_propagation_can_correct_seed_tool_across_authorized_graph() -> None:
+    seed = _GeometryRouteSelectingBackend(
+        "weather.forecast",
+        top_similarity=0.50,
+        top_margin=0.12,
+        ranked_ids=(
+            "weather.forecast",
+            "papers.search",
+            "weather.current",
+            "papers.citations",
+        ),
+    )
+    propagation = _RouteSelectingBackend("papers.search")
+    downstream = _ExplodingBackend()
+    planner = SchemaPlanner(
+        _multi_registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        graph_semantic_direct_min_similarity=0.55,
+        graph_semantic_direct_min_margin=0.15,
+        graph_semantic_propagation_backend=propagation,
+        graph_semantic_propagation_scope="ranked",
+        graph_semantic_propagation_limit=2,
+        graph_semantic_propagation_on_abstain="reject",
+        candidate_recall_backend=downstream,
+        candidate_fit_backend=downstream,
+        operation_fit_backend=downstream,
+        endpoint_disambiguation_backend=downstream,
+    )
+
+    plan = planner.plan(
+        PlanRequest(query="Busca artículos académicos sobre graph neural networks.")
+    )
+
+    assert seed.calls == 1
+    assert propagation.calls == 1
+    assert propagation.offered_ids == (
+        "weather.forecast",
+        "papers.search",
+        "weather.current",
+    )
+    assert downstream.calls == 0
+    assert len(plan.calls) == 1
+    assert plan.calls[0].tool == "papers"
+    assert plan.calls[0].endpoint == "search"
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "graph_propagation"
+
+
+def test_ranked_graph_propagation_never_adds_unranked_unrelated_routes() -> None:
+    seed = _GeometryRouteSelectingBackend(
+        "weather.forecast",
+        top_similarity=0.50,
+        top_margin=0.12,
+        ranked_ids=(
+            "weather.forecast",
+            "papers.search",
+            "papers.citations",
+        ),
+    )
+    propagation = _RouteSelectingBackend("papers.search")
+    planner = SchemaPlanner(
+        _multi_registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        graph_semantic_direct_min_similarity=0.55,
+        graph_semantic_direct_min_margin=0.15,
+        graph_semantic_propagation_backend=propagation,
+        graph_semantic_propagation_scope="ranked",
+        graph_semantic_propagation_limit=1,
+    )
+
+    plan = planner.plan(
+        PlanRequest(query="Busca artículos académicos sobre graph neural networks.")
+    )
+
+    assert set(propagation.offered_ids) == {
+        "weather.forecast",
+        "weather.current",
+    }
+    assert plan.calls == []
+
+
 def test_graph_propagation_abstention_can_fail_closed_without_downstream() -> None:
     seed = _GeometryRouteSelectingBackend(
         "weather.forecast",
@@ -694,6 +829,20 @@ def test_graph_semantic_direct_thresholds_are_bounded(
 ) -> None:
     with pytest.raises(ValueError):
         SchemaPlanner(_registry(), **{keyword: value})
+
+
+def test_graph_propagation_scope_and_limit_are_validated() -> None:
+    with pytest.raises(ValueError, match="siblings.*ranked"):
+        SchemaPlanner(
+            _registry(),
+            graph_semantic_propagation_scope="invalid",  # type: ignore[arg-type]
+        )
+
+    with pytest.raises(ValueError, match="integer >= 1"):
+        SchemaPlanner(
+            _registry(),
+            graph_semantic_propagation_limit=0,
+        )
 
 
 def test_graph_propagation_abstention_policy_is_validated() -> None:
