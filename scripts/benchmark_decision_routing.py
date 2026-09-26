@@ -86,6 +86,7 @@ class BenchmarkRow:
     failure_stage: str | None = None
     graph_operation_decision: str | None = None
     graph_semantic_seed_decision: str | None = None
+    graph_propagation_decision: str | None = None
 
 
 SMOKE_CASES = [
@@ -539,6 +540,7 @@ async def benchmark_planner(
             )
             graph_operation_decision = _graph_operation_decision(plan.warnings)
             graph_semantic_seed_decision = _graph_semantic_seed_decision(plan.warnings)
+            graph_propagation_decision = _graph_propagation_decision(plan.warnings)
             metadata = getattr(result, "metadata", {}) if result is not None else {}
             input_tokens = metadata.get("input_tokens")
             output_tokens = metadata.get("output_tokens")
@@ -601,6 +603,7 @@ async def benchmark_planner(
                     failure_stage=failure_stage,
                     graph_operation_decision=graph_operation_decision,
                     graph_semantic_seed_decision=graph_semantic_seed_decision,
+                    graph_propagation_decision=graph_propagation_decision,
                 )
             )
         except Exception as exc:  # noqa: BLE001 - benchmark records provider failures.
@@ -629,9 +632,24 @@ def _graph_semantic_seed_decision(warnings: list[str]) -> str | None:
     lowered = [warning.casefold() for warning in warnings]
     if any("graph semantic seed accepted" in warning for warning in lowered):
         return "accept"
+    if any("graph semantic seed entered bounded propagation band" in warning for warning in lowered):
+        return "propagate"
     if any("graph semantic seed abstained" in warning for warning in lowered):
         return "abstain"
     if any("graph semantic seed fallback" in warning for warning in lowered):
+        return "fallback"
+    return None
+
+
+def _graph_propagation_decision(warnings: list[str]) -> str | None:
+    lowered = [warning.casefold() for warning in warnings]
+    if any("graph propagation accepted" in warning for warning in lowered):
+        return "accept"
+    if any("graph propagation rejected" in warning for warning in lowered):
+        return "reject"
+    if any("graph propagation abstained" in warning for warning in lowered):
+        return "abstain"
+    if any("graph propagation fallback" in warning for warning in lowered):
         return "fallback"
     return None
 
@@ -775,10 +793,23 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
         ),
         "graph_semantic_seed_counts": {
             decision: sum(row.graph_semantic_seed_decision == decision for row in rows)
-            for decision in ("accept", "abstain", "fallback")
+            for decision in ("accept", "propagate", "abstain", "fallback")
         },
         "graph_semantic_seed_resolution_rate": (
             sum(row.graph_semantic_seed_decision == "accept" for row in rows) / total
+            if total
+            else 0.0
+        ),
+        "graph_propagation_counts": {
+            decision: sum(row.graph_propagation_decision == decision for row in rows)
+            for decision in ("accept", "reject", "abstain", "fallback")
+        },
+        "graph_propagation_resolution_rate": (
+            sum(
+                row.graph_propagation_decision in {"accept", "reject"}
+                for row in rows
+            )
+            / total
             if total
             else 0.0
         ),
@@ -1107,6 +1138,35 @@ async def main() -> None:
     parser.add_argument("--graph-semantic-seed-min-similarity", type=float, default=-1.0)
     parser.add_argument("--graph-semantic-seed-min-margin", type=float, default=0.0)
     parser.add_argument(
+        "--graph-semantic-direct-min-similarity",
+        type=float,
+        default=None,
+        help="Optional stricter similarity required for direct graph-semantic acceptance.",
+    )
+    parser.add_argument(
+        "--graph-semantic-direct-min-margin",
+        type=float,
+        default=None,
+        help="Optional stricter top-vs-second margin required for direct acceptance.",
+    )
+    parser.add_argument(
+        "--graph-semantic-propagation",
+        action="store_true",
+        help=(
+            "Resolve semantic-seed uncertainty inside the selected tool's registered "
+            "sibling-operation subgraph using the operation-fit backend."
+        ),
+    )
+    parser.add_argument(
+        "--graph-semantic-propagation-on-abstain",
+        choices=("fallback", "reject"),
+        default="fallback",
+        help=(
+            "When bounded graph propagation abstains, either fall back to the existing "
+            "semantic stack or fail closed."
+        ),
+    )
+    parser.add_argument(
         "--counterbalanced",
         action="store_true",
         help=(
@@ -1232,6 +1292,8 @@ async def main() -> None:
         parser.error("--graph-operation-field-paths requires --graph-operation-gate")
     if args.graph_semantic_seed_embedding_callable and not args.graph_operation_gate:
         parser.error("--graph-semantic-seed-embedding-callable requires --graph-operation-gate")
+    if args.graph_semantic_propagation and not args.graph_semantic_seed_embedding_callable:
+        parser.error("--graph-semantic-propagation requires --graph-semantic-seed-embedding-callable")
     if args.warmup_cases < 0:
         parser.error("--warmup-cases must be >= 0")
 
@@ -1333,6 +1395,10 @@ async def main() -> None:
             operation_fit_embedder,
             min_similarity=args.operation_fit_min_similarity,
             min_margin=args.operation_fit_min_margin,
+        )
+    if args.graph_semantic_propagation and operation_fit_backend is None:
+        raise ValueError(
+            "--graph-semantic-propagation requires an operation-fit backend"
         )
 
     graph_operation_gate = (
@@ -1450,6 +1516,8 @@ async def main() -> None:
         graph_name_parts = ["keyword", "graph-operation"]
         if graph_semantic_seed_backend is not None:
             graph_name_parts.append("graph-semantic-seed")
+        if args.graph_semantic_propagation:
+            graph_name_parts.append("graph-propagation")
         if candidate_recall_backend is not None:
             graph_name_parts.append("selective-semantic-recall")
         if candidate_fit_backend is not None:
@@ -1468,6 +1536,18 @@ async def main() -> None:
                     candidate_fit_backend=candidate_fit_backend,
                     graph_operation_gate=graph_operation_gate,
                     graph_semantic_seed_backend=graph_semantic_seed_backend,
+                    graph_semantic_direct_min_similarity=(
+                        args.graph_semantic_direct_min_similarity
+                    ),
+                    graph_semantic_direct_min_margin=args.graph_semantic_direct_min_margin,
+                    graph_semantic_propagation_backend=(
+                        operation_fit_backend
+                        if args.graph_semantic_propagation
+                        else None
+                    ),
+                    graph_semantic_propagation_on_abstain=(
+                        args.graph_semantic_propagation_on_abstain
+                    ),
                     operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
@@ -1705,8 +1785,20 @@ async def main() -> None:
             "embedding_callable": args.graph_semantic_seed_embedding_callable,
             "min_similarity": args.graph_semantic_seed_min_similarity,
             "min_margin": args.graph_semantic_seed_min_margin,
+            "direct_min_similarity": args.graph_semantic_direct_min_similarity,
+            "direct_min_margin": args.graph_semantic_direct_min_margin,
             "authority": "registered-schema-graph-operation-nodes-only",
             "abstention_action": "escalate_to_existing_semantic_stack",
+        },
+        "graph_propagation": {
+            "enabled": args.graph_semantic_propagation,
+            "backend": (
+                "operation_fit_backend"
+                if args.graph_semantic_propagation
+                else None
+            ),
+            "scope": "seed-selected-tool-registered-siblings-only",
+            "on_abstain": args.graph_semantic_propagation_on_abstain,
         },
         "measurement": {
             "mode": "counterbalanced" if args.counterbalanced else "sequential",
