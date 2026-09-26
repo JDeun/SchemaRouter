@@ -1,6 +1,6 @@
 {
   "cycle": "0.10-operation-graph-projection-v3",
-  "status": "development_semantic_seed_rejected_continue_bounded_propagation",
+  "status": "development_propagation_rejected_continue_semantic_reuse",
   "reserved_from_main": "526d0c588bbec053fba54c55d982cc67d2a74d56",
   "predecessor": {
     "cycle": "0.10-operation-cascade-v2",
@@ -187,15 +187,21 @@
     "candidate_frozen": false,
     "calibration_allowed": false,
     "blind_v15_allowed": false,
-    "next_stage": "graph + bounded propagation + negative evidence",
+    "next_stage": "graph semantic ranking reuse + selective BGE",
     "semantic_seed_result": "benchmarks/operation-fit-0.10-graph-semantic-seed-dev-result.json",
-    "semantic_seed_status": "no_candidate_passed_all_preregistered_gates"
+    "semantic_seed_status": "no_candidate_passed_all_preregistered_gates",
+    "propagation_result": "benchmarks/operation-fit-0.10-graph-propagation-dev-result.json",
+    "propagation_status": "no_candidate_passed_all_preregistered_gates"
   },
   "methodology_note": {
     "hard_graph_latency_promotion_evidence_valid": false,
     "reason": "The initial development harness ran baseline and candidate planner blocks sequentially, exposing warm-cache/order bias. Future efficiency promotion requires a counterbalanced paired harness.",
     "semantic_seed_latency_evidence_valid": true,
     "semantic_seed_measurement": "warmup + counterbalanced paired per-case execution",
-    "semantic_seed_observation": "mean latency improved materially, but p95 regressed for every tested candidate; escalation must avoid duplicated semantic passes"
+    "semantic_seed_observation": "mean latency improved materially, but p95 regressed for every tested candidate; escalation must avoid duplicated semantic passes",
+    "propagation_latency_evidence_valid": true,
+    "propagation_measurement": "warmup + counterbalanced paired per-case execution",
+    "propagation_observation": "fallback passed every quality/safety/mean-latency gate and gained 29 paired correct cases with zero losses, but failed p95; reject lost 16 rescued supported cases and also failed p95",
+    "propagation_tail_diagnosis": "42 bounded-propagation abstentions repeat semantic recall/capability-fit/BGE in fallback mode; reuse of the already-computed graph semantic ranking is the next preregistered efficiency ablation"
   }
 }
