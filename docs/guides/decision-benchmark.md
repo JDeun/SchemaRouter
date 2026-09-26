@@ -488,6 +488,22 @@ Reproducibility record:
 - artifact SHA-256: `f977511c7d65bc94e2dba9142b6cedf378ceaae1b8418c351e85b550f191dfd1`.
 
 
+Because v11 was already consumed, a **post-hoc diagnostic only** reran the prior frozen MiniLM
+operation-fit baseline (similarity 0.40) on the same corpus. It reached 54.833% overall accuracy,
+40.625% supported-operation accuracy, 77.604% near-domain rejection, and 100% OOD rejection, with
+253.947 ms mean latency. Its equal-weight supported/rejection balanced score was 59.115%, versus
+61.589% for BGE. Thus BGE retained a +2.474 percentage-point advantage on the pre-registered balanced
+metric, but only by trading away 14.844 points of supported recall, 3.167 points of overall accuracy,
+and more than doubling CPU latency. This diagnostic was run **after** v11 consumption and is not a
+fresh holdout claim.
+
+Baseline diagnostic reproducibility:
+- source SHA: `099cf009003df35f48571ecdc988fddaa11db904`;
+- GitHub Actions run: `36240431389`;
+- artifact ID: `10905429518`;
+- artifact SHA-256: `1048405ab34b41371004247e15934f5086a53977a14d4957bd14c6d69e194dee`.
+
+
 ### Post-change operation holdout (v7)
 
 `benchmarks/decision-routing-v7-operation-post-change-holdout.json` is a 600-case,
