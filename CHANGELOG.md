@@ -9,6 +9,13 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- optional bounded `operation_fit_backend` gate for single-call plans that checks only sibling
+  endpoint operations inside the currently leading tool domain, deliberately excluding broad tool
+  descriptions and output-field labels; the gate can suppress unsupported operations but cannot add,
+  select, reorder, or switch execution candidates;
+- separate multilingual v5 operation calibration (576 cases) and untouched v6 operation holdout
+  (600 cases) corpora for measuring near-domain unsupported-operation rejection without reusing the
+  already-consumed v4 holdout;
 - optional bounded `endpoint_disambiguation_backend` stage that may reorder only sibling endpoints
   inside the currently leading tool domain for single-call plans, preserving the existing candidate
   order on backend failure/abstention and never switching tools or creating execution authority;
