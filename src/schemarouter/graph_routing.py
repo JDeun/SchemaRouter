@@ -436,6 +436,37 @@ class GraphOperationGate:
                 reason="empty query",
             )
 
+        if self.reject_explicit_conflicts:
+            conflicts: list[tuple[str, str]] = []
+            seen_tools: set[str] = set()
+            for tool_key, _endpoint_name in graph.operation_routes():
+                if tool_key in seen_tools:
+                    continue
+                seen_tools.add(tool_key)
+                for alias in graph.unsupported_operation_aliases(tool_key):
+                    if _contains_token_phrase(query, alias):
+                        conflicts.append((tool_key, alias))
+            conflicts = list(dict.fromkeys(conflicts))
+            if conflicts:
+                tools = {tool_key for tool_key, _alias in conflicts}
+                return GraphOperationAssessment(
+                    decision="reject",
+                    tool_key=next(iter(tools)) if len(tools) == 1 else "",
+                    reason=(
+                        "query matched an explicitly unsupported graph operation"
+                        if len(conflicts) == 1
+                        else "query matched explicit unsupported graph operations"
+                    ),
+                    evidence=tuple(
+                        GraphOperationEvidence(
+                            endpoint_name="",
+                            operation_aliases=(alias,),
+                            graph_paths=((f"tool:{tool_key}", "CONFLICTS_WITH"),),
+                        )
+                        for tool_key, alias in conflicts
+                    ),
+                )
+
         positive: dict[tuple[str, str], GraphOperationEvidence] = {}
         for tool_key, endpoint_name in graph.operation_routes():
             matched_aliases = tuple(
@@ -507,34 +538,6 @@ class GraphOperationGate:
                 reason="multiple registered graph operation paths matched",
                 evidence=tuple(positive.values()),
             )
-
-        if self.reject_explicit_conflicts:
-            conflicts: list[tuple[str, str]] = []
-            for tool_key, _endpoint_name in graph.operation_routes():
-                for alias in graph.unsupported_operation_aliases(tool_key):
-                    if _contains_token_phrase(query, alias):
-                        conflicts.append((tool_key, alias))
-            conflicts = list(dict.fromkeys(conflicts))
-            if len(conflicts) == 1:
-                tool_key, alias = conflicts[0]
-                return GraphOperationAssessment(
-                    decision="reject",
-                    tool_key=tool_key,
-                    reason="query matched an explicitly unsupported graph operation",
-                    evidence=(
-                        GraphOperationEvidence(
-                            endpoint_name="",
-                            operation_aliases=(alias,),
-                            graph_paths=((f"tool:{tool_key}", "CONFLICTS_WITH"),),
-                        ),
-                    ),
-                )
-            if len(conflicts) > 1:
-                return GraphOperationAssessment(
-                    decision="escalate",
-                    tool_key="",
-                    reason="multiple explicit unsupported graph paths matched",
-                )
 
         return GraphOperationAssessment(
             decision="escalate",
