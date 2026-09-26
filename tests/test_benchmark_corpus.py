@@ -14,6 +14,7 @@ CORPUS_V6 = ROOT / "benchmarks" / "decision-routing-v6-operation-holdout.json"
 GENERATOR_V2 = ROOT / "scripts" / "generate_decision_routing_v2.py"
 GENERATOR_V3 = ROOT / "scripts" / "generate_decision_routing_v3.py"
 SCRIPT = ROOT / "scripts" / "benchmark_decision_routing.py"
+RESEARCH_WORKFLOW = ROOT / ".github" / "workflows" / "research-benchmark.yml"
 
 
 def _benchmark_module():
@@ -621,3 +622,20 @@ def test_v5_v6_are_disjoint_from_prior_corpora_and_each_other() -> None:
     assert v5.isdisjoint(prior)
     assert v6.isdisjoint(prior)
     assert v5.isdisjoint(v6)
+
+def test_v6_operation_holdout_workflow_is_manual_and_threshold_gated() -> None:
+    workflow = RESEARCH_WORKFLOW.read_text(encoding="utf-8")
+    marker = "  operation-fit-v6-heldout-cpu:"
+    assert marker in workflow
+    holdout_job = workflow.split(marker, 1)[1]
+
+    assert (
+        "if: ${{ github.event_name == 'workflow_dispatch' "
+        "&& inputs.run_operation_holdout "
+        "&& inputs.operation_fit_min_similarity != '' }}"
+        in holdout_job
+    )
+    assert "OPERATION_FIT_MIN_SIMILARITY: ${{ inputs.operation_fit_min_similarity }}" in holdout_job
+    assert '--operation-fit-min-similarity "${OPERATION_FIT_MIN_SIMILARITY}"' in holdout_job
+    assert "--operation-fit-min-similarity 0.40" not in holdout_job
+
