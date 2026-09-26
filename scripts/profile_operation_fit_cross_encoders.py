@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 import torch
-
 from benchmark_decision_routing import (
     BenchmarkCase,
     BenchmarkRow,
