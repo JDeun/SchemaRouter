@@ -678,6 +678,7 @@ CandidateSelectionSource = Literal[
     "semantic_recall",
     "graph_operation",
     "graph_semantic_seed",
+    "graph_semantic_reuse",
     "graph_propagation",
     "endpoint_disambiguation",
     "decision_backend",
