@@ -1,0 +1,77 @@
+name: Operation Fit Margin Research
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/research-operation-fit-margin.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: operation-fit-margin-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  v5-devcal-grid:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    continue-on-error: false
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { similarity: "0.40", margin: "0.00", label: "baseline-s040-m000" }
+          - { similarity: "0.20", margin: "0.03", label: "s020-m003" }
+          - { similarity: "0.20", margin: "0.06", label: "s020-m006" }
+          - { similarity: "0.20", margin: "0.10", label: "s020-m010" }
+          - { similarity: "0.25", margin: "0.03", label: "s025-m003" }
+          - { similarity: "0.25", margin: "0.06", label: "s025-m006" }
+          - { similarity: "0.25", margin: "0.10", label: "s025-m010" }
+          - { similarity: "0.30", margin: "0.03", label: "s030-m003" }
+          - { similarity: "0.30", margin: "0.06", label: "s030-m006" }
+          - { similarity: "0.30", margin: "0.10", label: "s030-m010" }
+          - { similarity: "0.35", margin: "0.03", label: "s035-m003" }
+          - { similarity: "0.35", margin: "0.06", label: "s035-m006" }
+          - { similarity: "0.35", margin: "0.10", label: "s035-m010" }
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "sentence-transformers>=3,<6"
+      - run: pip install -e ".[dev]"
+      - name: Evaluate v5 dev/cal only
+        env:
+          SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+          SIMILARITY: ${{ matrix.similarity }}
+          MARGIN: ${{ matrix.margin }}
+          LABEL: ${{ matrix.label }}
+        run: |
+          for SPLIT in dev calibration; do
+            OUT="artifacts/${LABEL}/${SPLIT}"
+            mkdir -p "${OUT}"
+            python scripts/benchmark_decision_routing.py \
+              --corpus benchmarks/decision-routing-v5-operation-calibration.json \
+              --split "${SPLIT}" \
+              --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
+              --candidate-recall-limit 2 \
+              --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed \
+              --candidate-fit-min-similarity 0.25 \
+              --operation-fit-embedding-callable benchmarks.multilingual_embedder:embed \
+              --operation-fit-min-similarity "${SIMILARITY}" \
+              --operation-fit-min-margin "${MARGIN}" \
+              --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed \
+              --endpoint-disambiguation-min-margin 0.03 \
+              --hardware-label "GitHub Actions ubuntu-latest x64 CPU" \
+              --json-out "${OUT}/report.json" \
+              --csv-out "${OUT}/rows.csv"
+          done
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: operation-fit-margin-${{ matrix.label }}-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 14
