@@ -1346,7 +1346,7 @@ class SchemaPlanner:
             if self.graph_semantic_propagation_on_abstain == "reject":
                 return [], [
                     "graph propagation rejected the unresolved route after bounded "
-                    "sibling verification"
+                    "graph verification"
                 ], False
             return [], [
                 "graph propagation abstained; escalated to existing semantic routing"
