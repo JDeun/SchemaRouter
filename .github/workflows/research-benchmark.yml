@@ -431,7 +431,7 @@ jobs:
       - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
       - run: pip install "sentence-transformers>=3,<6"
       - run: pip install -e ".[dev]"
-      - name: Screen alias-aware operation-fit threshold on v5 and consumed v7 diagnostic
+      - name: Calibrate concise operation-fit threshold on v5 dev and calibration only
         env:
           SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
           OPERATION_SIMILARITY: ${{ matrix.operation_similarity }}
