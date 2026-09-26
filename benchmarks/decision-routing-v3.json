@@ -1,0 +1,5402 @@
+[
+  {
+    "id": "v3-weather-current-en-01",
+    "query": "Could you handle this request: get the current weather in Madrid",
+    "expected": "weather.current",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-current-en-02",
+    "query": "What I am trying to do is get the current weather in Osaka",
+    "expected": "weather.current",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-current-en-03",
+    "query": "Please use the appropriate capability to get the current weather in Paris",
+    "expected": "weather.current",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-current-en-04",
+    "query": "I only need you to get the current weather in Hamburg",
+    "expected": "weather.current",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-current-en-05",
+    "query": "For the next step, get the current weather in Busan",
+    "expected": "weather.current",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-current-ko-01",
+    "query": "이 요청만 처리해줘: Berlin의 지금 날씨를 알려줘",
+    "expected": "weather.current",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-current-ko-02",
+    "query": "내가 하려는 건 New York의 지금 날씨를 알려줘",
+    "expected": "weather.current",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-current-ko-03",
+    "query": "적절한 기능을 사용해서 Daejeon의 지금 날씨를 알려줘",
+    "expected": "weather.current",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-current-ko-04",
+    "query": "다른 건 필요 없고 Seoul의 지금 날씨를 알려줘",
+    "expected": "weather.current",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-current-ko-05",
+    "query": "다음 단계로 Tokyo의 지금 날씨를 알려줘",
+    "expected": "weather.current",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-current-es-01",
+    "query": "Gestiona solo esta solicitud: obtén el clima actual en Osaka",
+    "expected": "weather.current",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-current-es-02",
+    "query": "Lo que intento hacer es obtén el clima actual en Paris",
+    "expected": "weather.current",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-current-es-03",
+    "query": "Usa la capacidad adecuada para obtén el clima actual en Hamburg",
+    "expected": "weather.current",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-current-es-04",
+    "query": "Solo necesito que obtén el clima actual en Busan",
+    "expected": "weather.current",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-current-es-05",
+    "query": "Como siguiente paso, obtén el clima actual en Madrid",
+    "expected": "weather.current",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-current-ja-01",
+    "query": "この依頼だけ処理して: New Yorkの現在の天気を調べて",
+    "expected": "weather.current",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-current-ja-02",
+    "query": "やりたいことはDaejeonの現在の天気を調べて",
+    "expected": "weather.current",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-current-ja-03",
+    "query": "適切な機能を使ってSeoulの現在の天気を調べて",
+    "expected": "weather.current",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-current-ja-04",
+    "query": "必要なのはTokyoの現在の天気を調べてだけ",
+    "expected": "weather.current",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-current-ja-05",
+    "query": "次の手順としてBerlinの現在の天気を調べて",
+    "expected": "weather.current",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-current-de-01",
+    "query": "Bearbeite nur diese Anfrage: ermittle das aktuelle Wetter in Paris",
+    "expected": "weather.current",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-current-de-02",
+    "query": "Ich möchte Folgendes tun: ermittle das aktuelle Wetter in Hamburg",
+    "expected": "weather.current",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-current-de-03",
+    "query": "Nutze die passende Funktion, um ermittle das aktuelle Wetter in Busan",
+    "expected": "weather.current",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-current-de-04",
+    "query": "Ich brauche nur, dass du ermittle das aktuelle Wetter in Madrid",
+    "expected": "weather.current",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-current-de-05",
+    "query": "Als nächsten Schritt: ermittle das aktuelle Wetter in Osaka",
+    "expected": "weather.current",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-current-mixed-01",
+    "query": "이 request만 처리해: Daejeon 지금 weather를 확인해",
+    "expected": "weather.current",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-current-mixed-02",
+    "query": "내가 하려는 task는 Seoul 지금 weather를 확인해",
+    "expected": "weather.current",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-current-mixed-03",
+    "query": "appropriate capability로 Tokyo 지금 weather를 확인해",
+    "expected": "weather.current",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-current-mixed-04",
+    "query": "다른 건 필요 없고 just Berlin 지금 weather를 확인해",
+    "expected": "weather.current",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-current-mixed-05",
+    "query": "next step으로 New York 지금 weather를 확인해",
+    "expected": "weather.current",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-forecast-en-01",
+    "query": "Could you handle this request: get the weather forecast for Madrid tomorrow",
+    "expected": "weather.forecast",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-forecast-en-02",
+    "query": "What I am trying to do is get the weather forecast for Osaka tonight",
+    "expected": "weather.forecast",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-forecast-en-03",
+    "query": "Please use the appropriate capability to get the weather forecast for Paris next Tuesday",
+    "expected": "weather.forecast",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-forecast-en-04",
+    "query": "I only need you to get the weather forecast for Hamburg next week",
+    "expected": "weather.forecast",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-forecast-en-05",
+    "query": "For the next step, get the weather forecast for Busan this weekend",
+    "expected": "weather.forecast",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-weather-forecast-ko-01",
+    "query": "이 요청만 처리해줘: Berlin next week 날씨 예보를 알려줘",
+    "expected": "weather.forecast",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-forecast-ko-02",
+    "query": "내가 하려는 건 New York this weekend 날씨 예보를 알려줘",
+    "expected": "weather.forecast",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-forecast-ko-03",
+    "query": "적절한 기능을 사용해서 Daejeon tomorrow 날씨 예보를 알려줘",
+    "expected": "weather.forecast",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-forecast-ko-04",
+    "query": "다른 건 필요 없고 Seoul tomorrow 날씨 예보를 알려줘",
+    "expected": "weather.forecast",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-forecast-ko-05",
+    "query": "다음 단계로 Tokyo next Monday 날씨 예보를 알려줘",
+    "expected": "weather.forecast",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-weather-forecast-es-01",
+    "query": "Gestiona solo esta solicitud: obtén el pronóstico del tiempo para Osaka tonight",
+    "expected": "weather.forecast",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-forecast-es-02",
+    "query": "Lo que intento hacer es obtén el pronóstico del tiempo para Paris next Tuesday",
+    "expected": "weather.forecast",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-forecast-es-03",
+    "query": "Usa la capacidad adecuada para obtén el pronóstico del tiempo para Hamburg next week",
+    "expected": "weather.forecast",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-forecast-es-04",
+    "query": "Solo necesito que obtén el pronóstico del tiempo para Busan this weekend",
+    "expected": "weather.forecast",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-forecast-es-05",
+    "query": "Como siguiente paso, obtén el pronóstico del tiempo para Madrid tomorrow",
+    "expected": "weather.forecast",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-weather-forecast-ja-01",
+    "query": "この依頼だけ処理して: New York this weekendの天気予報を調べて",
+    "expected": "weather.forecast",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-forecast-ja-02",
+    "query": "やりたいことはDaejeon tomorrowの天気予報を調べて",
+    "expected": "weather.forecast",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-forecast-ja-03",
+    "query": "適切な機能を使ってSeoul tomorrowの天気予報を調べて",
+    "expected": "weather.forecast",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-forecast-ja-04",
+    "query": "必要なのはTokyo next Mondayの天気予報を調べてだけ",
+    "expected": "weather.forecast",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-forecast-ja-05",
+    "query": "次の手順としてBerlin next weekの天気予報を調べて",
+    "expected": "weather.forecast",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-weather-forecast-de-01",
+    "query": "Bearbeite nur diese Anfrage: hole die Wettervorhersage für Paris next Tuesday",
+    "expected": "weather.forecast",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-forecast-de-02",
+    "query": "Ich möchte Folgendes tun: hole die Wettervorhersage für Hamburg next week",
+    "expected": "weather.forecast",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-forecast-de-03",
+    "query": "Nutze die passende Funktion, um hole die Wettervorhersage für Busan this weekend",
+    "expected": "weather.forecast",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-forecast-de-04",
+    "query": "Ich brauche nur, dass du hole die Wettervorhersage für Madrid tomorrow",
+    "expected": "weather.forecast",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-forecast-de-05",
+    "query": "Als nächsten Schritt: hole die Wettervorhersage für Osaka tonight",
+    "expected": "weather.forecast",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-weather-forecast-mixed-01",
+    "query": "이 request만 처리해: Daejeon tomorrow weather forecast를 보여줘",
+    "expected": "weather.forecast",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-forecast-mixed-02",
+    "query": "내가 하려는 task는 Seoul tomorrow weather forecast를 보여줘",
+    "expected": "weather.forecast",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-forecast-mixed-03",
+    "query": "appropriate capability로 Tokyo next Monday weather forecast를 보여줘",
+    "expected": "weather.forecast",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-forecast-mixed-04",
+    "query": "다른 건 필요 없고 just Berlin next week weather forecast를 보여줘",
+    "expected": "weather.forecast",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-weather-forecast-mixed-05",
+    "query": "next step으로 New York this weekend weather forecast를 보여줘",
+    "expected": "weather.forecast",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-search-en-01",
+    "query": "Could you handle this request: find the band gap or material properties of diamond",
+    "expected": "materials.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-search-en-02",
+    "query": "What I am trying to do is find the band gap or material properties of Al2O3",
+    "expected": "materials.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-search-en-03",
+    "query": "Please use the appropriate capability to find the band gap or material properties of TiO2",
+    "expected": "materials.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-search-en-04",
+    "query": "I only need you to find the band gap or material properties of copper",
+    "expected": "materials.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-search-en-05",
+    "query": "For the next step, find the band gap or material properties of LiFePO4",
+    "expected": "materials.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-search-ko-01",
+    "query": "이 요청만 처리해줘: graphene의 밴드갭이나 물성을 찾아줘",
+    "expected": "materials.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-search-ko-02",
+    "query": "내가 하려는 건 SiC의 밴드갭이나 물성을 찾아줘",
+    "expected": "materials.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-search-ko-03",
+    "query": "적절한 기능을 사용해서 perovskite의 밴드갭이나 물성을 찾아줘",
+    "expected": "materials.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-search-ko-04",
+    "query": "다른 건 필요 없고 silicon의 밴드갭이나 물성을 찾아줘",
+    "expected": "materials.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-search-ko-05",
+    "query": "다음 단계로 GaN의 밴드갭이나 물성을 찾아줘",
+    "expected": "materials.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-search-es-01",
+    "query": "Gestiona solo esta solicitud: busca la banda prohibida o propiedades de Al2O3",
+    "expected": "materials.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-search-es-02",
+    "query": "Lo que intento hacer es busca la banda prohibida o propiedades de TiO2",
+    "expected": "materials.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-search-es-03",
+    "query": "Usa la capacidad adecuada para busca la banda prohibida o propiedades de copper",
+    "expected": "materials.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-search-es-04",
+    "query": "Solo necesito que busca la banda prohibida o propiedades de LiFePO4",
+    "expected": "materials.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-search-es-05",
+    "query": "Como siguiente paso, busca la banda prohibida o propiedades de diamond",
+    "expected": "materials.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-search-ja-01",
+    "query": "この依頼だけ処理して: SiCのバンドギャップや物性を探して",
+    "expected": "materials.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-search-ja-02",
+    "query": "やりたいことはperovskiteのバンドギャップや物性を探して",
+    "expected": "materials.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-search-ja-03",
+    "query": "適切な機能を使ってsiliconのバンドギャップや物性を探して",
+    "expected": "materials.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-search-ja-04",
+    "query": "必要なのはGaNのバンドギャップや物性を探してだけ",
+    "expected": "materials.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-search-ja-05",
+    "query": "次の手順としてgrapheneのバンドギャップや物性を探して",
+    "expected": "materials.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-search-de-01",
+    "query": "Bearbeite nur diese Anfrage: suche Bandlücke oder Materialeigenschaften von TiO2",
+    "expected": "materials.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-search-de-02",
+    "query": "Ich möchte Folgendes tun: suche Bandlücke oder Materialeigenschaften von copper",
+    "expected": "materials.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-search-de-03",
+    "query": "Nutze die passende Funktion, um suche Bandlücke oder Materialeigenschaften von LiFePO4",
+    "expected": "materials.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-search-de-04",
+    "query": "Ich brauche nur, dass du suche Bandlücke oder Materialeigenschaften von diamond",
+    "expected": "materials.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-search-de-05",
+    "query": "Als nächsten Schritt: suche Bandlücke oder Materialeigenschaften von Al2O3",
+    "expected": "materials.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-search-mixed-01",
+    "query": "이 request만 처리해: perovskite band gap이나 material property를 찾아줘",
+    "expected": "materials.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-search-mixed-02",
+    "query": "내가 하려는 task는 silicon band gap이나 material property를 찾아줘",
+    "expected": "materials.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-search-mixed-03",
+    "query": "appropriate capability로 GaN band gap이나 material property를 찾아줘",
+    "expected": "materials.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-search-mixed-04",
+    "query": "다른 건 필요 없고 just graphene band gap이나 material property를 찾아줘",
+    "expected": "materials.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-search-mixed-05",
+    "query": "next step으로 SiC band gap이나 material property를 찾아줘",
+    "expected": "materials.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-structure-en-01",
+    "query": "Could you handle this request: retrieve the crystal structure and lattice for diamond",
+    "expected": "materials.structure",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-structure-en-02",
+    "query": "What I am trying to do is retrieve the crystal structure and lattice for Al2O3",
+    "expected": "materials.structure",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-structure-en-03",
+    "query": "Please use the appropriate capability to retrieve the crystal structure and lattice for TiO2",
+    "expected": "materials.structure",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-structure-en-04",
+    "query": "I only need you to retrieve the crystal structure and lattice for copper",
+    "expected": "materials.structure",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-structure-en-05",
+    "query": "For the next step, retrieve the crystal structure and lattice for LiFePO4",
+    "expected": "materials.structure",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-materials-structure-ko-01",
+    "query": "이 요청만 처리해줘: graphene의 결정구조와 격자 정보를 가져와",
+    "expected": "materials.structure",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-structure-ko-02",
+    "query": "내가 하려는 건 SiC의 결정구조와 격자 정보를 가져와",
+    "expected": "materials.structure",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-structure-ko-03",
+    "query": "적절한 기능을 사용해서 perovskite의 결정구조와 격자 정보를 가져와",
+    "expected": "materials.structure",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-structure-ko-04",
+    "query": "다른 건 필요 없고 silicon의 결정구조와 격자 정보를 가져와",
+    "expected": "materials.structure",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-structure-ko-05",
+    "query": "다음 단계로 GaN의 결정구조와 격자 정보를 가져와",
+    "expected": "materials.structure",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-materials-structure-es-01",
+    "query": "Gestiona solo esta solicitud: obtén la estructura cristalina y red de Al2O3",
+    "expected": "materials.structure",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-structure-es-02",
+    "query": "Lo que intento hacer es obtén la estructura cristalina y red de TiO2",
+    "expected": "materials.structure",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-structure-es-03",
+    "query": "Usa la capacidad adecuada para obtén la estructura cristalina y red de copper",
+    "expected": "materials.structure",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-structure-es-04",
+    "query": "Solo necesito que obtén la estructura cristalina y red de LiFePO4",
+    "expected": "materials.structure",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-structure-es-05",
+    "query": "Como siguiente paso, obtén la estructura cristalina y red de diamond",
+    "expected": "materials.structure",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-materials-structure-ja-01",
+    "query": "この依頼だけ処理して: SiCの結晶構造と格子情報を取得して",
+    "expected": "materials.structure",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-structure-ja-02",
+    "query": "やりたいことはperovskiteの結晶構造と格子情報を取得して",
+    "expected": "materials.structure",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-structure-ja-03",
+    "query": "適切な機能を使ってsiliconの結晶構造と格子情報を取得して",
+    "expected": "materials.structure",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-structure-ja-04",
+    "query": "必要なのはGaNの結晶構造と格子情報を取得してだけ",
+    "expected": "materials.structure",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-structure-ja-05",
+    "query": "次の手順としてgrapheneの結晶構造と格子情報を取得して",
+    "expected": "materials.structure",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-materials-structure-de-01",
+    "query": "Bearbeite nur diese Anfrage: hole Kristallstruktur und Gitter von TiO2",
+    "expected": "materials.structure",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-structure-de-02",
+    "query": "Ich möchte Folgendes tun: hole Kristallstruktur und Gitter von copper",
+    "expected": "materials.structure",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-structure-de-03",
+    "query": "Nutze die passende Funktion, um hole Kristallstruktur und Gitter von LiFePO4",
+    "expected": "materials.structure",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-structure-de-04",
+    "query": "Ich brauche nur, dass du hole Kristallstruktur und Gitter von diamond",
+    "expected": "materials.structure",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-structure-de-05",
+    "query": "Als nächsten Schritt: hole Kristallstruktur und Gitter von Al2O3",
+    "expected": "materials.structure",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-materials-structure-mixed-01",
+    "query": "이 request만 처리해: perovskite crystal structure와 lattice를 가져와",
+    "expected": "materials.structure",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-structure-mixed-02",
+    "query": "내가 하려는 task는 silicon crystal structure와 lattice를 가져와",
+    "expected": "materials.structure",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-structure-mixed-03",
+    "query": "appropriate capability로 GaN crystal structure와 lattice를 가져와",
+    "expected": "materials.structure",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-structure-mixed-04",
+    "query": "다른 건 필요 없고 just graphene crystal structure와 lattice를 가져와",
+    "expected": "materials.structure",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-materials-structure-mixed-05",
+    "query": "next step으로 SiC crystal structure와 lattice를 가져와",
+    "expected": "materials.structure",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-search-en-01",
+    "query": "Could you handle this request: search research papers about agentic RAG",
+    "expected": "papers.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-search-en-02",
+    "query": "What I am trying to do is search research papers about solid electrolytes",
+    "expected": "papers.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-search-en-03",
+    "query": "Please use the appropriate capability to search research papers about multimodal models",
+    "expected": "papers.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-search-en-04",
+    "query": "I only need you to search research papers about quantum materials",
+    "expected": "papers.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-search-en-05",
+    "query": "For the next step, search research papers about small language models",
+    "expected": "papers.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-search-ko-01",
+    "query": "이 요청만 처리해줘: graph neural networks 관련 논문을 검색해줘",
+    "expected": "papers.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-search-ko-02",
+    "query": "내가 하려는 건 tool routing 관련 논문을 검색해줘",
+    "expected": "papers.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-search-ko-03",
+    "query": "적절한 기능을 사용해서 perovskite solar cells 관련 논문을 검색해줘",
+    "expected": "papers.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-search-ko-04",
+    "query": "다른 건 필요 없고 retrieval augmented generation 관련 논문을 검색해줘",
+    "expected": "papers.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-search-ko-05",
+    "query": "다음 단계로 battery materials 관련 논문을 검색해줘",
+    "expected": "papers.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-search-es-01",
+    "query": "Gestiona solo esta solicitud: busca artículos de investigación sobre solid electrolytes",
+    "expected": "papers.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-search-es-02",
+    "query": "Lo que intento hacer es busca artículos de investigación sobre multimodal models",
+    "expected": "papers.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-search-es-03",
+    "query": "Usa la capacidad adecuada para busca artículos de investigación sobre quantum materials",
+    "expected": "papers.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-search-es-04",
+    "query": "Solo necesito que busca artículos de investigación sobre small language models",
+    "expected": "papers.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-search-es-05",
+    "query": "Como siguiente paso, busca artículos de investigación sobre agentic RAG",
+    "expected": "papers.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-search-ja-01",
+    "query": "この依頼だけ処理して: tool routingに関する研究論文を検索して",
+    "expected": "papers.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-search-ja-02",
+    "query": "やりたいことはperovskite solar cellsに関する研究論文を検索して",
+    "expected": "papers.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-search-ja-03",
+    "query": "適切な機能を使ってretrieval augmented generationに関する研究論文を検索して",
+    "expected": "papers.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-search-ja-04",
+    "query": "必要なのはbattery materialsに関する研究論文を検索してだけ",
+    "expected": "papers.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-search-ja-05",
+    "query": "次の手順としてgraph neural networksに関する研究論文を検索して",
+    "expected": "papers.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-search-de-01",
+    "query": "Bearbeite nur diese Anfrage: suche Forschungsarbeiten zu multimodal models",
+    "expected": "papers.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-search-de-02",
+    "query": "Ich möchte Folgendes tun: suche Forschungsarbeiten zu quantum materials",
+    "expected": "papers.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-search-de-03",
+    "query": "Nutze die passende Funktion, um suche Forschungsarbeiten zu small language models",
+    "expected": "papers.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-search-de-04",
+    "query": "Ich brauche nur, dass du suche Forschungsarbeiten zu agentic RAG",
+    "expected": "papers.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-search-de-05",
+    "query": "Als nächsten Schritt: suche Forschungsarbeiten zu solid electrolytes",
+    "expected": "papers.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-search-mixed-01",
+    "query": "이 request만 처리해: perovskite solar cells 관련 research paper를 search해",
+    "expected": "papers.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-search-mixed-02",
+    "query": "내가 하려는 task는 retrieval augmented generation 관련 research paper를 search해",
+    "expected": "papers.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-search-mixed-03",
+    "query": "appropriate capability로 battery materials 관련 research paper를 search해",
+    "expected": "papers.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-search-mixed-04",
+    "query": "다른 건 필요 없고 just graph neural networks 관련 research paper를 search해",
+    "expected": "papers.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-search-mixed-05",
+    "query": "next step으로 tool routing 관련 research paper를 search해",
+    "expected": "papers.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-citations-en-01",
+    "query": "Could you handle this request: find papers that cite 10.1000/delta",
+    "expected": "papers.citations",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-citations-en-02",
+    "query": "What I am trying to do is find papers that cite 10.1000/zeta",
+    "expected": "papers.citations",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-citations-en-03",
+    "query": "Please use the appropriate capability to find papers that cite 10.1000/theta",
+    "expected": "papers.citations",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-citations-en-04",
+    "query": "I only need you to find papers that cite 10.1000/kappa",
+    "expected": "papers.citations",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-citations-en-05",
+    "query": "For the next step, find papers that cite 10.1000/beta",
+    "expected": "papers.citations",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-papers-citations-ko-01",
+    "query": "이 요청만 처리해줘: 10.1000/epsilon를 인용한 논문을 찾아줘",
+    "expected": "papers.citations",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-citations-ko-02",
+    "query": "내가 하려는 건 10.1000/eta를 인용한 논문을 찾아줘",
+    "expected": "papers.citations",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-citations-ko-03",
+    "query": "적절한 기능을 사용해서 10.1000/iota를 인용한 논문을 찾아줘",
+    "expected": "papers.citations",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-citations-ko-04",
+    "query": "다른 건 필요 없고 10.1000/alpha를 인용한 논문을 찾아줘",
+    "expected": "papers.citations",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-citations-ko-05",
+    "query": "다음 단계로 10.1000/gamma를 인용한 논문을 찾아줘",
+    "expected": "papers.citations",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-papers-citations-es-01",
+    "query": "Gestiona solo esta solicitud: encuentra artículos que citan 10.1000/zeta",
+    "expected": "papers.citations",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-citations-es-02",
+    "query": "Lo que intento hacer es encuentra artículos que citan 10.1000/theta",
+    "expected": "papers.citations",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-citations-es-03",
+    "query": "Usa la capacidad adecuada para encuentra artículos que citan 10.1000/kappa",
+    "expected": "papers.citations",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-citations-es-04",
+    "query": "Solo necesito que encuentra artículos que citan 10.1000/beta",
+    "expected": "papers.citations",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-citations-es-05",
+    "query": "Como siguiente paso, encuentra artículos que citan 10.1000/delta",
+    "expected": "papers.citations",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-papers-citations-ja-01",
+    "query": "この依頼だけ処理して: 10.1000/etaを引用している論文を探して",
+    "expected": "papers.citations",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-citations-ja-02",
+    "query": "やりたいことは10.1000/iotaを引用している論文を探して",
+    "expected": "papers.citations",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-citations-ja-03",
+    "query": "適切な機能を使って10.1000/alphaを引用している論文を探して",
+    "expected": "papers.citations",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-citations-ja-04",
+    "query": "必要なのは10.1000/gammaを引用している論文を探してだけ",
+    "expected": "papers.citations",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-citations-ja-05",
+    "query": "次の手順として10.1000/epsilonを引用している論文を探して",
+    "expected": "papers.citations",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-papers-citations-de-01",
+    "query": "Bearbeite nur diese Anfrage: finde Arbeiten, die 10.1000/theta zitieren",
+    "expected": "papers.citations",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-citations-de-02",
+    "query": "Ich möchte Folgendes tun: finde Arbeiten, die 10.1000/kappa zitieren",
+    "expected": "papers.citations",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-citations-de-03",
+    "query": "Nutze die passende Funktion, um finde Arbeiten, die 10.1000/beta zitieren",
+    "expected": "papers.citations",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-citations-de-04",
+    "query": "Ich brauche nur, dass du finde Arbeiten, die 10.1000/delta zitieren",
+    "expected": "papers.citations",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-citations-de-05",
+    "query": "Als nächsten Schritt: finde Arbeiten, die 10.1000/zeta zitieren",
+    "expected": "papers.citations",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-papers-citations-mixed-01",
+    "query": "이 request만 처리해: 10.1000/iota를 cite한 papers를 찾아줘",
+    "expected": "papers.citations",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-citations-mixed-02",
+    "query": "내가 하려는 task는 10.1000/alpha를 cite한 papers를 찾아줘",
+    "expected": "papers.citations",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-citations-mixed-03",
+    "query": "appropriate capability로 10.1000/gamma를 cite한 papers를 찾아줘",
+    "expected": "papers.citations",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-citations-mixed-04",
+    "query": "다른 건 필요 없고 just 10.1000/epsilon를 cite한 papers를 찾아줘",
+    "expected": "papers.citations",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-papers-citations-mixed-05",
+    "query": "next step으로 10.1000/eta를 cite한 papers를 찾아줘",
+    "expected": "papers.citations",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-quote-en-01",
+    "query": "Could you handle this request: get the latest stock quote for TSLA",
+    "expected": "finance.quote",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-quote-en-02",
+    "query": "What I am trying to do is get the latest stock quote for AMZN",
+    "expected": "finance.quote",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-quote-en-03",
+    "query": "Please use the appropriate capability to get the latest stock quote for AMD",
+    "expected": "finance.quote",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-quote-en-04",
+    "query": "I only need you to get the latest stock quote for KO",
+    "expected": "finance.quote",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-quote-en-05",
+    "query": "For the next step, get the latest stock quote for NVDA",
+    "expected": "finance.quote",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-quote-ko-01",
+    "query": "이 요청만 처리해줘: GOOGL의 현재 주가를 알려줘",
+    "expected": "finance.quote",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-quote-ko-02",
+    "query": "내가 하려는 건 META의 현재 주가를 알려줘",
+    "expected": "finance.quote",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-quote-ko-03",
+    "query": "적절한 기능을 사용해서 INTC의 현재 주가를 알려줘",
+    "expected": "finance.quote",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-quote-ko-04",
+    "query": "다른 건 필요 없고 AAPL의 현재 주가를 알려줘",
+    "expected": "finance.quote",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-quote-ko-05",
+    "query": "다음 단계로 MSFT의 현재 주가를 알려줘",
+    "expected": "finance.quote",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-quote-es-01",
+    "query": "Gestiona solo esta solicitud: obtén la cotización actual de AMZN",
+    "expected": "finance.quote",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-quote-es-02",
+    "query": "Lo que intento hacer es obtén la cotización actual de AMD",
+    "expected": "finance.quote",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-quote-es-03",
+    "query": "Usa la capacidad adecuada para obtén la cotización actual de KO",
+    "expected": "finance.quote",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-quote-es-04",
+    "query": "Solo necesito que obtén la cotización actual de NVDA",
+    "expected": "finance.quote",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-quote-es-05",
+    "query": "Como siguiente paso, obtén la cotización actual de TSLA",
+    "expected": "finance.quote",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-quote-ja-01",
+    "query": "この依頼だけ処理して: METAの最新株価を取得して",
+    "expected": "finance.quote",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-quote-ja-02",
+    "query": "やりたいことはINTCの最新株価を取得して",
+    "expected": "finance.quote",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-quote-ja-03",
+    "query": "適切な機能を使ってAAPLの最新株価を取得して",
+    "expected": "finance.quote",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-quote-ja-04",
+    "query": "必要なのはMSFTの最新株価を取得してだけ",
+    "expected": "finance.quote",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-quote-ja-05",
+    "query": "次の手順としてGOOGLの最新株価を取得して",
+    "expected": "finance.quote",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-quote-de-01",
+    "query": "Bearbeite nur diese Anfrage: hole den aktuellen Aktienkurs von AMD",
+    "expected": "finance.quote",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-quote-de-02",
+    "query": "Ich möchte Folgendes tun: hole den aktuellen Aktienkurs von KO",
+    "expected": "finance.quote",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-quote-de-03",
+    "query": "Nutze die passende Funktion, um hole den aktuellen Aktienkurs von NVDA",
+    "expected": "finance.quote",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-quote-de-04",
+    "query": "Ich brauche nur, dass du hole den aktuellen Aktienkurs von TSLA",
+    "expected": "finance.quote",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-quote-de-05",
+    "query": "Als nächsten Schritt: hole den aktuellen Aktienkurs von AMZN",
+    "expected": "finance.quote",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-quote-mixed-01",
+    "query": "이 request만 처리해: INTC current stock quote를 알려줘",
+    "expected": "finance.quote",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-quote-mixed-02",
+    "query": "내가 하려는 task는 AAPL current stock quote를 알려줘",
+    "expected": "finance.quote",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-quote-mixed-03",
+    "query": "appropriate capability로 MSFT current stock quote를 알려줘",
+    "expected": "finance.quote",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-quote-mixed-04",
+    "query": "다른 건 필요 없고 just GOOGL current stock quote를 알려줘",
+    "expected": "finance.quote",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-quote-mixed-05",
+    "query": "next step으로 META current stock quote를 알려줘",
+    "expected": "finance.quote",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-history-en-01",
+    "query": "Could you handle this request: retrieve historical prices for TSLA for 30 days",
+    "expected": "finance.history",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-history-en-02",
+    "query": "What I am trying to do is retrieve historical prices for AMZN this quarter",
+    "expected": "finance.history",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-history-en-03",
+    "query": "Please use the appropriate capability to retrieve historical prices for AMD since 2024",
+    "expected": "finance.history",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-history-en-04",
+    "query": "I only need you to retrieve historical prices for KO over the last decade",
+    "expected": "finance.history",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-history-en-05",
+    "query": "For the next step, retrieve historical prices for NVDA for six months",
+    "expected": "finance.history",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-finance-history-ko-01",
+    "query": "이 요청만 처리해줘: GOOGL over five years의 과거 주가 기록을 가져와",
+    "expected": "finance.history",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-history-ko-02",
+    "query": "내가 하려는 건 META for two years의 과거 주가 기록을 가져와",
+    "expected": "finance.history",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-history-ko-03",
+    "query": "적절한 기능을 사용해서 INTC for 90 days의 과거 주가 기록을 가져와",
+    "expected": "finance.history",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-history-ko-04",
+    "query": "다른 건 필요 없고 AAPL over the last year의 과거 주가 기록을 가져와",
+    "expected": "finance.history",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-history-ko-05",
+    "query": "다음 단계로 MSFT since January의 과거 주가 기록을 가져와",
+    "expected": "finance.history",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-finance-history-es-01",
+    "query": "Gestiona solo esta solicitud: obtén precios históricos de AMZN this quarter",
+    "expected": "finance.history",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-history-es-02",
+    "query": "Lo que intento hacer es obtén precios históricos de AMD since 2024",
+    "expected": "finance.history",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-history-es-03",
+    "query": "Usa la capacidad adecuada para obtén precios históricos de KO over the last decade",
+    "expected": "finance.history",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-history-es-04",
+    "query": "Solo necesito que obtén precios históricos de NVDA for six months",
+    "expected": "finance.history",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-history-es-05",
+    "query": "Como siguiente paso, obtén precios históricos de TSLA for 30 days",
+    "expected": "finance.history",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-finance-history-ja-01",
+    "query": "この依頼だけ処理して: META for two yearsの過去の株価履歴を取得して",
+    "expected": "finance.history",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-history-ja-02",
+    "query": "やりたいことはINTC for 90 daysの過去の株価履歴を取得して",
+    "expected": "finance.history",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-history-ja-03",
+    "query": "適切な機能を使ってAAPL over the last yearの過去の株価履歴を取得して",
+    "expected": "finance.history",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-history-ja-04",
+    "query": "必要なのはMSFT since Januaryの過去の株価履歴を取得してだけ",
+    "expected": "finance.history",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-history-ja-05",
+    "query": "次の手順としてGOOGL over five yearsの過去の株価履歴を取得して",
+    "expected": "finance.history",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-finance-history-de-01",
+    "query": "Bearbeite nur diese Anfrage: hole historische Kurse für AMD since 2024",
+    "expected": "finance.history",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-history-de-02",
+    "query": "Ich möchte Folgendes tun: hole historische Kurse für KO over the last decade",
+    "expected": "finance.history",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-history-de-03",
+    "query": "Nutze die passende Funktion, um hole historische Kurse für NVDA for six months",
+    "expected": "finance.history",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-history-de-04",
+    "query": "Ich brauche nur, dass du hole historische Kurse für TSLA for 30 days",
+    "expected": "finance.history",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-history-de-05",
+    "query": "Als nächsten Schritt: hole historische Kurse für AMZN this quarter",
+    "expected": "finance.history",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-finance-history-mixed-01",
+    "query": "이 request만 처리해: INTC for 90 days historical price history를 보여줘",
+    "expected": "finance.history",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-history-mixed-02",
+    "query": "내가 하려는 task는 AAPL over the last year historical price history를 보여줘",
+    "expected": "finance.history",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-history-mixed-03",
+    "query": "appropriate capability로 MSFT since January historical price history를 보여줘",
+    "expected": "finance.history",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-history-mixed-04",
+    "query": "다른 건 필요 없고 just GOOGL over five years historical price history를 보여줘",
+    "expected": "finance.history",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-finance-history-mixed-05",
+    "query": "next step으로 META for two years historical price history를 보여줘",
+    "expected": "finance.history",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-list-en-01",
+    "query": "Could you handle this request: list my calendar events for this afternoon",
+    "expected": "calendar.list",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-list-en-02",
+    "query": "What I am trying to do is list my calendar events for this week",
+    "expected": "calendar.list",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-list-en-03",
+    "query": "Please use the appropriate capability to list my calendar events for the morning",
+    "expected": "calendar.list",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-list-en-04",
+    "query": "I only need you to list my calendar events for October 1",
+    "expected": "calendar.list",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-list-en-05",
+    "query": "For the next step, list my calendar events for tomorrow",
+    "expected": "calendar.list",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-list-ko-01",
+    "query": "이 요청만 처리해줘: next Monday 일정 목록을 보여줘",
+    "expected": "calendar.list",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-list-ko-02",
+    "query": "내가 하려는 건 September 30 일정 목록을 보여줘",
+    "expected": "calendar.list",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-list-ko-03",
+    "query": "적절한 기능을 사용해서 next weekend 일정 목록을 보여줘",
+    "expected": "calendar.list",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-list-ko-04",
+    "query": "다른 건 필요 없고 today 일정 목록을 보여줘",
+    "expected": "calendar.list",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-list-ko-05",
+    "query": "다음 단계로 Friday 일정 목록을 보여줘",
+    "expected": "calendar.list",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-list-es-01",
+    "query": "Gestiona solo esta solicitud: muestra mis eventos del calendario para this week",
+    "expected": "calendar.list",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-list-es-02",
+    "query": "Lo que intento hacer es muestra mis eventos del calendario para the morning",
+    "expected": "calendar.list",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-list-es-03",
+    "query": "Usa la capacidad adecuada para muestra mis eventos del calendario para October 1",
+    "expected": "calendar.list",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-list-es-04",
+    "query": "Solo necesito que muestra mis eventos del calendario para tomorrow",
+    "expected": "calendar.list",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-list-es-05",
+    "query": "Como siguiente paso, muestra mis eventos del calendario para this afternoon",
+    "expected": "calendar.list",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-list-ja-01",
+    "query": "この依頼だけ処理して: September 30の予定一覧を表示して",
+    "expected": "calendar.list",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-list-ja-02",
+    "query": "やりたいことはnext weekendの予定一覧を表示して",
+    "expected": "calendar.list",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-list-ja-03",
+    "query": "適切な機能を使ってtodayの予定一覧を表示して",
+    "expected": "calendar.list",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-list-ja-04",
+    "query": "必要なのはFridayの予定一覧を表示してだけ",
+    "expected": "calendar.list",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-list-ja-05",
+    "query": "次の手順としてnext Mondayの予定一覧を表示して",
+    "expected": "calendar.list",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-list-de-01",
+    "query": "Bearbeite nur diese Anfrage: zeige meine Kalendertermine für the morning",
+    "expected": "calendar.list",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-list-de-02",
+    "query": "Ich möchte Folgendes tun: zeige meine Kalendertermine für October 1",
+    "expected": "calendar.list",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-list-de-03",
+    "query": "Nutze die passende Funktion, um zeige meine Kalendertermine für tomorrow",
+    "expected": "calendar.list",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-list-de-04",
+    "query": "Ich brauche nur, dass du zeige meine Kalendertermine für this afternoon",
+    "expected": "calendar.list",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-list-de-05",
+    "query": "Als nächsten Schritt: zeige meine Kalendertermine für this week",
+    "expected": "calendar.list",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-list-mixed-01",
+    "query": "이 request만 처리해: next weekend calendar events를 list해",
+    "expected": "calendar.list",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-list-mixed-02",
+    "query": "내가 하려는 task는 today calendar events를 list해",
+    "expected": "calendar.list",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-list-mixed-03",
+    "query": "appropriate capability로 Friday calendar events를 list해",
+    "expected": "calendar.list",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-list-mixed-04",
+    "query": "다른 건 필요 없고 just next Monday calendar events를 list해",
+    "expected": "calendar.list",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-list-mixed-05",
+    "query": "next step으로 September 30 calendar events를 list해",
+    "expected": "calendar.list",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-create-en-01",
+    "query": "Could you handle this request: create a calendar event for lunch with Alex at noon",
+    "expected": "calendar.create",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-create-en-02",
+    "query": "What I am trying to do is create a calendar event for focus time at 9 AM",
+    "expected": "calendar.create",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-create-en-03",
+    "query": "Please use the appropriate capability to create a calendar event for release review at 11",
+    "expected": "calendar.create",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-create-en-04",
+    "query": "I only need you to create a calendar event for weekly planning Monday at 9",
+    "expected": "calendar.create",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-create-en-05",
+    "query": "For the next step, create a calendar event for dentist tomorrow at 10",
+    "expected": "calendar.create",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-calendar-create-ko-01",
+    "query": "이 요청만 처리해줘: demo next Monday at 4 일정을 캘린더에 만들어줘",
+    "expected": "calendar.create",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-create-ko-02",
+    "query": "내가 하려는 건 parent meeting Thursday at 5 일정을 캘린더에 만들어줘",
+    "expected": "calendar.create",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-create-ko-03",
+    "query": "적절한 기능을 사용해서 design sync Tuesday at 1 일정을 캘린더에 만들어줘",
+    "expected": "calendar.create",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-create-ko-04",
+    "query": "다른 건 필요 없고 team sync at 3 PM 일정을 캘린더에 만들어줘",
+    "expected": "calendar.create",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-create-ko-05",
+    "query": "다음 단계로 project review Friday at 2 일정을 캘린더에 만들어줘",
+    "expected": "calendar.create",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-calendar-create-es-01",
+    "query": "Gestiona solo esta solicitud: crea un evento de calendario para focus time at 9 AM",
+    "expected": "calendar.create",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-create-es-02",
+    "query": "Lo que intento hacer es crea un evento de calendario para release review at 11",
+    "expected": "calendar.create",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-create-es-03",
+    "query": "Usa la capacidad adecuada para crea un evento de calendario para weekly planning Monday at 9",
+    "expected": "calendar.create",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-create-es-04",
+    "query": "Solo necesito que crea un evento de calendario para dentist tomorrow at 10",
+    "expected": "calendar.create",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-create-es-05",
+    "query": "Como siguiente paso, crea un evento de calendario para lunch with Alex at noon",
+    "expected": "calendar.create",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-calendar-create-ja-01",
+    "query": "この依頼だけ処理して: parent meeting Thursday at 5の予定をカレンダーに作成して",
+    "expected": "calendar.create",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-create-ja-02",
+    "query": "やりたいことはdesign sync Tuesday at 1の予定をカレンダーに作成して",
+    "expected": "calendar.create",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-create-ja-03",
+    "query": "適切な機能を使ってteam sync at 3 PMの予定をカレンダーに作成して",
+    "expected": "calendar.create",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-create-ja-04",
+    "query": "必要なのはproject review Friday at 2の予定をカレンダーに作成してだけ",
+    "expected": "calendar.create",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-create-ja-05",
+    "query": "次の手順としてdemo next Monday at 4の予定をカレンダーに作成して",
+    "expected": "calendar.create",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-calendar-create-de-01",
+    "query": "Bearbeite nur diese Anfrage: erstelle einen Kalendereintrag für release review at 11",
+    "expected": "calendar.create",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-create-de-02",
+    "query": "Ich möchte Folgendes tun: erstelle einen Kalendereintrag für weekly planning Monday at 9",
+    "expected": "calendar.create",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-create-de-03",
+    "query": "Nutze die passende Funktion, um erstelle einen Kalendereintrag für dentist tomorrow at 10",
+    "expected": "calendar.create",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-create-de-04",
+    "query": "Ich brauche nur, dass du erstelle einen Kalendereintrag für lunch with Alex at noon",
+    "expected": "calendar.create",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-create-de-05",
+    "query": "Als nächsten Schritt: erstelle einen Kalendereintrag für focus time at 9 AM",
+    "expected": "calendar.create",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-calendar-create-mixed-01",
+    "query": "이 request만 처리해: design sync Tuesday at 1 calendar event를 create해",
+    "expected": "calendar.create",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-create-mixed-02",
+    "query": "내가 하려는 task는 team sync at 3 PM calendar event를 create해",
+    "expected": "calendar.create",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-create-mixed-03",
+    "query": "appropriate capability로 project review Friday at 2 calendar event를 create해",
+    "expected": "calendar.create",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-create-mixed-04",
+    "query": "다른 건 필요 없고 just demo next Monday at 4 calendar event를 create해",
+    "expected": "calendar.create",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-calendar-create-mixed-05",
+    "query": "next step으로 parent meeting Thursday at 5 calendar event를 create해",
+    "expected": "calendar.create",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-search-en-01",
+    "query": "Could you handle this request: search the support knowledge base for refund policy",
+    "expected": "support.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-search-en-02",
+    "query": "What I am trying to do is search the support knowledge base for API timeout",
+    "expected": "support.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-search-en-03",
+    "query": "Please use the appropriate capability to search the support knowledge base for two-factor setup",
+    "expected": "support.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-search-en-04",
+    "query": "I only need you to search the support knowledge base for notification settings",
+    "expected": "support.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-search-en-05",
+    "query": "For the next step, search the support knowledge base for billing FAQ",
+    "expected": "support.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-search-ko-01",
+    "query": "이 요청만 처리해줘: account verification 관련 고객지원 문서를 검색해줘",
+    "expected": "support.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-search-ko-02",
+    "query": "내가 하려는 건 subscription change 관련 고객지원 문서를 검색해줘",
+    "expected": "support.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-search-ko-03",
+    "query": "적절한 기능을 사용해서 data export 관련 고객지원 문서를 검색해줘",
+    "expected": "support.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-search-ko-04",
+    "query": "다른 건 필요 없고 password reset 관련 고객지원 문서를 검색해줘",
+    "expected": "support.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-search-ko-05",
+    "query": "다음 단계로 login failure 관련 고객지원 문서를 검색해줘",
+    "expected": "support.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-search-es-01",
+    "query": "Gestiona solo esta solicitud: busca en la base de soporte información sobre API timeout",
+    "expected": "support.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-search-es-02",
+    "query": "Lo que intento hacer es busca en la base de soporte información sobre two-factor setup",
+    "expected": "support.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-search-es-03",
+    "query": "Usa la capacidad adecuada para busca en la base de soporte información sobre notification settings",
+    "expected": "support.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-search-es-04",
+    "query": "Solo necesito que busca en la base de soporte información sobre billing FAQ",
+    "expected": "support.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-search-es-05",
+    "query": "Como siguiente paso, busca en la base de soporte información sobre refund policy",
+    "expected": "support.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-search-ja-01",
+    "query": "この依頼だけ処理して: subscription changeについてサポート記事を検索して",
+    "expected": "support.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-search-ja-02",
+    "query": "やりたいことはdata exportについてサポート記事を検索して",
+    "expected": "support.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-search-ja-03",
+    "query": "適切な機能を使ってpassword resetについてサポート記事を検索して",
+    "expected": "support.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-search-ja-04",
+    "query": "必要なのはlogin failureについてサポート記事を検索してだけ",
+    "expected": "support.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-search-ja-05",
+    "query": "次の手順としてaccount verificationについてサポート記事を検索して",
+    "expected": "support.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-search-de-01",
+    "query": "Bearbeite nur diese Anfrage: suche in der Support-Wissensbasis nach two-factor setup",
+    "expected": "support.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-search-de-02",
+    "query": "Ich möchte Folgendes tun: suche in der Support-Wissensbasis nach notification settings",
+    "expected": "support.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-search-de-03",
+    "query": "Nutze die passende Funktion, um suche in der Support-Wissensbasis nach billing FAQ",
+    "expected": "support.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-search-de-04",
+    "query": "Ich brauche nur, dass du suche in der Support-Wissensbasis nach refund policy",
+    "expected": "support.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-search-de-05",
+    "query": "Als nächsten Schritt: suche in der Support-Wissensbasis nach API timeout",
+    "expected": "support.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-search-mixed-01",
+    "query": "이 request만 처리해: data export 관련 support KB를 search해",
+    "expected": "support.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-search-mixed-02",
+    "query": "내가 하려는 task는 password reset 관련 support KB를 search해",
+    "expected": "support.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-search-mixed-03",
+    "query": "appropriate capability로 login failure 관련 support KB를 search해",
+    "expected": "support.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-search-mixed-04",
+    "query": "다른 건 필요 없고 just account verification 관련 support KB를 search해",
+    "expected": "support.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-search-mixed-05",
+    "query": "next step으로 subscription change 관련 support KB를 search해",
+    "expected": "support.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-create-ticket-en-01",
+    "query": "Could you handle this request: create a support ticket because account is locked",
+    "expected": "support.create_ticket",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-create-ticket-en-02",
+    "query": "What I am trying to do is create a support ticket because subscription was duplicated",
+    "expected": "support.create_ticket",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-create-ticket-en-03",
+    "query": "Please use the appropriate capability to create a support ticket because export failed",
+    "expected": "support.create_ticket",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-create-ticket-en-04",
+    "query": "I only need you to create a support ticket because mobile app crashes",
+    "expected": "support.create_ticket",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-create-ticket-en-05",
+    "query": "For the next step, create a support ticket because invoice is wrong",
+    "expected": "support.create_ticket",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-support-create-ticket-ko-01",
+    "query": "이 요청만 처리해줘: refund has not arrived 문제로 고객지원 티켓을 만들어줘",
+    "expected": "support.create_ticket",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-create-ticket-ko-02",
+    "query": "내가 하려는 건 verification email missing 문제로 고객지원 티켓을 만들어줘",
+    "expected": "support.create_ticket",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-create-ticket-ko-03",
+    "query": "적절한 기능을 사용해서 notification bug 문제로 고객지원 티켓을 만들어줘",
+    "expected": "support.create_ticket",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-create-ticket-ko-04",
+    "query": "다른 건 필요 없고 login keeps failing 문제로 고객지원 티켓을 만들어줘",
+    "expected": "support.create_ticket",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-create-ticket-ko-05",
+    "query": "다음 단계로 API returns 500 문제로 고객지원 티켓을 만들어줘",
+    "expected": "support.create_ticket",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-support-create-ticket-es-01",
+    "query": "Gestiona solo esta solicitud: crea un ticket de soporte porque subscription was duplicated",
+    "expected": "support.create_ticket",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-create-ticket-es-02",
+    "query": "Lo que intento hacer es crea un ticket de soporte porque export failed",
+    "expected": "support.create_ticket",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-create-ticket-es-03",
+    "query": "Usa la capacidad adecuada para crea un ticket de soporte porque mobile app crashes",
+    "expected": "support.create_ticket",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-create-ticket-es-04",
+    "query": "Solo necesito que crea un ticket de soporte porque invoice is wrong",
+    "expected": "support.create_ticket",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-create-ticket-es-05",
+    "query": "Como siguiente paso, crea un ticket de soporte porque account is locked",
+    "expected": "support.create_ticket",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-support-create-ticket-ja-01",
+    "query": "この依頼だけ処理して: verification email missingの問題でサポートチケットを作成して",
+    "expected": "support.create_ticket",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-create-ticket-ja-02",
+    "query": "やりたいことはnotification bugの問題でサポートチケットを作成して",
+    "expected": "support.create_ticket",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-create-ticket-ja-03",
+    "query": "適切な機能を使ってlogin keeps failingの問題でサポートチケットを作成して",
+    "expected": "support.create_ticket",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-create-ticket-ja-04",
+    "query": "必要なのはAPI returns 500の問題でサポートチケットを作成してだけ",
+    "expected": "support.create_ticket",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-create-ticket-ja-05",
+    "query": "次の手順としてrefund has not arrivedの問題でサポートチケットを作成して",
+    "expected": "support.create_ticket",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-support-create-ticket-de-01",
+    "query": "Bearbeite nur diese Anfrage: erstelle ein Support-Ticket, weil export failed",
+    "expected": "support.create_ticket",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-create-ticket-de-02",
+    "query": "Ich möchte Folgendes tun: erstelle ein Support-Ticket, weil mobile app crashes",
+    "expected": "support.create_ticket",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-create-ticket-de-03",
+    "query": "Nutze die passende Funktion, um erstelle ein Support-Ticket, weil invoice is wrong",
+    "expected": "support.create_ticket",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-create-ticket-de-04",
+    "query": "Ich brauche nur, dass du erstelle ein Support-Ticket, weil account is locked",
+    "expected": "support.create_ticket",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-create-ticket-de-05",
+    "query": "Als nächsten Schritt: erstelle ein Support-Ticket, weil subscription was duplicated",
+    "expected": "support.create_ticket",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-support-create-ticket-mixed-01",
+    "query": "이 request만 처리해: notification bug 문제로 support ticket을 create해",
+    "expected": "support.create_ticket",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-create-ticket-mixed-02",
+    "query": "내가 하려는 task는 login keeps failing 문제로 support ticket을 create해",
+    "expected": "support.create_ticket",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-create-ticket-mixed-03",
+    "query": "appropriate capability로 API returns 500 문제로 support ticket을 create해",
+    "expected": "support.create_ticket",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-create-ticket-mixed-04",
+    "query": "다른 건 필요 없고 just refund has not arrived 문제로 support ticket을 create해",
+    "expected": "support.create_ticket",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-support-create-ticket-mixed-05",
+    "query": "next step으로 verification email missing 문제로 support ticket을 create해",
+    "expected": "support.create_ticket",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-search-en-01",
+    "query": "Could you handle this request: check current inventory quantity for SKU-404",
+    "expected": "inventory.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-search-en-02",
+    "query": "What I am trying to do is check current inventory quantity for SKU-A12",
+    "expected": "inventory.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-search-en-03",
+    "query": "Please use the appropriate capability to check current inventory quantity for SKU-C36",
+    "expected": "inventory.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-search-en-04",
+    "query": "I only need you to check current inventory quantity for SKU-E60",
+    "expected": "inventory.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-search-en-05",
+    "query": "For the next step, check current inventory quantity for SKU-202",
+    "expected": "inventory.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-search-ko-01",
+    "query": "이 요청만 처리해줘: SKU-505의 현재 재고 수량을 확인해줘",
+    "expected": "inventory.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-search-ko-02",
+    "query": "내가 하려는 건 SKU-B24의 현재 재고 수량을 확인해줘",
+    "expected": "inventory.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-search-ko-03",
+    "query": "적절한 기능을 사용해서 SKU-D48의 현재 재고 수량을 확인해줘",
+    "expected": "inventory.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-search-ko-04",
+    "query": "다른 건 필요 없고 SKU-101의 현재 재고 수량을 확인해줘",
+    "expected": "inventory.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-search-ko-05",
+    "query": "다음 단계로 SKU-303의 현재 재고 수량을 확인해줘",
+    "expected": "inventory.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-search-es-01",
+    "query": "Gestiona solo esta solicitud: consulta la cantidad actual en inventario de SKU-A12",
+    "expected": "inventory.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-search-es-02",
+    "query": "Lo que intento hacer es consulta la cantidad actual en inventario de SKU-C36",
+    "expected": "inventory.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-search-es-03",
+    "query": "Usa la capacidad adecuada para consulta la cantidad actual en inventario de SKU-E60",
+    "expected": "inventory.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-search-es-04",
+    "query": "Solo necesito que consulta la cantidad actual en inventario de SKU-202",
+    "expected": "inventory.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-search-es-05",
+    "query": "Como siguiente paso, consulta la cantidad actual en inventario de SKU-404",
+    "expected": "inventory.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-search-ja-01",
+    "query": "この依頼だけ処理して: SKU-B24の現在庫数を確認して",
+    "expected": "inventory.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-search-ja-02",
+    "query": "やりたいことはSKU-D48の現在庫数を確認して",
+    "expected": "inventory.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-search-ja-03",
+    "query": "適切な機能を使ってSKU-101の現在庫数を確認して",
+    "expected": "inventory.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-search-ja-04",
+    "query": "必要なのはSKU-303の現在庫数を確認してだけ",
+    "expected": "inventory.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-search-ja-05",
+    "query": "次の手順としてSKU-505の現在庫数を確認して",
+    "expected": "inventory.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-search-de-01",
+    "query": "Bearbeite nur diese Anfrage: prüfe den aktuellen Bestand von SKU-C36",
+    "expected": "inventory.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-search-de-02",
+    "query": "Ich möchte Folgendes tun: prüfe den aktuellen Bestand von SKU-E60",
+    "expected": "inventory.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-search-de-03",
+    "query": "Nutze die passende Funktion, um prüfe den aktuellen Bestand von SKU-202",
+    "expected": "inventory.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-search-de-04",
+    "query": "Ich brauche nur, dass du prüfe den aktuellen Bestand von SKU-404",
+    "expected": "inventory.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-search-de-05",
+    "query": "Als nächsten Schritt: prüfe den aktuellen Bestand von SKU-A12",
+    "expected": "inventory.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-search-mixed-01",
+    "query": "이 request만 처리해: SKU-D48 current inventory quantity를 확인해",
+    "expected": "inventory.search",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-search-mixed-02",
+    "query": "내가 하려는 task는 SKU-101 current inventory quantity를 확인해",
+    "expected": "inventory.search",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-search-mixed-03",
+    "query": "appropriate capability로 SKU-303 current inventory quantity를 확인해",
+    "expected": "inventory.search",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-search-mixed-04",
+    "query": "다른 건 필요 없고 just SKU-505 current inventory quantity를 확인해",
+    "expected": "inventory.search",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-search-mixed-05",
+    "query": "next step으로 SKU-B24 current inventory quantity를 확인해",
+    "expected": "inventory.search",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-update-en-01",
+    "query": "Could you handle this request: update inventory quantity for SKU-404 to 0",
+    "expected": "inventory.update",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-update-en-02",
+    "query": "What I am trying to do is update inventory quantity for SKU-A12 to 7",
+    "expected": "inventory.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-update-en-03",
+    "query": "Please use the appropriate capability to update inventory quantity for SKU-C36 to 2",
+    "expected": "inventory.update",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-update-en-04",
+    "query": "I only need you to update inventory quantity for SKU-E60 to 15",
+    "expected": "inventory.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-update-en-05",
+    "query": "For the next step, update inventory quantity for SKU-202 to 4",
+    "expected": "inventory.update",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-inventory-update-ko-01",
+    "query": "이 요청만 처리해줘: 재고를 SKU-505 to 55로 업데이트해줘",
+    "expected": "inventory.update",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-update-ko-02",
+    "query": "내가 하려는 건 재고를 SKU-B24 to 19로 업데이트해줘",
+    "expected": "inventory.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-update-ko-03",
+    "query": "적절한 기능을 사용해서 재고를 SKU-D48 to 81로 업데이트해줘",
+    "expected": "inventory.update",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-update-ko-04",
+    "query": "다른 건 필요 없고 재고를 SKU-101 to 12로 업데이트해줘",
+    "expected": "inventory.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-update-ko-05",
+    "query": "다음 단계로 재고를 SKU-303 to 30로 업데이트해줘",
+    "expected": "inventory.update",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-inventory-update-es-01",
+    "query": "Gestiona solo esta solicitud: actualiza la cantidad de inventario de SKU-A12 to 7",
+    "expected": "inventory.update",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-update-es-02",
+    "query": "Lo que intento hacer es actualiza la cantidad de inventario de SKU-C36 to 2",
+    "expected": "inventory.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-update-es-03",
+    "query": "Usa la capacidad adecuada para actualiza la cantidad de inventario de SKU-E60 to 15",
+    "expected": "inventory.update",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-update-es-04",
+    "query": "Solo necesito que actualiza la cantidad de inventario de SKU-202 to 4",
+    "expected": "inventory.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-update-es-05",
+    "query": "Como siguiente paso, actualiza la cantidad de inventario de SKU-404 to 0",
+    "expected": "inventory.update",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-inventory-update-ja-01",
+    "query": "この依頼だけ処理して: 在庫数量をSKU-B24 to 19に更新して",
+    "expected": "inventory.update",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-update-ja-02",
+    "query": "やりたいことは在庫数量をSKU-D48 to 81に更新して",
+    "expected": "inventory.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-update-ja-03",
+    "query": "適切な機能を使って在庫数量をSKU-101 to 12に更新して",
+    "expected": "inventory.update",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-update-ja-04",
+    "query": "必要なのは在庫数量をSKU-303 to 30に更新してだけ",
+    "expected": "inventory.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-update-ja-05",
+    "query": "次の手順として在庫数量をSKU-505 to 55に更新して",
+    "expected": "inventory.update",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-inventory-update-de-01",
+    "query": "Bearbeite nur diese Anfrage: aktualisiere den Lagerbestand für SKU-C36 to 2",
+    "expected": "inventory.update",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-update-de-02",
+    "query": "Ich möchte Folgendes tun: aktualisiere den Lagerbestand für SKU-E60 to 15",
+    "expected": "inventory.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-update-de-03",
+    "query": "Nutze die passende Funktion, um aktualisiere den Lagerbestand für SKU-202 to 4",
+    "expected": "inventory.update",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-update-de-04",
+    "query": "Ich brauche nur, dass du aktualisiere den Lagerbestand für SKU-404 to 0",
+    "expected": "inventory.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-update-de-05",
+    "query": "Als nächsten Schritt: aktualisiere den Lagerbestand für SKU-A12 to 7",
+    "expected": "inventory.update",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-inventory-update-mixed-01",
+    "query": "이 request만 처리해: inventory를 SKU-D48 to 81로 update해",
+    "expected": "inventory.update",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-update-mixed-02",
+    "query": "내가 하려는 task는 inventory를 SKU-101 to 12로 update해",
+    "expected": "inventory.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-update-mixed-03",
+    "query": "appropriate capability로 inventory를 SKU-303 to 30로 update해",
+    "expected": "inventory.update",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-update-mixed-04",
+    "query": "다른 건 필요 없고 just inventory를 SKU-505 to 55로 update해",
+    "expected": "inventory.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-inventory-update-mixed-05",
+    "query": "next step으로 inventory를 SKU-B24 to 19로 update해",
+    "expected": "inventory.update",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-lookup-en-01",
+    "query": "Could you handle this request: look up the user profile for account 1007",
+    "expected": "users.lookup",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-lookup-en-02",
+    "query": "What I am trying to do is look up the user profile for user 9001",
+    "expected": "users.lookup",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-lookup-en-03",
+    "query": "Please use the appropriate capability to look up the user profile for Hans Müller",
+    "expected": "users.lookup",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-lookup-en-04",
+    "query": "I only need you to look up the user profile for account 73",
+    "expected": "users.lookup",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-lookup-en-05",
+    "query": "For the next step, look up the user profile for alice@example.com",
+    "expected": "users.lookup",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-lookup-ko-01",
+    "query": "이 요청만 처리해줘: Bob Kim 사용자 프로필을 조회해줘",
+    "expected": "users.lookup",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-lookup-ko-02",
+    "query": "내가 하려는 건 maria@example.com 사용자 프로필을 조회해줘",
+    "expected": "users.lookup",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-lookup-ko-03",
+    "query": "적절한 기능을 사용해서 Yuki Sato 사용자 프로필을 조회해줘",
+    "expected": "users.lookup",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-lookup-ko-04",
+    "query": "다른 건 필요 없고 user 42 사용자 프로필을 조회해줘",
+    "expected": "users.lookup",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-lookup-ko-05",
+    "query": "다음 단계로 Kevin Cho 사용자 프로필을 조회해줘",
+    "expected": "users.lookup",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-lookup-es-01",
+    "query": "Gestiona solo esta solicitud: busca el perfil de usuario de user 9001",
+    "expected": "users.lookup",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-lookup-es-02",
+    "query": "Lo que intento hacer es busca el perfil de usuario de Hans Müller",
+    "expected": "users.lookup",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-lookup-es-03",
+    "query": "Usa la capacidad adecuada para busca el perfil de usuario de account 73",
+    "expected": "users.lookup",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-lookup-es-04",
+    "query": "Solo necesito que busca el perfil de usuario de alice@example.com",
+    "expected": "users.lookup",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-lookup-es-05",
+    "query": "Como siguiente paso, busca el perfil de usuario de account 1007",
+    "expected": "users.lookup",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-lookup-ja-01",
+    "query": "この依頼だけ処理して: maria@example.comのユーザープロフィールを検索して",
+    "expected": "users.lookup",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-lookup-ja-02",
+    "query": "やりたいことはYuki Satoのユーザープロフィールを検索して",
+    "expected": "users.lookup",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-lookup-ja-03",
+    "query": "適切な機能を使ってuser 42のユーザープロフィールを検索して",
+    "expected": "users.lookup",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-lookup-ja-04",
+    "query": "必要なのはKevin Choのユーザープロフィールを検索してだけ",
+    "expected": "users.lookup",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-lookup-ja-05",
+    "query": "次の手順としてBob Kimのユーザープロフィールを検索して",
+    "expected": "users.lookup",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-lookup-de-01",
+    "query": "Bearbeite nur diese Anfrage: suche das Benutzerprofil für Hans Müller",
+    "expected": "users.lookup",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-lookup-de-02",
+    "query": "Ich möchte Folgendes tun: suche das Benutzerprofil für account 73",
+    "expected": "users.lookup",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-lookup-de-03",
+    "query": "Nutze die passende Funktion, um suche das Benutzerprofil für alice@example.com",
+    "expected": "users.lookup",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-lookup-de-04",
+    "query": "Ich brauche nur, dass du suche das Benutzerprofil für account 1007",
+    "expected": "users.lookup",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-lookup-de-05",
+    "query": "Als nächsten Schritt: suche das Benutzerprofil für user 9001",
+    "expected": "users.lookup",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-lookup-mixed-01",
+    "query": "이 request만 처리해: Yuki Sato user profile을 lookup해",
+    "expected": "users.lookup",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-lookup-mixed-02",
+    "query": "내가 하려는 task는 user 42 user profile을 lookup해",
+    "expected": "users.lookup",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-lookup-mixed-03",
+    "query": "appropriate capability로 Kevin Cho user profile을 lookup해",
+    "expected": "users.lookup",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-lookup-mixed-04",
+    "query": "다른 건 필요 없고 just Bob Kim user profile을 lookup해",
+    "expected": "users.lookup",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-lookup-mixed-05",
+    "query": "next step으로 maria@example.com user profile을 lookup해",
+    "expected": "users.lookup",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-update-en-01",
+    "query": "Could you handle this request: update the user profile for account 1007 department",
+    "expected": "users.update",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-update-en-02",
+    "query": "What I am trying to do is update the user profile for user 9001 timezone",
+    "expected": "users.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-update-en-03",
+    "query": "Please use the appropriate capability to update the user profile for Hans Müller nickname",
+    "expected": "users.update",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-update-en-04",
+    "query": "I only need you to update the user profile for account 73 display name",
+    "expected": "users.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-update-en-05",
+    "query": "For the next step, update the user profile for alice@example.com phone number",
+    "expected": "users.update",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-users-update-ko-01",
+    "query": "이 요청만 처리해줘: Bob Kim title 사용자 프로필을 수정해줘",
+    "expected": "users.update",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-update-ko-02",
+    "query": "내가 하려는 건 maria@example.com locale 사용자 프로필을 수정해줘",
+    "expected": "users.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-update-ko-03",
+    "query": "적절한 기능을 사용해서 Yuki Sato department 사용자 프로필을 수정해줘",
+    "expected": "users.update",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-update-ko-04",
+    "query": "다른 건 필요 없고 user 42 name to Alice 사용자 프로필을 수정해줘",
+    "expected": "users.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-update-ko-05",
+    "query": "다음 단계로 Kevin Cho display name 사용자 프로필을 수정해줘",
+    "expected": "users.update",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-users-update-es-01",
+    "query": "Gestiona solo esta solicitud: actualiza el perfil de usuario de user 9001 timezone",
+    "expected": "users.update",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-update-es-02",
+    "query": "Lo que intento hacer es actualiza el perfil de usuario de Hans Müller nickname",
+    "expected": "users.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-update-es-03",
+    "query": "Usa la capacidad adecuada para actualiza el perfil de usuario de account 73 display name",
+    "expected": "users.update",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-update-es-04",
+    "query": "Solo necesito que actualiza el perfil de usuario de alice@example.com phone number",
+    "expected": "users.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-update-es-05",
+    "query": "Como siguiente paso, actualiza el perfil de usuario de account 1007 department",
+    "expected": "users.update",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-users-update-ja-01",
+    "query": "この依頼だけ処理して: maria@example.com localeのユーザープロフィールを更新して",
+    "expected": "users.update",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-update-ja-02",
+    "query": "やりたいことはYuki Sato departmentのユーザープロフィールを更新して",
+    "expected": "users.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-update-ja-03",
+    "query": "適切な機能を使ってuser 42 name to Aliceのユーザープロフィールを更新して",
+    "expected": "users.update",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-update-ja-04",
+    "query": "必要なのはKevin Cho display nameのユーザープロフィールを更新してだけ",
+    "expected": "users.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-update-ja-05",
+    "query": "次の手順としてBob Kim titleのユーザープロフィールを更新して",
+    "expected": "users.update",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-users-update-de-01",
+    "query": "Bearbeite nur diese Anfrage: aktualisiere das Benutzerprofil für Hans Müller nickname",
+    "expected": "users.update",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-update-de-02",
+    "query": "Ich möchte Folgendes tun: aktualisiere das Benutzerprofil für account 73 display name",
+    "expected": "users.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-update-de-03",
+    "query": "Nutze die passende Funktion, um aktualisiere das Benutzerprofil für alice@example.com phone number",
+    "expected": "users.update",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-update-de-04",
+    "query": "Ich brauche nur, dass du aktualisiere das Benutzerprofil für account 1007 department",
+    "expected": "users.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-update-de-05",
+    "query": "Als nächsten Schritt: aktualisiere das Benutzerprofil für user 9001 timezone",
+    "expected": "users.update",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-users-update-mixed-01",
+    "query": "이 request만 처리해: Yuki Sato department user profile을 update해",
+    "expected": "users.update",
+    "category": "natural_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-update-mixed-02",
+    "query": "내가 하려는 task는 user 42 name to Alice user profile을 update해",
+    "expected": "users.update",
+    "category": "indirect",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-update-mixed-03",
+    "query": "appropriate capability로 Kevin Cho display name user profile을 update해",
+    "expected": "users.update",
+    "category": "long_tail",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-update-mixed-04",
+    "query": "다른 건 필요 없고 just Bob Kim title user profile을 update해",
+    "expected": "users.update",
+    "category": "distractor",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-users-update-mixed-05",
+    "query": "next step으로 maria@example.com locale user profile을 update해",
+    "expected": "users.update",
+    "category": "held_out_paraphrase",
+    "expect_abstain": false,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-en-1-01",
+    "query": "Could you handle this request: write a short poem about autumn",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-1-02",
+    "query": "What I am trying to do is write a short poem about autumn",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-1-03",
+    "query": "Please use the appropriate capability to write a short poem about autumn",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-1-04",
+    "query": "I only need you to write a short poem about autumn",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-1-05",
+    "query": "For the next step, write a short poem about autumn",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-2-01",
+    "query": "Could you handle this request: diagnose my chest pain",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-2-02",
+    "query": "What I am trying to do is diagnose my chest pain",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-2-03",
+    "query": "Please use the appropriate capability to diagnose my chest pain",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-2-04",
+    "query": "I only need you to diagnose my chest pain",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-2-05",
+    "query": "For the next step, diagnose my chest pain",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-3-01",
+    "query": "Could you handle this request: turn on the living room lights",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-3-02",
+    "query": "What I am trying to do is turn on the living room lights",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-3-03",
+    "query": "Please use the appropriate capability to turn on the living room lights",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-3-04",
+    "query": "I only need you to turn on the living room lights",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-3-05",
+    "query": "For the next step, turn on the living room lights",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-4-01",
+    "query": "Could you handle this request: book a flight to Paris",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-4-02",
+    "query": "What I am trying to do is book a flight to Paris",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-4-03",
+    "query": "Please use the appropriate capability to book a flight to Paris",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-4-04",
+    "query": "I only need you to book a flight to Paris",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-en-4-05",
+    "query": "For the next step, book a flight to Paris",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "en"
+  },
+  {
+    "id": "v3-no-route-ko-1-01",
+    "query": "이 요청만 처리해줘: 가을에 대한 짧은 시를 써줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-1-02",
+    "query": "내가 하려는 건 가을에 대한 짧은 시를 써줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-1-03",
+    "query": "적절한 기능을 사용해서 가을에 대한 짧은 시를 써줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-1-04",
+    "query": "다른 건 필요 없고 가을에 대한 짧은 시를 써줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-1-05",
+    "query": "다음 단계로 가을에 대한 짧은 시를 써줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-2-01",
+    "query": "이 요청만 처리해줘: 내 가슴 통증을 진단해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-2-02",
+    "query": "내가 하려는 건 내 가슴 통증을 진단해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-2-03",
+    "query": "적절한 기능을 사용해서 내 가슴 통증을 진단해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-2-04",
+    "query": "다른 건 필요 없고 내 가슴 통증을 진단해줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-2-05",
+    "query": "다음 단계로 내 가슴 통증을 진단해줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-3-01",
+    "query": "이 요청만 처리해줘: 거실 조명을 켜줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-3-02",
+    "query": "내가 하려는 건 거실 조명을 켜줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-3-03",
+    "query": "적절한 기능을 사용해서 거실 조명을 켜줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-3-04",
+    "query": "다른 건 필요 없고 거실 조명을 켜줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-3-05",
+    "query": "다음 단계로 거실 조명을 켜줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-4-01",
+    "query": "이 요청만 처리해줘: 파리행 항공편을 예약해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-4-02",
+    "query": "내가 하려는 건 파리행 항공편을 예약해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-4-03",
+    "query": "적절한 기능을 사용해서 파리행 항공편을 예약해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-4-04",
+    "query": "다른 건 필요 없고 파리행 항공편을 예약해줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-ko-4-05",
+    "query": "다음 단계로 파리행 항공편을 예약해줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ko"
+  },
+  {
+    "id": "v3-no-route-es-1-01",
+    "query": "Gestiona solo esta solicitud: escribe un poema corto sobre el otoño",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-1-02",
+    "query": "Lo que intento hacer es escribe un poema corto sobre el otoño",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-1-03",
+    "query": "Usa la capacidad adecuada para escribe un poema corto sobre el otoño",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-1-04",
+    "query": "Solo necesito que escribe un poema corto sobre el otoño",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-1-05",
+    "query": "Como siguiente paso, escribe un poema corto sobre el otoño",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-2-01",
+    "query": "Gestiona solo esta solicitud: diagnostica mi dolor de pecho",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-2-02",
+    "query": "Lo que intento hacer es diagnostica mi dolor de pecho",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-2-03",
+    "query": "Usa la capacidad adecuada para diagnostica mi dolor de pecho",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-2-04",
+    "query": "Solo necesito que diagnostica mi dolor de pecho",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-2-05",
+    "query": "Como siguiente paso, diagnostica mi dolor de pecho",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-3-01",
+    "query": "Gestiona solo esta solicitud: enciende las luces del salón",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-3-02",
+    "query": "Lo que intento hacer es enciende las luces del salón",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-3-03",
+    "query": "Usa la capacidad adecuada para enciende las luces del salón",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-3-04",
+    "query": "Solo necesito que enciende las luces del salón",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-3-05",
+    "query": "Como siguiente paso, enciende las luces del salón",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-4-01",
+    "query": "Gestiona solo esta solicitud: reserva un vuelo a París",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-4-02",
+    "query": "Lo que intento hacer es reserva un vuelo a París",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-4-03",
+    "query": "Usa la capacidad adecuada para reserva un vuelo a París",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-4-04",
+    "query": "Solo necesito que reserva un vuelo a París",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-es-4-05",
+    "query": "Como siguiente paso, reserva un vuelo a París",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "es"
+  },
+  {
+    "id": "v3-no-route-ja-1-01",
+    "query": "この依頼だけ処理して: 秋について短い詩を書いて",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-1-02",
+    "query": "やりたいことは秋について短い詩を書いて",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-1-03",
+    "query": "適切な機能を使って秋について短い詩を書いて",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-1-04",
+    "query": "必要なのは秋について短い詩を書いてだけ",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-1-05",
+    "query": "次の手順として秋について短い詩を書いて",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-2-01",
+    "query": "この依頼だけ処理して: 胸の痛みを診断して",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-2-02",
+    "query": "やりたいことは胸の痛みを診断して",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-2-03",
+    "query": "適切な機能を使って胸の痛みを診断して",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-2-04",
+    "query": "必要なのは胸の痛みを診断してだけ",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-2-05",
+    "query": "次の手順として胸の痛みを診断して",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-3-01",
+    "query": "この依頼だけ処理して: リビングの照明をつけて",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-3-02",
+    "query": "やりたいことはリビングの照明をつけて",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-3-03",
+    "query": "適切な機能を使ってリビングの照明をつけて",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-3-04",
+    "query": "必要なのはリビングの照明をつけてだけ",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-3-05",
+    "query": "次の手順としてリビングの照明をつけて",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-4-01",
+    "query": "この依頼だけ処理して: パリ行きの航空券を予約して",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-4-02",
+    "query": "やりたいことはパリ行きの航空券を予約して",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-4-03",
+    "query": "適切な機能を使ってパリ行きの航空券を予約して",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-4-04",
+    "query": "必要なのはパリ行きの航空券を予約してだけ",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-ja-4-05",
+    "query": "次の手順としてパリ行きの航空券を予約して",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "ja"
+  },
+  {
+    "id": "v3-no-route-de-1-01",
+    "query": "Bearbeite nur diese Anfrage: schreibe ein kurzes Gedicht über den Herbst",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-1-02",
+    "query": "Ich möchte Folgendes tun: schreibe ein kurzes Gedicht über den Herbst",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-1-03",
+    "query": "Nutze die passende Funktion, um schreibe ein kurzes Gedicht über den Herbst",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-1-04",
+    "query": "Ich brauche nur, dass du schreibe ein kurzes Gedicht über den Herbst",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-1-05",
+    "query": "Als nächsten Schritt: schreibe ein kurzes Gedicht über den Herbst",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-2-01",
+    "query": "Bearbeite nur diese Anfrage: diagnostiziere meine Brustschmerzen",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-2-02",
+    "query": "Ich möchte Folgendes tun: diagnostiziere meine Brustschmerzen",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-2-03",
+    "query": "Nutze die passende Funktion, um diagnostiziere meine Brustschmerzen",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-2-04",
+    "query": "Ich brauche nur, dass du diagnostiziere meine Brustschmerzen",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-2-05",
+    "query": "Als nächsten Schritt: diagnostiziere meine Brustschmerzen",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-3-01",
+    "query": "Bearbeite nur diese Anfrage: schalte das Wohnzimmerlicht ein",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-3-02",
+    "query": "Ich möchte Folgendes tun: schalte das Wohnzimmerlicht ein",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-3-03",
+    "query": "Nutze die passende Funktion, um schalte das Wohnzimmerlicht ein",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-3-04",
+    "query": "Ich brauche nur, dass du schalte das Wohnzimmerlicht ein",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-3-05",
+    "query": "Als nächsten Schritt: schalte das Wohnzimmerlicht ein",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-4-01",
+    "query": "Bearbeite nur diese Anfrage: buche einen Flug nach Paris",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-4-02",
+    "query": "Ich möchte Folgendes tun: buche einen Flug nach Paris",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-4-03",
+    "query": "Nutze die passende Funktion, um buche einen Flug nach Paris",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-4-04",
+    "query": "Ich brauche nur, dass du buche einen Flug nach Paris",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-de-4-05",
+    "query": "Als nächsten Schritt: buche einen Flug nach Paris",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "de"
+  },
+  {
+    "id": "v3-no-route-mixed-1-01",
+    "query": "이 request만 처리해: 가을 poem을 써줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-1-02",
+    "query": "내가 하려는 task는 가을 poem을 써줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-1-03",
+    "query": "appropriate capability로 가을 poem을 써줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-1-04",
+    "query": "다른 건 필요 없고 just 가을 poem을 써줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-1-05",
+    "query": "next step으로 가을 poem을 써줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-2-01",
+    "query": "이 request만 처리해: my chest pain을 diagnose해",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-2-02",
+    "query": "내가 하려는 task는 my chest pain을 diagnose해",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-2-03",
+    "query": "appropriate capability로 my chest pain을 diagnose해",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-2-04",
+    "query": "다른 건 필요 없고 just my chest pain을 diagnose해",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-2-05",
+    "query": "next step으로 my chest pain을 diagnose해",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-3-01",
+    "query": "이 request만 처리해: living room lights를 켜줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-3-02",
+    "query": "내가 하려는 task는 living room lights를 켜줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-3-03",
+    "query": "appropriate capability로 living room lights를 켜줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-3-04",
+    "query": "다른 건 필요 없고 just living room lights를 켜줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-3-05",
+    "query": "next step으로 living room lights를 켜줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-4-01",
+    "query": "이 request만 처리해: Paris flight를 book해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-4-02",
+    "query": "내가 하려는 task는 Paris flight를 book해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-4-03",
+    "query": "appropriate capability로 Paris flight를 book해줘",
+    "expected": null,
+    "category": "out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-4-04",
+    "query": "다른 건 필요 없고 just Paris flight를 book해줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  },
+  {
+    "id": "v3-no-route-mixed-4-05",
+    "query": "next step으로 Paris flight를 book해줘",
+    "expected": null,
+    "category": "adversarial_or_out_of_domain",
+    "expect_abstain": true,
+    "split": "test",
+    "language": "mixed"
+  }
+]
