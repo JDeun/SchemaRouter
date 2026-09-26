@@ -14,7 +14,11 @@ def test_graph_cycle_is_preregistered_before_implementation() -> None:
     assert cycle["reserved_from_main"] == "526d0c588bbec053fba54c55d982cc67d2a74d56"
     assert cycle["candidate_selection_policy"]["blind_corpus_must_not_exist_before_freeze"] is True
     assert cycle["preregistered_gates"]["promotion_requires_all_gates"] is True
-    assert cycle["preregistered_gates"]["false_route_count_must_not_exceed_paired_full_bge_baseline"] is True
+    assert (
+        cycle["preregistered_gates"]
+        ["false_route_count_must_not_exceed_paired_full_bge_baseline"]
+        is True
+    )
     assert cycle["preregistered_gates"]["paired_p95_latency_must_not_exceed_full_bge"] is True
 
 
