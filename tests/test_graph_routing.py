@@ -179,6 +179,60 @@ def test_global_graph_resolves_unique_registered_operation() -> None:
     assert assessment.endpoint_name == "forecast"
 
 
+def test_global_graph_matches_unicode_literal_aliases() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="weather",
+            endpoints=[
+                EndpointSpec(
+                    name="forecast",
+                    operation_aliases=["天気予報", "cotización actual"],
+                )
+            ],
+        )
+    )
+    graph = CompiledSchemaGraph.from_registry(registry)
+    gate = GraphOperationGate()
+
+    japanese = gate.assess_global(
+        query="東京の天気予報を見せて",
+        graph=graph,
+    )
+    accented = gate.assess_global(
+        query="Necesito la cotización actual de ACME.",
+        graph=graph,
+    )
+
+    assert japanese.decision == "accept"
+    assert japanese.endpoint_name == "forecast"
+    assert accented.decision == "accept"
+    assert accented.endpoint_name == "forecast"
+
+
+def test_unicode_nfkc_normalization_preserves_literal_authority() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="catalog",
+            endpoints=[
+                EndpointSpec(
+                    name="lookup",
+                    operation_aliases=["ＡＰＩ 検索"],
+                )
+            ],
+        )
+    )
+
+    assessment = GraphOperationGate().assess_global(
+        query="API 検索を実行して",
+        graph=CompiledSchemaGraph.from_registry(registry),
+    )
+
+    assert assessment.decision == "accept"
+    assert assessment.endpoint_name == "lookup"
+
+
 def test_global_graph_ambiguity_escalates() -> None:
     registry = InMemoryRegistry()
     registry.register(
@@ -277,6 +331,44 @@ def test_global_conflict_overrides_supported_alias_path() -> None:
         evidence.operation_aliases == ("weather alerts",)
         for evidence in assessment.evidence
     )
+
+
+def test_global_conflict_from_another_tool_does_not_block_unique_positive_path() -> None:
+    registry = _registry(conflicts=False)
+    registry.register(
+        ToolSpec(
+            name="alerts",
+            unsupported_operation_aliases=["weather alerts"],
+            endpoints=[
+                EndpointSpec(
+                    name="status",
+                    operation_aliases=["alert status"],
+                )
+            ],
+        )
+    )
+
+    assessment = GraphOperationGate().assess_global(
+        query="Show the weather forecast; ignore the phrase weather alerts.",
+        graph=CompiledSchemaGraph.from_registry(registry),
+    )
+
+    assert assessment.decision == "accept"
+    assert assessment.tool_key == "weather"
+    assert assessment.endpoint_name == "forecast"
+
+
+def test_global_conflict_without_tool_grounding_escalates() -> None:
+    graph = CompiledSchemaGraph.from_registry(_registry(conflicts=True))
+
+    assessment = GraphOperationGate().assess_global(
+        query="Show weather alerts for Seoul.",
+        graph=graph,
+    )
+
+    assert assessment.decision == "escalate"
+    assert assessment.tool_key == ""
+    assert "tool grounding" in assessment.reason
 
 
 def test_conflict_rejection_can_be_disabled_for_ablation() -> None:
