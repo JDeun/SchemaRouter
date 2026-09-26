@@ -1,0 +1,60 @@
+{
+  "cycle": "0.10-operation-reject-only-cascade-v3",
+  "status": "design_reserved_before_implementation",
+  "reserved_after_rejected_cycle": "0.10-operation-cascade-v2",
+  "reserved_from_revision": "ff4991e288ab9e54721c2f34e2201162405fabf0",
+  "predecessor": {
+    "cycle": "0.10-operation-cascade-v2",
+    "calibration_result": "benchmarks/operation-fit-0.10-cascade-calibration-result.json",
+    "status": "calibration_rejected"
+  },
+  "research_question": "Can latency be reduced safely by using MiniLM only to reject very low-similarity operation batches while delegating every surviving batch to the already-validated beta=1 BGE scorer?",
+  "candidate_family": "MiniLM fast-reject only; no fast accept; beta=1 sibling-contrastive BGE for all survivors",
+  "selection": {
+    "corpus": "benchmarks/decision-routing-v5-operation-calibration.json",
+    "split": "dev",
+    "supported_operation_floor": 0.6,
+    "near_domain_unsupported_rejection_floor": 0.95,
+    "objective": "lowest paired mean CPU latency among candidates meeting both floors",
+    "candidate_grid": [
+      {
+        "name": "reject-010",
+        "reject_below": 0.1
+      },
+      {
+        "name": "reject-015",
+        "reject_below": 0.15
+      },
+      {
+        "name": "reject-020",
+        "reject_below": 0.2
+      },
+      {
+        "name": "reject-025",
+        "reject_below": 0.25
+      },
+      {
+        "name": "reject-030",
+        "reject_below": 0.3
+      }
+    ],
+    "baseline": "frozen full beta=1 sibling-contrastive BGE measured in the same sequential job as each candidate or in a single paired sweep job"
+  },
+  "confirmation": {
+    "corpus": "benchmarks/decision-routing-v5-operation-calibration.json",
+    "split": "calibration",
+    "rule": "freeze the selected dev winner, then run it unchanged once against a same-job full-BGE baseline; both quality floors and lower mean latency are required",
+    "candidate_changes_allowed": false
+  },
+  "blind_final": {
+    "protocol": "benchmarks/decision-routing-v15-blind-protocol.json",
+    "corpus_exists": false,
+    "run_allowed_only_after_candidate_freeze": true
+  },
+  "guardrails": [
+    "Do not use v12, v13, v14, or v15 for threshold, model, representation, or architecture selection.",
+    "Do not change semantic recall, capability-fit, endpoint-disambiguation, BGE beta, pairwise min score, or pairwise min margin during this cycle.",
+    "The MiniLM prefilter has reject-only authority; it cannot fast-accept or rank an endpoint.",
+    "If no preregistered candidate meets both quality floors and reduces paired mean latency, retain the full-BGE optional profile and close the cycle without blind-final generation."
+  ]
+}
