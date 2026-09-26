@@ -2385,3 +2385,128 @@ def test_semantic_candidate_recall_limit_must_be_positive_integer(limit) -> None
             _semantic_recall_registry(),
             candidate_recall_limit=limit,
         )
+
+
+def test_capability_fit_gate_suppresses_lexical_false_positive() -> None:
+    def abstain(_request):
+        return {"abstained": True}
+
+    plan = SchemaPlanner(
+        _semantic_recall_registry(),
+        candidate_fit_backend=CallableDecisionBackend(abstain),
+    ).plan("weather poem")
+
+    assert plan.calls == []
+    assert any(
+        "capability fit gate abstained; suppressed candidate routes" in warning
+        for warning in plan.warnings
+    )
+
+
+def test_capability_fit_gate_passes_without_selecting_or_reordering_candidates() -> None:
+    final_seen = {}
+
+    def fit(request):
+        selected = next(
+            option for option in request.options
+            if option.label == "weather.current"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.9}]}
+
+    def final(request):
+        final_seen["options"] = [option.label for option in request.options]
+        selected = next(
+            option for option in request.options
+            if option.label == "materials.search"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.95}]}
+
+    plan = SchemaPlanner(
+        _semantic_recall_registry(),
+        decision_backend=CallableDecisionBackend(final),
+        decision_policy=DecisionPolicy(
+            enabled=True,
+            endpoint_selection=True,
+        ),
+        candidate_recall_backend=EmbeddingDecisionBackend(
+            _semantic_material_embedder
+        ),
+        candidate_recall_limit=1,
+        candidate_fit_backend=CallableDecisionBackend(fit),
+    ).plan("weather 그리고 실리콘 밴드갭")
+
+    assert set(final_seen["options"]) == {
+        "weather.current",
+        "materials.search",
+    }
+    assert plan.calls[0].tool == "materials"
+    assert any(
+        "capability fit gate accepted via" in warning
+        for warning in plan.warnings
+    )
+
+
+def test_capability_fit_gate_failure_retains_authorized_candidates() -> None:
+    def fail(_request):
+        raise RuntimeError("fit backend unavailable")
+
+    plan = SchemaPlanner(
+        _semantic_recall_registry(),
+        candidate_fit_backend=CallableDecisionBackend(fail),
+    ).plan("current weather")
+
+    assert len(plan.calls) == 1
+    assert plan.calls[0].tool == "weather"
+    assert any(
+        "capability fit fallback: RuntimeError" in warning
+        for warning in plan.warnings
+    )
+
+
+def test_capability_fit_gate_cannot_create_candidates() -> None:
+    invoked = False
+
+    def fit(_request):
+        nonlocal invoked
+        invoked = True
+        return {"selections": [{"option_id": "fit:0"}]}
+
+    plan = SchemaPlanner(
+        _semantic_recall_registry(),
+        candidate_fit_backend=CallableDecisionBackend(fit),
+    ).plan("완전히 등록되지 않은 요청")
+
+    assert invoked is False
+    assert plan.calls == []
+
+
+@pytest.mark.asyncio
+async def test_async_capability_fit_gate_suppresses_candidates() -> None:
+    async def fit(_request):
+        return {"abstained": True}
+
+    plan = await SchemaPlanner(
+        _semantic_recall_registry(),
+        candidate_fit_backend=CallableDecisionBackend(fit),
+    ).aplan("current weather")
+
+    assert plan.calls == []
+    assert any(
+        "capability fit gate abstained" in warning
+        for warning in plan.warnings
+    )
+
+
+def test_capability_fit_gate_abstention_keeps_required_coverage_visible() -> None:
+    def abstain(_request):
+        return {"abstained": True}
+
+    plan = SchemaPlanner(
+        _semantic_recall_registry(),
+        candidate_fit_backend=CallableDecisionBackend(abstain),
+    ).plan("band gap")
+
+    assert plan.calls == []
+    assert plan.coverage is not None
+    assert plan.coverage.complete is False
+    assert plan.coverage.uncovered

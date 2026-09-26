@@ -7,7 +7,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "benchmarks" / "decision-routing-v1.json"
 CORPUS_V2 = ROOT / "benchmarks" / "decision-routing-v2.json"
+CORPUS_V3 = ROOT / "benchmarks" / "decision-routing-v3.json"
 GENERATOR_V2 = ROOT / "scripts" / "generate_decision_routing_v2.py"
+GENERATOR_V3 = ROOT / "scripts" / "generate_decision_routing_v3.py"
 SCRIPT = ROOT / "scripts" / "benchmark_decision_routing.py"
 
 
@@ -357,3 +359,65 @@ def test_benchmark_summary_tracks_split_and_language_accuracy() -> None:
 
     assert summary["split_accuracy"] == {"dev": 1.0, "test": 0.0}
     assert summary["language_accuracy"] == {"en": 1.0, "ko": 0.0}
+
+
+def test_v3_holdout_is_balanced_multilingual_and_test_only() -> None:
+    cases = json.loads(CORPUS_V3.read_text(encoding="utf-8"))
+
+    assert len(cases) == 600
+    assert len({case["id"] for case in cases}) == 600
+
+    route_counts: dict[str, int] = {}
+    language_counts: dict[str, int] = {}
+    for case in cases:
+        route = case["expected"] or "NO_ROUTE"
+        route_counts[route] = route_counts.get(route, 0) + 1
+        language_counts[case["language"]] = language_counts.get(case["language"], 0) + 1
+        assert case["split"] == "test"
+
+    assert route_counts["NO_ROUTE"] == 120
+    assert all(
+        count == 30
+        for route, count in route_counts.items()
+        if route != "NO_ROUTE"
+    )
+    assert language_counts == {
+        "en": 100,
+        "ko": 100,
+        "es": 100,
+        "ja": 100,
+        "de": 100,
+        "mixed": 100,
+    }
+
+
+def test_v3_holdout_has_no_exact_normalized_overlap_with_v2() -> None:
+    import re
+
+    v2 = json.loads(CORPUS_V2.read_text(encoding="utf-8"))
+    v3 = json.loads(CORPUS_V3.read_text(encoding="utf-8"))
+
+    def normalize(query: str) -> str:
+        return re.sub(r"[^\w]+", "", query.casefold())
+
+    v2_queries = {normalize(case["query"]) for case in v2}
+    v3_queries = [normalize(case["query"]) for case in v3]
+
+    assert len(v3_queries) == len(set(v3_queries))
+    assert not (v2_queries & set(v3_queries))
+
+
+def test_v3_generator_reproduces_checked_in_holdout_exactly() -> None:
+    spec = importlib.util.spec_from_file_location(
+        "generate_decision_routing_v3",
+        GENERATOR_V3,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    generated = module.build()
+    module.validate(generated)
+    checked_in = json.loads(CORPUS_V3.read_text(encoding="utf-8"))
+
+    assert generated == checked_in
