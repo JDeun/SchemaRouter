@@ -1,0 +1,138 @@
+{
+  "cycle": "0.10-operation-cascade-v2",
+  "status": "development_selection_complete",
+  "selection_eligible": true,
+  "source_revision": "f542fbd92bd55432eff6b508e0577eef1d71866c",
+  "workflow_run_id": 36248873541,
+  "workflow_run_conclusion": "success",
+  "selection_data": {
+    "corpus": "benchmarks/decision-routing-v5-operation-calibration.json",
+    "split": "dev",
+    "cases": 384
+  },
+  "preregistered_rule": {
+    "supported_operation_floor": 0.6,
+    "near_domain_unsupported_rejection_floor": 0.95,
+    "primary_objective": "lowest mean CPU latency among candidates meeting both floors",
+    "tie_breaker": "higher harmonic mean of supported-operation routed accuracy and near-domain unsupported-operation rejection"
+  },
+  "baseline": {
+    "name": "full-beta1-bge",
+    "artifact_id": 10908890215,
+    "artifact_sha256": "454ad332e217dc0b30b4aaeaba41043f76decf136847fac2086a8737a726fe9b",
+    "overall_accuracy": 0.8072916666666666,
+    "supported_operation_routed_accuracy": 0.65625,
+    "near_domain_unsupported_operation_rejection": 0.9583333333333334,
+    "harmonic_mean": 0.779032258064516,
+    "mean_latency_ms": 528.848,
+    "errors": 0
+  },
+  "candidates": [
+    {
+      "name": "r025-a055",
+      "reject_below": 0.25,
+      "accept_above": 0.55,
+      "accept_margin": 0.03,
+      "artifact_id": 10908662306,
+      "artifact_sha256": "a12324788ce4c52ee84b5418a5ab1919cf10d6c7cd66f33e9bcfbce8e957f8c8",
+      "overall_accuracy": 0.7994791666666666,
+      "supported_operation_routed_accuracy": 0.6458333333333334,
+      "near_domain_unsupported_operation_rejection": 0.953125,
+      "harmonic_mean": 0.7699511400651465,
+      "mean_latency_ms": 489.892,
+      "passed_quality_floors": true
+    },
+    {
+      "name": "r030-a055",
+      "reject_below": 0.3,
+      "accept_above": 0.55,
+      "accept_margin": 0.03,
+      "artifact_id": 10908108511,
+      "artifact_sha256": "60092e44d3f46ba5b71a6870ef42aa8c0891c03781ac540a7d4bc533904739db",
+      "overall_accuracy": 0.7916666666666666,
+      "supported_operation_routed_accuracy": 0.6197916666666666,
+      "near_domain_unsupported_operation_rejection": 0.9635416666666666,
+      "harmonic_mean": 0.7543516995614035,
+      "mean_latency_ms": 493.799,
+      "passed_quality_floors": true
+    },
+    {
+      "name": "r030-a060",
+      "reject_below": 0.3,
+      "accept_above": 0.6,
+      "accept_margin": 0.03,
+      "artifact_id": 10908388201,
+      "artifact_sha256": "33aa7eeaa3780275178ab9088f605ffdaf07adeef9f3e747d97b8ed146ab551c",
+      "overall_accuracy": 0.7942708333333334,
+      "supported_operation_routed_accuracy": 0.6197916666666666,
+      "near_domain_unsupported_operation_rejection": 0.96875,
+      "harmonic_mean": 0.7559426229508196,
+      "mean_latency_ms": 519.042,
+      "passed_quality_floors": true
+    },
+    {
+      "name": "r035-a060",
+      "reject_below": 0.35,
+      "accept_above": 0.6,
+      "accept_margin": 0.03,
+      "artifact_id": 10907644430,
+      "artifact_sha256": "82be091f3fc9caeb50a729a3abcc8791e914151290f9246fa349f02321804638",
+      "overall_accuracy": 0.7734375,
+      "supported_operation_routed_accuracy": 0.5729166666666666,
+      "near_domain_unsupported_operation_rejection": 0.9739583333333334,
+      "harmonic_mean": 0.7214506172839507,
+      "mean_latency_ms": 413.296,
+      "passed_quality_floors": false
+    },
+    {
+      "name": "r035-a065",
+      "reject_below": 0.35,
+      "accept_above": 0.65,
+      "accept_margin": 0.03,
+      "artifact_id": 10908876240,
+      "artifact_sha256": "0bfcebcc203f31b6559478b8c7e47af40b596921e866005fae956b0620b957dc",
+      "overall_accuracy": 0.7786458333333334,
+      "supported_operation_routed_accuracy": 0.5729166666666666,
+      "near_domain_unsupported_operation_rejection": 0.984375,
+      "harmonic_mean": 0.724289297658863,
+      "mean_latency_ms": 311.018,
+      "passed_quality_floors": false
+    },
+    {
+      "name": "r030-a060-m005",
+      "reject_below": 0.3,
+      "accept_above": 0.6,
+      "accept_margin": 0.05,
+      "artifact_id": 10908831764,
+      "artifact_sha256": "5fad4b7715bfc3be2e04146f0708f476a209945abe24ae112fb486537d731527",
+      "overall_accuracy": 0.7942708333333334,
+      "supported_operation_routed_accuracy": 0.6197916666666666,
+      "near_domain_unsupported_operation_rejection": 0.96875,
+      "harmonic_mean": 0.7559426229508196,
+      "mean_latency_ms": 473.467,
+      "passed_quality_floors": true
+    }
+  ],
+  "selected_candidate": {
+    "name": "r030-a060-m005",
+    "reject_below": 0.3,
+    "accept_above": 0.6,
+    "accept_margin": 0.05,
+    "bge_beta": 1,
+    "pairwise_min_score": 0.01,
+    "pairwise_min_margin": 0,
+    "supported_operation_routed_accuracy": 0.6197916666666666,
+    "near_domain_unsupported_operation_rejection": 0.96875,
+    "harmonic_mean": 0.7559426229508196,
+    "mean_latency_ms": 473.467,
+    "mean_latency_reduction_vs_full_bge_fraction": 0.10472007079538918
+  },
+  "selection_note": "The selected candidate is the lowest observed mean-latency candidate among the four preregistered candidates that met both quality floors. Matrix jobs and the baseline can land on different GitHub-hosted runners, so this development latency delta is provisional selection evidence only; the frozen candidate must beat full BGE in a same-job sequential calibration comparison before advancing.",
+  "post_selection_policy": [
+    "The six-candidate development grid is closed; no candidate or threshold may be added after inspecting this run.",
+    "Only r030-a060-m005 may advance to v5 calibration confirmation.",
+    "Calibration may confirm or reject the frozen candidate but may not switch to another development candidate.",
+    "v12 and v13 remain unavailable for tuning and v14 does not yet exist.",
+    "Calibration must compare the frozen cascade and full-BGE baseline sequentially in the same job; if the cascade does not retain both quality floors or does not reduce mean latency there, it is rejected rather than retuned."
+  ]
+}
