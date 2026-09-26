@@ -1,6 +1,9 @@
 name: Consumed V11 Diagnostic Archive
 
-on: {}
+on:
+  pull_request:
+    branches:
+      - __consumed_v11_archive_never__
 
 permissions:
   contents: read
