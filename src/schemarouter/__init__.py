@@ -101,6 +101,7 @@ from .models import (
     ToolSpec,
     UnitNormalizationSpec,
 )
+from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
 from .openapi_compatibility import (
     OpenAPICompatibilityIssue,
     OpenAPICompatibilityReport,
@@ -204,6 +205,8 @@ __all__ = [
     "NonRetryableInvocationError",
     "OpenAPICompatibilityIssue",
     "OpenAPICompatibilityReport",
+    "PairwiseDecisionBackend",
+    "PairwiseScoreCallable",
     "ParameterSpec",
     "PlanCoverage",
     "PlanExplanation",
