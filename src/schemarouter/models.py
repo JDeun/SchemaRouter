@@ -589,6 +589,7 @@ class QueryIntent(StrictModel):
 
 
 FallbackScope = Literal["disabled", "same_provider", "cross_provider"]
+RetrievalMode = Literal["coverage", "corroborate"]
 
 
 class PlanRequest(StrictModel):
@@ -599,6 +600,7 @@ class PlanRequest(StrictModel):
     evidence: EvidenceRequirements = Field(default_factory=EvidenceRequirements)
     field_evidence: dict[str, EvidenceRequirements] = Field(default_factory=dict)
     max_calls: int = Field(default=1, ge=1, le=32)
+    retrieval_mode: RetrievalMode = "coverage"
     fallback_scope: FallbackScope = "disabled"
     max_fallbacks: int = Field(default=2, ge=0, le=8)
 
