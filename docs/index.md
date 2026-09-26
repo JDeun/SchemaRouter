@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.7.0</span>
+<span class="sr-kicker">SchemaRouter 0.8.0</span>
 
 # Put a typed execution boundary between agents and tools
 
@@ -181,6 +181,22 @@ equivalence, convert qualifier values, or synthesize measurement context.
 [Field-first execution and scientific contracts →](concepts/field-first-execution.md)
 
 [Read the 0.7.0 release notes →](releases/0.7.0.md)
+
+## 0.8 focus
+
+Version `0.8.0` adds bounded semantic candidate recall, capability/operation fit gates,
+same-tool endpoint disambiguation, trusted operation aliases, per-field evidence requirements,
+coverage-aware multi-call planning, and explicit multi-provider corroboration/aggregation.
+
+The release publishes the current routing state without overstating it. On the fresh 600-case v10
+one-shot holdout, the frozen stack reached **55.667% overall accuracy**, **42.188% supported-route
+accuracy**, **77.083% near-domain unsupported-operation rejection**, and **100% ordinary OOD
+rejection**. Most remaining supported-route misses occur at operation-fit, so later tuning must use
+a newly reserved untouched holdout rather than v10.
+
+[Multi-provider evidence →](guides/multi-provider-evidence.md)
+
+[Read the 0.8.0 release notes →](releases/0.8.0.md)
 
 ## Go deeper
 
