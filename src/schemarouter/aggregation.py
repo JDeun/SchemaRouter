@@ -27,7 +27,7 @@ class SourceRecord(StrictModel):
     provenance: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
-    def validate_record(self) -> "SourceRecord":
+    def validate_record(self) -> SourceRecord:
         if not self.provider.strip():
             raise ValueError("provider must be non-empty")
         if any(not key.strip() or not value.strip() for key, value in self.identifiers.items()):
