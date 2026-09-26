@@ -362,6 +362,8 @@ def test_benchmark_summary_tracks_split_and_language_accuracy() -> None:
 
     assert summary["split_accuracy"] == {"dev": 1.0, "test": 0.0}
     assert summary["language_accuracy"] == {"en": 1.0, "ko": 0.0}
+    assert summary["routed_accuracy"] == 0.5
+    assert summary["routed_accuracy_ci95"] is not None
 
 
 def test_v3_holdout_is_balanced_multilingual_and_test_only() -> None:
