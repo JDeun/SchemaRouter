@@ -1,6 +1,6 @@
 {
   "cycle": "0.10-operation-graph-projection-v3",
-  "status": "development_hard_graph_rejected_continue_semantic_seed",
+  "status": "development_semantic_seed_rejected_continue_bounded_propagation",
   "reserved_from_main": "526d0c588bbec053fba54c55d982cc67d2a74d56",
   "predecessor": {
     "cycle": "0.10-operation-cascade-v2",
@@ -187,10 +187,15 @@
     "candidate_frozen": false,
     "calibration_allowed": false,
     "blind_v15_allowed": false,
-    "next_stage": "graph + semantic seed without propagation"
+    "next_stage": "graph + bounded propagation + negative evidence",
+    "semantic_seed_result": "benchmarks/operation-fit-0.10-graph-semantic-seed-dev-result.json",
+    "semantic_seed_status": "no_candidate_passed_all_preregistered_gates"
   },
   "methodology_note": {
     "hard_graph_latency_promotion_evidence_valid": false,
-    "reason": "The initial development harness ran baseline and candidate planner blocks sequentially, exposing warm-cache/order bias. Future efficiency promotion requires a counterbalanced paired harness."
+    "reason": "The initial development harness ran baseline and candidate planner blocks sequentially, exposing warm-cache/order bias. Future efficiency promotion requires a counterbalanced paired harness.",
+    "semantic_seed_latency_evidence_valid": true,
+    "semantic_seed_measurement": "warmup + counterbalanced paired per-case execution",
+    "semantic_seed_observation": "mean latency improved materially, but p95 regressed for every tested candidate; escalation must avoid duplicated semantic passes"
   }
 }
