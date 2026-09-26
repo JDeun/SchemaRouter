@@ -1515,7 +1515,9 @@ async def main() -> None:
         "operation_capability_fit": {
             "enabled": operation_fit_backend is not None,
             "embedding_callable": args.operation_fit_embedding_callable,
+            "pairwise_callable": args.operation_fit_pairwise_callable,
             "min_similarity": args.operation_fit_min_similarity,
+            "min_score": args.operation_fit_min_score,
             "min_margin": args.operation_fit_min_margin,
         },
         "endpoint_disambiguation": {
