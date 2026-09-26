@@ -10,6 +10,8 @@ CORPUS_V2 = ROOT / "benchmarks" / "decision-routing-v2.json"
 GENERATOR_V2 = ROOT / "scripts" / "generate_decision_routing_v2.py"
 CORPUS_V3 = ROOT / "benchmarks" / "decision-routing-v3-holdout.json"
 GENERATOR_V3 = ROOT / "scripts" / "generate_decision_routing_v3_holdout.py"
+CORPUS_V4 = ROOT / "benchmarks" / "decision-routing-v4-holdout.json"
+GENERATOR_V4 = ROOT / "scripts" / "generate_decision_routing_v4_holdout.py"
 SCRIPT = ROOT / "scripts" / "benchmark_decision_routing.py"
 
 
@@ -415,5 +417,68 @@ def test_v3_generator_reproduces_checked_in_holdout_exactly() -> None:
     generated = module.build()
     module.validate(generated)
     checked_in = json.loads(CORPUS_V3.read_text(encoding="utf-8"))
+
+    assert generated == checked_in
+
+
+def test_v4_holdout_is_balanced_multilingual_and_near_domain() -> None:
+    cases = json.loads(CORPUS_V4.read_text(encoding="utf-8"))
+
+    assert len(cases) == 576
+    assert len({case["id"] for case in cases}) == 576
+    assert {case["split"] for case in cases} == {"fresh_holdout"}
+
+    route_counts: dict[str, int] = {}
+    language_counts: dict[str, int] = {}
+    for case in cases:
+        route = case["expected"] or "NO_ROUTE"
+        route_counts[route] = route_counts.get(route, 0) + 1
+        language_counts[case["language"]] = language_counts.get(case["language"], 0) + 1
+
+    assert route_counts["NO_ROUTE"] == 192
+    assert all(
+        count == 24
+        for route, count in route_counts.items()
+        if route != "NO_ROUTE"
+    )
+    assert language_counts == {
+        "en": 96,
+        "ko": 96,
+        "es": 96,
+        "ja": 96,
+        "de": 96,
+        "mixed": 96,
+    }
+    assert {
+        case["category"]
+        for case in cases
+        if case["expect_abstain"]
+    } == {"near_domain_ood"}
+
+
+def test_v4_holdout_has_no_normalized_query_duplicates() -> None:
+    import re
+
+    cases = json.loads(CORPUS_V4.read_text(encoding="utf-8"))
+    normalized = [
+        re.sub(r"[^\w]+", "", case["query"].casefold())
+        for case in cases
+    ]
+
+    assert len(normalized) == len(set(normalized))
+
+
+def test_v4_generator_reproduces_checked_in_holdout_exactly() -> None:
+    spec = importlib.util.spec_from_file_location(
+        "generate_decision_routing_v4_holdout",
+        GENERATOR_V4,
+    )
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    generated = module.build()
+    module.validate(generated)
+    checked_in = json.loads(CORPUS_V4.read_text(encoding="utf-8"))
 
     assert generated == checked_in
