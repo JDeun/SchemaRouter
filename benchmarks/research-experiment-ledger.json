@@ -51,6 +51,49 @@
   },
   "experiments": [
     {
+      "id": "pre-0.8-no-route-sentinel-ablation",
+      "source_revision": "e41f57a044182deb374980c28d66863d637a691b",
+      "issue": 87,
+      "hypothesis": "An explicit none_of_the_above pseudo-option could improve empty-recall no-route discrimination.",
+      "dataset": {
+        "cases": 144,
+        "hardware": "GitHub-hosted ubuntu-latest x64 CPU",
+        "backend": "Laya"
+      },
+      "result": {
+        "no_sentinel_recall_on_empty": {
+          "overall_accuracy": 0.6181,
+          "korean_accuracy": 0.4364,
+          "ood_adversarial_accuracy": 0,
+          "final_no_route_recall": 0
+        },
+        "no_sentinel_confidence_025": {
+          "overall_accuracy": 0.6042,
+          "korean_accuracy": 0.3818,
+          "ood_adversarial_accuracy": 0.5,
+          "final_no_route_recall": 0.4375
+        },
+        "sentinel_recall_on_empty": {
+          "overall_accuracy": 0.5625,
+          "korean_accuracy": 0.2909
+        },
+        "sentinel_confidence_025": {
+          "overall_accuracy": 0.5417,
+          "korean_accuracy": 0.2545
+        },
+        "sentinel_no_route_selections": 16,
+        "sentinel_false_no_route_on_valid_korean": 13,
+        "sentinel_true_no_route": 3
+      },
+      "decision": "sentinel_removed",
+      "failure_reason": "The catch-all pseudo-route suppressed valid multilingual in-domain recall and provided weak open-set discrimination.",
+      "paper_relevance": [
+        "negative-capability design history",
+        "pseudo-route failure",
+        "multilingual open-set routing"
+      ]
+    },
+    {
       "id": "0.10-contrastive-bge-v1",
       "cycle": "0.10-operation-contrastive-v1",
       "hypothesis": "Sibling-contrastive BGE operation-fit can improve supported operation routing while retaining near-domain unsupported rejection.",
@@ -555,7 +598,8 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "bounded retrieve-rerank raw score diagnostic (#204 / PR #205)"
+    "active_experiment": "bounded retrieve-rerank raw score diagnostic (#204 / PR #205)",
+    "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
