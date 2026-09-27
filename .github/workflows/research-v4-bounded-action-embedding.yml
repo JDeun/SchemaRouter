@@ -1,4 +1,5 @@
 name: V4 Bounded Action Embedding Diagnostic
+# research-trigger: lint-fixed
 
 on:
   push:
