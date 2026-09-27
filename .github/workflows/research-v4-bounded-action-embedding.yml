@@ -3,7 +3,7 @@ name: V4 Bounded Action Embedding Diagnostic
 on:
   push:
     branches:
-      - "research/v4-bounded-action-embedding"
+      - "research/v4-bounded-action-embedding-v2"
     paths:
       - ".github/workflows/research-v4-bounded-action-embedding.yml"
       - "benchmarks/operation-routing-v4-bounded-action-embedding.json"
