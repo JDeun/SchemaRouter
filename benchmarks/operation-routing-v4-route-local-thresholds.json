@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "cycle": "0.11-operation-routing-quality-v4",
+  "derivation": "development top-score dynamic-programming heuristic",
+  "source": {
+    "workflow_run_id": 36305969034,
+    "artifact_id": 10927253262,
+    "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+  },
+  "caveat": "The derivation heuristic treats a top operation falling below its own threshold as abstention. The actual PairwiseDecisionBackend filters all options independently, so lower-ranked eligible siblings may be selected. Actual benchmark output, not the heuristic projection, is authoritative.",
+  "dev_safety_budget_12": {
+    "false_route_budget": 12,
+    "heuristic_supported_exact_route_accuracy": 0.6571180555555556,
+    "heuristic_false_routes": 12,
+    "min_score_by_option": {
+      "calendar.create": 0.00016094724507024723,
+      "calendar.list": 0.0017696517858705315,
+      "finance.history": 0.0001930398961381103,
+      "finance.quote": 0.013738249528049938,
+      "inventory.search": 0.0077006774868279134,
+      "inventory.update": 0.0019287301004377872,
+      "materials.search": 0.00024890149194108855,
+      "materials.structure": 0.0018750419790853898,
+      "papers.citations": 0.0019093452090340407,
+      "papers.search": 0.0010052156803382066,
+      "support.create_ticket": 0.8116520396334256,
+      "support.search": 0.0007262449004401813,
+      "users.lookup": 0.0010067481840496026,
+      "users.update": 0.0004977248922619924,
+      "weather.current": 0.01601478149640258,
+      "weather.forecast": 0.0014617305900492775
+    }
+  },
+  "production_safety_budget_6": {
+    "false_route_budget": 6,
+    "heuristic_supported_exact_route_accuracy": 0.6475694444444444,
+    "heuristic_false_routes": 6,
+    "min_score_by_option": {
+      "calendar.create": 0.0004207931619481954,
+      "calendar.list": 0.0017696517858705315,
+      "finance.history": 0.0001930398961381103,
+      "finance.quote": 0.013738249528049938,
+      "inventory.search": 0.0077006774868279134,
+      "inventory.update": 0.01634005911536128,
+      "materials.search": 0.00024890149194108855,
+      "materials.structure": 0.0018750419790853898,
+      "papers.citations": 0.0019093452090340407,
+      "papers.search": 0.0010052156803382066,
+      "support.create_ticket": 0.8116520396334256,
+      "support.search": 0.0007262449004401813,
+      "users.lookup": 0.0010067481840496026,
+      "users.update": 0.0004977248922619924,
+      "weather.current": 0.01601478149640258,
+      "weather.forecast": 0.0014617305900492775
+    }
+  }
+}
