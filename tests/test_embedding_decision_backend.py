@@ -332,3 +332,49 @@ def test_sync_path_rejects_async_cached_embedding_backend() -> None:
 
     with pytest.raises(PlanningError, match="asynchronous"):
         choose_sync(CachedEmbeddingDecisionBackend(embed), request())
+
+
+def test_cached_embedding_backend_bounds_option_cache_with_lru() -> None:
+    calls: list[list[str]] = []
+
+    def embed(texts: list[str]) -> list[list[float]]:
+        calls.append(list(texts))
+        return [[float(index + 1), 1.0] for index, _text in enumerate(texts)]
+
+    backend = CachedEmbeddingDecisionBackend(embed, max_cache_entries=2)
+    choose_sync(backend, request())
+
+    assert len(backend._option_vector_cache) == 2
+    assert calls[0][0] == "find material band gap"
+
+    second = choose_sync(backend, request())
+
+    assert len(backend._option_vector_cache) == 2
+    assert second.metadata["cache_hits"] == 2
+    assert second.metadata["cache_misses"] == 1
+    assert second.metadata["cache_entries"] == 2
+    assert second.metadata["max_cache_entries"] == 2
+
+
+def test_cached_embedding_backend_handles_request_larger_than_cache_limit() -> None:
+    def embed(texts: list[str]) -> list[list[float]]:
+        return [[1.0, float(index + 1)] for index, _text in enumerate(texts)]
+
+    backend = CachedEmbeddingDecisionBackend(embed, max_cache_entries=1)
+
+    result = choose_sync(backend, request())
+
+    assert result.metadata["option_count"] == 3
+    assert result.metadata["cache_entries"] == 1
+
+
+@pytest.mark.parametrize("value", [0, -1, True])
+def test_cached_embedding_backend_rejects_invalid_cache_limit(value: object) -> None:
+    def embed(texts: list[str]) -> list[list[float]]:
+        return [[1.0, 0.0] for _ in texts]
+
+    with pytest.raises(ValueError, match="max_cache_entries"):
+        CachedEmbeddingDecisionBackend(
+            embed,
+            max_cache_entries=value,  # type: ignore[arg-type]
+        )
