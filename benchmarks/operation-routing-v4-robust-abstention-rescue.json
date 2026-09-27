@@ -1,0 +1,76 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "robust-bge-m3-abstention-rescue-diagnostic-v1",
+  "work_item": 262,
+  "parent_work_item": 259,
+  "status": "prepared_but_execution_blocked_on_parent_confirmation",
+  "execution_prerequisite": "#259 must pass executable confirmation before any workflow is enabled",
+  "base_candidate": {
+    "name": "bge-m3-dual-view-055-budget6-robust-v1",
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "boundary_epsilon": 1e-6,
+    "already_accepted_decisions_immutable": true,
+    "rescue_scope": "base abstentions only"
+  },
+  "rescue_authority": {
+    "same_base_raw_top1_only": true,
+    "rank2_fallback": false,
+    "winner_change": false,
+    "new_route_creation": false
+  },
+  "variants": {
+    "gte-agreement": {
+      "model": "Alibaba-NLP/gte-multilingual-base",
+      "revision": "087a024525fd6e2fe749cb4679d218d8bcc95bdd",
+      "schema_weight": 0.25,
+      "action_weight": 0.75,
+      "eligibility": "GTE top-1 route must equal frozen BGE-M3 raw top-1 route",
+      "features": [
+        "GTE fused top score",
+        "GTE top-vs-second margin",
+        "base score deficit to frozen route threshold",
+        "base margin deficit to frozen route threshold"
+      ]
+    },
+    "gte-agreement-bge": {
+      "inherits": "gte-agreement",
+      "reranker_model": "BAAI/bge-reranker-v2-m3",
+      "reranker_revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+      "reranker_max_length": 256,
+      "pair_surface": "same winner action aliases plus endpoint description",
+      "pairs_per_eligible_case": 1
+    }
+  },
+  "fixed_grids": {
+    "additional_false_budgets": [0, 1, 2],
+    "primary_additional_false_budget": 0,
+    "gte_margin_thresholds": [0.0, 0.01, 0.02, 0.03, 0.05, 0.08, 0.1, 0.15],
+    "base_score_deficit_max": [0.001, 0.0025, 0.005, 0.01, 0.02, 0.05, 1.0],
+    "base_margin_deficit_max": [0.0, 0.005, 0.01, 0.02, 0.05, 1.0],
+    "gte_score_thresholds": "observed route-local DEV values plus accept-all/reject-all sentinels",
+    "reranker_thresholds": "observed route-local DEV values plus accept-all/reject-all sentinels for the cross-encoder variant"
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "promotion_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "total_false_route_rate_max": 0.01,
+    "additional_false_routes_max": 0,
+    "invalid_plans_max": 0,
+    "execution_errors_max": 0
+  },
+  "behavior_change": false,
+  "workflow_present": false
+}
