@@ -723,171 +723,212 @@ PR #230 was merged into the active v4 research integration branch because it add
 
 ## 20. Action-guided single-pair BGE diagnostic
 
-Work item #231 / PR #232 is the next preregistered DEV-only diagnostic.
-
-The hypothesis is that the cheap action signal is more useful **inside** the bounded recall set than as a global acceptance boundary:
-
-```text
-registered/authorized semantic recall (width 2)
-    ↓
-action-only MiniLM selects one of the two candidates
-    ↓
-BGE scores exactly that one query-route pair
-    ↓
-DEV-only route-local winner boundary analysis
-```
-
-Constraints fixed before execution:
-
-- action selection is restricted to the already-authorized width-2 candidates;
-- action text remains endpoint name + trusted operation aliases only;
-- BGE cannot introduce a route not supplied by the recall stage;
-- calibration/blind evidence is forbidden;
-- route-local thresholds derived here are diagnostic and require a separate frozen executable candidate before confirmation;
-- paired mean **and p95** latency remain mandatory promotion gates.
-
-Current workflow: `36319879567`.
-
-The decision tree is preregistered in #197: promote only through a separate frozen DEV candidate if both the 70/96/2 quality frontier and paired latency headroom are present; otherwise retain the negative result and move to the corresponding DEV-only latency or typed-negative-evidence branch.
-
-
-## 21. Single-pair BGE and lightweight cross-encoder diagnostics
-
-### Action-guided single-pair BGE (#231 / PR #232)
-
-The width-2 action selector was used to choose one already-authorized candidate and BGE scored exactly one pair.
+Work item #231 / PR #232 tested whether the cheap action-only signal could choose one candidate from the already-authorized width-2 recall set before invoking BGE on only one query-route pair.
 
 Result:
-- raw supported top-route exact: **74.48%**;
-- canonical 12/648 supported exact: **65.36%**;
-- false-route: **1.85%**;
-- near-domain rejection lower bound: **97.92%**;
-- mean/p95 latency: **445.96 / 476.42 ms** versus paired baseline **531.79 / 699.00 ms**;
-- invalid plans/errors: 0.
 
-Decision: **rejected**. One-pair BGE solved the major CPU tail-latency problem, but the cheap selector/open-set boundary lost too much supported recall.
+- raw supported exact-route: **74.48%**;
+- mean / p95 latency: **445.96 / 476.42 ms**;
+- strict 6/648 false-route frontier:
+  - supported exact: **62.15%**;
+  - false-route: **0.93%**;
+  - near-domain rejection lower bound: **98.96%**;
+- canonical 12/648 frontier:
+  - supported exact: **65.36%**;
+  - false-route: **1.85%**;
+  - near-domain rejection lower bound: **97.92%**;
+- invalid plans / execution errors: **0 / 0**.
+
+Decision: **rejected**. Single-pair BGE solved much of the CPU latency problem but did not preserve enough supported recall.
 
 Provenance:
+
 - workflow: `36319879567`;
 - artifact: `10932093354`;
-- SHA-256: `47f1a8dcab2f1956a939df995c0f19137e96d92b8a4451753abdf039598934aa`.
+- artifact SHA-256: `47f1a8dcab2f1956a939df995c0f19137e96d92b8a4451753abdf039598934aa`.
 
-### Lightweight multilingual cross-encoders (#238 / PR #239)
+## 21. Cheap embedding architecture diagnostics
 
-mMARCO MiniLM reached **67.80% raw supported exact** and **36.89%** at the canonical 12/648 safety frontier, although latency was only **185.89 / 260.95 ms mean/p95**.
+### Bounded action embedding
 
-The GTE multilingual reranker-base planner path reached only **54.25% routed accuracy** with **159.23 / 167.38 ms mean/p95**.
+Work item #233 / PR #236 tested cached multilingual MiniLM action-only evidence inside the bounded width-2 set.
 
-Decision: both rejected. Smaller cross-encoders were fast enough, but their route-ranking ceiling was below the target.
+Valid revision-2 result:
 
-## 22. Single-query dual-view embedding architecture
+- raw supported top-route exact: **73.35%**;
+- canonical 12/648 supported exact: **47.92%**;
+- near-domain rejection: **97.92%**;
+- false-route: **1.85%**;
+- mean / p95 latency: **44.29 / 47.98 ms**.
 
-### MiniLM dual-view (#240 / PR #241)
+An earlier run was invalidated **before result inspection** because projected metrics could have used only scored rows rather than the fixed 1,800-case denominator.
 
-One query embedding was scored against two cached route views:
+Decision: **rejected**. The architecture was fast, but score/margin open-set gating collapsed supported recall.
 
-1. schema/domain view;
-2. action-only view.
+### Single-query MiniLM dual view
 
-The best raw fusion, schema/action 0.25/0.75, reached **75.00%** supported exact. The best safe 12/648 projection reached only **54.77% exact / 97.92% rejection / 1.85% false-route**.
+Work item #240 / PR #241 scored two cached route representations from one query embedding:
 
-Latency was only **14.02 / 15.31 ms mean/p95**.
+- schema/domain view;
+- action/alias view.
 
-Decision: architecture retained conceptually; MiniLM backbone rejected as the capacity ceiling.
+The best raw strategy was schema/action 0.25/0.75 at **75.00%** supported exact. The best canonical 12/648 point reached only **54.77%** exact at **97.92%** near-domain rejection and **1.85%** false-route, while latency fell to about **14.02 / 15.31 ms mean/p95**.
 
-### Multilingual backbone screen (#242 / PR #243)
+Decision: **rejected for quality, retained as evidence that representation capacity rather than runtime had become the limiting factor**.
 
-Keeping the architecture fixed while changing only the embedding backbone produced:
+## 22. Multilingual embedding backbone screen
 
-| Backbone | Best raw exact | Best safe observation | mean/p95 |
-| --- | ---: | --- | ---: |
-| multilingual E5-base | 84.46% | canonical exact ~62.41% | 50.19 / 56.20 ms |
-| GTE multilingual base | **89.15%** | canonical exact ~63.11% | 69.37 / 76.58 ms |
-| BGE-M3 | 88.45% | **83.85% exact at 1.85% false-route** | 153.61 / 167.99 ms |
+Work item #242 / PR #243 kept the dual-view architecture fixed and changed only the multilingual embedding backbone.
 
-At the stricter 6/648 false-route budget, BGE-M3 retained about **83.33% exact / 98.96% near-domain rejection / 0.93% false-route**.
+### E5-base
 
-Interpretation:
+- best raw exact: **84.46%**;
+- best canonical 12/648 exact: **62.41%**;
+- latency: **50.19 / 56.20 ms mean/p95**.
 
-**Ranking capacity and open-set separability can coexist in a single embedding model.** BGE-M3 became the preferred strict-base architecture; unconditional cross-encoder BGE was no longer required on the hot path.
+### GTE multilingual base
 
-## 23. GTE winner + one-pair BGE rejector
+- best raw exact: **89.15%** using schema/action 0.25/0.75;
+- best canonical 12/648 exact: **63.11%**;
+- latency: **69.37 / 76.58 ms mean/p95**.
 
-Work item #244 / PR #249 tested whether GTE's **89.15%** raw ranking could be preserved while BGE acted only as a one-pair unsupported-operation validator.
+GTE proved that >=85% ranking capacity was available, but its native score geometry was not a sufficient open-set boundary.
 
-Four preregistered variants were tested:
-- action-only, max length 128/256;
-- action + aliases + endpoint capability text, max length 128/256.
+### BGE-M3 embedding
 
-All four failed the supported-recall target.
+BGE-M3 was the first embedding-only architecture to combine high ranking quality with a strong open-set frontier:
 
-Best canonical result:
-- capability surface;
+- best raw exact: **88.45%**;
+- at 12/648 false routes:
+  - supported exact: **83.85%**;
+  - near-domain rejection: **97.92%**;
+  - false-route: **1.85%**;
+- at 6/648 false routes:
+  - supported exact: **83.33%**;
+  - near-domain rejection: **98.96%**;
+  - false-route: **0.93%**;
+- p95 latency: approximately **168 ms**.
+
+Decision: **BGE-M3 selected as the main strict open-set optimization line**.
+
+## 23. GTE winner + BGE rejector
+
+Work item #244 / PR #249 tested a factorized architecture:
+
+1. GTE 0.25/0.75 dual-view selects one registered route;
+2. BGE reranker scores only that winner;
+3. BGE may accept/reject but may not switch routes.
+
+All four preregistered action/capability × max-length variants preserved raw GTE ranking at **89.15%**, but the best canonical open-set result was only:
+
 - supported exact: **76.13%**;
 - near-domain rejection: **97.92%**;
 - false-route: **1.85%**;
-- end-to-end p95 remained below ~378 ms.
+- best end-to-end mean / p95 latency: **293.89 / 328.11 ms**.
 
-Decision: **rejected**. The cross-encoder score is useful as relevance evidence, but a direct winner threshold still overlaps too strongly with correct supported queries.
+Decision: **rejected**. A cross-encoder winner relevance score was not a clean enough open-set separator to preserve GTE's ranking headroom.
 
-## 24. Strict BGE-M3 executable confirmation and numeric boundary reproducibility
+## 24. Frozen BGE-M3 candidate and numerical-stability finding
 
-Work item #245 / PR #247 froze the BGE-M3 50/50 dual-view, budget-6 profile and executed it through the actual `SchemaPlanner`.
+Work item #245 / PR #247 froze the BGE-M3 50/50, budget-6 profile and executed it through the actual `SchemaPlanner`.
 
-Planner/direct scorer parity was exact for **all 1,800 cases**.
+Safety and authority behavior reproduced exactly:
 
-Actual result:
-- supported exact: **959/1152 = 83.2465%**;
-- near-domain rejection: **98.9583%**;
-- false-route: **6/648 = 0.9259%**;
-- OOD rejection: 100%;
-- invalid plans/errors/rank-2 fallthroughs: 0;
-- planner mean/p95: **188.73 / 206.00 ms**.
+- planner/direct parity mismatches: **0 / 1800**;
+- invalid plans: **0**;
+- execution errors: **0**;
+- rank-2 fallthroughs: **0**;
+- false-route: **6/648 = 0.93%**;
+- near-domain rejection: **98.96%**;
+- OOD rejection: **100%**;
+- planner mean / p95 latency: **188.73 / 206.00 ms**.
 
-The frozen diagnostic projection expected 960 supported-correct cases. The sole mismatch was a `papers.citations` case whose executable score was approximately **1.35e-7 below** the frozen threshold.
+However, the frozen projection expected 960 supported-correct cases and executable confirmation produced **959/1152 = 83.25%**.
 
-Decision: do not retune. This is retained as evidence that exact score-boundary reproduction must account for floating-point/runtime tolerance in future freeze protocols.
+Artifact inspection localized the single-case drift:
+
+- case: `v4-dev-papers-citations-ko-08`;
+- route: `papers.citations`;
+- frozen min score: `0.46308739913552904`;
+- rerun score: `0.4630872644672503`;
+- difference: approximately **-1.35e-7**.
+
+The route winner and planner/direct behavior did not change; only the accept/reject boundary flipped.
+
+Decision: **not promoted**.
+
+This established an additional operational requirement: **a frozen threshold must not be an observed floating-point sample boundary**. Later candidates must define explicit numerical-stability semantics such as midpoint thresholds, conservative quantization/guard bands, and perturbation checks.
 
 Provenance:
+
 - workflow: `36323685913`;
 - artifact: `10933122169`;
 - artifact SHA-256: `a63e6954d8cf44db21bc89b336ca8f67bacc77af933fe870c33bc9298bf6a1a1`.
 
-## 25. BGE-M3 fine fusion under the final <=1% safety budget
+## 25. BGE-M3 fine global fusion
 
-Work item #246 / PR #248 preregistered schema weights **0.30–0.60** in 0.05 increments. No post-run interpolation was allowed.
+Work item #246 / PR #248 preregistered schema weights 0.30–0.60 with no post-run interpolation.
 
-Valid result:
-- best strict strategy: **schema/action 0.55/0.45**;
-- supported exact: **965/1152 = 83.7674%**;
-- near-domain rejection: **98.9583%**;
-- false-route: **6/648 = 0.9259%**;
-- mean/p95 latency: **180.34 / 195.97 ms**.
+Best strict 6/648 result:
 
-At the secondary 12/648 budget, the same fusion reached **970/1152 = 84.2014% exact / 97.9167% rejection / 1.8519% false-route**.
+- schema/action fusion: **0.55 / 0.45**;
+- supported exact: **965/1152 = 83.77%**;
+- near-domain rejection: **98.96%**;
+- false-route: **0.93%**;
+- wrong-supported accepted: 62;
+- mean / p95 latency: **180.34 / 195.97 ms**.
 
-No preregistered weight reached the strict **85/97/1** target.
+Best secondary 12/648 result:
 
-Decision: negative result retained; no interpolation or out-of-grid retuning.
+- supported exact: **970/1152 = 84.20%**;
+- near-domain rejection: **97.92%**;
+- false-route: **1.85%**.
+
+The final >=85% strict target requires at least **980/1152** correct cases, so the best global fusion remained **15 cases short**.
+
+Decision: **global fine-fusion search exhausted without passing the production target**.
 
 Provenance:
+
 - workflow: `36324755106`;
 - artifact: `10934145256`;
 - artifact SHA-256: `60dfbb1d32f1f27873bd8fad4aa4888af80856365196e3ab6fb5be6b1e7f0af7`.
 
-## 26. Current active experiment: zero-additional-false rejected-winner rescue
+## 26. Current active optimization: recover the final 15 cases
 
-Work item #255 / PR #258 was preregistered **before** the #246 result as a conditional fallback.
+Route-level analysis of #246 found that different routes prefer different schema/action weights. Holding the global 0.55 weight produced 1,019 raw supported-correct cases, while independently choosing the best preregistered grid weight for each route yields a diagnostic raw ceiling of **1,046**, a **+27-case** headroom.
 
-Because #246 had no strict 85/97/1 pass, its deterministic selection rule chose the 0.55/0.45 strict base above.
+The largest examples include:
 
-The base is immutable. A pinned BGE cross-encoder is invoked only on base abstentions and may only:
+- `inventory.search`: 50.00% raw exact at global 0.55 versus **69.44%** at route-local 0.35;
+- `papers.search`: 81.94% versus **90.28%** at route-local 0.30.
 
-- rescue the same raw rank-1 winner; or
-- preserve abstention.
+### #256 route-local stable fusion
 
-Primary rescue budget: **0 additional false routes**.
+Work item #256 / PR #257 is the lower-cost active line.
 
-Only **15 additional correct supported rescues** are required for the composed router to reach at least 85% exact while retaining the existing <=1% false-route base.
+It freezes the route-local weight map before execution and changes boundary construction so that:
 
-Calibration and blind evidence remain untouched.
+- an observed sample score is never used directly as a threshold;
+- candidate thresholds are midpoints between adjacent unique winner scores;
+- selected score thresholds are conservatively rounded upward to six decimals;
+- final metrics are stress-tested at **±1e-6** and **±1e-5** score/margin perturbations.
+
+Primary gate:
+
+- supported exact >=85%;
+- near-domain rejection >=97%;
+- false-route <=1%;
+- OOD rejection 100%;
+- p95 <=250 ms;
+- the same primary quality/safety gates must survive ±1e-6 perturbation.
+
+### #255 conditional zero-false rescue
+
+Work item #255 / PR #258 runs in parallel as a more expensive fallback.
+
+It keeps the immutable #246 strict 0.55/0.45 base and invokes a pinned BGE cross-encoder **only on base abstentions**, with a primary rescue budget of zero additional false routes.
+
+The validator may only rescue the same raw rank-1 winner; it cannot switch to rank 2 or create execution authority.
+
+Both lines remain DEV-only. Calibration/blind evidence remains blocked until a fully frozen candidate passes the complete development, numerical-stability, and runtime gates.
