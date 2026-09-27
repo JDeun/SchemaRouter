@@ -1,0 +1,66 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "lightweight-multilingual-crossencoder-winner-gates-v1",
+  "work_item": 238,
+  "parent_work_items": [197, 227, 233],
+  "status": "preregistered_before_execution",
+  "source_parent_revision": "e93f5ddd104b5d876b248a8607092e6900a6e0a3",
+  "research_question": "Can a smaller multilingual cross-encoder preserve width-2 winner-gate open-set separation while reducing CPU latency below the paired baseline?",
+  "candidates": [
+    {
+      "id": "mmarco-minilm",
+      "model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+      "license": "apache-2.0",
+      "role": "speed_control",
+      "known_risk": "Korean is not one of the mMARCO training languages; Korean and mixed slices are mandatory."
+    },
+    {
+      "id": "gte-multilingual-base",
+      "model": "Alibaba-NLP/gte-multilingual-reranker-base",
+      "license": "apache-2.0",
+      "role": "primary_multilingual_candidate",
+      "declared_multilingual_scope": "75 languages"
+    }
+  ],
+  "architecture": {
+    "candidate_recall_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "candidate_recall_limit": 2,
+    "candidate_fit": false,
+    "operation_fit_scope": "all_candidates",
+    "operation_fit_threshold_application": "rank_then_gate",
+    "operation_fit_diagnostic_min_score": 0.0,
+    "operation_fit_diagnostic_min_margin": 0.0,
+    "accepted_selector": true,
+    "endpoint_disambiguation": false,
+    "max_pair_tokens": 256,
+    "score_transform": "sigmoid(single relevance logit)"
+  },
+  "threshold_projection": {
+    "semantics": "winner_only_rank_then_gate",
+    "false_budgets": [0, 6, 12, 13, 24, 36],
+    "canonical_false_budget": 12,
+    "note": "Threshold maps are retrospective DEV diagnostics only. An executable candidate requires a separate frozen preregistration."
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_count": 1152,
+    "near_domain_unsupported_count": 576,
+    "out_of_domain_count": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "eligibility_gates": {
+    "supported_exact_route_accuracy_min": 0.70,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "canonical_false_route_rate_max": 0.02,
+    "invalid_plans_max": 0,
+    "execution_errors_max": 0,
+    "mean_latency_ms_max": 531.031,
+    "p95_latency_ms_max": 697.912
+  },
+  "selection_rule": "If both candidates pass all gates, prefer lower p95 latency; supported exact-route is the secondary tie-breaker.",
+  "behavior_change": false,
+  "authority": "The pairwise model ranks only registered candidates returned by bounded semantic recall and cannot synthesize tools, endpoints, fields, arguments, credentials, or side effects."
+}
