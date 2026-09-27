@@ -681,7 +681,6 @@ async def benchmark_planner(
 
             operation_fit_result = (
                 operation_fit_recorder.last_result
-                operation_fit_recorder.last_result
                 if operation_fit_recorder is not None
                 else None
             )
