@@ -1,0 +1,93 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "single-query-dual-view-embedding-diagnostic-v1",
+  "work_item": 240,
+  "parent_work_items": [197, 226, 227, 233],
+  "status": "preregistered_before_execution",
+  "research_question": "Can one multilingual MiniLM query embedding scored against cached schema/domain and action-only route views improve supported ranking while preserving sub-100ms latency and separating open-set confidence from route ranking?",
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "query_embedding_count_per_case": 1,
+  "route_views": {
+    "schema": [
+      "stable route id",
+      "tool description",
+      "endpoint description",
+      "non-identifier output field semantic labels"
+    ],
+    "action": [
+      "normalized endpoint action name",
+      "trusted operation_aliases"
+    ],
+    "excluded": [
+      "unsupported labels",
+      "calibration/blind annotations",
+      "pseudo routes",
+      "credentials",
+      "runtime availability",
+      "side-effect authority"
+    ]
+  },
+  "ranking_strategies": {
+    "schema_only": {"schema_weight": 1.0, "action_weight": 0.0},
+    "fusion_schema_0_75": {"schema_weight": 0.75, "action_weight": 0.25},
+    "fusion_schema_0_50": {"schema_weight": 0.5, "action_weight": 0.5},
+    "fusion_schema_0_25": {"schema_weight": 0.25, "action_weight": 0.75},
+    "action_only": {"schema_weight": 0.0, "action_weight": 1.0},
+    "factorized_tool_action": {
+      "tool_selection": "maximum schema-view endpoint similarity per registered tool",
+      "endpoint_selection": "maximum action-view similarity among endpoints of selected tool",
+      "confidence_top_score": "minimum(selected tool schema score, selected endpoint action score)",
+      "confidence_margin": "minimum(tool top-vs-second margin, selected-tool endpoint action top-vs-second margin)"
+    }
+  },
+  "agreement_modes": [
+    "none",
+    "schema_action_top_tool_agree",
+    "schema_action_top_route_agree"
+  ],
+  "threshold_projection": {
+    "semantics": "winner_only_rank_then_gate",
+    "fixed_margin_thresholds": [0.0, 0.02, 0.05, 0.08, 0.1, 0.15, 0.2],
+    "score_thresholds": "observed DEV winner scores plus -1 and reject-all sentinel",
+    "false_budgets": [0, 6, 12, 13, 24, 36],
+    "canonical_false_budget": 12,
+    "population_rule": "optimize on scored DEV rows but evaluate every projection against the complete fixed 1800-case DEV population",
+    "note": "Every threshold map is retrospective DEV evidence only. Any behavior-changing candidate must freeze its map in a separate preregistration before a new execution."
+  },
+  "diagnostics": [
+    "raw supported exact overall/language/route",
+    "raw wrong-tool and wrong-endpoint counts",
+    "schema/action route and tool agreement",
+    "top-score and top-margin distributions",
+    "winner-only route-local frontiers for every ranking strategy and agreement mode",
+    "full-population supported exact, near-domain rejection, OOD rejection, false-route rate",
+    "mean/p50/p95 query-embedding-plus-scoring latency",
+    "static route-view embedding cost",
+    "invalid plans and execution errors"
+  ],
+  "screening_gate": {
+    "supported_exact_route_accuracy_min": 0.70,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "canonical_false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0.0,
+    "execution_errors_max": 0,
+    "p95_latency_max_ms": 200.0
+  },
+  "long_term_target": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "unsupported_rejection_target": "0.97-0.99",
+    "false_route_rate_max": 0.01
+  },
+  "behavior_change": false,
+  "authority": "Only registered route IDs are ranked. This diagnostic cannot synthesize or authorize tools, endpoints, fields, arguments, credentials, or side effects."
+}
