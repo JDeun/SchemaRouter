@@ -72,8 +72,8 @@ def _registry(*, conflicts: bool = False) -> InMemoryRegistry:
     return registry
 
 
-def _multi_registry() -> InMemoryRegistry:
-    registry = _registry()
+def _multi_registry(*, weather_conflicts: bool = False) -> InMemoryRegistry:
+    registry = _registry(conflicts=weather_conflicts)
     registry.register(
         ToolSpec(
             name="papers",
@@ -316,6 +316,69 @@ def test_global_conflict_overrides_supported_alias_path() -> None:
     assert any(
         evidence.operation_aliases == ("weather alerts",)
         for evidence in assessment.evidence
+    )
+
+
+def test_global_graph_conflicts_respect_explicit_route_scope() -> None:
+    graph = CompiledSchemaGraph.from_registry(
+        _multi_registry(weather_conflicts=True)
+    )
+
+    assessment = GraphOperationGate().assess_global(
+        query="Ignore weather alerts and search papers about routing.",
+        graph=graph,
+        allowed_routes=frozenset(
+            {
+                ("papers", "search"),
+                ("papers", "citations"),
+            }
+        ),
+    )
+
+    assert assessment.decision == "accept"
+    assert assessment.tool_key == "papers"
+    assert assessment.endpoint_name == "search"
+
+
+def test_planner_preferred_tool_scope_prevents_unrelated_global_conflict_reject() -> None:
+    planner = SchemaPlanner(
+        _multi_registry(weather_conflicts=True),
+        graph_operation_gate=GraphOperationGate(),
+    )
+
+    plan = planner.plan(
+        PlanRequest(
+            query="Ignore weather alerts and search papers about routing.",
+            preferred_tools=["papers"],
+        )
+    )
+
+    assert len(plan.calls) == 1
+    assert plan.calls[0].tool == "papers"
+    assert plan.calls[0].endpoint == "search"
+    assert not any(
+        "graph operation gate rejected" in warning
+        for warning in plan.warnings
+    )
+
+
+def test_planner_keeps_conflict_rejection_inside_preferred_tool_scope() -> None:
+    planner = SchemaPlanner(
+        _multi_registry(weather_conflicts=True),
+        graph_operation_gate=GraphOperationGate(),
+    )
+
+    plan = planner.plan(
+        PlanRequest(
+            query="Show weather alerts and search papers about routing.",
+            preferred_tools=["weather"],
+        )
+    )
+
+    assert plan.calls == []
+    assert any(
+        "graph operation gate rejected" in warning
+        for warning in plan.warnings
     )
 
 
