@@ -1255,6 +1255,16 @@ async def main() -> None:
     )
     parser.add_argument("--operation-fit-min-score", type=float, default=0.0)
     parser.add_argument(
+        "--operation-fit-mode",
+        choices=("gate", "narrow"),
+        default="gate",
+        help=(
+            "Use operation-fit as a pure no-route gate or, when accepted, "
+            "narrow the already-authorized leading-tool sibling set to the "
+            "selected tool.endpoint."
+        ),
+    )
+    parser.add_argument(
         "--operation-fit-min-score-by-option-json",
         default=None,
         help=(
@@ -1746,6 +1756,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_mode=args.operation_fit_mode,
                 ),
                 None,
             )
@@ -1769,6 +1780,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_mode=args.operation_fit_mode,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 None,
@@ -1825,6 +1837,7 @@ async def main() -> None:
                         args.graph_semantic_corroborate_abstain
                     ),
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_mode=args.operation_fit_mode,
                     endpoint_disambiguation_backend=graph_endpoint_disambiguation_backend,
                 ),
                 None,
@@ -1846,6 +1859,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_mode=args.operation_fit_mode,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 None,
@@ -1881,6 +1895,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_mode=args.operation_fit_mode,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1913,6 +1928,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_mode=args.operation_fit_mode,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1948,6 +1964,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_mode=args.operation_fit_mode,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1981,6 +1998,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_mode=args.operation_fit_mode,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -2045,6 +2063,7 @@ async def main() -> None:
             "min_similarity": args.operation_fit_min_similarity,
             "min_score": args.operation_fit_min_score,
             "min_margin": args.operation_fit_min_margin,
+            "mode": args.operation_fit_mode,
             "min_score_by_option": operation_fit_min_score_by_option,
             "min_margin_by_option": operation_fit_min_margin_by_option,
         },
