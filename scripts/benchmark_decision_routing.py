@@ -105,6 +105,7 @@ class BenchmarkRow:
     operation_fit_top_score: float | None = None
     operation_fit_second_score: float | None = None
     operation_fit_top_margin: float | None = None
+    operation_fit_ranked_options: list[dict[str, Any]] | None = None
     operation_fit_effective_min_score: float | None = None
     operation_fit_effective_min_margin: float | None = None
     operation_fit_abstained: bool = False
@@ -725,6 +726,15 @@ async def benchmark_planner(
             operation_fit_effective_min_margin = _finite_optional(
                 operation_fit_metadata.get("top_effective_min_margin")
             )
+            operation_fit_ranked_options = (
+                [
+                    dict(item)
+                    for item in operation_fit_metadata.get("ranked_options", [])
+                    if isinstance(item, dict)
+                ]
+                if isinstance(operation_fit_metadata.get("ranked_options"), list)
+                else None
+            )
             operation_fit_reason = (
                 operation_fit_metadata.get("reason")
                 if isinstance(operation_fit_metadata.get("reason"), str)
@@ -797,6 +807,7 @@ async def benchmark_planner(
                     operation_fit_top_score=operation_fit_top_score,
                     operation_fit_second_score=operation_fit_second_score,
                     operation_fit_top_margin=operation_fit_top_margin,
+                    operation_fit_ranked_options=operation_fit_ranked_options,
                     operation_fit_effective_min_score=operation_fit_effective_min_score,
                     operation_fit_effective_min_margin=operation_fit_effective_min_margin,
                     operation_fit_abstained=operation_fit_abstained,
