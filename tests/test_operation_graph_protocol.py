@@ -61,7 +61,7 @@ def test_graph_cycle_is_preregistered_before_implementation() -> None:
     )
     assert (
         cycle["development_progress"]["next_stage"]
-        == "fresh frozen-candidate calibration"
+        == "new research cycle with fresh development data"
     )
     assert (ROOT / "benchmarks" / "operation-fit-0.10-graph-propagation-dev-plan.json").exists()
     assert (ROOT / "benchmarks" / "operation-fit-0.10-graph-ranked-bge-dev-plan.json").exists()
