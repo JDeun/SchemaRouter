@@ -1,0 +1,85 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "graph_ranked_selective_bge_development",
+  "status": "development_ranked_bge_no_candidate_passed",
+  "source_revision": "a1b91287d11eea3de31a5e8f143b6e09b38eb833",
+  "workflow_run_id": 36280124905,
+  "corpus_sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6",
+  "ranked_k2": {
+    "supported_operation_routed_accuracy": 0.5950520833333334,
+    "near_domain_unsupported_operation_rejection": 0.953125,
+    "out_of_domain_rejection": 1,
+    "harmonic_mean_supported_rejection": 0.7326797729184188,
+    "false_routes": 18,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "mean_latency_ms": 407.972,
+    "paired_baseline_mean_latency_ms": 440.32279,
+    "paired_mean_delta_ms": -32.35061666666667,
+    "paired_mean_delta_bootstrap_ci95_ms": [
+      -40.6970399375,
+      -24.8894529375
+    ],
+    "baseline_p95_ms": 583.18,
+    "candidate_p95_ms": 586.2727,
+    "p95_delta_ms": 3.0927,
+    "direct_seed_accepts": 15,
+    "direct_seed_accept_precision": 1,
+    "propagation_accepts": 124,
+    "propagation_accept_precision": 1,
+    "propagation_unsupported_accepts": 0,
+    "candidate_gains": 30,
+    "candidate_losses": 17,
+    "gates": {
+      "supported_operation_floor": false,
+      "near_domain_unsupported_rejection_floor": true,
+      "false_route_non_regression": true,
+      "invalid_plan_zero": true,
+      "execution_errors_zero": true,
+      "paired_mean_latency_improvement": true,
+      "paired_p95_latency_non_regression": false
+    }
+  },
+  "ranked_k4": {
+    "supported_operation_routed_accuracy": 0.5963541666666666,
+    "near_domain_unsupported_operation_rejection": 0.953125,
+    "out_of_domain_rejection": 1,
+    "harmonic_mean_supported_rejection": 0.7336659663865547,
+    "false_routes": 18,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "mean_latency_ms": 462.739,
+    "paired_baseline_mean_latency_ms": 455.15322583333335,
+    "paired_mean_delta_ms": 7.586095833333332,
+    "baseline_p95_ms": 598.7176,
+    "candidate_p95_ms": 738.59225,
+    "p95_delta_ms": 139.87465,
+    "direct_seed_accepts": 15,
+    "direct_seed_accept_precision": 1,
+    "propagation_accepts": 125,
+    "propagation_accept_precision": 1,
+    "propagation_unsupported_accepts": 0,
+    "candidate_gains": 31,
+    "candidate_losses": 17,
+    "gates": {
+      "supported_operation_floor": false,
+      "near_domain_unsupported_rejection_floor": true,
+      "false_route_non_regression": true,
+      "invalid_plan_zero": true,
+      "execution_errors_zero": true,
+      "paired_mean_latency_improvement": false,
+      "paired_p95_latency_non_regression": false
+    }
+  },
+  "diagnosis": {
+    "k2": "Selective ranked BGE preserves false-route safety and materially improves mean latency, but loses 17 baseline-correct cases and remains 4 correct supported cases below the 0.60 floor; p95 misses by 3.09 ms.",
+    "k4": "Broader ranked BGE yields only one additional supported correct case while regressing both mean and tail latency.",
+    "next_hypothesis": "Do not widen ranked BGE. Add graph-derived corroboration and explicit negative evidence before selective BGE so supported routes with structural field/operation support are retained while unsupported operation-like queries remain suppressed."
+  },
+  "promotion": {
+    "candidate_frozen": false,
+    "calibration_allowed": false,
+    "blind_v15_allowed": false
+  },
+  "next_stage": "graph_negative_evidence_corroboration_development"
+}
