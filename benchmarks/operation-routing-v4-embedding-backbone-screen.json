@@ -2,7 +2,11 @@
   "cycle": "0.11-operation-routing-quality-v4",
   "experiment": "multilingual-embedding-backbone-screen-v1",
   "work_item": 242,
-  "parent_work_items": [197, 240, 241],
+  "parent_work_items": [
+    197,
+    240,
+    241
+  ],
   "status": "preregistered_before_execution",
   "historical_control": {
     "run": 36321806711,
@@ -18,7 +22,8 @@
       "license": "MIT",
       "query_prefix": "query: ",
       "document_prefix": "passage: ",
-      "trust_remote_code": false
+      "trust_remote_code": false,
+      "revision": "d13f1b27baf31030b7fd040960d60d909913633f"
     },
     "gte-multilingual-base": {
       "model_name": "Alibaba-NLP/gte-multilingual-base",
@@ -63,18 +68,33 @@
   },
   "threshold_projection": {
     "semantics": "winner_only_rank_then_gate",
-    "fixed_margin_thresholds": [0.0, 0.02, 0.05, 0.08, 0.1, 0.15, 0.2],
-    "false_budgets": [0, 6, 12, 13, 24, 36],
+    "fixed_margin_thresholds": [
+      0,
+      0.02,
+      0.05,
+      0.08,
+      0.1,
+      0.15,
+      0.2
+    ],
+    "false_budgets": [
+      0,
+      6,
+      12,
+      13,
+      24,
+      36
+    ],
     "canonical_false_budget": 12,
     "population_rule": "complete fixed 1800-case denominators"
   },
   "screening_gate": {
-    "supported_exact_route_accuracy_min": 0.70,
+    "supported_exact_route_accuracy_min": 0.7,
     "near_domain_unsupported_rejection_min": 0.96,
     "canonical_false_route_rate_max": 0.02,
-    "invalid_plan_rate_max": 0.0,
+    "invalid_plan_rate_max": 0,
     "execution_errors_max": 0,
-    "p95_query_embedding_plus_scoring_latency_ms_max": 200.0
+    "p95_query_embedding_plus_scoring_latency_ms_max": 200
   },
   "promotion_policy": "Select no production behavior from this run. If any model/strategy passes, freeze one exact model/strategy/threshold map in a new preregistered executable experiment.",
   "long_term_target": {
