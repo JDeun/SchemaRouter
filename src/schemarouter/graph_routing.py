@@ -416,6 +416,7 @@ class GraphOperationGate:
         *,
         query: str,
         graph: CompiledSchemaGraph,
+        allowed_routes: frozenset[tuple[str, str]] | None = None,
     ) -> GraphOperationAssessment:
         if not query.strip():
             return GraphOperationAssessment(
@@ -424,10 +425,22 @@ class GraphOperationGate:
                 reason="empty query",
             )
 
+        routes = tuple(
+            route
+            for route in graph.operation_routes()
+            if allowed_routes is None or route in allowed_routes
+        )
+        if not routes:
+            return GraphOperationAssessment(
+                decision="escalate",
+                tool_key="",
+                reason="graph route scope was empty",
+            )
+
         if self.reject_explicit_conflicts:
             conflicts: list[tuple[str, str]] = []
             seen_tools: set[str] = set()
-            for tool_key, _endpoint_name in graph.operation_routes():
+            for tool_key, _endpoint_name in routes:
                 if tool_key in seen_tools:
                     continue
                 seen_tools.add(tool_key)
@@ -456,7 +469,7 @@ class GraphOperationGate:
                 )
 
         positive: dict[tuple[str, str], GraphOperationEvidence] = {}
-        for tool_key, endpoint_name in graph.operation_routes():
+        for tool_key, endpoint_name in routes:
             matched_aliases = tuple(
                 alias
                 for alias in graph.operation_aliases(tool_key, endpoint_name)
@@ -477,6 +490,8 @@ class GraphOperationGate:
 
         if self.accept_unique_field_path:
             for tool_key, endpoint_name in graph.field_routes():
+                if allowed_routes is not None and (tool_key, endpoint_name) not in allowed_routes:
+                    continue
                 matched_fields = tuple(
                     concept
                     for concept in graph.field_concepts(tool_key, endpoint_name)
