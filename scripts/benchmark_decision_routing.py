@@ -1225,6 +1225,15 @@ async def main() -> None:
         ),
     )
     parser.add_argument("--candidate-recall-limit", type=int, default=4)
+    parser.add_argument(
+        "--candidate-recall-mode",
+        choices=("augment", "replace"),
+        default="augment",
+        help=(
+            "Keep current semantic recall union behavior, or replace lexical candidates "
+            "with the successful bounded semantic selection."
+        ),
+    )
     parser.add_argument("--candidate-recall-min-similarity", type=float, default=-1.0)
     parser.add_argument("--candidate-recall-min-margin", type=float, default=0.0)
     parser.add_argument(
@@ -1740,6 +1749,7 @@ async def main() -> None:
                     registry,
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_recall_mode=args.candidate_recall_mode,
                 ),
                 None,
             )
@@ -1757,6 +1767,7 @@ async def main() -> None:
                     registry,
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_recall_mode=args.candidate_recall_mode,
                     candidate_fit_backend=candidate_fit_backend,
                 ),
                 None,
@@ -1777,6 +1788,7 @@ async def main() -> None:
                     registry,
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_recall_mode=args.candidate_recall_mode,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
                     operation_fit_scope=args.operation_fit_scope,
@@ -1801,6 +1813,7 @@ async def main() -> None:
                     registry,
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_recall_mode=args.candidate_recall_mode,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
                     operation_fit_scope=args.operation_fit_scope,
@@ -1830,6 +1843,7 @@ async def main() -> None:
                     registry,
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_recall_mode=args.candidate_recall_mode,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
                     operation_fit_scope=args.operation_fit_scope,
@@ -1865,6 +1879,7 @@ async def main() -> None:
                     registry,
                     candidate_recall_backend=graph_candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_recall_mode=args.candidate_recall_mode,
                     candidate_fit_backend=graph_candidate_fit_backend,
                     graph_operation_gate=graph_operation_gate,
                     graph_semantic_seed_backend=graph_semantic_seed_backend,
@@ -1910,6 +1925,7 @@ async def main() -> None:
                     analyzer=ModelQueryAnalyzer(model_callable),
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_recall_mode=args.candidate_recall_mode,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
                     operation_fit_scope=args.operation_fit_scope,
@@ -1946,6 +1962,7 @@ async def main() -> None:
                     ),
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_recall_mode=args.candidate_recall_mode,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
                     operation_fit_scope=args.operation_fit_scope,
@@ -1979,6 +1996,7 @@ async def main() -> None:
                     ),
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_recall_mode=args.candidate_recall_mode,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
                     operation_fit_scope=args.operation_fit_scope,
@@ -2015,6 +2033,7 @@ async def main() -> None:
                     ),
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_recall_mode=args.candidate_recall_mode,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
                     operation_fit_scope=args.operation_fit_scope,
@@ -2049,6 +2068,7 @@ async def main() -> None:
                     ),
                     candidate_recall_backend=candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_recall_mode=args.candidate_recall_mode,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
                     operation_fit_scope=args.operation_fit_scope,
@@ -2100,6 +2120,7 @@ async def main() -> None:
             "enabled": candidate_recall_backend is not None,
             "embedding_callable": args.candidate_recall_embedding_callable,
             "limit": args.candidate_recall_limit,
+            "mode": args.candidate_recall_mode,
             "min_similarity": args.candidate_recall_min_similarity,
             "min_margin": args.candidate_recall_min_margin,
         },
