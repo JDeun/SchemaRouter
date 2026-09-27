@@ -605,3 +605,40 @@ The audit therefore has two complementary axes:
 
 1. **mainline history completeness** — every commit from repository inception is enumerated;
 2. **research evidence completeness** — material unmerged/rejected experiments remain in the experiment ledger instead of disappearing when their PR is closed.
+
+
+### Bounded retrieve → rerank and winner-only gating
+
+After the accepted-selector ablation showed that operation-fit ranking could materially repair endpoint choice, the v0.11 cycle simplified the semantic path to a bounded retrieve → rerank surface:
+
+```text
+registered/authorized candidate recall
+              ↓
+all-candidate pairwise BGE ranking
+              ↓
+raw winner
+              ↓
+winner-only route-local boundary
+              ↓
+accept or abstain
+```
+
+The critical threshold-semantics change is **rank then gate**. Earlier route-local thresholding filtered each option first and then ranked the survivors. That allowed a rejected rank-1 route to fall through to rank 2, creating executable false routes. The new opt-in policy fixes the raw winner first; if the winner misses its own score or margin boundary, routing abstains.
+
+PR #208 implemented this mechanism without changing the default backend behavior.
+
+#### Width-4 score diagnostic
+
+PR #205 / workflow `36310955824` measured the raw all-candidate score surface on the same fresh 1,800-case v4 development corpus.
+
+- raw supported top exact: **90.71%**;
+- zero-threshold false routes: **648 / 648 no-route cases**;
+- zero-threshold mean / p95 latency: **1014 / 1916 ms**;
+- winner-only score-only frontier at 12 false routes: **75.78% supported**;
+- same-artifact score+margin diagnostic at 12 false routes: **76.13% supported**, **98.09% near-domain rejection**, **98.61% OOD rejection**.
+
+The interpretation is not that zero-threshold reranking is safe—it is maximally unsafe. The important finding is that ranking headroom and fail-closed route-local boundaries can jointly satisfy the development quality/safety objectives. The new bottleneck is rerank width and latency.
+
+A retrospective analysis of the rejected pairwise hierarchy (#212, using #193 development evidence only) reached the same methodological conclusion: the scorer had sufficient ranking capacity, while filter-then-rank semantics and two-stage BGE latency prevented promotion.
+
+The active experiment is therefore #213 / PR #215: compare bounded rerank widths 2 and 3, select the smallest width that retains a score-only winner frontier above the v4 quality gates, and only then freeze one executable threshold candidate.
