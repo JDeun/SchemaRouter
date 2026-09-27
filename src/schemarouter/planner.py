@@ -1032,6 +1032,367 @@ class SchemaPlanner:
             f"{tool.key}.{endpoint.name}: {assessment.reason}"
         ], False
 
+    def _graph_tool_semantic_seed_request(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> tuple[
+        DecisionRequest | None,
+        dict[str, tuple[ToolSpec, tuple[EndpointSpec, ...]]],
+    ]:
+        if (
+            self.graph_semantic_seed_backend is None
+            or request.max_calls > 1
+            or request.fallback_scope != "disabled"
+        ):
+            return None, {}
+
+        graph = self._graph()
+        preferred_tools = set(intent.preferred_tools)
+        preferred_endpoints = set(intent.preferred_endpoints)
+        mutable: dict[str, tuple[ToolSpec, list[EndpointSpec]]] = {}
+
+        for tool_key, endpoint_name in graph.operation_routes():
+            try:
+                tool = self.registry.get(tool_key)
+                endpoint = tool.endpoint(endpoint_name)
+            except KeyError:
+                continue
+
+            if (
+                preferred_tools
+                and tool.key not in preferred_tools
+                and tool.name not in preferred_tools
+            ):
+                continue
+            route_id = f"{tool.key}.{endpoint.name}"
+            if preferred_endpoints and route_id not in preferred_endpoints:
+                continue
+            if (
+                self.availability_predicate is not None
+                and not self.availability_predicate(tool, endpoint)
+            ):
+                continue
+            if (
+                additional_availability_predicate is not None
+                and not additional_availability_predicate(tool, endpoint)
+            ):
+                continue
+
+            existing = mutable.get(tool.key)
+            if existing is None:
+                mutable[tool.key] = (tool, [endpoint])
+            else:
+                existing[1].append(endpoint)
+
+        if not mutable:
+            return None, {}
+
+        authorized = {
+            tool_key: (tool, tuple(endpoints))
+            for tool_key, (tool, endpoints) in mutable.items()
+        }
+        options = [
+            DecisionOption(
+                id=tool_key,
+                label=tool.name,
+                description=tool.description.strip() or tool.name,
+                metadata={
+                    "tool": tool.key,
+                    "surface": "graph_tool_semantic_seed",
+                },
+            )
+            for tool_key, (tool, _endpoints) in sorted(authorized.items())
+        ]
+        return (
+            DecisionRequest(
+                query=request.query,
+                options=options,
+                max_selections=1,
+                context={
+                    "surface": "graph_tool_semantic_seed",
+                    "authority": "registered_schema_graph_tools_only",
+                },
+            ),
+            authorized,
+        )
+
+    @staticmethod
+    def _graph_hierarchical_operation_request(
+        request: PlanRequest,
+        *,
+        tool: ToolSpec,
+        endpoints: tuple[EndpointSpec, ...],
+    ) -> tuple[
+        DecisionRequest | None,
+        dict[str, EndpointSpec],
+    ]:
+        if not endpoints:
+            return None, {}
+
+        authorized: dict[str, EndpointSpec] = {}
+        options: list[DecisionOption] = []
+        for endpoint in endpoints:
+            route_id = f"{tool.key}.{endpoint.name}"
+            operation_name = endpoint.name.replace("_", " ").replace("-", " ")
+            parts = [
+                operation_name,
+                *endpoint.operation_aliases,
+                endpoint.description.strip(),
+            ]
+            authorized[route_id] = endpoint
+            options.append(
+                DecisionOption(
+                    id=route_id,
+                    label=endpoint.name,
+                    description="\n".join(part for part in parts if part),
+                    metadata={
+                        "tool": tool.key,
+                        "endpoint": endpoint.name,
+                        "surface": "graph_hierarchical_operation",
+                    },
+                )
+            )
+
+        return (
+            DecisionRequest(
+                query=request.query,
+                options=options,
+                max_selections=1,
+                context={
+                    "surface": "graph_hierarchical_operation",
+                    "tool": tool.key,
+                    "authority": "selected_registered_tool_endpoints_only",
+                },
+            ),
+            authorized,
+        )
+
+    def _graph_hierarchical_candidates_sync(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> tuple[list[_Candidate], list[str], bool]:
+        tool_request, authorized_tools = self._graph_tool_semantic_seed_request(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
+        if tool_request is None or self.graph_semantic_seed_backend is None:
+            return [], [], True
+
+        try:
+            tool_result = choose_sync(self.graph_semantic_seed_backend, tool_request)
+        except Exception as exc:
+            return [], [
+                "graph hierarchical tool seed fallback: "
+                f"{type(exc).__name__}; escalated to semantic routing"
+            ], True
+
+        if tool_result.abstained or not tool_result.selections:
+            return [], [
+                "graph hierarchical tool seed abstained; escalated to semantic routing"
+            ], True
+
+        tool_key = tool_result.selections[0].option_id
+        target = authorized_tools.get(tool_key)
+        if target is None:
+            return [], [
+                "graph hierarchical tool seed returned no authorized tool; escalated"
+            ], True
+
+        top_similarity = tool_result.metadata.get("top_similarity")
+        top_margin = tool_result.metadata.get("top_margin")
+        geometry = (
+            f" similarity={float(top_similarity):.6f}"
+            if isinstance(top_similarity, (int, float))
+            and not isinstance(top_similarity, bool)
+            else ""
+        )
+        if isinstance(top_margin, (int, float)) and not isinstance(top_margin, bool):
+            geometry += f" margin={float(top_margin):.6f}"
+
+        if not self._graph_semantic_direct_accepts(tool_result.metadata):
+            return [], [
+                "graph hierarchical tool seed remained uncertain "
+                f"for {tool_key}{geometry}; escalated to semantic routing"
+            ], True
+
+        tool, endpoints = target
+        operation_request, authorized_endpoints = (
+            self._graph_hierarchical_operation_request(
+                request,
+                tool=tool,
+                endpoints=endpoints,
+            )
+        )
+        backend = self.graph_semantic_propagation_backend
+        if operation_request is None or backend is None:
+            return [], [
+                "graph hierarchical operation resolver unavailable; "
+                "escalated to semantic routing"
+            ], True
+
+        try:
+            operation_result = choose_sync(backend, operation_request)
+        except Exception as exc:
+            return [], [
+                "graph hierarchical operation fallback: "
+                f"{type(exc).__name__}; escalated to semantic routing"
+            ], True
+
+        if operation_result.abstained or not operation_result.selections:
+            if self.graph_semantic_propagation_on_abstain == "reject":
+                return [], [
+                    "graph hierarchical operation rejected unresolved "
+                    f"request within {tool.key}"
+                ], False
+            return [], [
+                "graph hierarchical operation abstained; escalated to semantic routing"
+            ], True
+
+        route_id = operation_result.selections[0].option_id
+        endpoint = authorized_endpoints.get(route_id)
+        if endpoint is None:
+            return [], [
+                "graph hierarchical operation returned no authorized route; escalated"
+            ], True
+
+        candidate = replace(
+            self._score_endpoint(tool, endpoint, request.query, intent),
+            selection_source="graph_propagation",
+        )
+        score = operation_result.selections[0].score
+        score_suffix = f" score={score:.6f}" if score is not None else ""
+        return [candidate], [
+            f"graph hierarchical tool seed selected {tool.key}{geometry}",
+            "graph hierarchical operation accepted "
+            f"{route_id}{score_suffix}; route remained schema-authorized",
+        ], False
+
+    async def _graph_hierarchical_candidates_async(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> tuple[list[_Candidate], list[str], bool]:
+        tool_request, authorized_tools = self._graph_tool_semantic_seed_request(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
+        if tool_request is None or self.graph_semantic_seed_backend is None:
+            return [], [], True
+
+        try:
+            tool_result = await choose_async(
+                self.graph_semantic_seed_backend,
+                tool_request,
+            )
+        except Exception as exc:
+            return [], [
+                "graph hierarchical tool seed fallback: "
+                f"{type(exc).__name__}; escalated to semantic routing"
+            ], True
+
+        if tool_result.abstained or not tool_result.selections:
+            return [], [
+                "graph hierarchical tool seed abstained; escalated to semantic routing"
+            ], True
+
+        tool_key = tool_result.selections[0].option_id
+        target = authorized_tools.get(tool_key)
+        if target is None:
+            return [], [
+                "graph hierarchical tool seed returned no authorized tool; escalated"
+            ], True
+
+        top_similarity = tool_result.metadata.get("top_similarity")
+        top_margin = tool_result.metadata.get("top_margin")
+        geometry = (
+            f" similarity={float(top_similarity):.6f}"
+            if isinstance(top_similarity, (int, float))
+            and not isinstance(top_similarity, bool)
+            else ""
+        )
+        if isinstance(top_margin, (int, float)) and not isinstance(top_margin, bool):
+            geometry += f" margin={float(top_margin):.6f}"
+
+        if not self._graph_semantic_direct_accepts(tool_result.metadata):
+            return [], [
+                "graph hierarchical tool seed remained uncertain "
+                f"for {tool_key}{geometry}; escalated to semantic routing"
+            ], True
+
+        tool, endpoints = target
+        operation_request, authorized_endpoints = (
+            self._graph_hierarchical_operation_request(
+                request,
+                tool=tool,
+                endpoints=endpoints,
+            )
+        )
+        backend = self.graph_semantic_propagation_backend
+        if operation_request is None or backend is None:
+            return [], [
+                "graph hierarchical operation resolver unavailable; "
+                "escalated to semantic routing"
+            ], True
+
+        try:
+            operation_result = await choose_async(backend, operation_request)
+        except Exception as exc:
+            return [], [
+                "graph hierarchical operation fallback: "
+                f"{type(exc).__name__}; escalated to semantic routing"
+            ], True
+
+        if operation_result.abstained or not operation_result.selections:
+            if self.graph_semantic_propagation_on_abstain == "reject":
+                return [], [
+                    "graph hierarchical operation rejected unresolved "
+                    f"request within {tool.key}"
+                ], False
+            return [], [
+                "graph hierarchical operation abstained; escalated to semantic routing"
+            ], True
+
+        route_id = operation_result.selections[0].option_id
+        endpoint = authorized_endpoints.get(route_id)
+        if endpoint is None:
+            return [], [
+                "graph hierarchical operation returned no authorized route; escalated"
+            ], True
+
+        candidate = replace(
+            self._score_endpoint(tool, endpoint, request.query, intent),
+            selection_source="graph_propagation",
+        )
+        score = operation_result.selections[0].score
+        score_suffix = f" score={score:.6f}" if score is not None else ""
+        return [candidate], [
+            f"graph hierarchical tool seed selected {tool.key}{geometry}",
+            "graph hierarchical operation accepted "
+            f"{route_id}{score_suffix}; route remained schema-authorized",
+        ], False
+
     def _graph_semantic_seed_request(
         self,
         request: PlanRequest,
@@ -1495,6 +1856,13 @@ class SchemaPlanner:
         ]
         | None = None,
     ) -> tuple[list[_Candidate], list[str], bool]:
+        if self.graph_semantic_hierarchical:
+            return self._graph_hierarchical_candidates_sync(
+                request,
+                intent,
+                additional_availability_predicate=additional_availability_predicate,
+            )
+
         decision_request, authorized = self._graph_semantic_seed_request(
             request,
             intent,
@@ -1588,6 +1956,13 @@ class SchemaPlanner:
         ]
         | None = None,
     ) -> tuple[list[_Candidate], list[str], bool]:
+        if self.graph_semantic_hierarchical:
+            return await self._graph_hierarchical_candidates_async(
+                request,
+                intent,
+                additional_availability_predicate=additional_availability_predicate,
+            )
+
         decision_request, authorized = self._graph_semantic_seed_request(
             request,
             intent,
