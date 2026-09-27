@@ -1128,6 +1128,64 @@
       "pull_request": 258,
       "branch": "research/v4-bge-m3-zero-false-rescue",
       "workflow_run_id": 36325616293
+    },
+    {
+      "id": "0.11-route-local-stable-bge-m3-fusion",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 256,
+      "pull_request": 257,
+      "branch": "research/v4-route-local-stable-fusion",
+      "status": "executing",
+      "decision": "pending",
+      "hypothesis": "Route-specific schema/action fusion weights can recover the remaining exact-route gap at embedding-only latency, while midpoint thresholds and conservative rounding remove sample-boundary numerical fragility observed in #245.",
+      "source_evidence": {
+        "parent_experiment": 246,
+        "global_best_schema_weight": 0.55,
+        "global_best_raw_supported_correct": 1019,
+        "route_local_raw_oracle_supported_correct": 1046,
+        "raw_headroom_cases": 27,
+        "strict_supported_correct_before_route_local_fusion": 965,
+        "minimum_supported_correct_for_85_percent": 980,
+        "additional_strict_correct_needed": 15
+      },
+      "frozen_route_schema_weights": {
+        "calendar.create": 0.45,
+        "calendar.list": 0.55,
+        "finance.history": 0.6,
+        "finance.quote": 0.55,
+        "inventory.search": 0.35,
+        "inventory.update": 0.55,
+        "materials.search": 0.55,
+        "materials.structure": 0.6,
+        "papers.citations": 0.6,
+        "papers.search": 0.3,
+        "support.create_ticket": 0.4,
+        "support.search": 0.55,
+        "users.lookup": 0.55,
+        "users.update": 0.55,
+        "weather.current": 0.55,
+        "weather.forecast": 0.4
+      },
+      "threshold_stability_policy": {
+        "observed_sample_score_as_threshold": false,
+        "score_candidates": "midpoints between adjacent unique winner scores",
+        "selected_threshold_rounding": "ceil_to_6_decimal_places",
+        "primary_perturbation_epsilon": 0.000001,
+        "secondary_perturbation_epsilon": 0.00001
+      },
+      "target": {
+        "supported_exact_route_accuracy_min": 0.85,
+        "near_domain_unsupported_rejection_min": 0.97,
+        "false_route_rate_max": 0.01,
+        "out_of_domain_rejection_min": 1,
+        "p95_latency_ms_max": 250,
+        "primary_stability_gate_required": true
+      },
+      "data": {
+        "cases": 1800,
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+        "calibration_or_blind_used": false
+      }
     }
   ],
   "current_research_conclusion": {
