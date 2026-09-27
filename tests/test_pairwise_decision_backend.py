@@ -60,6 +60,26 @@ def test_pairwise_backend_selects_best_bounded_option() -> None:
     ]
 
 
+def test_pairwise_backend_emits_route_local_typed_evidence() -> None:
+    result = choose_sync(
+        PairwiseDecisionBackend(
+            lambda _: [0.80, 0.55, 0.10],
+            min_score=0.50,
+            min_score_by_option={"candidate:0": 0.85},
+        ),
+        request(),
+    )
+
+    evidence = {item.option_id: item for item in result.evidence}
+    assert evidence["candidate:0"].state == "no_match"
+    assert evidence["candidate:1"].state == "match"
+    assert evidence["candidate:2"].state == "no_match"
+    assert evidence["candidate:0"].source == "pairwise-score"
+    assert evidence["candidate:0"].score_kind == "pairwise_probability"
+    assert evidence["candidate:0"].metadata["threshold"] == pytest.approx(0.85)
+    assert evidence["candidate:1"].metadata["threshold"] == pytest.approx(0.50)
+
+
 def test_pairwise_backend_never_forwards_option_metadata() -> None:
     captured: list[tuple[str, str]] = []
 
