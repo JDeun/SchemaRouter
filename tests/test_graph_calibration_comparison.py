@@ -27,6 +27,8 @@ def _write_report(
     candidate_false_routes: int = 0,
     candidate_mean: float = 80.0,
     candidate_p95: float = 108.0,
+    candidate_tail_latency: float | None = None,
+    candidate_tail_count: int = 0,
     baseline_mean: float = 100.0,
     baseline_p95: float = 120.0,
 ) -> None:
@@ -43,6 +45,13 @@ def _write_report(
     ):
         for index in range(20):
             correct = index < supported_correct
+            latency = mean + (index % 3)
+            if (
+                backend == module.CANDIDATE
+                and candidate_tail_latency is not None
+                and index >= 20 - candidate_tail_count
+            ):
+                latency = candidate_tail_latency
             rows.append(
                 {
                     "backend": backend,
@@ -52,7 +61,7 @@ def _write_report(
                     "predicted": "weather.current" if correct else None,
                     "correct": correct,
                     "invalid_plan": False,
-                    "latency_ms": mean + (index % 3),
+                    "latency_ms": latency,
                     "error": None,
                 }
             )
@@ -182,8 +191,10 @@ def test_calibration_p95_regression_closes_candidate(tmp_path: Path) -> None:
     report = tmp_path / "report.json"
     _write_report(
         report,
-        candidate_mean=80.0,
-        candidate_p95=125.0,
+        candidate_mean=60.0,
+        candidate_p95=150.0,
+        candidate_tail_latency=150.0,
+        candidate_tail_count=5,
         baseline_mean=100.0,
         baseline_p95=120.0,
     )
