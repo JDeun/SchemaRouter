@@ -96,6 +96,14 @@ The top-level `schemarouter` package exposes the stable public surface intended 
 
 ::: schemarouter.inspect_traces
 
+## EmbeddingDecisionBackend
+
+::: schemarouter.EmbeddingDecisionBackend
+
+## CachedEmbeddingDecisionBackend
+
+::: schemarouter.CachedEmbeddingDecisionBackend
+
 ## PairwiseDecisionBackend
 
 ::: schemarouter.PairwiseDecisionBackend
