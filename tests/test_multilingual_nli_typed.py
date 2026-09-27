@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from benchmarks.multilingual_nli_typed import (
+from benchmarks.multilingual_nli_typed import (  # noqa: E402
     _resolve_label_indexes,
     hypothesis,
 )
