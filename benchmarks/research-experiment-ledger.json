@@ -1458,7 +1458,7 @@
       "issue": 279,
       "pull_request": 280,
       "preregistered": true,
-      "status": "executing",
+      "status": "completed",
       "workflow_run_id": 36358352642,
       "design": {
         "route_authority": "BGE-M3 raw registered top-1 only",
@@ -1469,6 +1469,57 @@
         "positive_route_local_thresholds": false,
         "veto_only": true
       },
+      "decision": "rejected_scalar_signed_evidence_overlap",
+      "artifact_id": 10944663761,
+      "artifact_sha256": "f04242ac79d22b35f29486b9f3b94b3ce1603400bfc87382ec73a412905cea83",
+      "result": {
+        "raw_supported_top1_accuracy": 0.8845486111111112,
+        "mean_latency_ms": 183.79347730444442,
+        "p95_latency_ms": 200.0708493,
+        "fixed_rule_count": 1764,
+        "candidate_worthy_rule_count": 0,
+        "best_exact_ge_85": {
+          "supported_exact_route_accuracy": 0.8585069444444444,
+          "near_domain_unsupported_rejection": 0.8680555555555556,
+          "out_of_domain_rejection": 0.6944444444444444,
+          "false_routes": 98,
+          "false_route_rate": 0.15123456790123457
+        },
+        "best_near_97_ood_100": {
+          "supported_exact_route_accuracy": 0.6536458333333334,
+          "near_domain_unsupported_rejection": 0.9739583333333334,
+          "out_of_domain_rejection": 1,
+          "false_routes": 15,
+          "false_route_rate": 0.023148148148148147
+        },
+        "best_ood_100_false_le_1pct": {
+          "supported_exact_route_accuracy": 0.3602430555555556,
+          "near_domain_unsupported_rejection": 0.9947916666666666,
+          "out_of_domain_rejection": 1,
+          "false_routes": 3,
+          "false_route_rate": 0.004629629629629629
+        }
+      },
+      "interpretation": "Separate near-domain and OOD scalar signed thresholds still cannot satisfy 85/97/1/100. Supported and OOD evidence distributions overlap around zero; stop scalar-threshold refinement and test relative prototype ranks."
+    },
+    {
+      "id": "0.11-rank-based-capability-set-openworld",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 281,
+      "pull_request": 283,
+      "preregistered": true,
+      "status": "executing",
+      "workflow_run_id": 36359121048,
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "scalar_score_thresholds": false,
+        "near_domain_evidence": "relative rank of registered positive endpoint prototypes vs route-conditioned negative capability prototypes",
+        "ood_evidence": "relative rank of eight known-domain anchors vs sixteen broad background prototypes",
+        "near_modes": 5,
+        "ood_modes": 4,
+        "fixed_rule_count": 20,
+        "veto_only": true
+      },
       "decision": "executing"
     }
   ],
@@ -1477,19 +1528,18 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "retain BGE-M3 raw registered top-1 as the only route authority",
-      "use route-conditioned explicit negative capability evidence for near-domain unsupported veto",
-      "use a separate background-vs-known-domain signed evidence channel for OOD rather than any absolute low-positive threshold",
-      "keep all open-set evidence veto-only",
-      "if #279 passes DEV, freeze exactly one rule and confirm on a new preregistered fresh-surface DEV distinct from #270",
-      "if #279 fails, stop scalar threshold refinement and move to a richer capability-set/open-world detector",
+      "stop scalar threshold refinement for the fixed prototype evidence family",
+      "test threshold-free relative prototype rank/top-k composition for near-domain and OOD veto",
+      "retain BGE-M3 raw registered top-1 as sole route authority",
+      "if #281 passes, freeze exact rank rule and confirm on a new fresh-surface DEV distinct from #270",
+      "if #281 fails, end fixed-prototype heuristics and move to a learned or externally pretrained open-set capability classifier with veto-only authority",
       "keep calibration/blind evidence untouched until fresh-surface confirmation passes"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "dual signed negative open-world detector (#279 / PR #280)",
+    "active_experiment": "rank-based capability-set open-world veto (#281 / PR #283)",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1550,14 +1600,15 @@
       271,
       273,
       275,
-      277
+      277,
+      279
     ],
     "active_experiments": [
-      279
+      281
     ],
     "active_pull_requests": [
       235,
-      280
+      283
     ],
     "next_blocked_confirmation": 198
   },
