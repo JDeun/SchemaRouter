@@ -1,0 +1,117 @@
+name: V4 Embedding Backbone Screen
+
+on:
+  push:
+    branches:
+      - "research/v4-embedding-backbone-screen"
+    paths:
+      - ".github/workflows/research-v4-embedding-backbone-screen.yml"
+      - "benchmarks/operation-routing-v4-embedding-backbone-screen.json"
+      - "scripts/analyze_embedding_backbone_screen_v4.py"
+      - "scripts/analyze_dual_view_embedding_v4.py"
+      - "tests/test_embedding_backbone_screen_v4.py"
+      - "tests/test_dual_view_embedding_v4.py"
+      - "scripts/generate_decision_routing_quality_v4.py"
+      - "scripts/audit_operation_routing_corpus.py"
+      - "scripts/benchmark_decision_routing.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SCHEMAROUTER_SOURCE_REVISION: ${{ github.sha }}
+  V4_DEV_SEED: "operation-routing-quality-v4-development-2026-09-27"
+  V4_DEV_SHA256: "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+
+concurrency:
+  group: v4-embedding-backbone-screen-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Validate research contracts
+        run: |
+          python -m json.tool benchmarks/operation-routing-v4-embedding-backbone-screen.json >/dev/null
+          ruff check scripts/analyze_embedding_backbone_screen_v4.py scripts/analyze_dual_view_embedding_v4.py tests/test_embedding_backbone_screen_v4.py tests/test_dual_view_embedding_v4.py
+          pytest -q tests/test_embedding_backbone_screen_v4.py tests/test_dual_view_embedding_v4.py
+
+  evaluate:
+    needs: contracts
+    strategy:
+      fail-fast: false
+      matrix:
+        model_id:
+          - e5-base
+          - gte-multilingual-base
+          - bge-m3
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "sentence-transformers>=3,<6" einops
+      - run: pip install -e ".[dev]"
+      - name: Generate fixed v4 development corpus
+        run: |
+          OUT="artifacts/v4-embedding-backbone-screen/${{ matrix.model_id }}"
+          mkdir -p "${OUT}"
+          python scripts/generate_decision_routing_quality_v4.py             --seed "${V4_DEV_SEED}"             --source-revision "${SCHEMAROUTER_SOURCE_REVISION}"             --out "${OUT}/corpus.json"             --manifest "${OUT}/corpus-manifest.json"
+      - name: Verify corpus identity
+        run: |
+          MODEL_ID="${{ matrix.model_id }}" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          model_id = os.environ["MODEL_ID"]
+          path = Path(
+              f"artifacts/v4-embedding-backbone-screen/{model_id}/corpus-manifest.json"
+          )
+          manifest = json.loads(path.read_text(encoding="utf-8"))
+          actual = manifest.get("corpus_sha256")
+          expected = os.environ["V4_DEV_SHA256"]
+          if actual != expected:
+              raise SystemExit(
+                  f"corpus SHA mismatch: expected {expected}, got {actual}"
+              )
+          if manifest.get("case_count") != 1800:
+              raise SystemExit(
+                  f"unexpected case count: {manifest.get('case_count')}"
+              )
+          print(f"verified corpus sha256={actual}")
+          PY
+      - name: Audit corpus
+        run: |
+          OUT="artifacts/v4-embedding-backbone-screen/${{ matrix.model_id }}"
+          python scripts/audit_operation_routing_corpus.py             --corpus "${OUT}/corpus.json"             --out "${OUT}/corpus-audit.json"             --near-duplicate-threshold 0.80             --max-duplicate-examples 50
+      - name: Run backbone screen
+        run: |
+          OUT="artifacts/v4-embedding-backbone-screen/${{ matrix.model_id }}"
+          python scripts/analyze_embedding_backbone_screen_v4.py             --corpus "${OUT}/corpus.json"             --model-id "${{ matrix.model_id }}"             --out "${OUT}/analysis.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: v4-embedding-backbone-${{ matrix.model_id }}-${{ github.run_id }}
+          path: |
+            artifacts/v4-embedding-backbone-screen/${{ matrix.model_id }}/analysis.json
+            artifacts/v4-embedding-backbone-screen/${{ matrix.model_id }}/corpus-manifest.json
+            artifacts/v4-embedding-backbone-screen/${{ matrix.model_id }}/corpus-audit.json
+            benchmarks/operation-routing-v4-embedding-backbone-screen.json
+          if-no-files-found: error
+          retention-days: 30
