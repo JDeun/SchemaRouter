@@ -1272,6 +1272,15 @@ async def main() -> None:
         ),
     )
     parser.add_argument(
+        "--operation-fit-threshold-application",
+        choices=("filter_then_rank", "rank_then_gate"),
+        default="filter_then_rank",
+        help=(
+            "Apply pairwise route thresholds before ranking eligible options, or "
+            "rank first and fail closed if the raw winner misses its own boundary."
+        ),
+    )
+    parser.add_argument(
         "--operation-fit-min-score-by-option-json",
         default=None,
         help=(
@@ -1637,6 +1646,7 @@ async def main() -> None:
                 min_margin=args.operation_fit_min_margin,
                 min_score_by_option=operation_fit_min_score_by_option,
                 min_margin_by_option=operation_fit_min_margin_by_option,
+                threshold_application=args.operation_fit_threshold_application,
             )
         )
         operation_fit_backend = operation_fit_recorder
@@ -2110,6 +2120,7 @@ async def main() -> None:
             "min_margin_by_option": operation_fit_min_margin_by_option,
             "accepted_selector_ablation": args.operation_fit_select_accepted,
             "scope": args.operation_fit_scope,
+            "threshold_application": args.operation_fit_threshold_application,
         },
         "graph_operation": {
             "enabled": graph_operation_gate is not None,
