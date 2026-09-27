@@ -157,7 +157,7 @@ SUPPORTED_VARIANTS: dict[str, dict[str, tuple[str, str]]] = {
         "de": ("zeige historische Kursdaten für {v}", "hole die frühere Marktzeitreihe für {v}"),
         "mixed": ("{v} historical price data 보여줘", "{v} past market series 가져와"),
     },
-    "calendar.list_events": {
+    "calendar.list": {
         "en": ("show the events on my calendar for {v}", "list my scheduled items for {v}"),
         "ko": ("{v}의 내 캘린더 일정을 보여줘", "{v}에 잡힌 일정을 목록으로 보여줘"),
         "es": ("muestra los eventos de mi calendario para {v}", "enumera mis citas programadas para {v}"),
@@ -165,7 +165,7 @@ SUPPORTED_VARIANTS: dict[str, dict[str, tuple[str, str]]] = {
         "de": ("zeige meine Kalendereinträge für {v}", "liste meine geplanten Termine für {v}"),
         "mixed": ("{v} calendar events 보여줘", "{v} scheduled items list해줘"),
     },
-    "calendar.create_event": {
+    "calendar.create": {
         "en": ("put {v} on my calendar", "add a calendar event for {v}"),
         "ko": ("{v} 일정을 내 캘린더에 넣어줘", "{v} 캘린더 이벤트를 추가해줘"),
         "es": ("añade {v} a mi calendario", "crea un evento de calendario para {v}"),
@@ -173,7 +173,7 @@ SUPPORTED_VARIANTS: dict[str, dict[str, tuple[str, str]]] = {
         "de": ("trage {v} in meinen Kalender ein", "füge einen Kalendereintrag für {v} hinzu"),
         "mixed": ("{v}를 calendar에 넣어줘", "{v} calendar event 추가해줘"),
     },
-    "support.search_kb": {
+    "support.search": {
         "en": ("find help documentation for {v}", "search the support knowledge base for {v}"),
         "ko": ("{v} 관련 도움말 문서를 찾아줘", "{v}를 고객지원 지식베이스에서 검색해줘"),
         "es": ("encuentra documentación de ayuda para {v}", "busca {v} en la base de conocimiento de soporte"),
