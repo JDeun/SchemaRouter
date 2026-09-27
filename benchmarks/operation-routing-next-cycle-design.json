@@ -101,5 +101,24 @@
     "candidate_freeze_before_calibration": true,
     "calibration_pass_before_blind_generation": true,
     "no_retroactive_gate_changes": true
+  },
+  "problem_definition_evidence": {
+    "source": "0.10 graph-projection development aggregates and paired discordance diagnostics only",
+    "tuning_status": "historical problem-definition evidence; next cycle still requires fresh development data",
+    "observations": {
+      "best_dev_supported_exact_route_accuracy": 0.6328125,
+      "korean_supported_accuracy": 0.4609375,
+      "japanese_supported_accuracy": 0.609375,
+      "weather_forecast_baseline_accuracy": 0.8333333333333334,
+      "weather_forecast_candidate_accuracy": 0.7708333333333334,
+      "paired_candidate_gains": 47,
+      "paired_candidate_losses": 5,
+      "paired_loss_concentration": "all five observed losses were weather.forecast Korean/Japanese variants",
+      "observed_cross_tool_corroboration_errors": [
+        "papers.search -> materials.search on a Korean supported query",
+        "finance.quote -> inventory.search on a Japanese supported query"
+      ]
+    },
+    "design_implication": "Prioritize multilingual tool-domain separation before within-tool operation discrimination. Test hierarchical or multi-view graph evidence on fresh next-cycle development data rather than adding benchmark-specific aliases."
   }
 }
