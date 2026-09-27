@@ -315,6 +315,7 @@ class SchemaPlanner:
         operation_fit_backend: DecisionBackend | None = None,
         graph_operation_gate: GraphOperationGate | None = None,
         graph_semantic_seed_backend: DecisionBackend | None = None,
+        graph_semantic_hierarchical: bool = False,
         graph_semantic_direct_min_similarity: float | None = None,
         graph_semantic_direct_min_margin: float | None = None,
         graph_semantic_propagation_backend: DecisionBackend | None = None,
@@ -381,6 +382,8 @@ class SchemaPlanner:
             raise ValueError("graph_semantic_propagation_limit must be an integer >= 1")
         if not isinstance(graph_semantic_corroborate_abstain, bool):
             raise TypeError("graph_semantic_corroborate_abstain must be a boolean")
+        if not isinstance(graph_semantic_hierarchical, bool):
+            raise TypeError("graph_semantic_hierarchical must be a boolean")
         self.registry = registry
         self.analyzer = analyzer or KeywordAnalyzer()
         self.decision_backend = decision_backend
@@ -391,6 +394,7 @@ class SchemaPlanner:
         self.operation_fit_backend = operation_fit_backend
         self.graph_operation_gate = graph_operation_gate
         self.graph_semantic_seed_backend = graph_semantic_seed_backend
+        self.graph_semantic_hierarchical = graph_semantic_hierarchical
         self.graph_semantic_direct_min_similarity = graph_semantic_direct_min_similarity
         self.graph_semantic_direct_min_margin = graph_semantic_direct_min_margin
         self.graph_semantic_propagation_backend = graph_semantic_propagation_backend
