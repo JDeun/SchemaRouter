@@ -93,6 +93,9 @@ class BenchmarkRow:
     graph_seed_invoked: bool = False
     graph_seed_surface: str | None = None
     graph_seed_top_option_id: str | None = None
+    graph_seed_score_kind: str | None = None
+    graph_seed_top_score: float | None = None
+    graph_seed_second_score: float | None = None
     graph_seed_top_similarity: float | None = None
     graph_seed_second_similarity: float | None = None
     graph_seed_top_margin: float | None = None
@@ -701,6 +704,17 @@ async def benchmark_planner(
                     return float(value)
                 return None
 
+            graph_seed_score_kind = (
+                graph_seed_metadata.get("score_kind")
+                if isinstance(graph_seed_metadata.get("score_kind"), str)
+                else None
+            )
+            graph_seed_top_score = _finite_optional(
+                graph_seed_metadata.get("top_score")
+            )
+            graph_seed_second_score = _finite_optional(
+                graph_seed_metadata.get("second_score")
+            )
             graph_seed_top_similarity = _finite_optional(
                 graph_seed_metadata.get("top_similarity")
             )
@@ -792,6 +806,9 @@ async def benchmark_planner(
                     ),
                     graph_seed_surface=graph_seed_surface,
                     graph_seed_top_option_id=graph_seed_top_option_id,
+                    graph_seed_score_kind=graph_seed_score_kind,
+                    graph_seed_top_score=graph_seed_top_score,
+                    graph_seed_second_score=graph_seed_second_score,
                     graph_seed_top_similarity=graph_seed_top_similarity,
                     graph_seed_second_similarity=graph_seed_second_similarity,
                     graph_seed_top_margin=graph_seed_top_margin,
@@ -1409,7 +1426,15 @@ async def main() -> None:
             "schema-graph operation nodes before downstream semantic routing."
         ),
     )
+    parser.add_argument(
+        "--graph-semantic-seed-pairwise-callable",
+        help=(
+            "Optional pairwise scorer for the bounded graph semantic seed surface. "
+            "In hierarchical mode the options are registered tool domains only."
+        ),
+    )
     parser.add_argument("--graph-semantic-seed-min-similarity", type=float, default=-1.0)
+    parser.add_argument("--graph-semantic-seed-min-score", type=float, default=0.0)
     parser.add_argument("--graph-semantic-seed-min-margin", type=float, default=0.0)
     parser.add_argument(
         "--graph-semantic-hierarchical",
@@ -1604,14 +1629,27 @@ async def main() -> None:
     args = parser.parse_args()
     if args.graph_operation_field_paths and not args.graph_operation_gate:
         parser.error("--graph-operation-field-paths requires --graph-operation-gate")
-    if args.graph_semantic_seed_embedding_callable and not args.graph_operation_gate:
+    if (
+        args.graph_semantic_seed_embedding_callable
+        and args.graph_semantic_seed_pairwise_callable
+    ):
         parser.error(
-            "--graph-semantic-seed-embedding-callable requires --graph-operation-gate"
+            "--graph-semantic-seed-embedding-callable and "
+            "--graph-semantic-seed-pairwise-callable are mutually exclusive"
         )
-    if args.graph_semantic_propagation and not args.graph_semantic_seed_embedding_callable:
+    if (
+        args.graph_semantic_seed_embedding_callable
+        or args.graph_semantic_seed_pairwise_callable
+    ) and not args.graph_operation_gate:
         parser.error(
-            "--graph-semantic-propagation requires "
-            "--graph-semantic-seed-embedding-callable"
+            "graph semantic seed backends require --graph-operation-gate"
+        )
+    if args.graph_semantic_propagation and not (
+        args.graph_semantic_seed_embedding_callable
+        or args.graph_semantic_seed_pairwise_callable
+    ):
+        parser.error(
+            "--graph-semantic-propagation requires a graph semantic seed backend"
         )
     if args.graph_semantic_hierarchical and not args.graph_semantic_propagation:
         parser.error(
@@ -1778,7 +1816,20 @@ async def main() -> None:
 
     graph_semantic_seed_backend = None
     graph_seed_recorder = None
-    if args.graph_semantic_seed_embedding_callable:
+    if args.graph_semantic_seed_pairwise_callable:
+        graph_semantic_seed_scorer = load_callable(
+            args.graph_semantic_seed_pairwise_callable,
+            option_name="--graph-semantic-seed-pairwise-callable",
+        )
+        graph_seed_recorder = RecordingDecisionBackend(
+            PairwiseDecisionBackend(
+                graph_semantic_seed_scorer,
+                min_score=args.graph_semantic_seed_min_score,
+                min_margin=args.graph_semantic_seed_min_margin,
+            )
+        )
+        graph_semantic_seed_backend = graph_seed_recorder
+    elif args.graph_semantic_seed_embedding_callable:
         graph_semantic_seed_embedder = load_callable(
             args.graph_semantic_seed_embedding_callable,
             option_name="--graph-semantic-seed-embedding-callable",
@@ -1910,6 +1961,8 @@ async def main() -> None:
         graph_name_parts = ["keyword", "graph-operation"]
         if graph_semantic_seed_backend is not None:
             graph_name_parts.append("graph-semantic-seed")
+        if args.graph_semantic_seed_pairwise_callable:
+            graph_name_parts.append("graph-pairwise-tool")
         if args.graph_semantic_hierarchical:
             graph_name_parts.append("graph-hierarchical")
         if args.graph_semantic_propagation:
@@ -2196,7 +2249,9 @@ async def main() -> None:
             "enabled": graph_semantic_seed_backend is not None,
             "hierarchical": args.graph_semantic_hierarchical,
             "embedding_callable": args.graph_semantic_seed_embedding_callable,
+            "pairwise_callable": args.graph_semantic_seed_pairwise_callable,
             "min_similarity": args.graph_semantic_seed_min_similarity,
+            "min_score": args.graph_semantic_seed_min_score,
             "min_margin": args.graph_semantic_seed_min_margin,
             "direct_min_similarity": args.graph_semantic_direct_min_similarity,
             "direct_min_margin": args.graph_semantic_direct_min_margin,
