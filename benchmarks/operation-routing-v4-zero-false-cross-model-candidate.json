@@ -1,0 +1,157 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "candidate": "zero-false-cross-model-rescue-v1",
+  "work_item": 265,
+  "source_experiment": 262,
+  "base_candidate": 259,
+  "status": "frozen_before_executable_confirmation",
+  "base": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "threshold_profile": "false-budget-6-robust-epsilon",
+    "boundary_epsilon": 1e-6,
+    "base_acceptances_immutable": true
+  },
+  "gte": {
+    "model": "Alibaba-NLP/gte-multilingual-base",
+    "revision": "087a024525fd6e2fe749cb4679d218d8bcc95bdd",
+    "schema_weight": 0.25,
+    "action_weight": 0.75,
+    "same_winner_required": true
+  },
+  "reranker": {
+    "model": "BAAI/bge-reranker-v2-m3",
+    "revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+    "max_length": 256,
+    "surface": "same winner action aliases plus endpoint description",
+    "can_change_route": false
+  },
+  "rescue_epsilon": 1e-6,
+  "rescue_rules": {
+    "calendar.create": {
+      "min_gte_score": 0.5049319933930052,
+      "min_gte_margin": 0.02,
+      "max_base_score_deficit": 0.05,
+      "max_base_margin_deficit": 0.0,
+      "min_reranker_score": 0.00007667232808125623
+    },
+    "finance.quote": {
+      "min_gte_score": -1.0,
+      "min_gte_margin": 0.10,
+      "max_base_score_deficit": 0.05,
+      "max_base_margin_deficit": 0.0,
+      "min_reranker_score": -1.0
+    },
+    "materials.search": {
+      "min_gte_score": -1.0,
+      "min_gte_margin": 0.0,
+      "max_base_score_deficit": 1.0,
+      "max_base_margin_deficit": 0.0,
+      "min_reranker_score": 0.00007708727670863652
+    },
+    "papers.search": {
+      "min_gte_score": -1.0,
+      "min_gte_margin": 0.0,
+      "max_base_score_deficit": 0.02,
+      "max_base_margin_deficit": 0.0,
+      "min_reranker_score": -1.0
+    },
+    "support.create_ticket": {
+      "min_gte_score": -1.0,
+      "min_gte_margin": 0.0,
+      "max_base_score_deficit": 0.02,
+      "max_base_margin_deficit": 0.0,
+      "min_reranker_score": 0.0011868140695276287
+    },
+    "users.lookup": {
+      "min_gte_score": -1.0,
+      "min_gte_margin": 0.05,
+      "max_base_score_deficit": 0.02,
+      "max_base_margin_deficit": 0.0,
+      "min_reranker_score": -1.0
+    },
+    "weather.current": {
+      "min_gte_score": -1.0,
+      "min_gte_margin": 0.0,
+      "max_base_score_deficit": 1.0,
+      "max_base_margin_deficit": 0.0,
+      "min_reranker_score": 0.004901762022622069
+    },
+    "weather.forecast": {
+      "min_gte_score": 0.5627313325090175,
+      "min_gte_margin": 0.0,
+      "max_base_score_deficit": 0.05,
+      "max_base_margin_deficit": 0.0,
+      "min_reranker_score": -1.0
+    }
+  },
+  "execution_optimization": {
+    "rescue_enabled_route_count": 8,
+    "reranker_enabled_routes": [
+      "calendar.create",
+      "materials.search",
+      "support.create_ticket",
+      "weather.current"
+    ],
+    "order": [
+      "evaluate frozen base",
+      "return immediately when base accepts",
+      "return abstention when raw winner is rescue-disabled",
+      "evaluate GTE and require same winner plus frozen preconditions",
+      "skip reranker when min_reranker_score <= -1",
+      "otherwise score exactly one same-winner reranker pair"
+    ]
+  },
+  "tuning_dev_projection": {
+    "supported_correct": 982,
+    "supported_exact_route_accuracy": 0.8524305555555556,
+    "near_domain_unsupported_rejection": 0.9895833333333334,
+    "out_of_domain_rejection": 1.0,
+    "false_routes": 6,
+    "false_route_rate": 0.009259259259259259,
+    "additional_false_routes": 0,
+    "rescued_correct": 17,
+    "rescued_wrong_supported": 0
+  },
+  "confirmation": {
+    "stage_1": {
+      "role": "same_corpus_executable_parity",
+      "seed": "operation-routing-quality-v4-development-2026-09-27",
+      "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+    },
+    "stage_2": {
+      "role": "fresh_surface_development_confirmation",
+      "seed": "operation-routing-quality-v4-zero-false-confirmation-2026-09-28-a",
+      "reference_seed": "operation-routing-quality-v4-development-2026-09-27",
+      "surface_version": "zero-false-confirmation-wrappers-v1",
+      "required_normalized_exact_overlap_with_reference_dev": 0,
+      "runs_only_after_stage_1_passes": true
+    }
+  },
+  "gates": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "false_route_rate_max": 0.01,
+    "additional_false_routes_max": 0,
+    "rescued_wrong_supported_max": 0,
+    "planner_direct_parity_mismatches_max": 0,
+    "invalid_plans_max": 0,
+    "execution_errors_max": 0,
+    "winner_changes_max": 0,
+    "base_accept_changes_max": 0
+  },
+  "authority": {
+    "registered_routes_only": true,
+    "same_base_raw_winner_rescue_only": true,
+    "rank2_fallback": false,
+    "new_route_creation": false
+  },
+  "data_policy": {
+    "calibration_used": false,
+    "blind_used": false,
+    "fresh_surface_confirmation_is_not_independent_semantic_family_generalization": true
+  },
+  "no_retuning": true
+}
