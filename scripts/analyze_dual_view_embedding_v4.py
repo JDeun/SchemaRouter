@@ -649,14 +649,14 @@ def analyze(
         if _screening_passes(item)
     ]
 
-    schema_rows = strategy_rows["schema_only"]
+    agreement_rows = next(iter(strategy_rows.values()))
     route_agreement_rate = statistics.fmean(
         float(row["schema_action_top_route_agree"])
-        for row in schema_rows
+        for row in agreement_rows
     )
     tool_agreement_rate = statistics.fmean(
         float(row["schema_action_top_tool_agree"])
-        for row in schema_rows
+        for row in agreement_rows
     )
 
     return {
