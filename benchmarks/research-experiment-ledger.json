@@ -1508,7 +1508,7 @@
       "issue": 281,
       "pull_request": 283,
       "preregistered": true,
-      "status": "executing",
+      "status": "completed",
       "workflow_run_id": 36359121048,
       "design": {
         "route_authority": "BGE-M3 raw registered top-1 only",
@@ -1520,7 +1520,42 @@
         "fixed_rule_count": 20,
         "veto_only": true
       },
-      "decision": "executing"
+      "decision": "rejected_fixed_prototype_heuristics_terminated",
+      "source_revision": "944df2e0f2dc8617e7b97e6a38d4e2f5684f5324",
+      "artifact_id": 10945431360,
+      "artifact_sha256": "9d7fcfb8bff361137216c3bdc6182c5bb5cef50f2eee4d2f65e32711fff95b13",
+      "result": {
+        "raw_supported_top1_accuracy": 0.8845486111111112,
+        "mean_latency_ms": 185.41329462166667,
+        "p95_latency_ms": 200.65747900000002,
+        "fixed_rule_count": 20,
+        "candidate_worthy_rule_count": 0,
+        "rules_false_route_le_1pct": 0,
+        "rules_supported_exact_ge_85": 0,
+        "best_supported_exact": {
+          "rule_id": "negative_top2_all__background_top2_all",
+          "supported_exact_route_accuracy": 0.7881944444444444,
+          "near_domain_unsupported_rejection": 0.8194444444444444,
+          "out_of_domain_rejection": 0.8333333333333334,
+          "false_routes": 116,
+          "false_route_rate": 0.17901234567901234
+        },
+        "closest_high_rejection": {
+          "rule_id": "negative_top1__background_top3_majority",
+          "supported_exact_route_accuracy": 0.5034722222222222,
+          "near_domain_unsupported_rejection": 0.9826388888888888,
+          "out_of_domain_rejection": 1,
+          "false_routes": 10,
+          "false_route_rate": 0.015432098765432098
+        },
+        "rank_geometry": {
+          "correct_supported_local_top1_negative_rate": 0.21197252208047104,
+          "near_domain_local_top1_negative_rate": 0.96875,
+          "correct_supported_membership_top1_background_rate": 0.04317958783120707,
+          "ood_membership_top1_background_rate": 0.8194444444444444
+        }
+      },
+      "interpretation": "Relative prototype ordering carries signal but cannot jointly preserve supported recall and the 85/97/1/100 open-set safety target. The preregistered stopping rule is activated: no finer fixed-prototype thresholds, top-k grids, route-specific exceptions, or post-result hand rules."
     }
   ],
   "current_research_conclusion": {
@@ -1528,18 +1563,19 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "stop scalar threshold refinement for the fixed prototype evidence family",
-      "test threshold-free relative prototype rank/top-k composition for near-domain and OOD veto",
+      "fixed-prototype scalar and rank heuristics are closed after #281",
+      "preregister a learned or externally pretrained match/no_match/unknown capability verifier",
       "retain BGE-M3 raw registered top-1 as sole route authority",
-      "if #281 passes, freeze exact rank rule and confirm on a new fresh-surface DEV distinct from #270",
-      "if #281 fails, end fixed-prototype heuristics and move to a learned or externally pretrained open-set capability classifier with veto-only authority",
-      "keep calibration/blind evidence untouched until fresh-surface confirmation passes"
+      "verifier may veto or return unknown only; it may not reroute or create authority",
+      "use grouped/out-of-fold development validation before any freeze to reduce surface memorization risk",
+      "if a learned verifier passes development, freeze it before a new zero-overlap fresh-surface DEV confirmation distinct from #270",
+      "keep failed #270 fresh-surface, calibration, and blind evidence excluded from tuning"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "rank-based capability-set open-world veto (#281 / PR #283)",
+    "active_experiment": "none; fixed-prototype heuristic line terminated by #281",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1552,7 +1588,7 @@
     "zero_false_crossencoder_rescue_status": "#255 rescued only 5 correct supported cases at zero added false routes, reaching 84.20%; rejected.",
     "fresh_surface_result": "#265/#270 passed same-corpus 85/97/1 but failed zero-overlap fresh-surface open-set safety: 86.72% exact, 77.78% near rejection, 19.75% false-route. Ranking generalized; positive acceptance thresholds did not.",
     "generic_nli_status": "#273 rejected contradiction-only NLI because both supported and unsupported operation pairs were predominantly neutral.",
-    "explicit_negative_prototype_status": "#275 found useful near-domain signed negative evidence; #277 showed that a global signed bank is too coarse. #279 now separates route-conditioned near-domain negative veto from a distinct background-vs-known-domain OOD channel."
+    "explicit_negative_prototype_status": "#275 showed useful near-domain signal, while #277/#279/#281 demonstrated that fixed scalar and relative-rank prototype heuristics cannot meet the 85/97/1/100 target. This heuristic family is closed."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -1601,16 +1637,15 @@
       273,
       275,
       277,
-      279
-    ],
-    "active_experiments": [
+      279,
       281
     ],
+    "active_experiments": [],
     "active_pull_requests": [
-      235,
-      283
+      235
     ],
-    "next_blocked_confirmation": 198
+    "next_blocked_confirmation": 198,
+    "next_research_direction": "learned or externally pretrained match/no_match/unknown capability verifier with veto-only authority"
   },
   "design_lineage": [
     {
@@ -1790,10 +1825,17 @@
         "hierarchical tool→operation representation rejected",
         "accepted operation-fit selector retained after large wrong-endpoint reduction",
         "stage diagnostics show one global candidate-fit similarity threshold is insufficient",
-        "next candidate combines selector, boundary-local calibration and explicit negative/unknown capability evidence"
+        "next candidate combines selector, boundary-local calibration and explicit negative/unknown capability evidence",
+        "BGE-M3 0.55/0.45 raw dual-view ranking establishes ~88.45% supported top-1 headroom while the confirmed robust strict base reaches 83.77% exact / 98.96% near rejection / 0.93% false-route",
+        "cross-model same-winner rescue reached 85.24% on tuning DEV but failed preregistered zero-overlap fresh-surface open-set safety, isolating positive acceptance boundaries as surface-fragile",
+        "generic contradiction-only multilingual NLI was rejected because missing capability is predominantly neutral rather than textual contradiction",
+        "explicit negative-capability prototypes carry useful near-domain signal, but scalar signed and threshold-free relative-rank prototype families cannot jointly preserve supported recall and open-set safety",
+        "rank-based fixed-prototype experiment #281 completed 20 preregistered rules with zero <=1% false-route rules and zero >=85% exact rules; fixed-prototype heuristic refinement is terminated",
+        "next architecture is a learned or externally pretrained match/no_match/unknown capability verifier with strict veto-only authority"
       ],
-      "status": "active",
-      "work_item": 197
+      "status": "active_learned_open_set_verifier_next",
+      "work_item": 197,
+      "current_next_action": "Preregister and evaluate a grouped/out-of-fold learned or externally pretrained match/no_match/unknown verifier; do not use failed #270 fresh-surface or calibration/blind evidence for tuning."
     }
   ],
   "early_experiment_lineage": [
