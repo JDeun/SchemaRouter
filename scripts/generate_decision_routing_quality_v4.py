@@ -1,4 +1,5 @@
-# ruff: noqa: E501 -- multilingual corpus fixtures are intentionally kept verbatim.\n"""Generate fresh natural development data for operation-routing quality v4.
+# ruff: noqa: E501 -- multilingual corpus fixtures are intentionally kept verbatim.
+"""Generate fresh natural development data for operation-routing quality v4.
 
 This corpus is tuning-eligible for v4 only.  All predecessor calibration/blind
 corpora remain forbidden for tuning and are used here only for overlap guards.
