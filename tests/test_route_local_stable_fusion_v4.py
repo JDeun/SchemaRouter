@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import math
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,8 +32,26 @@ def test_midpoint_thresholds_never_reuse_observed_scores() -> None:
     module = _module()
     values = [0.1, 0.2, 0.4]
     thresholds = module._midpoint_thresholds(values)
-    assert thresholds == [-1.0, 0.15, 0.30000000000000004, 1.000001]
-    assert not any(value in thresholds for value in values)
+    assert len(thresholds) == 4
+    assert thresholds[0] == -1.0
+    assert math.isclose(thresholds[1], 0.15, rel_tol=0.0, abs_tol=1e-15)
+    assert math.isclose(
+        thresholds[2],
+        0.30,
+        rel_tol=0.0,
+        abs_tol=1e-15,
+    )
+    assert thresholds[3] == 1.000001
+    assert not any(
+        math.isclose(
+            value,
+            threshold,
+            rel_tol=0.0,
+            abs_tol=1e-15,
+        )
+        for value in values
+        for threshold in thresholds
+    )
 
 
 def test_round_up_is_conservative() -> None:
