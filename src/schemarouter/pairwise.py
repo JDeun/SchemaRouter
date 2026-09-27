@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 import math
-from collections.abc import Awaitable, Callable, Iterable
+from collections.abc import Awaitable, Callable, Iterable, Mapping
 from typing import Any
 
 from .decisions import (
@@ -65,6 +65,8 @@ class PairwiseDecisionBackend:
         *,
         min_score: float = 0.0,
         min_margin: float = 0.0,
+        min_score_by_option: Mapping[str, float] | None = None,
+        min_margin_by_option: Mapping[str, float] | None = None,
         option_text: DecisionOptionTextCallable | None = None,
     ) -> None:
         if not callable(scorer):
@@ -76,7 +78,49 @@ class PairwiseDecisionBackend:
         self.scorer = scorer
         self.min_score = min_score
         self.min_margin = min_margin
+        self.min_score_by_option = self._validate_threshold_map(
+            min_score_by_option,
+            name="min_score_by_option",
+        )
+        self.min_margin_by_option = self._validate_threshold_map(
+            min_margin_by_option,
+            name="min_margin_by_option",
+        )
         self.option_text = option_text or self._default_option_text
+
+    @staticmethod
+    def _validate_threshold_map(
+        values: Mapping[str, float] | None,
+        *,
+        name: str,
+    ) -> dict[str, float]:
+        if values is None:
+            return {}
+        if not isinstance(values, Mapping):
+            raise TypeError(f"{name} must be a mapping or None")
+
+        normalized: dict[str, float] = {}
+        for option_id, raw_threshold in values.items():
+            if not isinstance(option_id, str) or not option_id.strip():
+                raise ValueError(f"{name} keys must be non-empty strings")
+            if (
+                not isinstance(raw_threshold, (int, float))
+                or isinstance(raw_threshold, bool)
+            ):
+                raise TypeError(f"{name} values must be numeric")
+            threshold = float(raw_threshold)
+            if not math.isfinite(threshold) or not 0.0 <= threshold <= 1.0:
+                raise ValueError(
+                    f"{name} values must be finite and between 0 and 1"
+                )
+            normalized[option_id] = threshold
+        return normalized
+
+    def _score_threshold_for(self, option_id: str) -> float:
+        return self.min_score_by_option.get(option_id, self.min_score)
+
+    def _margin_threshold_for(self, option_id: str) -> float:
+        return self.min_margin_by_option.get(option_id, self.min_margin)
 
     @staticmethod
     def _default_option_text(option: DecisionOption) -> str:
@@ -127,13 +171,22 @@ class PairwiseDecisionBackend:
             enumerate(scores),
             key=lambda item: (-item[1], item[0]),
         )
-        eligible = [item for item in ranked if item[1] >= self.min_score]
+        eligible = [
+            item
+            for item in ranked
+            if item[1] >= self._score_threshold_for(request.options[item[0]].id)
+        ]
 
+        top_option_id = request.options[ranked[0][0]].id
         metadata: dict[str, Any] = {
             "provider": "pairwise-score",
             "option_count": len(request.options),
             "min_score": self.min_score,
             "min_margin": self.min_margin,
+            "score_kind": "pairwise",
+            "top_option_id": top_option_id,
+            "top_effective_min_score": self._score_threshold_for(top_option_id),
+            "top_effective_min_margin": self._margin_threshold_for(top_option_id),
             "top_score": ranked[0][1],
             "second_score": ranked[1][1] if len(ranked) > 1 else None,
             "top_margin": (
@@ -160,10 +213,13 @@ class PairwiseDecisionBackend:
 
         limit = min(request.max_selections, len(eligible))
         selected = eligible[:limit]
-        if self.min_margin > 0.0 and len(eligible) > limit:
+        if len(eligible) > limit:
+            boundary_option_id = request.options[selected[-1][0]].id
+            effective_min_margin = self._margin_threshold_for(boundary_option_id)
+            metadata["effective_boundary_min_margin"] = effective_min_margin
             boundary_margin = selected[-1][1] - eligible[limit][1]
             metadata["boundary_margin"] = boundary_margin
-            if boundary_margin < self.min_margin:
+            if effective_min_margin > 0.0 and boundary_margin < effective_min_margin:
                 return validate_decision(
                     request,
                     DecisionResult(
