@@ -142,6 +142,52 @@ def test_pairwise_backend_route_local_score_threshold_can_fail_closed() -> None:
     assert result.selections[0].option_id == "candidate:1"
 
 
+def test_pairwise_rank_then_gate_abstains_instead_of_falling_through() -> None:
+    backend = PairwiseDecisionBackend(
+        lambda _: [0.62, 0.61, 0.10],
+        min_score=0.20,
+        min_score_by_option={
+            "candidate:0": 0.70,
+            "candidate:1": 0.60,
+        },
+        threshold_application="rank_then_gate",
+    )
+
+    result = choose_sync(backend, request())
+
+    assert result.abstained is True
+    assert result.selections == []
+    assert result.metadata["top_option_id"] == "candidate:0"
+    assert result.metadata["threshold_application"] == "rank_then_gate"
+    assert result.metadata["reason"] == "top_below_min_score"
+
+
+def test_pairwise_rank_then_gate_uses_raw_runner_up_for_margin() -> None:
+    backend = PairwiseDecisionBackend(
+        lambda _: [0.80, 0.76, 0.10],
+        min_score=0.20,
+        min_margin_by_option={"candidate:0": 0.05},
+        threshold_application="rank_then_gate",
+    )
+
+    result = choose_sync(backend, request())
+
+    assert result.abstained is True
+    assert result.metadata["reason"] == "ambiguous_selection_boundary"
+    assert result.metadata["top_margin"] == pytest.approx(0.04)
+    assert result.metadata["boundary_margin"] == pytest.approx(0.04)
+
+
+def test_pairwise_rank_then_gate_fails_closed_for_multi_selection() -> None:
+    backend = PairwiseDecisionBackend(
+        lambda _: [0.90, 0.80, 0.10],
+        threshold_application="rank_then_gate",
+    )
+
+    with pytest.raises(PlanningError, match="single-selection"):
+        choose_sync(backend, request(max_selections=2))
+
+
 def test_pairwise_backend_supports_route_local_margin_thresholds() -> None:
     backend = PairwiseDecisionBackend(
         lambda _: [0.80, 0.76, 0.10],
@@ -266,6 +312,14 @@ def test_pairwise_route_local_thresholds_are_validated(
 ) -> None:
     with pytest.raises(error):
         PairwiseDecisionBackend(lambda _: [], **{keyword: value})
+
+
+def test_pairwise_threshold_application_is_validated() -> None:
+    with pytest.raises(ValueError, match="threshold_application"):
+        PairwiseDecisionBackend(
+            lambda _: [],
+            threshold_application="fallback",  # type: ignore[arg-type]
+        )
 
 
 def test_pairwise_backend_rejects_empty_custom_option_text() -> None:

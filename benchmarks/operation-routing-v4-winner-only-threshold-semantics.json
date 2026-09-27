@@ -1,0 +1,37 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "pairwise-rank-then-gate-semantics-v1",
+  "work_item": 207,
+  "parent_work_item": 197,
+  "status": "preregistered_before_implementation",
+  "base_revision": "90af3e1fce3bf29f45fd3347c14afc2603b37d5e",
+  "research_question": "Can winner-first threshold application remove lower-ranked executable fallback without changing default PairwiseDecisionBackend behavior?",
+  "motivation": {
+    "source_ablation_pr": 191,
+    "observation": "Filter-then-rank route-local thresholds can reject the raw winner but still select a lower-ranked option whose own threshold passes.",
+    "safety_implication": "For open-set routing, failure of the raw winner's boundary should represent insufficient evidence and abstain rather than trigger rank fallback."
+  },
+  "mechanism": {
+    "parameter": "threshold_application",
+    "default": "filter_then_rank",
+    "experimental": "rank_then_gate",
+    "rank_then_gate_steps": [
+      "rank all bounded authorized options by raw score",
+      "fix the raw top option",
+      "apply only the raw winner's effective min_score",
+      "compare raw winner against raw runner-up for effective min_margin",
+      "abstain if either boundary fails",
+      "never fall through to a lower-ranked route"
+    ],
+    "multi_selection": "fail_closed_when rank_then_gate is requested with max_selections != 1"
+  },
+  "compatibility": [
+    "default filter_then_rank predictions remain unchanged",
+    "no new runtime/model dependency",
+    "no route outside DecisionRequest can be selected",
+    "typed DecisionEvidence remains available for every option",
+    "sync and async scorers share the same result semantics"
+  ],
+  "data_policy": "mechanism-only implementation; no threshold selection or empirical promotion in this work item",
+  "follow_up": "Threshold map, if any, must be selected only from #204 development diagnostics and evaluated in a separate preregistered candidate experiment."
+}

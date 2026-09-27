@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import math
 from collections.abc import Awaitable, Callable, Iterable, Mapping
-from typing import Any
+from typing import Any, Literal
 
 from .decisions import (
     DecisionEvidence,
@@ -68,6 +68,7 @@ class PairwiseDecisionBackend:
         min_margin: float = 0.0,
         min_score_by_option: Mapping[str, float] | None = None,
         min_margin_by_option: Mapping[str, float] | None = None,
+        threshold_application: Literal["filter_then_rank", "rank_then_gate"] = "filter_then_rank",
         option_text: DecisionOptionTextCallable | None = None,
     ) -> None:
         if not callable(scorer):
@@ -87,6 +88,11 @@ class PairwiseDecisionBackend:
             min_margin_by_option,
             name="min_margin_by_option",
         )
+        if threshold_application not in {"filter_then_rank", "rank_then_gate"}:
+            raise ValueError(
+                "threshold_application must be 'filter_then_rank' or 'rank_then_gate'"
+            )
+        self.threshold_application = threshold_application
         self.option_text = option_text or self._default_option_text
 
     @staticmethod
@@ -172,11 +178,6 @@ class PairwiseDecisionBackend:
             enumerate(scores),
             key=lambda item: (-item[1], item[0]),
         )
-        eligible = [
-            item
-            for item in ranked
-            if item[1] >= self._score_threshold_for(request.options[item[0]].id)
-        ]
 
         evidence = [
             DecisionEvidence(
@@ -197,23 +198,29 @@ class PairwiseDecisionBackend:
             for index, score in ranked
         ]
 
-        top_option_id = request.options[ranked[0][0]].id
+        top_index, top_score = ranked[0]
+        top_option_id = request.options[top_index].id
+        top_effective_min_score = self._score_threshold_for(top_option_id)
+        top_effective_min_margin = self._margin_threshold_for(top_option_id)
+        second_score = ranked[1][1] if len(ranked) > 1 else None
+        top_margin = (
+            top_score - second_score
+            if second_score is not None
+            else None
+        )
         metadata: dict[str, Any] = {
             "provider": "pairwise-score",
             "option_count": len(request.options),
             "min_score": self.min_score,
             "min_margin": self.min_margin,
             "score_kind": "pairwise",
+            "threshold_application": self.threshold_application,
             "top_option_id": top_option_id,
-            "top_effective_min_score": self._score_threshold_for(top_option_id),
-            "top_effective_min_margin": self._margin_threshold_for(top_option_id),
-            "top_score": ranked[0][1],
-            "second_score": ranked[1][1] if len(ranked) > 1 else None,
-            "top_margin": (
-                ranked[0][1] - ranked[1][1]
-                if len(ranked) > 1
-                else None
-            ),
+            "top_effective_min_score": top_effective_min_score,
+            "top_effective_min_margin": top_effective_min_margin,
+            "top_score": top_score,
+            "second_score": second_score,
+            "top_margin": top_margin,
             "ranked_options": [
                 {
                     "option_id": request.options[index].id,
@@ -222,6 +229,61 @@ class PairwiseDecisionBackend:
                 for index, score in ranked
             ],
         }
+
+        if self.threshold_application == "rank_then_gate":
+            if request.max_selections != 1:
+                raise PlanningError(
+                    "rank_then_gate threshold application supports only "
+                    "single-selection decisions"
+                )
+            if top_score < top_effective_min_score:
+                return validate_decision(
+                    request,
+                    DecisionResult(
+                        abstained=True,
+                        evidence=evidence,
+                        metadata={**metadata, "reason": "top_below_min_score"},
+                    ),
+                )
+            if (
+                top_effective_min_margin > 0.0
+                and top_margin is not None
+                and top_margin < top_effective_min_margin
+            ):
+                return validate_decision(
+                    request,
+                    DecisionResult(
+                        abstained=True,
+                        evidence=evidence,
+                        metadata={
+                            **metadata,
+                            "effective_boundary_min_margin": (
+                                top_effective_min_margin
+                            ),
+                            "boundary_margin": top_margin,
+                            "reason": "ambiguous_selection_boundary",
+                        },
+                    ),
+                )
+            return validate_decision(
+                request,
+                DecisionResult(
+                    selections=[
+                        DecisionSelection(
+                            option_id=top_option_id,
+                            score=top_score,
+                        )
+                    ],
+                    evidence=evidence,
+                    metadata=metadata,
+                ),
+            )
+
+        eligible = [
+            item
+            for item in ranked
+            if item[1] >= self._score_threshold_for(request.options[item[0]].id)
+        ]
         if not eligible:
             return validate_decision(
                 request,
