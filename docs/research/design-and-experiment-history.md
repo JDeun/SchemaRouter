@@ -1325,43 +1325,97 @@ Provenance:
 - artifact: `10944663761`;
 - artifact SHA-256: `f04242ac79d22b35f29486b9f3b94b3ce1603400bfc87382ec73a412905cea83`.
 
-## 36. Active experiment — rank-based capability-set open-world veto
+## 36. #281 — rank-based capability-set open-world veto
 
-Work item #281 / PR #283 tests a threshold-free alternative using only **relative prototype ordering**.
+Work item #281 / PR #283 tested the final preregistered fixed-prototype heuristic family using only **relative prototype ordering**, with no scalar similarity threshold.
 
-The route authority remains unchanged:
+The route authority remained unchanged:
 
 - BGE-M3 raw registered global top-1;
 - no positive acceptance threshold;
 - no rank-2 fallback;
 - no pseudo-route;
-- capability evidence may only veto.
+- capability evidence could veto only.
 
 ### Near-domain local set
 
-Within the raw winner domain, rank:
+Within the raw winner domain, the experiment ranked:
 
 - registered positive endpoint capability prototypes;
 - four frozen explicit unsupported-action prototypes.
 
-Five preregistered rules use only top-k class composition or whether the best negative outranks the raw-route positive prototype.
+Five fixed near-domain veto modes covered local top-1/top-k negative composition and whether the best negative outranked the raw-route positive prototype.
 
 ### OOD global membership set
 
-Rank:
+The experiment ranked:
 
 - eight registered domain anchors;
-- sixteen broad background-domain prototypes.
+- sixteen frozen broad background-domain prototypes.
 
-Four preregistered rules use only background/known composition in top-1, top-2, top-3 or top-5.
+Four fixed OOD modes covered background composition in top-1, top-2, top-3 and top-5.
 
-The Cartesian product contains **20 fixed rules** and uses **no similarity thresholds**.
+The Cartesian product contained **20 fixed rules**.
 
-This is intended to test whether relative semantic ordering is more stable than absolute or signed score magnitudes under surface-form shifts.
+### Result
 
-Workflow: `36359121048`.
+- raw BGE-M3 supported top-1: **1019/1152 = 88.4549%**;
+- mean / p95 query scoring latency: **185.41 / 200.66 ms**;
+- authority violations / execution errors: **0 / 0**;
+- promotion-gate passing rules: **0**;
+- rules satisfying total false-route <=1%: **0**;
+- rules retaining supported exact >=85%: **0**.
 
-If all 20 rules fail, fixed-prototype heuristic refinement ends. The next research architecture should be a learned or externally pretrained open-set capability classifier constrained to veto-only authority.
+Best supported-exact rule:
 
-The failed #270 fresh-surface set remains confirmation-only and forbidden for tuning. Calibration/blind evidence remains untouched.
+- `negative_top2_all__background_top2_all`;
+- supported exact: **78.8194%**;
+- near-domain rejection: **81.9444%**;
+- OOD rejection: **83.3333%**;
+- false-route: **116/648 = 17.9012%**.
 
+Closest high-rejection rule:
+
+- `negative_top1__background_top3_majority`;
+- supported exact: **50.3472%**;
+- near-domain rejection: **98.2639%**;
+- OOD rejection: **100%**;
+- false-route: **10/648 = 1.5432%**.
+
+The rank geometry still contains useful semantic signal:
+
+- correct-supported local top-1 negative rate: **21.20%**;
+- near-domain unsupported local top-1 negative rate: **96.88%**;
+- correct-supported membership top-1 background rate: **4.32%**;
+- OOD membership top-1 background rate: **81.94%**.
+
+However, composing the two channels still produces an overlap too large for the 85/97/1/100 target. Top-k composition is additionally sensitive to prototype-bank cardinality (8 known anchors vs 16 background anchors).
+
+Decision: **rejected; fixed-prototype heuristic refinement is terminated for this capability-bank family**.
+
+This activates the preregistered stopping rule from #281. Do not continue with finer scalar thresholds, larger top-k grids, route-specific exceptions or post-result hand rules. The next architecture must use a **learned or externally pretrained open-set capability verifier/classifier** under strict veto-only authority.
+
+Provenance:
+
+- source revision: `944df2e0f2dc8617e7b97e6a38d4e2f5684f5324`;
+- workflow: `36359121048`;
+- artifact: `10945431360`;
+- artifact digest: `sha256:9d7fcfb8bff361137216c3bdc6182c5bb5cef50f2eee4d2f65e32711fff95b13`.
+
+The failed #270 fresh-surface corpus remains confirmation-only and forbidden for tuning. Calibration/blind evidence remains untouched.
+
+## 37. Current resume point
+
+The current 0.11 research state is now:
+
+1. raw BGE-M3 ranking capacity is sufficient (**88.45% tuning DEV; fresh supported ranking also remained >85% in #270**);
+2. the confirmed strict positive-threshold base remains safe on the original DEV but its acceptance boundary is not surface-robust;
+3. generic contradiction NLI does not encode missing capability;
+4. fixed positive/negative/background prototype banks contain signal but scalar and relative-rank heuristics cannot jointly satisfy **>=85% exact / >=97% near rejection / 100% OOD / <=1% false-route**;
+5. fixed-prototype heuristic refinement is closed;
+6. #198 calibration/blind remains blocked;
+7. the next behavior-changing experiment must test a learned or externally pretrained **match / no_match / unknown verifier** that can veto the raw registered winner but can never reroute or create execution authority.
+
+The architectural invariant remains:
+
+> Semantic models may rank or veto only among locally registered authority. They do not create execution authority.
