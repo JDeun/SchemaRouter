@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import math
 from collections.abc import Awaitable, Callable, Iterable
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -45,6 +45,43 @@ class DecisionRequest(_DecisionModel):
         return self
 
 
+DecisionEvidenceState = Literal["match", "no_match", "unknown"]
+
+
+class DecisionEvidence(_DecisionModel):
+    """One typed, non-authoritative observation used by a bounded decision.
+
+    Evidence can rank, veto, or explain only options already present in the
+    DecisionRequest. An unavailable signal is represented as unknown rather
+    than a fabricated numeric score.
+    """
+
+    kind: str = Field(min_length=1)
+    state: DecisionEvidenceState
+    source: str = Field(min_length=1)
+    option_id: str | None = None
+    score: float | None = None
+    score_kind: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def validate_evidence(self) -> DecisionEvidence:
+        if not self.kind.strip():
+            raise ValueError("decision evidence kind must contain non-whitespace text")
+        if not self.source.strip():
+            raise ValueError("decision evidence source must contain non-whitespace text")
+        if self.option_id is not None and not self.option_id.strip():
+            raise ValueError("decision evidence option_id must contain non-whitespace text")
+        if self.score_kind is not None and not self.score_kind.strip():
+            raise ValueError("decision evidence score_kind must contain non-whitespace text")
+        if self.score is not None and not math.isfinite(self.score):
+            raise ValueError("decision evidence scores must be finite")
+        if self.state == "unknown" and self.score is not None:
+            raise ValueError("unknown decision evidence cannot carry a numeric score")
+        if self.score is not None and self.score_kind is None:
+            raise ValueError("numeric decision evidence requires score_kind")
+        return self
+
 class DecisionSelection(_DecisionModel):
     option_id: str = Field(min_length=1)
     score: float | None = Field(default=None, ge=0.0, le=1.0)
@@ -59,6 +96,7 @@ class DecisionSelection(_DecisionModel):
 class DecisionResult(_DecisionModel):
     selections: list[DecisionSelection] = Field(default_factory=list)
     abstained: bool = False
+    evidence: list[DecisionEvidence] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -98,6 +136,18 @@ def validate_decision(request: DecisionRequest, result: DecisionResult) -> Decis
     if unknown:
         raise PlanningError(
             "decision backend returned unknown option IDs: " + ", ".join(unknown)
+        )
+    evidence_unknown = sorted(
+        {
+            item.option_id
+            for item in result.evidence
+            if item.option_id is not None and item.option_id not in allowed
+        }
+    )
+    if evidence_unknown:
+        raise PlanningError(
+            "decision backend returned evidence for unknown option IDs: "
+            + ", ".join(evidence_unknown)
         )
     if len(selected) > request.max_selections:
         raise PlanningError("decision backend exceeded max_selections")
