@@ -5,18 +5,22 @@ on:
     paths:
       - ".github/workflows/research-operation-routing-quality-v4.yml"
       - "benchmarks/operation-fit-0.11-quality-v4-cycle.json"
+      - "benchmarks/operation-routing-v4-operation-fit-selector-ablation.json"
       - "scripts/generate_decision_routing_quality_v4.py"
       - "scripts/audit_operation_routing_corpus.py"
       - "scripts/analyze_operation_routing_quality_v4_dev.py"
+      - "scripts/analyze_operation_routing_v4_selector.py"
       - "scripts/benchmark_decision_routing.py"
       - "src/schemarouter/decisions.py"
       - "src/schemarouter/pairwise.py"
       - "src/schemarouter/planner.py"
       - "tests/test_decisions.py"
+      - "tests/test_planner.py"
       - "tests/test_pairwise_decision_backend.py"
       - "tests/test_operation_routing_quality_v4_generator.py"
       - "tests/test_operation_routing_quality_v4_protocol.py"
       - "tests/test_operation_routing_quality_v4_analysis.py"
+      - "tests/test_operation_routing_v4_selector_analysis.py"
 
 permissions:
   contents: read
@@ -46,10 +50,10 @@ jobs:
       - run: pip install -e ".[dev]"
       - name: Lint v4 research surface
         run: |
-          ruff check             scripts/generate_decision_routing_quality_v4.py             scripts/audit_operation_routing_corpus.py             scripts/analyze_operation_routing_quality_v4_dev.py             scripts/benchmark_decision_routing.py             src/schemarouter/decisions.py             src/schemarouter/pairwise.py             tests/test_operation_routing_quality_v4_generator.py             tests/test_operation_routing_quality_v4_protocol.py             tests/test_operation_routing_quality_v4_analysis.py
+          ruff check             scripts/generate_decision_routing_quality_v4.py             scripts/audit_operation_routing_corpus.py             scripts/analyze_operation_routing_quality_v4_dev.py             scripts/analyze_operation_routing_v4_selector.py             scripts/benchmark_decision_routing.py             src/schemarouter/decisions.py             src/schemarouter/pairwise.py             src/schemarouter/planner.py             tests/test_planner.py             tests/test_operation_routing_quality_v4_generator.py             tests/test_operation_routing_quality_v4_protocol.py             tests/test_operation_routing_quality_v4_analysis.py             tests/test_operation_routing_v4_selector_analysis.py
       - name: Validate v4 contracts
         run: |
-          pytest -q             tests/test_decisions.py             tests/test_pairwise_decision_backend.py             tests/test_operation_routing_quality_v4_generator.py             tests/test_operation_routing_quality_v4_protocol.py             tests/test_operation_routing_quality_v4_analysis.py
+          pytest -q             tests/test_decisions.py             tests/test_planner.py             tests/test_pairwise_decision_backend.py             tests/test_operation_routing_quality_v4_generator.py             tests/test_operation_routing_quality_v4_protocol.py             tests/test_operation_routing_quality_v4_analysis.py             tests/test_operation_routing_v4_selector_analysis.py
 
   baseline:
     needs: contracts
@@ -75,11 +79,15 @@ jobs:
       - name: Run fresh v4 development baselines
         run: |
           BASELINE="keyword+semantic-recall+capability-fit+operation-fit+endpoint-disambiguation"
+          SELECTOR="keyword+semantic-recall+capability-fit+operation-fit+accepted-selector+endpoint-disambiguation"
           HISTORICAL="keyword+graph-operation+graph-semantic-seed+graph-propagation+graph-corroboration+graph-static-option-cache+selective-semantic-recall+selective-capability-fit+selective-operation-fit+selective-endpoint-disambiguation"
-          python scripts/benchmark_decision_routing.py             --corpus artifacts/v4-dev/corpus.json             --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed             --candidate-recall-limit 2             --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed             --candidate-fit-min-similarity 0.25             --operation-fit-pairwise-callable benchmarks.bge_contrastive:score_pairs             --operation-fit-min-score 0.01             --operation-fit-min-margin 0.0             --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed             --endpoint-disambiguation-min-margin 0.03             --graph-operation-gate             --graph-semantic-seed-embedding-callable benchmarks.multilingual_embedder:embed             --graph-semantic-seed-min-similarity 0.45             --graph-semantic-seed-min-margin 0.10             --graph-semantic-direct-min-similarity 0.55             --graph-semantic-direct-min-margin 0.15             --graph-semantic-propagation             --graph-semantic-propagation-scope ranked_only             --graph-semantic-propagation-limit 2             --graph-semantic-propagation-on-abstain reject             --graph-semantic-corroborate-abstain             --graph-cache-static-embedding-options             --counterbalanced             --warmup-cases 24             --planner-name "${BASELINE}"             --planner-name "${HISTORICAL}"             --hardware-label "GitHub Actions ubuntu-latest x64 CPU v4 fresh development"             --json-out artifacts/v4-dev/report.json
+          python scripts/benchmark_decision_routing.py             --corpus artifacts/v4-dev/corpus.json             --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed             --candidate-recall-limit 2             --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed             --candidate-fit-min-similarity 0.25             --operation-fit-pairwise-callable benchmarks.bge_contrastive:score_pairs             --operation-fit-min-score 0.01             --operation-fit-min-margin 0.0             --operation-fit-select-accepted             --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed             --endpoint-disambiguation-min-margin 0.03             --graph-operation-gate             --graph-semantic-seed-embedding-callable benchmarks.multilingual_embedder:embed             --graph-semantic-seed-min-similarity 0.45             --graph-semantic-seed-min-margin 0.10             --graph-semantic-direct-min-similarity 0.55             --graph-semantic-direct-min-margin 0.15             --graph-semantic-propagation             --graph-semantic-propagation-scope ranked_only             --graph-semantic-propagation-limit 2             --graph-semantic-propagation-on-abstain reject             --graph-semantic-corroborate-abstain             --graph-cache-static-embedding-options             --counterbalanced             --warmup-cases 24             --planner-name "${BASELINE}"             --planner-name "${SELECTOR}"             --planner-name "${HISTORICAL}"             --hardware-label "GitHub Actions ubuntu-latest x64 CPU v4 fresh development"             --json-out artifacts/v4-dev/report.json
       - name: Analyze fresh v4 starting point
         run: |
           python scripts/analyze_operation_routing_quality_v4_dev.py             --report artifacts/v4-dev/report.json             --out artifacts/v4-dev/analysis.json
+      - name: Analyze accepted operation selector ablation
+        run: |
+          python scripts/analyze_operation_routing_v4_selector.py             --report artifacts/v4-dev/report.json             --out artifacts/v4-dev/selector-analysis.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
@@ -87,6 +95,7 @@ jobs:
           path: |
             artifacts/v4-dev/report.json
             artifacts/v4-dev/analysis.json
+            artifacts/v4-dev/selector-analysis.json
             artifacts/v4-dev/corpus-manifest.json
             artifacts/v4-dev/corpus-audit.json
           if-no-files-found: error
