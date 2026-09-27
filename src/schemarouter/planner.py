@@ -311,6 +311,7 @@ class SchemaPlanner:
         decision_policy: DecisionPolicy | None = None,
         candidate_recall_backend: DecisionBackend | None = None,
         candidate_recall_limit: int = 4,
+        candidate_recall_mode: Literal["augment", "replace"] = "augment",
         candidate_fit_backend: DecisionBackend | None = None,
         operation_fit_backend: DecisionBackend | None = None,
         operation_fit_select_accepted: bool = False,
@@ -338,6 +339,10 @@ class SchemaPlanner:
             or candidate_recall_limit < 1
         ):
             raise ValueError("candidate_recall_limit must be an integer >= 1")
+        if candidate_recall_mode not in {"augment", "replace"}:
+            raise ValueError(
+                "candidate_recall_mode must be 'augment' or 'replace'"
+            )
         for name, value in (
             ("graph_semantic_direct_min_similarity", graph_semantic_direct_min_similarity),
             ("graph_semantic_direct_min_margin", graph_semantic_direct_min_margin),
@@ -395,6 +400,7 @@ class SchemaPlanner:
         self.decision_policy = decision_policy or DecisionPolicy()
         self.candidate_recall_backend = candidate_recall_backend
         self.candidate_recall_limit = candidate_recall_limit
+        self.candidate_recall_mode = candidate_recall_mode
         self.candidate_fit_backend = candidate_fit_backend
         self.operation_fit_backend = operation_fit_backend
         self.operation_fit_select_accepted = operation_fit_select_accepted
@@ -756,6 +762,18 @@ class SchemaPlanner:
             int(item.option_id.split(":", 1)[1])
             for item in result.selections
         ]
+        if self.candidate_recall_mode == "replace":
+            selected = [
+                replace(
+                    catalog[index],
+                    selection_source="semantic_recall",
+                )
+                for index in selected_indexes
+            ]
+            return selected, [
+                "semantic candidate recall replaced candidates with "
+                f"{len(selected)} selected route(s)"
+            ]
         merged, added = self._merge_semantic_recall(
             candidates,
             catalog,
@@ -806,6 +824,18 @@ class SchemaPlanner:
             int(item.option_id.split(":", 1)[1])
             for item in result.selections
         ]
+        if self.candidate_recall_mode == "replace":
+            selected = [
+                replace(
+                    catalog[index],
+                    selection_source="semantic_recall",
+                )
+                for index in selected_indexes
+            ]
+            return selected, [
+                "semantic candidate recall replaced candidates with "
+                f"{len(selected)} selected route(s)"
+            ]
         merged, added = self._merge_semantic_recall(
             candidates,
             catalog,
