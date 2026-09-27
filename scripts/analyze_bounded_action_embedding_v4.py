@@ -15,7 +15,6 @@ import math
 import statistics
 import sys
 import time
-from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +25,7 @@ for _path in (_PROJECT_ROOT, _SCRIPTS_DIR):
         sys.path.insert(0, str(_path))
 
 from benchmark_decision_routing import reference_registry  # noqa: E402
+
 from benchmarks.multilingual_embedder import embed  # noqa: E402
 from schemarouter import (  # noqa: E402
     CachedEmbeddingDecisionBackend,
