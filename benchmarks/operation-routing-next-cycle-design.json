@@ -70,7 +70,18 @@
       "mean/p50/p95 latency",
       "invalid plans",
       "execution errors"
-    ]
+    ],
+    "corpus_audit_script": "scripts/audit_operation_routing_corpus.py",
+    "corpus_audit_required": true,
+    "corpus_audit_before_model_scoring": true,
+    "leakage_review": [
+      "label-associated token gaps",
+      "normalized exact duplicates",
+      "high-overlap paraphrase/template pairs",
+      "language/category/route balance",
+      "semantic family holdout audit"
+    ],
+    "production_claim_requires_non_label_revealing_blind_evidence": true
   },
   "research_hygiene": {
     "forbidden_for_tuning": [
@@ -82,7 +93,8 @@
       "any future calibration or blind corpus"
     ],
     "current_0_10_graph_dev": "may be used only for retrospective diagnosis of the completed 0.10 cycle; do not reuse it as the sole selection corpus for the next cycle",
-    "corpus_generation": "Do not generate the next cycle's fresh corpora until the current graph-projection cycle is formally closed."
+    "corpus_generation": "Do not generate the next cycle's fresh corpora until the current graph-projection cycle is formally closed.",
+    "benchmark_leakage_policy": "Do not include instructions such as unsupported, reject, schema support, endpoint selection, or capability graph as label-revealing wrapper cues in production-claim calibration/blind corpora."
   },
   "promotion": {
     "requires_all_gates": true,
