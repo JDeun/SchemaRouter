@@ -153,6 +153,7 @@ nav:
   - Project:
       - Operation routing quality: project/operation-routing-quality-roadmap.md
       - Operation benchmark audit: project/operation-routing-benchmark-audit.md
+      - Router ecosystem source audit: project/router-ecosystem-source-code-audit.md
       - Versioning: versioning.md
       - Release notes:
           - 0.9.0: releases/0.9.0.md
