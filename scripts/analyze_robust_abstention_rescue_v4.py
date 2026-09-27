@@ -23,8 +23,6 @@ from benchmark_decision_routing import reference_registry  # noqa: E402
 
 from benchmarks.bge_m3_frozen_candidate import (  # noqa: E402
     FROZEN_THRESHOLDS,
-    MODEL_NAME,
-    MODEL_REVISION,
     FrozenBgeM3DualViewBackend,
 )
 
