@@ -946,10 +946,11 @@ class SchemaPlanner:
 
         context: dict[str, Any] = {
             "surface": "operation_capability_fit",
-            "scope": self.operation_fit_scope,
         }
         if self.operation_fit_scope == "primary_tool":
             context["tool"] = primary_tool
+        else:
+            context["scope"] = "all_candidates"
 
         return DecisionRequest(
             query=request.query,
