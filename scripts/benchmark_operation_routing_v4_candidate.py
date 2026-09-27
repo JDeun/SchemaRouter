@@ -6,17 +6,22 @@ import json
 import math
 import os
 import statistics
+import sys
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-from schemarouter import (
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
+from schemarouter import (  # noqa: E402
     EmbeddingDecisionBackend,
     PairwiseDecisionBackend,
     SchemaPlanner,
 )
 
-from scripts.benchmark_decision_routing import (
+from scripts.benchmark_decision_routing import (  # noqa: E402
     BenchmarkRow,
     RecordingDecisionBackend,
     _corpus_sha256,
