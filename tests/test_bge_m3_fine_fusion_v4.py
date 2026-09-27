@@ -30,3 +30,16 @@ def test_schema_weight_grid_is_frozen() -> None:
         0.55,
         0.60,
     )
+
+
+def test_fine_strategy_names_are_stable() -> None:
+    module = _module()
+    assert set(module.FINE_STRATEGIES) == {
+        "fusion_schema_0.30",
+        "fusion_schema_0.35",
+        "fusion_schema_0.40",
+        "fusion_schema_0.45",
+        "fusion_schema_0.50",
+        "fusion_schema_0.55",
+        "fusion_schema_0.60",
+    }
