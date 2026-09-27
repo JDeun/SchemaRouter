@@ -12,6 +12,7 @@ from benchmark_decision_routing import reference_registry  # noqa: E402
 
 from benchmarks.bge_m3_frozen_candidate import (  # noqa: E402
     ACTION_WEIGHT,
+    BOUNDARY_EPSILON,
     FROZEN_THRESHOLDS,
     SCHEMA_WEIGHT,
     AcceptAllRegisteredRecallBackend,
@@ -54,8 +55,9 @@ def test_frozen_thresholds_cover_reference_registry_exactly() -> None:
     }
     assert registered == set(FROZEN_THRESHOLDS)
     assert len(registered) == 16
-    assert SCHEMA_WEIGHT == 0.5
-    assert ACTION_WEIGHT == 0.5
+    assert SCHEMA_WEIGHT == 0.55
+    assert ACTION_WEIGHT == 0.45
+    assert BOUNDARY_EPSILON == 1e-6
 
 
 def test_registered_recall_returns_only_offered_ids() -> None:
@@ -104,3 +106,21 @@ def test_frozen_backend_can_select_only_an_offered_registered_route() -> None:
     selected = result.selections[0].option_id
     assert selected in {option.id for option in request.options}
     assert result.metadata["top_route"] == "calendar.create"
+
+
+def test_frozen_backend_uses_preregistered_boundary_epsilon() -> None:
+    registry = reference_registry()
+
+    class BoundaryEmbedder:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def __call__(self, texts: list[str]) -> list[list[float]]:
+            self.calls += 1
+            if len(texts) > 1:
+                return [[1.0, 0.0] for _ in texts]
+            return [[1.0, 0.0]]
+
+    backend = FrozenBgeM3DualViewBackend(registry, BoundaryEmbedder())
+    assert BOUNDARY_EPSILON > 0.0
+    assert backend.route_ids
