@@ -1268,50 +1268,100 @@ Provenance:
 - artifact: `10944407595`;
 - artifact SHA-256: `00eb49f680d7b1bdfa8c341c2f091c641e4912ca94c9f0bc81815db3e70b3643`.
 
-## 35. Active experiment — dual signed negative open-world detector
+## 35. #279 — dual signed negative open-world detector
 
-Work item #279 / PR #280 separates the two open-set failure modes into independent veto channels while preserving BGE-M3 raw top-1 as the only execution-route authority.
+Work item #279 / PR #280 explicitly separated near-domain and OOD veto evidence while keeping BGE-M3 raw top-1 as the only route authority.
 
 ### Near-domain channel
 
-Reuse the frozen #275 route-conditioned unsupported-action prototype bank.
-
-For the raw winner domain:
-
-- maximum explicit negative capability score;
+- route-conditioned explicit unsupported-action prototypes from #275;
+- maximum negative score;
 - negative-over-raw-winner-action signed advantage.
-
-The channel can only veto the raw winner.
 
 ### OOD channel
 
-Use:
-
 - eight registered domain anchors;
-- sixteen preregistered broad background-domain prototypes.
-
-Compute:
-
-- max registered-domain similarity;
-- max background similarity;
+- sixteen broad background-domain prototypes;
+- maximum background score;
 - background-over-known-domain signed advantage.
 
-OOD rejection is therefore contrastive against an explicit background bank rather than based on an absolute low positive/domain score.
+No low-positive or route-local positive acceptance threshold was used.
 
-### Fixed experiment
+The fixed preregistered grid contained **1,764** rules.
 
-- no positive route-local acceptance threshold;
-- no pseudo-route;
+Result:
+
+- raw supported top-1: **88.4549%**;
+- mean / p95 latency: **183.79 / 200.07 ms**;
+- promotion-gate rules: **0**.
+
+The trade-off exposed the structural limit of scalar signed evidence:
+
+- best rule retaining supported exact >=85%:
+  - exact **85.8507%**;
+  - near-domain rejection **86.8056%**;
+  - OOD rejection **69.4444%**;
+  - false-route **98/648 = 15.1235%**;
+- best rule with near >=97% and OOD =100%:
+  - exact **65.3646%**;
+  - false-route **15/648 = 2.3148%**;
+- best rule with OOD =100% and false-route <=1%:
+  - exact **36.0243%**;
+  - near-domain rejection **99.4792%**;
+  - false-route **3/648 = 0.4630%**.
+
+Background-over-known-domain signed-advantage distributions overlap around zero:
+
+- correct-supported median **-0.0890**, p95 **-0.0040**, max **+0.0714**;
+- OOD median **+0.0418**, p05 **-0.0212**, min **-0.0359**.
+
+Decision: **rejected**.
+
+This result closes the scalar-threshold line for the fixed prototype family. Finer threshold search would optimize inside an overlapping distribution rather than solve the open-set representation problem.
+
+Provenance:
+
+- workflow: `36358352642`;
+- artifact: `10944663761`;
+- artifact SHA-256: `f04242ac79d22b35f29486b9f3b94b3ce1603400bfc87382ec73a412905cea83`.
+
+## 36. Active experiment — rank-based capability-set open-world veto
+
+Work item #281 / PR #283 tests a threshold-free alternative using only **relative prototype ordering**.
+
+The route authority remains unchanged:
+
+- BGE-M3 raw registered global top-1;
+- no positive acceptance threshold;
 - no rank-2 fallback;
-- both channels veto only;
-- fixed grid: **1,764** rules;
-- original tuning DEV only;
-- failed #270 fresh-surface corpus forbidden for tuning;
-- calibration/blind untouched.
+- no pseudo-route;
+- capability evidence may only veto.
 
-Workflow: `36358352642`.
+### Near-domain local set
 
-If a rule passes 85/97/1 on DEV, it must be frozen unchanged and confirmed on a **new** preregistered fresh-surface DEV corpus distinct from #270 before calibration/blind evaluation.
+Within the raw winner domain, rank:
 
-If #279 fails, the research line should stop scalar-threshold refinement and move to a richer capability-set/open-world detector rather than another positive-score tuning pass.
+- registered positive endpoint capability prototypes;
+- four frozen explicit unsupported-action prototypes.
+
+Five preregistered rules use only top-k class composition or whether the best negative outranks the raw-route positive prototype.
+
+### OOD global membership set
+
+Rank:
+
+- eight registered domain anchors;
+- sixteen broad background-domain prototypes.
+
+Four preregistered rules use only background/known composition in top-1, top-2, top-3 or top-5.
+
+The Cartesian product contains **20 fixed rules** and uses **no similarity thresholds**.
+
+This is intended to test whether relative semantic ordering is more stable than absolute or signed score magnitudes under surface-form shifts.
+
+Workflow: `36359121048`.
+
+If all 20 rules fail, fixed-prototype heuristic refinement ends. The next research architecture should be a learned or externally pretrained open-set capability classifier constrained to veto-only authority.
+
+The failed #270 fresh-surface set remains confirmation-only and forbidden for tuning. Calibration/blind evidence remains untouched.
 
