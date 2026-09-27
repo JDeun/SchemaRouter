@@ -152,6 +152,7 @@ nav:
       - Security model: security/threat-model.md
   - Project:
       - Operation routing quality: project/operation-routing-quality-roadmap.md
+      - Operation benchmark audit: project/operation-routing-benchmark-audit.md
       - Versioning: versioning.md
       - Release notes:
           - 0.9.0: releases/0.9.0.md
