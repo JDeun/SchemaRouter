@@ -29,6 +29,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "DecisionFallback",
         "DecisionPolicy",
         "DecisionCallable",
+        "DecisionEvidence",
+        "DecisionEvidenceState",
         "DecisionOption",
         "DecisionOptionTextCallable",
         "DecisionRequest",
