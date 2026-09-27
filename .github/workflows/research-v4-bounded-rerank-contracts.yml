@@ -1,0 +1,37 @@
+name: V4 Bounded Rerank Contracts
+
+on:
+  push:
+    branches:
+      - "research/v4-bounded-rerank"
+    paths:
+      - ".github/workflows/research-v4-bounded-rerank-contracts.yml"
+      - "benchmarks/operation-routing-v4-bounded-rerank.json"
+      - "src/schemarouter/planner.py"
+      - "scripts/benchmark_decision_routing.py"
+      - "tests/test_planner.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v4-bounded-rerank-contracts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Validate bounded rerank surface
+        run: |
+          python -m py_compile src/schemarouter/planner.py scripts/benchmark_decision_routing.py
+          ruff check src/schemarouter/planner.py scripts/benchmark_decision_routing.py tests/test_planner.py
+          pytest -q tests/test_planner.py
