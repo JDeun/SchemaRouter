@@ -1,0 +1,62 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "ablation": "operation-narrow-multilingual-nli-boundary-v1",
+  "status": "design_frozen_before_inspecting_any_nli_result",
+  "base_revision": "470d126c7dedb93e71640d29222fc007f95126d9",
+  "supersedes": {
+    "pull_request": 192,
+    "reason": "PR #192 used a redundant selector branch and the generic candidate pipeline. No result from that run is eligible for threshold selection."
+  },
+  "source_evidence": {
+    "route_local_threshold_pr": 191,
+    "route_local_threshold_supported_exact_route_accuracy": 0.7161458333333334,
+    "route_local_threshold_near_domain_unsupported_rejection": 0.9357638888888888,
+    "route_local_threshold_false_route_rate": 0.05864197530864197,
+    "operation_narrow_raw_pairwise_top_rank_ceiling": 0.7751736111111112,
+    "interpretation": "Operation-narrow has materially more ranking headroom than the generic gate path, but BGE score thresholds do not provide a safe open-set boundary."
+  },
+  "hypothesis": "Replacing the operation-narrow BGE relevance boundary with a multilingual entailment-oriented score can improve the distinction between semantically related requests and actually supported registered operations while preserving schema-bounded authority.",
+  "model": {
+    "id": "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli",
+    "role": "development-only bounded operation entailment scorer",
+    "runtime_integration": "benchmark-only; no core package dependency",
+    "premise": "user query",
+    "hypothesis_template": "The user is requesting exactly this operation: {operation_text}",
+    "score": "softmax entailment probability",
+    "max_length": 256
+  },
+  "architecture": [
+    "Use the existing graph-first v4 candidate surface and operation_fit_mode=narrow.",
+    "Preserve semantic candidate recall, graph semantic seed, ranked-only propagation, corroboration, and static option caching exactly as in the existing operation-narrow experiment.",
+    "Disable generic capability-fit exactly as in PR #191 so the experiment isolates the operation boundary.",
+    "Replace only the bounded operation-fit pairwise scorer from BGE relevance to multilingual NLI entailment.",
+    "An accepted NLI result may narrow only the already-authorized leading-tool sibling set; no route, tool, field, argument, or authority is synthesized.",
+    "Abstention remains fail-closed."
+  ],
+  "threshold_grid": [0.2, 0.35, 0.5, 0.65, 0.8, 0.9],
+  "selection_rule": {
+    "dataset": "same fresh v4 1800-case tuning-eligible development corpus",
+    "primary": "Among candidates passing every standing development gate, choose the highest supported exact-route accuracy; tie-break by lower canonical false-route rate, then lower p95 latency.",
+    "no_passing_candidate": "Reject NLI-as-single-boundary for promotion and proceed to independently typed multi-signal evidence; do not invent intermediate thresholds after seeing results."
+  },
+  "gates": {
+    "supported_exact_route_accuracy_min": 0.7,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0
+  },
+  "long_term_target": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "unsupported_rejection_target": "0.97-0.99",
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0
+  },
+  "research_hygiene": [
+    "Do not inspect or use the superseded PR #192 NLI outputs for threshold selection.",
+    "Do not alter the frozen threshold grid after inspecting this run.",
+    "Do not use calibration or blind corpora for development selection.",
+    "Do not add corpus-derived negative phrases or unsupported-family labels to the NLI input.",
+    "If a candidate passes all development gates, freeze its complete configuration before any confirmation corpus is evaluated."
+  ]
+}
