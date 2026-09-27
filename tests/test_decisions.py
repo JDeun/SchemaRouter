@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from schemarouter import (
     CallableDecisionBackend,
+    DecisionEvidence,
     DecisionOption,
     DecisionRequest,
     DecisionResult,
@@ -83,6 +84,68 @@ def test_abstention_cannot_smuggle_a_selection() -> None:
             abstained=True,
             selections=[DecisionSelection(option_id="endpoint:0")],
         )
+
+
+def test_typed_decision_evidence_preserves_unknown_without_fabricated_score() -> None:
+    result = DecisionResult(
+        abstained=True,
+        evidence=[
+            DecisionEvidence(
+                kind="tool_domain",
+                state="unknown",
+                source="domain-encoder",
+                option_id="endpoint:0",
+            )
+        ],
+    )
+
+    validated = choose_sync(CallableDecisionBackend(lambda _: result), request())
+
+    assert validated.abstained is True
+    assert validated.evidence[0].state == "unknown"
+    assert validated.evidence[0].score is None
+
+
+def test_numeric_decision_evidence_requires_a_score_kind() -> None:
+    with pytest.raises(ValidationError, match="score_kind"):
+        DecisionEvidence(
+            kind="operation_action",
+            state="match",
+            source="reranker",
+            option_id="endpoint:0",
+            score=0.8,
+        )
+
+
+def test_unknown_decision_evidence_rejects_numeric_score() -> None:
+    with pytest.raises(ValidationError, match="unknown"):
+        DecisionEvidence(
+            kind="operation_action",
+            state="unknown",
+            source="reranker",
+            option_id="endpoint:0",
+            score=0.0,
+            score_kind="pairwise",
+        )
+
+
+def test_decision_evidence_cannot_reference_unoffered_option() -> None:
+    result = DecisionResult(
+        abstained=True,
+        evidence=[
+            DecisionEvidence(
+                kind="tool_domain",
+                state="match",
+                source="domain-encoder",
+                option_id="endpoint:evil",
+                score=0.9,
+                score_kind="cosine",
+            )
+        ],
+    )
+
+    with pytest.raises(PlanningError, match="evidence for unknown option"):
+        choose_sync(CallableDecisionBackend(lambda _: result), request())
 
 
 def test_extra_backend_fields_are_rejected() -> None:
