@@ -128,7 +128,7 @@ def main() -> None:
         reference_seed=args.reference_seed,
     )
     payload = json.dumps(cases, ensure_ascii=False, indent=2) + "\n"
-    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+    digest = hashlib.sha256(payload.encode()).hexdigest()
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(payload, encoding="utf-8")
