@@ -12,6 +12,7 @@ on:
       - "scripts/analyze_operation_routing_v4_selector.py"
       - "scripts/benchmark_decision_routing.py"
       - "src/schemarouter/decisions.py"
+      - "src/schemarouter/models.py"
       - "src/schemarouter/pairwise.py"
       - "src/schemarouter/planner.py"
       - "tests/test_decisions.py"
@@ -50,7 +51,7 @@ jobs:
       - run: pip install -e ".[dev]"
       - name: Lint v4 research surface
         run: |
-          ruff check             scripts/generate_decision_routing_quality_v4.py             scripts/audit_operation_routing_corpus.py             scripts/analyze_operation_routing_quality_v4_dev.py             scripts/analyze_operation_routing_v4_selector.py             scripts/benchmark_decision_routing.py             src/schemarouter/decisions.py             src/schemarouter/pairwise.py             src/schemarouter/planner.py             tests/test_planner.py             tests/test_operation_routing_quality_v4_generator.py             tests/test_operation_routing_quality_v4_protocol.py             tests/test_operation_routing_quality_v4_analysis.py             tests/test_operation_routing_v4_selector_analysis.py
+          ruff check             scripts/generate_decision_routing_quality_v4.py             scripts/audit_operation_routing_corpus.py             scripts/analyze_operation_routing_quality_v4_dev.py             scripts/analyze_operation_routing_v4_selector.py             scripts/benchmark_decision_routing.py             src/schemarouter/decisions.py             src/schemarouter/models.py             src/schemarouter/pairwise.py             src/schemarouter/planner.py             tests/test_planner.py             tests/test_operation_routing_quality_v4_generator.py             tests/test_operation_routing_quality_v4_protocol.py             tests/test_operation_routing_quality_v4_analysis.py             tests/test_operation_routing_v4_selector_analysis.py
       - name: Validate v4 contracts
         run: |
           pytest -q             tests/test_decisions.py             tests/test_planner.py             tests/test_pairwise_decision_backend.py             tests/test_operation_routing_quality_v4_generator.py             tests/test_operation_routing_quality_v4_protocol.py             tests/test_operation_routing_quality_v4_analysis.py             tests/test_operation_routing_v4_selector_analysis.py
