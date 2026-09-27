@@ -1,0 +1,75 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "global-signed-capability-prototype-bank-v1",
+  "work_item": 277,
+  "parent_work_items": [197, 221, 273, 275],
+  "status": "preregistered_before_execution",
+  "route_authority": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "selection": "global registered raw top-1",
+    "positive_route_local_thresholds": false,
+    "prototype_bank_can_select_route": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "positive_bank": {
+    "count": 16,
+    "surface": [
+      "normalized endpoint action",
+      "trusted operation_aliases",
+      "endpoint description"
+    ]
+  },
+  "negative_bank": {
+    "count": 32,
+    "source": "unchanged explicit negative-capability taxonomy from experiment #275",
+    "scope": "global across all domains"
+  },
+  "typed_evidence": {
+    "capability_envelope": "max(max_positive_score, max_negative_score)",
+    "signed_advantage": "max_negative_score - max_positive_score",
+    "ood_veto": "capability_envelope < envelope_min",
+    "negative_veto": "max_negative_score >= negative_min and signed_advantage >= signed_advantage_min",
+    "positive_consistency_mode": "optional veto when top positive prototype route differs from raw route",
+    "veto_only": true
+  },
+  "grid": {
+    "envelope_min": [0.35, 0.40, 0.45, 0.50, 0.55, 0.60],
+    "negative_min": [0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65],
+    "signed_advantage_min": [-0.10, -0.05, 0.0, 0.025, 0.05, 0.10],
+    "require_positive_consistency": [false, true],
+    "fixed_rule_count": 504,
+    "interpolation_forbidden": true
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "failed_270_fresh_surface_forbidden": true,
+    "calibration_or_blind_forbidden": true
+  },
+  "promotion_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "p95_latency_ms_max": 250.0
+  },
+  "selection_order": [
+    "highest supported exact",
+    "lowest false-route count",
+    "highest near-domain rejection",
+    "highest OOD rejection",
+    "lexical frozen rule id"
+  ],
+  "promotion_policy": "Diagnostic only. Any passing rule must be frozen unchanged in a separate executable candidate and confirmed on a new preregistered fresh-surface DEV corpus distinct from #270 before calibration/blind use."
+}
