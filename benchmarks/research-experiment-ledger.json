@@ -1418,7 +1418,7 @@
       "issue": 277,
       "pull_request": 278,
       "preregistered": true,
-      "status": "executing",
+      "status": "completed",
       "workflow_run_id": 36356550905,
       "design": {
         "route_authority": "BGE-M3 raw registered top-1 only",
@@ -1431,6 +1431,44 @@
         ],
         "fixed_rule_count": 504
       },
+      "decision": "rejected_global_signed_prototype_evidence_too_coarse",
+      "artifact_id": 10944407595,
+      "artifact_sha256": "00eb49f680d7b1bdfa8c341c2f091c641e4912ca94c9f0bc81815db3e70b3643",
+      "result": {
+        "raw_supported_top1_accuracy": 0.8845486111111112,
+        "mean_latency_ms": 157.09005567944445,
+        "p95_latency_ms": 180.99912650000002,
+        "fixed_rule_count": 504,
+        "candidate_worthy_rule_count": 0,
+        "best_strict_rule": {
+          "rule_id": "e0.450-n0.350-a+0.050-noagree",
+          "supported_exact_route_accuracy": 0.8185763888888888,
+          "near_domain_unsupported_rejection": 0.9895833333333334,
+          "out_of_domain_rejection": 1,
+          "false_routes": 6,
+          "false_route_rate": 0.009259259259259259,
+          "vetoed_supported_correct_winners": 76
+        }
+      },
+      "interpretation": "The global signed capability bank can impose <=1% false-route and 100% OOD safety, but the best strict rule vetoes 76 otherwise-correct supported raw winners and falls to 81.86% exact. Preserve the route-conditioned negative-capability finding from #275 and separate OOD into an explicit background/open-world channel."
+    },
+    {
+      "id": "0.11-dual-signed-negative-openworld",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 279,
+      "pull_request": 280,
+      "preregistered": true,
+      "status": "executing",
+      "workflow_run_id": 36358352642,
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "near_domain_channel": "route-conditioned explicit negative capability signed advantage",
+        "ood_channel": "broad background prototype minus registered-domain anchor signed advantage",
+        "background_prototype_count": 16,
+        "fixed_rule_count": 1764,
+        "positive_route_local_thresholds": false,
+        "veto_only": true
+      },
       "decision": "executing"
     }
   ],
@@ -1439,18 +1477,19 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "separate registered route ranking from open-set evidence",
-      "use explicit positive/negative capability prototypes globally rather than route-local positive thresholds",
-      "treat capability evidence as veto-only and never as route authority",
-      "test OOD capability-envelope evidence separately from near-domain signed negative evidence",
-      "if a DEV rule passes, freeze it and confirm on a new preregistered fresh-surface DEV distinct from #270",
+      "retain BGE-M3 raw registered top-1 as the only route authority",
+      "use route-conditioned explicit negative capability evidence for near-domain unsupported veto",
+      "use a separate background-vs-known-domain signed evidence channel for OOD rather than any absolute low-positive threshold",
+      "keep all open-set evidence veto-only",
+      "if #279 passes DEV, freeze exactly one rule and confirm on a new preregistered fresh-surface DEV distinct from #270",
+      "if #279 fails, stop scalar threshold refinement and move to a richer capability-set/open-world detector",
       "keep calibration/blind evidence untouched until fresh-surface confirmation passes"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "global signed capability prototype bank (#277 / PR #278)",
+    "active_experiment": "dual signed negative open-world detector (#279 / PR #280)",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1463,7 +1502,7 @@
     "zero_false_crossencoder_rescue_status": "#255 rescued only 5 correct supported cases at zero added false routes, reaching 84.20%; rejected.",
     "fresh_surface_result": "#265/#270 passed same-corpus 85/97/1 but failed zero-overlap fresh-surface open-set safety: 86.72% exact, 77.78% near rejection, 19.75% false-route. Ranking generalized; positive acceptance thresholds did not.",
     "generic_nli_status": "#273 rejected contradiction-only NLI because both supported and unsupported operation pairs were predominantly neutral.",
-    "explicit_negative_prototype_status": "#275 found useful near-domain signed negative evidence but failed when combined with a winner-domain absolute OOD threshold."
+    "explicit_negative_prototype_status": "#275 found useful near-domain signed negative evidence; #277 showed that a global signed bank is too coarse. #279 now separates route-conditioned near-domain negative veto from a distinct background-vs-known-domain OOD channel."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -1510,14 +1549,15 @@
       266,
       271,
       273,
-      275
+      275,
+      277
     ],
     "active_experiments": [
-      277
+      279
     ],
     "active_pull_requests": [
       235,
-      278
+      280
     ],
     "next_blocked_confirmation": 198
   },
