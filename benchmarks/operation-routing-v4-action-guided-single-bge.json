@@ -1,0 +1,78 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "action-guided-single-pair-bge-diagnostic-v1",
+  "work_item": 231,
+  "parent_work_items": [225, 197],
+  "status": "preregistered_before_execution",
+  "source_parent_revision": "e93f5ddd104b5d876b248a8607092e6900a6e0a3",
+  "motivation": {
+    "failed_candidate_work_item": 227,
+    "failed_candidate_quality_passed": true,
+    "failed_candidate_latency": {
+      "baseline_mean_ms": 531.031,
+      "baseline_p95_ms": 697.912,
+      "candidate_mean_ms": 765.187,
+      "candidate_p95_ms": 1836.868
+    },
+    "action_only_evidence_work_item": 226,
+    "action_only_supported_raw_top_exact": 0.7300347222222222,
+    "action_only_mean_latency_ms": 13.83590290111111
+  },
+  "architecture": {
+    "candidate_recall_limit": 2,
+    "candidate_recall_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "action_selector_surface": [
+      "normalized endpoint name",
+      "trusted operation_aliases"
+    ],
+    "action_selector_excluded": [
+      "tool name",
+      "tool description",
+      "endpoint description",
+      "output fields",
+      "parameters",
+      "corpus templates",
+      "unsupported-operation labels"
+    ],
+    "action_selector_scope": "already-recalled width-2 registered authorized candidates only",
+    "action_selector_output": "exactly one bounded candidate",
+    "boundary_model": "BAAI/bge-reranker-v2-m3",
+    "boundary_model_pairs_per_invocation": 1,
+    "unselected_candidate_score": 0,
+    "planner_operation_fit_scope": "all_candidates",
+    "accepted_selector": true,
+    "raw_diagnostic_threshold": 0,
+    "authority": "no route outside the recalled registered-schema candidate set can be emitted"
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "threshold_frontier": {
+    "route_local_winner_score": true,
+    "false_budgets": [0, 6, 12, 13, 24, 36],
+    "canonical_dev_false_budget": 12,
+    "thresholds_must_not_be_promoted_from_this_issue": true
+  },
+  "development_feasibility_gates": {
+    "supported_exact_route_accuracy_min": 0.70,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "canonical_false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0
+  },
+  "latency": {
+    "comparison": "same-runner current v4 baseline",
+    "required_metrics": ["mean_ms", "p50_ms", "p95_ms"],
+    "promotion_requires_followup_frozen_candidate": true
+  },
+  "forbidden": [
+    "calibration data",
+    "blind-final data",
+    "unregistered route synthesis",
+    "post-result behavior change inside this diagnostic"
+  ]
+}
