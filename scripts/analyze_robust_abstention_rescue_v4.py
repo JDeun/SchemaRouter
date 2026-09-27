@@ -34,6 +34,25 @@ SCORE_DEFICIT_MAX = (0.001, 0.0025, 0.005, 0.01, 0.02, 0.05, 1.0)
 MARGIN_DEFICIT_MAX = (0.0, 0.005, 0.01, 0.02, 0.05, 1.0)
 BGE_RERANKER_MODEL = "BAAI/bge-reranker-v2-m3"
 BGE_RERANKER_REVISION = "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e"
+SCORE_QUANTILES = (0.0, 0.10, 0.25, 0.50, 0.75, 0.90, 1.0)
+
+
+def _quantile_thresholds(values: list[float]) -> list[float]:
+    if not values:
+        return [1.000001]
+    ordered = sorted(values)
+    thresholds = {-1.0, 1.000001}
+    for q in SCORE_QUANTILES:
+        position = (len(ordered) - 1) * q
+        lower = math.floor(position)
+        upper = math.ceil(position)
+        if lower == upper:
+            value = ordered[lower]
+        else:
+            weight = position - lower
+            value = ordered[lower] * (1.0 - weight) + ordered[upper] * weight
+        thresholds.add(float(value))
+    return sorted(thresholds)
 
 
 def _distribution(values: list[float]) -> dict[str, float | int | None]:
@@ -130,17 +149,18 @@ def _candidate_rules(
         and row["gte_agrees"]
         and not row["base_accepted"]
     ]
-    score_thresholds = sorted({float(row["gte_top_score"]) for row in routed})
-    if not score_thresholds:
-        score_thresholds = [1.000001]
-    else:
-        score_thresholds = [-1.0, *score_thresholds, 1.000001]
+    score_thresholds = _quantile_thresholds(
+        [float(row["gte_top_score"]) for row in routed]
+    )
 
     if variant == "gte-agreement-bge":
-        reranker_thresholds = sorted(
-            {float(row["reranker_score"]) for row in routed if row["reranker_score"] is not None}
+        reranker_thresholds = _quantile_thresholds(
+            [
+                float(row["reranker_score"])
+                for row in routed
+                if row["reranker_score"] is not None
+            ]
         )
-        reranker_thresholds = [-1.0, *reranker_thresholds, 1.000001]
     else:
         reranker_thresholds = [-1.0]
 
