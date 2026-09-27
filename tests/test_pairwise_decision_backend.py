@@ -89,6 +89,71 @@ def test_pairwise_backend_abstains_below_score_threshold() -> None:
     assert result.metadata["reason"] == "below_min_score"
 
 
+def test_pairwise_backend_supports_route_local_score_thresholds() -> None:
+    backend = PairwiseDecisionBackend(
+        lambda _: [0.62, 0.61, 0.10],
+        min_score=0.20,
+        min_score_by_option={
+            "candidate:0": 0.70,
+            "candidate:1": 0.60,
+        },
+    )
+
+    result = choose_sync(backend, request())
+
+    assert result.abstained is False
+    assert result.selections[0].option_id == "candidate:1"
+    assert result.metadata["top_option_id"] == "candidate:0"
+    assert result.metadata["top_effective_min_score"] == pytest.approx(0.70)
+    assert result.metadata["score_kind"] == "pairwise"
+
+
+def test_pairwise_backend_route_local_score_threshold_can_fail_closed() -> None:
+    result = choose_sync(
+        PairwiseDecisionBackend(
+            lambda _: [0.62, 0.30, 0.10],
+            min_score=0.20,
+            min_score_by_option={"candidate:0": 0.70},
+        ),
+        request(),
+    )
+
+    assert result.abstained is False
+    assert result.selections[0].option_id == "candidate:1"
+
+
+def test_pairwise_backend_supports_route_local_margin_thresholds() -> None:
+    backend = PairwiseDecisionBackend(
+        lambda _: [0.80, 0.76, 0.10],
+        min_margin=0.0,
+        min_margin_by_option={"candidate:0": 0.05},
+    )
+
+    result = choose_sync(backend, request())
+
+    assert result.abstained is True
+    assert result.metadata["reason"] == "ambiguous_selection_boundary"
+    assert result.metadata["effective_boundary_min_margin"] == pytest.approx(0.05)
+    assert result.metadata["boundary_margin"] == pytest.approx(0.04)
+
+
+def test_pairwise_backend_falls_back_to_global_route_thresholds() -> None:
+    backend = PairwiseDecisionBackend(
+        lambda _: [0.80, 0.76, 0.10],
+        min_score=0.70,
+        min_margin=0.03,
+        min_score_by_option={"different-route": 0.99},
+        min_margin_by_option={"different-route": 0.99},
+    )
+
+    result = choose_sync(backend, request())
+
+    assert result.abstained is False
+    assert result.selections[0].option_id == "candidate:0"
+    assert result.metadata["top_effective_min_score"] == pytest.approx(0.70)
+    assert result.metadata["effective_boundary_min_margin"] == pytest.approx(0.03)
+
+
 def test_pairwise_backend_abstains_when_selection_boundary_is_ambiguous() -> None:
     result = choose_sync(
         PairwiseDecisionBackend(
@@ -160,6 +225,27 @@ def test_pairwise_score_threshold_must_be_bounded(threshold: float) -> None:
 def test_pairwise_margin_must_be_bounded(margin: float) -> None:
     with pytest.raises(ValueError, match="min_margin"):
         PairwiseDecisionBackend(lambda _: [], min_margin=margin)
+
+
+@pytest.mark.parametrize(
+    ("keyword", "value", "error"),
+    [
+        ("min_score_by_option", {"candidate:0": -0.1}, ValueError),
+        ("min_score_by_option", {"candidate:0": 1.1}, ValueError),
+        ("min_score_by_option", {"candidate:0": math.nan}, ValueError),
+        ("min_margin_by_option", {"candidate:0": -0.1}, ValueError),
+        ("min_margin_by_option", {"candidate:0": 1.1}, ValueError),
+        ("min_margin_by_option", {"": 0.5}, ValueError),
+        ("min_score_by_option", {"candidate:0": True}, TypeError),
+    ],
+)
+def test_pairwise_route_local_thresholds_are_validated(
+    keyword: str,
+    value: dict[str, object],
+    error: type[Exception],
+) -> None:
+    with pytest.raises(error):
+        PairwiseDecisionBackend(lambda _: [], **{keyword: value})
 
 
 def test_pairwise_backend_rejects_empty_custom_option_text() -> None:
