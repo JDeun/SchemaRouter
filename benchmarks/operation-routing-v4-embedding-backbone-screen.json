@@ -1,0 +1,85 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "multilingual-embedding-backbone-screen-v1",
+  "work_item": 242,
+  "parent_work_items": [197, 240, 241],
+  "status": "preregistered_before_execution",
+  "historical_control": {
+    "run": 36321806711,
+    "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "best_raw_supported_exact_route_accuracy": 0.75,
+    "best_canonical_supported_exact_route_accuracy": 0.5477430555555556,
+    "mean_latency_ms": 14.020342673888889,
+    "p95_latency_ms": 15.305669550000001
+  },
+  "models": {
+    "e5-base": {
+      "model_name": "intfloat/multilingual-e5-base",
+      "license": "MIT",
+      "query_prefix": "query: ",
+      "document_prefix": "passage: ",
+      "trust_remote_code": false
+    },
+    "gte-multilingual-base": {
+      "model_name": "Alibaba-NLP/gte-multilingual-base",
+      "license": "Apache-2.0",
+      "revision": "087a024525fd6e2fe749cb4679d218d8bcc95bdd",
+      "query_prefix": "",
+      "document_prefix": "",
+      "trust_remote_code": true
+    },
+    "bge-m3": {
+      "model_name": "BAAI/bge-m3",
+      "license": "MIT",
+      "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+      "query_prefix": "",
+      "document_prefix": "",
+      "trust_remote_code": false
+    }
+  },
+  "routing_architecture": "identical to experiment #240 single-query dual-view diagnostic",
+  "ranking_strategies": [
+    "schema_only",
+    "fusion_schema_0_75",
+    "fusion_schema_0_50",
+    "fusion_schema_0_25",
+    "action_only",
+    "factorized_tool_action"
+  ],
+  "agreement_modes": [
+    "none",
+    "schema_action_top_tool_agree",
+    "schema_action_top_route_agree"
+  ],
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "threshold_projection": {
+    "semantics": "winner_only_rank_then_gate",
+    "fixed_margin_thresholds": [0.0, 0.02, 0.05, 0.08, 0.1, 0.15, 0.2],
+    "false_budgets": [0, 6, 12, 13, 24, 36],
+    "canonical_false_budget": 12,
+    "population_rule": "complete fixed 1800-case denominators"
+  },
+  "screening_gate": {
+    "supported_exact_route_accuracy_min": 0.70,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "canonical_false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0.0,
+    "execution_errors_max": 0,
+    "p95_query_embedding_plus_scoring_latency_ms_max": 200.0
+  },
+  "promotion_policy": "Select no production behavior from this run. If any model/strategy passes, freeze one exact model/strategy/threshold map in a new preregistered executable experiment.",
+  "long_term_target": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "unsupported_rejection_target": "0.97-0.99",
+    "false_route_rate_max": 0.01
+  }
+}
