@@ -1255,6 +1255,14 @@ async def main() -> None:
     )
     parser.add_argument("--operation-fit-min-score", type=float, default=0.0)
     parser.add_argument(
+        "--operation-fit-select-accepted",
+        action="store_true",
+        help=(
+            "Add an ablation planner that uses the already-accepted operation-fit "
+            "route as the single-call candidate without changing fit thresholds."
+        ),
+    )
+    parser.add_argument(
         "--operation-fit-min-score-by-option-json",
         default=None,
         help=(
@@ -1775,6 +1783,35 @@ async def main() -> None:
             )
         )
 
+    if args.operation_fit_select_accepted:
+        if operation_fit_backend is None:
+            raise ValueError(
+                "--operation-fit-select-accepted requires an operation-fit backend"
+            )
+        selector_name_parts = ["keyword"]
+        if candidate_recall_backend is not None:
+            selector_name_parts.append("semantic-recall")
+        if candidate_fit_backend is not None:
+            selector_name_parts.append("capability-fit")
+        selector_name_parts.extend(["operation-fit", "accepted-selector"])
+        if endpoint_disambiguation_backend is not None:
+            selector_name_parts.append("endpoint-disambiguation")
+        planners.append(
+            (
+                "+".join(selector_name_parts),
+                SchemaPlanner(
+                    registry,
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
+                    operation_fit_select_accepted=True,
+                    endpoint_disambiguation_backend=endpoint_disambiguation_backend,
+                ),
+                None,
+            )
+        )
+
     if graph_operation_gate is not None:
         graph_name_parts = ["keyword", "graph-operation"]
         if graph_semantic_seed_backend is not None:
@@ -2047,6 +2084,7 @@ async def main() -> None:
             "min_margin": args.operation_fit_min_margin,
             "min_score_by_option": operation_fit_min_score_by_option,
             "min_margin_by_option": operation_fit_min_margin_by_option,
+            "accepted_selector_ablation": args.operation_fit_select_accepted,
         },
         "graph_operation": {
             "enabled": graph_operation_gate is not None,
