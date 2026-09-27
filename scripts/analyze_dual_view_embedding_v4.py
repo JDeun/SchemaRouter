@@ -496,7 +496,12 @@ def _screening_passes(item: dict[str, Any]) -> bool:
     )
 
 
-def analyze(cases: list[dict[str, Any]]) -> dict[str, Any]:
+def analyze(
+    cases: list[dict[str, Any]],
+    *,
+    static_embedder: Any = embed,
+    query_embedder: Any = embed,
+) -> dict[str, Any]:
     registry = reference_registry()
     catalog = _route_catalog(registry)
     route_ids = [str(item["route_id"]) for item in catalog]
@@ -506,7 +511,7 @@ def analyze(cases: list[dict[str, Any]]) -> dict[str, Any]:
         *(str(item["action_text"]) for item in catalog),
     ]
     static_started = time.perf_counter_ns()
-    static_vectors = embed(static_texts)
+    static_vectors = static_embedder(static_texts)
     static_ms = (time.perf_counter_ns() - static_started) / 1_000_000
     split = len(catalog)
     schema_vectors = static_vectors[:split]
@@ -521,7 +526,7 @@ def analyze(cases: list[dict[str, Any]]) -> dict[str, Any]:
     for case in cases:
         query = str(case["query"])
         started = time.perf_counter_ns()
-        query_vector = embed([query])[0]
+        query_vector = query_embedder([query])[0]
         schema_scores = [
             _cosine(query_vector, vector)
             for vector in schema_vectors
