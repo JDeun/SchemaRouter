@@ -68,7 +68,9 @@ class BenchmarkRow:
     predicted: str | None
     correct: bool
     invalid_plan: bool
-    latency_ms: float
+    execution_authority_violation: bool = False
+    execution_authority_violation_count: int = 0
+    latency_ms: float = 0.0
     split: str = "unspecified"
     language: str = "unspecified"
     backend_invoked: bool = False
@@ -451,6 +453,69 @@ def _corpus_sha256(path: str | os.PathLike[str] | None) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def _plan_authority_violations(
+    planner: SchemaPlanner,
+    plan: Any,
+) -> list[str]:
+    """Return structural authority violations without changing the plan."""
+
+    violations: list[str] = []
+
+    def inspect_call(call: Any, *, location: str) -> None:
+        try:
+            tool = planner.registry.get(call.tool)
+        except KeyError:
+            violations.append(f"{location}: unknown tool {call.tool!r}")
+            return
+        try:
+            endpoint = tool.endpoint(call.endpoint)
+        except KeyError:
+            violations.append(
+                f"{location}: unknown endpoint {call.tool}.{call.endpoint}"
+            )
+            return
+
+        allowed_arguments = {parameter.name for parameter in endpoint.parameters}
+        unknown_arguments = sorted(set(call.arguments) - allowed_arguments)
+        if unknown_arguments:
+            violations.append(
+                f"{location}: undeclared arguments "
+                + ", ".join(unknown_arguments)
+            )
+
+        allowed_fields = {field.name for field in endpoint.output_fields}
+        unknown_fields = sorted(set(call.fields) - allowed_fields)
+        if unknown_fields:
+            violations.append(
+                f"{location}: undeclared fields " + ", ".join(unknown_fields)
+            )
+
+        unknown_field_evidence = sorted(set(call.field_evidence) - allowed_fields)
+        if unknown_field_evidence:
+            violations.append(
+                f"{location}: undeclared field evidence "
+                + ", ".join(unknown_field_evidence)
+            )
+
+        if call.schema_fingerprint != endpoint.fingerprint:
+            violations.append(f"{location}: endpoint fingerprint mismatch")
+        if call.tool_fingerprint != tool.fingerprint:
+            violations.append(f"{location}: tool fingerprint mismatch")
+
+    for index, call in enumerate(plan.calls):
+        inspect_call(call, location=f"calls[{index}]")
+    for route_index, route in enumerate(plan.fallback_routes):
+        for alternative_index, call in enumerate(route.alternatives):
+            inspect_call(
+                call,
+                location=(
+                    f"fallback_routes[{route_index}]."
+                    f"alternatives[{alternative_index}]"
+                ),
+            )
+    return violations
+
+
 def estimate_cost(
     input_tokens: int | None,
     output_tokens: int | None,
@@ -567,6 +632,8 @@ async def benchmark_planner(
             )
             abstained = bool(getattr(result, "abstained", False))
             invalid_plan = predicted is not None and predicted not in allowed_routes
+            authority_violations = _plan_authority_violations(planner, plan)
+            execution_authority_violation = bool(authority_violations)
             correct = (
                 predicted is None
                 if case.expect_abstain
@@ -583,8 +650,14 @@ async def benchmark_planner(
                     query=case.query,
                     expected=case.expected,
                     predicted=predicted,
-                    correct=correct and not invalid_plan,
+                    correct=(
+                        correct
+                        and not invalid_plan
+                        and not execution_authority_violation
+                    ),
                     invalid_plan=invalid_plan,
+                    execution_authority_violation=execution_authority_violation,
+                    execution_authority_violation_count=len(authority_violations),
                     latency_ms=round(latency_ms, 3),
                     backend_invoked=bool(recorder and recorder.last_invoked),
                     recall_expanded=recall_expanded,
@@ -623,6 +696,8 @@ async def benchmark_planner(
                     predicted=None,
                     correct=False,
                     invalid_plan=False,
+                    execution_authority_violation=False,
+                    execution_authority_violation_count=0,
                     latency_ms=round(latency_ms, 3),
                     backend_invoked=bool(recorder and recorder.last_invoked),
                     error=f"{type(exc).__name__}: {exc}",
@@ -792,6 +867,14 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
         ),
         "invalid_plan_rate": (
             sum(row.invalid_plan for row in rows) / total if total else 0.0
+        ),
+        "execution_authority_violation_rate": (
+            sum(row.execution_authority_violation for row in rows) / total
+            if total
+            else 0.0
+        ),
+        "execution_authority_violations": sum(
+            row.execution_authority_violation_count for row in rows
         ),
         "errors": sum(row.error is not None for row in rows),
         "error_taxonomy": _error_taxonomy(rows),
