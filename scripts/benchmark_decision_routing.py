@@ -1747,6 +1747,8 @@ async def main() -> None:
         if candidate_fit_backend is not None:
             operation_name_parts.append("capability-fit")
         operation_name_parts.append("operation-fit")
+        if args.operation_fit_mode == "narrow":
+            operation_name_parts.append("operation-narrow")
         planners.append(
             (
                 "+".join(operation_name_parts),
@@ -1803,6 +1805,8 @@ async def main() -> None:
             graph_name_parts.append("selective-capability-fit")
         if operation_fit_backend is not None:
             graph_name_parts.append("selective-operation-fit")
+            if args.operation_fit_mode == "narrow":
+                graph_name_parts.append("operation-narrow")
         if endpoint_disambiguation_backend is not None:
             graph_name_parts.append("selective-endpoint-disambiguation")
         planners.append(
