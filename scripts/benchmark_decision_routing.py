@@ -56,6 +56,7 @@ class BenchmarkCase:
     expect_abstain: bool = False
     split: str = "unspecified"
     language: str = "unspecified"
+    unsupported_family: str | None = None
 
 
 @dataclass
@@ -71,6 +72,7 @@ class BenchmarkRow:
     latency_ms: float
     split: str = "unspecified"
     language: str = "unspecified"
+    unsupported_family: str | None = None
     backend_invoked: bool = False
     recall_expanded: bool = False
     confidence: float | None = None
@@ -382,6 +384,11 @@ def load_corpus(path: str | os.PathLike[str], *, allowed_routes: set[str]) -> li
             expect_abstain=bool(raw.get("expect_abstain", False)),
             split=str(raw.get("split", "unspecified")).strip() or "unspecified",
             language=str(raw.get("language", "unspecified")).strip() or "unspecified",
+            unsupported_family=(
+                str(raw["unsupported_family"]).strip()
+                if raw.get("unsupported_family") is not None
+                else None
+            ),
         )
         if not case.id or case.id in seen_ids:
             raise ValueError(f"corpus item {index} has a missing or duplicate id")
@@ -661,6 +668,7 @@ async def benchmark_planner(
                     category=case.category,
                     split=case.split,
                     language=case.language,
+                    unsupported_family=case.unsupported_family,
                     query=case.query,
                     expected=case.expected,
                     predicted=predicted,
@@ -712,6 +720,7 @@ async def benchmark_planner(
                     category=case.category,
                     split=case.split,
                     language=case.language,
+                    unsupported_family=case.unsupported_family,
                     query=case.query,
                     expected=case.expected,
                     predicted=None,
@@ -1542,6 +1551,7 @@ async def main() -> None:
                 expect_abstain=case.expect_abstain,
                 split=case.split,
                 language=case.language,
+                unsupported_family=case.unsupported_family,
             )
             for iteration in range(args.repeat)
             for case in cases
