@@ -1,0 +1,70 @@
+{
+  "scope": "SchemaRouter operation routing long-term production quality targets",
+  "status": "standing_project_target",
+  "recorded_at": "2026-09-27",
+  "rationale": "The current 0.10 graph-projection research cycle retains its preregistered development gates for methodological integrity. These targets define the long-term OSS/production objective for subsequent research cycles and must not retroactively change current-cycle promotion criteria.",
+  "final_targets": {
+    "supported_exact_route_accuracy": {
+      "target_min": 0.85,
+      "metric": "Exact tool.endpoint match on supported requests",
+      "direction": "higher_is_better"
+    },
+    "unsupported_rejection": {
+      "target_range": [
+        0.97,
+        0.99
+      ],
+      "metric": "Near-domain unsupported-operation rejection",
+      "direction": "higher_is_better"
+    },
+    "false_route_rate": {
+      "target_max": 0.01,
+      "metric": "Unsupported or otherwise no-route requests incorrectly routed to an executable tool.endpoint",
+      "direction": "lower_is_better"
+    },
+    "invalid_plan_rate": {
+      "target_max": 0
+    },
+    "execution_authority_violation_rate": {
+      "target_max": 0
+    }
+  },
+  "supporting_requirements": [
+    "OOD rejection should remain effectively perfect on the maintained blind/stress suites.",
+    "Mean latency should improve or remain operationally competitive versus the paired full-BGE baseline.",
+    "p95 latency must not regress against the paired production baseline for a promoted candidate.",
+    "Report language-level and operation-level worst-case slices; aggregate accuracy alone is insufficient.",
+    "Prefer safe abstention to a false executable route.",
+    "Never broaden tool, endpoint, field, argument, credential, or side-effect authority from semantic evidence."
+  ],
+  "milestone_sequence": [
+    {
+      "label": "current research gate",
+      "supported_exact_route_accuracy_min": 0.6,
+      "note": "Frozen for the current preregistered 0.10 graph-projection cycle only."
+    },
+    {
+      "label": "next-cycle target",
+      "supported_exact_route_accuracy_min": 0.7
+    },
+    {
+      "label": "strong beta target",
+      "supported_exact_route_accuracy_min": 0.75
+    },
+    {
+      "label": "serious OSS target",
+      "supported_exact_route_accuracy_min": 0.8
+    },
+    {
+      "label": "production-credible target",
+      "supported_exact_route_accuracy_min": 0.85,
+      "unsupported_rejection_min": 0.97,
+      "false_route_rate_max": 0.01
+    }
+  ],
+  "governance": {
+    "current_cycle_gates_must_not_be_changed_retroactively": true,
+    "future_cycles_should_reference_this_target": true,
+    "calibration_and_blind_sets_must_not_be_used_for_tuning": true
+  }
+}
