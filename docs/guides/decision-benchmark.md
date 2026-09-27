@@ -70,6 +70,34 @@ capability-fit threshold only on v2 `dev` / `calibration`, freeze the chosen thr
 evaluate v3 exactly once. After that first evaluation, v3 becomes a frozen regression set too.
 
 
+## Standing production-quality scorecard
+
+Research-cycle promotion gates and long-term production targets are deliberately separate.
+
+The current graph-projection cycle keeps its preregistered thresholds unchanged for methodological
+integrity. Later cycles should move toward the standing production objectives in
+`benchmarks/operation-routing-production-targets.json`:
+
+- supported exact `tool.endpoint` accuracy >= 85%;
+- near-domain unsupported-operation rejection >= 97%, with 99% preferred for high-safety use;
+- false-route rate <= 1%;
+- invalid plans and execution-authority violations = 0.
+
+Evaluate any completed benchmark report without changing that report:
+
+```bash
+python scripts/evaluate_operation_routing_quality.py \
+  --report artifacts/decision-benchmark.json \
+  --backend "<planner-name>" \
+  --out artifacts/operation-routing-quality.json
+```
+
+The scorecard also reports per-language and per-route supported accuracy plus worst-language and
+worst-route values. A strong aggregate score must not hide a brittle language or operation slice.
+
+The production scorecard is **not** a replacement for a preregistered cycle comparator. It never
+retroactively changes the promotion criteria of an experiment whose gates were already frozen.
+
 ## Persist results
 
 ```bash
