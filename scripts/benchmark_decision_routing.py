@@ -87,6 +87,7 @@ class BenchmarkRow:
     graph_operation_decision: str | None = None
     graph_semantic_seed_decision: str | None = None
     graph_propagation_decision: str | None = None
+    graph_corroboration_decision: str | None = None
 
 
 SMOKE_CASES = [
@@ -541,6 +542,7 @@ async def benchmark_planner(
             graph_operation_decision = _graph_operation_decision(plan.warnings)
             graph_semantic_seed_decision = _graph_semantic_seed_decision(plan.warnings)
             graph_propagation_decision = _graph_propagation_decision(plan.warnings)
+            graph_corroboration_decision = _graph_corroboration_decision(plan.warnings)
             metadata = getattr(result, "metadata", {}) if result is not None else {}
             input_tokens = metadata.get("input_tokens")
             output_tokens = metadata.get("output_tokens")
@@ -604,6 +606,7 @@ async def benchmark_planner(
                     graph_operation_decision=graph_operation_decision,
                     graph_semantic_seed_decision=graph_semantic_seed_decision,
                     graph_propagation_decision=graph_propagation_decision,
+                    graph_corroboration_decision=graph_corroboration_decision,
                 )
             )
         except Exception as exc:  # noqa: BLE001 - benchmark records provider failures.
@@ -654,6 +657,19 @@ def _graph_propagation_decision(warnings: list[str]) -> str | None:
         return "abstain"
     if any("graph propagation fallback" in warning for warning in lowered):
         return "fallback"
+    return None
+
+
+def _graph_corroboration_decision(warnings: list[str]) -> str | None:
+    lowered = [warning.casefold() for warning in warnings]
+    if any("graph corroboration accepted" in warning for warning in lowered):
+        return "accept"
+    if any(
+        "bounded pairwise top route was" in warning
+        and "graph propagation rejected" in warning
+        for warning in lowered
+    ):
+        return "disagree_reject"
     return None
 
 
@@ -813,6 +829,15 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
                 for row in rows
             )
             / total
+            if total
+            else 0.0
+        ),
+        "graph_corroboration_counts": {
+            decision: sum(row.graph_corroboration_decision == decision for row in rows)
+            for decision in ("accept", "disagree_reject")
+        },
+        "graph_corroboration_accept_rate": (
+            sum(row.graph_corroboration_decision == "accept" for row in rows) / total
             if total
             else 0.0
         ),
@@ -1171,11 +1196,11 @@ async def main() -> None:
     )
     parser.add_argument(
         "--graph-semantic-propagation-scope",
-        choices=("siblings", "ranked"),
+        choices=("siblings", "ranked", "ranked_only"),
         default="siblings",
         help=(
-            "Use only seed-tool siblings, or reuse the semantic graph ranking plus "
-            "seed-tool siblings in one selective-BGE batch."
+            "Use seed-tool siblings, semantic-ranked routes plus siblings, or only "
+            "semantic-ranked registered routes in the selective-BGE batch."
         ),
     )
     parser.add_argument(
@@ -1183,6 +1208,14 @@ async def main() -> None:
         type=int,
         default=4,
         help="Maximum number of ranked graph routes added before seed-tool siblings.",
+    )
+    parser.add_argument(
+        "--graph-semantic-corroborate-abstain",
+        action="store_true",
+        help=(
+            "When bounded pairwise scoring abstains, accept only if its top-ranked "
+            "registered route agrees with the semantic seed top route."
+        ),
     )
     parser.add_argument(
         "--counterbalanced",
@@ -1319,6 +1352,14 @@ async def main() -> None:
         )
     if args.graph_semantic_propagation_limit < 1:
         parser.error("--graph-semantic-propagation-limit must be >= 1")
+    if (
+        args.graph_semantic_corroborate_abstain
+        and not args.graph_semantic_propagation
+    ):
+        parser.error(
+            "--graph-semantic-corroborate-abstain requires "
+            "--graph-semantic-propagation"
+        )
     if args.warmup_cases < 0:
         parser.error("--warmup-cases must be >= 0")
 
@@ -1543,6 +1584,8 @@ async def main() -> None:
             graph_name_parts.append("graph-semantic-seed")
         if args.graph_semantic_propagation:
             graph_name_parts.append("graph-propagation")
+        if args.graph_semantic_corroborate_abstain:
+            graph_name_parts.append("graph-corroboration")
         if candidate_recall_backend is not None:
             graph_name_parts.append("selective-semantic-recall")
         if candidate_fit_backend is not None:
@@ -1578,6 +1621,9 @@ async def main() -> None:
                     ),
                     graph_semantic_propagation_limit=(
                         args.graph_semantic_propagation_limit
+                    ),
+                    graph_semantic_corroborate_abstain=(
+                        args.graph_semantic_corroborate_abstain
                     ),
                     operation_fit_backend=operation_fit_backend,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
@@ -1833,9 +1879,17 @@ async def main() -> None:
             "authority": (
                 "ranked-registered-routes-plus-seed-siblings"
                 if args.graph_semantic_propagation_scope == "ranked"
+                else "ranked-registered-routes-only"
+                if args.graph_semantic_propagation_scope == "ranked_only"
                 else "seed-selected-tool-registered-siblings-only"
             ),
             "on_abstain": args.graph_semantic_propagation_on_abstain,
+            "corroborate_abstain": args.graph_semantic_corroborate_abstain,
+            "corroboration_rule": (
+                "accept_only_when_seed_top_equals_pairwise_top"
+                if args.graph_semantic_corroborate_abstain
+                else None
+            ),
         },
         "measurement": {
             "mode": "counterbalanced" if args.counterbalanced else "sequential",
