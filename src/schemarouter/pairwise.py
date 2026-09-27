@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable, Iterable, Mapping
 from typing import Any
 
 from .decisions import (
+    DecisionEvidence,
     DecisionOption,
     DecisionOptionTextCallable,
     DecisionRequest,
@@ -177,6 +178,25 @@ class PairwiseDecisionBackend:
             if item[1] >= self._score_threshold_for(request.options[item[0]].id)
         ]
 
+        evidence = [
+            DecisionEvidence(
+                kind=str(request.context.get("surface") or "pairwise_ranking"),
+                state=(
+                    "match"
+                    if score >= self._score_threshold_for(request.options[index].id)
+                    else "no_match"
+                ),
+                source="pairwise-score",
+                option_id=request.options[index].id,
+                score=score,
+                score_kind="pairwise_probability",
+                metadata={
+                    "threshold": self._score_threshold_for(request.options[index].id),
+                },
+            )
+            for index, score in ranked
+        ]
+
         top_option_id = request.options[ranked[0][0]].id
         metadata: dict[str, Any] = {
             "provider": "pairwise-score",
@@ -207,6 +227,7 @@ class PairwiseDecisionBackend:
                 request,
                 DecisionResult(
                     abstained=True,
+                    evidence=evidence,
                     metadata={**metadata, "reason": "below_min_score"},
                 ),
             )
@@ -224,6 +245,7 @@ class PairwiseDecisionBackend:
                     request,
                     DecisionResult(
                         abstained=True,
+                        evidence=evidence,
                         metadata={
                             **metadata,
                             "reason": "ambiguous_selection_boundary",
@@ -241,6 +263,7 @@ class PairwiseDecisionBackend:
                     )
                     for index, score in selected
                 ],
+                evidence=evidence,
                 metadata=metadata,
             ),
         )
