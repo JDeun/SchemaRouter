@@ -1,0 +1,1549 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-27",
+  "base_branch": "main",
+  "base_revision": "526d0c588bbec053fba54c55d982cc67d2a74d56",
+  "commit_count": 140,
+  "purpose": "Complete commit-level source index used by issue #196 to audit whether every material SchemaRouter design/experiment decision has been represented in the human history and research ledger.",
+  "note": "potential_material is a triage aid based on commit subject/category, not a substitute for human audit.",
+  "commits": [
+    {
+      "sha": "526d0c588bbec053fba54c55d982cc67d2a74d56",
+      "date": "2026-09-26T15:35:30Z",
+      "subject": "research: close rejected operation cascade cycle (#180)",
+      "full_message": "research: close rejected operation cascade cycle (#180)\n\nRecord the paired calibration rejection, retire the unused v14 reservation, and remove the consumed cascade research workflows.",
+      "parents": [
+        "8b85148faa404fe4e1858c3b4321c3ecd37545c5"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "8b85148faa404fe4e1858c3b4321c3ecd37545c5",
+      "date": "2026-09-26T14:55:26Z",
+      "subject": "research: benchmark cheap-first operation cascade",
+      "full_message": "research: benchmark cheap-first operation cascade\n\nImplement the bounded MiniLM-to-BGE cascade, record the preregistered v5 dev sweep, freeze r030-a060-m005, and require paired same-job latency confirmation before blind evaluation.",
+      "parents": [
+        "5d7c972c8b13d03934c9cc88de3dc9e14159bcd5"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "5d7c972c8b13d03934c9cc88de3dc9e14159bcd5",
+      "date": "2026-09-26T14:27:19Z",
+      "subject": "research: reserve v14 cascade cycle",
+      "full_message": "research: reserve v14 cascade cycle\n\nRecord the successful v13 blind-final profile and reserve the v14 cascade protocol before implementation.",
+      "parents": [
+        "ecc6ba6f313df45545590297c7130a4abadf93f1"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "ecc6ba6f313df45545590297c7130a4abadf93f1",
+      "date": "2026-09-26T14:18:06Z",
+      "subject": "research: record consumed v13 blind evidence",
+      "full_message": "research: record consumed v13 blind evidence\n\nArchive the one-shot v13 corpus and reproducibility evidence, mark v13 permanently consumed, and preserve the frozen 0.10 contrastive operation-fit result.",
+      "parents": [
+        "14e1977011c5b926476731736f7a4a9e1876367a"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "14e1977011c5b926476731736f7a4a9e1876367a",
+      "date": "2026-09-26T13:45:41Z",
+      "subject": "research: freeze confirmed 0.10 operation-fit candidate",
+      "full_message": "research: freeze confirmed 0.10 operation-fit candidate\n\nRecord the calibrated beta=1 sibling-contrastive BGE candidate as frozen before the v13 blind-final evaluation.",
+      "parents": [
+        "912c3790bba4f6104f4ccf5451170894f3b84f1f"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "912c3790bba4f6104f4ccf5451170894f3b84f1f",
+      "date": "2026-09-26T13:41:22Z",
+      "subject": "research: contrastive operation-fit dev cycle",
+      "full_message": "research: contrastive operation-fit dev cycle\n\nSelect beta=1 sibling-contrastive BGE on v5 dev only and confirm the frozen candidate on v5 calibration without touching v12 or v13.",
+      "parents": [
+        "9ac1eb6b5f678d072ff41a54cc9988043e2a5f85"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "9ac1eb6b5f678d072ff41a54cc9988043e2a5f85",
+      "date": "2026-09-26T13:03:29Z",
+      "subject": "research: tighten holdout hygiene for 0.10 cycle",
+      "full_message": "research: tighten holdout hygiene for 0.10 cycle\n\nReclassify v12 as design-known stress evidence and reserve v13 as the next blind one-shot generalization protocol.",
+      "parents": [
+        "2d49bf447e5ec3509b7cb7e0b4d0153964829937"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "2d49bf447e5ec3509b7cb7e0b4d0153964829937",
+      "date": "2026-09-26T12:52:01Z",
+      "subject": "research: reserve v12 contrastive operation holdout",
+      "full_message": "research: reserve v12 contrastive operation holdout\n\nReserve a sealed multilingual contrastive operation-generalization holdout before the 0.10 routing optimization cycle.",
+      "parents": [
+        "465f6780178a6d8ac275ef1f4d977664d8227656"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "465f6780178a6d8ac275ef1f4d977664d8227656",
+      "date": "2026-09-26T12:43:27Z",
+      "subject": "chore: start 0.10.0 development",
+      "full_message": "chore: start 0.10.0 development\n\nResume development after the successful 0.9.0 release with version 0.10.0.dev0.",
+      "parents": [
+        "7be1811a7fd0c2cc46ee3145b0b7e1e05e46d612"
+      ],
+      "category": "chore",
+      "potential_material": false
+    },
+    {
+      "sha": "7be1811a7fd0c2cc46ee3145b0b7e1e05e46d612",
+      "date": "2026-09-26T12:35:39Z",
+      "subject": "release: SchemaRouter 0.9.0",
+      "full_message": "release: SchemaRouter 0.9.0\n\n* release: set version 0.9.0\n\n* release: finalize 0.9.0 changelog\n\n* docs: update README for 0.9.0\n\n* docs: update Korean README for 0.9.0\n\n* docs: update homepage for 0.9.0\n\n* docs: add 0.9.0 release navigation\n\n* docs: add 0.9.0 release notes",
+      "parents": [
+        "d20ab8f2bae2cff72bbd9352c2bfc5d62d6a7a92"
+      ],
+      "category": "release",
+      "potential_material": true
+    },
+    {
+      "sha": "d20ab8f2bae2cff72bbd9352c2bfc5d62d6a7a92",
+      "date": "2026-09-26T12:19:11Z",
+      "subject": "docs: record consumed v11 evidence and remove one-shot workflow",
+      "full_message": "docs: record consumed v11 evidence and remove one-shot workflow\n\n* fix: record pairwise operation-fit benchmark config\n\n* docs: record v11 pairwise generalization result\n\n* docs: publish consumed v11 evidence\n\n* ci: remove temporary v11 one-shot workflow\n\n* ci: retire consumed v11 holdout path\n\n* test: enforce consumed v11 workflow retirement\n\n* docs: update pairwise routing maturity evidence",
+      "parents": [
+        "099cf009003df35f48571ecdc988fddaa11db904"
+      ],
+      "category": "docs",
+      "potential_material": true
+    },
+    {
+      "sha": "099cf009003df35f48571ecdc988fddaa11db904",
+      "date": "2026-09-26T11:57:41Z",
+      "subject": "research: diagnose frozen MiniLM baseline on consumed v11",
+      "full_message": "research: diagnose frozen MiniLM baseline on consumed v11",
+      "parents": [
+        "57af2fd18d254fa1a9cd5855a158ae74b94adfc7"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "57af2fd18d254fa1a9cd5855a158ae74b94adfc7",
+      "date": "2026-09-26T11:36:12Z",
+      "subject": "research: consume frozen v11 holdout once",
+      "full_message": "research: consume frozen v11 holdout once",
+      "parents": [
+        "632471b746525023a23d4c616b2a3a59689e940a"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "632471b746525023a23d4c616b2a3a59689e940a",
+      "date": "2026-09-26T11:31:38Z",
+      "subject": "research: freeze v11 pairwise operation-fit evaluation",
+      "full_message": "research: freeze v11 pairwise operation-fit evaluation\n\n* research: support pairwise operation-fit benchmark scorer\n\n* research: add frozen BGE pairwise scorer\n\n* research: freeze v11 BGE pairwise configuration\n\n* test: lock v11 pairwise holdout configuration\n\n* ci: keep research matrices manual on pull requests\n\n* ci: isolate full research matrix from v11 dispatch\n\n* test: isolate v11 dispatch from full research matrix\n\n* style: order pairwise benchmark import",
+      "parents": [
+        "880451eb0e4adadd5e96290c8c576820614fbc7a"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "880451eb0e4adadd5e96290c8c576820614fbc7a",
+      "date": "2026-09-26T11:23:01Z",
+      "subject": "feat: add bounded pairwise decision backend",
+      "full_message": "feat: add bounded pairwise decision backend\n\n* feat: add bounded pairwise decision backend\n\n* test: cover pairwise decision backend\n\n* feat: export pairwise decision backend\n\n* docs: document pairwise scoring backend\n\n* docs: expose pairwise backend API reference\n\n* style: order pairwise public imports\n\n* test: register pairwise public API exports",
+      "parents": [
+        "fd8291a33261378b0f890e36ab12154d69b24a36"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "fd8291a33261378b0f890e36ab12154d69b24a36",
+      "date": "2026-09-26T10:22:14Z",
+      "subject": "research: reserve v11 operation-generalization holdout (#154)",
+      "full_message": "research: reserve v11 operation-generalization holdout (#154)\n\nFreeze the next untouched 600-case multilingual operation holdout before post-0.8 optimization, advance the manual one-shot workflow guard to v11, and keep consumed v9/v10 out of calibration.",
+      "parents": [
+        "121e039082705c48bfde4a9f9995be3a691a0436"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "121e039082705c48bfde4a9f9995be3a691a0436",
+      "date": "2026-09-26T10:00:12Z",
+      "subject": "chore: start 0.9 development (#153)",
+      "full_message": "chore: start 0.9 development (#153)\n\n* chore: start 0.9 development\n\n* docs: resume unreleased development",
+      "parents": [
+        "255bedad0da545175ce4821e4029afb6b5c6addd"
+      ],
+      "category": "chore",
+      "potential_material": false
+    },
+    {
+      "sha": "255bedad0da545175ce4821e4029afb6b5c6addd",
+      "date": "2026-09-26T09:51:05Z",
+      "subject": "release: SchemaRouter 0.8.0 (#152)",
+      "full_message": "release: SchemaRouter 0.8.0 (#152)\n\n* release: set version to 0.8.0\n\n* docs: finalize 0.8.0 changelog\n\n* docs: document 0.8.0 in English README\n\n* docs: document 0.8.0 in Korean README\n\n* docs: publish 0.8.0 site landing state\n\n* docs: align framework maturity with 0.8.0 evidence\n\n* docs: expose 0.8.0 and multi-provider evidence\n\n* docs: add 0.8.0 release notes",
+      "parents": [
+        "854d70bfeb5497011ee17cd507f04985415cdd4d"
+      ],
+      "category": "release",
+      "potential_material": true
+    },
+    {
+      "sha": "854d70bfeb5497011ee17cd507f04985415cdd4d",
+      "date": "2026-09-26T09:28:32Z",
+      "subject": "perf: simplify and recalibrate operation-fit semantic surface (#149)",
+      "full_message": "perf: simplify and recalibrate operation-fit semantic surface (#149)\n\nSelect the concise operation-fit embedding surface from v5 dev/cal only, retain the 0.40 threshold, record the one-shot v10 generalization result, and preserve bounded suppression-only authority.",
+      "parents": [
+        "4c425695ac2964bd986213a054f815888d4eb753"
+      ],
+      "category": "performance",
+      "potential_material": true
+    },
+    {
+      "sha": "4c425695ac2964bd986213a054f815888d4eb753",
+      "date": "2026-09-26T07:52:22Z",
+      "subject": "perf: expose routing failure stages in benchmarks",
+      "full_message": "perf: expose routing failure stages in benchmarks\n\n* perf: expose routing benchmark failure stages\n\n* fix: record benchmark failure stage per row\n\n* test: cover routing failure stage attribution",
+      "parents": [
+        "555e5de185c1e1b1cdac904482e5d83a96467279"
+      ],
+      "category": "performance",
+      "potential_material": true
+    },
+    {
+      "sha": "555e5de185c1e1b1cdac904482e5d83a96467279",
+      "date": "2026-09-26T07:49:01Z",
+      "subject": "research: freeze v10 routing benchmark and error taxonomy",
+      "full_message": "research: freeze v10 routing benchmark and error taxonomy\n\n* research: freeze v10 routing generalization holdout\n\n* research: classify routing benchmark failures\n\n* test: lock v10 corpus and benchmark error taxonomy\n\n* style: format v10 benchmark tests",
+      "parents": [
+        "850a0a0f2e4e646bbc5ce6fb4923db937429ade6"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "850a0a0f2e4e646bbc5ce6fb4923db937429ade6",
+      "date": "2026-09-26T07:28:27Z",
+      "subject": "feat: add provenance-aware multi-provider evidence aggregation",
+      "full_message": "feat: add provenance-aware multi-provider evidence aggregation\n\n* research: freeze operation fit at 0.40 for one-shot v9 holdout\n\n* research: retire one-shot v9 holdout trigger\n\n* docs: record frozen v9 operation holdout evidence\n\n* docs: align benchmark maturity with consumed v9 holdout\n\n* docs: record alias-aware operation-fit validation\n\n* feat: add provenance-aware multi-provider aggregation\n\n* test: cover multi-provider identity and evidence aggregation\n\n* feat: export multi-provider aggregation API\n\n* feat: add corroborating retrieval mode\n\n* feat: add corroborating retrieval mode\n\n* feat: plan corroborating calls across providers\n\n* test: cover corroborating provider fan-out\n\n* feat: export retrieval mode\n\n* docs: explain multi-provider evidence policy\n\n* test: use explicit canonical material identity\n\n* feat: resolve transitive cross-provider identities\n\n* test: cover transitive document identity resolution\n\n* feat: require semantic compatibility for corroboration\n\n* test: reject incompatible corroborating provider fields\n\n* style: satisfy aggregation lint\n\n* fix: use trusted identifiers for entity resolution\n\n* test: prevent formula-only entity merges\n\n* docs: clarify retrieval versus canonical identity\n\n* style: use explicit hashlib import\n\n* fix: repair aggregation public API exports\n\n* style: sort aggregation public imports\n\n* fix: remove escaped newlines from public API list\n\n* style: modernize aggregation annotations\n\n* style: sort standard library imports\n\n* style: apply ruff import ordering\n\n* style: normalize aggregation import block\n\n* test: align scientific aggregation fixtures with trusted identity\n\n* test: lock new corroboration and aggregation public API",
+      "parents": [
+        "e75dd933c00c54aac9b6a4e1701208a2ee043d91"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "e75dd933c00c54aac9b6a4e1701208a2ee043d91",
+      "date": "2026-09-26T07:14:27Z",
+      "subject": "research: validate frozen operation fit on v9 holdout (#143)",
+      "full_message": "research: validate frozen operation fit on v9 holdout (#143)\n\n* research: freeze operation fit at 0.40 for one-shot v9 holdout\n\n* research: retire one-shot v9 holdout trigger\n\n* docs: record frozen v9 operation holdout evidence\n\n* docs: align benchmark maturity with consumed v9 holdout\n\n* docs: record alias-aware operation-fit validation",
+      "parents": [
+        "14286ac795f32151593a4e2884c03aa04d81bb4e"
+      ],
+      "category": "research",
+      "potential_material": true
+    },
+    {
+      "sha": "14286ac795f32151593a4e2884c03aa04d81bb4e",
+      "date": "2026-09-26T06:19:01Z",
+      "subject": "feat: add bounded operation capability fit (#142)",
+      "full_message": "feat: add bounded operation capability fit (#142)\n\n* feat: add bounded operation capability-fit gate\n\n* test: lock operation capability-fit boundaries\n\n* feat: benchmark bounded operation capability fit\n\n* research: add operation-fit calibration corpus\n\n* research: add untouched operation-fit holdout\n\n* test: lock operation-fit calibration and holdout corpora\n\n* research: calibrate operation capability fit on v5\n\n* feat: inspect operation capability-fit backend\n\n* feat: show operation capability fit in dashboard\n\n* test: expose operation capability-fit inspection\n\n* docs: explain bounded operation capability fit\n\n* docs: add operation-fit calibration protocol\n\n* docs: record operation capability-fit work\n\n* feat: report routed accuracy explicitly\n\n* test: report routed accuracy from benchmarks\n\n* research: freeze operation fit and run v6 holdout\n\n* research: extend operation-fit calibration range\n\n* docs: align maturity matrix with bounded routing benchmarks\n\n* fix: remove tool-domain signal from operation fit\n\n* test: protect untouched operation holdout\n\n* docs: document holdout execution guard\n\n* test: enforce operation holdout isolation\n\n* research: reserve post-change operation holdout\n\n* test: align operation fit label assertion\n\n* research: protect post-change operation holdout\n\n* test: align bounded routing labels\n\n* research: freeze operation fit at 0.45 for v7\n\n* research: close consumed v7 holdout\n\n* research: reserve operation-alias v8 holdout\n\n* feat: add endpoint operation aliases\n\n* research: add operation aliases to benchmark catalog\n\n* test: lock operation alias boundaries\n\n* test: harden operation alias contract\n\n* research: calibrate alias-aware operation fit\n\n* style: wrap operation alias metadata\n\n* research: reserve replacement alias holdout\n\n* fix: isolate alias calibration from holdout\n\n* fix: align operation alias validation errors\n\n* fix: stabilize operation alias validation message",
+      "parents": [
+        "4975db03a5ca6bb68429309a8245e21722fac4b3"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "4975db03a5ca6bb68429309a8245e21722fac4b3",
+      "date": "2026-09-26T02:31:22Z",
+      "subject": "feat: add bounded same-tool endpoint disambiguation (#141)",
+      "full_message": "feat: add bounded same-tool endpoint disambiguation (#141)\n\n* feat: expose endpoint disambiguation selection source\n\n* feat: add bounded same-tool endpoint disambiguation\n\n* test: lock bounded endpoint disambiguation boundaries\n\n* feat: benchmark bounded endpoint disambiguation\n\n* fix: preserve capability-fit benchmark baseline\n\n* feat: inspect endpoint disambiguation backend\n\n* feat: show endpoint disambiguation in dashboard\n\n* test: expose endpoint disambiguation inspection\n\n* docs: explain bounded endpoint disambiguation\n\n* docs: record endpoint disambiguation\n\n* research: screen endpoint disambiguation on v2 dev\n\n* test: avoid coupling disambiguation to initial sibling order\n\n* research: calibrate endpoint disambiguation on v2 calibration\n\n* research: add frozen v4 operation holdout\n\n* test: lock frozen v4 operation holdout\n\n* test: keep v4 holdout disjoint from prior corpora\n\n* research: evaluate frozen endpoint disambiguation on v4",
+      "parents": [
+        "585d0dc0291d720d95dc764943d6081923953f80"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "585d0dc0291d720d95dc764943d6081923953f80",
+      "date": "2026-09-26T01:43:09Z",
+      "subject": "feat: add bounded capability-fit gate (#136)",
+      "full_message": "feat: add bounded capability-fit gate (#136)\n\n* feat: add bounded capability-fit gate\n\n* test: cover capability-fit gate boundaries\n\n* feat: benchmark bounded capability-fit gates\n\n* feat: inspect capability-fit backend\n\n* feat: show capability-fit gate in dashboard\n\n* test: expose capability-fit inspection\n\n* docs: explain bounded capability-fit gate\n\n* docs: record capability-fit gate\n\n* research: calibrate capability-fit similarity\n\n* research: add untouched 600-case v3 holdout\n\n* research: add reproducible v3 holdout generator\n\n* fix: make v3 generator location independent\n\n* test: lock untouched v3 holdout invariants\n\n* docs: add untouched v3 capability-fit protocol\n\n* docs: record v3 capability-fit holdout\n\n* research: freeze capability-fit v3 heldout evaluation",
+      "parents": [
+        "5677758886b0f5804e50db44b743c7195aefe122"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "5677758886b0f5804e50db44b743c7195aefe122",
+      "date": "2026-09-26T00:46:02Z",
+      "subject": "feat: add bounded semantic candidate recall and v2 benchmark (#133)",
+      "full_message": "feat: add bounded semantic candidate recall and v2 benchmark (#133)\n\n* feat: expose semantic recall selection source\n\n* feat: add bounded semantic candidate recall stage\n\n* fix: keep semantic recall bounded on empty lexical recall\n\n* test: cover bounded semantic candidate recall\n\n* feat: benchmark semantic recall and held-out splits\n\n* fix: preserve benchmark row compatibility\n\n* research: add multilingual semantic recall embedder\n\n* research: add 1200-case multilingual routing corpus\n\n* research: add reproducible v2 corpus generator\n\n* test: lock v2 corpus size splits and reproducibility\n\n* research: calibrate bounded multilingual semantic recall\n\n* feat: inspect semantic candidate recall configuration\n\n* feat: show semantic recall in dashboard\n\n* test: cover semantic recall inspection\n\n* docs: explain bounded semantic candidate recall\n\n* docs: add v2 held-out semantic recall protocol\n\n* docs: record semantic recall and v2 benchmark\n\n* style: wrap semantic recall dashboard line\n\n* fix: distinguish semantic recall from full-catalog recall\n\n* fix: make benchmark embedding helper importable\n\n* fix: load repo-local benchmark callables reproducibly\n\n* research: parallelize semantic recall calibration\n\n* fix: lint repo-local benchmark imports\n\n* research: freeze and run held-out semantic recall evaluation",
+      "parents": [
+        "431f8e761c103184a10fd186b27c0d9415a9e786"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "431f8e761c103184a10fd186b27c0d9415a9e786",
+      "date": "2026-09-25T15:40:33Z",
+      "subject": "fix: harden global provenance and field evidence contracts (#131)",
+      "full_message": "fix: harden global provenance and field evidence contracts (#131)\n\n* fix: require provenance across the selected answer surface\n\n* fix: reject unknown active field evidence semantics\n\n* test: require provenance across selected fields\n\n* test: reject partial runtime provenance\n\n* docs: clarify global provenance evidence scope\n\n* docs: record evidence contract hardening",
+      "parents": [
+        "95fcef0fc020d2f0283ab238b55cf559ee42881f"
+      ],
+      "category": "fix",
+      "potential_material": true
+    },
+    {
+      "sha": "95fcef0fc020d2f0283ab238b55cf559ee42881f",
+      "date": "2026-09-25T15:18:45Z",
+      "subject": "fix: revalidate evidence contracts at execution (#130)",
+      "full_message": "fix: revalidate evidence contracts at execution (#130)\n\n* refactor: centralize evidence contract checks\n\n* feat: separate required from available call evidence\n\n* refactor: distinguish required and available evidence\n\n* refactor: simplify available source-type derivation\n\n* fix: revalidate evidence contracts before execution\n\n* fix: align evidence decision context with local sufficiency\n\n* test: separate required and available evidence in plans\n\n* test: reject forged runtime evidence contracts\n\n* docs: distinguish required and available evidence\n\n* docs: document runtime evidence revalidation\n\n* docs: record runtime evidence hardening\n\n* style: order executor evidence imports",
+      "parents": [
+        "a12983c42fe542a29882bb9bf434779e53d2d975"
+      ],
+      "category": "fix",
+      "potential_material": true
+    },
+    {
+      "sha": "a12983c42fe542a29882bb9bf434779e53d2d975",
+      "date": "2026-09-25T14:36:57Z",
+      "subject": "feat: scope evidence requirements by semantic field (#128)",
+      "full_message": "feat: scope evidence requirements by semantic field (#128)\n\n* feat: add semantic field evidence requirements\n\n* feat: preserve trusted field evidence in keyword analysis\n\n* feat: keep per-field evidence caller-controlled\n\n* feat: evaluate evidence per semantic field\n\n* feat: combine global and per-field evidence checks\n\n* feat: compile per-field evidence into tool calls\n\n* test: cover semantic field evidence requirements\n\n* test: keep field evidence outside model authority\n\n* docs: explain per-field evidence requirements\n\n* docs: scope evidence by semantic field\n\n* docs: record semantic field evidence",
+      "parents": [
+        "fea2e146379eb73a3cf0a8390638dbb38022913f"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "fea2e146379eb73a3cf0a8390638dbb38022913f",
+      "date": "2026-09-25T14:10:22Z",
+      "subject": "feat: expose semantic field coverage in bounded plans (#127)",
+      "full_message": "feat: expose semantic field coverage in bounded plans (#127)\n\n* feat: expose semantic field plan coverage\n\n* feat: export plan coverage contracts\n\n* feat: preserve multi-call recall and report field coverage\n\n* test: lock multi-call coverage completeness behavior\n\n* docs: explain semantic plan coverage\n\n* docs: reference coverage models\n\n* docs: record explicit coverage reporting\n\n* test: register plan coverage public API exports",
+      "parents": [
+        "1cb9a9800dd5da84ddc307f22b8f36733e7327d0"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "1cb9a9800dd5da84ddc307f22b8f36733e7327d0",
+      "date": "2026-09-25T13:23:07Z",
+      "subject": "docs: add real-world field-first scenario (#126)",
+      "full_message": "docs: add real-world field-first scenario (#126)\n\n* docs: add real-world scenario visual\n\n* docs: add Korean real-world scenario visual\n\n* docs: explain a real-world multi-source scenario\n\n* docs: add Korean real-world scenario\n\n* docs: surface the real-world scenario",
+      "parents": [
+        "8d6f5905de0427137328bdf53b78b598b0fba094"
+      ],
+      "category": "docs",
+      "potential_material": true
+    },
+    {
+      "sha": "8d6f5905de0427137328bdf53b78b598b0fba094",
+      "date": "2026-09-25T12:46:42Z",
+      "subject": "feat: cover heterogeneous fields across bounded multi-call plans (#125)",
+      "full_message": "feat: cover heterogeneous fields across bounded multi-call plans (#125)\n\n* feat: prefer complementary field coverage in multi-call plans\n\n* test: cover heterogeneous multi-source field planning\n\n* docs: clarify unitless fields and multi-source coverage\n\n* docs: add SchemaRouter design principles\n\n* docs: link design principles in navigation\n\n* docs: surface design principles from README\n\n* docs: link design principles from Korean README\n\n* docs: surface design principles on docs home\n\n* docs: record multi-source field coverage work\n\n* feat: stop multi-call planning after field coverage is satisfied\n\n* test: assert coverage without call-order coupling\n\n* docs: explain max-calls as a coverage bound\n\n* docs: define max-calls as upper bound\n\n* docs: note coverage-complete early stop\n\n* test: lock general unitless field contracts\n\n* fix: preserve single-call routing semantics",
+      "parents": [
+        "c9abdafbff18d307efd60ed5cd3a5b6982b2917a"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "c9abdafbff18d307efd60ed5cd3a5b6982b2917a",
+      "date": "2026-09-25T11:53:43Z",
+      "subject": "chore: begin SchemaRouter 0.8 development (#124)",
+      "full_message": "chore: begin SchemaRouter 0.8 development (#124)\n\n* chore: begin SchemaRouter 0.8 development\n\n* chore: open 0.8.0.dev0 changelog",
+      "parents": [
+        "24e960ee3511828bdb7549efc745e59ed1470d8f"
+      ],
+      "category": "chore",
+      "potential_material": true
+    },
+    {
+      "sha": "24e960ee3511828bdb7549efc745e59ed1470d8f",
+      "date": "2026-09-25T11:43:08Z",
+      "subject": "release: SchemaRouter 0.7.0 (#123)",
+      "full_message": "release: SchemaRouter 0.7.0 (#123)\n\n* release: set SchemaRouter 0.7.0 version\n\n* release: finalize 0.7.0 changelog\n\n* release: update README for 0.7.0\n\n* release: update Korean README for 0.7.0\n\n* release: update installation docs for 0.7.0\n\n* release: update docs landing for 0.7.0\n\n* release: add 0.7.0 notes to docs navigation\n\n* release: add SchemaRouter 0.7.0 notes",
+      "parents": [
+        "80773cffed52ef11b8b08d729457b47d44bee1b6"
+      ],
+      "category": "release",
+      "potential_material": true
+    },
+    {
+      "sha": "80773cffed52ef11b8b08d729457b47d44bee1b6",
+      "date": "2026-09-25T11:36:32Z",
+      "subject": "fix: align OPTIMADE live smoke with field-first projection (#122)",
+      "full_message": "fix: align OPTIMADE live smoke with field-first projection (#122)",
+      "parents": [
+        "76d5bb6481b70302ebc94c05aa2a7d5b28cf19e1"
+      ],
+      "category": "fix",
+      "potential_material": true
+    },
+    {
+      "sha": "76d5bb6481b70302ebc94c05aa2a7d5b28cf19e1",
+      "date": "2026-09-25T11:31:09Z",
+      "subject": "docs: align 0.7 scientific contracts (#121)",
+      "full_message": "docs: align 0.7 scientific contracts (#121)\n\n* docs: align README with current 0.7 contracts\n\n* docs: align Korean README with current 0.7 contracts\n\n* docs: record scientific and parameter contract maturity\n\n* docs: surface current 0.7 field contracts",
+      "parents": [
+        "2e97122d7fb7782e08eef0e8b5045709e21bd477"
+      ],
+      "category": "docs",
+      "potential_material": false
+    },
+    {
+      "sha": "2e97122d7fb7782e08eef0e8b5045709e21bd477",
+      "date": "2026-09-25T11:22:14Z",
+      "subject": "feat: add exact scientific field qualifiers (#120)",
+      "full_message": "feat: add exact scientific field qualifiers (#120)\n\n* feat: add optional scientific field qualifiers\n\n* fix: require exact scientific qualifiers for fallback\n\n* feat: preserve field qualifiers in ToolResult contracts\n\n* feat: expose scientific field qualifiers in inspection\n\n* feat: render scientific field qualifiers in dashboard\n\n* feat: expose trusted field qualifiers to model analyzers\n\n* fix: classify field qualifier drift as breaking\n\n* test: cover optional scientific field qualifiers\n\n* test: use real registry inspection for qualifier dashboard\n\n* test: expose semantic qualifiers without runtime metadata\n\n* docs: define optional scientific field qualifiers\n\n* docs: explain trusted scientific qualifier authoring\n\n* docs: record scientific field qualifier contracts\n\n* test: cover field qualifiers in installed packages\n\n* style: shorten qualifier analyzer test name\n\n* fix: route on exact trusted field qualifiers\n\n* test: cover qualifier-aware primary routing\n\n* docs: define qualifier-aware routing boundary\n\n* docs: record qualifier-aware primary routing\n\n* fix: bound qualifier matching to lexical tokens\n\n* test: reject numeric qualifier substring collisions\n\n* docs: clarify token-bounded qualifier matching\n\n* test: lock qualifier fingerprint semantics",
+      "parents": [
+        "36ae98c1c76d4da7ad1af2a0138de0150e78d493"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "36ae98c1c76d4da7ad1af2a0138de0150e78d493",
+      "date": "2026-09-25T09:05:49Z",
+      "subject": "feat: route trusted parameter aliases across providers (#119)",
+      "full_message": "feat: route trusted parameter aliases across providers (#119)\n\n* feat: route arguments through unambiguous trusted parameter aliases\n\n* fix: surface ambiguous parameter alias bindings explicitly\n\n* test: cover trusted parameter alias routing\n\n* docs: define trusted parameter alias contracts\n\n* docs: explain bounded parameter alias routing\n\n* docs: record trusted parameter alias routing\n\n* test: cover parameter aliases in installed packages\n\n* fix: import Any for parameter alias binding\n\n* fix: import ParameterSpec in consumer acceptance",
+      "parents": [
+        "056a44d3485f961e1962d56893d7b6c84a776c36"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "056a44d3485f961e1962d56893d7b6c84a776c36",
+      "date": "2026-09-25T08:45:39Z",
+      "subject": "fix: keep units optional while enforcing explicit evidence requirements (#118)",
+      "full_message": "fix: keep units optional while enforcing explicit evidence requirements (#118)\n\n* test: lock optional units for text and document fields\n\n* docs: clarify units are optional value contracts\n\n* test: require units only when explicitly requested\n\n* docs: define safe boundary for dynamic per-record units\n\n* test: keep field contract metadata field-first\n\n* test: support dimensionless numeric scientific fields\n\n* docs: document dimensionless numeric fields\n\n* fix: enforce local evidence requirements without a decision backend\n\n* docs: record deterministic evidence requirement enforcement\n\n* docs: clarify optional units and explicit evidence constraints",
+      "parents": [
+        "3f7a6e1adb84f71ced27a21d03f0b0a8697be688"
+      ],
+      "category": "fix",
+      "potential_material": true
+    },
+    {
+      "sha": "3f7a6e1adb84f71ced27a21d03f0b0a8697be688",
+      "date": "2026-09-25T07:23:42Z",
+      "subject": "feat: add typed scientific field and unit contracts (#116)",
+      "full_message": "feat: add typed scientific field and unit contracts (#116)\n\n* feat: add explicit unit normalization and result field contracts\n\n* feat: resolve field value schemas for typed fallback checks\n\n* feat: require typed unit-compatible fallback fields\n\n* fix: fail closed when fallback field type is unknown\n\n* fix: require symmetric unit contracts for fallback\n\n* feat: normalize units after raw validation and expose field contracts\n\n* feat: export typed field and unit contracts\n\n* test: lock typed unit contracts in public API\n\n* test: cover typed scientific fields and canonical unit normalization\n\n* feat: support numeric-array unit contracts\n\n* feat: compare array item types in fallback schemas\n\n* feat: compare full field value shapes for fallback\n\n* feat: normalize numeric arrays and preserve type shape metadata\n\n* style: remove unused field type import\n\n* test: cover typed mismatch and numeric-array normalization\n\n* fix: classify semantic and unit normalization field drift\n\n* fix: fail closed on unit normalization overflow\n\n* fix: validate unit-bearing fields against endpoint output schemas\n\n* fix: make fallback datatype compatibility directional\n\n* fix: preserve case-sensitive scientific unit symbols\n\n* test: harden scientific type and unit boundaries\n\n* test: classify semantic and unit field drift\n\n* docs: define typed scientific field and unit contracts\n\n* docs: specify scientific datatype and unit adapter contracts\n\n* docs: record typed scientific field contracts\n\n* test: cover scientific unit normalization in installed packages\n\n* fix: preserve nullable scientific values during unit normalization\n\n* test: preserve nullable scientific values\n\n* fix: bind unit conversion closure state explicitly\n\n* test: keep semantic-id fallback unit symbols exact\n\n* test: match precise unit schema validation error\n\n* fix: tighten scientific unit and raw type contracts\n\n* feat: expose canonical post-normalization field schema\n\n* fix: compare canonical datatypes for scientific fallback\n\n* refactor: share canonical result type contract\n\n* fix: enforce selected field datatype contracts at runtime\n\n* fix: reject contradictory same-unit fallback conversions\n\n* test: harden datatype and unit contract invariants\n\n* docs: clarify strict datatype and unit fallback contracts\n\n* docs: define scientific datatype authoring requirements\n\n* docs: record strict typed-unit hardening\n\n* style: sort canonical validation imports\n\n* test: declare datatype for unit-bearing provider fallbacks\n\n* test: declare numeric type for unit-bearing semantic fields\n\n* feat: preserve OpenAPI field unit annotations\n\n* feat: preserve MCP field unit annotations\n\n* feat: expose typed unit field contracts in inspection\n\n* feat: export field inspection contract\n\n* feat: render typed scientific field contracts in dashboard\n\n* test: preserve typed unit annotations from remote schemas\n\n* test: expose typed unit contracts in inspection dashboard\n\n* test: export field inspection contract\n\n* style: sort typed inspection imports\n\n* docs: consolidate scientific unit adapter contract\n\n* docs: record unit ingestion and inspection surfaces\n\n* test: normalize units after provider-specific path canonicalization\n\n* test: keep remote unit labels non-authoritative",
+      "parents": [
+        "3c4e72be8f5059b2d84f28087f35546274962da6"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "3c4e72be8f5059b2d84f28087f35546274962da6",
+      "date": "2026-09-25T03:14:07Z",
+      "subject": "fix: validate nested server projections conservatively (#115)",
+      "full_message": "fix: validate nested server projections conservatively (#115)\n\n* feat: validate nested object server projections conservatively\n\n* test: cover nested object server projection validation\n\n* test: keep nested array projection paths fail closed\n\n* docs: define nested object projection safety boundary\n\n* docs: record nested server projection validation",
+      "parents": [
+        "b420c163b0668c105f0a6bce8898f67b50d091b2"
+      ],
+      "category": "fix",
+      "potential_material": false
+    },
+    {
+      "sha": "b420c163b0668c105f0a6bce8898f67b50d091b2",
+      "date": "2026-09-25T03:03:20Z",
+      "subject": "fix: plan across execution-ready routes before fallback (#114)",
+      "full_message": "fix: plan across execution-ready routes before fallback (#114)\n\n* feat: support additional runtime availability predicates\n\n* feat: use binding-ready planning for execution-facing APIs\n\n* test: separate schema planning from execution-ready routing\n\n* docs: distinguish schema and execution-ready planning\n\n* docs: plan across executable routes before fallback\n\n* test: cover execution-ready planning in installed packages\n\n* test: inject fixed plans through execution-ready planner\n\n* docs: record execution-ready planning behavior",
+      "parents": [
+        "4d0855163aed42fe339652067f56291252928da9"
+      ],
+      "category": "fix",
+      "potential_material": true
+    },
+    {
+      "sha": "4d0855163aed42fe339652067f56291252928da9",
+      "date": "2026-09-25T01:23:08Z",
+      "subject": "fix: harden executable route readiness",
+      "full_message": "fix: harden executable route readiness\n\nSeparate access health from local binding readiness, prune unusable optional read-only fallbacks, preserve fail-closed primary schema/policy behavior, align parallel fallback preflight, and expose ready/unbound/stale/orphaned binding states in inspection.",
+      "parents": [
+        "b6fed459a85d75537104359c66efaa3c95d38a5f"
+      ],
+      "category": "fix",
+      "potential_material": false
+    },
+    {
+      "sha": "b6fed459a85d75537104359c66efaa3c95d38a5f",
+      "date": "2026-09-25T01:01:41Z",
+      "subject": "test: prove recovery from all-down access paths (#111)",
+      "full_message": "test: prove recovery from all-down access paths (#111)\n\n* test: prove all-down access paths recover into planning\n\n* docs: explain recovery when every access path is down",
+      "parents": [
+        "0d02da90c0d248fd31b5bcc6c74fc142a3b28955"
+      ],
+      "category": "test",
+      "potential_material": false
+    },
+    {
+      "sha": "0d02da90c0d248fd31b5bcc6c74fc142a3b28955",
+      "date": "2026-09-25T00:53:56Z",
+      "subject": "feat: harden field-first provider-aware execution",
+      "full_message": "feat: harden field-first provider-aware execution\n\nAdd provider/access identity, bounded read-only fallback, availability-aware planning, trusted health probes, server-side field projection, canonical result paths, minimal list/dict projection, execution-contract fingerprinting, and adversarial hardening across metadata, drift, policy, inspection, packaging, and integrations.",
+      "parents": [
+        "6d3155603c7c4fefe848e7fcc7537ca882cef08a"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "6d3155603c7c4fefe848e7fcc7537ca882cef08a",
+      "date": "2026-09-24T16:03:21Z",
+      "subject": "feat: harden SchemaRouter 0.7 execution boundary",
+      "full_message": "feat: harden SchemaRouter 0.7 execution boundary\n\nAdd conservative schema drift analysis, operation-scoped local policy rules, structured planning explanations, and fail-closed read-only parallel fan-out. Includes CLI/docs, installed-package acceptance coverage, and full CI validation.",
+      "parents": [
+        "617f9cee4fe22c9055a4cd94905ada502457d0cd"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "617f9cee4fe22c9055a4cd94905ada502457d0cd",
+      "date": "2026-09-24T05:17:38Z",
+      "subject": "test: isolate lightweight optional-extra validation (#108)",
+      "full_message": "test: isolate lightweight optional-extra validation (#108)\n\nValidate MCP/Jev/OpenTelemetry extras independently from framework transitive dependencies across built-wheel, PyPI compatibility, and post-publish verification paths.",
+      "parents": [
+        "8ea206abeebcdd06970696405c1ebcd2632b4309"
+      ],
+      "category": "test",
+      "potential_material": false
+    },
+    {
+      "sha": "8ea206abeebcdd06970696405c1ebcd2632b4309",
+      "date": "2026-09-24T04:20:14Z",
+      "subject": "test: verify published lightweight integration extras (#107)",
+      "full_message": "test: verify published lightweight integration extras (#107)\n\nExtend stable PyPI and exact post-publish verification to MCP, LangChain, LangGraph, LlamaIndex, Jev, and OpenTelemetry extras.",
+      "parents": [
+        "2d65d06c205a620631b79c2316bc4e8310880eca"
+      ],
+      "category": "test",
+      "potential_material": true
+    },
+    {
+      "sha": "2d65d06c205a620631b79c2316bc4e8310880eca",
+      "date": "2026-09-24T04:07:13Z",
+      "subject": "test: harden installed extras and live compatibility smokes (#106)",
+      "full_message": "test: harden installed extras and live compatibility smokes (#106)\n\nValidate built-wheel MCP/Jev/OpenTelemetry extras and run live OpenAPI/OPTIMADE smokes from non-editable package installs.",
+      "parents": [
+        "c6dfcf81bd8c0e083e63a4f15fc5c798eec11490"
+      ],
+      "category": "test",
+      "potential_material": false
+    },
+    {
+      "sha": "c6dfcf81bd8c0e083e63a4f15fc5c798eec11490",
+      "date": "2026-09-24T03:47:34Z",
+      "subject": "release: verify PyPI artifact digests against trusted build (#105)",
+      "full_message": "release: verify PyPI artifact digests against trusted build (#105)\n\nRequire public PyPI wheel/sdist bytes to match the trusted release build by filename and SHA-256, with tested fail-closed verification.",
+      "parents": [
+        "948bb4fbddb260f27da067d59b000163306339ab"
+      ],
+      "category": "release",
+      "potential_material": true
+    },
+    {
+      "sha": "948bb4fbddb260f27da067d59b000163306339ab",
+      "date": "2026-09-24T03:34:50Z",
+      "subject": "release: verify exact PyPI artifacts after publication (#104)",
+      "full_message": "release: verify exact PyPI artifacts after publication (#104)\n\nAdd exact-version post-publish verification for wheel, sdist, and framework extras, with bounded PyPI propagation retries.",
+      "parents": [
+        "654d559845a2671bacd2485b7679c32e647b3f16"
+      ],
+      "category": "release",
+      "potential_material": true
+    },
+    {
+      "sha": "654d559845a2671bacd2485b7679c32e647b3f16",
+      "date": "2026-09-24T02:49:20Z",
+      "subject": "test: validate installed inspection CLI from package artifacts (#103)",
+      "full_message": "test: validate installed inspection CLI from package artifacts (#103)\n\nExercise installed registry/trace inspection and dashboard console paths from clean wheel and sdist environments.",
+      "parents": [
+        "da357495ba5c668f1d07da7814c00451004b8b39"
+      ],
+      "category": "test",
+      "potential_material": false
+    },
+    {
+      "sha": "da357495ba5c668f1d07da7814c00451004b8b39",
+      "date": "2026-09-24T02:33:15Z",
+      "subject": "test: validate published framework extras from PyPI (#102)",
+      "full_message": "test: validate published framework extras from PyPI (#102)\n\nExtend compatibility smokes to install stable framework extras from public PyPI and execute LangChain, LangGraph, and LlamaIndex bridges outside the source checkout.",
+      "parents": [
+        "dd83a9ea93e35b8f4d7af419b9b91e7c06e904c4"
+      ],
+      "category": "test",
+      "potential_material": false
+    },
+    {
+      "sha": "dd83a9ea93e35b8f4d7af419b9b91e7c06e904c4",
+      "date": "2026-09-24T02:16:44Z",
+      "subject": "test: verify published PyPI artifacts in compatibility smoke (#101)",
+      "full_message": "test: verify published PyPI artifacts in compatibility smoke (#101)\n\nAdd scheduled/manual PyPI wheel and sdist smokes, retain reports, and align compatibility documentation with the actual CI and live OpenAPI source.",
+      "parents": [
+        "1e0355e17dcc077aa95efe447f2e2487e59d2076"
+      ],
+      "category": "test",
+      "potential_material": false
+    },
+    {
+      "sha": "1e0355e17dcc077aa95efe447f2e2487e59d2076",
+      "date": "2026-09-24T00:59:10Z",
+      "subject": "test: add installed-artifact consumer acceptance validation (#99)",
+      "full_message": "test: add installed-artifact consumer acceptance validation (#99)\n\nAdd public-surface consumer acceptance scenarios across supported runtimes, clean wheel/sdist installs, and built-wheel framework extras.",
+      "parents": [
+        "efe27f3b8dd26322a2d09ea41ddc74906141a92b"
+      ],
+      "category": "test",
+      "potential_material": false
+    },
+    {
+      "sha": "efe27f3b8dd26322a2d09ea41ddc74906141a92b",
+      "date": "2026-09-24T00:03:08Z",
+      "subject": "docs: make contributing guide canonical (#97)",
+      "full_message": "docs: make contributing guide canonical (#97)\n\nMake root CONTRIBUTING.md the single source for the docs page, align the actual 84% coverage requirement and integration list, and prevent future drift with a regression test.",
+      "parents": [
+        "0359b5134624ba639da5832f872e2d1f8e9f82f0"
+      ],
+      "category": "docs",
+      "potential_material": false
+    },
+    {
+      "sha": "0359b5134624ba639da5832f872e2d1f8e9f82f0",
+      "date": "2026-09-23T23:59:28Z",
+      "subject": "ci: make dependency audit merge-blocking (#96)",
+      "full_message": "ci: make dependency audit merge-blocking (#96)\n\nAdd a dependency vulnerability audit to required CI and make the protected package check depend on both Laya integration and the audit, so vulnerability failures block merge even when repository rules lag newer job names.",
+      "parents": [
+        "29eb4f0b06150b8065f0d16e4b687345b67fca54"
+      ],
+      "category": "ci",
+      "potential_material": false
+    },
+    {
+      "sha": "29eb4f0b06150b8065f0d16e4b687345b67fca54",
+      "date": "2026-09-23T23:56:14Z",
+      "subject": "docs: make root changelog the canonical source (#95)",
+      "full_message": "docs: make root changelog the canonical source (#95)\n\nReplace the stale duplicated docs changelog with a MkDocs snippet of the canonical root CHANGELOG and add a regression test preventing future drift.",
+      "parents": [
+        "ff3bd6c5d3336cdfb7c386abc79c28955e064bf6"
+      ],
+      "category": "docs",
+      "potential_material": false
+    },
+    {
+      "sha": "ff3bd6c5d3336cdfb7c386abc79c28955e064bf6",
+      "date": "2026-09-23T19:42:50Z",
+      "subject": "security: tighten workflow permissions and PR SAST (#94)",
+      "full_message": "security: tighten workflow permissions and PR SAST (#94)\n\nRun CodeQL on pull requests with job-scoped security-events permission and make Docs read-only by default, retaining write access only for deployment.",
+      "parents": [
+        "87a3f22f1ff86a8f2d07fb17cec5b06087980bf9"
+      ],
+      "category": "security",
+      "potential_material": true
+    },
+    {
+      "sha": "87a3f22f1ff86a8f2d07fb17cec5b06087980bf9",
+      "date": "2026-09-23T19:38:09Z",
+      "subject": "security: pin workflow dependencies and harden release checkout (#93)",
+      "full_message": "security: pin workflow dependencies and harden release checkout (#93)\n\nPin all external GitHub Actions to immutable commit SHAs, enforce the invariant in tests, remove the dynamic write-capable release checkout, consume trusted release-note artifacts, and link private vulnerability reporting.",
+      "parents": [
+        "c27cd7f8a97270887d87d655f43d02630a6f6ab2"
+      ],
+      "category": "security",
+      "potential_material": true
+    },
+    {
+      "sha": "c27cd7f8a97270887d87d655f43d02630a6f6ab2",
+      "date": "2026-09-23T19:29:02Z",
+      "subject": "security: add release SBOM attestation (#92)",
+      "full_message": "security: add release SBOM attestation (#92)\n\nGenerate an SPDX JSON SBOM outside the PyPI distribution directory, attest it against wheel/sdist artifacts, attach it to GitHub releases, and align release checklist/documentation with current gates.",
+      "parents": [
+        "cbb4e9d407bb99cef3c4e4d47b635dce3a47c39f"
+      ],
+      "category": "security",
+      "potential_material": true
+    },
+    {
+      "sha": "cbb4e9d407bb99cef3c4e4d47b635dce3a47c39f",
+      "date": "2026-09-23T19:23:44Z",
+      "subject": "security: add OpenSSF Scorecard analysis (#91)",
+      "full_message": "security: add OpenSSF Scorecard analysis (#91)\n\nAdd the pinned official OpenSSF Scorecard workflow with least-privilege permissions, authenticated result publication, SARIF retention, Code Scanning upload, and workflow contract tests.",
+      "parents": [
+        "3b62d9828037eb8d6d9be702b7e64f4d4a29df7e"
+      ],
+      "category": "security",
+      "potential_material": true
+    },
+    {
+      "sha": "3b62d9828037eb8d6d9be702b7e64f4d4a29df7e",
+      "date": "2026-09-23T19:20:44Z",
+      "subject": "bench: report Wilson confidence intervals (#90)",
+      "full_message": "bench: report Wilson confidence intervals (#90)\n\nAdd dependency-free 95% Wilson score intervals for routing accuracy, expected no-route recall, and category-level accuracy, with JSON/HTML/history output and regression coverage.",
+      "parents": [
+        "c2d4b6452f6474dc1b37220c91950ad9277318cc"
+      ],
+      "category": "bench",
+      "potential_material": false
+    },
+    {
+      "sha": "c2d4b6452f6474dc1b37220c91950ad9277318cc",
+      "date": "2026-09-23T19:12:56Z",
+      "subject": "bench: add exact reproducibility manifest to benchmark reports (#89)",
+      "full_message": "bench: add exact reproducibility manifest to benchmark reports (#89)\n\nRecord exact source revision, corpus SHA-256, repeat count, and case limit in benchmark reports and history views; align Research Benchmark CI and remove stale no-route sentinel changelog text.",
+      "parents": [
+        "7c5c635ec81bd79009dd2e50a901ffb851450928"
+      ],
+      "category": "bench",
+      "potential_material": true
+    },
+    {
+      "sha": "7c5c635ec81bd79009dd2e50a901ffb851450928",
+      "date": "2026-09-23T19:03:44Z",
+      "subject": "bench: measure Laya with resident language checkpoints (#88)",
+      "full_message": "bench: measure Laya with resident language checkpoints (#88)\n\nUse max_loaded=2 with preload for mixed-language steady-state Laya benchmarking. Full-corpus evidence shows unchanged quality with substantially lower mean, p50, and p95 CPU latency.",
+      "parents": [
+        "e41f57a044182deb374980c28d66863d637a691b"
+      ],
+      "category": "bench",
+      "potential_material": false
+    },
+    {
+      "sha": "e41f57a044182deb374980c28d66863d637a691b",
+      "date": "2026-09-23T18:50:05Z",
+      "subject": "fix: remove ineffective no-route sentinel from empty-recall routing (#87)",
+      "full_message": "fix: remove ineffective no-route sentinel from empty-recall routing (#87)\n\nRemove the counterproductive none_of_the_above sentinel while retaining recall_on_empty, candidate abstention, confidence metrics, and offline threshold calibration. Full-corpus Laya evidence shows higher overall and Korean routing accuracy without the sentinel.",
+      "parents": [
+        "ad85b9fb7edf30df59832deea282fb2b049b0b71"
+      ],
+      "category": "fix",
+      "potential_material": true
+    },
+    {
+      "sha": "ad85b9fb7edf30df59832deea282fb2b049b0b71",
+      "date": "2026-09-23T14:29:09Z",
+      "subject": "fix: recover bounded decision routing after empty lexical recall (#85)",
+      "full_message": "fix: recover bounded decision routing after empty lexical recall (#85)\n\nAdd opt-in empty lexical recall recovery, explicit no-route bounded choices, calibrated candidate abstention semantics, threshold tooling, and reproducible Laya evidence.",
+      "parents": [
+        "8d8d9415483d56e940f3f716e53aa2e22b0c5e10"
+      ],
+      "category": "fix",
+      "potential_material": true
+    },
+    {
+      "sha": "8d8d9415483d56e940f3f716e53aa2e22b0c5e10",
+      "date": "2026-09-23T13:19:31Z",
+      "subject": "bench: add reproducible full-corpus research benchmark workflow (#84)",
+      "full_message": "bench: add reproducible full-corpus research benchmark workflow (#84)\n\nAdd an on-demand research benchmark workflow for deterministic and Laya CPU full-corpus evidence with retained JSON/CSV/HTML artifacts.",
+      "parents": [
+        "1dd4e59b23c549655758e9b015180703f9da5cc4"
+      ],
+      "category": "bench",
+      "potential_material": true
+    },
+    {
+      "sha": "1dd4e59b23c549655758e9b015180703f9da5cc4",
+      "date": "2026-09-23T13:02:05Z",
+      "subject": "feat: retain compatibility evidence and benchmark history (#83)",
+      "full_message": "feat: retain compatibility evidence and benchmark history (#83)\n\nAdd reproducibility metadata, multi-run benchmark history rendering, and retained machine-readable OpenAPI/OPTIMADE compatibility artifacts.",
+      "parents": [
+        "59a7949a8fd745567d92177a759acf1f60e3c606"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "59a7949a8fd745567d92177a759acf1f60e3c606",
+      "date": "2026-09-23T12:51:24Z",
+      "subject": "chore: harden 0.7 CI, serialization tests, and benchmark reporting (#82)",
+      "full_message": "chore: harden 0.7 CI, serialization tests, and benchmark reporting (#82)\n\nAdd property-based OpenAPI serialization tests, benchmark HTML reporting, security automation, Laya release gating, tighter coverage, and release artifact provenance.",
+      "parents": [
+        "01191ebce2fe477495c5a932b7e41633c622c80a"
+      ],
+      "category": "chore",
+      "potential_material": true
+    },
+    {
+      "sha": "01191ebce2fe477495c5a932b7e41633c622c80a",
+      "date": "2026-09-23T09:52:20Z",
+      "subject": "chore: begin SchemaRouter 0.7 development (#81)",
+      "full_message": "chore: begin SchemaRouter 0.7 development (#81)\n\nAdvance main to 0.7.0.dev0 after the stable 0.6.0 release; published 0.6.0 artifacts remain immutable.",
+      "parents": [
+        "cdaa2de6f3be1e8f131b287672083ee2a35ee622"
+      ],
+      "category": "chore",
+      "potential_material": true
+    },
+    {
+      "sha": "cdaa2de6f3be1e8f131b287672083ee2a35ee622",
+      "date": "2026-09-23T08:24:26Z",
+      "subject": "release: SchemaRouter 0.6.0 (#80)",
+      "full_message": "release: SchemaRouter 0.6.0 (#80)\n\nPromote the 0.6 development line after protected CI gates passed. Includes local/provider-neutral bounded decisions, operational inspection/dashboard, and the expanded fail-closed OpenAPI fidelity surface.",
+      "parents": [
+        "f6ea410176c5b2f8d1f4f6d59085f671598a53ef"
+      ],
+      "category": "release",
+      "potential_material": true
+    },
+    {
+      "sha": "f6ea410176c5b2f8d1f4f6d59085f671598a53ef",
+      "date": "2026-09-23T07:58:43Z",
+      "subject": "feat: serialize default OpenAPI parameter styles (#79)",
+      "full_message": "feat: serialize default OpenAPI parameter styles (#79)\n\nCompile and serialize OpenAPI default parameter styles, preserve manual ParameterSpec defaults at runtime, and keep trusted/sensitive header security checks ahead of transport serialization.",
+      "parents": [
+        "535b2f70f3e035d4e2d28fabd8076fc2f4499ad5"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "535b2f70f3e035d4e2d28fabd8076fc2f4499ad5",
+      "date": "2026-09-23T07:19:47Z",
+      "subject": "feat: normalize OpenAPI 3.0 nullable schemas (#78)",
+      "full_message": "feat: normalize OpenAPI 3.0 nullable schemas (#78)\n\nTranslate OpenAPI 3.0 nullable Schema Objects into JSON Schema type unions while preserving examples/defaults/extensions, keeping OAS 3.1 untouched, and retaining typed root-body semantics.",
+      "parents": [
+        "3ae94ca2c0abd0a83754b8847bcdf10efa587b2a"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "3ae94ca2c0abd0a83754b8847bcdf10efa587b2a",
+      "date": "2026-09-23T06:58:00Z",
+      "subject": "feat: support generic typed OpenAPI root bodies (#76)",
+      "full_message": "feat: support generic typed OpenAPI root bodies (#76)\n\nPreserve non-flattenable explicit JSON request schemas as typed root bodies, including arrays, scalars, nullable roots, and general compositions; fix YAML timestamp coercion discovered by the public OpenAPI smoke.",
+      "parents": [
+        "f1746bc9ac09c606fa09821c3c1e49c6767c3daf"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "f1746bc9ac09c606fa09821c3c1e49c6767c3daf",
+      "date": "2026-09-23T06:47:10Z",
+      "subject": "ci: use CPU-only PyTorch for Laya tests (#75)",
+      "full_message": "ci: use CPU-only PyTorch for Laya tests (#75)\n\nKeep the official Laya optional-extra contract test while preinstalling PyTorch from the CPU-only wheel index to avoid unnecessary CUDA downloads in Linux CI.",
+      "parents": [
+        "b85956a433f60e0ddf11bd18500b26607c51da42"
+      ],
+      "category": "ci",
+      "potential_material": false
+    },
+    {
+      "sha": "b85956a433f60e0ddf11bd18500b26607c51da42",
+      "date": "2026-09-23T06:44:12Z",
+      "subject": "feat: support discriminated OpenAPI request bodies (#74)",
+      "full_message": "feat: support discriminated OpenAPI request bodies (#74)\n\nSupport strictly tagged oneOf JSON request bodies as one typed root body parameter, preserve local validation, and allow provider-neutral cloud model analyzers to propose the complete body object safely.",
+      "parents": [
+        "1449ada7be7c00ed6cf413ff0f3152c19d63c259"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "1449ada7be7c00ed6cf413ff0f3152c19d63c259",
+      "date": "2026-09-23T06:32:23Z",
+      "subject": "feat: resolve bounded OpenAPI schema ids and anchors (#73)",
+      "full_message": "feat: resolve bounded OpenAPI schema ids and anchors (#73)\n\nAdd bounded same-origin JSON Schema $id rebasing, static $anchor resolution, nested virtual resources, local bundle rewriting, and fail-closed dynamic-reference handling for opt-in OpenAPI external refs.",
+      "parents": [
+        "79210db92ce1b459e298a5b10d6d4e1cefcce7f0"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "79210db92ce1b459e298a5b10d6d4e1cefcce7f0",
+      "date": "2026-09-23T06:21:47Z",
+      "subject": "feat: expose OpenAPI response variant fields (#72)",
+      "full_message": "feat: expose OpenAPI response variant fields (#72)\n\nExpose planner-visible fields from oneOf/anyOf response variants while preserving composed runtime validation and keeping variant request bodies unflattened.",
+      "parents": [
+        "264357faf9efb82857b1025d8819ccbb1ecdd7dc"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "264357faf9efb82857b1025d8819ccbb1ecdd7dc",
+      "date": "2026-09-23T06:00:32Z",
+      "subject": "docs: clarify SchemaRouter layer ownership (#71)",
+      "full_message": "docs: clarify SchemaRouter layer ownership (#71)\n\nClarify that SchemaRouter is a typed execution boundary, distinguish framework bridges from bounded decision backends, and document provider-neutral reuse of GPT, Gemini, Claude, and other hosted clients.",
+      "parents": [
+        "713da488920885478b47e64269f1917bb518c5a4"
+      ],
+      "category": "docs",
+      "potential_material": true
+    },
+    {
+      "sha": "713da488920885478b47e64269f1917bb518c5a4",
+      "date": "2026-09-23T05:26:50Z",
+      "subject": "feat: add live inspection and static dashboard (#70)",
+      "full_message": "feat: add live inspection and static dashboard (#70)\n\nExtend operational inspection with live router state, safe binding visibility, a self-contained HTML dashboard, runnable examples, and clearer local decision-backend documentation.",
+      "parents": [
+        "c5c526b9c269c2a39b2d7a972695fa33fff4ce82"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "c5c526b9c269c2a39b2d7a972695fa33fff4ce82",
+      "date": "2026-09-23T04:57:57Z",
+      "subject": "feat: add operational inspection CLI (#68)",
+      "full_message": "feat: add operational inspection CLI (#68)\n\nAdd read-oriented registry and trace inspection APIs, CLI commands, safe ingestion provenance, stable JSON output for dashboard consumers, package entry point, tests, and docs.",
+      "parents": [
+        "ab7ba1e7d683a8fe6acd42a11364e867b9b03340"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "ab7ba1e7d683a8fe6acd42a11364e867b9b03340",
+      "date": "2026-09-23T04:38:04Z",
+      "subject": "feat: add local Laya bounded decision backend (#67)",
+      "full_message": "feat: add local Laya bounded decision backend (#67)\n\nAdd Laya as an optional local bounded-decision backend with device-aware benchmarking, fail-closed single-selection semantics, optional dependency isolation, CI coverage, and documentation.",
+      "parents": [
+        "3072f81129e48c3df3f5dcfd56a4c8091c6b36b7"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "3072f81129e48c3df3f5dcfd56a4c8091c6b36b7",
+      "date": "2026-09-22T23:06:42Z",
+      "subject": "docs: streamline README and documentation UX (#66)",
+      "full_message": "docs: streamline README and documentation UX (#66)\n\nMake the repository and GitHub Pages easier to scan, surface PyPI/latest release links, and expose installation directly from the docs homepage.",
+      "parents": [
+        "c2e4194e4597e05367eeb27fefca8ff7303e57db"
+      ],
+      "category": "docs",
+      "potential_material": false
+    },
+    {
+      "sha": "c2e4194e4597e05367eeb27fefca8ff7303e57db",
+      "date": "2026-09-22T22:48:55Z",
+      "subject": "chore: begin SchemaRouter 0.6 development (#65)",
+      "full_message": "chore: begin SchemaRouter 0.6 development (#65)\n\nReturn main to 0.6.0.dev0 after publishing SchemaRouter 0.5.0.",
+      "parents": [
+        "f54c589adce05ae397e88ba4cd2275a9ac5298d5"
+      ],
+      "category": "chore",
+      "potential_material": true
+    },
+    {
+      "sha": "f54c589adce05ae397e88ba4cd2275a9ac5298d5",
+      "date": "2026-09-22T22:44:36Z",
+      "subject": "release: SchemaRouter 0.5.0 (#64)",
+      "full_message": "release: SchemaRouter 0.5.0 (#64)\n\nPublish SchemaRouter 0.5.0 after the runtime-hardening and OpenAPI-fidelity validation cycle.",
+      "parents": [
+        "05bbbf17574e44338b67428aac598b1eaa8292cb"
+      ],
+      "category": "release",
+      "potential_material": true
+    },
+    {
+      "sha": "05bbbf17574e44338b67428aac598b1eaa8292cb",
+      "date": "2026-09-22T22:21:21Z",
+      "subject": "fix: preserve multiple OpenAPI success response variants (#63)",
+      "full_message": "fix: preserve multiple OpenAPI success response variants (#63)\n\nSupport multiple 2xx JSON/no-content response variants and scan all successful responses for compatibility limitations.",
+      "parents": [
+        "d0aa56f29c96627fae3187cf57740747d69df1c3"
+      ],
+      "category": "fix",
+      "potential_material": false
+    },
+    {
+      "sha": "d0aa56f29c96627fae3187cf57740747d69df1c3",
+      "date": "2026-09-22T22:08:38Z",
+      "subject": "fix: avoid fabricating schema-less OpenAPI request bodies (#62)",
+      "full_message": "fix: avoid fabricating schema-less OpenAPI request bodies (#62)\n\nTreat schema-less JSON request bodies conservatively and expose the limitation through compatibility reporting.",
+      "parents": [
+        "de3a1b13c7bc667145f26bb82f159fd082eb11b8"
+      ],
+      "category": "fix",
+      "potential_material": true
+    },
+    {
+      "sha": "de3a1b13c7bc667145f26bb82f159fd082eb11b8",
+      "date": "2026-09-22T15:07:02Z",
+      "subject": "fix: ignore protocol-controlled OpenAPI header parameters (#61)",
+      "full_message": "fix: ignore protocol-controlled OpenAPI header parameters (#61)\n\nIgnore OpenAPI Accept, Content-Type, and Authorization header parameters during import.",
+      "parents": [
+        "4f8a24711cee135bb3f62cd71f3ab5dabf9ceba0"
+      ],
+      "category": "fix",
+      "potential_material": false
+    },
+    {
+      "sha": "4f8a24711cee135bb3f62cd71f3ab5dabf9ceba0",
+      "date": "2026-09-22T15:04:30Z",
+      "subject": "fix: preserve required OpenAPI JSON request bodies (#60)",
+      "full_message": "fix: preserve required OpenAPI JSON request bodies (#60)\n\nPreserve required request-body presence for supported JSON object bodies, including empty-object payloads.",
+      "parents": [
+        "54e828286ba095c00b1931d0ccf135bc0d3aafd6"
+      ],
+      "category": "fix",
+      "potential_material": false
+    },
+    {
+      "sha": "54e828286ba095c00b1931d0ccf135bc0d3aafd6",
+      "date": "2026-09-22T14:45:13Z",
+      "subject": "fix: make generated OpenAPI endpoint names collision-safe (#59)",
+      "full_message": "fix: make generated OpenAPI endpoint names collision-safe (#59)\n\nPreserve explicit operationId values and deterministically disambiguate colliding generated endpoint names.",
+      "parents": [
+        "b2c43a7d9382af36b1b7ea690a9d5e9c329f5200"
+      ],
+      "category": "fix",
+      "potential_material": false
+    },
+    {
+      "sha": "b2c43a7d9382af36b1b7ea690a9d5e9c329f5200",
+      "date": "2026-09-22T14:39:29Z",
+      "subject": "fix: honor OpenAPI operation parameter overrides (#58)",
+      "full_message": "fix: honor OpenAPI operation parameter overrides (#58)\n\nCorrect Path Item vs Operation parameter precedence and preserve imported tool identity.",
+      "parents": [
+        "1f4e903157698f8439b7dfdc7e4c28fca64f6bf8"
+      ],
+      "category": "fix",
+      "potential_material": false
+    },
+    {
+      "sha": "1f4e903157698f8439b7dfdc7e4c28fca64f6bf8",
+      "date": "2026-09-22T14:18:54Z",
+      "subject": "fix: enforce elapsed budget across approval and hooks (#57)",
+      "full_message": "fix: enforce elapsed budget across approval and hooks (#57)\n\nKeep max_elapsed_seconds authoritative across trusted approval and execution hook awaits.",
+      "parents": [
+        "cfa74238ce7e7eddd678f0eee8b28c67c026b317"
+      ],
+      "category": "fix",
+      "potential_material": false
+    },
+    {
+      "sha": "cfa74238ce7e7eddd678f0eee8b28c67c026b317",
+      "date": "2026-09-22T14:08:59Z",
+      "subject": "fix: cap the initial retry backoff (#56)",
+      "full_message": "fix: cap the initial retry backoff (#56)\n\nApply max_backoff_seconds from the first retry delay onward.",
+      "parents": [
+        "498997170edb31d61be8a0b670845ae04ee06925"
+      ],
+      "category": "fix",
+      "potential_material": false
+    },
+    {
+      "sha": "498997170edb31d61be8a0b670845ae04ee06925",
+      "date": "2026-09-22T14:03:42Z",
+      "subject": "fix: bound retry backoff by wall-clock budget (#55)",
+      "full_message": "fix: bound retry backoff by wall-clock budget (#55)\n\nEnsure retry backoff cannot sleep past ExecutionBudget.max_elapsed_seconds.",
+      "parents": [
+        "b58a29bcc1e1fce83673ded9302da90b577341df"
+      ],
+      "category": "fix",
+      "potential_material": false
+    },
+    {
+      "sha": "b58a29bcc1e1fce83673ded9302da90b577341df",
+      "date": "2026-09-22T13:59:40Z",
+      "subject": "feat: add transient-aware retry classification (#54)",
+      "full_message": "feat: add transient-aware retry classification (#54)\n\nStart the 0.5 line with fail-fast classification for deterministic built-in transport failures while preserving custom invoker retry compatibility.",
+      "parents": [
+        "91e498ec90f64b6532e09f2ed8310369b10a9645"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "91e498ec90f64b6532e09f2ed8310369b10a9645",
+      "date": "2026-09-22T13:15:51Z",
+      "subject": "test: harden async wall-clock budget timing (#53)",
+      "full_message": "test: harden async wall-clock budget timing (#53)\n\nRemove the Windows timing flake while preserving the intended async invocation timeout assertion.",
+      "parents": [
+        "b54386441b49f2952fa80ccaccf9cab706df91a9"
+      ],
+      "category": "test",
+      "potential_material": false
+    },
+    {
+      "sha": "b54386441b49f2952fa80ccaccf9cab706df91a9",
+      "date": "2026-09-22T13:11:39Z",
+      "subject": "chore: begin SchemaRouter 0.5 development (#52)",
+      "full_message": "chore: begin SchemaRouter 0.5 development (#52)\n\nReturn main to 0.5.0.dev0 after publishing 0.4.0.",
+      "parents": [
+        "aaf6585c2cf3badf117ed91efa7a418d632dab6d"
+      ],
+      "category": "chore",
+      "potential_material": true
+    },
+    {
+      "sha": "aaf6585c2cf3badf117ed91efa7a418d632dab6d",
+      "date": "2026-09-22T13:06:40Z",
+      "subject": "release: SchemaRouter 0.4.0 (#51)",
+      "full_message": "release: SchemaRouter 0.4.0 (#51)\n\nPrepare and publish the SchemaRouter 0.4.0 non-prerelease release.",
+      "parents": [
+        "354e18e95aa33d0aed53eafc7f9a083b673f0bff"
+      ],
+      "category": "release",
+      "potential_material": true
+    },
+    {
+      "sha": "354e18e95aa33d0aed53eafc7f9a083b673f0bff",
+      "date": "2026-09-22T12:21:12Z",
+      "subject": "feat: add trusted before/after execution hooks (#50)",
+      "full_message": "feat: add trusted before/after execution hooks (#50)\n\n* feat: add trusted execution hook contract\n\n* feat: add execution hook error\n\n* feat: execute trusted before and after hooks\n\n* feat: expose execution hooks through SchemaRouter\n\n* feat: export trusted execution hook API\n\n* test: adversarially cover trusted execution hooks\n\n* style: use direct ExecutionPlan import in hook tests\n\n* test: include execution hooks in public API\n\n* docs: add trusted execution hooks guide\n\n* docs: add execution hooks guide to navigation\n\n* docs: expose execution hook reference\n\n* docs: mark execution hooks implemented\n\n* docs: record execution hooks\n\n* docs: record execution hooks\n\n* docs: expose trusted execution hooks in README\n\n* docs: expose trusted execution hooks in Korean README\n\n* docs: add execution hook architecture invariants\n\n* docs: document execution hook security boundary\n\n* docs: expose execution hook error\n\n* fix: include after-hook time in elapsed budget\n\n* test: cover hook return and elapsed-budget contracts\n\n* test: mark intentional invalid hook return types\n\n* test: harden hook approval and budget ordering",
+      "parents": [
+        "2854f9bb590093ed1d1fde384960f242583da55b"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "2854f9bb590093ed1d1fde384960f242583da55b",
+      "date": "2026-09-22T12:06:05Z",
+      "subject": "feat: add bounded same-origin OpenAPI external refs (#49)",
+      "full_message": "feat: add bounded same-origin OpenAPI external refs (#49)\n\n* feat: add bounded OpenAPI external ref bundler\n\n* feat: add bounded OpenAPI ref adapter context\n\n* feat: preserve bundled external refs in runtime schemas\n\n* feat: wire bounded external refs into OpenAPI ingestion\n\n* feat: expose bounded OpenAPI external ref controls\n\n* test: adversarially cover bounded OpenAPI external refs\n\n* fix: deduplicate redirected OpenAPI ref documents\n\n* test: assert precise OpenAPI ref limit errors\n\n* docs: clarify opt-in external ref compatibility\n\n* docs: document bounded external OpenAPI refs\n\n* docs: align compatibility report with external ref opt-in\n\n* docs: mark bounded OpenAPI external refs implemented\n\n* docs: record bounded OpenAPI external refs\n\n* docs: record bounded OpenAPI external refs\n\n* docs: expose bounded OpenAPI refs in README\n\n* docs: expose bounded OpenAPI refs in Korean README\n\n* docs: add external ref SSRF boundary\n\n* docs: add bounded external ref architecture invariant\n\n* refactor: restrict external OpenAPI documents to object roots\n\n* test: block cross-origin external ref redirects\n\n* fix: type-safe external ref state and reserved bundle key\n\n* security: validate OpenAPI external-ref opt-in type\n\n* test: reject external-ref namespace and non-boolean opt-in",
+      "parents": [
+        "bb2cb859594ac95c40a952bfcdc339dc908e65c3"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "bb2cb859594ac95c40a952bfcdc339dc908e65c3",
+      "date": "2026-09-22T11:22:29Z",
+      "subject": "perf: add exact-recall candidate indexing (#48)",
+      "full_message": "perf: add exact-recall candidate indexing (#48)\n\n* feat: add exact-recall candidate index\n\n* test: prove candidate index exact recall and cache invalidation\n\n* perf: add candidate index benchmark harness\n\n* docs: add candidate indexing guide\n\n* docs: mark candidate indexing implemented\n\n* docs: add candidate-index architecture invariant\n\n* docs: expose candidate indexing in README\n\n* docs: expose candidate indexing in Korean README\n\n* docs: add candidate indexing navigation\n\n* docs: record candidate indexing\n\n* docs: record candidate indexing\n\n* test: align candidate index cases with planner contracts",
+      "parents": [
+        "d478ae7ac32ff726b8b1786927bfe2546b7ba4a0"
+      ],
+      "category": "performance",
+      "potential_material": true
+    },
+    {
+      "sha": "d478ae7ac32ff726b8b1786927bfe2546b7ba4a0",
+      "date": "2026-09-22T11:11:24Z",
+      "subject": "feat: add conservative evidence sufficiency decisions (#47)",
+      "full_message": "feat: add conservative evidence sufficiency decisions (#47)\n\n* feat: activate bounded evidence-sufficiency surface\n\n* feat: enable evidence-sufficiency planning surface\n\n* feat: add conservative evidence sufficiency contract\n\n* feat: gate calls through bounded evidence sufficiency\n\n* test: adversarially cover evidence sufficiency decisions\n\n* test: activate evidence sufficiency decision switch\n\n* test: replace reserved evidence surface expectation\n\n* fix: assess answer-field evidence conservatively\n\n* docs: document bounded evidence sufficiency\n\n* docs: mark evidence sufficiency implemented\n\n* docs: expose evidence sufficiency in README\n\n* docs: expose evidence sufficiency in Korean README\n\n* docs: record evidence sufficiency contract\n\n* docs: record evidence sufficiency contract\n\n* docs: add evidence sufficiency authority boundary\n\n* style: sort evidence sufficiency test imports",
+      "parents": [
+        "0d0fc3c3ccaecc918d6efece1ba2886ae3d24937"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "0d0fc3c3ccaecc918d6efece1ba2886ae3d24937",
+      "date": "2026-09-22T10:27:37Z",
+      "subject": "feat: add explicit nested field projection paths (#46)",
+      "full_message": "feat: add explicit nested field projection paths (#46)\n\n* feat: add explicit nested field projection paths\n\n* feat: score nested projection paths during planning\n\n* feat: execute explicit nested field projections\n\n* test: adversarially cover nested field projection\n\n* docs: add nested field projection guide\n\n* docs: add field projection guide to navigation\n\n* docs: mark nested projection implemented\n\n* docs: align architecture with nested projection\n\n* docs: record nested field projection\n\n* docs: record nested field projection\n\n* fix: avoid broad parent-key field matches\n\n* docs: expose nested projection in README\n\n* docs: expose nested projection in Korean README\n\n* style: sort executor imports\n\n* style: remove unused nested projection import",
+      "parents": [
+        "db03aa42dac88eb4743eda762de98541bf90c7c2"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "db03aa42dac88eb4743eda762de98541bf90c7c2",
+      "date": "2026-09-22T10:08:03Z",
+      "subject": "feat: add bounded output field selection (#45)",
+      "full_message": "feat: add bounded output field selection (#45)\n\n* feat: enable bounded field selection policy\n\n* feat: reserve only evidence decision surface\n\n* feat: add bounded field selection contract\n\n* test: cover bounded field decision contract\n\n* test: cover field selection policy surface\n\n* docs: document bounded field selection\n\n* docs: mark bounded field selection implemented\n\n* docs: record bounded field selection\n\n* docs: record bounded field selection\n\n* docs: expose bounded field selection in README\n\n* docs: expose bounded field selection in Korean README\n\n* docs: certify bounded field selection\n\n* docs: add field selection authority boundary",
+      "parents": [
+        "497e8c9e236ac60cc317760d4d3bf9b5850be685"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "497e8c9e236ac60cc317760d4d3bf9b5850be685",
+      "date": "2026-09-22T10:00:44Z",
+      "subject": "feat: add replayable persistent run traces (#44)",
+      "full_message": "feat: add replayable persistent run traces (#44)\n\n* feat: add run trace error type\n\n* feat: add replayable SQLite run trace storage\n\n* feat: export run trace persistence API\n\n* feat: allow direct event trace persistence\n\n* fix: persist runtime events without syntax drift\n\n* test: adversarially cover persistent run traces\n\n* test: include run trace API in public contract\n\n* docs: expose run trace persistence API\n\n* docs: add persistent run trace guide\n\n* docs: add run trace guide to navigation\n\n* docs: document persistent trace privacy boundary\n\n* docs: add run trace architecture boundary\n\n* docs: mark replayable run traces implemented\n\n* docs: record persistent run traces\n\n* docs: record persistent run traces\n\n* docs: expose persistent run traces in README\n\n* docs: expose persistent run traces in Korean README\n\n* docs: link runtime events to persistence\n\n* security: cross-check persisted trace summaries\n\n* test: fail closed on trace summary corruption\n\n* style: sort run trace test imports",
+      "parents": [
+        "1972ecea8683ddcc24c5d7e72fc97956a23ab076"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "1972ecea8683ddcc24c5d7e72fc97956a23ab076",
+      "date": "2026-09-22T09:32:09Z",
+      "subject": "feat: add transactional persistent SQLite registry (#43)",
+      "full_message": "feat: add transactional persistent SQLite registry (#43)\n\n* feat: add persistent SQLite registry\n\n* fix: configure SQLite busy timeout safely\n\n* feat: export SQLite registry\n\n* test: include SQLite registry in public API\n\n* docs: expose SQLite registry reference\n\n* test: cover persistent SQLite registry\n\n* docs: document persistent SQLite registry\n\n* docs: mark persistent registry implemented\n\n* docs: align architecture with SQLite persistence\n\n* docs: record SQLite registry\n\n* docs: record SQLite registry\n\n* test: execute through reopened SQLite registry\n\n* docs: expose persistent registry in README\n\n* docs: expose persistent registry in Korean README\n\n* style: sort SQLite registry test imports\n\n* test: use PlanRequest with persistent registry runtime",
+      "parents": [
+        "6dfda34074f7c28375d66720c6ef5bbd12b5cad0"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "6dfda34074f7c28375d66720c6ef5bbd12b5cad0",
+      "date": "2026-09-22T09:06:01Z",
+      "subject": "feat: add local Ollama bounded decision backend (#42)",
+      "full_message": "feat: add local Ollama bounded decision backend (#42)\n\n* feat: add ollama support\n\n* feat: add test_ollama_integration support\n\n* feat: add ollama support\n\n* feat: export Ollama decision backend\n\n* feat: benchmark Ollama decision backends\n\n* docs: document Ollama bounded decisions\n\n* docs: add Ollama compatibility surface\n\n* docs: add Ollama integration navigation\n\n* docs: add Ollama benchmark workflow\n\n* docs: add Ollama bounded decisions to README\n\n* docs: add Ollama bounded decisions to Korean README\n\n* docs: record Ollama decision provider maturity\n\n* docs: record Ollama decision backend\n\n* docs: record Ollama decision backend",
+      "parents": [
+        "5ec8bfa7c3a438f12553099333322eb150008e49"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "5ec8bfa7c3a438f12553099333322eb150008e49",
+      "date": "2026-09-22T08:27:29Z",
+      "subject": "feat: add provider-neutral embedding decision backend (#40)",
+      "full_message": "feat: add provider-neutral embedding decision backend (#40)\n\n* feat: add embedding decision backend\n\n* feat: export embedding decision backend\n\n* test: cover embedding decision backend\n\n* style: align embedding backend formatting\n\n* style: keep decision exports ordered\n\n* feat: benchmark embedding decision backends\n\n* test: include embedding backend in public API contract\n\n* docs: document embedding decision backend\n\n* docs: add embedding benchmark path\n\n* docs: update bounded decision maturity\n\n* docs: expose embedding decision backend in README\n\n* docs: add Korean embedding decision guidance\n\n* docs: record embedding decision backend\n\n* docs: record embedding decision backend\n\n* fix: close unconsumed async embedding providers\n\n* docs: clarify embedding metadata boundary\n\n* docs: clarify custom embedding text trust boundary\n\n* style: satisfy modern annotation lint",
+      "parents": [
+        "f5b08809a6b1f1776d8d98546b2a29586d6aaf94"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "f5b08809a6b1f1776d8d98546b2a29586d6aaf94",
+      "date": "2026-09-22T08:15:45Z",
+      "subject": "feat: improve OpenAPI ref and composition fidelity (#39)",
+      "full_message": "feat: improve OpenAPI ref and composition fidelity (#39)\n\n* feat: improve OpenAPI local ref and allOf planning fidelity\n\n* feat: normalize same-document OpenAPI URI refs\n\n* test: cover OpenAPI ref chains and allOf composition\n\n* docs: clarify OpenAPI ref and composition compatibility\n\n* docs: document OpenAPI ref and allOf support\n\n* docs: refine OpenAPI compatibility guidance\n\n* docs: update OpenAPI maturity state\n\n* docs: record OpenAPI ref/composition improvements\n\n* docs: record OpenAPI ref/composition improvements\n\n* fix: align OpenAPI compatibility analysis with ref chains\n\n* test: assert compatibility analyzer resolves path refs",
+      "parents": [
+        "aa597a0a3eaffbd3487d51f810adbfd8dec1d86d"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "aa597a0a3eaffbd3487d51f810adbfd8dec1d86d",
+      "date": "2026-09-22T08:07:55Z",
+      "subject": "feat: add native LangGraph StateGraph integration (#38)",
+      "full_message": "feat: add native LangGraph StateGraph integration (#38)\n\n* feat: add native LangGraph node adapter\n\n* test: cover LangGraph node integration\n\n* docs: add runnable LangGraph example\n\n* docs: add LangGraph integration guide\n\n* feat: add LangGraph optional dependency\n\n* feat: export LangGraph integration\n\n* ci: certify LangGraph integration\n\n* docs: certify LangGraph compatibility\n\n* docs: mark LangGraph maturity gate complete\n\n* docs: add LangGraph to navigation\n\n* docs: cross-link LangGraph guide\n\n* docs: record LangGraph integration\n\n* docs: sync LangGraph changelog\n\n* docs: add LangGraph README quickstart\n\n* docs: add Korean LangGraph quickstart",
+      "parents": [
+        "d4073490fba7de023ccbee4019630f535341599b"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "d4073490fba7de023ccbee4019630f535341599b",
+      "date": "2026-09-22T04:26:27Z",
+      "subject": "chore: remove one-off branch cleanup workflow (#37)",
+      "full_message": "chore: remove one-off branch cleanup workflow (#37)",
+      "parents": [
+        "890e276ce3a55552927ab2bbfd5470b959c6b460"
+      ],
+      "category": "chore",
+      "potential_material": false
+    },
+    {
+      "sha": "890e276ce3a55552927ab2bbfd5470b959c6b460",
+      "date": "2026-09-22T04:24:02Z",
+      "subject": "chore: add one-off stale branch cleanup (#36)",
+      "full_message": "chore: add one-off stale branch cleanup (#36)",
+      "parents": [
+        "8a5ffed90ba5f8cbd5b2e41db0e86f9a54487daa"
+      ],
+      "category": "chore",
+      "potential_material": false
+    },
+    {
+      "sha": "8a5ffed90ba5f8cbd5b2e41db0e86f9a54487daa",
+      "date": "2026-09-22T04:20:05Z",
+      "subject": "chore: begin 0.4.0 development (#35)",
+      "full_message": "chore: begin 0.4.0 development (#35)\n\n* chore: begin 0.4.0 development\n\n* chore: mark 0.4.0 development state\n\n* chore: mark 0.4.0 development state",
+      "parents": [
+        "76e5408beb91503627f0bc0db6efc38f41ccefe8"
+      ],
+      "category": "chore",
+      "potential_material": false
+    },
+    {
+      "sha": "76e5408beb91503627f0bc0db6efc38f41ccefe8",
+      "date": "2026-09-22T04:08:20Z",
+      "subject": "release: SchemaRouter 0.3.0 (#34)",
+      "full_message": "release: SchemaRouter 0.3.0 (#34)\n\n* release: set package version to 0.3.0\n\n* docs: point README installs at 0.3.0\n\n* docs: point Korean README installs at 0.3.0\n\n* docs: update installation guide for 0.3.0\n\n* docs: update mcp.md install command\n\n* docs: update langchain.md install command\n\n* docs: update opentelemetry.md install command\n\n* docs: update LlamaIndex integration for 0.3.0\n\n* docs: update Jev integration for 0.3.0\n\n* docs: align maturity gate with 0.3.0\n\n* release: add 0.3.0 changelog\n\n* docs: add 0.3.0 changelog\n\n* release: add 0.3.0 release notes",
+      "parents": [
+        "7b281ee95112f9011eb37d44f8a7b2632a5761f6"
+      ],
+      "category": "release",
+      "potential_material": true
+    },
+    {
+      "sha": "7b281ee95112f9011eb37d44f8a7b2632a5761f6",
+      "date": "2026-09-22T03:05:38Z",
+      "subject": "chore(deps): bump GitHub artifact actions (#6)",
+      "full_message": "chore(deps): bump GitHub artifact actions (#6)\n\nUpdate upload-artifact to v7 and download-artifact to v8 across CI and release workflows.",
+      "parents": [
+        "bb540cd7979133f9b2fd07f7e4e58db6906de893"
+      ],
+      "category": "chore",
+      "potential_material": false
+    },
+    {
+      "sha": "bb540cd7979133f9b2fd07f7e4e58db6906de893",
+      "date": "2026-09-22T02:36:57Z",
+      "subject": "ci: separate Python preview from release gate (#32)",
+      "full_message": "ci: separate Python preview from release gate (#32)\n\nMove Python 3.15 RC checks into a bounded standalone workflow so preview-only compatibility signals cannot stall deterministic CI or release publication.",
+      "parents": [
+        "92ad56bb2e492417ca51da324da01c49759db0be"
+      ],
+      "category": "ci",
+      "potential_material": true
+    },
+    {
+      "sha": "92ad56bb2e492417ca51da324da01c49759db0be",
+      "date": "2026-09-22T01:49:57Z",
+      "subject": "docs: align integration installs with published alpha (#31)",
+      "full_message": "docs: align integration installs with published alpha (#31)\n\nUpdate LangChain, LlamaIndex, Jev, MCP, and OpenTelemetry consumer guides to use the published 0.3.0a1 prerelease extras.",
+      "parents": [
+        "4ec70ce454f701da6624303c839754d876986757"
+      ],
+      "category": "docs",
+      "potential_material": true
+    },
+    {
+      "sha": "4ec70ce454f701da6624303c839754d876986757",
+      "date": "2026-09-22T01:43:26Z",
+      "subject": "chore: begin 0.3.0a2 development (#30)",
+      "full_message": "chore: begin 0.3.0a2 development (#30)\n\nReturn main to 0.3.0a2.dev0 after the published 0.3.0a1 alpha while keeping public installation docs pointed at the released artifact.",
+      "parents": [
+        "26ae8bcb8929d559826ffe0bab1c66ef7412c64e"
+      ],
+      "category": "chore",
+      "potential_material": false
+    },
+    {
+      "sha": "26ae8bcb8929d559826ffe0bab1c66ef7412c64e",
+      "date": "2026-09-22T01:29:32Z",
+      "subject": "ci: separate Python preview from release-blocking CI (#27)",
+      "full_message": "ci: separate Python preview from release-blocking CI (#27)\n\nMove Python 3.15 RC compatibility checks to a standalone bounded workflow so release publication depends only on deterministic blocking CI.",
+      "parents": [
+        "6250015c5197fae39272caf71fe7da29bf7246f7"
+      ],
+      "category": "ci",
+      "potential_material": true
+    },
+    {
+      "sha": "6250015c5197fae39272caf71fe7da29bf7246f7",
+      "date": "2026-09-22T01:24:04Z",
+      "subject": "fix: preserve release tag ancestry history (#26)",
+      "full_message": "fix: preserve release tag ancestry history (#26)\n\nPreserve full Git history while verifying an existing unpublished release tag against the current green main SHA.",
+      "parents": [
+        "afc6c25b0b6ba04336df74d3093a6dade45d463b"
+      ],
+      "category": "fix",
+      "potential_material": true
+    },
+    {
+      "sha": "afc6c25b0b6ba04336df74d3093a6dade45d463b",
+      "date": "2026-09-22T01:11:40Z",
+      "subject": "ci: unify release tagging and publishing pipeline (#25)",
+      "full_message": "ci: unify release tagging and publishing pipeline (#25)\n\nUnify green-main release detection, tag creation/recovery, artifact verification, GitHub release creation, and PyPI Trusted Publishing in the top-level Release workflow.",
+      "parents": [
+        "2a1a95642ea82e4364efc5f4b53bea30ed911927"
+      ],
+      "category": "ci",
+      "potential_material": true
+    },
+    {
+      "sha": "2a1a95642ea82e4364efc5f4b53bea30ed911927",
+      "date": "2026-09-22T00:54:26Z",
+      "subject": "ci: automate release tag creation after green main CI (#24)",
+      "full_message": "ci: automate release tag creation after green main CI (#24)\n\nAutomatically create idempotent annotated release tags only after successful current-main CI, with release metadata validation and no repository-code execution in the privileged workflow.",
+      "parents": [
+        "fc17588aaa8097145ed1f5b0feca2fd6e11b6ba0"
+      ],
+      "category": "ci",
+      "potential_material": true
+    },
+    {
+      "sha": "fc17588aaa8097145ed1f5b0feca2fd6e11b6ba0",
+      "date": "2026-09-22T00:17:17Z",
+      "subject": "release: SchemaRouter 0.3.0a1 (#23)",
+      "full_message": "release: SchemaRouter 0.3.0a1 (#23)\n\nPrepare the 0.3.0a1 alpha release with release metadata, changelog, notes, and packaged installation documentation.",
+      "parents": [
+        "ac7833feceef21a1949fb70308ba86159037db21"
+      ],
+      "category": "release",
+      "potential_material": true
+    },
+    {
+      "sha": "ac7833feceef21a1949fb70308ba86159037db21",
+      "date": "2026-09-21T21:20:03Z",
+      "subject": "feat: add production maturity controls and ecosystem contracts",
+      "full_message": "feat: add production maturity controls and ecosystem contracts\n\n* feat: expand decision benchmark harness\n\n* bench: add multilingual adversarial routing corpus\n\n* feat: add OpenAPI compatibility reporting\n\n* feat: attach OpenAPI compatibility report to imported tools\n\n* feat: export OpenAPI compatibility API\n\n* feat: expose OpenAPI compatibility report publicly\n\n* test: cover OpenAPI compatibility reporting\n\n* test: validate checked-in decision benchmark corpus\n\n* test: pin OpenAPI compatibility public exports\n\n* feat: add authenticated MCP client transport boundary\n\n* feat: carry trusted MCP client factory through adapter context\n\n* feat: wire authenticated MCP transport through URL ingestion\n\n* feat: expose trusted MCP client factory on router URL APIs\n\n* feat: export MCP transport factory contracts\n\n* feat: expose MCP transport factory contracts\n\n* test: cover authenticated MCP transport isolation\n\n* test: pin MCP transport public exports\n\n* feat: add approval and execution budget errors\n\n* feat: add trusted per-call approval policy\n\n* feat: add deterministic per-run execution budgets\n\n* feat: enforce approvals and execution budgets at executor boundary\n\n* feat: enforce wall-clock budget during invocation\n\n* feat: carry approval and budget semantics through runtime APIs\n\n* feat: export approval and execution budget contracts\n\n* test: pin approval and execution budget public exports\n\n* test: cover trusted approval and execution budget semantics\n\n* feat: add privacy-preserving OpenTelemetry run exporter\n\n* feat: export OpenTelemetry integration\n\n* feat: add optional OpenTelemetry dependency extra\n\n* feat: add explicit third-party adapter plugin contract\n\n* feat: export adapter plugin discovery contract\n\n* feat: expose adapter plugin APIs\n\n* feat: add explicit adapter plugin loading on router\n\n* test: enforce explicit adapter plugin loading\n\n* test: pin adapter plugin public APIs\n\n* fix: make telemetry cleanup non-disruptive\n\n* test: verify OpenTelemetry span privacy and hierarchy\n\n* ci: validate OpenTelemetry integration\n\n* security: reject credentials embedded in MCP URLs\n\n* docs: add openapi-compatibility guide\n\n* docs: add opentelemetry guide\n\n* docs: add adapter-plugins guide\n\n* docs: update decision-benchmark for production controls\n\n* docs: update mcp for production controls\n\n* docs: update execution-policy for production controls\n\n* docs: update framework maturity for production controls\n\n* docs: document third-party adapter packaging contract\n\n* docs: connect runtime events to OpenTelemetry\n\n* docs: extend threat model for auth budgets telemetry and plugins\n\n* docs: add production maturity guides to navigation\n\n* docs: update project overview for production maturity features\n\n* docs: update project overview for production maturity features\n\n* docs: record production maturity feature suite\n\n* docs: record production maturity feature suite\n\n* docs: add OpenTelemetry compatibility surface\n\n* docs: add OpenTelemetry to compatibility contract\n\n* docs: include OpenTelemetry in full contributor surface\n\n* docs: include OpenTelemetry in full contributor surface\n\n* docs: include OpenTelemetry in release integration gate\n\n* security: reject non-finite execution budget costs\n\n* security: reject ambiguous adapter plugin entry points\n\n* test: reject non-finite execution budget costs\n\n* test: reject ambiguous plugin entry point names\n\n* style: wrap benchmark catalog definitions\n\n* test: reject embedded MCP URL credentials\n\n* test: exercise trusted headers through real MCP transport\n\n* docs: align root security policy with production controls\n\n* docs: include new public production contracts in compatibility policy\n\n* docs: update architecture for production maturity suite\n\n* docs: expose execution budget in runtime reference\n\n* docs: expose new public contracts in API reference\n\n* bench: separate final routing accuracy from backend abstention\n\n* docs: distinguish abstention quality from final routing accuracy\n\n* test: pin benchmark abstention metric semantics\n\n* docs: strengthen production contribution invariants\n\n* docs: strengthen production contribution invariants\n\n* docs: add production security compatibility gates\n\n* fix: avoid Pydantic construct name collision\n\n* fix: serialize compatibility report with public aliases\n\n* fix: make adapter plugin protocol boundary explicit\n\n* fix: narrow OpenTelemetry tool span attributes\n\n* test: use non-conflicting compatibility issue field\n\n* test: assert concrete telemetry execution failure\n\n* style: sort public package imports\n\n* style: sort adapter package imports\n\n* style: sort runtime adapter imports\n\n* style: wrap OpenAPI compatibility analysis\n\n* style: wrap OpenTelemetry test rendering\n\n* fix: support asyncio timeout errors on Python 3.10\n\n* test: register dynamic benchmark module for dataclasses\n\n* ci: include OpenTelemetry in full coverage surface\n\n* style: match Ruff public import ordering\n\n* security: isolate approval callbacks and revalidate after await\n\n* test: cover approval mutation isolation and TOCTOU drift\n\n* fix: stage adapter plugins before registry mutation\n\n* test: keep adapter registry atomic on duplicate plugin kinds\n\n* test: assert binding drift after approval-time metadata change\n\n* style: finalize public import order\n\n* fix: restore OPTIMADE public export import",
+      "parents": [
+        "89b20c4bb2420877c89b46e0789ea758ece92762"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "89b20c4bb2420877c89b46e0789ea758ece92762",
+      "date": "2026-09-21T17:09:39Z",
+      "subject": "chore: finish compatibility and release quality gates (#21)",
+      "full_message": "chore: finish compatibility and release quality gates (#21)\n\nAdd Python 3.14 support, Python 3.15 preview CI, Windows smoke coverage, branch-coverage regression protection, minimum-dependency testing, reusable release quality gates, and clean wheel/sdist artifact verification.",
+      "parents": [
+        "7bb16d72cb655a796d42ca408d87f0e6d5467aba"
+      ],
+      "category": "chore",
+      "potential_material": true
+    },
+    {
+      "sha": "7bb16d72cb655a796d42ca408d87f0e6d5467aba",
+      "date": "2026-09-21T16:49:24Z",
+      "subject": "chore: harden release metadata and typed CI (#20)",
+      "full_message": "chore: harden release metadata and typed CI (#20)\n\nHarden development/release version identity, add Python 3.13 and Pyright gates, fix typed Jev/LlamaIndex integration boundaries, and make release publishing re-verify the full package surface.",
+      "parents": [
+        "5599ed48ea300dc88dc0cefdc6ce9aa5a75cb38d"
+      ],
+      "category": "chore",
+      "potential_material": true
+    },
+    {
+      "sha": "5599ed48ea300dc88dc0cefdc6ce9aa5a75cb38d",
+      "date": "2026-09-21T16:02:10Z",
+      "subject": "fix: bound OpenAPI runtime responses and finish hardening audit",
+      "full_message": "fix: bound OpenAPI runtime responses and finish hardening audit\n\n* fix: bound OpenAPI runtime response size\n\n* test: adversarially bound OpenAPI runtime responses\n\n* fix: validate OpenAPI response limit type\n\n* test: reject non-integer OpenAPI response limits\n\n* docs: document OpenAPI runtime response bound\n\n* docs: document OpenAPI runtime response bound\n\n* docs: document OpenAPI runtime response bound\n\n* docs: record bounded OpenAPI runtime responses\n\n* docs: record bounded OpenAPI runtime responses\n\n* docs: align site index with current architecture\n\n* docs: align adversarial architecture review\n\n* docs: make release checklist reusable after first publish\n\n* docs: mark 0.2.0a1 as published alpha\n\n* fix: avoid double decoding compressed OpenAPI responses\n\n* test: cover compressed OpenAPI runtime responses",
+      "parents": [
+        "dfe4b85f12ae7356e085d93897b56f73272088db"
+      ],
+      "category": "fix",
+      "potential_material": false
+    },
+    {
+      "sha": "dfe4b85f12ae7356e085d93897b56f73272088db",
+      "date": "2026-09-21T15:52:30Z",
+      "subject": "feat: complete Jev decision backend, hardening, benchmarks, and Korean README",
+      "full_message": "feat: complete Jev decision backend, hardening, benchmarks, and Korean README\n\n* feat: add optional Jev decision backend\n\n* feat: export Jev decision backend\n\n* build: add optional Jev dependency\n\n* test: adversarially validate Jev integration\n\n* ci: add Jev integration contract job\n\n* bench: add decision routing comparison harness\n\n* fix: reject unknown Jev choices before abstention\n\n* test: fail closed on low-confidence unknown Jev choice\n\n* docs: add Jev integration guide\n\n* docs: document decision benchmark harness\n\n* docs: align decision backend contract with Jev provider\n\n* docs: add Jev compatibility and CI policy\n\n* docs: align maturity matrix with Jev and benchmark work\n\n* docs: add Jev and decision benchmark navigation\n\n* docs: record decision backend and Jev changes\n\n* docs: align site changelog with root changelog\n\n* docs: align README with Jev and decision benchmark\n\n* docs: add Korean README\n\n* ci: smoke test decision benchmark from built wheel\n\n* style: satisfy Jev integration lint\n\n* fix: restore multiline Jev test signature\n\n* test: cover decision abstention and provider failure fallback\n\n* docs: distinguish published alpha from unreleased main\n\n* docs: clarify LlamaIndex unreleased install path\n\n* docs: clarify Jev unreleased install path\n\n* docs: align decision backend install with release state\n\n* docs: align README install commands with release state\n\n* docs: align Korean README with release state",
+      "parents": [
+        "a04b1dd6a8f5eb8a6621d0be5ce33b59b7d32500"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "a04b1dd6a8f5eb8a6621d0be5ce33b59b7d32500",
+      "date": "2026-09-21T15:25:09Z",
+      "subject": "docs: complete ecosystem runnable examples and compatibility policy",
+      "full_message": "docs: complete ecosystem runnable examples and compatibility policy\n\n* docs: add runnable LangChain example\n\n* docs: add runnable LlamaIndex example\n\n* ci: execute ecosystem integration examples\n\n* docs: publish ecosystem compatibility policy\n\n* docs: make LangChain integration runnable\n\n* docs: make LlamaIndex integration runnable\n\n* docs: align framework maturity with current main",
+      "parents": [
+        "d131d005b604f4b0ff86106b56ff624d98c02959"
+      ],
+      "category": "docs",
+      "potential_material": true
+    },
+    {
+      "sha": "d131d005b604f4b0ff86106b56ff624d98c02959",
+      "date": "2026-09-21T15:20:58Z",
+      "subject": "docs: align ecosystem readiness and published alpha status",
+      "full_message": "docs: align ecosystem readiness and published alpha status",
+      "parents": [
+        "207739cca531dd20ebb6fe16b342fb23e736e1f7"
+      ],
+      "category": "docs",
+      "potential_material": false
+    },
+    {
+      "sha": "207739cca531dd20ebb6fe16b342fb23e736e1f7",
+      "date": "2026-09-21T15:16:20Z",
+      "subject": "feat: add first-class LlamaIndex integration",
+      "full_message": "feat: add first-class LlamaIndex integration\n\n* test: add LlamaIndex integration contract coverage\n\n* ci: validate LlamaIndex integration independently",
+      "parents": [
+        "7c25ae95439a9cc07a5ab7b6d81db50dea791d89"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "7c25ae95439a9cc07a5ab7b6d81db50dea791d89",
+      "date": "2026-09-21T15:08:31Z",
+      "subject": "feat: add provider-neutral bounded decision backends",
+      "full_message": "feat: add provider-neutral bounded decision backends\n\n* feat: add bounded decision backend contracts\n\n* test: adversarially validate decision backend boundaries\n\n* feat: export bounded decision API\n\n* test: lock decision backend public API\n\n* fix: satisfy decision contract lint gates\n\n* fix: close wrapped async decision awaitables on sync rejection\n\n* fix: make async decision wrapper explicitly closable\n\n* feat: add opt-in granular decision policy\n\n* test: lock decision policy opt-in defaults\n\n* feat: add opt-in bounded candidate selection to planner\n\n* feat: export decision policy controls\n\n* test: cover decision opt-in and fallback behavior\n\n* style: wrap async planner argument projection\n\n* style: sort planner test imports\n\n* test: include decision policy in public API contract\n\n* docs: explain opt-in bounded decision backends\n\n* docs: add decision backends to manual navigation\n\n* test: select bounded candidate by identity not rank\n\n* feat: expose reserved decision-surface state explicitly\n\n* fix: fail closed on unimplemented decision surfaces\n\n* test: fail closed on reserved decision surfaces\n\n* feat: add optional LlamaIndex tool integration\n\n* docs: add LlamaIndex integration guide\n\n* feat: export LlamaIndex integration helpers\n\n* build: add optional LlamaIndex dependency\n\n* docs: add LlamaIndex integration navigation",
+      "parents": [
+        "b4e134b920ff2d61e5fd7eb0b24e80be3e4633eb"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "b4e134b920ff2d61e5fd7eb0b24e80be3e4633eb",
+      "date": "2026-09-21T14:00:18Z",
+      "subject": "fix: support web-created releases in publish workflow",
+      "full_message": "fix: support web-created releases in publish workflow\n\nAllow tag-triggered publishing to reuse a GitHub Release created from the web UI, upload validated distribution artifacts, and normalize release metadata before PyPI Trusted Publishing.",
+      "parents": [
+        "8d88ccaaa83f8b858fdee52684024704b18fec62"
+      ],
+      "category": "fix",
+      "potential_material": true
+    },
+    {
+      "sha": "8d88ccaaa83f8b858fdee52684024704b18fec62",
+      "date": "2026-09-20T06:02:10Z",
+      "subject": "ci: guard GitHub Pages deployment until enabled",
+      "full_message": "ci: guard GitHub Pages deployment until enabled\n\nKeep strict documentation builds while skipping only the Pages deployment when repository Pages is not yet enabled; future main pushes will deploy automatically once Pages is enabled.",
+      "parents": [
+        "4eab1a216660e4997848ff666f26d607e2c94043"
+      ],
+      "category": "ci",
+      "potential_material": false
+    },
+    {
+      "sha": "4eab1a216660e4997848ff666f26d607e2c94043",
+      "date": "2026-09-20T05:58:42Z",
+      "subject": "chore: prepare SchemaRouter 0.2.0a1 release",
+      "full_message": "chore: prepare SchemaRouter 0.2.0a1 release\n\nPrepare SchemaRouter 0.2.0a1 with dated changelog and release notes, release metadata regression tests, tag/version validation, GitHub prerelease automation, and PyPI Trusted Publishing workflow.",
+      "parents": [
+        "1de6b4e14f4bb6607f58e6fc73b6b62d21e9473d"
+      ],
+      "category": "chore",
+      "potential_material": true
+    },
+    {
+      "sha": "1de6b4e14f4bb6607f58e6fc73b6b62d21e9473d",
+      "date": "2026-09-20T05:44:57Z",
+      "subject": "feat: add v0.2 adapter ecosystem and OPTIMADE support",
+      "full_message": "feat: add v0.2 adapter ecosystem and OPTIMADE support\n\nIntroduce the v0.2 adapter ecosystem with pluggable SourceAdapter/AdapterRegistry contracts, first-class OPTIMADE discovery and execution, call-aware protocol invokers, live OpenAPI/OPTIMADE compatibility coverage, security hardening, and documentation.",
+      "parents": [
+        "55e2563966b7c656a59f6fe1862ff7d01ef87bee"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "55e2563966b7c656a59f6fe1862ff7d01ef87bee",
+      "date": "2026-09-20T04:57:07Z",
+      "subject": "feat: establish SchemaRouter v0.1 framework core",
+      "full_message": "feat: establish SchemaRouter v0.1 framework core\n\nBuild the SchemaRouter v0.1 framework core with schema-aware planning and execution, OpenAPI/MCP/Python ingestion, fail-closed validation and policy, LangChain integration, documentation, MIT licensing, release engineering, security hardening, and production brand assets.",
+      "parents": [
+        "5691c3c922f0209231f112c06096fe8744681fc5"
+      ],
+      "category": "feature",
+      "potential_material": true
+    },
+    {
+      "sha": "5691c3c922f0209231f112c06096fe8744681fc5",
+      "date": "2026-09-20T01:58:57Z",
+      "subject": "Initial commit",
+      "full_message": "Initial commit",
+      "parents": [],
+      "category": "initial commit",
+      "potential_material": false
+    }
+  ]
+}
