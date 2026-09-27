@@ -1,0 +1,75 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "ablation": "operation-narrow-route-local-score-thresholds-v1",
+  "status": "design_frozen_before_execution",
+  "base_revision": "470d126c7dedb93e71640d29222fc007f95126d9",
+  "source_evidence": {
+    "workflow_run_id": 36301289694,
+    "artifact_id": 10925388875,
+    "artifact_name": "operation-routing-quality-v4-narrow-36301289694",
+    "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "corpus_cases": 1800,
+    "supported_cases": 1152,
+    "near_domain_unsupported_cases": 576,
+    "out_of_domain_cases": 72,
+    "operation_narrow_supported_exact_route_accuracy": 0.5980902777777778,
+    "operation_narrow_near_domain_unsupported_rejection": 0.9114583333333334,
+    "operation_narrow_false_routes": 51,
+    "operation_narrow_false_route_rate_all_cases": 0.028333333333333332,
+    "raw_pairwise_top_rank_ceiling_on_supported_cases": 0.7751736111111112
+  },
+  "motivation": {
+    "observation": "Accepted operation-fit selections materially improve endpoint choice, but one global score threshold cannot simultaneously preserve supported recall and reject near-domain unsupported operations.",
+    "constraint": "The pairwise top-rank ceiling on this development corpus is below the long-term 0.85 exact-route target, so threshold calibration is only an intermediate safety/recall optimization and not a final architecture.",
+    "hypothesis": "Per-route minimum score thresholds can recover the v4 development safety gate without changing model weights, semantic surfaces, schema authority, or the operation-narrow selection rule."
+  },
+  "derivation": {
+    "role": "development_tuning_only",
+    "method": "For each raw top-scoring registered route, enumerate score cut points from the completed operation-narrow development report; prune dominated true-positive/false-route states; solve a global dynamic program maximizing supported correct top-route accepts subject to at most 23 near-domain false routes and at most 36 total false routes. Place the executable threshold at the midpoint between the highest rejected and lowest accepted observed top score for the chosen state.",
+    "projected_top_only_supported_exact_route_accuracy": 0.703125,
+    "projected_top_only_near_domain_unsupported_rejection": 0.9600694444444444,
+    "projected_top_only_false_routes": 24,
+    "projected_top_only_false_route_rate_all_cases": 0.013333333333333334,
+    "caveat": "Projection treats rejection of the raw top option as abstention. PairwiseDecisionBackend may instead select a lower-ranked option whose own route-local threshold is satisfied, so the executable benchmark is required before accepting the hypothesis."
+  },
+  "thresholds": {
+    "calendar.create": 0.00019821745776647787,
+    "calendar.list": 0.0011715169577212747,
+    "finance.history": 0.00015798662710046313,
+    "finance.quote": 0.012920827237535985,
+    "inventory.search": 0.0009064449180763154,
+    "inventory.update": 0.01292045924235638,
+    "materials.search": 0.0001515212403423615,
+    "materials.structure": 0.00009723051676328919,
+    "papers.citations": 0.0016772098271876073,
+    "papers.search": 0.0008392293082061272,
+    "support.create_ticket": 0.28561067200372803,
+    "support.search": 0.0001327929295417866,
+    "users.lookup": 0.0009079877552794149,
+    "users.update": 0.0004954768703611896,
+    "weather.current": 0.007493950017117824,
+    "weather.forecast": 0.000618904392405142
+  },
+  "evaluation": {
+    "corpus": "same fresh v4 1800-case tuning-eligible development corpus",
+    "candidate": "operation-narrow configuration with generic capability-fit disabled; only route-local pairwise min-score thresholds change",
+    "gates": {
+      "supported_exact_route_accuracy_min": 0.7,
+      "near_domain_unsupported_rejection_min": 0.96,
+      "false_route_rate_max": 0.02,
+      "invalid_plan_rate_max": 0,
+      "execution_errors_max": 0
+    },
+    "required_diagnostics": [
+      "supported exact-route accuracy",
+      "near-domain unsupported rejection",
+      "false-route count and rate",
+      "wrong-tool and wrong-endpoint counts",
+      "per-language supported accuracy",
+      "per-route supported accuracy",
+      "per-unsupported-family rejection",
+      "mean/p50/p95 latency"
+    ]
+  },
+  "selection_policy": "This run may validate or reject the development-tuned threshold map only. Do not claim production readiness or tune against calibration/test results. If the development gates pass, freeze the map before evaluating on an untouched calibration corpus."
+}
