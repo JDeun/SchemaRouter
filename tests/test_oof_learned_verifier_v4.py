@@ -153,7 +153,7 @@ def test_quality_gate_requires_all_safety_conditions() -> None:
     module = _module()
     rows = []
     probabilities = []
-    for index in range(100):
+    for _ in range(100):
         rows.append(
             _row(
                 expected="weather.current",
@@ -162,7 +162,7 @@ def test_quality_gate_requires_all_safety_conditions() -> None:
             )
         )
         probabilities.append(0.99)
-    for index in range(97):
+    for _ in range(97):
         rows.append(
             _row(
                 expected=None,
@@ -172,7 +172,7 @@ def test_quality_gate_requires_all_safety_conditions() -> None:
             )
         )
         probabilities.append(0.01)
-    for index in range(3):
+    for _ in range(3):
         rows.append(
             _row(
                 expected=None,
@@ -182,7 +182,7 @@ def test_quality_gate_requires_all_safety_conditions() -> None:
             )
         )
         probabilities.append(0.99)
-    for index in range(10):
+    for _ in range(10):
         rows.append(
             _row(
                 expected=None,
