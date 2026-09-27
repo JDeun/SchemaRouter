@@ -10,6 +10,7 @@ Research-only adapter. The confirmed robust BGE-M3 base remains authoritative:
 from __future__ import annotations
 
 import math
+import time
 from collections.abc import Callable, Iterable
 from typing import Any
 
@@ -251,8 +252,10 @@ class FrozenCrossModelRescueBackend:
             "rescue_enabled": top_route in RESCUE_RULES,
             "gte_invoked": False,
             "gte_agrees": False,
+            "gte_latency_ms": 0.0,
             "reranker_invoked": False,
             "reranker_score": None,
+            "reranker_latency_ms": 0.0,
             "rescue_accepted": False,
         }
         if result["base_accepted"]:
@@ -265,7 +268,11 @@ class FrozenCrossModelRescueBackend:
             return result
 
         result["gte_invoked"] = True
+        gte_started = time.perf_counter_ns()
         gte = self._gte_rank(query, offered_routes)
+        result["gte_latency_ms"] = (
+            time.perf_counter_ns() - gte_started
+        ) / 1_000_000
         result.update(gte)
         result["gte_agrees"] = str(gte["gte_top_route"]) == top_route
         if not result["gte_agrees"]:
@@ -308,7 +315,11 @@ class FrozenCrossModelRescueBackend:
         if reranker_threshold > -1.0:
             result["reranker_invoked"] = True
             capability = self._route_specs[top_route][2]
+            reranker_started = time.perf_counter_ns()
             reranker_score = float(self.reranker_scorer(query, capability))
+            result["reranker_latency_ms"] = (
+                time.perf_counter_ns() - reranker_started
+            ) / 1_000_000
             if not math.isfinite(reranker_score):
                 raise ValueError("reranker returned a non-finite score")
             result["reranker_score"] = reranker_score
@@ -326,9 +337,14 @@ class FrozenCrossModelRescueBackend:
         offered_routes: Iterable[str],
     ) -> dict[str, Any]:
         routes = list(dict.fromkeys(offered_routes))
+        base_started = time.perf_counter_ns()
         base = self.base.score_routes(query, routes)
+        base_latency_ms = (
+            time.perf_counter_ns() - base_started
+        ) / 1_000_000
         return {
             **base,
+            "base_latency_ms": base_latency_ms,
             **self._rescue_from_base(query, routes, base),
         }
 
