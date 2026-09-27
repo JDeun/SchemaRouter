@@ -1,6 +1,6 @@
 {
   "cycle": "0.10-operation-graph-projection-v3",
-  "status": "development_ranked_bge_rejected_continue_negative_evidence",
+  "status": "development_corroboration_rejected_continue_embedding_cache",
   "reserved_from_main": "526d0c588bbec053fba54c55d982cc67d2a74d56",
   "predecessor": {
     "cycle": "0.10-operation-cascade-v2",
@@ -187,13 +187,15 @@
     "candidate_frozen": false,
     "calibration_allowed": false,
     "blind_v15_allowed": false,
-    "next_stage": "graph + bounded propagation + explicit negative evidence/corroboration",
+    "next_stage": "behavior-preserving static option embedding cache",
     "semantic_seed_result": "benchmarks/operation-fit-0.10-graph-semantic-seed-dev-result.json",
     "semantic_seed_status": "no_candidate_passed_all_preregistered_gates",
     "propagation_result": "benchmarks/operation-fit-0.10-graph-propagation-dev-result.json",
     "propagation_status": "no_candidate_passed_all_preregistered_gates",
     "ranked_bge_result": "benchmarks/operation-fit-0.10-graph-ranked-bge-dev-result.json",
-    "ranked_bge_status": "no_candidate_passed_all_preregistered_gates"
+    "ranked_bge_status": "no_candidate_passed_all_preregistered_gates",
+    "corroboration_result": "benchmarks/operation-fit-0.10-graph-corroboration-dev-result.json",
+    "corroboration_status": "no_candidate_passed_all_preregistered_gates"
   },
   "methodology_note": {
     "hard_graph_latency_promotion_evidence_valid": false,
@@ -207,6 +209,9 @@
     "propagation_tail_diagnosis": "42 bounded-propagation abstentions repeat semantic recall/capability-fit/BGE in fallback mode; reuse of the already-computed graph semantic ranking is the next preregistered efficiency ablation",
     "ranked_bge_latency_evidence_valid": true,
     "ranked_bge_observation": "ranked k=2 preserved baseline false routes and reduced mean latency, but missed the supported floor by four correct cases and p95 by 3.09 ms; k=4 regressed mean and p95",
-    "negative_evidence_next": "Analyze fresh-development paired discordances only. Derive graph-structural corroboration/negative evidence without adding benchmark-authored routes or using calibration/blind data."
+    "negative_evidence_next": "Analyze fresh-development paired discordances only. Derive graph-structural corroboration/negative evidence without adding benchmark-authored routes or using calibration/blind data.",
+    "corroboration_latency_evidence_valid": true,
+    "corroboration_observation": "ranked_only passed all quality/safety/mean-latency gates at 63.281% supported accuracy and baseline-equal false routes, but p95 regressed by 4.524 ms",
+    "corroboration_tail_diagnosis": "candidate p95 tail is dominated by semantic-seed abstention followed by the unchanged downstream semantic embedding stages; optimize repeated static option embeddings without changing predictions"
   }
 }
