@@ -313,6 +313,7 @@ class SchemaPlanner:
         candidate_recall_limit: int = 4,
         candidate_fit_backend: DecisionBackend | None = None,
         operation_fit_backend: DecisionBackend | None = None,
+        operation_fit_mode: Literal["gate", "narrow"] = "gate",
         graph_operation_gate: GraphOperationGate | None = None,
         graph_semantic_seed_backend: DecisionBackend | None = None,
         graph_semantic_direct_min_similarity: float | None = None,
@@ -381,6 +382,8 @@ class SchemaPlanner:
             raise ValueError("graph_semantic_propagation_limit must be an integer >= 1")
         if not isinstance(graph_semantic_corroborate_abstain, bool):
             raise TypeError("graph_semantic_corroborate_abstain must be a boolean")
+        if operation_fit_mode not in {"gate", "narrow"}:
+            raise ValueError("operation_fit_mode must be 'gate' or 'narrow'")
         self.registry = registry
         self.analyzer = analyzer or KeywordAnalyzer()
         self.decision_backend = decision_backend
@@ -389,6 +392,7 @@ class SchemaPlanner:
         self.candidate_recall_limit = candidate_recall_limit
         self.candidate_fit_backend = candidate_fit_backend
         self.operation_fit_backend = operation_fit_backend
+        self.operation_fit_mode = operation_fit_mode
         self.graph_operation_gate = graph_operation_gate
         self.graph_semantic_seed_backend = graph_semantic_seed_backend
         self.graph_semantic_direct_min_similarity = graph_semantic_direct_min_similarity
@@ -1666,6 +1670,25 @@ class SchemaPlanner:
             f"{route_id}{score_suffix}{geometry}; path remained schema-authorized"
         ], False
 
+    @staticmethod
+    def _narrow_operation_fit_candidates(
+        candidates: list[_Candidate],
+        option_id: str,
+    ) -> list[_Candidate]:
+        selected = next(
+            (
+                candidate
+                for candidate in candidates
+                if f"{candidate.tool.key}.{candidate.endpoint.name}" == option_id
+            ),
+            None,
+        )
+        if selected is None:
+            raise PlanningError(
+                "operation capability fit selected a route outside the candidate set"
+            )
+        return [replace(selected, selection_source="operation_fit")]
+
     def _apply_operation_fit_sync(
         self,
         request: PlanRequest,
@@ -1696,6 +1719,12 @@ class SchemaPlanner:
             ]
 
         accepted = result.selections[0].option_id
+        if self.operation_fit_mode == "narrow":
+            narrowed = self._narrow_operation_fit_candidates(candidates, accepted)
+            return narrowed, [
+                "operation capability fit narrowed the authorized sibling set to "
+                f"{accepted}"
+            ]
         return candidates, [
             f"operation capability fit gate accepted via {accepted}"
         ]
@@ -1730,6 +1759,12 @@ class SchemaPlanner:
             ]
 
         accepted = result.selections[0].option_id
+        if self.operation_fit_mode == "narrow":
+            narrowed = self._narrow_operation_fit_candidates(candidates, accepted)
+            return narrowed, [
+                "operation capability fit narrowed the authorized sibling set to "
+                f"{accepted}"
+            ]
         return candidates, [
             f"operation capability fit gate accepted via {accepted}"
         ]
