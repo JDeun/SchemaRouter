@@ -916,12 +916,16 @@ class SchemaPlanner:
                 parts.extend(endpoint.operation_aliases)
             if endpoint.description.strip():
                 parts.append(endpoint.description.strip())
+            route_id = f"{primary_tool}.{endpoint.name}"
             options.append(
                 DecisionOption(
-                    id=f"operation:{index}",
+                    id=route_id,
                     label=endpoint.name,
                     description="\n".join(part for part in parts if part),
-                    metadata={"tool": primary_tool},
+                    metadata={
+                        "tool": primary_tool,
+                        "endpoint": endpoint.name,
+                    },
                 )
             )
 
