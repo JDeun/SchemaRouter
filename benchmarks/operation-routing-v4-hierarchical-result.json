@@ -1,0 +1,68 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "ablation": "hierarchical-tool-then-operation-v1",
+  "status": "rejected_on_development_evidence",
+  "source_revision": "bb7214ef960baaacfb46a05b8612afc0b41285a3",
+  "workflow_run_id": 36305345476,
+  "artifact_id": 10927038875,
+  "artifact_name": "operation-routing-quality-v4-hierarchical-36305345476",
+  "artifact_sha256": "6aeef6e37b60e413dfc3215874ea33bc08f4b05e994e5fc3d28bc76d9bc94f55",
+  "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+  "comparison_baseline": {
+    "source_revision": "2bc95fc9d2bd51a33802e5db4b304b2d716deea4",
+    "supported_exact_route_accuracy": 0.4401041666666667,
+    "near_domain_unsupported_rejection": 0.9409722222222222,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate": 0.05246913580246913,
+    "false_routes": 34,
+    "missed_routes": 512,
+    "wrong_tools": 3,
+    "wrong_endpoints": 130,
+    "mean_latency_ms": 543.374,
+    "p95_latency_ms": 723.483
+  },
+  "hierarchical_candidate": {
+    "supported_exact_route_accuracy": 0.4262152777777778,
+    "near_domain_unsupported_rejection": 0.9409722222222222,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate": 0.05246913580246913,
+    "false_routes": 34,
+    "missed_routes": 492,
+    "wrong_tools": 3,
+    "wrong_endpoints": 166,
+    "invalid_plan_rate": 0.0,
+    "errors": 0,
+    "mean_latency_ms": 507.634,
+    "p95_latency_ms": 689.518,
+    "worst_language": {
+      "language": "ko",
+      "supported_exact_route_accuracy": 0.2604166666666667
+    },
+    "worst_route": {
+      "route": "users.update",
+      "supported_exact_route_accuracy": 0.1111111111111111
+    }
+  },
+  "paired_vs_baseline": {
+    "candidate_gains": 91,
+    "candidate_losses": 107,
+    "both_correct": 1014,
+    "both_wrong": 588
+  },
+  "standing_gates": {
+    "supported_exact_route_accuracy_min": 0.70,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0.0,
+    "execution_errors_max": 0,
+    "all_gates_passed": false
+  },
+  "diagnosis": [
+    "Separating tool-domain selection from within-tool operation resolution did not improve exact-route accuracy.",
+    "Wrong-tool count stayed at 3 while wrong-endpoint errors increased from 130 to 166, localizing the dominant regression to within-tool operation selection rather than tool-domain selection.",
+    "Near-domain unsupported rejection and false-route count were unchanged, so the hierarchical split did not solve the unsupported-operation boundary.",
+    "Latency improved modestly, but the quality regression makes the architecture non-promotable."
+  ],
+  "decision": "Reject this hierarchical representation. Keep the registered-schema authority principle, but do not advance this tool-then-operation implementation.",
+  "next_action": "Continue with the preregistered accepted operation-fit selector ablation and explicit negative/unknown capability evidence. Do not tune on calibration or blind corpora."
+}
