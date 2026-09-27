@@ -1,0 +1,73 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "rank-based-capability-set-openworld-v1",
+  "work_item": 281,
+  "parent_work_items": [197, 221, 275, 277, 279],
+  "status": "preregistered_before_execution",
+  "route_authority": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "selection": "global registered raw top-1",
+    "positive_route_local_thresholds": false,
+    "capability_evidence_can_select_route": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "near_domain_set": {
+    "positive_members": "registered endpoint capability prototypes within the raw-winner domain",
+    "negative_members": "four frozen unsupported-action prototypes within the raw-winner domain",
+    "modes": [
+      "negative_top1",
+      "negative_top2_all",
+      "negative_top3_majority",
+      "negative_top4_majority",
+      "negative_outranks_raw_positive"
+    ]
+  },
+  "ood_membership_set": {
+    "known_members": "eight frozen registered-domain anchors",
+    "background_members": "sixteen frozen broad background-domain prototypes",
+    "modes": [
+      "background_top1",
+      "background_top2_all",
+      "background_top3_majority",
+      "background_top5_majority"
+    ]
+  },
+  "rule_grid": {
+    "fixed_rule_count": 20,
+    "score_thresholds": false,
+    "interpolation_forbidden": true,
+    "learned_classifier": false
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "failed_270_fresh_surface_forbidden": true,
+    "calibration_or_blind_forbidden": true
+  },
+  "promotion_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "p95_latency_ms_max": 250.0
+  },
+  "selection_order": [
+    "highest supported exact",
+    "lowest false-route count",
+    "highest near-domain rejection",
+    "highest OOD rejection",
+    "lexical frozen rule id"
+  ],
+  "promotion_policy": "Diagnostic only. Any passing rule must be frozen unchanged and confirmed on a new preregistered fresh-surface DEV distinct from #270 before calibration/blind use. If all 20 rules fail, stop fixed-prototype heuristic refinement and move to a learned or externally pretrained open-set capability classifier with veto-only authority."
+}
