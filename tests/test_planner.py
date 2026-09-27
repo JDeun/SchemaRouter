@@ -7,7 +7,6 @@ from schemarouter import (
     EndpointSpec,
     EvidenceRequirements,
     FieldSpec,
-    GraphOperationGate,
     InMemoryRegistry,
     ParameterSpec,
     PlanningError,
@@ -16,6 +15,7 @@ from schemarouter import (
     ServerProjectionSpec,
     ToolSpec,
 )
+from schemarouter.graph_routing import GraphOperationGate
 
 
 def registry() -> InMemoryRegistry:
