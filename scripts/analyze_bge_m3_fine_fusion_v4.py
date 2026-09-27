@@ -64,11 +64,16 @@ def run(cases: list[dict]) -> dict:
             str(item["strategy"]),
         )
     )
+    latency_p95 = result["summary"][
+        "query_embedding_plus_all_scoring_latency_ms"
+    ]["p95"]
     passes = [
         point for point in strict
         if float(point["supported_exact_route_accuracy"]) >= 0.85
         and float(point["near_domain_unsupported_rejection"]) >= 0.97
         and float(point["canonical_false_route_rate"]) <= 0.01
+        and latency_p95 is not None
+        and float(latency_p95) <= 250.0
     ]
 
     result["fine_fusion"] = {
