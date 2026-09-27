@@ -1,0 +1,91 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "candidate": "bge-m3-dual-view-budget6-v1",
+  "work_item": 245,
+  "source_experiment": 242,
+  "status": "frozen_before_execution",
+  "model": {
+    "name": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "runtime": {
+      "python": "3.12",
+      "transformers": ">=4.44,<5",
+      "sentence_transformers": ">=3,<6"
+    }
+  },
+  "route_views": {
+    "schema_weight": 0.5,
+    "action_weight": 0.5,
+    "schema": [
+      "stable route id",
+      "tool description",
+      "endpoint description",
+      "non-identifier output semantic labels"
+    ],
+    "action": [
+      "normalized endpoint action",
+      "trusted operation_aliases"
+    ]
+  },
+  "selection": {
+    "candidate_recall": "all registered routes only",
+    "winner": "global top-1 fused cosine",
+    "gate": "winner-only rank-then-gate",
+    "agreement_gate": "none",
+    "on_gate_failure": "abstain_no_route",
+    "fallthrough_to_rank2": false
+  },
+  "threshold_profile": {
+    "selected_false_budget": 6,
+    "observed_false_routes": 6,
+    "thresholds": {
+      "calendar.create": {"min_score": 0.5292801944276883, "min_margin": 0.0},
+      "calendar.list": {"min_score": 0.5621905218231467, "min_margin": 0.0},
+      "finance.history": {"min_score": 0.4707406423828726, "min_margin": 0.0},
+      "finance.quote": {"min_score": 0.4954960146759477, "min_margin": 0.02},
+      "inventory.search": {"min_score": 0.5399746603642237, "min_margin": 0.0},
+      "inventory.update": {"min_score": 0.5417961416033495, "min_margin": 0.0},
+      "materials.search": {"min_score": 0.4501598106579401, "min_margin": 0.0},
+      "materials.structure": {"min_score": 0.4309823790571844, "min_margin": 0.0},
+      "papers.citations": {"min_score": 0.46308739913552904, "min_margin": 0.0},
+      "papers.search": {"min_score": 0.46760352196230276, "min_margin": 0.0},
+      "support.create_ticket": {"min_score": 0.5367359981974534, "min_margin": 0.0},
+      "support.search": {"min_score": 0.48680333676555776, "min_margin": 0.0},
+      "users.lookup": {"min_score": 0.4955420233706772, "min_margin": 0.0},
+      "users.update": {"min_score": 0.5130788502270399, "min_margin": 0.0},
+      "weather.current": {"min_score": 0.5432413821663619, "min_margin": 0.02},
+      "weather.forecast": {"min_score": 0.5125866061513324, "min_margin": 0.0}
+    }
+  },
+  "data": {
+    "role": "tuning_eligible_development_executable_confirmation",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "frozen_projection": {
+    "supported_exact_route_accuracy": 0.8333333333333334,
+    "near_domain_unsupported_rejection": 0.9895833333333334,
+    "out_of_domain_rejection": 1.0,
+    "false_routes": 6,
+    "false_route_rate": 0.009259259259259259,
+    "wrong_supported_accepted": 66,
+    "diagnostic_p95_latency_ms": 167.98736335
+  },
+  "confirmation_gates": {
+    "planner_matches_direct_case_by_case": true,
+    "supported_exact_route_accuracy_min": 0.70,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "long_term_false_route_rate_max": 0.01,
+    "invalid_plans_max": 0,
+    "execution_errors_max": 0,
+    "unregistered_routes_max": 0
+  },
+  "behavior_change": "research_only_opt_in",
+  "no_retuning": true
+}
