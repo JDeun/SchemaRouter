@@ -1,0 +1,108 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "status": "preregistered_before_fresh_development_generation",
+  "predecessor": {
+    "cycle": "0.10-operation-graph-projection-v3",
+    "status": "fresh_calibration_rejected_cycle_closed",
+    "result": "benchmarks/operation-fit-0.10-graph-calibration-result.json",
+    "diagnostic_only": {
+      "supported_exact_route_accuracy": 0.6875,
+      "near_domain_unsupported_rejection": 0.9166666666666666,
+      "false_routes": 16
+    }
+  },
+  "standing_production_target": "benchmarks/operation-routing-production-targets.json",
+  "research_question": "Can typed multi-signal routing with explicit unknown handling, hierarchical authorized filtering, and route/boundary-specific decision thresholds raise natural supported exact-route accuracy while materially improving unsupported-operation rejection?",
+  "source_level_design_basis": "docs/project/router-ecosystem-source-code-audit.md",
+  "architectural_principles": [
+    "Trusted schema graph remains the only source of executable route authority.",
+    "Caller, policy, health, and deterministic schema constraints filter the candidate universe before semantic ranking.",
+    "Tool-domain, operation-action, field/concept, qualifier, negative-capability, and pairwise evidence are distinct score kinds.",
+    "Missing or failed evidence is unknown, never an invented numeric zero.",
+    "Raw scores from incompatible score kinds are not averaged or directly compared.",
+    "Semantic components may rank, filter, veto, or abstain only over already-authorized routes.",
+    "Prefer no-route/abstention to an executable false route.",
+    "No benchmark-specific alias or unsupported keyword may be added from observed development failures."
+  ],
+  "fresh_development": {
+    "total_cases": 1440,
+    "supported_cases": 960,
+    "near_domain_unsupported_cases": 384,
+    "out_of_domain_cases": 96,
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "per_language_total": 240,
+    "supported_routes": 16,
+    "supported_cases_per_route": 60,
+    "unsupported_domains": 8,
+    "unsupported_families_per_domain": 8,
+    "split_policy": {
+      "tune": {
+        "supported": 576,
+        "near_domain_unsupported": 192,
+        "out_of_domain": 48,
+        "total": 816,
+        "use": "threshold estimation and development-only fitting"
+      },
+      "dev_holdout": {
+        "supported": 384,
+        "near_domain_unsupported": 192,
+        "out_of_domain": 48,
+        "total": 624,
+        "use": "one-shot development confirmation; no threshold retuning after reveal"
+      },
+      "family_level_separation": true
+    },
+    "requirements": [
+      "natural non-label-revealing requests",
+      "normalized exact overlap with all checked-in prior/dev/calibration corpora = 0",
+      "corpus leakage audit before model scoring",
+      "supported and unsupported semantic families must be identified explicitly",
+      "tune and dev_holdout must not share semantic family IDs",
+      "language and route/domain balance must be deterministic"
+    ]
+  },
+  "first_ablation": {
+    "id": "route-local-pairwise-boundaries",
+    "rationale": "Aurelio Semantic Router implements per-route thresholds and LiteLLM capability routing maps different capability boundaries to different thresholds. Fresh 0.10 calibration showed one global operation boundary was insufficient for natural unsupported families.",
+    "implementation": [
+      "stable tool.endpoint option IDs in operation-fit requests",
+      "PairwiseDecisionBackend min_score_by_option",
+      "PairwiseDecisionBackend min_margin_by_option",
+      "operation-fit score geometry telemetry"
+    ],
+    "fitting_rule": "Estimate route-local thresholds on tune only. Freeze the threshold map before reading dev_holdout results.",
+    "holdout_rule": "Evaluate the frozen threshold map exactly once on dev_holdout. If it misses any preregistered gate, reject the threshold-map candidate and do not retune from holdout."
+  },
+  "preregistered_dev_holdout_gates": {
+    "supported_exact_route_accuracy_min": 0.7,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0,
+    "paired_mean_latency_must_not_regress": true,
+    "paired_p95_latency_must_not_regress": true,
+    "promotion_requires_all": true
+  },
+  "calibration_policy": {
+    "fresh_calibration_only_after_dev_holdout_pass": true,
+    "candidate_freeze_before_calibration": true,
+    "calibration_tuning_forbidden": true,
+    "blind_generation_only_after_calibration_pass": true
+  },
+  "forbidden_for_tuning": [
+    "0.10 graph-v1 development rows",
+    "0.10 fresh natural calibration rows",
+    "v5 cascade calibration",
+    "v12 design-known stress",
+    "v13 consumed blind-final",
+    "retired v14",
+    "reserved v15"
+  ]
+}
