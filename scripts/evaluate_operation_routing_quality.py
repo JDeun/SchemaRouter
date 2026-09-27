@@ -115,6 +115,19 @@ def evaluate(
         len(rows),
     )
     execution_errors = sum(row.get("error") is not None for row in rows)
+    authority_evidence_available = all(
+        "execution_authority_violation" in row for row in rows
+    )
+    authority_violations = (
+        sum(bool(row.get("execution_authority_violation")) for row in rows)
+        if authority_evidence_available
+        else None
+    )
+    authority_violation_rate = (
+        _fraction(authority_violations, len(rows))
+        if authority_violations is not None
+        else None
+    )
 
     languages = _slice_accuracy(rows, key="language")
     routes = _route_accuracy(rows)
@@ -146,6 +159,10 @@ def evaluate(
         final_targets["invalid_plan_rate"]["target_max"],
         label="invalid-plan target",
     )
+    authority_target = _finite(
+        final_targets["execution_authority_violation_rate"]["target_max"],
+        label="execution-authority-violation target",
+    )
 
     gates = {
         "supported_exact_route_accuracy": (
@@ -160,6 +177,11 @@ def evaluate(
         ),
         "invalid_plan_rate": (
             invalid_plan_rate is not None and invalid_plan_rate <= invalid_target
+        ),
+        "execution_authority_evidence_available": authority_evidence_available,
+        "execution_authority_violation_rate": (
+            authority_violation_rate is not None
+            and authority_violation_rate <= authority_target
         ),
         "execution_errors_zero": execution_errors == 0,
     }
@@ -176,6 +198,9 @@ def evaluate(
             "false_routes": false_routes,
             "false_route_rate": false_route_rate,
             "invalid_plan_rate": invalid_plan_rate,
+            "execution_authority_evidence_available": authority_evidence_available,
+            "execution_authority_violations": authority_violations,
+            "execution_authority_violation_rate": authority_violation_rate,
             "execution_errors": execution_errors,
             "worst_language_supported_accuracy": (
                 min(language_values) if language_values else None
@@ -188,7 +213,9 @@ def evaluate(
         "route_slices": routes,
         "note": (
             "Production targets are standing long-term objectives, not retroactive "
-            "promotion gates for preregistered research cycles."
+            "promotion gates for preregistered research cycles. A production PASS "
+            "also requires explicit execution_authority_violation evidence on every "
+            "row; invalid_plan only proves route-level authority."
         ),
     }
 
