@@ -1419,3 +1419,34 @@ The current 0.11 research state is now:
 The architectural invariant remains:
 
 > Semantic models may rank or veto only among locally registered authority. They do not create execution authority.
+
+## 38. Active experiment — grouped-OOF learned winner verifier
+
+Work item #285 / PR #286 is the first experiment after the fixed-prototype stopping rule.
+
+The learned component is deliberately **not a router**. BGE-M3 raw registered global top-1 remains the sole route authority. The verifier only estimates whether that already-selected winner matches the request:
+
+- `match` permits the raw winner;
+- `no_match` abstains;
+- `unknown` abstains;
+- no rank-2 fallback;
+- no route switching;
+- no semantic authority creation.
+
+To reduce surface memorization, evaluation uses six-fold **leave-one-language-out OOF** over `de/en/es/ja/ko/mixed`. Language is a grouping variable only and is forbidden as a model feature.
+
+The fixed feature schema contains 19 runtime-observable BGE/prototype geometry values plus one-hot raw winner route ID. Query text, benchmark IDs, expected route, category, language and unsupported-family labels are forbidden as classifier features.
+
+Two classifier families and twelve acceptance thresholds were preregistered before execution:
+
+- regularized logistic regression;
+- shallow regularized histogram gradient boosting;
+- thresholds `0.50..0.995` from the fixed #285 grid;
+- total fixed learned rules: **24**.
+
+A passing OOF rule will still not unblock calibration. It must first be frozen, trained once on the full original tuning DEV, exported deterministically, and confirmed on a **new zero-overlap fresh-surface DEV distinct from #270**.
+
+If all 24 learned rules fail, do not add more complexity to the same DEV geometry. Move to an externally pretrained semantic capability verifier.
+
+Active workflow: `36360031386`.
+\n
