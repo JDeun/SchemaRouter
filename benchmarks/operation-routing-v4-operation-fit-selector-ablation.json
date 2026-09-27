@@ -1,0 +1,53 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "ablation": "operation-fit-accepted-selector-v1",
+  "status": "design_frozen_before_implementation",
+  "base_revision": "212df048ecee1bea53dc2b5763a0c05393f90054",
+  "motivation": {
+    "fresh_v4_supported_exact_route_accuracy": 0.4401041666666667,
+    "operation_fit_supported_invocations": 1058,
+    "operation_fit_supported_accepts": 640,
+    "accepted_wrong_endpoint_cases": 130,
+    "accepted_wrong_endpoint_cases_where_pairwise_top_was_expected": 129,
+    "observation": "The operation-fit gate returns an accepted registered route ID but the planner currently discards that ID and preserves the prior candidate order.",
+    "hypothesis": "Using the already-accepted, schema-authorized operation-fit selection as the single-call candidate should recover endpoint accuracy without weakening the existing abstention boundary."
+  },
+  "architecture": [
+    "Keep the existing candidate recall, capability-fit, operation-fit score threshold, and operation-fit margin unchanged.",
+    "Apply only when max_calls == 1 and operation-fit returns a non-abstaining selection.",
+    "Resolve the selected option only against the already-authorized leading-tool candidate set.",
+    "Promote the selected registered candidate to the execution position; do not synthesize tools, endpoints, arguments, fields, or authority.",
+    "On operation-fit abstention, preserve the existing fail-closed suppression behavior.",
+    "On backend error, preserve the existing fallback behavior.",
+    "Default behavior remains unchanged unless the new opt-in selector flag is enabled."
+  ],
+  "evaluation": {
+    "corpus": "fresh v4 1800-case development corpus only",
+    "tuning_eligible": true,
+    "compare_against": [
+      "fresh v4 baseline",
+      "historical mixed-surface graph candidate"
+    ],
+    "gates": {
+      "supported_exact_route_accuracy_min": 0.70,
+      "near_domain_unsupported_rejection_min": 0.96,
+      "false_route_rate_max": 0.02,
+      "invalid_plan_rate_max": 0,
+      "execution_errors_max": 0
+    },
+    "required_diagnostics": [
+      "supported exact-route accuracy",
+      "near-domain unsupported rejection",
+      "false-route rate",
+      "wrong-tool and wrong-endpoint counts",
+      "operation-fit accepts and abstentions",
+      "selector promotions",
+      "per-language supported accuracy",
+      "per-route supported accuracy",
+      "per-unsupported-family rejection",
+      "paired gains and losses",
+      "mean/p50/p95 latency"
+    ]
+  },
+  "selection_policy": "This ablation tests only whether an already-accepted operation-fit route should control the single-call candidate. Do not change pairwise thresholds, representation, or unsupported-family policy based on its first result inside the same frozen run."
+}
