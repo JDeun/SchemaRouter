@@ -1,0 +1,62 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "bounded-retrieve-rerank-recall-width-v1",
+  "work_item": 214,
+  "parent_work_item": 197,
+  "status": "preregistered_before_execution",
+  "source_parent_revision": "8a9d086bbfa7ad69a8965fce715861e258637113",
+  "source_evidence": {
+    "diagnostic_work_item": 204,
+    "workflow_run_id": 36310955824,
+    "artifact_id": 10929374346,
+    "artifact_sha256": "47a1d7a5716b100edd654607816a6cceeb630be09091348fcc788928a73fdb09",
+    "recall_width": 4,
+    "raw_supported_top_exact_route_accuracy": 0.9071180555555556,
+    "zero_threshold_mean_latency_ms": 1014.271,
+    "zero_threshold_p95_latency_ms": 1915.928,
+    "winner_only_false_budget_12_supported_exact_route_accuracy": 0.7578125,
+    "winner_only_false_budget_12_canonical_false_route_rate": 0.018518518518518517,
+    "winner_only_false_budget_12_actual_near_domain_rejection": 0.9809027777777778
+  },
+  "frozen_ablation": {
+    "recall_widths": [
+      2,
+      3
+    ],
+    "candidate_fit_gate": false,
+    "operation_fit_scope": "all_candidates",
+    "operation_fit_backend": "BAAI/bge-reranker-v2-m3 sibling-contrastive beta=1",
+    "operation_fit_select_accepted": true,
+    "operation_fit_min_score": 0,
+    "operation_fit_min_margin": 0,
+    "endpoint_disambiguation": false,
+    "authority": "registered and currently authorized recalled routes only"
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+  },
+  "selection_rule": {
+    "canonical_false_budget": 12,
+    "choose": "smallest recall width whose winner-only route-local score frontier passes all quality/safety criteria",
+    "criteria": {
+      "supported_exact_route_accuracy_min": 0.7,
+      "canonical_false_route_rate_max": 0.02,
+      "near_domain_rejection_lower_bound_min": 0.96,
+      "invalid_plan_rate_max": 0,
+      "execution_errors_max": 0
+    },
+    "fallback": "If width 2 fails, test 3; if width 3 fails, retain width 4.",
+    "latency_note": "Absolute latency is diagnostic here. The selected width must still pass a separately preregistered paired baseline latency gate in the executable candidate run."
+  },
+  "forbidden_tuning_evidence": [
+    "v5 calibration",
+    "v12 design-known stress",
+    "v13 blind-final",
+    "0.10 graph fresh calibration",
+    "future v4 calibration",
+    "future v4 blind-final"
+  ]
+}
