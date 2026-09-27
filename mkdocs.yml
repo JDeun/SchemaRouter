@@ -151,6 +151,7 @@ nav:
       - Adapter authoring: adapter-authoring.md
       - Security model: security/threat-model.md
   - Project:
+      - Operation routing quality: project/operation-routing-quality-roadmap.md
       - Versioning: versioning.md
       - Release notes:
           - 0.9.0: releases/0.9.0.md
