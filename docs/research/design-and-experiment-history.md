@@ -509,6 +509,61 @@ Interpretation:
 
 A single global similarity threshold cannot be both a high-recall positive selector and a strong unsupported-capability boundary.
 
+### Bounded retrieve → rerank diagnostic
+
+PR #205 / work item #204 tested the preregistered architecture that removed the generic candidate-fit gate and let the existing contrastive BGE reranker score all already-authorized semantic-recall candidates.
+
+The zero-threshold run was intentionally a ranking-ceiling diagnostic, not a promotable router.
+
+Result on the same fresh 1,800-case v4 development corpus:
+
+- raw supported top-route exactness: **90.71%** (1045 / 1152);
+- invalid plans / execution errors: **0 / 0**;
+- mean / p95 latency: **1014 / 1916 ms** on the GitHub CPU runner.
+
+The raw score distributions showed strong separation between most supported-correct winners and no-route requests, although route-specific tails remained.
+
+Using the preregistered **winner-first** semantics—rank first, then apply only the raw winner's route-local threshold, and abstain instead of falling through—produced the following development-only score frontier:
+
+| canonical false-route budget | supported exact-route | false-route rate | actual near-domain rejection | actual OOD rejection |
+| ---: | ---: | ---: | ---: | ---: |
+| 0 / 648 | 70.57% | 0.00% | 100.00% | 100.00% |
+| 6 / 648 | 74.05% | 0.93% | 99.13% | 98.61% |
+| 12 / 648 | **75.78%** | **1.85%** | **98.09%** | **98.61%** |
+
+This changed the immediate research conclusion:
+
+- an additional NLI/negative model is **not required** to cross the current accuracy/rejection/false-route development gates;
+- threshold **application order** was a major safety variable;
+- the remaining primary gate is **latency**, because scoring four BGE candidates for every request is too expensive.
+
+Artifact provenance:
+
+- workflow: `36310955824`
+- artifact: `10929374346`
+- artifact digest: `47a1d7a5716b100edd654607816a6cceeb630be09091348fcc788928a73fdb09`
+- source revision: `f43535b6ef0acbc5492b9791e6757e28a343d9fa`
+- corpus SHA-256: `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`
+
+### Winner-only threshold mechanism and evidence infrastructure
+
+PR #208 added opt-in `rank_then_gate` semantics to `PairwiseDecisionBackend` and was merged into the active #195 research stack. The default historical `filter_then_rank` behavior remains unchanged.
+
+PR #210 then ported the score-kind-safe `EvidenceProjector` from #186 into the same stack without wiring it into planner behavior. This keeps explicit `match / no_match / unknown` evidence available for later robustness work without prematurely adding a second decision signal.
+
+### Recall-width latency ablation
+
+Work item #214 / PR #216 preregistered a width-only development ablation.
+
+The selection rule was fixed before execution:
+
+1. evaluate recall widths 2 and 3;
+2. derive the same winner-only false-budget-12 frontier;
+3. choose the **smallest** width that preserves >=70% supported exact-route, <=2% canonical false-route, >=96% near-domain rejection lower bound, and zero invalid plans/errors;
+4. if neither passes, retain width 4.
+
+The chosen width must still pass a separately executed **paired latency gate** before the candidate is frozen.
+
 ## 14. Current research direction
 
 Tracked in issue #197.
