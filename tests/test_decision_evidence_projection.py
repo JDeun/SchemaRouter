@@ -2,14 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from schemarouter import (
-    DecisionEvidence,
-    DecisionOption,
-    DecisionRequest,
-    EvidenceProjector,
-    EvidenceRequirement,
-    PlanningError,
-)
+from schemarouter import DecisionEvidence, DecisionOption, DecisionRequest, PlanningError
+from schemarouter.decision_evidence import EvidenceProjector, EvidenceRequirement
 
 
 def request(*, max_selections: int = 1) -> DecisionRequest:
