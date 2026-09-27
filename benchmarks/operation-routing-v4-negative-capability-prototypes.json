@@ -1,0 +1,129 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "explicit-negative-capability-prototype-veto-v1",
+  "work_item": 275,
+  "parent_work_items": [197, 221, 273],
+  "status": "preregistered_before_execution",
+  "ranker": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "selection": "global raw top-1 over registered routes",
+    "positive_route_local_gate_used": false,
+    "query_embeddings_per_case": 1
+  },
+  "domain_anchors": {
+    "weather": "weather and meteorological information",
+    "materials": "materials science and crystal structure information",
+    "papers": "academic papers and citation information",
+    "finance": "market quotes and historical price information",
+    "calendar": "calendar events and schedules",
+    "support": "customer support tickets",
+    "inventory": "inventory items and stock management",
+    "users": "user accounts and profiles"
+  },
+  "negative_capability_prototypes": {
+    "weather": [
+      "satellite cloud imagery",
+      "aviation METAR and TAF reports",
+      "live lightning strike maps",
+      "pollen and allergy outlooks"
+    ],
+    "materials": [
+      "XRD pattern simulation",
+      "defect formation energy calculation",
+      "laboratory synthesis recipe design",
+      "molecular dynamics simulation"
+    ],
+    "papers": [
+      "full paper translation",
+      "citation network visualization",
+      "plagiarism detection",
+      "emailing corresponding authors"
+    ],
+    "finance": [
+      "securities trading and selling shares",
+      "portfolio rebalancing",
+      "live options chains",
+      "capital gains tax reporting"
+    ],
+    "calendar": [
+      "declining calendar invitations",
+      "setting event reminders",
+      "sharing calendars",
+      "booking rooms or resources"
+    ],
+    "support": [
+      "reopening support tickets",
+      "changing ticket priority",
+      "deleting support tickets",
+      "escalating tickets to another support tier"
+    ],
+    "inventory": [
+      "printing inventory barcode labels",
+      "changing retail prices",
+      "creating catalog items",
+      "exporting inventory to CSV"
+    ],
+    "users": [
+      "assigning user roles or permissions",
+      "suspending user accounts",
+      "verifying email addresses",
+      "listing active login sessions"
+    ]
+  },
+  "evidence_semantics": {
+    "domain": "winner-domain semantic membership; failure may veto only",
+    "negative_capability": "same-domain explicit unsupported action similarity; may veto only",
+    "unknown": "no veto",
+    "no_match": "abstain",
+    "may_select_or_switch_route": false,
+    "may_create_authority": false,
+    "rank2_fallback": false,
+    "pseudo_route": false,
+    "cross_kind_averaging": false
+  },
+  "grid": {
+    "domain_min_similarity": [0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50],
+    "require_top_domain_agreement": [false, true],
+    "negative_min_similarity": [0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55],
+    "negative_advantage_over_winner_action": [-0.10, -0.05, 0.00, 0.025, 0.05, 0.10],
+    "combination_count": 588,
+    "no_interpolation": true
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "prototype_source": "semantic action taxonomy in the tuning-eligible v4 generator only; no query values or failed fresh-confirmation rows",
+    "forbidden_evidence": [
+      "failed #270 fresh-surface confirmation corpus",
+      "calibration",
+      "blind-final",
+      "row-level repair from confirmation evidence"
+    ]
+  },
+  "promotion_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "false_route_rate_max": 0.01,
+    "out_of_domain_rejection": 1.0,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "p95_latency_ms_max": 250.0
+  },
+  "candidate_selection": [
+    "highest supported exact-route accuracy",
+    "lowest false-route count",
+    "highest near-domain rejection",
+    "highest OOD rejection",
+    "lexical frozen rule id"
+  ],
+  "promotion_policy": "Diagnostic only. Freeze a passing rule in a separate executable candidate and test it on a new preregistered fresh-surface DEV, never the failed #270 corpus, before calibration/blind evidence.",
+  "behavior_change": false
+}
