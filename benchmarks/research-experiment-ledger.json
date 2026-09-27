@@ -598,14 +598,78 @@
       "note": "First stable benchmark harness/corpus. Exact historical workflow artifact provenance is not yet fully backfilled; tracked by #196."
     },
     {
-      "id": "pre-v0.7-empty-recall-no-route-sentinel",
-      "source_revision": "e41f57a0",
-      "context": "DecisionBackend empty lexical recall expansion",
-      "hypothesis": "An explicit none_of_the_above option can let a bounded model choose no route when the registered catalog is exposed after empty lexical recall.",
-      "result": "counterproductive_on_full_corpus_laya",
-      "decision": "removed",
-      "interpretation": "Full-corpus Laya evidence showed higher overall and Korean routing accuracy without the generic sentinel. The project retained recall_on_empty, confidence gating, candidate abstention, and offline threshold calibration.",
-      "relevance_to_v0_11": "Do not repeat the same generic sentinel as negative capability evidence. Future negative evidence must be a distinct typed signal tied to capability/action boundaries rather than a catch-all executable-choice sibling."
+      "id": "pre-v0.7-empty-recall-and-no-route-sentinel",
+      "source_prs": [
+        84,
+        85,
+        87
+      ],
+      "corpus": "decision-routing-v1.json",
+      "cases": 144,
+      "hardware": "GitHub-hosted ubuntu-latest x64 CPU",
+      "context": "Laya bounded decision routing after empty lexical candidate recall",
+      "initial_diagnosis": {
+        "observation": "Most Korean failures occurred before Laya inference because lexical recall returned zero candidates.",
+        "response": "Add opt-in recall_on_empty to expose only the trusted registered endpoint catalog."
+      },
+      "sentinel_experiment": {
+        "hypothesis": "A generic none_of_the_above option can improve no-route handling after empty-recall expansion.",
+        "pr85_results": {
+          "lexical_only": {
+            "accuracy": 0.4861,
+            "korean_accuracy": 0.0545,
+            "ood_adversarial_accuracy": 0.0833,
+            "final_no_route_recall": 0.3125
+          },
+          "recall_on_empty_with_sentinel": {
+            "accuracy": 0.5625,
+            "korean_accuracy": 0.2909,
+            "ood_adversarial_accuracy": 0.0833,
+            "final_no_route_recall": 0.1875
+          },
+          "confidence_0_25_no_route": {
+            "accuracy": 0.5417,
+            "korean_accuracy": 0.2545,
+            "ood_adversarial_accuracy": 0.5,
+            "final_no_route_recall": 0.5
+          }
+        },
+        "follow_up_evidence": {
+          "explicit_no_route_selections": 16,
+          "valid_korean_in_domain_misrejected": 13,
+          "true_no_route": 3
+        },
+        "pr87_results_after_removal": {
+          "lexical_only": {
+            "accuracy": 0.5069,
+            "korean_accuracy": 0.0545,
+            "ood_adversarial_accuracy": 0.0833,
+            "final_no_route_recall": 0.3125
+          },
+          "recall_on_empty_no_sentinel": {
+            "accuracy": 0.6181,
+            "korean_accuracy": 0.4364,
+            "ood_adversarial_accuracy": 0,
+            "final_no_route_recall": 0
+          },
+          "confidence_0_25_no_route": {
+            "accuracy": 0.6042,
+            "korean_accuracy": 0.3818,
+            "ood_adversarial_accuracy": 0.5,
+            "final_no_route_recall": 0.4375
+          }
+        },
+        "decision": "generic_sentinel_removed",
+        "retained_components": [
+          "recall_on_empty",
+          "independent candidate_abstention",
+          "fail-closed provider failure/abstention after empty recall",
+          "confidence metrics",
+          "offline threshold calibration"
+        ],
+        "interpretation": "The generic sentinel confused multilingual semantic selection and disproportionately rejected valid Korean requests. Confidence-gated abstention remained configurable, but no single confidence threshold was treated as universal."
+      },
+      "relevance_to_v0_11": "Do not repeat a catch-all sentinel. Negative capability must be represented as a distinct typed boundary signal rather than an extra pseudo-route."
     },
     {
       "corpus": "decision-routing-v2.json",
