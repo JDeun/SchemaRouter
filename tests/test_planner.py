@@ -2683,6 +2683,7 @@ def test_operation_fit_gate_sees_only_primary_tool_operations() -> None:
 
     def fit(request):
         seen["context"] = request.context
+        seen["ids"] = [option.id for option in request.options]
         seen["labels"] = [option.label for option in request.options]
         seen["descriptions"] = [option.description for option in request.options]
         return {"selections": [{"option_id": request.options[0].id}]}
@@ -2697,6 +2698,7 @@ def test_operation_fit_gate_sees_only_primary_tool_operations() -> None:
         "surface": "operation_capability_fit",
         "tool": "inventory",
     }
+    assert set(seen["ids"]) == {"inventory.search", "inventory.update"}
     assert set(seen["labels"]) == {"search", "update"}
     assert all("inventory" not in label for label in seen["labels"])
     assert any(
@@ -2753,7 +2755,7 @@ def test_operation_fit_gate_acceptance_does_not_select_or_reorder_endpoint() -> 
     assert plan.calls[0].tool == baseline.calls[0].tool
     assert plan.calls[0].endpoint == baseline.calls[0].endpoint
     assert any(
-        "operation capability fit gate accepted via operation:"
+        "operation capability fit gate accepted via inventory.update"
         in warning
         for warning in plan.warnings
     )
