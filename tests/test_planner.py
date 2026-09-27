@@ -2761,6 +2761,58 @@ def test_operation_fit_gate_acceptance_does_not_select_or_reorder_endpoint() -> 
     )
 
 
+def test_operation_fit_selector_promotes_accepted_registered_endpoint() -> None:
+    def fit(request):
+        selected = next(
+            option
+            for option in request.options
+            if option.label == "update"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.99}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fit),
+        operation_fit_select_accepted=True,
+    ).plan("inventory quantity")
+
+    assert plan.calls[0].tool == "inventory"
+    assert plan.calls[0].endpoint == "update"
+    assert any(
+        "operation capability fit selected accepted route inventory.update"
+        in warning
+        for warning in plan.warnings
+    )
+
+
+@pytest.mark.asyncio
+async def test_async_operation_fit_selector_promotes_accepted_registered_endpoint() -> None:
+    async def fit(request):
+        selected = next(
+            option
+            for option in request.options
+            if option.label == "update"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.99}]}
+
+    plan = await SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fit),
+        operation_fit_select_accepted=True,
+    ).aplan("inventory quantity")
+
+    assert plan.calls[0].tool == "inventory"
+    assert plan.calls[0].endpoint == "update"
+
+
+def test_operation_fit_selector_flag_requires_boolean() -> None:
+    with pytest.raises(TypeError, match="operation_fit_select_accepted"):
+        SchemaPlanner(
+            _endpoint_disambiguation_registry(),
+            operation_fit_select_accepted=1,  # type: ignore[arg-type]
+        )
+
+
 def test_operation_fit_gate_failure_retains_authorized_candidates() -> None:
     def fail(_request):
         raise RuntimeError("operation fit unavailable")
