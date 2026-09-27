@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import math
+import threading
 from collections import OrderedDict
 from collections.abc import Awaitable, Callable, Iterable
 from typing import Any, Protocol
@@ -398,6 +399,7 @@ class CachedEmbeddingDecisionBackend(EmbeddingDecisionBackend):
     request still embeds the current query. A changed option text uses a new cache key,
     so schema-description drift cannot silently reuse the previous vector. The cache
     is bounded by an LRU limit so repeated schema drift cannot grow memory without bound.
+    Cache lookup/update is synchronized so concurrent planners cannot corrupt LRU state.
     """
 
     def __init__(
@@ -426,9 +428,11 @@ class CachedEmbeddingDecisionBackend(EmbeddingDecisionBackend):
             tuple[str, str],
             list[float],
         ] = OrderedDict()
+        self._cache_lock = threading.RLock()
 
     def clear_cache(self) -> None:
-        self._option_vector_cache.clear()
+        with self._cache_lock:
+            self._option_vector_cache.clear()
 
     def _cached_result(
         self,
@@ -445,12 +449,14 @@ class CachedEmbeddingDecisionBackend(EmbeddingDecisionBackend):
         )
         query_vector, *missing_vectors = vectors
         current_vectors = dict(cached_vectors)
-        for key, vector in zip(missing_keys, missing_vectors, strict=True):
-            current_vectors[key] = vector
-            self._option_vector_cache[key] = vector
-            self._option_vector_cache.move_to_end(key)
-            while len(self._option_vector_cache) > self.max_cache_entries:
-                self._option_vector_cache.popitem(last=False)
+        with self._cache_lock:
+            for key, vector in zip(missing_keys, missing_vectors, strict=True):
+                current_vectors[key] = vector
+                self._option_vector_cache[key] = vector
+                self._option_vector_cache.move_to_end(key)
+                while len(self._option_vector_cache) > self.max_cache_entries:
+                    self._option_vector_cache.popitem(last=False)
+            cache_entries = len(self._option_vector_cache)
 
         option_vectors = [current_vectors[key] for key in option_keys]
         dimensions = len(query_vector)
@@ -489,7 +495,7 @@ class CachedEmbeddingDecisionBackend(EmbeddingDecisionBackend):
             ],
             "cache_hits": len(cached_vectors),
             "cache_misses": len(missing_keys),
-            "cache_entries": len(self._option_vector_cache),
+            "cache_entries": cache_entries,
             "max_cache_entries": self.max_cache_entries,
         }
         if not eligible:
@@ -544,13 +550,14 @@ class CachedEmbeddingDecisionBackend(EmbeddingDecisionBackend):
         ]
         cached_vectors: dict[tuple[str, str], list[float]] = {}
         missing_keys: list[tuple[str, str]] = []
-        for key in option_keys:
-            vector = self._option_vector_cache.get(key)
-            if vector is None:
-                missing_keys.append(key)
-                continue
-            cached_vectors[key] = vector
-            self._option_vector_cache.move_to_end(key)
+        with self._cache_lock:
+            for key in option_keys:
+                vector = self._option_vector_cache.get(key)
+                if vector is None:
+                    missing_keys.append(key)
+                    continue
+                cached_vectors[key] = list(vector)
+                self._option_vector_cache.move_to_end(key)
 
         missing_texts = [text for _option_id, text in missing_keys]
         raw = self.embedder([request.query, *missing_texts])
