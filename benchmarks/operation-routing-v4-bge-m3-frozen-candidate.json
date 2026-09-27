@@ -1,9 +1,10 @@
 {
   "cycle": "0.11-operation-routing-quality-v4",
-  "candidate": "bge-m3-dual-view-budget6-v1",
-  "work_item": 245,
-  "source_experiment": 242,
-  "status": "frozen_before_execution",
+  "candidate": "bge-m3-dual-view-055-budget6-robust-v1",
+  "work_item": 259,
+  "source_experiment": 246,
+  "supersedes_candidate": 245,
+  "status": "frozen_before_valid_execution",
   "model": {
     "name": "BAAI/bge-m3",
     "revision": "5617a9f61b028005a4858fdac845db406aefb181",
@@ -14,8 +15,8 @@
     }
   },
   "route_views": {
-    "schema_weight": 0.5,
-    "action_weight": 0.5,
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
     "schema": [
       "stable route id",
       "tool description",
@@ -35,27 +36,42 @@
     "on_gate_failure": "abstain_no_route",
     "fallthrough_to_rank2": false
   },
+  "numerical_stability": {
+    "comparison_epsilon": 1e-6,
+    "score_rule": "top_score + epsilon >= min_score",
+    "margin_rule": "top_margin + epsilon >= min_margin",
+    "rationale_source": "failed candidate #245 observed one boundary drift of approximately 1.35e-7; epsilon was fixed before this candidate execution",
+    "raw_scores_are_not_modified": true
+  },
   "threshold_profile": {
     "selected_false_budget": 6,
-    "observed_false_routes": 6,
+    "source_dev_false_routes": 6,
     "thresholds": {
-      "calendar.create": {"min_score": 0.5292801944276883, "min_margin": 0.0},
-      "calendar.list": {"min_score": 0.5621905218231467, "min_margin": 0.0},
-      "finance.history": {"min_score": 0.4707406423828726, "min_margin": 0.0},
-      "finance.quote": {"min_score": 0.4954960146759477, "min_margin": 0.02},
-      "inventory.search": {"min_score": 0.5399746603642237, "min_margin": 0.0},
-      "inventory.update": {"min_score": 0.5417961416033495, "min_margin": 0.0},
-      "materials.search": {"min_score": 0.4501598106579401, "min_margin": 0.0},
-      "materials.structure": {"min_score": 0.4309823790571844, "min_margin": 0.0},
-      "papers.citations": {"min_score": 0.46308739913552904, "min_margin": 0.0},
-      "papers.search": {"min_score": 0.46760352196230276, "min_margin": 0.0},
-      "support.create_ticket": {"min_score": 0.5367359981974534, "min_margin": 0.0},
-      "support.search": {"min_score": 0.48680333676555776, "min_margin": 0.0},
-      "users.lookup": {"min_score": 0.4955420233706772, "min_margin": 0.0},
-      "users.update": {"min_score": 0.5130788502270399, "min_margin": 0.0},
-      "weather.current": {"min_score": 0.5432413821663619, "min_margin": 0.02},
-      "weather.forecast": {"min_score": 0.5125866061513324, "min_margin": 0.0}
+      "calendar.create": {"min_score": 0.5207915599172316, "min_margin": 0.0},
+      "calendar.list": {"min_score": 0.5549226120493271, "min_margin": 0.0},
+      "finance.history": {"min_score": 0.44227107387387427, "min_margin": 0.0},
+      "finance.quote": {"min_score": 0.4893408565908712, "min_margin": 0.02},
+      "inventory.search": {"min_score": 0.5359938169033298, "min_margin": 0.0},
+      "inventory.update": {"min_score": 0.5376021992095548, "min_margin": 0.0},
+      "materials.search": {"min_score": 0.44967027419294425, "min_margin": 0.0},
+      "materials.structure": {"min_score": 0.42728435995293546, "min_margin": 0.0},
+      "papers.citations": {"min_score": 0.46196385844297233, "min_margin": 0.0},
+      "papers.search": {"min_score": 0.4590736815129689, "min_margin": 0.0},
+      "support.create_ticket": {"min_score": 0.5326329467130329, "min_margin": 0.0},
+      "support.search": {"min_score": 0.4830030958690135, "min_margin": 0.0},
+      "users.lookup": {"min_score": 0.49123020769781134, "min_margin": 0.0},
+      "users.update": {"min_score": 0.5230594574881653, "min_margin": 0.0},
+      "weather.current": {"min_score": 0.5397048468861396, "min_margin": 0.02},
+      "weather.forecast": {"min_score": 0.5050024291985815, "min_margin": 0.0}
     }
+  },
+  "source_dev_projection_without_epsilon": {
+    "supported_exact_route_accuracy": 0.8376736111111112,
+    "near_domain_unsupported_rejection": 0.9895833333333334,
+    "out_of_domain_rejection": 1.0,
+    "false_routes": 6,
+    "false_route_rate": 0.009259259259259259,
+    "diagnostic_p95_latency_ms": 195.9703148
   },
   "data": {
     "role": "tuning_eligible_development_executable_confirmation",
@@ -67,25 +83,17 @@
     "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
     "calibration_or_blind_forbidden": true
   },
-  "frozen_projection": {
-    "supported_exact_route_accuracy": 0.8333333333333334,
-    "near_domain_unsupported_rejection": 0.9895833333333334,
-    "out_of_domain_rejection": 1.0,
-    "false_routes": 6,
-    "false_route_rate": 0.009259259259259259,
-    "wrong_supported_accepted": 66,
-    "diagnostic_p95_latency_ms": 167.98736335
-  },
   "confirmation_gates": {
     "planner_matches_direct_case_by_case": true,
-    "supported_exact_route_accuracy_min": 0.70,
-    "near_domain_unsupported_rejection_min": 0.96,
-    "false_route_rate_max": 0.02,
-    "long_term_false_route_rate_max": 0.01,
+    "supported_exact_route_accuracy_min": 0.83,
+    "near_domain_unsupported_rejection_min": 0.98,
+    "false_route_rate_max": 0.01,
     "invalid_plans_max": 0,
     "execution_errors_max": 0,
-    "unregistered_routes_max": 0
+    "rank2_fallthroughs_max": 0,
+    "planner_p95_latency_ms_max": 250.0
   },
+  "next_if_confirmed": "Run a separately preregistered validator only on base abstentions, with zero additional false-route budget and same-winner-only rescue, targeting >=85% exact-route.",
   "behavior_change": "research_only_opt_in",
   "no_retuning": true
 }
