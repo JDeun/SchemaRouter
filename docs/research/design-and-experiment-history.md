@@ -110,6 +110,14 @@ The v0.4 line added several architectural layers that later routing research rel
 
 The significant design progression was from “select a route” toward “select a route while retaining explicit evidence, output-field and execution-state contracts.”
 
+### Historical negative experiment: generic no-route sentinel
+
+Before the later operation-routing cycles, empty lexical recall could optionally expose the entire registered catalog to a bounded decision backend. An explicit `none_of_the_above` option was tested as a generic no-route sentinel.
+
+Commit `e41f57a0` removed it after full-corpus Laya evidence showed **higher overall and Korean routing accuracy without the sentinel**. The project retained empty-recall expansion, confidence gating, candidate abstention and offline threshold calibration instead.
+
+This matters to the current 0.11 research: a generic catch-all sentinel should not simply be reintroduced under a new name. Negative capability evidence must instead be represented as a distinct typed boundary signal and remain non-authoritative.
+
 ## 5. v0.5: runtime/OpenAPI correctness
 
 This phase primarily hardened execution semantics:
