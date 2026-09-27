@@ -8,7 +8,6 @@ import math
 import statistics
 import sys
 import time
-from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
