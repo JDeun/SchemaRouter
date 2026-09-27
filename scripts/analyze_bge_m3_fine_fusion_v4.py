@@ -37,7 +37,7 @@ def run(cases: list[dict]) -> dict:
 
     strict: list[dict] = []
     secondary: list[dict] = []
-    for strategy, modes in result["winner_only_route_local_frontiers"].items():
+    for _strategy, modes in result["winner_only_route_local_frontiers"].items():
         points = modes["none"]
         for point in points:
             if int(point["false_budget"]) == 6:
