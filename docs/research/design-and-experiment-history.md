@@ -114,7 +114,11 @@ The significant design progression was from “select a route” toward “selec
 
 Before the later operation-routing cycles, empty lexical recall could optionally expose the entire registered catalog to a bounded decision backend. An explicit `none_of_the_above` option was tested as a generic no-route sentinel.
 
-Commit `e41f57a0` removed it after full-corpus Laya evidence showed **higher overall and Korean routing accuracy without the sentinel**. The project retained empty-recall expansion, confidence gating, candidate abstention and offline threshold calibration instead.
+The first PR #85 experiment on the 144-case corpus found 56.25% overall / 29.09% Korean accuracy with recall-on-empty plus the sentinel. A 0.25 confidence + no-route configuration reached 54.17% overall / 25.45% Korean and 50% OOD/adversarial accuracy.
+
+The follow-up run showed why the mechanism was wrong: **16 explicit no-route selections contained 13 valid Korean in-domain requests and only 3 true no-route cases**. PR #87 / commit `e41f57a0` therefore removed the sentinel.
+
+Without the sentinel, recall-on-empty reached **61.81% overall and 43.64% Korean accuracy**; adding the same 0.25 confidence/no-route policy reached **60.42% overall, 38.18% Korean and 50% OOD/adversarial accuracy**. The project retained empty-recall expansion, confidence gating, candidate abstention and offline threshold calibration instead.
 
 This matters to the current 0.11 research: a generic catch-all sentinel should not simply be reintroduced under a new name. Negative capability evidence must instead be represented as a distinct typed boundary signal and remain non-authoritative.
 
