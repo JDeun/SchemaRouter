@@ -1,9 +1,9 @@
-name: V4 Frozen BGE-M3 Candidate
+name: V4 Robust BGE-M3 Candidate
 
 on:
   push:
     branches:
-      - "research/v4-bge-m3-frozen-candidate"
+      - "research/v4-bge-m3-robust-candidate"
     paths:
       - ".github/workflows/research-v4-bge-m3-frozen-candidate.yml"
       - "benchmarks/operation-routing-v4-bge-m3-frozen-candidate.json"
@@ -25,7 +25,7 @@ env:
   V4_DEV_SHA256: "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
 
 concurrency:
-  group: v4-frozen-bge-m3-candidate-${{ github.ref }}
+  group: v4-robust-bge-m3-candidate-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -97,7 +97,7 @@ jobs:
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
-          name: v4-bge-m3-frozen-candidate-${{ github.run_id }}
+          name: v4-bge-m3-robust-candidate-${{ github.run_id }}
           path: |
             artifacts/v4-bge-m3-frozen-candidate/report.json
             artifacts/v4-bge-m3-frozen-candidate/corpus-manifest.json
