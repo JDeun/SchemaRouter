@@ -1,0 +1,126 @@
+name: V4 Frozen Width2 Winner Gate Candidate
+
+on:
+  push:
+    branches:
+      - "research/v4-width2-winner-gate-candidate"
+    paths:
+      - ".github/workflows/research-v4-width2-winner-gate-candidate.yml"
+      - "benchmarks/operation-routing-v4-width2-winner-gate-candidate.json"
+      - "scripts/benchmark_decision_routing.py"
+      - "scripts/generate_decision_routing_quality_v4.py"
+      - "scripts/audit_operation_routing_corpus.py"
+      - "src/schemarouter/planner.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SCHEMAROUTER_SOURCE_REVISION: ${{ github.sha }}
+  SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+  SCHEMAROUTER_BENCHMARK_RERANKER_MODEL: "BAAI/bge-reranker-v2-m3"
+  SCHEMAROUTER_BENCHMARK_CONTRASTIVE_BETA: "1.00"
+  V4_DEV_SEED: "operation-routing-quality-v4-development-2026-09-27"
+
+concurrency:
+  group: v4-width2-winner-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Validate frozen preregistration and routing contracts
+        run: |
+          python -m json.tool benchmarks/operation-routing-v4-width2-winner-gate-candidate.json >/dev/null
+          pytest -q tests/test_planner.py tests/test_pairwise_decision_backend.py
+
+  evaluate:
+    needs: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "sentence-transformers>=3,<6"
+      - run: pip install -e ".[dev]"
+      - name: Generate frozen DEV corpus
+        run: |
+          mkdir -p artifacts/v4-width2-winner-gate
+          python scripts/generate_decision_routing_quality_v4.py \
+            --seed "${V4_DEV_SEED}" \
+            --source-revision "${SCHEMAROUTER_SOURCE_REVISION}" \
+            --out artifacts/v4-width2-winner-gate/corpus.json \
+            --manifest artifacts/v4-width2-winner-gate/corpus-manifest.json
+      - name: Audit corpus
+        run: |
+          python scripts/audit_operation_routing_corpus.py \
+            --corpus artifacts/v4-width2-winner-gate/corpus.json \
+            --out artifacts/v4-width2-winner-gate/corpus-audit.json \
+            --near-duplicate-threshold 0.80 \
+            --max-duplicate-examples 50
+      - name: Run current v4 paired baseline
+        run: |
+          python scripts/benchmark_decision_routing.py \
+            --corpus artifacts/v4-width2-winner-gate/corpus.json \
+            --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
+            --candidate-recall-limit 2 \
+            --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed \
+            --candidate-fit-min-similarity 0.25 \
+            --operation-fit-pairwise-callable benchmarks.bge_contrastive:score_pairs \
+            --operation-fit-min-score 0.01 \
+            --operation-fit-min-margin 0.0 \
+            --endpoint-disambiguation-embedding-callable benchmarks.multilingual_embedder:embed \
+            --endpoint-disambiguation-min-margin 0.03 \
+            --counterbalanced \
+            --warmup-cases 24 \
+            --planner-name "keyword+semantic-recall+capability-fit+operation-fit+endpoint-disambiguation" \
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU v4 paired baseline" \
+            --json-out artifacts/v4-width2-winner-gate/baseline-report.json
+      - name: Run frozen width2 rank-then-gate candidate
+        env:
+          ROUTE_THRESHOLDS: >-
+            {"calendar.create":0.0004207907551704739,"calendar.list":0.0004693468047293043,"finance.history":0.000041384542881440935,"finance.quote":0.013738197840866963,"inventory.search":0.007700659268386702,"inventory.update":0.016340143422138256,"materials.search":0.000239197628484152,"materials.structure":0.0018750830305426453,"papers.citations":0.0019093025002166364,"papers.search":0.0014375698120041836,"support.create_ticket":0.7359367946501093,"support.search":0.00413790789853153,"users.lookup":0.0016116826714426718,"users.update":0.0004977282132914147,"weather.current":0.016015052007939637,"weather.forecast":0.24072465268769136}
+        run: |
+          python scripts/benchmark_decision_routing.py \
+            --corpus artifacts/v4-width2-winner-gate/corpus.json \
+            --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
+            --candidate-recall-limit 2 \
+            --operation-fit-pairwise-callable benchmarks.bge_contrastive:score_pairs \
+            --operation-fit-min-score 0.0 \
+            --operation-fit-min-margin 0.0 \
+            --operation-fit-min-score-by-option-json "${ROUTE_THRESHOLDS}" \
+            --operation-fit-threshold-application rank_then_gate \
+            --operation-fit-scope all_candidates \
+            --operation-fit-select-accepted \
+            --counterbalanced \
+            --warmup-cases 24 \
+            --planner-name "keyword+semantic-recall+operation-fit-all-candidates+accepted-selector" \
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU frozen width2 winner gate" \
+            --json-out artifacts/v4-width2-winner-gate/candidate-report.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: v4-width2-winner-gate-${{ github.run_id }}
+          path: |
+            artifacts/v4-width2-winner-gate/baseline-report.json
+            artifacts/v4-width2-winner-gate/candidate-report.json
+            artifacts/v4-width2-winner-gate/corpus-manifest.json
+            artifacts/v4-width2-winner-gate/corpus-audit.json
+            benchmarks/operation-routing-v4-width2-winner-gate-candidate.json
+          if-no-files-found: error
+          retention-days: 30
