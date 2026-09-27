@@ -1,0 +1,62 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "graph_static_option_embedding_cache_development",
+  "status": "development_static_cache_candidate_selected",
+  "source_revision": "454b5c76674327bfe6bb3864a0b6314c79313614",
+  "workflow_run_id": 36283873302,
+  "artifact_id": 10920740125,
+  "corpus_sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6",
+  "reference_prediction_digest_sha256": "7972d4f4260e5f5138c8735b8e8d0d781bb9d7ea157c17b930e7220690f38bc7",
+  "candidate": {
+    "supported_operation_routed_accuracy": 0.6328125,
+    "near_domain_unsupported_operation_rejection": 0.953125,
+    "out_of_domain_rejection": 1,
+    "harmonic_mean_supported_rejection": 0.760621921182266,
+    "false_routes": 18,
+    "missed_routes": 202,
+    "wrong_tools": 2,
+    "wrong_endpoints": 78,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "prediction_digest_sha256": "7972d4f4260e5f5138c8735b8e8d0d781bb9d7ea157c17b930e7220690f38bc7",
+    "mean_latency_ms": 379.067,
+    "p50_latency_ms": 469.456,
+    "p95_latency_ms": 551.199
+  },
+  "paired_full_bge_baseline": {
+    "supported_operation_routed_accuracy": 0.578125,
+    "near_domain_unsupported_operation_rejection": 0.953125,
+    "out_of_domain_rejection": 1,
+    "false_routes": 18,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "mean_latency_ms": 536.94,
+    "p50_latency_ms": 605.118,
+    "p95_latency_ms": 697.076
+  },
+  "paired": {
+    "cases": 1200,
+    "mean_delta_ms": -157.8726125,
+    "mean_delta_bootstrap_ci95_ms": [
+      -165.62417891666666,
+      -150.75342233333333
+    ],
+    "p95_delta_ms": -145.8762999999999,
+    "candidate_gains": 47,
+    "candidate_losses": 5
+  },
+  "gates": {
+    "prediction_digest_parity": true,
+    "supported_operation_floor": true,
+    "near_domain_unsupported_rejection_floor": true,
+    "false_route_non_regression": true,
+    "invalid_plan_zero": true,
+    "execution_errors_zero": true,
+    "paired_mean_latency_improvement": true,
+    "paired_p95_latency_non_regression": true
+  },
+  "all_gates_passed": true,
+  "freeze_allowed": true,
+  "calibration_allowed_after_freeze": true,
+  "blind_v15_allowed": false
+}
