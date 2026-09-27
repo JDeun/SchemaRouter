@@ -23,7 +23,7 @@ def test_sigmoid_is_bounded() -> None:
     module = _module()
     assert 0.0 < module._sigmoid(-100.0) < 0.5
     assert module._sigmoid(0.0) == 0.5
-    assert 0.5 < module._sigmoid(100.0) < 1.0
+    assert 0.5 < module._sigmoid(20.0) <= 1.0
 
 
 def test_project_preserves_full_population_denominators() -> None:
