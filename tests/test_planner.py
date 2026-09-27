@@ -2761,6 +2761,66 @@ def test_operation_fit_gate_acceptance_does_not_select_or_reorder_endpoint() -> 
     )
 
 
+def test_operation_fit_narrow_mode_selects_only_bounded_operation() -> None:
+    baseline = SchemaPlanner(
+        _endpoint_disambiguation_registry()
+    ).plan("inventory quantity")
+    assert baseline.calls[0].endpoint == "search"
+
+    def fit(request):
+        selected = next(
+            option
+            for option in request.options
+            if option.id == "inventory.update"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.99}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fit),
+        operation_fit_mode="narrow",
+    ).plan("inventory quantity")
+
+    assert plan.calls[0].tool == "inventory"
+    assert plan.calls[0].endpoint == "update"
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "operation_fit"
+    assert any(
+        "operation capability fit narrowed the authorized sibling set to "
+        "inventory.update" in warning
+        for warning in plan.warnings
+    )
+
+
+@pytest.mark.asyncio
+async def test_async_operation_fit_narrow_mode_selects_bounded_operation() -> None:
+    async def fit(request):
+        selected = next(
+            option
+            for option in request.options
+            if option.id == "inventory.update"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.99}]}
+
+    plan = await SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fit),
+        operation_fit_mode="narrow",
+    ).aplan("inventory quantity")
+
+    assert plan.calls[0].endpoint == "update"
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "operation_fit"
+
+
+def test_operation_fit_mode_is_validated() -> None:
+    with pytest.raises(ValueError, match="operation_fit_mode"):
+        SchemaPlanner(
+            _endpoint_disambiguation_registry(),
+            operation_fit_mode="unknown",  # type: ignore[arg-type]
+        )
+
+
 def test_operation_fit_gate_failure_retains_authorized_candidates() -> None:
     def fail(_request):
         raise RuntimeError("operation fit unavailable")
