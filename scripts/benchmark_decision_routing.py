@@ -68,9 +68,9 @@ class BenchmarkRow:
     predicted: str | None
     correct: bool
     invalid_plan: bool
+    latency_ms: float
     execution_authority_violation: bool = False
     execution_authority_violation_count: int = 0
-    latency_ms: float = 0.0
     split: str = "unspecified"
     language: str = "unspecified"
     backend_invoked: bool = False
