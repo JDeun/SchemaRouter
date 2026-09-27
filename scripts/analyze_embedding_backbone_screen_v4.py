@@ -19,7 +19,7 @@ import analyze_dual_view_embedding_v4 as dual  # noqa: E402
 MODEL_CONFIGS: dict[str, dict[str, Any]] = {
     "e5-base": {
         "model_name": "intfloat/multilingual-e5-base",
-        "revision": None,
+        "revision": "d13f1b27baf31030b7fd040960d60d909913633f",
         "trust_remote_code": False,
         "query_prefix": "query: ",
         "document_prefix": "passage: ",
