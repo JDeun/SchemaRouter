@@ -1,0 +1,117 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "winner-only-joint-score-margin-development-diagnostic",
+  "work_item": 211,
+  "status": "completed_exploratory_development_analysis",
+  "source_evidence": {
+    "workflow_run_id": 36310955824,
+    "artifact_id": 10929374346,
+    "artifact_sha256": "47a1d7a5716b100edd654607816a6cceeb630be09091348fcc788928a73fdb09",
+    "source_revision": "f43535b6ef0acbc5492b9791e6757e28a343d9fa",
+    "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "recall_width": 4
+  },
+  "acceptance_semantics": "Fix raw top route first; accept only if both route-local min_score and min_margin pass. Otherwise abstain. Never fall through to rank 2.",
+  "frontier": {
+    "false_budget_0": {
+      "supported_exact_route_accuracy": 0.7092013888888888,
+      "false_routes": 0,
+      "canonical_false_route_rate": 0,
+      "actual_near_domain_rejection": 1,
+      "actual_out_of_domain_rejection": 1
+    },
+    "false_budget_6": {
+      "supported_exact_route_accuracy": 0.7439236111111112,
+      "false_routes": 6,
+      "canonical_false_route_rate": 0.009259259259259259,
+      "actual_near_domain_rejection": 0.9913194444444444,
+      "actual_out_of_domain_rejection": 0.9861111111111112
+    },
+    "false_budget_12": {
+      "supported_exact_route_accuracy": 0.7612847222222222,
+      "false_routes": 12,
+      "canonical_false_route_rate": 0.018518518518518517,
+      "actual_near_domain_rejection": 0.9809027777777778,
+      "actual_out_of_domain_rejection": 0.9861111111111112,
+      "wrong_supported": 22
+    }
+  },
+  "score_only_reference_false_budget_12": {
+    "supported_exact_route_accuracy": 0.7578125,
+    "false_routes": 12,
+    "canonical_false_route_rate": 0.018518518518518517,
+    "actual_near_domain_rejection": 0.9809027777777778,
+    "actual_out_of_domain_rejection": 0.9861111111111112
+  },
+  "incremental_gain_supported_exact_route_percentage_points": 0.3472222222222223,
+  "budget_12_thresholds": {
+    "calendar.create": {
+      "min_score": 0.00042079637100656214,
+      "min_margin": 0.00016096901138006454
+    },
+    "calendar.list": {
+      "min_score": 0.005646923840177776,
+      "min_margin": 0.0033542952711176277
+    },
+    "finance.history": {
+      "min_score": 0.000025101905537945652,
+      "min_margin": 0.000011492836692943268
+    },
+    "finance.quote": {
+      "min_score": 0.01026822900828383,
+      "min_margin": 0.010266790488242309
+    },
+    "inventory.search": {
+      "min_score": 0.007700608256978836,
+      "min_margin": 0.0030581585587478545
+    },
+    "inventory.update": {
+      "min_score": 0.01634009743657051,
+      "min_margin": 0.016253077108618924
+    },
+    "materials.search": {
+      "min_score": 0.00019822956397447963,
+      "min_margin": 0.00018117076699546798
+    },
+    "materials.structure": {
+      "min_score": 0.0018750598274348406,
+      "min_margin": 0.0018414408247486977
+    },
+    "papers.citations": {
+      "min_score": 0.0019093124958118395,
+      "min_margin": 0.0002539485879214508
+    },
+    "papers.search": {
+      "min_score": 0.0014506273508091635,
+      "min_margin": 0.0005479764514592436
+    },
+    "support.create_ticket": {
+      "min_score": 0.30969020172547573,
+      "min_margin": 0.3096899287387756
+    },
+    "support.search": {
+      "min_score": 0.0028175199665163866,
+      "min_margin": 0.0027694373190867085
+    },
+    "users.lookup": {
+      "min_score": 0.0012918383203391155,
+      "min_margin": 0.0011953999373397902
+    },
+    "users.update": {
+      "min_score": 0.0004977362787407921,
+      "min_margin": 0.0004918385054822773
+    },
+    "weather.current": {
+      "min_score": 0.016014969351159758,
+      "min_margin": 0.0159499573663317
+    },
+    "weather.forecast": {
+      "min_score": 0.5670879836375817,
+      "min_margin": 0.5670738011357273
+    }
+  },
+  "decision": "not_selected",
+  "reason": "Joint score+margin gating improves supported exact-route by only ~0.35 percentage points at the same 12-false-route budget. The extra route-local parameter surface is not justified before recall-width/latency optimization.",
+  "tuning_eligible": true,
+  "calibration_or_blind_used": false
+}
