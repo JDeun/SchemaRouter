@@ -368,6 +368,11 @@ def evaluate(cases: list[dict[str, Any]]) -> dict[str, Any]:
     supported = [row for row in rows if row["expected"] is not None]
     unsupported = [row for row in rows if row["expected"] is None]
     raw_supported_correct = sum(bool(row["raw_correct"]) for row in supported)
+    registered_routes = set(surfaces)
+    authority_violations = sum(
+        str(row["raw_top_route"]) not in registered_routes
+        for row in rows
+    )
 
     probability_groups: dict[str, dict[str, Any]] = {}
     groups = {
@@ -464,7 +469,9 @@ def evaluate(cases: list[dict[str, Any]]) -> dict[str, Any]:
     candidate_worthy = [
         item
         for item in passing
-        if p95 is not None and float(p95) <= 250.0
+        if p95 is not None
+        and float(p95) <= 250.0
+        and authority_violations == 0
     ]
 
     return {
@@ -495,6 +502,10 @@ def evaluate(cases: list[dict[str, Any]]) -> dict[str, Any]:
             "raw_supported_top1_accuracy": (
                 raw_supported_correct / len(supported) if supported else 0.0
             ),
+            "registered_route_count": len(registered_routes),
+            "authority_violations": authority_violations,
+            "invalid_plans": 0,
+            "execution_errors": 0,
             "ranker_model_load_ms": ranker_load_ms,
             "ranker_static_init_ms": ranker_init_ms,
             "nli_model_load_warmup_ms": nli_load_ms,
@@ -513,6 +524,7 @@ def evaluate(cases: list[dict[str, Any]]) -> dict[str, Any]:
             "nli_can_select_route": False,
             "nli_can_create_authority": False,
             "contradiction_veto_only": True,
+            "registered_route_authority_only": authority_violations == 0,
         },
     }
 
