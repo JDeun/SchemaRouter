@@ -1,0 +1,78 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "graph_corroboration_development",
+  "status": "corroboration_candidates_preregistered_before_execution",
+  "tuning_eligible": true,
+  "source_ranked_bge_result": "benchmarks/operation-fit-0.10-graph-ranked-bge-dev-result.json",
+  "rationale": {
+    "observed_ranked_k2": "Preserved baseline false routes and reduced paired mean latency by 32.35 ms, but lost 17 baseline-correct cases, leaving supported accuracy at 0.595052 and p95 3.09 ms above baseline.",
+    "paired_discordance": "The lost cases are predominantly supported multilingual paraphrases that entered the semantic uncertainty band and were rejected by bounded pairwise scoring; near-domain false routes remain the same downstream baseline errors.",
+    "design_response": "Treat agreement between the semantic-seed top route and bounded pairwise top route as graph corroboration when pairwise absolute-score gating abstains. Treat disagreement as negative evidence and fail closed. No extra model inference is added."
+  },
+  "selection_data": {
+    "corpus_role": "fresh_graph_v1_development_only",
+    "case_count": 1200,
+    "corpus_sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6",
+    "forbidden": [
+      "v5 calibration",
+      "v12 design-known stress",
+      "v13 consumed blind final",
+      "retired v14",
+      "future v15"
+    ]
+  },
+  "frozen_geometry": {
+    "semantic_seed_min_similarity": 0.45,
+    "semantic_seed_min_margin": 0.1,
+    "direct_accept_min_similarity": 0.55,
+    "direct_accept_min_margin": 0.15,
+    "ranked_limit": 2,
+    "pairwise_model": "BAAI/bge-reranker-v2-m3",
+    "pairwise_contrastive_beta": 1,
+    "pairwise_min_score": 0.01,
+    "pairwise_min_margin": 0,
+    "propagation_on_abstain": "reject",
+    "corroboration_rule": "accept only if semantic-seed top route equals pairwise top route after pairwise abstention",
+    "disagreement_rule": "negative evidence; reject",
+    "extra_model_calls": 0
+  },
+  "candidates": [
+    {
+      "tag": "corroborate-ranked-plus-siblings",
+      "propagation_scope": "ranked",
+      "description": "semantic top-2 registered routes plus all registered siblings of the seed tool"
+    },
+    {
+      "tag": "corroborate-ranked-only",
+      "propagation_scope": "ranked_only",
+      "description": "semantic top-2 registered routes only; do not append seed-tool siblings"
+    }
+  ],
+  "measurement": {
+    "mode": "counterbalanced paired per case",
+    "warmup_cases": 24,
+    "paired_mean_delta_bootstrap_samples": 2000
+  },
+  "gates": {
+    "supported_operation_routed_accuracy_min": 0.6,
+    "near_domain_unsupported_rejection_min": 0.95,
+    "false_routes_must_not_exceed_paired_full_bge_baseline": true,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0,
+    "paired_mean_latency_must_be_lower": true,
+    "p95_latency_must_not_regress": true,
+    "promotion_requires_all": true
+  },
+  "selection_rule": {
+    "primary": "highest harmonic mean of supported-operation routed accuracy and near-domain unsupported rejection among all-gate passers",
+    "tie_breakers": [
+      "lower candidate p95 latency",
+      "lower paired candidate mean latency",
+      "higher corroboration accept precision"
+    ],
+    "no_winner": "Continue graph-derived negative-evidence/semantic-representation development on fresh dev only. Do not generate calibration or v15."
+  },
+  "candidate_frozen": false,
+  "calibration_allowed": false,
+  "blind_v15_allowed": false
+}
