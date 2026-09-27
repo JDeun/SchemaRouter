@@ -953,9 +953,33 @@ class SchemaPlanner:
         ):
             return [], [], True
 
+        graph = self._graph()
+        preferred_tools = set(intent.preferred_tools)
+        preferred_endpoints = set(intent.preferred_endpoints)
+        allowed_routes: frozenset[tuple[str, str]] | None = None
+        if preferred_tools or preferred_endpoints:
+            scoped_routes: set[tuple[str, str]] = set()
+            for scoped_tool_key, scoped_endpoint_name in graph.operation_routes():
+                try:
+                    scoped_tool = self.registry.get(scoped_tool_key)
+                except KeyError:
+                    continue
+                if (
+                    preferred_tools
+                    and scoped_tool.key not in preferred_tools
+                    and scoped_tool.name not in preferred_tools
+                ):
+                    continue
+                scoped_route_id = f"{scoped_tool.key}.{scoped_endpoint_name}"
+                if preferred_endpoints and scoped_route_id not in preferred_endpoints:
+                    continue
+                scoped_routes.add((scoped_tool.key, scoped_endpoint_name))
+            allowed_routes = frozenset(scoped_routes)
+
         assessment = self.graph_operation_gate.assess_global(
             query=request.query,
-            graph=self._graph(),
+            graph=graph,
+            allowed_routes=allowed_routes,
         )
         if assessment.decision == "reject":
             return [], [
@@ -982,12 +1006,10 @@ class SchemaPlanner:
                 "graph operation gate path disappeared from the registry; escalated"
             ], True
 
-        preferred_tools = set(intent.preferred_tools)
         if preferred_tools and tool.key not in preferred_tools and tool.name not in preferred_tools:
             return [], [
                 "graph operation gate path conflicted with preferred tool constraints; escalated"
             ], True
-        preferred_endpoints = set(intent.preferred_endpoints)
         endpoint_key = f"{tool.key}.{endpoint.name}"
         if preferred_endpoints and endpoint_key not in preferred_endpoints:
             return [], [
