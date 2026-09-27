@@ -10,7 +10,7 @@ def test_graph_cycle_is_preregistered_before_implementation() -> None:
     cycle = json.loads(CYCLE.read_text(encoding="utf-8"))
 
     assert cycle["cycle"] == "0.10-operation-graph-projection-v3"
-    assert cycle["status"] == "development_propagation_rejected_continue_semantic_reuse"
+    assert cycle["status"] == "development_ranked_bge_rejected_continue_negative_evidence"
     assert (
         cycle["development_progress"]["hard_graph_result"]
         == "benchmarks/operation-fit-0.10-graph-hard-dev-result.json"
@@ -32,18 +32,29 @@ def test_graph_cycle_is_preregistered_before_implementation() -> None:
         == "no_candidate_passed_all_preregistered_gates"
     )
     assert (
+        cycle["development_progress"]["ranked_bge_result"]
+        == "benchmarks/operation-fit-0.10-graph-ranked-bge-dev-result.json"
+    )
+    assert (
+        cycle["development_progress"]["ranked_bge_status"]
+        == "no_candidate_passed_all_preregistered_gates"
+    )
+    assert (
         cycle["development_progress"]["next_stage"]
-        == "graph semantic ranking reuse + selective BGE"
+        == "graph + bounded propagation + explicit negative evidence/corroboration"
     )
     assert (ROOT / "benchmarks" / "operation-fit-0.10-graph-propagation-dev-plan.json").exists()
     assert (ROOT / "benchmarks" / "operation-fit-0.10-graph-ranked-bge-dev-plan.json").exists()
+    assert (
+        ROOT / "benchmarks" / "operation-fit-0.10-graph-corroboration-dev-plan.json"
+    ).exists()
     assert not (
         ROOT / ".github" / "workflows" / "research-operation-graph-semantic-seed.yml"
     ).exists()
     assert not (
         ROOT / ".github" / "workflows" / "research-operation-graph-propagation.yml"
     ).exists()
-    assert (
+    assert not (
         ROOT / ".github" / "workflows" / "research-operation-graph-ranked-bge.yml"
     ).exists()
     assert cycle["development_progress"]["candidate_frozen"] is False
