@@ -218,6 +218,8 @@
     "corroboration_tail_diagnosis": "candidate p95 tail is dominated by semantic-seed abstention followed by the unchanged downstream semantic embedding stages; optimize repeated static option embeddings without changing predictions",
     "static_cache_latency_evidence_valid": true,
     "static_cache_observation": "Behavior-preserving static option embedding cache matched the frozen corroboration prediction digest exactly and passed every quality, safety, mean-latency, and p95 gate.",
-    "freeze_rule": "No architecture, threshold, route representation, or model changes are allowed before fresh calibration completes."
+    "freeze_rule": "No architecture, threshold, route representation, or model changes are allowed before fresh calibration completes.",
+    "calibration_attempt_log": "benchmarks/operation-fit-0.10-graph-calibration-attempts.json",
+    "invalidated_calibration_attempt": "Run 36285424108 generated a corpus but was cancelled before scoring/gates completed after a pre-result structural audit found development unsupported-family reuse. No artifact contents or metrics were inspected; the attempt is permanently excluded from evidence."
   }
 }
