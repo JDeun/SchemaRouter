@@ -1,0 +1,87 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "fresh_frozen_candidate_calibration",
+  "status": "fresh_calibration_rejected_cycle_closed",
+  "source_revision": "33f1bed4f94fa5f69360984e46ffbf35b561b217",
+  "workflow_run_id": 36285587372,
+  "artifact_id": 10920004901,
+  "corpus_sha256": "9b9c42bf146637c9f5866cbcd7952b46e4d5dd46b1e5fbdf74829a7332bfb3ed",
+  "corpus_contract": {
+    "cases": 600,
+    "supported": 384,
+    "near_domain_unsupported": 192,
+    "out_of_domain": 24,
+    "unsupported_family_count": 32,
+    "normalized_exact_overlap_with_prior_and_dev": 0,
+    "label_revealing_routing_cues": 0,
+    "tuning_eligible": false
+  },
+  "baseline": {
+    "supported_operation_routed_accuracy": 0.65625,
+    "near_domain_unsupported_operation_rejection": 0.9166666666666666,
+    "out_of_domain_rejection": 1,
+    "harmonic_mean_supported_rejection": 0.7649006622516556,
+    "false_routes": 16,
+    "missed_routes": 93,
+    "wrong_tools": 0,
+    "wrong_endpoints": 39,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "mean_latency_ms": 302.883,
+    "p50_latency_ms": 337.25,
+    "p95_latency_ms": 411.531
+  },
+  "candidate": {
+    "supported_operation_routed_accuracy": 0.6875,
+    "near_domain_unsupported_operation_rejection": 0.9166666666666666,
+    "out_of_domain_rejection": 1,
+    "harmonic_mean_supported_rejection": 0.7857142857142857,
+    "false_routes": 16,
+    "missed_routes": 86,
+    "wrong_tools": 0,
+    "wrong_endpoints": 34,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "mean_latency_ms": 207.524,
+    "p50_latency_ms": 252.25,
+    "p95_latency_ms": 322.73
+  },
+  "paired": {
+    "cases": 600,
+    "baseline_mean_ms": 302.88345666666663,
+    "candidate_mean_ms": 207.52356333333336,
+    "mean_delta_ms": -95.35989333333333,
+    "mean_delta_bootstrap_ci95_ms": [
+      -101.16737445833334,
+      -89.436571375
+    ],
+    "baseline_p95_ms": 411.5311,
+    "candidate_p95_ms": 322.72955,
+    "p95_delta_ms": -88.80154999999996,
+    "candidate_gains": 14,
+    "candidate_losses": 2,
+    "both_correct": 450,
+    "both_wrong": 134
+  },
+  "gates": {
+    "supported_operation_floor": true,
+    "near_domain_unsupported_rejection_floor": false,
+    "false_route_non_regression": true,
+    "invalid_plan_zero": true,
+    "execution_errors_zero": true,
+    "paired_mean_latency_improvement": true,
+    "paired_p95_latency_non_regression": true
+  },
+  "interpretation": {
+    "quality": "Candidate generalized above the full-BGE baseline on supported exact-route accuracy (+3.125 percentage points) and did not increase false routes.",
+    "latency": "Candidate retained substantial paired latency improvements on both mean and p95.",
+    "rejection": "Both candidate and paired full-BGE baseline rejected 91.67% of the harder natural near-domain unsupported families, below the preregistered 95% floor.",
+    "conclusion": "The frozen candidate is rejected because promotion requires every preregistered gate. Calibration rows are consumed confirmation evidence and must not be used for tuning."
+  },
+  "policy": {
+    "candidate_closed": true,
+    "calibration_tuning_forbidden": true,
+    "v15_generation_forbidden": true,
+    "next_work": "start a new research cycle with fresh development data; do not modify or retest this frozen candidate on calibration"
+  }
+}
