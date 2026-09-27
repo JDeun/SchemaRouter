@@ -892,33 +892,38 @@ class SchemaPlanner:
         accepted = result.selections[0].option_id
         return candidates, [f"capability fit gate accepted via {accepted}"]
 
-    @staticmethod
     def _operation_fit_request(
+        self,
         request: PlanRequest,
         candidates: list[_Candidate],
     ) -> DecisionRequest | None:
-        """Build a narrow operation-only fit surface for the leading tool domain.
+        """Build a narrow operation-only fit surface over authorized candidates.
 
-        This gate deliberately excludes the tool description and output-field labels so
-        domain similarity cannot by itself turn an unsupported operation into a match.
-        It can only suppress the already-authorized candidate set; it never selects,
-        adds, or reorders execution candidates.
+        The default primary_tool scope preserves the historical gate exactly.
+        The opt-in all_candidates scope exposes every already-recalled,
+        schema-authorized candidate to the operation scorer. Tool descriptions and
+        output-field labels remain excluded so broad domain similarity cannot create
+        operation authority.
         """
 
         if request.max_calls > 1 or not candidates:
             return None
 
         primary_tool = candidates[0].tool.key
-        sibling_candidates = [
-            candidate
-            for candidate in candidates
-            if candidate.tool.key == primary_tool
-        ]
-        if not sibling_candidates:
+        operation_candidates = (
+            candidates
+            if self.operation_fit_scope == "all_candidates"
+            else [
+                candidate
+                for candidate in candidates
+                if candidate.tool.key == primary_tool
+            ]
+        )
+        if not operation_candidates:
             return None
 
         options: list[DecisionOption] = []
-        for candidate in sibling_candidates:
+        for candidate in operation_candidates:
             endpoint = candidate.endpoint
             operation_name = endpoint.name.replace("_", " ").replace("-", " ")
             parts = [operation_name]
@@ -926,27 +931,31 @@ class SchemaPlanner:
                 parts.extend(endpoint.operation_aliases)
             if endpoint.description.strip():
                 parts.append(endpoint.description.strip())
-            route_id = f"{primary_tool}.{endpoint.name}"
+            route_id = f"{candidate.tool.key}.{endpoint.name}"
             options.append(
                 DecisionOption(
                     id=route_id,
                     label=endpoint.name,
                     description="\n".join(part for part in parts if part),
                     metadata={
-                        "tool": primary_tool,
+                        "tool": candidate.tool.key,
                         "endpoint": endpoint.name,
                     },
                 )
             )
 
+        context: dict[str, Any] = {
+            "surface": "operation_capability_fit",
+            "scope": self.operation_fit_scope,
+        }
+        if self.operation_fit_scope == "primary_tool":
+            context["tool"] = primary_tool
+
         return DecisionRequest(
             query=request.query,
             options=options,
             max_selections=1,
-            context={
-                "surface": "operation_capability_fit",
-                "tool": primary_tool,
-            },
+            context=context,
         )
 
     def _graph_first_candidates(
