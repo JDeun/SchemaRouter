@@ -692,6 +692,32 @@
         "quality-latency tradeoff",
         "bounded candidate width ablation"
       ]
+    },
+    {
+      "id": "0.11-joint-score-margin-boundary",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "work_item": 211,
+      "status": "completed_exploratory_development_analysis",
+      "source_workflow_run_id": 36310955824,
+      "source_artifact_id": 10929374346,
+      "source_artifact_sha256": "47a1d7a5716b100edd654607816a6cceeb630be09091348fcc788928a73fdb09",
+      "result": {
+        "score_only_budget_12_supported_exact_route_accuracy": 0.7578125,
+        "joint_budget_12_supported_exact_route_accuracy": 0.7612847222222222,
+        "incremental_gain_percentage_points": 0.3472222222222223,
+        "false_routes": 12,
+        "canonical_false_route_rate": 0.018518518518518517,
+        "actual_near_domain_rejection": 0.9809027777777778,
+        "actual_out_of_domain_rejection": 0.9861111111111112
+      },
+      "decision": "not_selected",
+      "failure_reason": "Joint score+margin gating adds only ~0.35 percentage points at the same false-route budget, insufficient to justify a larger route-local tuning surface before width/latency optimization.",
+      "source_file": "benchmarks/operation-routing-v4-joint-score-margin-diagnostic.json",
+      "paper_relevance": [
+        "negative ablation",
+        "score-vs-margin boundary comparison",
+        "complexity control"
+      ]
     }
   ],
   "current_research_conclusion": {
@@ -715,7 +741,8 @@
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
     "negative_model_status": "A second negative/NLI model is not currently required to clear the accuracy/rejection/false-route DEV gates; latency is the immediate unresolved gate.",
-    "latency_bottleneck": "Width-4 all-candidate BGE measured ~1014 ms mean / ~1916 ms p95 on the GitHub CPU diagnostic runner."
+    "latency_bottleneck": "Width-4 all-candidate BGE measured ~1014 ms mean / ~1916 ms p95 on the GitHub CPU diagnostic runner.",
+    "joint_margin_result": "Adding route-local top margin to score thresholds yields only ~0.35 percentage points at the 12-false-route budget and is not selected for the immediate candidate."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
