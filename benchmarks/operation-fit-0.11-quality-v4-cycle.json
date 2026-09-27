@@ -1,0 +1,151 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "status": "preregistered_no_corpus_generated",
+  "predecessor": {
+    "cycle": "0.10-operation-graph-projection-v3",
+    "final_status": "fresh_calibration_rejected_cycle_closed",
+    "calibration_result": "benchmarks/operation-fit-0.10-graph-calibration-result.json",
+    "tuning_eligible": false,
+    "observation": "The frozen candidate reached 68.75% supported exact-route accuracy and 91.67% natural near-domain unsupported rejection while preserving strong latency gains. Calibration is consumed confirmation evidence and may only define the next problem, never tune v4."
+  },
+  "research_question": "Can typed multi-view evidence with explicit unknown handling and hierarchical authorized filtering raise natural exact-route accuracy and unsupported-operation rejection simultaneously without sacrificing bounded execution authority or paired latency?",
+  "source_level_design_basis": {
+    "audit": "docs/project/router-ecosystem-source-code-audit.md",
+    "patterns": [
+      "Aurelio Semantic Router: route-local thresholds and pre-selection route filters",
+      "RouteLLM: separate scalar evidence estimation from deterministic threshold application",
+      "LlamaIndex: retrieve a bounded candidate subset before final selection",
+      "Haystack ConditionalRouter: explicit no-route behavior when no deterministic rule matches",
+      "LiteLLM: structured capability boundaries and boundary-specific routing thresholds",
+      "vLLM Semantic Router: separate signal families, true/false/unknown state, score-kind-aware comparison, explicit on-unknown policy",
+      "LangGraph: routing chooses among predeclared graph destinations rather than creating topology"
+    ]
+  },
+  "architecture_principles": [
+    "The registered schema graph remains the only source of executable routing authority.",
+    "Caller, policy, health, and explicit schema constraints reduce the authorized candidate set before semantic evidence is evaluated.",
+    "Tool-domain, operation-action, field/concept, qualifier, and negative-capability evidence are distinct signal kinds.",
+    "Unavailable or failed evidence is unknown, never numeric zero.",
+    "Raw scores from incompatible score kinds are never averaged or directly compared.",
+    "Semantic evidence may rank or veto existing routes but may not create a tool, endpoint, field, argument, credential, or side effect.",
+    "A positive route requires graph consistency plus calibrated evidence; unresolved conflict abstains.",
+    "Safe abstention is preferred to an executable false route."
+  ],
+  "target_corpus_shapes": {
+    "development": {
+      "case_count": 1800,
+      "supported_operation_cases": 1152,
+      "near_domain_unsupported_operation_cases": 576,
+      "out_of_domain_cases": 72,
+      "languages": [
+        "en",
+        "ko",
+        "es",
+        "ja",
+        "de",
+        "mixed"
+      ],
+      "cases_per_language": 300,
+      "supported_route_count": 16,
+      "cases_per_supported_route": 72
+    },
+    "calibration": {
+      "case_count": 900,
+      "supported_operation_cases": 576,
+      "near_domain_unsupported_operation_cases": 288,
+      "out_of_domain_cases": 36,
+      "languages": [
+        "en",
+        "ko",
+        "es",
+        "ja",
+        "de",
+        "mixed"
+      ],
+      "cases_per_language": 150,
+      "supported_route_count": 16,
+      "cases_per_supported_route": 36
+    },
+    "blind_final": {
+      "case_count": 1800,
+      "supported_operation_cases": 1152,
+      "near_domain_unsupported_operation_cases": 576,
+      "out_of_domain_cases": 72,
+      "languages": [
+        "en",
+        "ko",
+        "es",
+        "ja",
+        "de",
+        "mixed"
+      ],
+      "cases_per_language": 300,
+      "supported_route_count": 16,
+      "cases_per_supported_route": 72
+    }
+  },
+  "preregistered_gates": {
+    "supported_exact_route_accuracy_min": 0.7,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0,
+    "execution_authority_violation_rate_max": 0,
+    "execution_errors_max": 0,
+    "paired_mean_latency_must_not_regress": true,
+    "paired_p95_latency_must_not_regress": true,
+    "promotion_requires_all_gates": true
+  },
+  "standing_production_targets": {
+    "reference": "benchmarks/operation-routing-production-targets.json",
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "near_domain_unsupported_rejection_preferred": 0.99,
+    "false_route_rate_max": 0.01
+  },
+  "fresh_data_contract": {
+    "natural_user_language": true,
+    "label_revealing_routing_meta_language_forbidden": true,
+    "supported_paraphrase_family_holdout": true,
+    "unsupported_operation_family_holdout": true,
+    "normalized_exact_overlap_with_all_consumed_corpora": 0,
+    "corpus_audit_required_before_scoring": true,
+    "audit_script": "scripts/audit_operation_routing_corpus.py",
+    "calibration_generated_only_after_candidate_freeze": true,
+    "blind_generated_only_after_fresh_calibration_pass": true
+  },
+  "tuning_policy": {
+    "eligible": [
+      "fresh v4 development only"
+    ],
+    "forbidden": [
+      "v5 cascade calibration",
+      "v12 design-known stress corpus",
+      "v13 consumed blind-final",
+      "retired v14",
+      "0.10 graph development rows",
+      "0.10 graph fresh calibration rows",
+      "future v4 calibration rows",
+      "future v4 blind rows"
+    ],
+    "predecessor_data_usage": "aggregate problem-definition evidence only"
+  },
+  "planned_ablations": [
+    "frozen 0.10 graph candidate as historical baseline only",
+    "typed evidence contract without routing behavior change",
+    "route-local/boundary-local pairwise thresholds",
+    "hierarchical tool-domain then operation-action filtering",
+    "explicit unknown-aware projection",
+    "negative capability evidence on fresh unsupported development families",
+    "multi-view graph consistency projection",
+    "selective pairwise reranking for unresolved authorized siblings"
+  ],
+  "promotion_sequence": [
+    "generate and audit fresh v4 development corpus",
+    "run paired baselines and ablations on development only",
+    "freeze one candidate only if every development gate passes",
+    "generate fresh v4 calibration after freeze",
+    "close cycle without tuning if calibration fails",
+    "generate v4 blind only if calibration passes",
+    "evaluate blind exactly once"
+  ]
+}
