@@ -1,0 +1,61 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "ablation": "hierarchical-tool-then-operation-v1",
+  "status": "design_frozen_before_execution",
+  "base_revision": "212df048ecee1bea53dc2b5763a0c05393f90054",
+  "motivation": {
+    "observation": "The existing graph semantic seed concatenates tool-domain, operation-action, endpoint-description, and returned-field terms into one embedding surface.",
+    "risk": "A single mixed representation can trade tool-domain separation against operation/field similarity and can produce cross-tool errors.",
+    "source_level_support": [
+      "LlamaIndex separates candidate retrieval from selector execution.",
+      "vLLM Semantic Router keeps signal families distinct and projects them later.",
+      "LangGraph routes only to predeclared destinations.",
+      "Aurelio supports eligibility filtering before final thresholded routing."
+    ]
+  },
+  "architecture": [
+    "Apply graph/caller/policy/availability authority filters first.",
+    "Embed one option per authorized tool using tool name and tool description only.",
+    "Require the configured direct similarity/margin boundary before committing to a tool.",
+    "Construct the second-stage option set only from registered endpoints of the selected tool.",
+    "Resolve operation using operation name, trusted aliases, and endpoint description only.",
+    "If stage two abstains, obey the existing fail-closed/fallback policy.",
+    "Never create a tool, endpoint, field, argument, or execution authority from semantic output."
+  ],
+  "implementation": {
+    "flag": "graph_semantic_hierarchical",
+    "default": false,
+    "tool_surface": "graph_tool_semantic_seed",
+    "operation_surface": "graph_hierarchical_operation",
+    "tool_backend": "graph_semantic_seed_backend",
+    "operation_backend": "graph_semantic_propagation_backend"
+  },
+  "evaluation": {
+    "corpus": "the exact fresh v4 development corpus produced by PR #184 artifact",
+    "tuning_eligible": true,
+    "compare_against": [
+      "fresh v4 baseline",
+      "historical mixed-surface graph candidate"
+    ],
+    "gates": {
+      "supported_exact_route_accuracy_min": 0.7,
+      "near_domain_unsupported_rejection_min": 0.96,
+      "false_route_rate_max": 0.02,
+      "invalid_plan_rate_max": 0,
+      "execution_errors_max": 0,
+      "mean_latency_no_regression": true,
+      "p95_latency_no_regression": true
+    },
+    "required_diagnostics": [
+      "per-language supported exact-route accuracy",
+      "per-route supported exact-route accuracy",
+      "per-unsupported-family rejection",
+      "wrong-tool versus wrong-endpoint counts",
+      "tool-stage abstention rate",
+      "operation-stage abstention rate",
+      "paired gains/losses versus baseline and historical graph",
+      "mean/p50/p95 latency"
+    ]
+  },
+  "selection_policy": "Do not modify this architecture from v4 baseline or historical-graph results before its first execution. Development results may determine whether this ablation is rejected or whether a separately preregistered threshold study is warranted."
+}
