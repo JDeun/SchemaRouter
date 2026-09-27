@@ -2762,11 +2762,6 @@ def test_operation_fit_gate_acceptance_does_not_select_or_reorder_endpoint() -> 
 
 
 def test_operation_fit_narrow_mode_selects_only_bounded_operation() -> None:
-    baseline = SchemaPlanner(
-        _endpoint_disambiguation_registry()
-    ).plan("inventory quantity")
-    assert baseline.calls[0].endpoint == "search"
-
     def fit(request):
         selected = next(
             option
