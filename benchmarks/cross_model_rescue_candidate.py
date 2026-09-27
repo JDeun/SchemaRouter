@@ -39,7 +39,6 @@ from benchmarks.bge_m3_frozen_candidate import (
     _schema_text,
     _to_vectors,
 )
-
 from schemarouter.decisions import (
     DecisionEvidence,
     DecisionOption,
