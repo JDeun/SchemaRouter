@@ -1,0 +1,87 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "robust-winner-only-cross-encoder-rescue-validator-v1",
+  "work_item": 266,
+  "parent_work_items": [197, 246, 259, 260],
+  "status": "preregistered_before_execution",
+  "base_candidate": {
+    "name": "bge-m3-dual-view-055-budget6-robust-v1",
+    "ranker_model": "BAAI/bge-m3",
+    "ranker_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "boundary_epsilon": 1e-6,
+    "threshold_profile": "false-budget-6-robust-epsilon",
+    "accepted_decisions_immutable": true,
+    "raw_winner_immutable": true,
+    "rank2_fallback": false,
+    "confirmed_metrics": {
+      "supported_exact_route_accuracy": 0.8376736111111112,
+      "near_domain_unsupported_rejection": 0.9895833333333334,
+      "false_routes": 6,
+      "false_route_rate": 0.009259259259259259,
+      "planner_p95_latency_ms": 134.95138205
+    }
+  },
+  "validator": {
+    "model": "BAAI/bge-reranker-v2-m3",
+    "revision": "c0abf900d43de6a2652b9acd221bb1b45ab65d6e",
+    "license": "Apache-2.0",
+    "surface": [
+      "normalized endpoint action",
+      "trusted operation_aliases",
+      "endpoint description"
+    ],
+    "eligible_cases": "robust base gate rejections only",
+    "decision": "rescue the same raw winner or preserve abstention",
+    "max_length": 256,
+    "score": "sigmoid(single-pair sequence-classification logit)"
+  },
+  "threshold_search": {
+    "development_only": true,
+    "global_threshold": true,
+    "route_local_thresholds": true,
+    "rescue_false_budgets": [0, 1, 2, 3],
+    "primary_target_rescue_false_budget": 0,
+    "route_local_semantics": "same winner only; threshold failure preserves abstention",
+    "population_rule": "compose rescues with immutable base decisions and evaluate on complete fixed 1800-case DEV population"
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "target": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "total_false_route_rate_max": 0.01,
+    "additional_false_routes_primary_max": 0,
+    "invalid_plans_max": 0,
+    "execution_errors_max": 0
+  },
+  "latency": {
+    "record_base_ranker_mean_p95": true,
+    "record_validator_invocation_rate": true,
+    "record_validator_per_invocation_mean_p50_p95": true,
+    "record_composed_sequential_mean_p95": true,
+    "record_batched_throughput_secondary": true
+  },
+  "forbidden": [
+    "modifying the robust base budget-6 threshold profile",
+    "modifying the 0.55/0.45 fusion weights",
+    "modifying the 1e-6 boundary epsilon",
+    "replacing the base raw winner",
+    "rank-2 fallback",
+    "running the validator on base-accepted cases",
+    "using calibration data",
+    "using blind-final data",
+    "pseudo-routes",
+    "creating execution authority"
+  ],
+  "promotion_policy": "If the zero-additional-false route-local rescue frontier reaches exact-route >=85%, near-domain rejection >=97%, total false-route <=1%, and invalid/errors=0, freeze exactly one threshold map in a separate executable candidate before promotion."
+}
