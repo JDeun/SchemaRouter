@@ -66,6 +66,30 @@ def test_embedding_backend_selects_best_bounded_option() -> None:
     ]
 
 
+def test_embedding_backend_emits_typed_similarity_evidence() -> None:
+    def embed(_: list[str]) -> list[list[float]]:
+        return [
+            [1.0, 0.0],
+            [1.0, 0.0],
+            [0.6, 0.8],
+            [-1.0, 0.0],
+        ]
+
+    result = choose_sync(
+        EmbeddingDecisionBackend(embed, min_similarity=0.70),
+        request(),
+    )
+
+    evidence = {item.option_id: item for item in result.evidence}
+    assert set(evidence) == {"candidate:0", "candidate:1", "candidate:2"}
+    assert evidence["candidate:0"].state == "match"
+    assert evidence["candidate:1"].state == "no_match"
+    assert evidence["candidate:2"].state == "no_match"
+    assert evidence["candidate:0"].source == "embedding-similarity"
+    assert evidence["candidate:0"].score_kind == "cosine_similarity"
+    assert evidence["candidate:0"].metadata["threshold"] == pytest.approx(0.70)
+
+
 def test_embedding_backend_never_forwards_option_metadata() -> None:
     captured: list[str] = []
 
@@ -261,6 +285,32 @@ def test_cached_embedding_backend_reuses_static_option_vectors() -> None:
     assert second.metadata["cache_misses"] == 0
     assert second.metadata["second_similarity"] is not None
     assert second.metadata["top_margin"] is not None
+
+
+def test_cached_embedding_backend_emits_cached_similarity_evidence() -> None:
+    def embed(texts: list[str]) -> list[list[float]]:
+        return [
+            (
+                [-1.0, 0.0]
+                if "weather" in text.casefold()
+                else [0.0, 1.0]
+                if "papers" in text.casefold() or "scientific papers" in text.casefold()
+                else [1.0, 0.0]
+            )
+            for text in texts
+        ]
+
+    result = choose_sync(
+        CachedEmbeddingDecisionBackend(embed, min_similarity=0.50),
+        request(),
+    )
+
+    evidence = {item.option_id: item for item in result.evidence}
+    assert evidence["candidate:0"].state == "match"
+    assert evidence["candidate:1"].state == "no_match"
+    assert evidence["candidate:2"].state == "no_match"
+    assert evidence["candidate:0"].source == "embedding-similarity-cached"
+    assert evidence["candidate:0"].score_kind == "cosine_similarity"
 
 
 def test_cached_embedding_backend_invalidates_changed_option_text() -> None:
