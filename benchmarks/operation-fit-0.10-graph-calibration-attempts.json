@@ -1,0 +1,28 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "fresh_frozen_candidate_calibration",
+  "invalidated_attempts": [
+    {
+      "workflow_run_id": 36285424108,
+      "source_revision": "fc5962b7b30c792b82190d88c79bafcafa768fcf",
+      "conclusion": "cancelled",
+      "artifact_id": 10919853043,
+      "artifact_name": "operation-graph-calibration-36285424108",
+      "corpus_generation_completed": true,
+      "candidate_scoring_completed": false,
+      "promotion_gate_evaluation_completed": false,
+      "artifact_contents_inspected": false,
+      "metrics_inspected": false,
+      "tuning_use": false,
+      "invalidation_reason": "Before observing any calibration metrics or artifact contents, a structural audit found that one unsupported-operation family per domain semantically reused the development corpus family. The generator was corrected to hold out those development unsupported families, and this attempt was invalidated.",
+      "policy": "This artifact must never be opened for tuning, reporting, or promotion evidence. The corrected holdout generator defines the only valid calibration attempt."
+    }
+  ],
+  "current_valid_generator_revision": "533d4988cfc71762bf7278b8ecbbc52e72f9603f",
+  "current_policy": {
+    "unsupported_dev_family_holdout_required": true,
+    "no_invalidated_artifact_inspection": true,
+    "candidate_configuration_remains_frozen": true,
+    "calibration_is_confirmation_only": true
+  }
+}
