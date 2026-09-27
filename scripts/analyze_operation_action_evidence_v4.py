@@ -12,9 +12,10 @@ import json
 import math
 import re
 import time
-from collections import Counter, defaultdict
+from collections import Counter
+from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, Callable, Iterable
+from typing import Any
 
 SCORE_THRESHOLDS = (
     0.30,
@@ -184,32 +185,45 @@ def reject_veto_frontier(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     points: list[dict[str, Any]] = []
     for score_threshold in SCORE_THRESHOLDS:
         for margin_threshold in MARGIN_THRESHOLDS:
-            def passes(row: dict[str, Any]) -> bool:
-                return _accepted(row, score_threshold, margin_threshold)
-
+            supported_passes = [
+                _accepted(row, score_threshold, margin_threshold)
+                for row in supported
+            ]
+            near_passes = [
+                _accepted(row, score_threshold, margin_threshold)
+                for row in near
+            ]
+            ood_passes = [
+                _accepted(row, score_threshold, margin_threshold)
+                for row in ood
+            ]
             points.append(
                 {
                     "score_threshold": score_threshold,
                     "margin_threshold": margin_threshold,
                     "supported_signal_pass_rate": (
-                        sum(passes(row) for row in supported) / len(supported)
-                        if supported
-                        else 0.0
+                        sum(supported_passes) / len(supported) if supported else 0.0
                     ),
                     "supported_correct_signal_rate": (
                         sum(
-                            passes(row) and row["top_route"] == row["expected"]
-                            for row in supported
+                            passed and row["top_route"] == row["expected"]
+                            for row, passed in zip(
+                                supported, supported_passes, strict=True
+                            )
                         )
                         / len(supported)
                         if supported
                         else 0.0
                     ),
                     "near_domain_rejection_rate": (
-                        sum(not passes(row) for row in near) / len(near) if near else 0.0
+                        sum(not passed for passed in near_passes) / len(near)
+                        if near
+                        else 0.0
                     ),
                     "ood_rejection_rate": (
-                        sum(not passes(row) for row in ood) / len(ood) if ood else 0.0
+                        sum(not passed for passed in ood_passes) / len(ood)
+                        if ood
+                        else 0.0
                     ),
                 }
             )
