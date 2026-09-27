@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -69,3 +71,17 @@ def test_paired_metrics_tracks_quality_and_latency_deltas() -> None:
     assert result["latency_delta_mean_ms"] == pytest.approx(-2.0)
     assert result["latency_delta_p50_ms"] == pytest.approx(-2.0)
     assert result["latency_delta_p95_ms"] == pytest.approx(-2.0)
+
+
+def test_paired_candidate_script_is_directly_executable() -> None:
+    completed = subprocess.run(
+        [sys.executable, str(SCRIPT), "--help"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert "--candidate-recall-limit" in completed.stdout
+    assert "--candidate-thresholds-json" in completed.stdout
