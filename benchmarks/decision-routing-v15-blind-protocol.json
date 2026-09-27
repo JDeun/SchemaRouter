@@ -1,12 +1,12 @@
 {
   "version": "v15",
   "cycle": "0.10-operation-graph-projection-v3",
-  "status": "reserved_not_generated",
+  "status": "retired_not_generated_calibration_failed",
   "role": "blind_final_generalization_holdout",
   "corpus_exists": false,
   "tuning_eligible": false,
-  "generation_timing": "only after the complete graph-first candidate configuration is frozen and the fresh calibration promotion gate passes",
-  "execution_policy": "one-shot scoring after freeze; permanently consumed after first completed run",
+  "generation_timing": "prohibited: the frozen graph candidate failed fresh calibration",
+  "execution_policy": "never generated for this closed cycle",
   "research_question": "Can graph-first operation routing, where schema topology owns execution authority and semantic models contribute only bounded soft evidence, preserve or improve safe rejection while reducing paired mean and tail CPU latency versus the frozen full-BGE operation-fit baseline?",
   "target_shape": {
     "case_count": 1200,
@@ -51,5 +51,10 @@
     "A runtime seed and source revision must be recorded.",
     "The generated corpus must not be previewed or used for configuration changes before scoring completes.",
     "After the first completed scoring run, v15 is permanently consumed and may only support reporting or clearly labeled diagnostics."
-  ]
+  ],
+  "retirement": {
+    "reason": "fresh calibration did not pass every preregistered promotion gate",
+    "calibration_result": "benchmarks/operation-fit-0.10-graph-calibration-result.json",
+    "blind_generation_allowed": false
+  }
 }
