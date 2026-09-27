@@ -11,6 +11,7 @@ import argparse
 import json
 import math
 import re
+import sys
 import time
 from collections import Counter
 from collections.abc import Callable, Iterable
@@ -32,6 +33,10 @@ SCORE_THRESHOLDS = (
 )
 MARGIN_THRESHOLDS = (0.00, 0.02, 0.05, 0.08, 0.10, 0.15, 0.20)
 PRECISION_FLOORS = (0.90, 0.95, 0.97, 0.98, 0.99, 0.995, 1.00)
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 
 
 def normalize_action_name(name: str) -> str:
