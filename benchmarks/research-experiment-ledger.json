@@ -866,34 +866,229 @@
     {
       "id": "0.11-action-guided-single-pair-bge-diagnostic",
       "cycle": "0.11-operation-routing-quality-v4",
-      "hypothesis": "Action-only MiniLM can select one route from the authorized width-2 recall set so BGE scores only one pair, reducing CPU tail latency while preserving enough open-set boundary headroom.",
-      "branch": "research/v4-action-guided-single-bge-diagnostic",
+      "issue": 231,
       "pull_request": 232,
-      "work_item": 231,
+      "branch": "research/v4-action-guided-single-bge-diagnostic",
+      "preregistered": true,
+      "hypothesis": "Use cheap action-only evidence to choose one already-authorized width-2 candidate, then score only one BGE pair to remove CPU tail latency.",
+      "result": {
+        "cases": 1800,
+        "supported_raw_top_exact_route_accuracy": 0.7447916666666666,
+        "canonical_false_budget": 12,
+        "canonical_supported_exact_route_accuracy": 0.6536458333333334,
+        "canonical_false_route_rate": 0.018518518518518517,
+        "near_domain_rejection_lower_bound": 0.9791666666666666,
+        "mean_latency_ms": 445.963,
+        "p95_latency_ms": 476.415,
+        "paired_baseline_mean_latency_ms": 531.792,
+        "paired_baseline_p95_latency_ms": 698.996,
+        "invalid_plans": 0,
+        "execution_errors": 0,
+        "workflow_run_id": 36319879567,
+        "artifact_id": 10932093354,
+        "artifact_sha256": "47f1a8dcab2f1956a939df995c0f19137e96d92b8a4451753abdf039598934aa"
+      },
+      "decision": "rejected_on_supported_recall",
+      "failure_reason": "Single-pair BGE materially improved mean/p95 latency, but the canonical <=2% false-route frontier retained only 65.36% supported exact-route accuracy.",
+      "paper_relevance": [
+        "single-pair cross-encoder latency ablation",
+        "selector-vs-boundary decomposition",
+        "negative result"
+      ]
+    },
+    {
+      "id": "0.11-bounded-action-embedding-diagnostic",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 233,
+      "pull_request": 236,
+      "preregistered": true,
+      "hypothesis": "Replace BGE inside width-2 authorized recall with cached action-only MiniLM embedding evidence.",
+      "integrity_events": [
+        {
+          "type": "invalidated_before_result_inspection",
+          "workflow_run_id": 36320476279,
+          "reason": "Projected frontier metrics could use valid_scored rather than full fixed-population denominators.",
+          "metrics_inspected": false
+        }
+      ],
+      "result": {
+        "valid_workflow_run_id": 36320820730,
+        "artifact_id": 10932034054,
+        "artifact_sha256": "cb96cf76692182c286fd18ff665a5b30c6e77574befe0b5f7d4d883dd453a2f6",
+        "raw_supported_top_exact_route_accuracy": 0.7335069444444444,
+        "canonical_supported_exact_route_accuracy": 0.4791666666666667,
+        "canonical_near_domain_unsupported_rejection": 0.9791666666666666,
+        "canonical_false_route_rate": 0.018518518518518517,
+        "mean_latency_ms": 44.288,
+        "p95_latency_ms": 47.975,
+        "invalid_plans": 0,
+        "execution_errors": 0
+      },
+      "decision": "rejected_on_open_set_supported_recall",
+      "interpretation": "Cheap embedding removed latency as the primary bottleneck, but using its winner score/margin as the open-set boundary collapsed supported recall."
+    },
+    {
+      "id": "0.11-minilm-dual-view-diagnostic",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 240,
+      "pull_request": 241,
+      "preregistered": true,
+      "hypothesis": "Use one MiniLM query embedding against cached schema/domain and action-only route views to separate ranking evidence from open-set confidence.",
+      "result": {
+        "cases": 1800,
+        "best_raw_strategy": "schema_0.25_action_0.75",
+        "best_raw_supported_exact_route_accuracy": 0.75,
+        "best_canonical_strategy": "schema_0.50_action_0.50",
+        "best_canonical_supported_exact_route_accuracy": 0.5477430555555556,
+        "canonical_near_domain_unsupported_rejection": 0.9791666666666666,
+        "canonical_false_route_rate": 0.018518518518518517,
+        "mean_latency_ms": 14.020342673888889,
+        "p95_latency_ms": 15.30566955,
+        "workflow_run_id": 36321806711,
+        "artifact_id": 10931809146,
+        "artifact_sha256": "5d2b9813dcbf6fc7361432c13f2009af8950f16425bcc24b5292d1b196b7cc22"
+      },
+      "decision": "rejected_backbone_capacity_insufficient",
+      "interpretation": "The architecture is extremely cheap, but MiniLM route representation capacity tops out near 75% raw exact and cannot support the production target."
+    },
+    {
+      "id": "0.11-multilingual-embedding-backbone-screen",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 242,
+      "pull_request": 243,
+      "preregistered": true,
+      "hypothesis": "Keep the dual-view routing architecture fixed and change only multilingual embedding backbone capacity.",
+      "workflow_run_id": 36322838889,
+      "models": {
+        "e5_base": {
+          "raw_best_supported_exact_route_accuracy": 0.8446,
+          "best_canonical_supported_exact_route_accuracy": 0.6241,
+          "mean_latency_ms": 50.19,
+          "p95_latency_ms": 56.2,
+          "artifact_id": 10933235582,
+          "artifact_sha256": "423c85a9ea29186e1c000df993e39fe96c0429a9051aae44908bfaed31f201c9"
+        },
+        "gte_multilingual_base": {
+          "raw_best_supported_exact_route_accuracy": 0.8914930555555556,
+          "best_canonical_supported_exact_route_accuracy": 0.6311,
+          "mean_latency_ms": 69.37,
+          "p95_latency_ms": 76.58,
+          "artifact_id": 10933800059,
+          "artifact_sha256": "144e786a8ed24ea7479d6a57d57aec4df9f6c57b394f19e6fd477d5e1882b307"
+        },
+        "bge_m3": {
+          "raw_best_supported_exact_route_accuracy": 0.8845,
+          "canonical_budget12_supported_exact_route_accuracy": 0.8385,
+          "canonical_budget12_near_domain_rejection": 0.9792,
+          "canonical_budget12_false_route_rate": 0.018519,
+          "strict_budget6_supported_exact_route_accuracy": 0.8333,
+          "strict_budget6_near_domain_rejection": 0.9896,
+          "strict_budget6_false_route_rate": 0.009259,
+          "mean_latency_ms": 153.61,
+          "p95_latency_ms": 167.99,
+          "artifact_id": 10933440456,
+          "artifact_sha256": "5801994cb05fca6ed6c377f7df280cfce7f97be88a5fe7b615a92bc556f6fd39"
+        }
+      },
+      "decision": "bge_m3_selected_for_strict_open_set_optimization",
+      "interpretation": "GTE and BGE-M3 both exceeded the 85% raw ranking target; BGE-M3 uniquely retained >83% exact under a <=1% false-route boundary at sub-200ms p95."
+    },
+    {
+      "id": "0.11-gte-winner-bge-rejector",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 244,
+      "pull_request": 249,
+      "preregistered": true,
+      "hypothesis": "Let high-capacity GTE choose one winner and use one BGE cross-encoder pair only as the unsupported-operation rejector.",
+      "result": {
+        "workflow_run_id": 36324105709,
+        "raw_gte_supported_exact_route_accuracy": 0.8914930555555556,
+        "best_variant": "capability",
+        "best_canonical_supported_exact_route_accuracy": 0.7612847222222222,
+        "canonical_near_domain_unsupported_rejection": 0.9791666666666666,
+        "canonical_false_route_rate": 0.018518518518518517,
+        "best_end_to_end_mean_latency_ms": 293.88988283055556,
+        "best_end_to_end_p95_latency_ms": 328.10912864999995,
+        "screening_gate_pass_count": 0
+      },
+      "decision": "rejected_on_supported_recall",
+      "interpretation": "Winner-only cross-encoder validation preserved acceptable latency but its relevance threshold rejected too many correct GTE winners."
+    },
+    {
+      "id": "0.11-bge-m3-budget6-executable-confirmation",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 245,
+      "pull_request": 247,
+      "preregistered": true,
+      "candidate": "bge-m3-dual-view-50-50-budget6-v1",
+      "result": {
+        "workflow_run_id": 36323685913,
+        "artifact_id": 10933122169,
+        "artifact_sha256": "a63e6954d8cf44db21bc89b336ca8f67bacc77af933fe870c33bc9298bf6a1a1",
+        "planner_direct_parity_mismatches": 0,
+        "supported_exact_route_accuracy": 0.8324652777777778,
+        "near_domain_unsupported_rejection": 0.9895833333333334,
+        "out_of_domain_rejection": 1,
+        "false_routes": 6,
+        "false_route_rate": 0.009259259259259259,
+        "invalid_plans": 0,
+        "execution_errors": 0,
+        "rank2_fallthroughs": 0,
+        "planner_mean_latency_ms": 188.72634740055554,
+        "planner_p95_latency_ms": 205.99659345,
+        "frozen_projection_counts_match": false
+      },
+      "decision": "not_promoted_literal_freeze_missed_by_one_case",
+      "failure_reason": "One supported papers.citations case scored ~1.35e-7 below its frozen threshold; all planner/direct parity and safety gates passed, but the literal 960-correct frozen projection reproduced as 959. Candidate was not retuned and remained below the 85% final exact target.",
+      "paper_relevance": [
+        "floating-point boundary reproducibility",
+        "executable planner parity",
+        "strict <=1% false-route evidence"
+      ]
+    },
+    {
+      "id": "0.11-bge-m3-fine-fusion-strict",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 246,
+      "pull_request": 248,
       "preregistered": true,
       "status": "executing",
-      "source_parent_revision": "e93f5ddd104b5d876b248a8607092e6900a6e0a3",
-      "data": {
-        "role": "tuning_eligible_development",
-        "cases": 1800,
-        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
-        "calibration_or_blind_forbidden": true
+      "design": {
+        "model": "BAAI/bge-m3@5617a9f61b028005a4858fdac845db406aefb181",
+        "schema_weights": [
+          0.3,
+          0.35,
+          0.4,
+          0.45,
+          0.5,
+          0.55,
+          0.6
+        ],
+        "primary_false_budget": 6,
+        "target_supported_exact": 0.85,
+        "target_near_domain_rejection": 0.97,
+        "target_false_route_rate_max": 0.01,
+        "p95_latency_ms_max": 250,
+        "interpolation_forbidden": true
       },
-      "architecture": [
-        "semantic recall width 2 over registered/authorized routes",
-        "action-only MiniLM selector restricted to the recalled pair",
-        "one selected query-route pair scored by BAAI/bge-reranker-v2-m3",
-        "unselected recalled route receives zero diagnostic score",
-        "route-local winner-score frontier derived on DEV only",
-        "paired same-runner v4 baseline"
-      ],
-      "decision": "pending",
-      "workflow_run_id": 36319879567,
-      "paper_relevance": [
-        "bounded cascade architecture",
-        "single-pair reranking",
-        "latency optimization without authority expansion"
-      ]
+      "decision": "pending"
+    },
+    {
+      "id": "0.11-conditional-zero-false-rejected-winner-rescue",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 255,
+      "preregistered": true,
+      "status": "conditional_not_executed",
+      "execution_condition": "Execute only if #246 has no strict 85/97/1 pass.",
+      "base_selection_rule": "Highest supported exact among preregistered #246 weights at budget 6 subject to rejection/false-route/error/latency gates; tie by lower p95 then lower schema weight.",
+      "validator": {
+        "model": "BAAI/bge-reranker-v2-m3",
+        "revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+        "max_length": 256,
+        "scope": "base-rejected raw rank-1 winner only",
+        "primary_additional_false_budget": 0
+      },
+      "decision": "pending_conditional"
     }
   ],
   "current_research_conclusion": {
