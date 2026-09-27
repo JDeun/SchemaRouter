@@ -362,6 +362,36 @@ def test_planner_preferred_tool_scope_prevents_unrelated_global_conflict_reject(
     )
 
 
+def test_global_graph_scope_can_limit_conflicts_to_one_endpoint() -> None:
+    graph = CompiledSchemaGraph.from_registry(
+        _multi_registry(weather_conflicts=True)
+    )
+
+    assessment = GraphOperationGate().assess_global(
+        query="Ignore weather alerts and find research articles about routing.",
+        graph=graph,
+        allowed_routes=frozenset({("papers", "search")}),
+    )
+
+    assert assessment.decision == "accept"
+    assert assessment.tool_key == "papers"
+    assert assessment.endpoint_name == "search"
+
+
+def test_global_graph_empty_scope_escalates_instead_of_rejecting() -> None:
+    graph = CompiledSchemaGraph.from_registry(_registry(conflicts=True))
+
+    assessment = GraphOperationGate().assess_global(
+        query="Show weather alerts for Seoul.",
+        graph=graph,
+        allowed_routes=frozenset(),
+    )
+
+    assert assessment.decision == "escalate"
+    assert assessment.endpoint_name is None
+    assert "scope was empty" in assessment.reason
+
+
 def test_planner_keeps_conflict_rejection_inside_preferred_tool_scope() -> None:
     planner = SchemaPlanner(
         _multi_registry(weather_conflicts=True),
