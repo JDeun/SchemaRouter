@@ -1,6 +1,6 @@
 {
   "cycle": "0.10-operation-graph-projection-v3",
-  "status": "candidate_frozen_fresh_calibration_allowed",
+  "status": "fresh_calibration_rejected_cycle_closed",
   "reserved_from_main": "526d0c588bbec053fba54c55d982cc67d2a74d56",
   "predecessor": {
     "cycle": "0.10-operation-cascade-v2",
@@ -185,9 +185,9 @@
     "hard_graph_result": "benchmarks/operation-fit-0.10-graph-hard-dev-result.json",
     "hard_graph_status": "no_candidate_passed_supported_floor",
     "candidate_frozen": true,
-    "calibration_allowed": true,
+    "calibration_allowed": false,
     "blind_v15_allowed": false,
-    "next_stage": "fresh frozen-candidate calibration",
+    "next_stage": "new research cycle with fresh development data",
     "semantic_seed_result": "benchmarks/operation-fit-0.10-graph-semantic-seed-dev-result.json",
     "semantic_seed_status": "no_candidate_passed_all_preregistered_gates",
     "propagation_result": "benchmarks/operation-fit-0.10-graph-propagation-dev-result.json",
@@ -198,7 +198,9 @@
     "corroboration_status": "no_candidate_passed_all_preregistered_gates",
     "static_cache_result": "benchmarks/operation-fit-0.10-graph-static-cache-dev-result.json",
     "static_cache_status": "all_preregistered_gates_passed",
-    "frozen_candidate": "benchmarks/operation-fit-0.10-graph-frozen-candidate.json"
+    "frozen_candidate": "benchmarks/operation-fit-0.10-graph-frozen-candidate.json",
+    "calibration_result": "benchmarks/operation-fit-0.10-graph-calibration-result.json",
+    "calibration_status": "fresh_calibration_rejected"
   },
   "methodology_note": {
     "hard_graph_latency_promotion_evidence_valid": false,
@@ -220,6 +222,8 @@
     "static_cache_observation": "Behavior-preserving static option embedding cache matched the frozen corroboration prediction digest exactly and passed every quality, safety, mean-latency, and p95 gate.",
     "freeze_rule": "No architecture, threshold, route representation, or model changes are allowed before fresh calibration completes.",
     "calibration_attempt_log": "benchmarks/operation-fit-0.10-graph-calibration-attempts.json",
-    "invalidated_calibration_attempt": "Run 36285424108 generated a corpus but was cancelled before scoring/gates completed after a pre-result structural audit found development unsupported-family reuse. No artifact contents or metrics were inspected; the attempt is permanently excluded from evidence."
+    "invalidated_calibration_attempt": "Run 36285424108 generated a corpus but was cancelled before scoring/gates completed after a pre-result structural audit found development unsupported-family reuse. No artifact contents or metrics were inspected; the attempt is permanently excluded from evidence.",
+    "calibration_observation": "Frozen candidate improved supported exact-route accuracy and paired mean/p95 latency versus full BGE on fresh natural calibration, but both candidate and baseline reached only 91.67% near-domain unsupported rejection, below the preregistered 95% floor.",
+    "calibration_policy": "Calibration is consumed confirmation evidence. No thresholds, route text, models, or architecture may be tuned against these rows."
   }
 }
