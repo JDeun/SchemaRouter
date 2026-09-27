@@ -2663,6 +2663,62 @@ async def test_async_graph_hierarchical_routing_is_bounded_to_selected_tool() ->
     assert plan.calls[0].endpoint == "update"
 
 
+def test_graph_hierarchical_tool_stage_respects_preferred_tools() -> None:
+    def choose_tool(request):
+        assert [option.id for option in request.options] == ["users"]
+        return {"selections": [{"option_id": "users"}]}
+
+    def choose_operation(request):
+        assert {option.id for option in request.options} == {
+            "users.lookup",
+            "users.update",
+        }
+        return {"selections": [{"option_id": "users.lookup"}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=CallableDecisionBackend(choose_tool),
+        graph_semantic_hierarchical=True,
+        graph_semantic_propagation_backend=CallableDecisionBackend(
+            choose_operation
+        ),
+    ).plan(
+        PlanRequest(
+            query="find this account",
+            preferred_tools=["users"],
+        )
+    )
+
+    assert plan.calls[0].tool == "users"
+    assert plan.calls[0].endpoint == "lookup"
+
+
+def test_graph_hierarchical_operation_stage_respects_availability() -> None:
+    def choose_tool(request):
+        selected = next(option for option in request.options if option.id == "users")
+        return {"selections": [{"option_id": selected.id}]}
+
+    def choose_operation(request):
+        assert [option.id for option in request.options] == ["users.lookup"]
+        return {"selections": [{"option_id": "users.lookup"}]}
+
+    planner = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=CallableDecisionBackend(choose_tool),
+        graph_semantic_hierarchical=True,
+        graph_semantic_propagation_backend=CallableDecisionBackend(
+            choose_operation
+        ),
+        availability_predicate=lambda _tool, endpoint: endpoint.name != "update",
+    )
+    plan = planner.plan("find or modify this account")
+
+    assert plan.calls[0].tool == "users"
+    assert plan.calls[0].endpoint == "lookup"
+
+
 def test_graph_hierarchical_operation_abstention_can_fail_closed() -> None:
     def choose_tool(request):
         selected = next(option for option in request.options if option.id == "inventory")
