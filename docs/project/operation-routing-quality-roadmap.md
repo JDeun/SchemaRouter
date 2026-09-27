@@ -18,6 +18,11 @@ The current 0.10 graph-projection research cycle retains its own preregistered p
 
 Safe abstention is preferable to an incorrect executable route. These values are project targets, not universal industry standards.
 
+A production-quality claim also requires explicit structural authority evidence. Route membership
+alone is insufficient: planned arguments and fields must remain declared by the selected endpoint,
+schema/tool fingerprints must match the current registry, and fallback alternatives must satisfy
+the same checks.
+
 ## Milestones
 
 1. current preregistered research gate: >= 60%;
