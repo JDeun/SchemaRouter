@@ -367,6 +367,176 @@
         "uncertainty semantics",
         "score-kind-safe evidence fusion"
       ]
+    },
+    {
+      "id": "0.11-route-local-threshold-ablation",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 191,
+      "branch": "research/v4-route-local-thresholds",
+      "preregistered": true,
+      "hypothesis": "Per-route pairwise minimum-score thresholds can recover open-set safety while preserving the operation-narrow supported-routing gain.",
+      "result": {
+        "cases": 1800,
+        "supported_exact_route_accuracy": 0.7161,
+        "near_domain_unsupported_rejection": 0.9358,
+        "false_routes": 38,
+        "canonical_false_route_rate": 0.05864197530864197,
+        "out_of_domain_rejection": 0.9861,
+        "invalid_plan_rate": 0,
+        "execution_errors": 0,
+        "workflow_run_id": 36305873119,
+        "artifact_id": 10928065296
+      },
+      "decision": "rejected_on_development",
+      "failure_reason": "Filter-then-rank route-local threshold semantics allowed a lower-ranked route to survive after the raw top route failed its own threshold, increasing executable false routes.",
+      "paper_relevance": [
+        "threshold-semantics ablation",
+        "rank-then-gate motivation",
+        "negative result"
+      ]
+    },
+    {
+      "id": "0.11-nli-boundary-superseded",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 192,
+      "branch": "research/v4-nli-operation-boundary",
+      "decision": "superseded_before_result_interpretation",
+      "tuning_eligible": false,
+      "reason": "Stacked on the weaker generic candidate pipeline. Frozen NLI hypothesis/grid was carried unchanged to #194; #192 results are not eligible for threshold selection.",
+      "paper_relevance": [
+        "research hygiene",
+        "superseded preregistration"
+      ]
+    },
+    {
+      "id": "0.11-pairwise-tool-hierarchy",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 193,
+      "branch": "research/v4-hierarchical-pairwise-tool",
+      "preregistered": true,
+      "result": {
+        "cases": 1800,
+        "supported_exact_route_accuracy": 0.7048611111111112,
+        "near_domain_unsupported_rejection": 0.9166666666666666,
+        "out_of_domain_rejection": 1,
+        "false_routes": 48,
+        "canonical_false_route_rate": 0.07407407407407407,
+        "wrong_tools": 1,
+        "wrong_endpoints": 13,
+        "invalid_plan_rate": 0,
+        "execution_errors": 0,
+        "mean_latency_ms": 1160.047,
+        "p95_latency_ms": 1355.556,
+        "workflow_run_id": 36306926184,
+        "artifact_id": 10927969192,
+        "artifact_sha256": "11369d9cd85f125f2bbb2f2ce1c1c9ba7a86d340144840e824a8a25cbb97e956"
+      },
+      "decision": "rejected_on_development",
+      "failure_reason": "Pairwise tool ranking crossed the 70% supported gate but did not provide an open-set capability boundary and badly missed rejection/false-route gates.",
+      "paper_relevance": [
+        "hierarchy ablation",
+        "selection-vs-rejection separation",
+        "negative result"
+      ]
+    },
+    {
+      "id": "0.11-direct-multilingual-nli-boundary",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 194,
+      "branch": "research/v4-nli-operation-narrow",
+      "preregistered": true,
+      "frozen_model": "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli",
+      "frozen_thresholds": [
+        0.2,
+        0.35,
+        0.5,
+        0.65,
+        0.8,
+        0.9
+      ],
+      "result": {
+        "workflow_run_id": 36307128063,
+        "threshold_sweep": [
+          {
+            "threshold": 0.2,
+            "supported_exact_route_accuracy": 0.1753472222222222,
+            "near_domain_unsupported_rejection": 0.9079861111111112,
+            "false_routes": 55
+          },
+          {
+            "threshold": 0.35,
+            "supported_exact_route_accuracy": 0.13194444444444445,
+            "near_domain_unsupported_rejection": 0.9722222222222222,
+            "false_routes": 17
+          },
+          {
+            "threshold": 0.5,
+            "supported_exact_route_accuracy": 0.1171875,
+            "near_domain_unsupported_rejection": 0.9774305555555556,
+            "false_routes": 13
+          },
+          {
+            "threshold": 0.65,
+            "supported_exact_route_accuracy": 0.1111111111111111,
+            "near_domain_unsupported_rejection": 0.9774305555555556,
+            "false_routes": 13
+          },
+          {
+            "threshold": 0.8,
+            "supported_exact_route_accuracy": 0.11024305555555555,
+            "near_domain_unsupported_rejection": 0.9774305555555556,
+            "false_routes": 13
+          },
+          {
+            "threshold": 0.9,
+            "supported_exact_route_accuracy": 0.11024305555555555,
+            "near_domain_unsupported_rejection": 0.9774305555555556,
+            "false_routes": 13
+          }
+        ],
+        "invalid_plan_rate": 0,
+        "execution_errors": 0
+      },
+      "decision": "rejected_on_development",
+      "failure_reason": "Conservative entailment thresholds improved unsupported rejection but collapsed supported recall; direct NLI is unsuitable as the operation selector/gate tested here.",
+      "paper_relevance": [
+        "independent-boundary ablation",
+        "precision-recall tradeoff",
+        "negative result"
+      ]
+    },
+    {
+      "id": "0.11-bounded-retrieve-rerank-architecture",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 195,
+      "branch": "research/v4-bounded-rerank",
+      "source_revision": "90af3e1fce3bf29f45fd3347c14afc2603b37d5e",
+      "behavior_change": "opt_in_only",
+      "components": [
+        "semantic recall over registered authorized candidates",
+        "operation_fit_scope=all_candidates",
+        "accepted operation-fit selector",
+        "candidate-fit optional/omittable",
+        "default primary_tool behavior preserved"
+      ],
+      "decision": "architecture_implemented_diagnostic_pending",
+      "work_item": 197,
+      "paper_relevance": [
+        "retrieve-rerank architecture",
+        "bounded authority"
+      ]
+    },
+    {
+      "id": "0.11-bounded-rerank-score-diagnostic",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 205,
+      "work_item": 204,
+      "branch": "research/v4-bounded-rerank-diagnostic",
+      "preregistered": true,
+      "source_parent_revision": "90af3e1fce3bf29f45fd3347c14afc2603b37d5e",
+      "status": "executing",
+      "purpose": "Measure raw all-candidate BGE ranking ceiling and derive a development-only winner-only route-local threshold Pareto frontier without freezing behavior.",
+      "decision": "pending"
     }
   ],
   "current_research_conclusion": {
@@ -381,7 +551,11 @@
       "project incompatible evidence kinds independently",
       "rerank only within authorized candidate sets"
     ],
-    "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism."
+    "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
+    "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
+    "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
+    "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
+    "active_experiment": "bounded retrieve-rerank raw score diagnostic (#204 / PR #205)"
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
