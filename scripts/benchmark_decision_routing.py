@@ -1253,6 +1253,13 @@ async def main() -> None:
             "confidence in [0, 1] per pair."
         ),
     )
+    parser.add_argument(
+        "--operation-fit-option-text-callable",
+        help=(
+            "Optional trusted DecisionOption -> text callable for the pairwise operation-fit "
+            "backend. This is benchmark-only and does not expand the authorized option set."
+        ),
+    )
     parser.add_argument("--operation-fit-min-score", type=float, default=0.0)
     parser.add_argument(
         "--operation-fit-select-accepted",
@@ -1634,10 +1641,26 @@ async def main() -> None:
             "--operation-fit-embedding-callable and --operation-fit-pairwise-callable "
             "are mutually exclusive"
         )
+    if (
+        args.operation_fit_option_text_callable
+        and not args.operation_fit_pairwise_callable
+    ):
+        raise ValueError(
+            "--operation-fit-option-text-callable requires "
+            "--operation-fit-pairwise-callable"
+        )
     if args.operation_fit_pairwise_callable:
         operation_fit_scorer = load_callable(
             args.operation_fit_pairwise_callable,
             option_name="--operation-fit-pairwise-callable",
+        )
+        operation_fit_option_text = (
+            load_callable(
+                args.operation_fit_option_text_callable,
+                option_name="--operation-fit-option-text-callable",
+            )
+            if args.operation_fit_option_text_callable
+            else None
         )
         operation_fit_recorder = RecordingDecisionBackend(
             PairwiseDecisionBackend(
@@ -1647,6 +1670,7 @@ async def main() -> None:
                 min_score_by_option=operation_fit_min_score_by_option,
                 min_margin_by_option=operation_fit_min_margin_by_option,
                 threshold_application=args.operation_fit_threshold_application,
+                option_text=operation_fit_option_text,
             )
         )
         operation_fit_backend = operation_fit_recorder
@@ -2113,6 +2137,7 @@ async def main() -> None:
             "enabled": operation_fit_backend is not None,
             "embedding_callable": args.operation_fit_embedding_callable,
             "pairwise_callable": args.operation_fit_pairwise_callable,
+            "option_text_callable": args.operation_fit_option_text_callable,
             "min_similarity": args.operation_fit_min_similarity,
             "min_score": args.operation_fit_min_score,
             "min_margin": args.operation_fit_min_margin,
