@@ -27,7 +27,10 @@ def run(cases: list[dict]) -> dict:
     _config, static_embedder, query_embedder = screen._build_embedders("bge-m3")
     original = dict(dual.WEIGHTED_STRATEGIES)
     try:
-        dual.WEIGHTED_STRATEGIES = dict(FINE_STRATEGIES)
+        dual.WEIGHTED_STRATEGIES = {
+            "schema_only": 1.0,
+            **FINE_STRATEGIES,
+        }
         result = dual.analyze(
             cases,
             static_embedder=static_embedder,
