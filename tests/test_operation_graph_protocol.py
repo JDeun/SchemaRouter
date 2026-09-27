@@ -10,7 +10,7 @@ def test_graph_cycle_is_preregistered_before_implementation() -> None:
     cycle = json.loads(CYCLE.read_text(encoding="utf-8"))
 
     assert cycle["cycle"] == "0.10-operation-graph-projection-v3"
-    assert cycle["status"] == "candidate_frozen_fresh_calibration_allowed"
+    assert cycle["status"] == "fresh_calibration_rejected_cycle_closed"
     assert (
         cycle["development_progress"]["hard_graph_result"]
         == "benchmarks/operation-fit-0.10-graph-hard-dev-result.json"
@@ -102,9 +102,20 @@ def test_graph_cycle_is_preregistered_before_implementation() -> None:
     assert not (
         ROOT / ".github" / "workflows" / "research-operation-graph-static-cache.yml"
     ).exists()
+    assert not (
+        ROOT / ".github" / "workflows" / "research-operation-graph-calibration.yml"
+    ).exists()
     assert cycle["development_progress"]["candidate_frozen"] is True
-    assert cycle["development_progress"]["calibration_allowed"] is True
+    assert cycle["development_progress"]["calibration_allowed"] is False
     assert cycle["development_progress"]["blind_v15_allowed"] is False
+    assert (
+        cycle["development_progress"]["calibration_result"]
+        == "benchmarks/operation-fit-0.10-graph-calibration-result.json"
+    )
+    assert (
+        cycle["development_progress"]["calibration_status"]
+        == "fresh_calibration_rejected"
+    )
     assert cycle["methodology_note"]["hard_graph_latency_promotion_evidence_valid"] is False
     assert cycle["reserved_from_main"] == "526d0c588bbec053fba54c55d982cc67d2a74d56"
     assert cycle["candidate_selection_policy"]["blind_corpus_must_not_exist_before_freeze"] is True
@@ -143,8 +154,13 @@ def test_v15_is_reserved_but_not_generated() -> None:
     blind = json.loads(BLIND.read_text(encoding="utf-8"))
 
     assert blind["version"] == "v15"
-    assert blind["status"] == "reserved_not_generated"
+    assert blind["status"] == "retired_not_generated_calibration_failed"
     assert blind["corpus_exists"] is False
     assert blind["tuning_eligible"] is False
     assert "v13 consumed blind-final corpus" in blind["selection_policy"]["forbidden_for_selection"]
     assert "retired v14 reservation" in blind["selection_policy"]["forbidden_for_selection"]
+    assert blind["retirement"]["blind_generation_allowed"] is False
+    assert (
+        blind["retirement"]["calibration_result"]
+        == "benchmarks/operation-fit-0.10-graph-calibration-result.json"
+    )
