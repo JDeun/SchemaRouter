@@ -460,6 +460,42 @@ class _GeometryRouteSelectingBackend:
 
 
 @dataclass
+class _RankedAbstainingBackend:
+    top_route_id: str
+    top_score: float = 0.005
+    calls: int = 0
+    offered_ids: tuple[str, ...] = ()
+
+    def decide(self, request: DecisionRequest) -> DecisionResult:
+        self.calls += 1
+        self.offered_ids = tuple(option.id for option in request.options)
+        ranking = (
+            self.top_route_id,
+            *(
+                option_id
+                for option_id in self.offered_ids
+                if option_id != self.top_route_id
+            ),
+        )
+        return DecisionResult(
+            abstained=True,
+            metadata={
+                "provider": "test-ranked-abstain",
+                "reason": "below_min_score",
+                "top_score": self.top_score,
+                "ranked_options": [
+                    {
+                        "option_id": option_id,
+                        "score": max(0.0, self.top_score - index * 0.001),
+                    }
+                    for index, option_id in enumerate(ranking)
+                    if option_id in self.offered_ids
+                ],
+            },
+        )
+
+
+@dataclass
 class _RouteSelectingBackend:
     route_id: str
     calls: int = 0
@@ -760,6 +796,140 @@ def test_ranked_graph_propagation_never_adds_unranked_unrelated_routes() -> None
     assert plan.calls == []
 
 
+def test_ranked_only_propagation_exposes_only_semantic_top_k() -> None:
+    seed = _GeometryRouteSelectingBackend(
+        "weather.forecast",
+        top_similarity=0.50,
+        top_margin=0.12,
+        ranked_ids=(
+            "weather.forecast",
+            "papers.search",
+            "weather.current",
+            "papers.citations",
+        ),
+    )
+    propagation = _RouteSelectingBackend("papers.search")
+    planner = SchemaPlanner(
+        _multi_registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        graph_semantic_direct_min_similarity=0.55,
+        graph_semantic_direct_min_margin=0.15,
+        graph_semantic_propagation_backend=propagation,
+        graph_semantic_propagation_scope="ranked_only",
+        graph_semantic_propagation_limit=2,
+        graph_semantic_propagation_on_abstain="reject",
+    )
+
+    plan = planner.plan(
+        PlanRequest(query="Busca artículos académicos sobre graph neural networks.")
+    )
+
+    assert propagation.offered_ids == (
+        "weather.forecast",
+        "papers.search",
+    )
+    assert len(plan.calls) == 1
+    assert plan.calls[0].tool == "papers"
+    assert plan.calls[0].endpoint == "search"
+
+
+def test_graph_corroboration_recovers_matching_seed_and_pairwise_top_route() -> None:
+    seed = _GeometryRouteSelectingBackend(
+        "weather.forecast",
+        top_similarity=0.50,
+        top_margin=0.12,
+        ranked_ids=("weather.forecast", "weather.current"),
+    )
+    propagation = _RankedAbstainingBackend("weather.forecast")
+    downstream = _ExplodingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        graph_semantic_direct_min_similarity=0.55,
+        graph_semantic_direct_min_margin=0.15,
+        graph_semantic_propagation_backend=propagation,
+        graph_semantic_propagation_scope="ranked_only",
+        graph_semantic_propagation_limit=2,
+        graph_semantic_propagation_on_abstain="reject",
+        graph_semantic_corroborate_abstain=True,
+        operation_fit_backend=downstream,
+    )
+
+    plan = planner.plan(PlanRequest(query="Show future conditions around Seoul."))
+
+    assert seed.calls == 1
+    assert propagation.calls == 1
+    assert downstream.calls == 0
+    assert len(plan.calls) == 1
+    assert plan.calls[0].endpoint == "forecast"
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "graph_corroboration"
+    assert any("graph corroboration accepted" in warning for warning in plan.warnings)
+
+
+def test_graph_corroboration_disagreement_is_negative_evidence_and_rejects() -> None:
+    seed = _GeometryRouteSelectingBackend(
+        "weather.forecast",
+        top_similarity=0.50,
+        top_margin=0.12,
+        ranked_ids=("weather.forecast", "weather.current"),
+    )
+    propagation = _RankedAbstainingBackend("weather.current")
+    downstream = _ExplodingBackend()
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        graph_semantic_direct_min_similarity=0.55,
+        graph_semantic_direct_min_margin=0.15,
+        graph_semantic_propagation_backend=propagation,
+        graph_semantic_propagation_scope="ranked_only",
+        graph_semantic_propagation_limit=2,
+        graph_semantic_propagation_on_abstain="reject",
+        graph_semantic_corroborate_abstain=True,
+        operation_fit_backend=downstream,
+    )
+
+    plan = planner.plan(PlanRequest(query="Show uncertain conditions around Seoul."))
+
+    assert propagation.calls == 1
+    assert downstream.calls == 0
+    assert plan.calls == []
+    assert any("bounded pairwise top route was weather.current" in warning for warning in plan.warnings)
+
+
+@pytest.mark.asyncio
+async def test_async_graph_corroboration_matches_sync_authority() -> None:
+    seed = _GeometryRouteSelectingBackend(
+        "weather.forecast",
+        top_similarity=0.50,
+        top_margin=0.12,
+        ranked_ids=("weather.forecast", "weather.current"),
+    )
+    propagation = _RankedAbstainingBackend("weather.forecast")
+    planner = SchemaPlanner(
+        _registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=seed,
+        graph_semantic_direct_min_similarity=0.55,
+        graph_semantic_direct_min_margin=0.15,
+        graph_semantic_propagation_backend=propagation,
+        graph_semantic_propagation_scope="ranked_only",
+        graph_semantic_propagation_limit=2,
+        graph_semantic_propagation_on_abstain="reject",
+        graph_semantic_corroborate_abstain=True,
+    )
+
+    plan = await planner.aplan(PlanRequest(query="Show future conditions around Seoul."))
+
+    assert len(plan.calls) == 1
+    assert plan.calls[0].endpoint == "forecast"
+    assert plan.calls[0].explanation is not None
+    assert plan.calls[0].explanation.candidate_selection == "graph_corroboration"
+
+
 def test_graph_propagation_abstention_can_fail_closed_without_downstream() -> None:
     seed = _GeometryRouteSelectingBackend(
         "weather.forecast",
@@ -832,7 +1002,7 @@ def test_graph_semantic_direct_thresholds_are_bounded(
 
 
 def test_graph_propagation_scope_and_limit_are_validated() -> None:
-    with pytest.raises(ValueError, match="siblings.*ranked"):
+    with pytest.raises(ValueError, match="siblings.*ranked.*ranked_only"):
         SchemaPlanner(
             _registry(),
             graph_semantic_propagation_scope="invalid",  # type: ignore[arg-type]
@@ -842,6 +1012,14 @@ def test_graph_propagation_scope_and_limit_are_validated() -> None:
         SchemaPlanner(
             _registry(),
             graph_semantic_propagation_limit=0,
+        )
+
+
+def test_graph_corroboration_flag_is_boolean() -> None:
+    with pytest.raises(TypeError, match="boolean"):
+        SchemaPlanner(
+            _registry(),
+            graph_semantic_corroborate_abstain=1,  # type: ignore[arg-type]
         )
 
 
