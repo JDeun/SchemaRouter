@@ -1,0 +1,81 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "fresh_frozen_candidate_calibration",
+  "status": "preregistered_before_calibration_generation",
+  "tuning_eligible": false,
+  "frozen_candidate": "benchmarks/operation-fit-0.10-graph-frozen-candidate.json",
+  "candidate_frozen": true,
+  "calibration_role": "confirmation_only",
+  "corpus": {
+    "generator": "scripts/generate_decision_routing_graph_calibration_v1.py",
+    "seed": "graph-v1-calibration-2026-09-27",
+    "target_cases": 600,
+    "supported_cases": 384,
+    "near_domain_unsupported_cases": 192,
+    "out_of_domain_cases": 24,
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "supported_routes": 16,
+    "cases_per_supported_route": 24,
+    "near_domain_unsupported_families": 32,
+    "exact_overlap_with_prior_and_dev_required": 0,
+    "label_revealing_routing_cues_required": 0,
+    "natural_request_surface": true
+  },
+  "frozen_configuration": {
+    "graph_operation_gate": true,
+    "graph_operation_field_paths": false,
+    "semantic_seed": {
+      "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+      "min_similarity": 0.45,
+      "min_margin": 0.1,
+      "direct_min_similarity": 0.55,
+      "direct_min_margin": 0.15
+    },
+    "propagation": {
+      "backend": "BAAI/bge-reranker-v2-m3",
+      "contrastive_beta": 1,
+      "min_score": 0.01,
+      "min_margin": 0,
+      "scope": "ranked_only",
+      "ranked_limit": 2,
+      "on_abstain": "reject",
+      "corroborate_abstain": true
+    },
+    "downstream": {
+      "candidate_recall_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+      "candidate_recall_limit": 2,
+      "candidate_fit_min_similarity": 0.25,
+      "endpoint_disambiguation_min_margin": 0.03,
+      "cache_static_embedding_options": true
+    }
+  },
+  "paired_baseline": "frozen full-BGE planner used throughout graph-projection-v3",
+  "measurement": {
+    "mode": "counterbalanced paired per case",
+    "warmup_cases": 24,
+    "paired_mean_delta_bootstrap_samples": 2000
+  },
+  "gates": {
+    "supported_operation_routed_accuracy_min": 0.6,
+    "near_domain_unsupported_rejection_min": 0.95,
+    "false_routes_must_not_exceed_paired_full_bge_baseline": true,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0,
+    "paired_mean_latency_must_be_lower": true,
+    "paired_p95_latency_must_not_regress": true,
+    "promotion_requires_all": true
+  },
+  "outcome_policy": {
+    "pass": "Mark calibration passed, preserve frozen candidate unchanged, then permit v15 blind generator/workflow creation.",
+    "fail": "Close this candidate/cycle as calibration rejected. Do not tune on calibration rows and do not generate v15.",
+    "no_threshold_or_architecture_changes_after_result": true
+  },
+  "blind_v15_allowed_before_pass": false
+}
