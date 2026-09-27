@@ -1218,6 +1218,15 @@ async def main() -> None:
         ),
     )
     parser.add_argument(
+        "--graph-cache-static-embedding-options",
+        action="store_true",
+        help=(
+            "Use graph-planner-local CachedEmbeddingDecisionBackend instances for "
+            "semantic recall, capability fit, and endpoint disambiguation. This "
+            "must not change routing decisions; it only reuses static option vectors."
+        ),
+    )
+    parser.add_argument(
         "--counterbalanced",
         action="store_true",
         help=(
@@ -1360,6 +1369,10 @@ async def main() -> None:
             "--graph-semantic-corroborate-abstain requires "
             "--graph-semantic-propagation"
         )
+    if args.graph_cache_static_embedding_options and not args.graph_operation_gate:
+        parser.error(
+            "--graph-cache-static-embedding-options requires --graph-operation-gate"
+        )
     if args.warmup_cases < 0:
         parser.error("--warmup-cases must be >= 0")
 
@@ -1411,6 +1424,10 @@ async def main() -> None:
             for iteration in range(args.repeat)
             for case in cases
         ]
+
+    candidate_recall_embedder = None
+    candidate_fit_embedder = None
+    endpoint_disambiguation_embedder = None
 
     candidate_recall_backend = None
     if args.candidate_recall_embedding_callable:
@@ -1499,6 +1516,29 @@ async def main() -> None:
             min_margin=args.endpoint_disambiguation_min_margin,
         )
 
+    graph_candidate_recall_backend = candidate_recall_backend
+    graph_candidate_fit_backend = candidate_fit_backend
+    graph_endpoint_disambiguation_backend = endpoint_disambiguation_backend
+    if args.graph_cache_static_embedding_options:
+        if candidate_recall_embedder is not None:
+            graph_candidate_recall_backend = CachedEmbeddingDecisionBackend(
+                candidate_recall_embedder,
+                min_similarity=args.candidate_recall_min_similarity,
+                min_margin=args.candidate_recall_min_margin,
+            )
+        if candidate_fit_embedder is not None:
+            graph_candidate_fit_backend = CachedEmbeddingDecisionBackend(
+                candidate_fit_embedder,
+                min_similarity=args.candidate_fit_min_similarity,
+                min_margin=args.candidate_fit_min_margin,
+            )
+        if endpoint_disambiguation_embedder is not None:
+            graph_endpoint_disambiguation_backend = CachedEmbeddingDecisionBackend(
+                endpoint_disambiguation_embedder,
+                min_similarity=args.endpoint_disambiguation_min_similarity,
+                min_margin=args.endpoint_disambiguation_min_margin,
+            )
+
     planners: list[tuple[str, SchemaPlanner, RecordingDecisionBackend | None]] = [
         ("keyword", SchemaPlanner(registry), None)
     ]
@@ -1586,6 +1626,8 @@ async def main() -> None:
             graph_name_parts.append("graph-propagation")
         if args.graph_semantic_corroborate_abstain:
             graph_name_parts.append("graph-corroboration")
+        if args.graph_cache_static_embedding_options:
+            graph_name_parts.append("graph-static-option-cache")
         if candidate_recall_backend is not None:
             graph_name_parts.append("selective-semantic-recall")
         if candidate_fit_backend is not None:
@@ -1599,9 +1641,9 @@ async def main() -> None:
                 "+".join(graph_name_parts),
                 SchemaPlanner(
                     registry,
-                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_backend=graph_candidate_recall_backend,
                     candidate_recall_limit=args.candidate_recall_limit,
-                    candidate_fit_backend=candidate_fit_backend,
+                    candidate_fit_backend=graph_candidate_fit_backend,
                     graph_operation_gate=graph_operation_gate,
                     graph_semantic_seed_backend=graph_semantic_seed_backend,
                     graph_semantic_direct_min_similarity=(
@@ -1626,7 +1668,7 @@ async def main() -> None:
                         args.graph_semantic_corroborate_abstain
                     ),
                     operation_fit_backend=operation_fit_backend,
-                    endpoint_disambiguation_backend=endpoint_disambiguation_backend,
+                    endpoint_disambiguation_backend=graph_endpoint_disambiguation_backend,
                 ),
                 None,
             )
@@ -1890,6 +1932,26 @@ async def main() -> None:
                 if args.graph_semantic_corroborate_abstain
                 else None
             ),
+        },
+        "graph_static_option_embedding_cache": {
+            "enabled": args.graph_cache_static_embedding_options,
+            "surfaces": (
+                [
+                    surface
+                    for surface, available in (
+                        ("candidate_recall", candidate_recall_embedder is not None),
+                        ("candidate_fit", candidate_fit_embedder is not None),
+                        (
+                            "endpoint_disambiguation",
+                            endpoint_disambiguation_embedder is not None,
+                        ),
+                    )
+                    if available
+                ]
+                if args.graph_cache_static_embedding_options
+                else []
+            ),
+            "behavior_requirement": "prediction parity with uncached graph candidate",
         },
         "measurement": {
             "mode": "counterbalanced" if args.counterbalanced else "sequential",
