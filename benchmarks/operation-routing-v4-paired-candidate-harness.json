@@ -1,0 +1,45 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "work_item": 222,
+  "component": "counterbalanced-paired-candidate-benchmark-harness",
+  "status": "measurement_contract_frozen_before_candidate_selection",
+  "behavior_change": false,
+  "baseline": {
+    "candidate_recall_limit": 2,
+    "candidate_fit_min_similarity": 0.25,
+    "operation_fit_scope": "primary_tool",
+    "operation_fit_pairwise_min_score": 0.01,
+    "operation_fit_min_margin": 0,
+    "endpoint_disambiguation_min_margin": 0.03
+  },
+  "candidate_parameters_deferred": [
+    "candidate_recall_limit",
+    "route_local_min_score_map"
+  ],
+  "candidate_fixed_semantics": {
+    "candidate_fit": false,
+    "operation_fit_scope": "all_candidates",
+    "operation_fit_select_accepted": true,
+    "threshold_application": "rank_then_gate",
+    "operation_fit_min_margin": 0,
+    "endpoint_disambiguation": false
+  },
+  "measurement": {
+    "same_process": true,
+    "shared_model_cache": true,
+    "warmup_cases": 24,
+    "case_order": "counterbalanced baseline-first/candidate-first by alternating case index",
+    "corpus": "fresh v4 tuning-eligible development only",
+    "record_raw_rows": true
+  },
+  "gates": {
+    "supported_exact_route_accuracy_min": 0.7,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0,
+    "mean_latency": "candidate <= baseline",
+    "p95_latency": "candidate <= baseline"
+  },
+  "policy": "This harness fixes measurement semantics only. Width and threshold map are supplied only after their separately preregistered development-selection experiments complete."
+}
