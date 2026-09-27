@@ -3,7 +3,7 @@
   "title": "SchemaRouter Design and Research Evidence Ledger",
   "purpose": "Machine-readable provenance index for reproducibility, follow-up papers, ablation reporting, and research-integrity review.",
   "scope": "Complete material design and experiment lineage from the initial repository implementation through the active 0.11 routing-quality cycle. Routine bugfix-only commits are referenced by Git history but are not treated as independent design experiments unless they changed an architectural invariant, evaluation protocol, or empirical claim.",
-  "updated_at": "2026-09-27",
+  "updated_at": "2026-09-28",
   "governance": {
     "calibration_and_blind_are_never_tuning_data": true,
     "failed_candidates_are_retained": true,
@@ -1249,24 +1249,188 @@
       "id": "0.11-cross-model-zero-false-abstention-rescue",
       "cycle": "0.11-operation-routing-quality-v4",
       "issue": 262,
-      "pr": 263,
-      "status": "executing",
-      "prerequisite_issue": 259,
+      "pull_request": 263,
+      "preregistered": true,
+      "status": "completed",
       "data_role": "tuning_eligible_development",
       "tuning_eligible": true,
       "base_candidate": "0.11-bge-m3-robust-budget6-executable-confirmation",
-      "variants": [
-        "gte-agreement",
-        "gte-agreement-bge"
-      ],
-      "primary_additional_false_budget": 0,
-      "promotion_gate": {
-        "supported_exact_route_accuracy_min": 0.85,
-        "near_domain_unsupported_rejection_min": 0.97,
-        "total_false_route_rate_max": 0.01,
-        "additional_false_routes_max": 0
-      },
       "workflow_run_id": 36326745694,
+      "variants": {
+        "gte_agreement": {
+          "supported_correct": 977,
+          "supported_exact_route_accuracy": 0.8480902777777778,
+          "near_domain_unsupported_rejection": 0.9895833333333334,
+          "false_routes": 6,
+          "false_route_rate": 0.009259259259259259,
+          "rescued_supported_correct": 12,
+          "additional_false_routes": 0,
+          "artifact_id": 10934337695,
+          "artifact_sha256": "7881a3594ecdab6a242a946a60cfde14d64e3c452ec9d0956c9cfa75a1e0c748"
+        },
+        "gte_agreement_bge": {
+          "supported_correct": 982,
+          "supported_exact_route_accuracy": 0.8524305555555556,
+          "near_domain_unsupported_rejection": 0.9895833333333334,
+          "out_of_domain_rejection": 1,
+          "false_routes": 6,
+          "false_route_rate": 0.009259259259259259,
+          "rescued_supported_correct": 17,
+          "rescued_wrong_supported": 0,
+          "additional_false_routes": 0,
+          "gte_mean_latency_ms": 60.68,
+          "gte_p95_latency_ms": 67.59,
+          "reranker_mean_latency_ms": 218.14,
+          "reranker_p95_latency_ms": 249.17,
+          "artifact_id": 10934392445,
+          "artifact_sha256": "b01d3aa55506aef45dc8402f8bbebb3c3c41056b6d6196775060333893859fbc"
+        }
+      },
+      "decision": "gte_agreement_bge_selected_for_frozen_confirmation",
+      "interpretation": "Cross-model same-winner rescue crossed the DEV 85/97/1 target with zero additional false routes, requiring a separate frozen executable candidate and fresh-surface confirmation."
+    },
+    {
+      "id": "0.11-zero-false-cross-model-frozen-candidate",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 265,
+      "pull_request": 270,
+      "preregistered": true,
+      "status": "completed_rejected_on_fresh_surface",
+      "same_corpus_confirmation": {
+        "workflow_run_id": 36330598219,
+        "artifact_id": 10935113994,
+        "artifact_sha256": "6dcc9b555ad4a5d2384407edc4f018bedee3625d27f92c331758e38a3a022359",
+        "supported_exact_route_accuracy": 0.8524305555555556,
+        "near_domain_unsupported_rejection": 0.9895833333333334,
+        "false_route_rate": 0.009259259259259259,
+        "planner_direct_parity_mismatches": 0,
+        "gte_invocation_rate": 0.2817,
+        "reranker_invocation_rate": 0.0428,
+        "planner_p95_latency_ms": 239.32
+      },
+      "fresh_surface_confirmation": {
+        "corpus_sha256": "7255e4875f92eff4f31cc02d46292ba2b59d9a950d8e18fc48c825cf4886ef1b",
+        "normalized_exact_overlap_with_tuning_dev": 0,
+        "artifact_id": 10936650485,
+        "artifact_sha256": "7a3a81d0d6e1562af963003797f8d3e90af8e642dd189b73e3432c33d983ea3c",
+        "supported_exact_route_accuracy": 0.8671875,
+        "near_domain_unsupported_rejection": 0.7777777777777778,
+        "false_routes": 128,
+        "false_route_rate": 0.19753086419753085,
+        "base_false_routes": 122,
+        "rescue_added_false_routes": 6,
+        "planner_direct_parity_mismatches": 0,
+        "invalid_plans": 0,
+        "execution_errors": 0
+      },
+      "decision": "rejected_surface_fragile_positive_open_set_boundary",
+      "interpretation": "Ranking generalized above 85%, while route-local positive acceptance thresholds collapsed under zero-overlap fresh wording. The fresh corpus is confirmation-only and forbidden for tuning."
+    },
+    {
+      "id": "0.11-robust-base-winner-crossencoder-rescue",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 266,
+      "status": "completed",
+      "preregistered": true,
+      "workflow_run_id": 36328632133,
+      "artifact_id": 10935242130,
+      "artifact_sha256": "25306500e97f539d92ecff65de0730caadff2be5f9d7b767c2f1e6556e0f5a42",
+      "result": {
+        "base_supported_exact_route_accuracy": 0.8376736111111112,
+        "base_false_route_rate": 0.009259259259259259,
+        "base_abstentions": 767,
+        "correct_winner_headroom": 54,
+        "zero_false_rescued_correct": 5,
+        "zero_false_additional_false_routes": 0,
+        "composed_supported_exact_route_accuracy": 0.8420138888888888,
+        "near_domain_unsupported_rejection": 0.9895833333333334,
+        "composed_mean_latency_ms": 300.6249238244444,
+        "composed_p95_latency_ms": 472.69132299999995
+      },
+      "decision": "rejected_safe_but_insufficient_rescue"
+    },
+    {
+      "id": "0.11-native-bge-m3-abstention-geometry-rescue",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 271,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36331192213,
+      "artifact_id": 10934894650,
+      "artifact_sha256": "18c97712830d8b527e125a64a72c11ede1050859eb09f17a40e6b4f98f3a0849",
+      "result": {
+        "base_supported_exact_route_accuracy": 0.8376736111111112,
+        "correct_winner_headroom": 54,
+        "zero_false_rescued_correct": 4,
+        "zero_false_additional_false_routes": 0,
+        "composed_supported_correct": 969,
+        "composed_supported_exact_route_accuracy": 0.8411458333333334,
+        "near_domain_unsupported_rejection": 0.9895833333333334,
+        "false_route_rate": 0.009259259259259259
+      },
+      "decision": "rejected_native_geometry_insufficient"
+    },
+    {
+      "id": "0.11-typed-contradiction-only-nli-veto",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 273,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36351728687,
+      "artifact_id": 10942666789,
+      "artifact_sha256": "3bca18563c965fadcd6987cc3b496ced0dcfd132e1d8b65a2a1dad9ba3eec39d",
+      "result": {
+        "raw_supported_top1_accuracy": 0.884549,
+        "ranker_mean_latency_ms": 151.15,
+        "ranker_p95_latency_ms": 177.15,
+        "nli_single_pair_mean_latency_ms": 14.13,
+        "nli_single_pair_p95_latency_ms": 15.29,
+        "candidate_worthy_thresholds": 0
+      },
+      "decision": "rejected_generic_nli_neutral_on_supported_and_unsupported",
+      "interpretation": "Generic contradiction probability does not encode absence of registered capability; both supported and unsupported pairs are predominantly neutral."
+    },
+    {
+      "id": "0.11-explicit-negative-capability-prototype-veto",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 275,
+      "pull_request": 276,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36352558325,
+      "artifact_id": 10942243493,
+      "artifact_sha256": "a831a35098b546c8003435ea04927fb8767aab1435320823ba4763e0b6608ae1",
+      "result": {
+        "fixed_rule_count": 588,
+        "raw_supported_top1_accuracy": 0.8845486111111112,
+        "mean_latency_ms": 123.14033356666667,
+        "p95_latency_ms": 139.7878024,
+        "candidate_worthy_rule_count": 0,
+        "supported_correct_negative_advantage_median": -0.09353674949857316,
+        "near_domain_negative_advantage_median": 0.17079734944168046
+      },
+      "decision": "rejected_combined_winner_domain_ood_veto",
+      "interpretation": "Explicit negative prototypes show meaningful near-domain separation, but the winner-domain absolute OOD threshold overlaps the supported low tail and collapses supported recall."
+    },
+    {
+      "id": "0.11-global-signed-capability-prototype-bank",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 277,
+      "pull_request": 278,
+      "preregistered": true,
+      "status": "executing",
+      "workflow_run_id": 36356550905,
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "positive_capability_prototypes": 16,
+        "negative_capability_prototypes": 32,
+        "open_set_evidence": [
+          "global capability envelope",
+          "negative-over-positive signed advantage",
+          "optional positive/raw consistency veto"
+        ],
+        "fixed_rule_count": 504
+      },
       "decision": "executing"
     }
   ],
@@ -1275,18 +1439,18 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "keep #259 robust BGE-M3 base acceptances immutable",
-      "evaluate rescue only on base abstentions",
-      "require the GTE top-1 to agree with the frozen BGE-M3 raw top-1 before rescue",
-      "use zero additional false routes as the primary rescue budget",
-      "freeze any passing rescue profile before fresh confirmation",
-      "do not consume calibration/blind evidence until the full DEV target is met"
+      "separate registered route ranking from open-set evidence",
+      "use explicit positive/negative capability prototypes globally rather than route-local positive thresholds",
+      "treat capability evidence as veto-only and never as route authority",
+      "test OOD capability-envelope evidence separately from near-domain signed negative evidence",
+      "if a DEV rule passes, freeze it and confirm on a new preregistered fresh-surface DEV distinct from #270",
+      "keep calibration/blind evidence untouched until fresh-surface confirmation passes"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "cross-model zero-false abstention rescue (#262 / PR #263)",
+    "active_experiment": "global signed capability prototype bank (#277 / PR #278)",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1296,7 +1460,10 @@
     "action_only_evidence_status": "Cheap MiniLM action-only evidence remains useful diagnostic evidence but is no longer the leading architecture; BGE-M3 dual-view embedding is the confirmed robust base.",
     "robust_base_status": "#259/#260 confirmed BGE-M3 0.55/0.45 budget-6 with preregistered 1e-6 comparison epsilon: 83.77% exact, 98.96% near-domain rejection, 0.93% false-route, 118/135 ms mean/p95, zero parity/authority/runtime failures.",
     "route_local_stable_fusion_status": "#256 raised raw exact to 90.54% but strict accepted exact remained 83.59%; rejected.",
-    "zero_false_crossencoder_rescue_status": "#255 rescued only 5 correct supported cases at zero added false routes, reaching 84.20%; rejected."
+    "zero_false_crossencoder_rescue_status": "#255 rescued only 5 correct supported cases at zero added false routes, reaching 84.20%; rejected.",
+    "fresh_surface_result": "#265/#270 passed same-corpus 85/97/1 but failed zero-overlap fresh-surface open-set safety: 86.72% exact, 77.78% near rejection, 19.75% false-route. Ranking generalized; positive acceptance thresholds did not.",
+    "generic_nli_status": "#273 rejected contradiction-only NLI because both supported and unsupported operation pairs were predominantly neutral.",
+    "explicit_negative_prototype_status": "#275 found useful near-domain signed negative evidence but failed when combined with a winner-domain absolute OOD threshold."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -1337,16 +1504,20 @@
       246,
       255,
       256,
-      259
+      259,
+      262,
+      265,
+      266,
+      271,
+      273,
+      275
     ],
     "active_experiments": [
-      262
+      277
     ],
     "active_pull_requests": [
-      195,
-      260,
-      263,
-      235
+      235,
+      278
     ],
     "next_blocked_confirmation": 198
   },
