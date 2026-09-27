@@ -1,0 +1,69 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "bounded-retrieve-rerank-score-surface-v1",
+  "work_item": 204,
+  "parent_work_item": 197,
+  "status": "preregistered_before_execution",
+  "implementation_parent": {
+    "pull_request": 195,
+    "source_revision": "90af3e1fce3bf29f45fd3347c14afc2603b37d5e"
+  },
+  "research_question": "After removing generic candidate-fit suppression, does bounded recall plus all-candidate pairwise reranking expose enough raw ranking headroom for a safe winner-gated composite candidate?",
+  "frozen_architecture": {
+    "semantic_recall_backend": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "semantic_recall_limit": 4,
+    "candidate_fit_gate": false,
+    "operation_fit_scope": "all_candidates",
+    "operation_fit_backend": "BAAI/bge-reranker-v2-m3 sibling-contrastive beta=1",
+    "operation_fit_select_accepted": true,
+    "operation_fit_min_score_diagnostic": 0,
+    "operation_fit_min_margin_diagnostic": 0,
+    "endpoint_disambiguation": false,
+    "authority": "registered and currently authorized recalled candidates only"
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported": 1152,
+    "near_domain_unsupported": 576,
+    "out_of_domain": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+  },
+  "forbidden_tuning_evidence": [
+    "decision-routing-v5 calibration split",
+    "v12 design-known stress",
+    "v13 consumed blind-final",
+    "0.10 graph fresh calibration",
+    "future v4 calibration",
+    "future v4 blind-final"
+  ],
+  "required_analysis": [
+    "supported exact raw-top route accuracy over all supported cases",
+    "operation-fit invocation coverage",
+    "near-domain and OOD zero-threshold false-route behavior",
+    "wrong-tool and wrong-endpoint taxonomy",
+    "per-language supported exact accuracy",
+    "per-route supported exact accuracy",
+    "top-score and top-margin distributions by supported-correct, supported-wrong, near-domain unsupported, and OOD groups",
+    "winner-only route-local threshold Pareto frontier under canonical no-route false budgets",
+    "development-only maximum supported exact-route accuracy under canonical false-route <=2%"
+  ],
+  "threshold_derivation_policy": {
+    "purpose": "diagnostic only; do not freeze or implement thresholds in this experiment",
+    "semantics": "raw winner is fixed first; its own route-local threshold may accept it or abstain. A rejected winner must never fall through to a lower-ranked route.",
+    "canonical_false_route_denominator": 648,
+    "development_gate_false_route_rate_max": 0.02,
+    "integer_false_route_budget_max": 12,
+    "production_target_false_route_rate_max": 0.01,
+    "integer_false_route_budget_target": 6
+  },
+  "standing_gates": {
+    "supported_exact_route_accuracy_min": 0.7,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0
+  },
+  "decision_rule": "This experiment cannot promote a candidate. It only determines whether the architecture has sufficient ranking headroom and what winner-only development Pareto frontier is available. Any behavior-changing winner gate requires a new preregistered experiment."
+}
