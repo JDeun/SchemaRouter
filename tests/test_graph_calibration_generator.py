@@ -88,3 +88,19 @@ def test_graph_calibration_uses_four_distinct_unsupported_families_per_domain() 
         for language in module.LANGUAGES:
             assert len(domain[language]) == 4
             assert len(set(domain[language])) == 4
+
+
+def test_graph_calibration_holds_out_dev_unsupported_core_families() -> None:
+    module = _module()
+
+    for first, _second in module._graph_dev.ROUTE_PAIRS:
+        domain = first.split(".", 1)[0]
+        for language in module.LANGUAGES:
+            dev_core = module._normalize(
+                module._graph_dev.NEAR_DOMAIN[domain][language]
+            )
+            calibration_families = {
+                module._normalize(query)
+                for query in module.NEAR_DOMAIN_FAMILIES[domain][language]
+            }
+            assert dev_core not in calibration_families
