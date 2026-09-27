@@ -47,7 +47,7 @@ jobs:
         run: |
           python -m json.tool benchmarks/operation-routing-v4-zero-false-cross-model-candidate.json >/dev/null
           ruff check             benchmarks/cross_model_rescue_candidate.py             scripts/evaluate_cross_model_rescue_candidate_v4.py             scripts/generate_decision_routing_quality_v4_confirmation.py             tests/test_cross_model_rescue_candidate_v4.py             tests/test_cross_model_rescue_confirmation_v4.py
-          pytest -q             tests/test_cross_model_rescue_candidate_v4.py             tests/test_cross_model_rescue_confirmation_v4.py
+          PYTHONPATH=. pytest -q             tests/test_cross_model_rescue_candidate_v4.py             tests/test_cross_model_rescue_confirmation_v4.py
 
   same-corpus-confirmation:
     needs: contracts
