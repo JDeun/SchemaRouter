@@ -314,6 +314,7 @@ class SchemaPlanner:
         candidate_fit_backend: DecisionBackend | None = None,
         operation_fit_backend: DecisionBackend | None = None,
         operation_fit_select_accepted: bool = False,
+        operation_fit_scope: Literal["primary_tool", "all_candidates"] = "primary_tool",
         graph_operation_gate: GraphOperationGate | None = None,
         graph_semantic_seed_backend: DecisionBackend | None = None,
         graph_semantic_direct_min_similarity: float | None = None,
@@ -382,6 +383,10 @@ class SchemaPlanner:
             raise ValueError("graph_semantic_propagation_limit must be an integer >= 1")
         if not isinstance(operation_fit_select_accepted, bool):
             raise TypeError("operation_fit_select_accepted must be a boolean")
+        if operation_fit_scope not in {"primary_tool", "all_candidates"}:
+            raise ValueError(
+                "operation_fit_scope must be 'primary_tool' or 'all_candidates'"
+            )
         if not isinstance(graph_semantic_corroborate_abstain, bool):
             raise TypeError("graph_semantic_corroborate_abstain must be a boolean")
         self.registry = registry
@@ -393,6 +398,7 @@ class SchemaPlanner:
         self.candidate_fit_backend = candidate_fit_backend
         self.operation_fit_backend = operation_fit_backend
         self.operation_fit_select_accepted = operation_fit_select_accepted
+        self.operation_fit_scope = operation_fit_scope
         self.graph_operation_gate = graph_operation_gate
         self.graph_semantic_seed_backend = graph_semantic_seed_backend
         self.graph_semantic_direct_min_similarity = graph_semantic_direct_min_similarity
