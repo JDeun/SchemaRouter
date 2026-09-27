@@ -718,6 +718,68 @@
         "score-vs-margin boundary comparison",
         "complexity control"
       ]
+    },
+    {
+      "id": "0.11-width2-winner-gate-executable",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "hypothesis": "A width-2 bounded semantic recall plus score-only BGE rank-then-gate boundary can satisfy the 0.11 development quality gates without material latency regression.",
+      "branch": "research/v4-width2-winner-gate-candidate",
+      "pull_request": 228,
+      "work_item": 227,
+      "preregistered": true,
+      "source_revision": "fdaf3f77e95b504e81739c69cd1d9889d36afabb",
+      "dataset": {
+        "role": "tuning_eligible_development",
+        "cases": 1800,
+        "supported_cases": 1152,
+        "near_domain_unsupported_cases": 576,
+        "out_of_domain_cases": 72,
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+      },
+      "result": {
+        "supported_exact_route_accuracy": 0.7256944444444444,
+        "near_domain_unsupported_rejection": 0.9809027777777778,
+        "out_of_domain_rejection": 0.9861111111111112,
+        "false_routes": 12,
+        "canonical_false_route_rate": 0.018518518518518517,
+        "invalid_plan_rate": 0,
+        "execution_errors": 0,
+        "candidate_mean_latency_ms": 765.187,
+        "candidate_p50_latency_ms": 582.75,
+        "candidate_p95_latency_ms": 1836.868,
+        "baseline_mean_latency_ms": 531.031,
+        "baseline_p50_latency_ms": 605.144,
+        "baseline_p95_latency_ms": 697.912,
+        "mean_latency_regression_fraction": 0.4409460088017462,
+        "p95_latency_regression_fraction": 1.631947867352904,
+        "operation_fit_invocations": 1800,
+        "workflow_run_id": 36315784179,
+        "artifact_id": 10931078672,
+        "artifact_sha256": "00517181c286197fe61156d04348eb9519bc8dab3681d20650216bfb923b37e1"
+      },
+      "gate_evaluation": {
+        "supported_exact_route_gate_passed": true,
+        "near_domain_rejection_gate_passed": true,
+        "false_route_gate_passed": true,
+        "invalid_plan_gate_passed": true,
+        "execution_error_gate_passed": true,
+        "mean_latency_non_regression_passed": false,
+        "p95_latency_non_regression_passed": false,
+        "all_development_gates_passed": false
+      },
+      "decision": "rejected_on_development_latency_gate",
+      "failure_reason": "The frozen width-2 winner-gate candidate crossed all preregistered quality/safety gates, but mean latency regressed from 531.031 ms to 765.187 ms (+44.09%) and p95 from 697.912 ms to 1836.868 ms (+163.19%). It must not advance to calibration.",
+      "next_action": "Keep calibration/blind untouched. Activate #226 cheap action-only evidence diagnostics to find a lower-cost independent action signal and inform a separately preregistered behavior-changing candidate.",
+      "paper_relevance": [
+        "quality-latency tradeoff",
+        "winner-only threshold semantics",
+        "bounded reranking quality gain",
+        "development rejection despite quality pass",
+        "research-governance evidence"
+      ],
+      "source_files": [
+        "benchmarks/operation-routing-v4-width2-winner-gate-result.json"
+      ]
     }
   ],
   "current_research_conclusion": {
