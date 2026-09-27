@@ -1,0 +1,71 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "typed-contradiction-only-nli-veto-v1",
+  "work_item": 273,
+  "parent_work_items": [197, 221, 265, 270],
+  "status": "preregistered_before_execution",
+  "motivation": "Fresh-surface confirmation showed ranking generalization but severe open-set boundary collapse; test a route-invariant typed contradiction signal without positive entailment gating.",
+  "ranker": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "candidate_space": "all registered routes",
+    "selection": "global raw top-1",
+    "positive_route_local_gate_used": false
+  },
+  "nli": {
+    "model": "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli",
+    "revision": "0a71e92a985b6e1ad1828cf67ce9c459639c1dca",
+    "max_length": 256,
+    "premise": "user query",
+    "hypothesis_template": "The user's request is supported by exactly this registered operation: {operation_text}",
+    "operation_text": [
+      "normalized endpoint action",
+      "trusted operation_aliases",
+      "endpoint description"
+    ],
+    "typed_semantics": {
+      "contradiction": "no_match_veto",
+      "neutral": "unknown_no_veto",
+      "entailment": "match_no_authority_upgrade"
+    },
+    "can_select_or_switch_route": false,
+    "can_create_authority": false
+  },
+  "contradiction_thresholds": [0.50, 0.65, 0.80, 0.90, 0.95, 0.98, 0.99],
+  "selection_policy": {
+    "candidate_worthy_gate": {
+      "supported_exact_route_accuracy_min": 0.85,
+      "near_domain_unsupported_rejection_min": 0.97,
+      "false_route_rate_max": 0.01,
+      "out_of_domain_rejection": 1.0,
+      "authority_violations_max": 0,
+      "invalid_plans_max": 0,
+      "execution_errors_max": 0,
+      "sequential_p95_latency_ms_max": 250.0
+    },
+    "deterministic_winner": [
+      "highest supported exact-route accuracy",
+      "lowest false-route count",
+      "highest contradiction threshold on exact ties"
+    ]
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "forbidden_evidence": [
+      "failed #270 fresh-surface confirmation corpus",
+      "calibration",
+      "blind-final",
+      "row-level repair derived from confirmation evidence"
+    ]
+  },
+  "promotion_policy": "Diagnostic only. A passing threshold must be frozen in a separate executable candidate and confirmed on a new preregistered fresh DEV surface before calibration/blind evidence.",
+  "behavior_change": false
+}
