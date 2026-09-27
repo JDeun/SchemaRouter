@@ -18,6 +18,10 @@ _MODEL_NAME = os.environ.get(
     "SCHEMAROUTER_BENCHMARK_NLI_MODEL",
     "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli",
 )
+_MODEL_REVISION = os.environ.get(
+    "SCHEMAROUTER_BENCHMARK_NLI_REVISION",
+    "0a71e92a985b6e1ad1828cf67ce9c459639c1dca",
+)
 _MAX_LENGTH = int(os.environ.get("SCHEMAROUTER_BENCHMARK_NLI_MAX_LENGTH", "256"))
 _BATCH_SIZE = int(os.environ.get("SCHEMAROUTER_BENCHMARK_NLI_BATCH_SIZE", "32"))
 if _MAX_LENGTH < 16:
@@ -48,8 +52,14 @@ def _load() -> tuple[Any, Any, int]:
     if _tokenizer is None or _model is None:
         from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-        _tokenizer = AutoTokenizer.from_pretrained(_MODEL_NAME)
-        _model = AutoModelForSequenceClassification.from_pretrained(_MODEL_NAME)
+        _tokenizer = AutoTokenizer.from_pretrained(
+            _MODEL_NAME,
+            revision=_MODEL_REVISION,
+        )
+        _model = AutoModelForSequenceClassification.from_pretrained(
+            _MODEL_NAME,
+            revision=_MODEL_REVISION,
+        )
         _model.eval()
         _entailment_index = _label_index(dict(_model.config.id2label))
     assert _entailment_index is not None
