@@ -691,4 +691,61 @@ Provenance:
 - artifact SHA-256: `00517181c286197fe61156d04348eb9519bc8dab3681d20650216bfb923b37e1`;
 - corpus SHA-256: `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`.
 
-The next development-only evidence task is #226: measure a cheap multilingual action-only signal built solely from endpoint action names and trusted `operation_aliases`. Any behavior-changing fast path, veto, or evidence projection must be preregistered separately after that diagnostic.
+The next development-only evidence task was #226: measure a cheap multilingual action-only signal built solely from endpoint action names and trusted `operation_aliases`. Any behavior-changing fast path, veto, or evidence projection remained subject to separate preregistration.
+
+## 19. Cheap action-only evidence diagnostic
+
+Work item #226 / PR #230 tested a behavior-preserving evidence surface using the existing multilingual MiniLM. The representation included only the normalized endpoint action name and trusted `operation_aliases`; tool descriptions, endpoint descriptions, fields, parameters, corpus templates, and unsupported-operation labels were explicitly excluded.
+
+DEV result:
+
+- supported raw top-route exact: **73.00%**;
+- English / Spanish / mixed / Japanese / German / Korean raw exact: **86.46 / 80.73 / 76.56 / 73.96 / 64.06 / 56.25%**;
+- query embedding + cosine mean/p50/p95: **13.836 / 13.604 / 15.515 ms**;
+- static 16-option embedding cost: **68.724 ms**, cacheable.
+
+The high-precision direct-accept frontier was narrow:
+
+- score >=0.50 and margin >=0.10: 155/1800 accepted, **98.06% precision**, 8.61% overall coverage;
+- score >=0.55 and margin >=0.15: 67/1800 accepted, **100% observed precision**, 3.72% overall coverage.
+
+Decision: retain the signal as a cheap bounded selector/supporting evidence surface, but **do not** promote it as a global direct fast path. Its high-precision coverage is too small to remove the BGE p95 bottleneck.
+
+Provenance:
+
+- source revision: `521dcc65e0269d68c76a372606f8d22b2ac57aa1`;
+- workflow run: `36319105106`;
+- artifact: `10932010750`;
+- artifact SHA-256: `ae12b6a9abb3f6d7bc2d53792ce75b12bcb853971c8f6367f97a8f949c499011`;
+- corpus SHA-256: `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`.
+
+PR #230 was merged into the active v4 research integration branch because it adds diagnostic instrumentation only; it does not change default routing behavior.
+
+## 20. Action-guided single-pair BGE diagnostic
+
+Work item #231 / PR #232 is the next preregistered DEV-only diagnostic.
+
+The hypothesis is that the cheap action signal is more useful **inside** the bounded recall set than as a global acceptance boundary:
+
+```text
+registered/authorized semantic recall (width 2)
+    ↓
+action-only MiniLM selects one of the two candidates
+    ↓
+BGE scores exactly that one query-route pair
+    ↓
+DEV-only route-local winner boundary analysis
+```
+
+Constraints fixed before execution:
+
+- action selection is restricted to the already-authorized width-2 candidates;
+- action text remains endpoint name + trusted operation aliases only;
+- BGE cannot introduce a route not supplied by the recall stage;
+- calibration/blind evidence is forbidden;
+- route-local thresholds derived here are diagnostic and require a separate frozen executable candidate before confirmation;
+- paired mean **and p95** latency remain mandatory promotion gates.
+
+Current workflow: `36319879567`.
+
+The decision tree is preregistered in #197: promote only through a separate frozen DEV candidate if both the 70/96/2 quality frontier and paired latency headroom are present; otherwise retain the negative result and move to the corresponding DEV-only latency or typed-negative-evidence branch.
