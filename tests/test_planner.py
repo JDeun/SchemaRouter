@@ -8,6 +8,7 @@ from schemarouter import (
     EvidenceRequirements,
     FieldSpec,
     InMemoryRegistry,
+    GraphOperationGate,
     ParameterSpec,
     PlanningError,
     PlanRequest,
@@ -2557,6 +2558,172 @@ def _endpoint_disambiguation_registry() -> InMemoryRegistry:
         )
     )
     return reg
+
+
+def test_graph_hierarchical_routing_separates_tool_and_operation_surfaces() -> None:
+    seen: dict[str, object] = {}
+
+    def choose_tool(request):
+        seen["tool_context"] = request.context
+        seen["tool_ids"] = [option.id for option in request.options]
+        seen["tool_descriptions"] = [
+            option.description for option in request.options
+        ]
+        selected = next(option for option in request.options if option.id == "inventory")
+        return {"selections": [{"option_id": selected.id, "score": 0.95}]}
+
+    def choose_operation(request):
+        seen["operation_context"] = request.context
+        seen["operation_ids"] = [option.id for option in request.options]
+        seen["operation_descriptions"] = [
+            option.description for option in request.options
+        ]
+        selected = next(
+            option for option in request.options if option.id == "inventory.update"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.93}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=CallableDecisionBackend(choose_tool),
+        graph_semantic_hierarchical=True,
+        graph_semantic_propagation_backend=CallableDecisionBackend(
+            choose_operation
+        ),
+        graph_semantic_propagation_on_abstain="reject",
+    ).plan("modify warehouse stock level")
+
+    assert set(seen["tool_ids"]) == {"inventory", "users"}
+    tool_text = "\n".join(seen["tool_descriptions"])
+    assert "Inventory lookup and stock update operations" in tool_text
+    assert "User lookup and profile update operations" in tool_text
+    assert "change quantity" not in tool_text
+    assert "set stock count" not in tool_text
+    assert "display_name" not in tool_text
+
+    assert seen["tool_context"] == {
+        "surface": "graph_tool_semantic_seed",
+        "authority": "registered_schema_graph_tools_only",
+    }
+    assert set(seen["operation_ids"]) == {
+        "inventory.search",
+        "inventory.update",
+    }
+    operation_text = "\n".join(seen["operation_descriptions"])
+    assert "change quantity" in operation_text
+    assert "set stock count" in operation_text
+    assert "user profile" not in operation_text.casefold()
+    assert seen["operation_context"] == {
+        "surface": "graph_hierarchical_operation",
+        "tool": "inventory",
+        "authority": "selected_registered_tool_endpoints_only",
+    }
+
+    assert plan.calls[0].tool == "inventory"
+    assert plan.calls[0].endpoint == "update"
+    assert any(
+        "graph hierarchical tool seed selected inventory" in warning
+        for warning in plan.warnings
+    )
+    assert any(
+        "graph hierarchical operation accepted inventory.update" in warning
+        for warning in plan.warnings
+    )
+
+
+@pytest.mark.asyncio
+async def test_async_graph_hierarchical_routing_is_bounded_to_selected_tool() -> None:
+    async def choose_tool(request):
+        selected = next(option for option in request.options if option.id == "users")
+        return {"selections": [{"option_id": selected.id, "score": 0.94}]}
+
+    async def choose_operation(request):
+        assert {option.id for option in request.options} == {
+            "users.lookup",
+            "users.update",
+        }
+        selected = next(
+            option for option in request.options if option.id == "users.update"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.91}]}
+
+    plan = await SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=CallableDecisionBackend(choose_tool),
+        graph_semantic_hierarchical=True,
+        graph_semantic_propagation_backend=CallableDecisionBackend(
+            choose_operation
+        ),
+        graph_semantic_propagation_on_abstain="reject",
+    ).aplan("modify this account")
+
+    assert plan.calls[0].tool == "users"
+    assert plan.calls[0].endpoint == "update"
+
+
+def test_graph_hierarchical_operation_abstention_can_fail_closed() -> None:
+    def choose_tool(request):
+        selected = next(option for option in request.options if option.id == "inventory")
+        return {"selections": [{"option_id": selected.id, "score": 0.95}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=CallableDecisionBackend(choose_tool),
+        graph_semantic_hierarchical=True,
+        graph_semantic_propagation_backend=CallableDecisionBackend(
+            lambda _request: {"abstained": True}
+        ),
+        graph_semantic_propagation_on_abstain="reject",
+    ).plan("do something to warehouse stock")
+
+    assert plan.calls == []
+    assert any(
+        "graph hierarchical operation rejected unresolved request within inventory"
+        in warning
+        for warning in plan.warnings
+    )
+
+
+def test_graph_semantic_default_keeps_route_level_seed_surface() -> None:
+    seen: dict[str, object] = {}
+
+    def choose_route(request):
+        seen["context"] = request.context
+        seen["ids"] = [option.id for option in request.options]
+        selected = next(
+            option for option in request.options if option.id == "inventory.update"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.95}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        graph_operation_gate=GraphOperationGate(),
+        graph_semantic_seed_backend=CallableDecisionBackend(choose_route),
+    ).plan("modify warehouse stock level")
+
+    assert seen["context"] == {
+        "surface": "graph_semantic_seed",
+        "authority": "registered_schema_graph_only",
+    }
+    assert set(seen["ids"]) == {
+        "inventory.search",
+        "inventory.update",
+        "users.lookup",
+        "users.update",
+    }
+    assert plan.calls[0].tool == "inventory"
+    assert plan.calls[0].endpoint == "update"
+
+
+def test_graph_semantic_hierarchical_flag_requires_boolean() -> None:
+    with pytest.raises(TypeError, match="graph_semantic_hierarchical"):
+        SchemaPlanner(
+            _endpoint_disambiguation_registry(),
+            graph_semantic_hierarchical=1,  # type: ignore[arg-type]
+        )
 
 
 def test_endpoint_disambiguation_reorders_only_within_primary_tool() -> None:
