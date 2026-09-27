@@ -493,7 +493,7 @@ def run(
     frontiers: list[dict[str, Any]] = []
     for budget in FALSE_BUDGETS:
         solution = optimize_route_thresholds(valid_scored, routes, budget)
-        projected = apply_threshold_map(valid_scored, solution["thresholds"])
+        projected = apply_threshold_map(rows, solution["thresholds"])
         frontiers.append({**solution, **projected})
 
     canonical = next(
