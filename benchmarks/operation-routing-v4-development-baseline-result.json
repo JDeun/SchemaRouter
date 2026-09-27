@@ -1,0 +1,193 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "stage": "fresh_development_baseline",
+  "status": "development_diagnostic_recorded_no_candidate_frozen",
+  "source_revision": "2bc95fc9d2bd51a33802e5db4b304b2d716deea4",
+  "workflow_run_id": 36289671639,
+  "artifact_id": 10922301686,
+  "artifact_name": "operation-routing-quality-v4-dev-36289671639",
+  "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+  "corpus": {
+    "cases": 1800,
+    "supported": 1152,
+    "near_domain_unsupported": 576,
+    "out_of_domain": 72,
+    "languages": {
+      "en": 300,
+      "ko": 300,
+      "es": 300,
+      "ja": 300,
+      "de": 300,
+      "mixed": 300
+    },
+    "supported_routes": 16,
+    "cases_per_supported_route": 72,
+    "unsupported_families": 32,
+    "cases_per_unsupported_family": 18,
+    "normalized_exact_overlap_with_consumed_corpora": 0,
+    "label_revealing_routing_cues": 0,
+    "tuning_eligible": true
+  },
+  "corpus_audit": {
+    "duplicate_ids": 0,
+    "duplicate_normalized_queries": 0,
+    "label_token_gaps": 0,
+    "token_jaccard_near_duplicate_threshold": 0.8,
+    "near_duplicate_pair_count": 108,
+    "interpretation": "No exact duplicates or detected high-frequency label-associated token gaps. Token-set near-duplicates remain inside the tuning-eligible development surface, so later confirmation corpora must hold out semantic/paraphrase families rather than only exact strings."
+  },
+  "baseline": {
+    "planner": "keyword+semantic-recall+capability-fit+operation-fit+endpoint-disambiguation",
+    "supported_exact_route_accuracy": 0.4401041666666667,
+    "near_domain_unsupported_rejection": 0.9409722222222222,
+    "out_of_domain_rejection": 1,
+    "false_route_rate": 0.05246913580246913,
+    "false_routes": 34,
+    "missed_routes": 512,
+    "wrong_tools": 3,
+    "wrong_endpoints": 130,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "mean_latency_ms": 543.374,
+    "p50_latency_ms": 618.186,
+    "p95_latency_ms": 723.483,
+    "worst_language": {
+      "language": "ko",
+      "supported_exact_route_accuracy": 0.3020833333333333
+    },
+    "worst_route": {
+      "route": "inventory.search",
+      "supported_exact_route_accuracy": 0.1388888888888889
+    },
+    "supported_failure_stages": {
+      "operation_fit_abstention": 418,
+      "capability_fit_abstention": 94,
+      "wrong_endpoint_after_routing": 130,
+      "wrong_tool_after_routing": 3
+    },
+    "operation_fit_diagnostic": {
+      "supported_invocations": 1058,
+      "supported_abstentions": 418,
+      "supported_accepts": 640,
+      "top_route_exact_when_invoked": 819,
+      "top_route_exact_rate_when_invoked": 0.774102079395085,
+      "top_route_exact_rate_over_all_supported": 0.7109375,
+      "top_route_exact_among_accepted": 623,
+      "accepted_wrong_endpoint_cases": 130,
+      "accepted_wrong_endpoint_cases_where_pairwise_top_was_expected": 129,
+      "conclusion": "The pairwise operation model frequently ranks the correct registered operation even when the downstream endpoint result is wrong; the current gate discards the accepted option ID and therefore leaves substantial exact-route accuracy unused."
+    }
+  },
+  "historical_graph_candidate": {
+    "planner": "keyword+graph-operation+graph-semantic-seed+graph-propagation+graph-corroboration+graph-static-option-cache+selective-semantic-recall+selective-capability-fit+selective-operation-fit+selective-endpoint-disambiguation",
+    "supported_exact_route_accuracy": 0.4913194444444444,
+    "near_domain_unsupported_rejection": 0.9166666666666666,
+    "out_of_domain_rejection": 1,
+    "false_route_rate": 0.07407407407407407,
+    "false_routes": 48,
+    "missed_routes": 468,
+    "wrong_tools": 4,
+    "wrong_endpoints": 114,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "mean_latency_ms": 384.662,
+    "p50_latency_ms": 468.208,
+    "p95_latency_ms": 560.457,
+    "worst_language": {
+      "language": "ko",
+      "supported_exact_route_accuracy": 0.3333333333333333
+    },
+    "worst_route": {
+      "route": "inventory.search",
+      "supported_exact_route_accuracy": 0.20833333333333334
+    },
+    "graph_resolution": {
+      "exact_graph_operation_accepts": 36,
+      "graph_operation_escalations": 1764,
+      "graph_semantic_direct_accepts": 8,
+      "graph_semantic_propagation_entries": 186,
+      "graph_semantic_abstentions": 1570,
+      "graph_propagation_accepts": 126,
+      "graph_propagation_rejects": 11,
+      "graph_corroboration_accepts": 49
+    }
+  },
+  "paired_historical_vs_baseline": {
+    "candidate_gains": 66,
+    "candidate_losses": 21,
+    "both_correct": 1100,
+    "both_wrong": 613,
+    "mean_latency_delta_ms": -158.7123238888889
+  },
+  "critical_unsupported_families": {
+    "baseline": {
+      "support.family_1": {
+        "rejection": 0,
+        "false_routes": 18,
+        "destination": "support.create_ticket"
+      },
+      "support.family_2": {
+        "rejection": 0.8333333333333334,
+        "false_routes": 3,
+        "destination": "support.create_ticket"
+      },
+      "support.family_4": {
+        "rejection": 0.6666666666666666,
+        "false_routes": 6,
+        "destination": "support.create_ticket"
+      },
+      "weather.family_2": {
+        "rejection": 0.8888888888888888,
+        "false_routes": 2,
+        "destination": "finance.history"
+      },
+      "weather.family_4": {
+        "rejection": 0.7777777777777778,
+        "false_routes": 4,
+        "destination": "weather.current/weather.forecast"
+      },
+      "inventory.family_4": {
+        "rejection": 0.9444444444444444,
+        "false_routes": 1,
+        "destination": "inventory.update"
+      }
+    },
+    "historical_graph_additional_regressions": {
+      "papers.family_2": {
+        "rejection": 0.7222222222222222,
+        "false_routes": 5,
+        "destination": "papers.citations"
+      },
+      "users.family_1": {
+        "rejection": 0.7222222222222222,
+        "false_routes": 5,
+        "destination": "users.update"
+      },
+      "users.family_4": {
+        "rejection": 0.9444444444444444,
+        "false_routes": 1,
+        "destination": "users.lookup"
+      }
+    }
+  },
+  "standing_gates": {
+    "supported_exact_route_accuracy_min": 0.7,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "baseline_all_gates_passed": false,
+    "historical_graph_all_gates_passed": false
+  },
+  "diagnosis": [
+    "The historical graph candidate improves supported exact-route accuracy and latency but worsens near-domain safety, so it is not promotable.",
+    "The dominant supported failure mode is false abstention in operation fit, followed by capability fit; wrong-tool errors are rare.",
+    "For accepted supported rows, the pairwise operation top choice is usually correct, including 129 of 130 baseline wrong-endpoint cases, but the ordinary operation-fit gate currently does not use that choice to reorder/select.",
+    "Near-domain false routes are highly concentrated in semantically adjacent unsupported actions, especially support ticket reopen/priority/escalation requests mapping to support.create_ticket. A scalar relevance threshold alone cannot reliably represent this capability boundary.",
+    "The existing graph semantic seed mixes tool-domain, operation-action, endpoint-description, and field terms into one embedding surface and resolves very few requests directly on this corpus. A separated tool-domain then within-tool operation ablation is justified."
+  ],
+  "next_actions": [
+    "Evaluate an opt-in operation-fit selector that uses the already-authorized pairwise top option after the same acceptance gate.",
+    "Evaluate the preregistered hierarchical tool-domain then within-tool operation representation.",
+    "Add explicit negative/unknown capability evidence for semantically adjacent unsupported actions instead of solving support-family failures only by raising a global threshold.",
+    "Keep calibration and blind corpora ungenerated until a development candidate passes all standing gates and is frozen."
+  ]
+}
