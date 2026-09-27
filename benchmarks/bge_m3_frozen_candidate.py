@@ -7,7 +7,8 @@ already present in the DecisionRequest. It cannot create execution authority.
 from __future__ import annotations
 
 import math
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from schemarouter.decisions import (
     DecisionEvidence,
