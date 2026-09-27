@@ -1,0 +1,59 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "graph_static_option_embedding_cache_development",
+  "status": "cache_ablation_preregistered_before_execution",
+  "tuning_eligible": true,
+  "source_corroboration_result": "benchmarks/operation-fit-0.10-graph-corroboration-dev-result.json",
+  "reference_candidate": {
+    "propagation_scope": "ranked_only",
+    "semantic_seed_min_similarity": 0.45,
+    "semantic_seed_min_margin": 0.1,
+    "direct_accept_min_similarity": 0.55,
+    "direct_accept_min_margin": 0.15,
+    "ranked_limit": 2,
+    "propagation_on_abstain": "reject",
+    "corroborate_abstain": true,
+    "supported_operation_routed_accuracy": 0.6328125,
+    "near_domain_unsupported_operation_rejection": 0.953125,
+    "false_routes": 18,
+    "prediction_digest_sha256": "7972d4f4260e5f5138c8735b8e8d0d781bb9d7ea157c17b930e7220690f38bc7"
+  },
+  "change_under_test": {
+    "description": "Replace graph-candidate semantic recall, capability-fit, and endpoint-disambiguation embedding backends with CachedEmbeddingDecisionBackend instances so static authorized option vectors are reused after warmup.",
+    "graph_semantic_seed": "already cached; unchanged",
+    "pairwise_bge": "unchanged",
+    "routing_thresholds": "unchanged",
+    "graph_authority": "unchanged",
+    "candidate_sets": "unchanged",
+    "required_prediction_parity": true
+  },
+  "measurement": {
+    "corpus_sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6",
+    "case_count": 1200,
+    "mode": "counterbalanced paired per case",
+    "warmup_cases": 24,
+    "baseline": "frozen full-BGE planner without graph-specific static option cache",
+    "candidate": "ranked_only corroboration with graph-specific static option embedding caches",
+    "paired_mean_delta_bootstrap_samples": 2000
+  },
+  "gates": {
+    "exact_prediction_digest_must_match_reference": true,
+    "supported_operation_routed_accuracy_min": 0.6,
+    "near_domain_unsupported_rejection_min": 0.95,
+    "false_routes_must_not_exceed_paired_full_bge_baseline": true,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0,
+    "paired_mean_latency_must_be_lower": true,
+    "paired_p95_latency_must_not_regress": true,
+    "promotion_requires_all": true
+  },
+  "research_hygiene": {
+    "no_threshold_tuning": true,
+    "no_route_representation_change": true,
+    "no_new_model_calls": true,
+    "no_calibration_data": true,
+    "no_blind_data": true,
+    "calibration_allowed": false,
+    "blind_v15_allowed": false
+  }
+}
