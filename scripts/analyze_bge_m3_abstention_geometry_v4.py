@@ -488,11 +488,19 @@ def _compose(
 
     return {
         "supported_correct": supported_correct,
-        "supported_exact_route_accuracy": supported_correct / len(supported),
-        "near_domain_unsupported_rejection": 1.0 - near_false / len(near),
-        "out_of_domain_rejection": 1.0 - ood_false / len(ood),
+        "supported_exact_route_accuracy": (
+            supported_correct / len(supported) if supported else 0.0
+        ),
+        "near_domain_unsupported_rejection": (
+            1.0 - near_false / len(near) if near else 1.0
+        ),
+        "out_of_domain_rejection": (
+            1.0 - ood_false / len(ood) if ood else 1.0
+        ),
         "false_routes": false_routes,
-        "false_route_rate": false_routes / len(no_route),
+        "false_route_rate": (
+            false_routes / len(no_route) if no_route else 0.0
+        ),
         "wrong_supported": wrong_supported,
         "rescued_cases": len(rescued_ids),
         "rescued_case_ids": sorted(rescued_ids),
