@@ -5,6 +5,7 @@ on:
     paths:
       - ".github/workflows/research-operation-routing-quality-v4.yml"
       - "benchmarks/operation-fit-0.11-quality-v4-cycle.json"
+      - "benchmarks/operation-routing-v4-hierarchical-ablation.json"
       - "scripts/generate_decision_routing_quality_v4.py"
       - "scripts/audit_operation_routing_corpus.py"
       - "scripts/analyze_operation_routing_quality_v4_dev.py"
