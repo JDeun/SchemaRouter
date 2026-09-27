@@ -1,0 +1,55 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "ablation": "multilingual-nli-operation-boundary-v1",
+  "status": "design_frozen_before_first_execution",
+  "base_revision": "6f083a70c27d31ded30e2e0704c65ac98f11ed5b",
+  "motivation": {
+    "pairwise_ranking_ceiling_on_supported": 0.7109375,
+    "global_threshold_problem": "Near-zero relevance thresholds expose useful supported ranking but collapse open-set rejection.",
+    "route_local_threshold_frontier_under_false_route_2pct": 0.6571180555555556,
+    "hypothesis": "An entailment-oriented multilingual signal can separate semantic relatedness from whether the requested action is actually supported by the registered operation."
+  },
+  "model": {
+    "id": "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli",
+    "role": "development-only operation entailment scorer",
+    "integration_status": "benchmark-only; no runtime dependency or default behavior change",
+    "score": "softmax entailment probability",
+    "premise": "user query",
+    "hypothesis_template": "The user is requesting exactly this operation: {operation_text}",
+    "max_length": 256
+  },
+  "architecture": [
+    "Preserve existing semantic candidate recall and capability-fit stages.",
+    "Replace only the operation-fit pairwise relevance scorer with the frozen NLI entailment scorer.",
+    "Use the already-preregistered accepted-selector behavior to let an accepted registered operation control the single-call candidate.",
+    "Keep all choices bounded to the existing leading-tool registered endpoints.",
+    "Abstention remains fail-closed and no execution authority is created by NLI output."
+  ],
+  "threshold_grid": [0.2, 0.35, 0.5, 0.65, 0.8, 0.9],
+  "selection_rule": {
+    "dataset": "fresh v4 1800-case development corpus only",
+    "primary": "Among candidates passing every standing quality gate, choose highest supported exact-route accuracy; tie-break by lower false-route rate, then lower p95 latency.",
+    "no_passing_candidate": "Reject the architecture for promotion and retain only diagnostic evidence."
+  },
+  "gates": {
+    "supported_exact_route_accuracy_min": 0.70,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0
+  },
+  "required_slices": [
+    "language",
+    "route",
+    "unsupported_family",
+    "wrong_tool_vs_wrong_endpoint",
+    "operation_fit_accept_vs_abstain",
+    "latency"
+  ],
+  "research_hygiene": [
+    "Do not use calibration or blind corpora for threshold selection.",
+    "Do not alter the threshold grid after inspecting the first NLI result.",
+    "Do not add family-specific negative examples from this development corpus to the NLI input.",
+    "If the architecture passes development gates, freeze it before any confirmation corpus is generated."
+  ]
+}
