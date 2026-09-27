@@ -1,0 +1,165 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "bounded-retrieve-rerank-score-surface-v1",
+  "work_item": 204,
+  "pull_request": 205,
+  "status": "completed_development_diagnostic",
+  "source_revision": "f43535b6ef0acbc5492b9791e6757e28a343d9fa",
+  "workflow_run_id": 36310955824,
+  "artifact_id": 10929374346,
+  "artifact_sha256": "47a1d7a5716b100edd654607816a6cceeb630be09091348fcc788928a73fdb09",
+  "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+  "corpus": {
+    "cases": 1800,
+    "supported": 1152,
+    "near_domain_unsupported": 576,
+    "out_of_domain": 72,
+    "tuning_eligible": true
+  },
+  "architecture": {
+    "semantic_recall_limit": 4,
+    "candidate_fit": false,
+    "operation_fit_scope": "all_candidates",
+    "operation_fit_select_accepted": true,
+    "operation_fit_min_score": 0,
+    "operation_fit_min_margin": 0
+  },
+  "raw_zero_threshold": {
+    "supported_exact_route_accuracy": 0.9071180555555556,
+    "supported_raw_top_correct": 1045,
+    "near_domain_unsupported_rejection": 0,
+    "out_of_domain_rejection": 0,
+    "false_routes": 648,
+    "canonical_false_route_rate": 1,
+    "wrong_tools": 28,
+    "wrong_endpoints": 79,
+    "missed_routes": 0,
+    "invalid_plan_rate": 0,
+    "execution_errors": 0,
+    "mean_latency_ms": 1014.271,
+    "p95_latency_ms": 1915.928
+  },
+  "preregistered_score_only_winner_frontier": {
+    "false_budget_0": {
+      "supported_exact_route_accuracy": 0.7057291666666666,
+      "false_routes": 0,
+      "canonical_false_route_rate": 0
+    },
+    "false_budget_6": {
+      "supported_exact_route_accuracy": 0.7404513888888888,
+      "false_routes": 6,
+      "canonical_false_route_rate": 0.009259259259259259
+    },
+    "false_budget_12": {
+      "supported_exact_route_accuracy": 0.7578125,
+      "false_routes": 12,
+      "canonical_false_route_rate": 0.018518518518518517,
+      "near_domain_rejection_lower_bound": 0.9791666666666666,
+      "thresholds": {
+        "calendar.create": 0.00042079637100656214,
+        "calendar.list": 0.005646923840177776,
+        "finance.history": 0.000025101905537945652,
+        "finance.quote": 0.01026822900828383,
+        "inventory.search": 0.007700608256978836,
+        "inventory.update": 0.01634009743657051,
+        "materials.search": 0.00019822956397447963,
+        "materials.structure": 0.0018750598274348406,
+        "papers.citations": 0.0019093124958118395,
+        "papers.search": 0.0014506273508091635,
+        "support.create_ticket": 0.8116532788543022,
+        "support.search": 0.0028175199665163866,
+        "users.lookup": 0.0014621524199206822,
+        "users.update": 0.0004977362787407921,
+        "weather.current": 0.016014969351159758,
+        "weather.forecast": 0.24072883612989712
+      }
+    }
+  },
+  "posthoc_development_score_margin_frontier": {
+    "role": "additional tuning-eligible diagnostic from the same completed raw-score artifact; not a preregistered candidate result",
+    "false_budget_12": {
+      "supported_exact_route_accuracy": 0.7612847222222222,
+      "supported_correct": 877,
+      "near_domain_unsupported_rejection": 0.9809027777777778,
+      "out_of_domain_rejection": 0.9861111111111112,
+      "false_routes": 12,
+      "canonical_false_route_rate": 0.018518518518518517,
+      "wrong_tools": 1,
+      "wrong_endpoints": 21,
+      "missed_supported_routes": 253,
+      "thresholds": {
+        "calendar.create": {
+          "min_score": 0.00042079637100656214,
+          "min_margin": 0
+        },
+        "calendar.list": {
+          "min_score": 0.005646923840177776,
+          "min_margin": 0
+        },
+        "finance.history": {
+          "min_score": 0,
+          "min_margin": 0.000011492836692943268
+        },
+        "finance.quote": {
+          "min_score": 0,
+          "min_margin": 0.010266790488242309
+        },
+        "inventory.search": {
+          "min_score": 0.007700608256978836,
+          "min_margin": 0
+        },
+        "inventory.update": {
+          "min_score": 0,
+          "min_margin": 0.016253077108618924
+        },
+        "materials.search": {
+          "min_score": 0,
+          "min_margin": 0.00018117076699546798
+        },
+        "materials.structure": {
+          "min_score": 0,
+          "min_margin": 0.0018414408247486977
+        },
+        "papers.citations": {
+          "min_score": 0.0019093124958118395,
+          "min_margin": 0
+        },
+        "papers.search": {
+          "min_score": 0.0014506273508091635,
+          "min_margin": 0
+        },
+        "support.create_ticket": {
+          "min_score": 0,
+          "min_margin": 0.3096899287387756
+        },
+        "support.search": {
+          "min_score": 0,
+          "min_margin": 0.0027694373190867085
+        },
+        "users.lookup": {
+          "min_score": 0,
+          "min_margin": 0.0011953999373397902
+        },
+        "users.update": {
+          "min_score": 0,
+          "min_margin": 0.0004918385054822773
+        },
+        "weather.current": {
+          "min_score": 0,
+          "min_margin": 0.0159499573663317
+        },
+        "weather.forecast": {
+          "min_score": 0,
+          "min_margin": 0.5670738011357273
+        }
+      }
+    }
+  },
+  "interpretation": [
+    "Bounded all-candidate BGE ranking has ample supported-route headroom: 90.71% raw top exact.",
+    "Winner-only route-local gating can satisfy the v4 quality/safety gates on tuning-eligible development scores.",
+    "The zero-threshold architecture is too slow for promotion at ~1014 ms mean and ~1916 ms p95, so the next ablation must reduce rerank width before confirmation.",
+    "Score+margin gives only a small accuracy gain over score-only at the 12-false-route budget, so complexity should be justified against a simpler score-only candidate."
+  ],
+  "decision": "advance_to_rerank_width_latency_ablation_before_freezing_threshold_candidate"
+}
