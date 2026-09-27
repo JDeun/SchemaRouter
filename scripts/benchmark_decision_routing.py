@@ -1297,6 +1297,14 @@ async def main() -> None:
     parser.add_argument("--graph-semantic-seed-min-similarity", type=float, default=-1.0)
     parser.add_argument("--graph-semantic-seed-min-margin", type=float, default=0.0)
     parser.add_argument(
+        "--graph-semantic-hierarchical",
+        action="store_true",
+        help=(
+            "Split graph semantic routing into a tool-domain embedding stage followed "
+            "by operation selection only within the selected registered tool."
+        ),
+    )
+    parser.add_argument(
         "--graph-semantic-direct-min-similarity",
         type=float,
         default=None,
@@ -1489,6 +1497,10 @@ async def main() -> None:
         parser.error(
             "--graph-semantic-propagation requires "
             "--graph-semantic-seed-embedding-callable"
+        )
+    if args.graph_semantic_hierarchical and not args.graph_semantic_propagation:
+        parser.error(
+            "--graph-semantic-hierarchical requires --graph-semantic-propagation"
         )
     if args.graph_semantic_propagation_limit < 1:
         parser.error("--graph-semantic-propagation-limit must be >= 1")
@@ -1779,6 +1791,8 @@ async def main() -> None:
         graph_name_parts = ["keyword", "graph-operation"]
         if graph_semantic_seed_backend is not None:
             graph_name_parts.append("graph-semantic-seed")
+        if args.graph_semantic_hierarchical:
+            graph_name_parts.append("graph-hierarchical")
         if args.graph_semantic_propagation:
             graph_name_parts.append("graph-propagation")
         if args.graph_semantic_corroborate_abstain:
@@ -1803,6 +1817,7 @@ async def main() -> None:
                     candidate_fit_backend=graph_candidate_fit_backend,
                     graph_operation_gate=graph_operation_gate,
                     graph_semantic_seed_backend=graph_semantic_seed_backend,
+                    graph_semantic_hierarchical=args.graph_semantic_hierarchical,
                     graph_semantic_direct_min_similarity=(
                         args.graph_semantic_direct_min_similarity
                     ),
@@ -2060,12 +2075,17 @@ async def main() -> None:
         },
         "graph_semantic_seed": {
             "enabled": graph_semantic_seed_backend is not None,
+            "hierarchical": args.graph_semantic_hierarchical,
             "embedding_callable": args.graph_semantic_seed_embedding_callable,
             "min_similarity": args.graph_semantic_seed_min_similarity,
             "min_margin": args.graph_semantic_seed_min_margin,
             "direct_min_similarity": args.graph_semantic_direct_min_similarity,
             "direct_min_margin": args.graph_semantic_direct_min_margin,
-            "authority": "registered-schema-graph-operation-nodes-only",
+            "authority": (
+                "registered-schema-graph-tools-then-selected-tool-endpoints"
+                if args.graph_semantic_hierarchical
+                else "registered-schema-graph-operation-nodes-only"
+            ),
             "abstention_action": "escalate_to_existing_semantic_stack",
         },
         "graph_propagation": {
