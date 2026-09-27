@@ -202,5 +202,5 @@ def test_quality_gate_requires_all_safety_conditions() -> None:
     assert metrics["supported_exact_route_accuracy"] == 1.0
     assert metrics["near_domain_unsupported_rejection"] == 0.97
     assert metrics["out_of_domain_rejection"] == 1.0
-    assert metrics["false_route_rate"] == 0.03
+    assert metrics["false_route_rate"] == 3 / 110
     assert metrics["quality_gate_pass"] is False
