@@ -166,6 +166,17 @@ Material changes:
 
 The design deliberately kept unit metadata optional because not every source is scientific/numeric; text sources such as papers and web/document search remain valid unitless capabilities.
 
+### Benchmark/reproducibility methodology added during the 0.7 line
+
+The project also formalized how empirical evidence is retained:
+
+- multi-run benchmark history and machine-readable compatibility artifacts (#83);
+- an on-demand full-corpus research workflow with retained JSON/CSV/HTML artifacts (#84);
+- opt-in empty lexical recall recovery plus candidate-abstention and offline threshold-calibration tooling (#85);
+- exact source revision, corpus SHA-256, repeat count and case-limit metadata in benchmark reports (#89).
+
+These changes are methodologically important: later routing claims can be traced to an exact source/data configuration rather than screenshots or chat notes.
+
 ## 8. v0.8: semantic routing stages and holdout discipline
 
 This phase introduced the routing stages that became the main research subject:
@@ -221,6 +232,8 @@ Known v10 result:
 - OOD rejection 100%.
 
 The v8 incident is retained as methodology evidence: a holdout touched by diagnostic tuning is not “reset”; it remains consumed and is replaced.
+
+The same line also added explicit **routing error taxonomy and failure-stage attribution**, allowing later studies to separate candidate recall, capability-fit, operation-fit, wrong-tool and wrong-endpoint failures. The operation-fit semantic representation itself was simplified using v5 development/calibration only before the one-shot v10 generalization run.
 
 ## 9. v0.9: bounded pairwise reranking
 
