@@ -23,13 +23,13 @@ import analyze_embedding_backbone_screen_v4 as screen  # noqa: E402
 from benchmark_decision_routing import reference_registry  # noqa: E402
 
 from benchmarks.bge_winner_validator import (  # noqa: E402
+    MAX_LENGTH as VALIDATOR_MAX_LENGTH,
+)
+from benchmarks.bge_winner_validator import (  # noqa: E402
     MODEL_NAME as VALIDATOR_MODEL_NAME,
 )
 from benchmarks.bge_winner_validator import (  # noqa: E402
     MODEL_REVISION as VALIDATOR_MODEL_REVISION,
-)
-from benchmarks.bge_winner_validator import (  # noqa: E402
-    MAX_LENGTH as VALIDATOR_MAX_LENGTH,
 )
 from benchmarks.bge_winner_validator import score_pair, score_pairs, unload  # noqa: E402
 
