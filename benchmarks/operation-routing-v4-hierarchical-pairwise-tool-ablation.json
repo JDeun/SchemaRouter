@@ -1,0 +1,61 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "ablation": "hierarchical-pairwise-tool-ranker-v1",
+  "status": "design_frozen_before_implementation",
+  "base_revision": "bb7214ef960baaacfb46a05b8612afc0b41285a3",
+  "source_evidence": {
+    "workflow_run_id": 36305345476,
+    "artifact_id": 10927038875,
+    "hierarchical_supported_exact_route_accuracy": 0.4262152777777778,
+    "hierarchical_near_domain_unsupported_rejection": 0.9409722222222222,
+    "hierarchical_false_route_rate": 0.05246913580246913,
+    "hierarchical_raw_tool_top_match_supported": 0.8485663082437276,
+    "hierarchical_raw_tool_top_match_with_deterministic_routes": 0.8532986111111112,
+    "hierarchical_direct_operation_raw_top_match": 0.9695121951219512,
+    "observation": "The embedding tool-stage ranker is the dominant ceiling. On the conservative direct hierarchical slice the selected tool was correct for all 164 supported cases and the within-tool operation pairwise top route was correct for 159/164, while the global raw tool top rank was correct for only 947/1116 graph-seed supported cases."
+  },
+  "hypothesis": "Replacing only the tool-domain embedding ranker with the existing multilingual pairwise reranker can improve cross-language/domain tool ranking while preserving the bounded registered-tool authority surface. The operation stage remains restricted to endpoints of the selected registered tool and keeps its existing pairwise rejection threshold.",
+  "architecture": [
+    "Keep graph/caller/policy/availability authority filtering unchanged.",
+    "Construct exactly one option per authorized registered tool using only tool name and description.",
+    "Score query-to-tool pairs with the existing multilingual pairwise scorer instead of the MiniLM embedding seed.",
+    "Use the pairwise backend's own min-score/min-margin boundary; do not use embedding similarity thresholds for this ablation.",
+    "Resolve operations only among registered endpoints of the selected tool with the existing operation pairwise backend.",
+    "Preserve fail-closed operation abstention and all schema authorization checks.",
+    "Do not introduce cross-kind score arithmetic or synthesize tools/endpoints/arguments/fields."
+  ],
+  "implementation": {
+    "planner_core_change_required": false,
+    "reason": "SchemaPlanner already accepts a generic DecisionBackend for graph_semantic_seed_backend; only benchmark/configuration plumbing and generic telemetry are required.",
+    "new_benchmark_option": "--graph-semantic-seed-pairwise-callable",
+    "pairwise_tool_min_score": 0,
+    "pairwise_tool_min_margin": 0,
+    "operation_pairwise_min_score": 0.01,
+    "operation_pairwise_min_margin": 0
+  },
+  "evaluation": {
+    "corpus": "same fresh v4 1800-case tuning-eligible development corpus",
+    "compare_against": [
+      "frozen hierarchical embedding-tool candidate",
+      "fresh v4 baseline",
+      "historical mixed-surface graph candidate"
+    ],
+    "gates": {
+      "supported_exact_route_accuracy_min": 0.7,
+      "near_domain_unsupported_rejection_min": 0.96,
+      "false_route_rate_max": 0.02,
+      "invalid_plan_rate_max": 0,
+      "execution_errors_max": 0
+    },
+    "required_diagnostics": [
+      "tool-stage raw top-tool accuracy overall and by language/tool",
+      "supported exact-route accuracy",
+      "near-domain unsupported rejection",
+      "canonical no-route false-route rate",
+      "operation-stage raw top-route accuracy",
+      "wrong-tool versus wrong-endpoint counts",
+      "mean/p50/p95 latency"
+    ]
+  },
+  "selection_policy": "Run this first pairwise-tool ablation without tuning its score threshold. Development results may justify a separately preregistered pairwise tool-boundary study; calibration/test data remain untouched."
+}
