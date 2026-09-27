@@ -14,15 +14,6 @@ import time
 from collections.abc import Callable, Iterable
 from typing import Any
 
-from schemarouter.decisions import (
-    DecisionEvidence,
-    DecisionOption,
-    DecisionRequest,
-    DecisionResult,
-    DecisionSelection,
-    validate_decision,
-)
-
 from benchmarks.bge_m3_frozen_candidate import (
     ACTION_WEIGHT as BASE_ACTION_WEIGHT,
 )
@@ -47,6 +38,15 @@ from benchmarks.bge_m3_frozen_candidate import (
     _cosine,
     _schema_text,
     _to_vectors,
+)
+
+from schemarouter.decisions import (
+    DecisionEvidence,
+    DecisionOption,
+    DecisionRequest,
+    DecisionResult,
+    DecisionSelection,
+    validate_decision,
 )
 
 GTE_MODEL_NAME = "Alibaba-NLP/gte-multilingual-base"
