@@ -8,7 +8,6 @@ import math
 from pathlib import Path
 from typing import Any
 
-
 TARGET_PLANNER_TOKEN = "operation-fit-all-candidates+accepted-selector"
 
 
