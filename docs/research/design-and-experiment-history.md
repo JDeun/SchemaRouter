@@ -1227,25 +1227,91 @@ Decision: rejected.
 
 These ablations support moving the open-set architecture away from strict-base rescue and toward explicit typed capability evidence.
 
-## 34. Active experiment — global signed capability bank
+## 34. #277 — global signed capability bank
 
-Work item #277 / PR #278 is the active DEV-only experiment.
+Work item #277 / PR #278 removed route-local positive acceptance thresholds and evaluated a global signed capability space:
 
-It removes route-local positive acceptance thresholds entirely and constructs a global signed capability space:
+- 16 registered positive operation prototypes;
+- 32 explicit unsupported negative prototypes;
+- BGE-M3 raw registered top-1 as the only route authority;
+- low capability-envelope veto for OOD;
+- negative-over-positive signed advantage for near-domain rejection;
+- optional positive/raw-winner consistency as veto only.
 
-- 16 registered positive operation capability prototypes;
-- 32 explicit unsupported negative capability prototypes;
-- one BGE-M3 query embedding;
-- raw BGE-M3 registered top-1 remains the only route authority.
+The fixed preregistered grid contained **504** rules.
 
-Typed veto evidence is separated into:
+Result:
 
-- **capability envelope**: low maximum similarity to both positive and negative capability banks => OOD no-match;
-- **signed capability advantage**: negative prototype sufficiently stronger than the best positive capability => near-domain no-match;
-- optional positive-prototype/raw-winner consistency => veto only, never reroute.
+- raw supported top-1: **88.4549%**;
+- mean / p95 latency: **157.09 / 181.00 ms**;
+- passing rules: **0**.
 
-The fixed preregistered grid contains **504** rules.
+The closest rule that simultaneously preserved <=1% false-route and 100% OOD rejection was:
 
-The failed #270 fresh-surface corpus is forbidden for tuning. Calibration/blind evidence remains untouched.
+- rule `e0.450-n0.350-a+0.050-noagree`;
+- supported exact: **81.8576%**;
+- near-domain rejection: **98.9583%**;
+- false-route: **6/648 = 0.9259%**;
+- correct supported raw winners vetoed: **76**.
 
-If a rule passes tuning DEV, it must be frozen unchanged and evaluated on a new preregistered fresh-surface DEV corpus distinct from #270 before #198 can proceed.
+Decision: **rejected**.
+
+Interpretation:
+
+> A global signed capability bank can enforce the safety boundary, but the evidence is too coarse and removes too many correct supported winners.
+
+This strengthens the #275 decomposition: route-conditioned explicit negative capability evidence is useful for near-domain unsupported actions, while OOD membership needs a separate signal that does not depend on a low positive/domain score.
+
+Provenance:
+
+- workflow: `36356550905`;
+- artifact: `10944407595`;
+- artifact SHA-256: `00eb49f680d7b1bdfa8c341c2f091c641e4912ca94c9f0bc81815db3e70b3643`.
+
+## 35. Active experiment — dual signed negative open-world detector
+
+Work item #279 / PR #280 separates the two open-set failure modes into independent veto channels while preserving BGE-M3 raw top-1 as the only execution-route authority.
+
+### Near-domain channel
+
+Reuse the frozen #275 route-conditioned unsupported-action prototype bank.
+
+For the raw winner domain:
+
+- maximum explicit negative capability score;
+- negative-over-raw-winner-action signed advantage.
+
+The channel can only veto the raw winner.
+
+### OOD channel
+
+Use:
+
+- eight registered domain anchors;
+- sixteen preregistered broad background-domain prototypes.
+
+Compute:
+
+- max registered-domain similarity;
+- max background similarity;
+- background-over-known-domain signed advantage.
+
+OOD rejection is therefore contrastive against an explicit background bank rather than based on an absolute low positive/domain score.
+
+### Fixed experiment
+
+- no positive route-local acceptance threshold;
+- no pseudo-route;
+- no rank-2 fallback;
+- both channels veto only;
+- fixed grid: **1,764** rules;
+- original tuning DEV only;
+- failed #270 fresh-surface corpus forbidden for tuning;
+- calibration/blind untouched.
+
+Workflow: `36358352642`.
+
+If a rule passes 85/97/1 on DEV, it must be frozen unchanged and confirmed on a **new** preregistered fresh-surface DEV corpus distinct from #270 before calibration/blind evaluation.
+
+If #279 fails, the research line should stop scalar-threshold refinement and move to a richer capability-set/open-world detector rather than another positive-score tuning pass.
+
