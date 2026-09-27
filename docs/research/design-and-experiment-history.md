@@ -660,3 +660,35 @@ The audit therefore has two complementary axes:
 
 1. **mainline history completeness** — every commit from repository inception is enumerated;
 2. **research evidence completeness** — material unmerged/rejected experiments remain in the experiment ledger instead of disappearing when their PR is closed.
+
+
+## 18. Width-2 frozen winner-gate executable result
+
+Work item #227 / PR #228 executed the preregistered width-2, score-only, route-local `rank_then_gate` candidate on the fresh 1,800-case v4 development corpus. The threshold map was frozen before execution from canonical width-selection artifact `10930665000`; no calibration or blind evidence was used.
+
+Quality/safety result:
+
+- supported exact-route: **72.57%** (gate >=70%);
+- near-domain unsupported rejection: **98.09%** (gate >=96%);
+- canonical false routes: **12/648 = 1.85%** (gate <=2%);
+- OOD rejection: **98.61%**;
+- invalid plans / execution errors: **0 / 0**.
+
+The quality gates therefore passed. The paired same-runner latency gate did not:
+
+- baseline mean/p50/p95: **531.031 / 605.144 / 697.912 ms**;
+- candidate mean/p50/p95: **765.187 / 582.750 / 1836.868 ms**;
+- mean latency: **+44.09%**;
+- p95 latency: **+163.19%**.
+
+Decision: **rejected on the development latency gate**. This candidate is not frozen for confirmation and must not advance to #198 calibration/blind evaluation. The result is important negative evidence: winner-only route-local gating can cross the current quality/safety frontier at width 2, but unconditional BGE invocation still produces unacceptable CPU mean/tail latency.
+
+Provenance:
+
+- source revision: `fdaf3f77e95b504e81739c69cd1d9889d36afabb`;
+- workflow run: `36315784179`;
+- artifact: `10931078672`;
+- artifact SHA-256: `00517181c286197fe61156d04348eb9519bc8dab3681d20650216bfb923b37e1`;
+- corpus SHA-256: `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`.
+
+The next development-only evidence task is #226: measure a cheap multilingual action-only signal built solely from endpoint action names and trusted `operation_aliases`. Any behavior-changing fast path, veto, or evidence projection must be preregistered separately after that diagnostic.
