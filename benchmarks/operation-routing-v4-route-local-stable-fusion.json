@@ -1,0 +1,88 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "route-local-bge-m3-stable-fusion-v1",
+  "work_item": 256,
+  "parent_work_items": [
+    197,
+    242,
+    245,
+    246
+  ],
+  "status": "preregistered_before_execution",
+  "model": {
+    "name": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "trust_remote_code": false
+  },
+  "route_schema_weights": {
+    "calendar.create": 0.45,
+    "calendar.list": 0.55,
+    "finance.history": 0.6,
+    "finance.quote": 0.55,
+    "inventory.search": 0.35,
+    "inventory.update": 0.55,
+    "materials.search": 0.55,
+    "materials.structure": 0.6,
+    "papers.citations": 0.6,
+    "papers.search": 0.3,
+    "support.create_ticket": 0.4,
+    "support.search": 0.55,
+    "users.lookup": 0.55,
+    "users.update": 0.55,
+    "weather.current": 0.55,
+    "weather.forecast": 0.4
+  },
+  "action_weight_rule": "1 - route_schema_weight",
+  "selection_provenance": {
+    "source": "#246 raw per-route accuracy",
+    "tie_break": "closest to global best 0.55, then smaller weight",
+    "post_run_weight_changes_forbidden": true
+  },
+  "threshold_policy": {
+    "score_candidates": "midpoints between adjacent unique winner scores plus accept-all/reject-all sentinels",
+    "margin_thresholds": [
+      0,
+      0.02,
+      0.05,
+      0.08,
+      0.1,
+      0.15,
+      0.2
+    ],
+    "selected_false_budgets": [
+      6,
+      12
+    ],
+    "primary_false_budget": 6,
+    "rounding": "ceil selected min_score to 6 decimal places before final evaluation",
+    "sample_score_as_threshold_forbidden": true
+  },
+  "stability_policy": {
+    "primary_epsilon": 0.000001,
+    "secondary_epsilon": 0.00001,
+    "supported_direction": "subtract epsilon from top score and margin",
+    "unsupported_direction": "add epsilon to top score and margin"
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "primary_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "false_route_rate_max": 0.01,
+    "out_of_domain_rejection_min": 1,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0,
+    "p95_latency_ms_max": 250,
+    "stability_1e_6_must_also_pass": true
+  },
+  "promotion_policy": "Diagnostic only. A passing stable threshold map must be frozen separately and executed on a fresh corpus/runtime before calibration or blind use.",
+  "authority": "Ranks registered schema routes only; no pseudo-route, tool synthesis, argument synthesis, credentials, or side-effect authority."
+}
