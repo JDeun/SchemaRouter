@@ -1,0 +1,115 @@
+name: V4 GTE Winner BGE Rejector
+
+on:
+  push:
+    branches:
+      - "research/v4-gte-winner-bge-rejector"
+    paths:
+      - ".github/workflows/research-v4-gte-winner-bge-rejector.yml"
+      - "benchmarks/operation-routing-v4-gte-winner-bge-rejector.json"
+      - "scripts/analyze_gte_winner_bge_rejector_v4.py"
+      - "scripts/analyze_dual_view_embedding_v4.py"
+      - "scripts/analyze_embedding_backbone_screen_v4.py"
+      - "tests/test_gte_winner_bge_rejector_v4.py"
+      - "scripts/generate_decision_routing_quality_v4.py"
+      - "scripts/audit_operation_routing_corpus.py"
+      - "scripts/benchmark_decision_routing.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SCHEMAROUTER_SOURCE_REVISION: ${{ github.sha }}
+  V4_DEV_SEED: "operation-routing-quality-v4-development-2026-09-27"
+  V4_DEV_SHA256: "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+
+concurrency:
+  group: v4-gte-winner-bge-rejector-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Validate contracts
+        run: |
+          python -m json.tool benchmarks/operation-routing-v4-gte-winner-bge-rejector.json >/dev/null
+          ruff check scripts/analyze_gte_winner_bge_rejector_v4.py tests/test_gte_winner_bge_rejector_v4.py
+          pytest -q tests/test_gte_winner_bge_rejector_v4.py
+
+  evaluate:
+    needs: contracts
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - text_variant: action-only
+            max_length: 128
+            variant_id: action-128
+          - text_variant: action-only
+            max_length: 256
+            variant_id: action-256
+          - text_variant: capability
+            max_length: 128
+            variant_id: capability-128
+          - text_variant: capability
+            max_length: 256
+            variant_id: capability-256
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "sentence-transformers>=3,<6" transformers einops
+      - run: pip install -e ".[dev]"
+      - name: Generate fixed DEV corpus
+        run: |
+          OUT="artifacts/v4-gte-winner-bge-rejector/${{ matrix.variant_id }}"
+          mkdir -p "${OUT}"
+          python scripts/generate_decision_routing_quality_v4.py             --seed "${V4_DEV_SEED}"             --source-revision "${SCHEMAROUTER_SOURCE_REVISION}"             --out "${OUT}/corpus.json"             --manifest "${OUT}/corpus-manifest.json"
+      - name: Verify corpus identity
+        run: |
+          VARIANT_ID="${{ matrix.variant_id }}" python - <<'PY'
+          import json, os
+          from pathlib import Path
+          variant=os.environ["VARIANT_ID"]
+          path=Path(f"artifacts/v4-gte-winner-bge-rejector/{variant}/corpus-manifest.json")
+          manifest=json.loads(path.read_text())
+          if manifest.get("corpus_sha256") != os.environ["V4_DEV_SHA256"]:
+              raise SystemExit("corpus SHA mismatch")
+          if manifest.get("case_count") != 1800:
+              raise SystemExit("unexpected case count")
+          PY
+      - name: Audit corpus
+        run: |
+          OUT="artifacts/v4-gte-winner-bge-rejector/${{ matrix.variant_id }}"
+          python scripts/audit_operation_routing_corpus.py             --corpus "${OUT}/corpus.json"             --out "${OUT}/corpus-audit.json"             --near-duplicate-threshold 0.80             --max-duplicate-examples 50
+      - name: Run winner-only rejector diagnostic
+        run: |
+          OUT="artifacts/v4-gte-winner-bge-rejector/${{ matrix.variant_id }}"
+          python scripts/analyze_gte_winner_bge_rejector_v4.py             --corpus "${OUT}/corpus.json"             --text-variant "${{ matrix.text_variant }}"             --max-length "${{ matrix.max_length }}"             --out "${OUT}/analysis.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: v4-gte-winner-bge-${{ matrix.variant_id }}-${{ github.run_id }}
+          path: |
+            artifacts/v4-gte-winner-bge-rejector/${{ matrix.variant_id }}/analysis.json
+            artifacts/v4-gte-winner-bge-rejector/${{ matrix.variant_id }}/corpus-manifest.json
+            artifacts/v4-gte-winner-bge-rejector/${{ matrix.variant_id }}/corpus-audit.json
+            benchmarks/operation-routing-v4-gte-winner-bge-rejector.json
+          if-no-files-found: error
+          retention-days: 30
