@@ -908,7 +908,7 @@ class SchemaPlanner:
             return None
 
         options: list[DecisionOption] = []
-        for index, candidate in enumerate(sibling_candidates):
+        for candidate in sibling_candidates:
             endpoint = candidate.endpoint
             operation_name = endpoint.name.replace("_", " ").replace("-", " ")
             parts = [operation_name]
