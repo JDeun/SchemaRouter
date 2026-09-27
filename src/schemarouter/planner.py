@@ -319,8 +319,13 @@ class SchemaPlanner:
         graph_semantic_direct_min_margin: float | None = None,
         graph_semantic_propagation_backend: DecisionBackend | None = None,
         graph_semantic_propagation_on_abstain: Literal["fallback", "reject"] = "fallback",
-        graph_semantic_propagation_scope: Literal["siblings", "ranked"] = "siblings",
+        graph_semantic_propagation_scope: Literal[
+            "siblings",
+            "ranked",
+            "ranked_only",
+        ] = "siblings",
         graph_semantic_propagation_limit: int = 4,
+        graph_semantic_corroborate_abstain: bool = False,
         endpoint_disambiguation_backend: DecisionBackend | None = None,
         candidate_index: bool = True,
         availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
@@ -359,9 +364,14 @@ class SchemaPlanner:
             raise ValueError(
                 "graph_semantic_propagation_on_abstain must be 'fallback' or 'reject'"
             )
-        if graph_semantic_propagation_scope not in {"siblings", "ranked"}:
+        if graph_semantic_propagation_scope not in {
+            "siblings",
+            "ranked",
+            "ranked_only",
+        }:
             raise ValueError(
-                "graph_semantic_propagation_scope must be 'siblings' or 'ranked'"
+                "graph_semantic_propagation_scope must be "
+                "'siblings', 'ranked', or 'ranked_only'"
             )
         if (
             not isinstance(graph_semantic_propagation_limit, int)
@@ -369,6 +379,8 @@ class SchemaPlanner:
             or graph_semantic_propagation_limit < 1
         ):
             raise ValueError("graph_semantic_propagation_limit must be an integer >= 1")
+        if not isinstance(graph_semantic_corroborate_abstain, bool):
+            raise TypeError("graph_semantic_corroborate_abstain must be a boolean")
         self.registry = registry
         self.analyzer = analyzer or KeywordAnalyzer()
         self.decision_backend = decision_backend
@@ -387,6 +399,7 @@ class SchemaPlanner:
         )
         self.graph_semantic_propagation_scope = graph_semantic_propagation_scope
         self.graph_semantic_propagation_limit = graph_semantic_propagation_limit
+        self.graph_semantic_corroborate_abstain = graph_semantic_corroborate_abstain
         self.endpoint_disambiguation_backend = endpoint_disambiguation_backend
         self.candidate_index = candidate_index
         self.availability_predicate = availability_predicate
@@ -1185,17 +1198,18 @@ class SchemaPlanner:
         route_ids: list[str] = []
         seen: set[str] = set()
 
-        if self.graph_semantic_propagation_scope == "ranked":
+        if self.graph_semantic_propagation_scope in {"ranked", "ranked_only"}:
             for route_id in ranked_route_ids[: self.graph_semantic_propagation_limit]:
                 if route_id in seed_authorized and route_id not in seen:
                     route_ids.append(route_id)
                     seen.add(route_id)
 
-        for endpoint in seed_tool.endpoints:
-            route_id = f"{seed_tool.key}.{endpoint.name}"
-            if route_id in seed_authorized and route_id not in seen:
-                route_ids.append(route_id)
-                seen.add(route_id)
+        if self.graph_semantic_propagation_scope != "ranked_only":
+            for endpoint in seed_tool.endpoints:
+                route_id = f"{seed_tool.key}.{endpoint.name}"
+                if route_id in seed_authorized and route_id not in seen:
+                    route_ids.append(route_id)
+                    seen.add(route_id)
 
         authorized: dict[str, tuple[ToolSpec, EndpointSpec]] = {}
         options: list[DecisionOption] = []
@@ -1235,11 +1249,12 @@ class SchemaPlanner:
         if not options:
             return None, {}
 
-        authority = (
-            "registered_schema_graph_ranked_routes_plus_seed_siblings"
-            if self.graph_semantic_propagation_scope == "ranked"
-            else "registered_schema_graph_siblings_only"
-        )
+        if self.graph_semantic_propagation_scope == "ranked":
+            authority = "registered_schema_graph_ranked_routes_plus_seed_siblings"
+        elif self.graph_semantic_propagation_scope == "ranked_only":
+            authority = "registered_schema_graph_ranked_routes_only"
+        else:
+            authority = "registered_schema_graph_siblings_only"
         return (
             DecisionRequest(
                 query=request.query,
@@ -1255,12 +1270,47 @@ class SchemaPlanner:
             authorized,
         )
 
+    @staticmethod
+    def _graph_ranked_top_option_id(metadata: dict[str, Any]) -> str | None:
+        raw = metadata.get("ranked_options")
+        if not isinstance(raw, list) or not raw:
+            return None
+        first = raw[0]
+        if not isinstance(first, dict):
+            return None
+        option_id = first.get("option_id")
+        return option_id if isinstance(option_id, str) and option_id else None
+
+    def _graph_corroborated_candidate(
+        self,
+        *,
+        request: PlanRequest,
+        intent: QueryIntent,
+        seed_route_id: str,
+        result_metadata: dict[str, Any],
+        authorized: dict[str, tuple[ToolSpec, EndpointSpec]],
+    ) -> _Candidate | None:
+        if not self.graph_semantic_corroborate_abstain:
+            return None
+        top_route_id = self._graph_ranked_top_option_id(result_metadata)
+        if top_route_id != seed_route_id:
+            return None
+        target = authorized.get(seed_route_id)
+        if target is None:
+            return None
+        tool, endpoint = target
+        return replace(
+            self._score_endpoint(tool, endpoint, request.query, intent),
+            selection_source="graph_corroboration",
+        )
+
     def _graph_propagation_sync(
         self,
         request: PlanRequest,
         intent: QueryIntent,
         *,
         seed_tool: ToolSpec,
+        seed_route_id: str,
         seed_authorized: dict[str, tuple[ToolSpec, EndpointSpec]],
         ranked_route_ids: tuple[str, ...],
     ) -> tuple[list[_Candidate], list[str], bool]:
@@ -1285,13 +1335,40 @@ class SchemaPlanner:
             ], True
 
         if result.abstained or not result.selections:
+            corroborated = self._graph_corroborated_candidate(
+                request=request,
+                intent=intent,
+                seed_route_id=seed_route_id,
+                result_metadata=result.metadata,
+                authorized=authorized,
+            )
+            if corroborated is not None:
+                top_score = result.metadata.get("top_score")
+                score_suffix = (
+                    f" top_score={float(top_score):.6f}"
+                    if isinstance(top_score, (int, float))
+                    and not isinstance(top_score, bool)
+                    else ""
+                )
+                return [corroborated], [
+                    "graph corroboration accepted "
+                    f"{seed_route_id}{score_suffix}; semantic seed and bounded "
+                    "pairwise ranking agreed on the same authorized route"
+                ], False
+            top_route = self._graph_ranked_top_option_id(result.metadata)
+            disagreement = (
+                f"; bounded pairwise top route was {top_route}"
+                if top_route is not None and top_route != seed_route_id
+                else ""
+            )
             if self.graph_semantic_propagation_on_abstain == "reject":
                 return [], [
                     "graph propagation rejected the unresolved route after bounded "
-                    "graph verification"
+                    f"graph verification{disagreement}"
                 ], False
             return [], [
                 "graph propagation abstained; escalated to existing semantic routing"
+                + disagreement
             ], True
 
         route_id = result.selections[0].option_id
@@ -1319,6 +1396,7 @@ class SchemaPlanner:
         intent: QueryIntent,
         *,
         seed_tool: ToolSpec,
+        seed_route_id: str,
         seed_authorized: dict[str, tuple[ToolSpec, EndpointSpec]],
         ranked_route_ids: tuple[str, ...],
     ) -> tuple[list[_Candidate], list[str], bool]:
@@ -1343,13 +1421,40 @@ class SchemaPlanner:
             ], True
 
         if result.abstained or not result.selections:
+            corroborated = self._graph_corroborated_candidate(
+                request=request,
+                intent=intent,
+                seed_route_id=seed_route_id,
+                result_metadata=result.metadata,
+                authorized=authorized,
+            )
+            if corroborated is not None:
+                top_score = result.metadata.get("top_score")
+                score_suffix = (
+                    f" top_score={float(top_score):.6f}"
+                    if isinstance(top_score, (int, float))
+                    and not isinstance(top_score, bool)
+                    else ""
+                )
+                return [corroborated], [
+                    "graph corroboration accepted "
+                    f"{seed_route_id}{score_suffix}; semantic seed and bounded "
+                    "pairwise ranking agreed on the same authorized route"
+                ], False
+            top_route = self._graph_ranked_top_option_id(result.metadata)
+            disagreement = (
+                f"; bounded pairwise top route was {top_route}"
+                if top_route is not None and top_route != seed_route_id
+                else ""
+            )
             if self.graph_semantic_propagation_on_abstain == "reject":
                 return [], [
                     "graph propagation rejected the unresolved route after bounded "
-                    "graph verification"
+                    f"graph verification{disagreement}"
                 ], False
             return [], [
                 "graph propagation abstained; escalated to existing semantic routing"
+                + disagreement
             ], True
 
         route_id = result.selections[0].option_id
@@ -1438,6 +1543,7 @@ class SchemaPlanner:
                 request,
                 intent,
                 seed_tool=tool,
+                seed_route_id=route_id,
                 seed_authorized=authorized,
                 ranked_route_ids=ranked_route_ids,
             )
@@ -1530,6 +1636,7 @@ class SchemaPlanner:
                 request,
                 intent,
                 seed_tool=tool,
+                seed_route_id=route_id,
                 seed_authorized=authorized,
                 ranked_route_ids=ranked_route_ids,
             )
