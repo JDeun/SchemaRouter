@@ -18,6 +18,7 @@
   "hypothesis": "Replacing the operation-narrow BGE relevance boundary with a multilingual entailment-oriented score can improve the distinction between semantically related requests and actually supported registered operations while preserving schema-bounded authority.",
   "model": {
     "id": "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli",
+    "revision": "0a71e92a985b6e1ad1828cf67ce9c459639c1dca",
     "role": "development-only bounded operation entailment scorer",
     "runtime_integration": "benchmark-only; no core package dependency",
     "premise": "user query",
