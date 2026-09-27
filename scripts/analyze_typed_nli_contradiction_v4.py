@@ -346,6 +346,7 @@ def evaluate(cases: list[dict[str, Any]]) -> dict[str, Any]:
         rows.append(
             {
                 "case_id": case.get("id"),
+                "query": query,
                 "category": case.get("category"),
                 "language": case.get("language"),
                 "unsupported_family": case.get("unsupported_family"),
