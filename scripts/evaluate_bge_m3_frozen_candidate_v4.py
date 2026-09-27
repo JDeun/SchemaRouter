@@ -20,6 +20,7 @@ for _path in (_PROJECT_ROOT, _SCRIPTS_DIR):
 from benchmark_decision_routing import reference_registry  # noqa: E402
 
 from benchmarks.bge_m3_frozen_candidate import (  # noqa: E402
+    BOUNDARY_EPSILON,
     MODEL_NAME,
     MODEL_REVISION,
     AcceptAllRegisteredRecallBackend,
@@ -279,36 +280,33 @@ def evaluate(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "static_route_embedding_ms": static_ms,
     }
 
-    frozen_projection_matches = (
-        supported_correct == 960
-        and false_routes == 6
-        and near_rejected == 570
-        and ood_rejected == 72
-    )
+    planner_p95 = metrics["planner_latency_ms"]["p95"]
     gates = {
         "planner_matches_direct_case_by_case": parity_mismatches == 0,
-        "frozen_projection_counts_match": frozen_projection_matches,
         "supported_exact_route_accuracy": (
-            metrics["supported_exact_route_accuracy"] >= 0.70
+            metrics["supported_exact_route_accuracy"] >= 0.83
         ),
         "near_domain_unsupported_rejection": (
-            metrics["near_domain_unsupported_rejection"] >= 0.96
+            metrics["near_domain_unsupported_rejection"] >= 0.98
         ),
-        "false_route_rate_screening": metrics["false_route_rate"] <= 0.02,
         "false_route_rate_long_term_safety": metrics["false_route_rate"] <= 0.01,
         "invalid_plans": invalid_plans == 0,
         "execution_errors": errors == 0,
         "rank2_fallthroughs": rank2_fallthroughs == 0,
+        "planner_p95_latency": (
+            planner_p95 is not None and float(planner_p95) <= 250.0
+        ),
     }
 
     return {
         "candidate": {
-            "name": "bge-m3-dual-view-budget6-v1",
+            "name": "bge-m3-dual-view-055-budget6-robust-v1",
             "model": MODEL_NAME,
             "model_revision": MODEL_REVISION,
             "registered_routes": sorted(allowed_routes),
             "registered_route_count": len(allowed_routes),
-            "threshold_profile": "false-budget-6",
+            "threshold_profile": "false-budget-6-robust-epsilon",
+            "boundary_epsilon": BOUNDARY_EPSILON,
         },
         "cases": len(rows),
         "supported_cases": len(supported),
