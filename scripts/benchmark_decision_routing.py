@@ -88,6 +88,16 @@ class BenchmarkRow:
     graph_semantic_seed_decision: str | None = None
     graph_propagation_decision: str | None = None
     graph_corroboration_decision: str | None = None
+    operation_fit_invoked: bool = False
+    operation_fit_surface: str | None = None
+    operation_fit_top_option_id: str | None = None
+    operation_fit_top_score: float | None = None
+    operation_fit_second_score: float | None = None
+    operation_fit_top_margin: float | None = None
+    operation_fit_effective_min_score: float | None = None
+    operation_fit_effective_min_margin: float | None = None
+    operation_fit_abstained: bool = False
+    operation_fit_reason: str | None = None
 
 
 SMOKE_CASES = [
@@ -390,11 +400,13 @@ def load_corpus(path: str | os.PathLike[str], *, allowed_routes: set[str]) -> li
 class RecordingDecisionBackend:
     def __init__(self, backend: Any) -> None:
         self.backend = backend
+        self.last_request: Any | None = None
         self.last_result: Any | None = None
         self.last_invoked = False
 
     def decide(self, request: Any) -> Any:
         self.last_invoked = True
+        self.last_request = request
         value = self.backend.decide(request)
         if inspect.isawaitable(value):
 
@@ -510,14 +522,20 @@ async def benchmark_planner(
     *,
     allowed_routes: set[str],
     recorder: RecordingDecisionBackend | None = None,
+    operation_fit_recorder: RecordingDecisionBackend | None = None,
     input_cost_per_million: float | None = None,
     output_cost_per_million: float | None = None,
 ) -> list[BenchmarkRow]:
     rows: list[BenchmarkRow] = []
     for case in cases:
         if recorder is not None:
+            recorder.last_request = None
             recorder.last_result = None
             recorder.last_invoked = False
+        if operation_fit_recorder is not None:
+            operation_fit_recorder.last_request = None
+            operation_fit_recorder.last_result = None
+            operation_fit_recorder.last_invoked = False
 
         started = time.perf_counter()
         try:
@@ -565,6 +583,69 @@ async def benchmark_planner(
                 and math.isfinite(float(raw_confidence))
                 else None
             )
+            operation_fit_result = (
+                operation_fit_recorder.last_result
+                if operation_fit_recorder is not None
+                else None
+            )
+            operation_fit_request = (
+                operation_fit_recorder.last_request
+                if operation_fit_recorder is not None
+                else None
+            )
+            operation_fit_metadata = (
+                getattr(operation_fit_result, "metadata", {})
+                if operation_fit_result is not None
+                else {}
+            )
+            operation_fit_context = (
+                getattr(operation_fit_request, "context", {})
+                if operation_fit_request is not None
+                else {}
+            )
+            operation_fit_surface = (
+                operation_fit_context.get("surface")
+                if isinstance(operation_fit_context.get("surface"), str)
+                else None
+            )
+            operation_fit_top_option_id = (
+                operation_fit_metadata.get("top_option_id")
+                if isinstance(operation_fit_metadata.get("top_option_id"), str)
+                else None
+            )
+            def _finite_optional(value: Any) -> float | None:
+                if (
+                    isinstance(value, (int, float))
+                    and not isinstance(value, bool)
+                    and math.isfinite(float(value))
+                ):
+                    return float(value)
+                return None
+
+            operation_fit_top_score = _finite_optional(
+                operation_fit_metadata.get("top_score")
+            )
+            operation_fit_second_score = _finite_optional(
+                operation_fit_metadata.get("second_score")
+            )
+            operation_fit_top_margin = _finite_optional(
+                operation_fit_metadata.get("top_margin")
+            )
+            operation_fit_effective_min_score = _finite_optional(
+                operation_fit_metadata.get("top_effective_min_score")
+            )
+            operation_fit_effective_min_margin = _finite_optional(
+                operation_fit_metadata.get("top_effective_min_margin")
+            )
+            operation_fit_reason = (
+                operation_fit_metadata.get("reason")
+                if isinstance(operation_fit_metadata.get("reason"), str)
+                else None
+            )
+            operation_fit_abstained = bool(
+                getattr(operation_fit_result, "abstained", False)
+            )
+
             abstained = bool(getattr(result, "abstained", False))
             invalid_plan = predicted is not None and predicted not in allowed_routes
             correct = (
@@ -607,6 +688,19 @@ async def benchmark_planner(
                     graph_semantic_seed_decision=graph_semantic_seed_decision,
                     graph_propagation_decision=graph_propagation_decision,
                     graph_corroboration_decision=graph_corroboration_decision,
+                    operation_fit_invoked=bool(
+                        operation_fit_recorder
+                        and operation_fit_recorder.last_invoked
+                    ),
+                    operation_fit_surface=operation_fit_surface,
+                    operation_fit_top_option_id=operation_fit_top_option_id,
+                    operation_fit_top_score=operation_fit_top_score,
+                    operation_fit_second_score=operation_fit_second_score,
+                    operation_fit_top_margin=operation_fit_top_margin,
+                    operation_fit_effective_min_score=operation_fit_effective_min_score,
+                    operation_fit_effective_min_margin=operation_fit_effective_min_margin,
+                    operation_fit_abstained=operation_fit_abstained,
+                    operation_fit_reason=operation_fit_reason,
                 )
             )
         except Exception as exc:  # noqa: BLE001 - benchmark records provider failures.
@@ -840,6 +934,18 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
             sum(row.graph_corroboration_decision == "accept" for row in rows) / total
             if total
             else 0.0
+        ),
+        "operation_fit_invocations": sum(row.operation_fit_invoked for row in rows),
+        "operation_fit_invocation_rate": (
+            sum(row.operation_fit_invoked for row in rows) / total if total else 0.0
+        ),
+        "operation_fit_abstentions": sum(row.operation_fit_abstained for row in rows),
+        "operation_fit_surfaces": sorted(
+            {
+                row.operation_fit_surface
+                for row in rows
+                if row.operation_fit_surface is not None
+            }
         ),
         "backend_invocations": sum(row.backend_invoked for row in rows),
         "backend_invocation_rate": (
@@ -1139,6 +1245,22 @@ async def main() -> None:
         ),
     )
     parser.add_argument("--operation-fit-min-score", type=float, default=0.0)
+    parser.add_argument(
+        "--operation-fit-min-score-by-option-json",
+        default=None,
+        help=(
+            "Optional JSON object mapping stable option IDs such as "
+            "weather.forecast to pairwise min-score thresholds."
+        ),
+    )
+    parser.add_argument(
+        "--operation-fit-min-margin-by-option-json",
+        default=None,
+        help=(
+            "Optional JSON object mapping stable option IDs to pairwise "
+            "selection-margin thresholds."
+        ),
+    )
     parser.add_argument(
         "--graph-operation-gate",
         action="store_true",
@@ -1454,6 +1576,23 @@ async def main() -> None:
         )
 
     operation_fit_backend = None
+    operation_fit_recorder = None
+    operation_fit_min_score_by_option = parse_json_mapping(
+        args.operation_fit_min_score_by_option_json,
+        option_name="--operation-fit-min-score-by-option-json",
+    )
+    operation_fit_min_margin_by_option = parse_json_mapping(
+        args.operation_fit_min_margin_by_option_json,
+        option_name="--operation-fit-min-margin-by-option-json",
+    )
+    if (
+        (operation_fit_min_score_by_option or operation_fit_min_margin_by_option)
+        and not args.operation_fit_pairwise_callable
+    ):
+        raise ValueError(
+            "route-local operation-fit thresholds require "
+            "--operation-fit-pairwise-callable"
+        )
     if args.operation_fit_embedding_callable and args.operation_fit_pairwise_callable:
         raise ValueError(
             "--operation-fit-embedding-callable and --operation-fit-pairwise-callable "
@@ -1464,21 +1603,29 @@ async def main() -> None:
             args.operation_fit_pairwise_callable,
             option_name="--operation-fit-pairwise-callable",
         )
-        operation_fit_backend = PairwiseDecisionBackend(
-            operation_fit_scorer,
-            min_score=args.operation_fit_min_score,
-            min_margin=args.operation_fit_min_margin,
+        operation_fit_recorder = RecordingDecisionBackend(
+            PairwiseDecisionBackend(
+                operation_fit_scorer,
+                min_score=args.operation_fit_min_score,
+                min_margin=args.operation_fit_min_margin,
+                min_score_by_option=operation_fit_min_score_by_option,
+                min_margin_by_option=operation_fit_min_margin_by_option,
+            )
         )
+        operation_fit_backend = operation_fit_recorder
     elif args.operation_fit_embedding_callable:
         operation_fit_embedder = load_callable(
             args.operation_fit_embedding_callable,
             option_name="--operation-fit-embedding-callable",
         )
-        operation_fit_backend = EmbeddingDecisionBackend(
-            operation_fit_embedder,
-            min_similarity=args.operation_fit_min_similarity,
-            min_margin=args.operation_fit_min_margin,
+        operation_fit_recorder = RecordingDecisionBackend(
+            EmbeddingDecisionBackend(
+                operation_fit_embedder,
+                min_similarity=args.operation_fit_min_similarity,
+                min_margin=args.operation_fit_min_margin,
+            )
         )
+        operation_fit_backend = operation_fit_recorder
     if args.graph_semantic_propagation and operation_fit_backend is None:
         raise ValueError(
             "--graph-semantic-propagation requires an operation-fit backend"
@@ -1888,6 +2035,8 @@ async def main() -> None:
             "min_similarity": args.operation_fit_min_similarity,
             "min_score": args.operation_fit_min_score,
             "min_margin": args.operation_fit_min_margin,
+            "min_score_by_option": operation_fit_min_score_by_option,
+            "min_margin_by_option": operation_fit_min_margin_by_option,
         },
         "graph_operation": {
             "enabled": graph_operation_gate is not None,
@@ -2033,6 +2182,7 @@ async def main() -> None:
                         [case],
                         allowed_routes=allowed_routes,
                         recorder=recorder,
+                        operation_fit_recorder=operation_fit_recorder,
                         input_cost_per_million=args.input_cost_per_million,
                         output_cost_per_million=args.output_cost_per_million,
                     )
@@ -2052,6 +2202,7 @@ async def main() -> None:
                 cases,
                 allowed_routes=allowed_routes,
                 recorder=recorder,
+                operation_fit_recorder=operation_fit_recorder,
                 input_cost_per_million=args.input_cost_per_million,
                 output_cost_per_million=args.output_cost_per_million,
             )
