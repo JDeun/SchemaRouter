@@ -1,0 +1,58 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "ablation": "operation-fit-accepted-selector-v1",
+  "status": "rejected_as_standalone_candidate",
+  "source_revision": "6f083a70c27d31ded30e2e0704c65ac98f11ed5b",
+  "workflow_run_id": 36305969034,
+  "artifact_id": 10927253262,
+  "artifact_name": "operation-routing-quality-v4-dev-36305969034",
+  "artifact_sha256": "7048a45e5bcc23a1cdd77558e47f86f9d2b2077b542a66cd74bd7de2377f948a",
+  "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+  "baseline": {
+    "supported_exact_route_accuracy": 0.4401041666666667,
+    "near_domain_unsupported_rejection": 0.9409722222222222,
+    "false_route_rate": 0.05246913580246913,
+    "false_routes": 34,
+    "missed_routes": 512,
+    "wrong_tools": 3,
+    "wrong_endpoints": 130
+  },
+  "selector_candidate": {
+    "supported_exact_route_accuracy": 0.5407986111111112,
+    "near_domain_unsupported_rejection": 0.9409722222222222,
+    "false_route_rate": 0.05246913580246913,
+    "false_routes": 34,
+    "missed_routes": 512,
+    "wrong_tools": 3,
+    "wrong_endpoints": 14,
+    "invalid_plan_rate": 0.0,
+    "errors": 0,
+    "mean_latency_ms": 383.912,
+    "p50_latency_ms": 430.514,
+    "p95_latency_ms": 514.388
+  },
+  "paired_vs_baseline": {
+    "candidate_gains": 129,
+    "candidate_losses": 13,
+    "both_correct": 1108,
+    "both_wrong": 550,
+    "route_changes": 151,
+    "top_driven_route_changes": 151,
+    "mean_latency_delta_ms": -9.834421666666666
+  },
+  "standing_gates": {
+    "supported_exact_route_accuracy_min": 0.70,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0.0,
+    "execution_errors_max": 0,
+    "all_gates_passed": false
+  },
+  "diagnosis": [
+    "Using the already-accepted operation-fit route as the single-call candidate is strongly beneficial: exact-route accuracy rises by 10.07 percentage points and wrong-endpoint errors fall from 130 to 14.",
+    "The selector does not alter the operation-fit acceptance boundary, so unsupported rejection and false-route counts remain unchanged.",
+    "The mechanism is therefore useful as a routing primitive but is not promotable as a standalone candidate.",
+    "The next architecture should retain accepted-route selection while replacing the lossy gate cascade with bounded retrieve-rerank and route-local/negative capability safety evidence."
+  ],
+  "decision": "Reject as a standalone development candidate; retain the selector mechanism for the next preregistered architecture."
+}
