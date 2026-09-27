@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "title": "SchemaRouter Operation-Routing Research Evidence Ledger",
+  "title": "SchemaRouter Design and Research Evidence Ledger",
   "purpose": "Machine-readable provenance index for reproducibility, follow-up papers, ablation reporting, and research-integrity review.",
-  "scope": "Operation-routing research lineage from pre-0.10 holdouts through the active 0.11 quality-v4 cycle.",
+  "scope": "Complete material design and experiment lineage from the initial repository implementation through the active 0.11 routing-quality cycle. Routine bugfix-only commits are referenced by Git history but are not treated as independent design experiments unless they changed an architectural invariant, evaluation protocol, or empirical claim.",
   "updated_at": "2026-09-27",
   "governance": {
     "calibration_and_blind_are_never_tuning_data": true,
@@ -389,5 +389,286 @@
     "State when calibration/blind evidence became permanently consumed.",
     "Include invalidated pre-result attempts and reasons without using their metrics.",
     "Separate architectural authority claims from empirical performance claims."
+  ],
+  "work_tracking": {
+    "canonical_tracker_issue": 200,
+    "history_backfill_issue": 196,
+    "active_research_issue": 197,
+    "confirmation_evaluation_issue": 198,
+    "follow_up_paper_issue": 199,
+    "existing_open_work": [
+      10,
+      15,
+      98,
+      100
+    ],
+    "session_resume_rule": "Read issue #200, then the active child issue, then this ledger and the active preregistration before changing code."
+  },
+  "design_lineage": [
+    {
+      "phase": "v0.1-framework-core",
+      "date": "2026-09-20",
+      "source_revision": "55e2563966b7c656a59f6fe1862ff7d01ef87bee",
+      "design_goal": "Establish a schema-aware planning/execution boundary between LLM/orchestrator intent and executable tools.",
+      "material_decisions": [
+        "typed Tool/Endpoint/Parameter/Field/Plan/Result contracts",
+        "schema-aware planning and field projection",
+        "runtime argument/output validation",
+        "fail-closed policy for mutation/destructive/unclassified remote calls",
+        "schema and invoker-binding drift checks",
+        "separate credentials from model-visible arguments",
+        "OpenAPI, MCP and Python callable ingestion",
+        "LangChain bridge without making SchemaRouter an agent framework"
+      ],
+      "status": "foundation_retained"
+    },
+    {
+      "phase": "v0.2-adapter-ecosystem",
+      "date": "2026-09-20",
+      "source_revision": "1de6b4e14f4bb6607f58e6fc73b6b62d21e9473d",
+      "design_goal": "Generalize capability ingestion/execution behind explicit adapter contracts.",
+      "material_decisions": [
+        "SourceAdapter/AdapterRegistry plugin model",
+        "OPTIMADE discovery and field-aware response_fields execution",
+        "call-aware protocol invokers",
+        "live compatibility smoke evidence",
+        "explicit security boundaries for adapter/runtime credentials"
+      ],
+      "status": "retained"
+    },
+    {
+      "phase": "v0.3-bounded-decision-and-production-controls",
+      "date": "2026-09-21/22",
+      "source_revisions": [
+        "7c25ae95439a9cc07a5ab7b6d81db50dea791d89",
+        "dfe4b85f12ae7356e085d93897b56f73272088db",
+        "ac7833feceef21a1949fb70308ba86159037db21"
+      ],
+      "design_goal": "Permit model-assisted routing without transferring execution authority to the model.",
+      "material_decisions": [
+        "provider-neutral DecisionBackend over finite locally authorized option IDs",
+        "deterministic fallback and fail-closed unknown-ID validation",
+        "opt-in granular DecisionPolicy",
+        "Jev/TypeSafe adapter with credential isolation",
+        "LlamaIndex bridge",
+        "trusted approvals, execution budgets and privacy-preserving telemetry",
+        "explicit third-party adapter loading",
+        "first checked-in multilingual/adversarial decision-routing benchmark"
+      ],
+      "status": "retained"
+    },
+    {
+      "phase": "v0.4-persistence-local-decisions-and-evidence",
+      "date": "2026-09-22",
+      "source_revision_range": "aa597a0..354e18e",
+      "design_goal": "Make routing observable, persistent, provider-neutral and richer in bounded evidence.",
+      "material_decisions": [
+        "native LangGraph StateGraph integration",
+        "EmbeddingDecisionBackend and local Ollama backend",
+        "transactional SQLite registry and replayable traces",
+        "bounded field selection and nested field projection",
+        "conservative evidence-sufficiency decisions",
+        "exact-recall candidate indexing",
+        "bounded same-origin OpenAPI external references",
+        "trusted non-transforming before/after execution hooks"
+      ],
+      "status": "retained"
+    },
+    {
+      "phase": "v0.5-runtime-and-openapi-hardening",
+      "date": "2026-09-22/23",
+      "design_goal": "Strengthen operational correctness without broadening routing authority.",
+      "material_decisions": [
+        "transient-aware retry classification",
+        "wall-clock-bounded retry/approval/hook semantics",
+        "OpenAPI parameter override correctness",
+        "collision-safe endpoint naming",
+        "required request-body preservation",
+        "protocol/auth header isolation",
+        "multi-2xx response contract handling"
+      ],
+      "status": "retained"
+    },
+    {
+      "phase": "v0.6-local-decision-observability",
+      "date": "2026-09-23",
+      "design_goal": "Expose what SchemaRouter built and allow practical local bounded-decision deployments.",
+      "material_decisions": [
+        "read-only inspection API and CLI",
+        "self-contained local HTML dashboard",
+        "Laya local decision backend with device/runtime observability",
+        "more spec-faithful OpenAPI composition/serialization handling"
+      ],
+      "status": "retained"
+    },
+    {
+      "phase": "v0.7-field-first-provider-access-scientific-contracts",
+      "date": "2026-09-25",
+      "design_goal": "Make requested data semantics primary and execution route secondary.",
+      "material_decisions": [
+        "field-first route-second architecture",
+        "provider/access identities and read-only fallback contracts",
+        "server-side field projection",
+        "typed scientific datatype/unit/qualifier contracts",
+        "trusted parameter aliases",
+        "schema-diff and operation-scoped policy rules",
+        "structured PlanExplanation without model chain-of-thought",
+        "parallel read-only fan-out",
+        "health recovery without permanent route blacklisting"
+      ],
+      "status": "retained"
+    },
+    {
+      "phase": "v0.8-semantic-routing-and-holdout-discipline",
+      "date": "2026-09-26",
+      "design_goal": "Improve natural-language routing with multiple bounded semantic stages while preserving fail-closed authority.",
+      "material_decisions": [
+        "semantic candidate recall",
+        "candidate-fit no-route gate",
+        "operation-fit sibling-operation gate",
+        "endpoint disambiguation inside the leading tool domain",
+        "trusted explicit operation aliases only; no model-authored aliases",
+        "multi-call coverage/corroboration/evidence revalidation",
+        "fresh holdout progression and explicit consumed-evidence rules"
+      ],
+      "status": "retained_with_later_research_refinement"
+    },
+    {
+      "phase": "v0.9-pairwise-operation-fit",
+      "date": "2026-09-26",
+      "source_revision": "880451eb0e4adadd5e96290c8c576820614fbc7a",
+      "design_goal": "Use bounded cross-encoder/reranker pair scores without making the scorer authoritative.",
+      "material_decisions": [
+        "PairwiseDecisionBackend",
+        "local mapping from score positions to opaque authorized option IDs",
+        "strict finite [0,1] score validation",
+        "v11 one-shot generalization holdout",
+        "BGE not promoted to unconditional default because rejection improved while supported recall and latency regressed"
+      ],
+      "status": "primitive_retained_default_rejected"
+    },
+    {
+      "phase": "v0.10-contrastive-cascade-graph-research",
+      "date": "2026-09-26/27",
+      "design_goal": "Improve operation rejection/accuracy and then latency while maintaining strict holdout hygiene.",
+      "material_decisions": [
+        "sibling-contrastive BGE beta=1 optional profile",
+        "frozen v13 blind-final protocol",
+        "cheap-first MiniLM→BGE cascade rejected on confirmation safety",
+        "graph-first authorized topology with bounded semantic seed/propagation/corroboration",
+        "counterbalanced paired latency measurement",
+        "behavior-preserving static option embedding cache",
+        "fresh calibration rejection without retuning",
+        "invalidated pre-result calibration attempt retained as research-integrity evidence"
+      ],
+      "status": "cycle_closed"
+    },
+    {
+      "phase": "v0.11-typed-multiview-routing-quality",
+      "date": "2026-09-27",
+      "design_goal": "Separate route-selection quality from unsupported-capability rejection using typed, unknown-aware, score-kind-safe evidence.",
+      "material_decisions": [
+        "fresh 1,800-case natural multilingual development corpus",
+        "typed DecisionEvidence and score_kind metadata",
+        "EvidenceProjector with explicit unknown policy and no cross-kind raw-score averaging",
+        "hierarchical tool→operation representation rejected",
+        "accepted operation-fit selector retained after large wrong-endpoint reduction",
+        "stage diagnostics show one global candidate-fit similarity threshold is insufficient",
+        "next candidate combines selector, boundary-local calibration and explicit negative/unknown capability evidence"
+      ],
+      "status": "active",
+      "work_item": 197
+    }
+  ],
+  "early_experiment_lineage": [
+    {
+      "corpus": "decision-routing-v1.json",
+      "introduced_in": "v0.3.0a1",
+      "role": "checked-in multilingual/adversarial benchmark",
+      "cases": 144,
+      "note": "First stable benchmark harness/corpus. Exact historical workflow artifact provenance is not yet fully backfilled; tracked by #196."
+    },
+    {
+      "corpus": "decision-routing-v2.json",
+      "introduced_in": "v0.8 development",
+      "role": "1,200-case multilingual stress corpus with fixed dev/calibration/test splits",
+      "note": "Used to establish split/language metrics and reproducibility contracts."
+    },
+    {
+      "corpus": "decision-routing-v3.json",
+      "role": "600-case untouched capability-fit holdout",
+      "note": "Kept separate from already-consumed v2 test evidence."
+    },
+    {
+      "corpus": "decision-routing-v4-operation-holdout.json",
+      "role": "operation-fit holdout",
+      "note": "Predecessor operation-routing evidence; detailed run provenance remains a #196 backfill target."
+    },
+    {
+      "corpus": "decision-routing-v5-operation-calibration.json",
+      "role": "operation-fit development + calibration source",
+      "note": "Later reused only according to explicitly recorded split/consumption rules."
+    },
+    {
+      "corpus": "decision-routing-v6-operation-holdout.json",
+      "role": "600-case multilingual operation regression holdout",
+      "note": "Consumed before tool-domain-label cleanup and retained as regression evidence, not reused for a fresh untouched claim."
+    },
+    {
+      "corpus": "decision-routing-v7-operation-post-change-holdout.json",
+      "role": "600-case post-change holdout",
+      "note": "Consumed once as distribution-shift evidence."
+    },
+    {
+      "corpus": "decision-routing-v8-operation-alias-holdout.json",
+      "role": "reserved alias-aware holdout",
+      "note": "Accidentally consumed by a calibration diagnostic path; this hygiene event motivated replacement with v9."
+    },
+    {
+      "corpus": "decision-routing-v9-operation-alias-holdout.json",
+      "role": "fresh alias-aware one-shot holdout",
+      "known_result": {
+        "overall_accuracy": 0.51167,
+        "supported_exact_route_accuracy": 0.38281,
+        "near_domain_unsupported_rejection": 0.70833,
+        "out_of_domain_rejection": 1
+      },
+      "tuning_eligible": false
+    },
+    {
+      "corpus": "decision-routing-v10-operation-generalization-holdout.json",
+      "role": "fresh post-representation one-shot generalization holdout",
+      "known_result": {
+        "overall_accuracy": 0.55667,
+        "supported_exact_route_accuracy": 0.42188,
+        "near_domain_unsupported_rejection": 0.77083,
+        "out_of_domain_rejection": 1
+      },
+      "tuning_eligible": false
+    },
+    {
+      "corpus": "decision-routing-v11-operation-generalization-holdout.json",
+      "role": "fresh 600-case pairwise generalization holdout",
+      "known_result": {
+        "bge_overall_accuracy": 0.51667,
+        "bge_supported_exact_route_accuracy": 0.25781,
+        "bge_near_domain_unsupported_rejection": 0.97396,
+        "minilm_diagnostic_supported_accuracy": 0.40625,
+        "minilm_diagnostic_near_domain_rejection": 0.77604
+      },
+      "tuning_eligible": false
+    },
+    {
+      "corpus": "decision-routing-v12-operation-contrastive-holdout.json",
+      "role": "design-known stress evidence",
+      "tuning_eligible": false,
+      "note": "Inspected before architecture selection, so explicitly not treated as blind evidence."
+    },
+    {
+      "corpus": "decision-routing-v13-operation-contrastive-holdout.json",
+      "role": "one-shot blind-final",
+      "tuning_eligible": false,
+      "note": "Generated only after freeze and permanently consumed after one evaluation."
+    }
   ]
 }
