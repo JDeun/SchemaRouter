@@ -8,16 +8,16 @@ SCRIPTS = ROOT / "scripts"
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
-from benchmark_decision_routing import reference_registry
+from benchmark_decision_routing import reference_registry  # noqa: E402
 
-from benchmarks.bge_m3_frozen_candidate import (
+from benchmarks.bge_m3_frozen_candidate import (  # noqa: E402
     ACTION_WEIGHT,
     FROZEN_THRESHOLDS,
     SCHEMA_WEIGHT,
     AcceptAllRegisteredRecallBackend,
     FrozenBgeM3DualViewBackend,
 )
-from schemarouter import DecisionOption, DecisionRequest
+from schemarouter import DecisionOption, DecisionRequest  # noqa: E402
 
 
 class StaticThenOrthogonalEmbedder:
