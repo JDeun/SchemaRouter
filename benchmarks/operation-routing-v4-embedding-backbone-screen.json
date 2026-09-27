@@ -7,7 +7,7 @@
     240,
     241
   ],
-  "status": "preregistered_before_execution",
+  "status": "preregistered_revision_2_before_valid_execution",
   "historical_control": {
     "run": 36321806711,
     "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
@@ -101,5 +101,11 @@
     "supported_exact_route_accuracy_min": 0.85,
     "unsupported_rejection_target": "0.97-0.99",
     "false_route_rate_max": 0.01
+  },
+  "runtime": {
+    "python": "3.12",
+    "transformers": ">=4.44,<5",
+    "sentence_transformers": ">=3,<6",
+    "note": "Revision 1 run 36322673859 was invalidated before inspecting E5/BGE result metrics after GTE failed under Transformers 5.17 custom-code incompatibility. Revision 2 changes runtime compatibility only; model set, data, ranking strategies, and gates are unchanged."
   }
 }
