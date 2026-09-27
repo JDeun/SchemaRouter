@@ -20,12 +20,6 @@ from .aggregation import (
 from .analyzers import ModelCallable, ModelQueryAnalyzer
 from .dashboard import render_dashboard, write_dashboard
 from .decision_policy import DecisionFallback, DecisionPolicy
-from .decision_evidence import (
-    EvidenceProjector,
-    EvidenceProjectionState,
-    EvidenceRequirement,
-    EvidenceUnknownPolicy,
-)
 from .decisions import (
     CachedEmbeddingDecisionBackend,
     CallableDecisionBackend,
@@ -167,10 +161,6 @@ __all__ = [
     "CachedEmbeddingDecisionBackend",
     "CallableDecisionBackend",
     "DecisionBackend",
-    "EvidenceProjector",
-    "EvidenceProjectionState",
-    "EvidenceRequirement",
-    "EvidenceUnknownPolicy",
     "DecisionFallback",
     "DecisionPolicy",
     "DecisionCallable",
