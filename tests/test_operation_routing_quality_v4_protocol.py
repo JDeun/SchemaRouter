@@ -8,6 +8,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CYCLE = ROOT / "benchmarks" / "operation-fit-0.11-quality-v4-cycle.json"
 BENCHMARK = ROOT / "scripts" / "benchmark_decision_routing.py"
+PAIRWISE_TOOL_ABLATION = (
+    ROOT / "benchmarks" / "operation-routing-v4-hierarchical-pairwise-tool-ablation.json"
+)
 
 
 def _benchmark_module():
@@ -89,3 +92,25 @@ def test_benchmark_preserves_unsupported_family(tmp_path: Path) -> None:
     )
 
     assert cases[0].unsupported_family == "inventory.family_1"
+
+
+def test_pairwise_tool_ablation_is_frozen_before_execution() -> None:
+    ablation = json.loads(PAIRWISE_TOOL_ABLATION.read_text(encoding="utf-8"))
+
+    assert ablation["status"] == "design_frozen_before_implementation"
+    assert ablation["implementation"]["planner_core_change_required"] is False
+    assert ablation["implementation"]["pairwise_tool_min_score"] == 0.0
+    assert ablation["implementation"]["operation_pairwise_min_score"] == 0.01
+
+
+def test_benchmark_exposes_generic_graph_seed_score_telemetry() -> None:
+    module = _benchmark_module()
+    fields = module.BenchmarkRow.__dataclass_fields__
+
+    assert "graph_seed_score_kind" in fields
+    assert "graph_seed_top_score" in fields
+    assert "graph_seed_second_score" in fields
+
+    source = BENCHMARK.read_text(encoding="utf-8")
+    assert "--graph-semantic-seed-pairwise-callable" in source
+    assert "--graph-semantic-seed-min-score" in source
