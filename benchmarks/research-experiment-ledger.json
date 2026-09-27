@@ -577,9 +577,147 @@
       "branch": "research/v4-bounded-rerank-diagnostic",
       "preregistered": true,
       "source_parent_revision": "90af3e1fce3bf29f45fd3347c14afc2603b37d5e",
-      "status": "executing",
+      "status": "completed",
       "purpose": "Measure raw all-candidate BGE ranking ceiling and derive a development-only winner-only route-local threshold Pareto frontier without freezing behavior.",
-      "decision": "pending"
+      "decision": "ranking_headroom_validated_latency_optimization_required",
+      "result": {
+        "cases": 1800,
+        "supported_cases": 1152,
+        "no_route_cases": 648,
+        "near_domain_unsupported_cases": 576,
+        "out_of_domain_cases": 72,
+        "raw_supported_top_exact_route_accuracy": 0.9071180555555556,
+        "raw_supported_top_correct": 1045,
+        "zero_threshold_false_routes": 648,
+        "zero_threshold_mean_latency_ms": 1014.271,
+        "zero_threshold_p95_latency_ms": 1915.928,
+        "winner_only_frontier": {
+          "false_budget_0": {
+            "supported_exact_route_accuracy": 0.7057291666666666,
+            "canonical_false_route_rate": 0,
+            "actual_near_domain_rejection": 1,
+            "actual_out_of_domain_rejection": 1
+          },
+          "false_budget_6": {
+            "supported_exact_route_accuracy": 0.7404513888888888,
+            "canonical_false_route_rate": 0.009259259259259259,
+            "actual_near_domain_rejection": 0.9913194444444444,
+            "actual_out_of_domain_rejection": 0.9861111111111112
+          },
+          "false_budget_12": {
+            "supported_exact_route_accuracy": 0.7578125,
+            "canonical_false_route_rate": 0.018518518518518517,
+            "actual_near_domain_rejection": 0.9809027777777778,
+            "actual_out_of_domain_rejection": 0.9861111111111112
+          }
+        },
+        "worst_raw_route": {
+          "route": "papers.citations",
+          "raw_top_exact_rate": 0.4166666666666667
+        },
+        "workflow_run_id": 36310955824,
+        "artifact_id": 10929374346,
+        "artifact_sha256": "47a1d7a5716b100edd654607816a6cceeb630be09091348fcc788928a73fdb09",
+        "source_revision": "f43535b6ef0acbc5492b9791e6757e28a343d9fa",
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+        "invalid_plan_rate": 0,
+        "execution_errors": 0
+      },
+      "interpretation": [
+        "All-candidate BGE raw ranking has substantially more supported headroom than the previous primary-tool/gated selector architecture.",
+        "Winner-first route-local score boundaries are sufficient in development simulation to satisfy accuracy, rejection, and false-route gates without a second negative model.",
+        "Recall width 4 remains too slow for the standing latency gate, so recall-width tuning is required before candidate freeze."
+      ]
+    },
+    {
+      "id": "0.11-winner-only-threshold-semantics",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 208,
+      "work_item": 207,
+      "branch": "research/v4-winner-only-threshold",
+      "behavior_change": "opt_in_only",
+      "components": [
+        "pairwise threshold_application=rank_then_gate",
+        "raw top route fixed before threshold evaluation",
+        "winner boundary failure abstains",
+        "no lower-ranked executable fallthrough",
+        "multi-selection fails closed in experimental mode"
+      ],
+      "decision": "mechanism_merged_into_active_research_stack",
+      "merged_into_pull_request": 195,
+      "paper_relevance": [
+        "open-set abstention semantics",
+        "threshold application order",
+        "fix for route-local filter-then-rank failure mode"
+      ]
+    },
+    {
+      "id": "0.11-evidence-projector-active-stack",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "source_pull_request": 186,
+      "integration_pull_request": 210,
+      "work_item": 209,
+      "behavior_change": false,
+      "components": [
+        "score-kind-safe EvidenceProjector",
+        "unknown remains unknown rather than zero",
+        "no cross-kind arithmetic",
+        "explicit no_match rejection",
+        "bounded authorized option projection only"
+      ],
+      "decision": "infrastructure_merged_into_active_research_stack",
+      "merged_into_pull_request": 195,
+      "paper_relevance": [
+        "typed multi-signal evidence infrastructure",
+        "uncertainty semantics",
+        "future robustness layer"
+      ]
+    },
+    {
+      "id": "0.11-bounded-rerank-width-ablation",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 216,
+      "work_item": 214,
+      "branch": "research/v4-bounded-rerank-width",
+      "preregistered": true,
+      "status": "executing",
+      "compared_recall_widths": [
+        2,
+        3
+      ],
+      "reference_recall_width": 4,
+      "selection_rule": "Choose the smallest width whose winner-only false-budget-12 frontier reaches >=70% supported exact-route, <=2% canonical false-route, >=96% near-domain rejection lower bound, and zero invalid plans/errors. If neither 2 nor 3 passes, retain 4.",
+      "decision": "pending",
+      "paper_relevance": [
+        "quality-latency tradeoff",
+        "bounded candidate width ablation"
+      ]
+    },
+    {
+      "id": "0.11-joint-score-margin-boundary",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "work_item": 211,
+      "status": "completed_exploratory_development_analysis",
+      "source_workflow_run_id": 36310955824,
+      "source_artifact_id": 10929374346,
+      "source_artifact_sha256": "47a1d7a5716b100edd654607816a6cceeb630be09091348fcc788928a73fdb09",
+      "result": {
+        "score_only_budget_12_supported_exact_route_accuracy": 0.7578125,
+        "joint_budget_12_supported_exact_route_accuracy": 0.7612847222222222,
+        "incremental_gain_percentage_points": 0.3472222222222223,
+        "false_routes": 12,
+        "canonical_false_route_rate": 0.018518518518518517,
+        "actual_near_domain_rejection": 0.9809027777777778,
+        "actual_out_of_domain_rejection": 0.9861111111111112
+      },
+      "decision": "not_selected",
+      "failure_reason": "Joint score+margin gating adds only ~0.35 percentage points at the same false-route budget, insufficient to justify a larger route-local tuning surface before width/latency optimization.",
+      "source_file": "benchmarks/operation-routing-v4-joint-score-margin-diagnostic.json",
+      "paper_relevance": [
+        "negative ablation",
+        "score-vs-margin boundary comparison",
+        "complexity control"
+      ]
     }
   ],
   "current_research_conclusion": {
@@ -598,8 +736,13 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "bounded retrieve-rerank raw score diagnostic (#204 / PR #205)",
-    "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule."
+    "active_experiment": "bounded rerank recall-width tuning (#214 / PR #216)",
+    "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
+    "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
+    "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
+    "negative_model_status": "A second negative/NLI model is not currently required to clear the accuracy/rejection/false-route DEV gates; latency is the immediate unresolved gate.",
+    "latency_bottleneck": "Width-4 all-candidate BGE measured ~1014 ms mean / ~1916 ms p95 on the GitHub CPU diagnostic runner.",
+    "joint_margin_result": "Adding route-local top margin to score thresholds yields only ~0.35 percentage points at the 12-false-route budget and is not selected for the immediate candidate."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -621,7 +764,21 @@
       98,
       100
     ],
-    "session_resume_rule": "Read issue #200, then the active child issue, then this ledger and the active preregistration before changing code."
+    "session_resume_rule": "Read issue #200, then the active child issue, then this ledger and the active preregistration before changing code.",
+    "completed_work": [
+      196,
+      204,
+      207,
+      209
+    ],
+    "active_experiments": [
+      214
+    ],
+    "active_pull_requests": [
+      195,
+      216
+    ],
+    "next_blocked_confirmation": 198
   },
   "design_lineage": [
     {
