@@ -1105,7 +1105,7 @@
       "cycle": "0.11-operation-routing-quality-v4",
       "issue": 255,
       "preregistered": true,
-      "status": "executing",
+      "status": "completed",
       "execution_condition": "Execute only if #246 has no strict 85/97/1 pass.",
       "base_selection_rule": "Highest supported exact among preregistered #246 weights at budget 6 subject to rejection/false-route/error/latency gates; tie by lower p95 then lower schema weight.",
       "validator": {
@@ -1115,7 +1115,7 @@
         "scope": "base-rejected raw rank-1 winner only",
         "primary_additional_false_budget": 0
       },
-      "decision": "executing",
+      "decision": "rejected_zero_false_rescue_recovers_only_5_of_required_15",
       "execution_condition_result": {
         "satisfied": true,
         "selected_base": "BGE-M3 schema/action 0.55/0.45, false-budget 6",
@@ -1127,7 +1127,22 @@
       },
       "pull_request": 258,
       "branch": "research/v4-bge-m3-zero-false-rescue",
-      "workflow_run_id": 36325681661
+      "workflow_run_id": 36325681661,
+      "artifact_id": 10934276251,
+      "artifact_sha256": "a51ae289ed3dd4dd2e9bdb06bbf70e26f32f1df030a119feeb9883cd131b8e25",
+      "result": {
+        "base_supported_correct": 965,
+        "base_supported_exact_route_accuracy": 0.8376736111111112,
+        "base_false_routes": 6,
+        "base_false_route_rate": 0.009259259259259259,
+        "primary_additional_false_routes": 0,
+        "rescued_supported_correct": 5,
+        "composed_supported_correct": 970,
+        "composed_supported_exact_route_accuracy": 0.8420138888888888,
+        "near_domain_unsupported_rejection": 0.9895833333333334,
+        "composed_mean_latency_ms": 301.0462508005556,
+        "composed_p95_latency_ms": 473.74695019999996
+      }
     },
     {
       "id": "0.11-route-local-stable-bge-m3-fusion",
@@ -1136,7 +1151,7 @@
       "pull_request": 257,
       "branch": "research/v4-route-local-stable-fusion",
       "preregistered": true,
-      "status": "executing",
+      "status": "completed",
       "hypothesis": "Route-local fusion weights selected from the already-preregistered #246 grid may recover the remaining exact-route gap while midpoint/canonicalized thresholds remove observed-score boundary fragility.",
       "design": {
         "model": "BAAI/bge-m3@5617a9f61b028005a4858fdac845db406aefb181",
@@ -1158,7 +1173,22 @@
         }
       },
       "workflow_run_id": 36325721448,
-      "decision": "executing"
+      "decision": "rejected_strict_boundary_below_85_percent_despite_90_54_raw_ceiling",
+      "artifact_id": 10933809684,
+      "artifact_sha256": "ca4df26ba5307b8e5aad22e2443f9e69713428b0898303939d8fd1cba3d443c0",
+      "result": {
+        "raw_supported_exact_route_accuracy": 0.9053819444444444,
+        "strict_supported_correct": 963,
+        "strict_supported_exact_route_accuracy": 0.8359375,
+        "strict_near_domain_unsupported_rejection": 0.9895833333333334,
+        "strict_false_routes": 6,
+        "strict_false_route_rate": 0.009259259259259259,
+        "stability_1e_6_unchanged": true,
+        "stability_1e_5_unchanged": true,
+        "secondary_supported_exact_route_accuracy": 0.8446180555555556,
+        "mean_latency_ms": 180.496637355,
+        "p95_latency_ms": 197.15664354999998
+      }
     },
     {
       "id": "0.11-numerically-robust-threshold-freeze-policy",
@@ -1173,6 +1203,71 @@
         "calibration_or_blind_retuning_forbidden": true
       },
       "decision": "required_for_future_frozen_candidates"
+    },
+    {
+      "id": "0.11-bge-m3-robust-budget6-executable-confirmation",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 259,
+      "pr": 260,
+      "status": "completed",
+      "data_role": "tuning_eligible_development_executable_confirmation",
+      "tuning_eligible": false,
+      "model": {
+        "name": "BAAI/bge-m3",
+        "revision": "5617a9f61b028005a4858fdac845db406aefb181"
+      },
+      "architecture": {
+        "schema_weight": 0.55,
+        "action_weight": 0.45,
+        "winner_semantics": "global_registered_route_top1_then_route_local_gate",
+        "false_budget_source": 6,
+        "boundary_epsilon": 0.000001,
+        "rank2_fallthrough": false
+      },
+      "workflow_run_id": 36325967632,
+      "source_revision": "9e9b1049eac779adbc5781bfc45a447966ae32e8",
+      "artifact_id": 10934635124,
+      "artifact_sha256": "aabe4321e039dbb2e0b0805553e4dfd7d6c4bcf63893e23da028ceb668608462",
+      "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+      "result": {
+        "supported_exact_route_accuracy": 0.8376736111111112,
+        "near_domain_unsupported_rejection": 0.9895833333333334,
+        "out_of_domain_rejection": 1,
+        "false_routes": 6,
+        "false_route_rate": 0.009259259259259259,
+        "invalid_plans": 0,
+        "execution_errors": 0,
+        "rank2_fallthroughs": 0,
+        "planner_direct_parity_mismatches": 0,
+        "planner_mean_latency_ms": 118.25508209722221,
+        "planner_p95_latency_ms": 134.95138205,
+        "all_confirmation_gates_pass": true
+      },
+      "decision": "confirmed_as_numerically_robust_strict_base_for_conditional_rescue"
+    },
+    {
+      "id": "0.11-cross-model-zero-false-abstention-rescue",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 262,
+      "pr": 263,
+      "status": "executing",
+      "prerequisite_issue": 259,
+      "data_role": "tuning_eligible_development",
+      "tuning_eligible": true,
+      "base_candidate": "0.11-bge-m3-robust-budget6-executable-confirmation",
+      "variants": [
+        "gte-agreement",
+        "gte-agreement-bge"
+      ],
+      "primary_additional_false_budget": 0,
+      "promotion_gate": {
+        "supported_exact_route_accuracy_min": 0.85,
+        "near_domain_unsupported_rejection_min": 0.97,
+        "total_false_route_rate_max": 0.01,
+        "additional_false_routes_max": 0
+      },
+      "workflow_run_id": 36326745694,
+      "decision": "executing"
     }
   ],
   "current_research_conclusion": {
@@ -1180,24 +1275,28 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "keep routing authority bounded to registered authorized candidates",
-      "test action-only evidence as a selector inside width-2 rather than as a global direct acceptor",
-      "score one selected pair with BGE and derive route-local winner boundaries on DEV only",
-      "require paired mean and p95 non-regression before any confirmation freeze",
-      "retain typed negative/unknown evidence as a later branch only if the single-pair open-set frontier fails"
+      "keep #259 robust BGE-M3 base acceptances immutable",
+      "evaluate rescue only on base abstentions",
+      "require the GTE top-1 to agree with the frozen BGE-M3 raw top-1 before rescue",
+      "use zero additional false routes as the primary rescue budget",
+      "freeze any passing rescue profile before fresh confirmation",
+      "do not consume calibration/blind evidence until the full DEV target is met"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "action-guided width-2 -> single-pair BGE diagnostic (#231 / PR #232)",
+    "active_experiment": "cross-model zero-false abstention rescue (#262 / PR #263)",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
-    "negative_model_status": "A second negative/NLI model is not currently required to clear the accuracy/rejection/false-route DEV gates; latency is the immediate unresolved gate.",
-    "latency_bottleneck": "The frozen width-2 winner-gate candidate passed quality but failed paired latency at 765/1837 ms mean/p95 versus 531/698 ms baseline; unconditional BGE remains the immediate bottleneck.",
+    "negative_model_status": "A cross-encoder applied to every winner or every base rejection has not reached the 85% exact target. #255 recovered only 5 correct cases at zero additional false routes. #262 therefore tests cross-model agreement before optional cross-encoder rescue.",
+    "latency_bottleneck": "The original unconditional width-2 BGE tail-latency bottleneck has been removed by the confirmed BGE-M3 embedding base: #259 executes at ~118/135 ms mean/p95 with <=1% false-route. The remaining blocker is recovering at least 15 supported abstentions without adding false routes.",
     "joint_margin_result": "Adding route-local top margin to score thresholds yields only ~0.35 percentage points at the 12-false-route budget and is not selected for the immediate candidate.",
-    "action_only_evidence_status": "Action-only MiniLM reaches 73.00% raw supported top-route exact at ~13.84 ms mean / 15.51 ms p95, but global high-precision direct-accept coverage is too small to solve tail latency alone."
+    "action_only_evidence_status": "Cheap MiniLM action-only evidence remains useful diagnostic evidence but is no longer the leading architecture; BGE-M3 dual-view embedding is the confirmed robust base.",
+    "robust_base_status": "#259/#260 confirmed BGE-M3 0.55/0.45 budget-6 with preregistered 1e-6 comparison epsilon: 83.77% exact, 98.96% near-domain rejection, 0.93% false-route, 118/135 ms mean/p95, zero parity/authority/runtime failures.",
+    "route_local_stable_fusion_status": "#256 raised raw exact to 90.54% but strict accepted exact remained 83.59%; rejected.",
+    "zero_false_crossencoder_rescue_status": "#255 rescued only 5 correct supported cases at zero added false routes, reaching 84.20%; rejected."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -1227,14 +1326,27 @@
       209,
       214,
       226,
-      227
+      227,
+      231,
+      233,
+      238,
+      240,
+      242,
+      244,
+      245,
+      246,
+      255,
+      256,
+      259
     ],
     "active_experiments": [
-      231
+      262
     ],
     "active_pull_requests": [
       195,
-      232
+      260,
+      263,
+      235
     ],
     "next_blocked_confirmation": 198
   },
