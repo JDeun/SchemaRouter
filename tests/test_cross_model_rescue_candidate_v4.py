@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from benchmarks.cross_model_rescue_candidate import (
+    RERANKER_ENABLED_ROUTES,
     RESCUE_EPSILON,
     RESCUE_RULES,
-    RERANKER_ENABLED_ROUTES,
     FrozenCrossModelRescueBackend,
     _passes_max,
     _passes_min,
