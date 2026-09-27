@@ -951,3 +951,127 @@ The route-local fusion map was frozen before execution. To avoid repeating the #
 - **±1e-5** is retained as a secondary stress diagnostic.
 
 This experiment is diagnostic only. Even a passing map requires a separate frozen executable confirmation before any calibration or blind evaluation.
+
+
+## 28. Late-stage strict-base, stability, and rescue results
+
+Sections 26–27 described #255/#256 while they were still active. Their terminal results, and the numerically robust successor base, are recorded here so the paper/research narrative has an unambiguous current state.
+
+### #255 — zero-additional-false cross-encoder rescue
+
+Work item #255 / PR #258 kept the strict BGE-M3 0.55/0.45 base immutable and invoked the pinned BGE reranker only on base abstentions.
+
+Primary zero-additional-false result:
+
+- base: **965/1152 = 83.77%** supported exact;
+- base false-route: **6/648 = 0.93%**;
+- rescued correct supported cases: **5**;
+- additional false routes: **0**;
+- composed supported exact: **970/1152 = 84.20%**;
+- near-domain rejection remained **98.96%**;
+- composed mean / p95 latency: **301.05 / 473.75 ms**.
+
+Decision: **rejected**. Same-winner cross-encoder rescue was safe but recovered only one third of the 15 cases required to cross 85%.
+
+Provenance:
+
+- workflow: `36325681661`;
+- artifact: `10934276251`;
+- artifact SHA-256: `a51ae289ed3dd4dd2e9bdb06bbf70e26f32f1df030a119feeb9883cd131b8e25`.
+
+### #256 — route-local stable fusion
+
+Work item #256 / PR #257 froze route-local schema/action weights selected from the already-preregistered #246 grid and replaced literal observed-score boundaries with midpoint + upward-rounded thresholds.
+
+Result:
+
+- raw supported exact: **90.54%**;
+- strict 6/648:
+  - supported exact: **963/1152 = 83.59%**;
+  - near-domain rejection: **98.96%**;
+  - false-route: **0.93%**;
+- secondary 12/648:
+  - supported exact: **84.46%**;
+  - near-domain rejection: **97.92%**;
+  - false-route: **1.85%**;
+- strict metrics were unchanged under adversarial **±1e-6** and **±1e-5** stability diagnostics;
+- mean / p95 latency: **180.50 / 197.16 ms**.
+
+Decision: **rejected**. Route-local fusion proved that ranking headroom above 90% exists, but the open-set acceptance boundary still prevented >=85% exact under the <=1% false-route constraint.
+
+Provenance:
+
+- workflow: `36325721448`;
+- artifact: `10933809684`;
+- artifact SHA-256: `ca4df26ba5307b8e5aad22e2443f9e69713428b0898303939d8fd1cba3d443c0`.
+
+### #259 — numerically robust frozen BGE-M3 base
+
+The failed #245 confirmation showed that a literal observed-score threshold could flip one case from a runtime drift of only ~1.35e-7.
+
+Work item #259 / PR #260 therefore froze, **before execution**:
+
+- BGE-M3 revision `5617a9f...`;
+- schema/action fusion **0.55 / 0.45**;
+- #246 strict budget-6 route-local thresholds;
+- winner-only rank-then-gate;
+- no rank-2 fallthrough;
+- a comparison epsilon of **1e-6**:
+  - `top_score + epsilon >= min_score`;
+  - `top_margin + epsilon >= min_margin`.
+
+Executable confirmation passed:
+
+- supported exact: **83.7674%**;
+- near-domain rejection: **98.9583%**;
+- OOD rejection: **100%**;
+- false-route: **6/648 = 0.9259%**;
+- invalid plans / execution errors / rank-2 fallthroughs: **0 / 0 / 0**;
+- planner/direct parity mismatches: **0 / 1800**;
+- planner mean / p95 latency: **118.26 / 134.95 ms**.
+
+Decision: **confirmed as the robust strict base** for later conditional rescue experiments. This is a development confirmation, not independent generalization evidence.
+
+Provenance:
+
+- source revision: `9e9b1049eac779adbc5781bfc45a447966ae32e8`;
+- workflow: `36325967632`;
+- artifact: `10934635124`;
+- artifact SHA-256: `aabe4321e039dbb2e0b0805553e4dfd7d6c4bcf63893e23da028ceb668608462`.
+
+### #262 — cross-model zero-false abstention rescue
+
+Work item #262 / PR #263 is the current active DEV diagnostic.
+
+The #259 base is immutable. Only base abstentions are eligible. A rescue can only restore the same BGE-M3 raw top-1 route; it cannot select rank 2 or change execution authority.
+
+Two preregistered variants are being evaluated:
+
+1. **GTE agreement** — rescue eligibility requires the GTE 0.25/0.75 top-1 route to equal the frozen BGE-M3 raw top-1 route;
+2. **GTE agreement + BGE reranker** — the same agreement gate plus one pinned winner-only cross-encoder score.
+
+Primary rescue false budget: **0 additional false routes**.
+
+Target:
+
+- composed supported exact >= **85%**;
+- near-domain rejection >= **97%**;
+- total false-route <= **1%**;
+- additional false routes = **0**.
+
+The active workflow is `36326745694`. Calibration/blind evidence remains untouched.
+
+## 29. Current resume point
+
+The canonical current state is:
+
+1. #259 is the confirmed robust strict base;
+2. #255 and #256 are terminal negative results;
+3. #262 is the only active quality-improvement experiment;
+4. #198 calibration/blind confirmation remains blocked;
+5. if #262 passes, freeze the exact rescue profile in a separate executable candidate before any fresh confirmation;
+6. if #262 fails, do not weaken the <=1% false-route boundary merely to hit the 85% exact target.
+
+The architectural invariant remains:
+
+> Semantic models may rank, reject, or rescue only among locally registered authority. They do not create execution authority.
