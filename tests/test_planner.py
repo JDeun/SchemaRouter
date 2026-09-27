@@ -2718,6 +2718,44 @@ def test_operation_fit_gate_sees_only_primary_tool_operations() -> None:
     )
 
 
+def test_operation_fit_all_candidates_can_select_across_authorized_tools() -> None:
+    seen = {}
+
+    def fit(request):
+        seen["context"] = request.context
+        seen["ids"] = [option.id for option in request.options]
+        selected = next(
+            option
+            for option in request.options
+            if option.id == "users.update"
+        )
+        return {"selections": [{"option_id": selected.id, "score": 0.99}]}
+
+    plan = SchemaPlanner(
+        _endpoint_disambiguation_registry(),
+        operation_fit_backend=CallableDecisionBackend(fit),
+        operation_fit_select_accepted=True,
+        operation_fit_scope="all_candidates",
+    ).plan("inventory user update")
+
+    assert "inventory.update" in seen["ids"]
+    assert "users.update" in seen["ids"]
+    assert seen["context"] == {
+        "surface": "operation_capability_fit",
+        "scope": "all_candidates",
+    }
+    assert plan.calls[0].tool == "users"
+    assert plan.calls[0].endpoint == "update"
+
+
+def test_operation_fit_scope_rejects_unknown_value() -> None:
+    with pytest.raises(ValueError, match="operation_fit_scope"):
+        SchemaPlanner(
+            _endpoint_disambiguation_registry(),
+            operation_fit_scope="global",  # type: ignore[arg-type]
+        )
+
+
 def test_operation_fit_gate_abstention_suppresses_near_domain_candidates() -> None:
     plan = SchemaPlanner(
         _endpoint_disambiguation_registry(),
