@@ -59,7 +59,7 @@ WRAPPERS: dict[str, tuple[str, ...]] = {
 
 def _wrapper_index(seed: str, case_id: str, count: int) -> int:
     digest = hashlib.sha256(
-        f"{SURFACE_VERSION}|{seed}|{case_id}".encode("utf-8")
+        f"{SURFACE_VERSION}|{seed}|{case_id}".encode()
     ).digest()
     return int.from_bytes(digest[:8], "big") % count
 
