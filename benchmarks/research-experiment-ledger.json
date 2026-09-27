@@ -380,7 +380,8 @@
       "introduce explicit negative-capability and unknown evidence",
       "project incompatible evidence kinds independently",
       "rerank only within authorized candidate sets"
-    ]
+    ],
+    "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -514,7 +515,8 @@
         "schema-diff and operation-scoped policy rules",
         "structured PlanExplanation without model chain-of-thought",
         "parallel read-only fan-out",
-        "health recovery without permanent route blacklisting"
+        "health recovery without permanent route blacklisting",
+        "generic none_of_the_above sentinel for empty-recall model routing was removed after full-corpus Laya evidence showed it was counterproductive; calibrated confidence/abstention remained the preferred no-route mechanism"
       ],
       "status": "retained"
     },
@@ -587,6 +589,16 @@
       "role": "checked-in multilingual/adversarial benchmark",
       "cases": 144,
       "note": "First stable benchmark harness/corpus. Exact historical workflow artifact provenance is not yet fully backfilled; tracked by #196."
+    },
+    {
+      "id": "pre-v0.7-empty-recall-no-route-sentinel",
+      "source_revision": "e41f57a0",
+      "context": "DecisionBackend empty lexical recall expansion",
+      "hypothesis": "An explicit none_of_the_above option can let a bounded model choose no route when the registered catalog is exposed after empty lexical recall.",
+      "result": "counterproductive_on_full_corpus_laya",
+      "decision": "removed",
+      "interpretation": "Full-corpus Laya evidence showed higher overall and Korean routing accuracy without the generic sentinel. The project retained recall_on_empty, confidence gating, candidate abstention, and offline threshold calibration.",
+      "relevance_to_v0_11": "Do not repeat the same generic sentinel as negative capability evidence. Future negative evidence must be a distinct typed signal tied to capability/action boundaries rather than a catch-all executable-choice sibling."
     },
     {
       "corpus": "decision-routing-v2.json",
