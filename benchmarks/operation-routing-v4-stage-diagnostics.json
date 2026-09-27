@@ -1,0 +1,34 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "diagnostic": "routing-stage-signal-observability-v1",
+  "status": "design_frozen_before_implementation",
+  "base_revision": "212df048ecee1bea53dc2b5763a0c05393f90054",
+  "purpose": "Measure candidate-fit embedding geometry that is currently hidden behind a binary gate so the next routing-quality change can target the actual failure boundary rather than tune blindly.",
+  "behavior_change": false,
+  "required_candidate_fit_fields": [
+    "invoked",
+    "surface",
+    "top_option_id",
+    "top_route_label",
+    "top_similarity",
+    "second_similarity",
+    "top_margin",
+    "abstained",
+    "reason"
+  ],
+  "analysis": [
+    "supported vs near-domain unsupported score distributions",
+    "supported false-abstention count and recoverable top-route correctness",
+    "unsupported false-accept count",
+    "language slices",
+    "route slices",
+    "unsupported-family slices",
+    "interaction with downstream operation-fit failure stage"
+  ],
+  "policy": [
+    "Do not change candidate-fit thresholds in this diagnostic run.",
+    "Do not change planner routing behavior.",
+    "Use only the existing tuning-eligible fresh v4 development corpus.",
+    "Do not inspect calibration or blind corpora for tuning."
+  ]
+}
