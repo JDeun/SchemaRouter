@@ -313,6 +313,7 @@ class SchemaPlanner:
         candidate_recall_limit: int = 4,
         candidate_fit_backend: DecisionBackend | None = None,
         operation_fit_backend: DecisionBackend | None = None,
+        operation_fit_select_accepted: bool = False,
         graph_operation_gate: GraphOperationGate | None = None,
         graph_semantic_seed_backend: DecisionBackend | None = None,
         graph_semantic_direct_min_similarity: float | None = None,
@@ -379,6 +380,8 @@ class SchemaPlanner:
             or graph_semantic_propagation_limit < 1
         ):
             raise ValueError("graph_semantic_propagation_limit must be an integer >= 1")
+        if not isinstance(operation_fit_select_accepted, bool):
+            raise TypeError("operation_fit_select_accepted must be a boolean")
         if not isinstance(graph_semantic_corroborate_abstain, bool):
             raise TypeError("graph_semantic_corroborate_abstain must be a boolean")
         self.registry = registry
@@ -389,6 +392,7 @@ class SchemaPlanner:
         self.candidate_recall_limit = candidate_recall_limit
         self.candidate_fit_backend = candidate_fit_backend
         self.operation_fit_backend = operation_fit_backend
+        self.operation_fit_select_accepted = operation_fit_select_accepted
         self.graph_operation_gate = graph_operation_gate
         self.graph_semantic_seed_backend = graph_semantic_seed_backend
         self.graph_semantic_direct_min_similarity = graph_semantic_direct_min_similarity
@@ -1696,6 +1700,25 @@ class SchemaPlanner:
             ]
 
         accepted = result.selections[0].option_id
+        if self.operation_fit_select_accepted:
+            selected = next(
+                (
+                    candidate
+                    for candidate in candidates
+                    if f"{candidate.tool.key}.{candidate.endpoint.name}" == accepted
+                ),
+                None,
+            )
+            if selected is None:
+                return [], [
+                    "operation capability fit returned no authorized route; "
+                    "suppressed candidate routes"
+                ]
+            return [
+                replace(selected, selection_source="operation_fit")
+            ], [
+                f"operation capability fit selected accepted route {accepted}"
+            ]
         return candidates, [
             f"operation capability fit gate accepted via {accepted}"
         ]
@@ -1730,6 +1753,25 @@ class SchemaPlanner:
             ]
 
         accepted = result.selections[0].option_id
+        if self.operation_fit_select_accepted:
+            selected = next(
+                (
+                    candidate
+                    for candidate in candidates
+                    if f"{candidate.tool.key}.{candidate.endpoint.name}" == accepted
+                ),
+                None,
+            )
+            if selected is None:
+                return [], [
+                    "operation capability fit returned no authorized route; "
+                    "suppressed candidate routes"
+                ]
+            return [
+                replace(selected, selection_source="operation_fit")
+            ], [
+                f"operation capability fit selected accepted route {accepted}"
+            ]
         return candidates, [
             f"operation capability fit gate accepted via {accepted}"
         ]
