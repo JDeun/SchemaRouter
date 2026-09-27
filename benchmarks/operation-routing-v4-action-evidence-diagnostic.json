@@ -1,0 +1,84 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "action-only-multilingual-embedding-diagnostic-v1",
+  "work_item": 226,
+  "parent_work_items": [
+    225,
+    197
+  ],
+  "status": "preregistered_before_implementation",
+  "base_revision": "f3531f34fb1fae4bfa251c14f0032a9c976f2b47",
+  "research_question": "Can a cheap multilingual embedding over operation action text only provide an independent signal for fast acceptance or typed action evidence without broad domain leakage?",
+  "evidence_surface": {
+    "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "option_text": [
+      "endpoint name with separators normalized to spaces",
+      "trusted registered operation_aliases"
+    ],
+    "excluded": [
+      "tool name",
+      "tool description",
+      "endpoint description",
+      "output fields",
+      "parameters",
+      "corpus templates",
+      "unsupported-operation labels"
+    ],
+    "authority": "registered route IDs only",
+    "static_option_embeddings_cacheable": true
+  },
+  "data": {
+    "role": "fresh_v4_tuning_eligible_development",
+    "cases": 1800,
+    "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ]
+  },
+  "diagnostics": [
+    "supported raw action-top exact-route accuracy",
+    "per-language and per-route raw action-top accuracy",
+    "supported expected-route similarity distributions",
+    "near-domain and OOD max-action similarity/margin distributions",
+    "route similarity vector per case for later typed-evidence joining",
+    "fast-accept precision/coverage grid",
+    "false accepts by unsupported family",
+    "per-query cached-option embedding latency"
+  ],
+  "fast_accept_grid": {
+    "min_similarity": [
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6
+    ],
+    "min_margin": [
+      0,
+      0.02,
+      0.05,
+      0.08,
+      0.1,
+      0.15
+    ]
+  },
+  "warmup_cases": 24,
+  "decision_policy": "Diagnostic only. No planner behavior changes and no threshold is frozen. Any fast path or EvidenceProjector rule requires a new preregistered executable experiment.",
+  "forbidden_tuning_evidence": [
+    "v5 calibration",
+    "v12 design-known stress",
+    "v13 blind-final",
+    "0.10 graph calibration",
+    "future v4 calibration",
+    "future v4 blind-final"
+  ]
+}
