@@ -95,6 +95,12 @@ python scripts/evaluate_operation_routing_quality.py \
 The scorecard also reports per-language and per-route supported accuracy plus worst-language and
 worst-route values. A strong aggregate score must not hide a brittle language or operation slice.
 
+A production PASS additionally requires explicit structural authority evidence on every benchmark
+row. `invalid_plan` proves only that the selected `tool.endpoint` belongs to the allowed route
+catalog. The benchmark authority audit separately verifies declared arguments, projected fields,
+endpoint/tool fingerprints, and fallback alternatives. Reports without that evidence are
+diagnostic-only and cannot receive a production PASS.
+
 The production scorecard is **not** a replacement for a preregistered cycle comparator. It never
 retroactively changes the promotion criteria of an experiment whose gates were already frozen.
 
