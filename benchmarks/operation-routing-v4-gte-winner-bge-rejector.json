@@ -1,0 +1,70 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "gte-winner-only-bge-rejector-diagnostic-v1",
+  "work_item": 244,
+  "parent_work_items": [197, 227, 242, 243],
+  "status": "preregistered_before_execution",
+  "ranker": {
+    "model": "Alibaba-NLP/gte-multilingual-base",
+    "revision": "087a024525fd6e2fe749cb4679d218d8bcc95bdd",
+    "trust_remote_code": true,
+    "schema_weight": 0.25,
+    "action_weight": 0.75,
+    "query_embeddings_per_case": 1,
+    "route_selection": "argmax fused score over registered routes",
+    "reject_threshold": null,
+    "observed_parent_raw_supported_exact_route_accuracy": 0.8914930555555556
+  },
+  "rejector": {
+    "model": "BAAI/bge-reranker-v2-m3",
+    "role": "winner relevance gate only; cannot rank or change route",
+    "pairs_per_case": 1,
+    "text_variants": {
+      "action-only": [
+        "normalized endpoint action name",
+        "trusted operation_aliases"
+      ],
+      "capability": [
+        "normalized endpoint action name",
+        "trusted operation_aliases",
+        "endpoint description"
+      ]
+    },
+    "max_lengths": [128, 256],
+    "score": "sigmoid(raw relevance logit)",
+    "gte_margin_guards": [0.0, 0.02, 0.05, 0.08]
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "threshold_projection": {
+    "bge_thresholds": "observed DEV winner BGE scores plus reject-all sentinel",
+    "threshold_scope": "route-local",
+    "false_budgets": [0, 6, 12, 13, 24, 36],
+    "canonical_false_budget": 12,
+    "population_rule": "optimize on DEV rows but evaluate against complete fixed 1800-case population"
+  },
+  "screening_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "canonical_false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0.0,
+    "execution_errors_max": 0,
+    "mean_latency_ms_max": 765.187,
+    "p95_latency_ms_max": 1836.868
+  },
+  "promotion_policy": "Diagnostic only. Freeze exactly one text variant, max length, GTE margin guard, and per-route BGE score threshold map before any executable promotion run.",
+  "long_term_target": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "unsupported_rejection_target": "0.97-0.99",
+    "false_route_rate_max": 0.01
+  },
+  "authority": "GTE selects only registered route IDs. BGE can only accept/reject the selected winner and cannot synthesize or switch tools/endpoints."
+}
