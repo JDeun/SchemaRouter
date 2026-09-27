@@ -1,0 +1,393 @@
+{
+  "schema_version": 1,
+  "title": "SchemaRouter Operation-Routing Research Evidence Ledger",
+  "purpose": "Machine-readable provenance index for reproducibility, follow-up papers, ablation reporting, and research-integrity review.",
+  "scope": "Operation-routing research lineage from pre-0.10 holdouts through the active 0.11 quality-v4 cycle.",
+  "updated_at": "2026-09-27",
+  "governance": {
+    "calibration_and_blind_are_never_tuning_data": true,
+    "failed_candidates_are_retained": true,
+    "invalidated_runs_are_retained_with_reason": true,
+    "artifacts_require_run_and_digest_when_available": true,
+    "default_promotion_requires_preregistered_gates": true,
+    "semantic_evidence_never_creates_execution_authority": true
+  },
+  "standing_targets": {
+    "development_next_cycle": {
+      "supported_exact_route_accuracy_min": 0.7,
+      "near_domain_unsupported_rejection_min": 0.96,
+      "false_route_rate_max": 0.02,
+      "invalid_plan_rate_max": 0,
+      "execution_errors_max": 0
+    },
+    "production": {
+      "supported_exact_route_accuracy_min": 0.85,
+      "near_domain_unsupported_rejection_range": [
+        0.97,
+        0.99
+      ],
+      "false_route_rate_max": 0.01,
+      "invalid_plan_rate_max": 0,
+      "execution_authority_violation_rate_max": 0
+    }
+  },
+  "legacy_evidence_inventory": {
+    "corpus_files": [
+      "benchmarks/decision-routing-v1.json",
+      "benchmarks/decision-routing-v2.json",
+      "benchmarks/decision-routing-v3.json",
+      "benchmarks/decision-routing-v4-operation-holdout.json",
+      "benchmarks/decision-routing-v5-operation-calibration.json",
+      "benchmarks/decision-routing-v6-operation-holdout.json",
+      "benchmarks/decision-routing-v7-operation-post-change-holdout.json",
+      "benchmarks/decision-routing-v8-operation-alias-holdout.json",
+      "benchmarks/decision-routing-v9-operation-alias-holdout.json",
+      "benchmarks/decision-routing-v10-operation-generalization-holdout.json",
+      "benchmarks/decision-routing-v11-operation-generalization-holdout.json",
+      "benchmarks/decision-routing-v12-operation-contrastive-holdout.json",
+      "benchmarks/decision-routing-v13-operation-contrastive-holdout.json"
+    ],
+    "note": "Legacy files and their Git history preserve the earlier routing/holdout lineage. Later cycles below contain explicit freeze/run/artifact provenance suitable for paper-level reconstruction."
+  },
+  "experiments": [
+    {
+      "id": "0.10-contrastive-bge-v1",
+      "cycle": "0.10-operation-contrastive-v1",
+      "hypothesis": "Sibling-contrastive BGE operation-fit can improve supported operation routing while retaining near-domain unsupported rejection.",
+      "data_policy": {
+        "development": "decision-routing-v5 split=dev",
+        "calibration": "decision-routing-v5 split=calibration; selected candidate only",
+        "design_known_stress": "v12; not tuning eligible",
+        "blind_final": "v13; generated/scored only after full candidate freeze"
+      },
+      "frozen_candidate": {
+        "architecture": "sibling-contrastive BGE operation-fit",
+        "model": "BAAI/bge-reranker-v2-m3",
+        "beta": 1,
+        "operation_fit_min_score": 0.01,
+        "operation_fit_min_margin": 0
+      },
+      "development": {
+        "cases": 384,
+        "supported_exact_route_accuracy": 0.65625,
+        "near_domain_unsupported_rejection": 0.9583333333333334,
+        "harmonic_mean": 0.779032258064516,
+        "workflow_run_id": 36244752578,
+        "artifact_id": 10906539444,
+        "artifact_sha256": "81ad5f1a385ab61d58c9424c125ef38b24667272d194c7c271a3481570723ccc"
+      },
+      "calibration": {
+        "tuning_eligible": false,
+        "cases": 192,
+        "supported_exact_route_accuracy": 0.625,
+        "near_domain_unsupported_rejection": 0.9791666666666666,
+        "false_routes": 2,
+        "wrong_endpoints": 8,
+        "workflow_run_id": 36245567627,
+        "artifact_id": 10907402275,
+        "artifact_sha256": "95ac1d052f1aa5bd4f3c0dfb4f2b0ec6aafe3dcb7911a41b7fd434bdec895d5d"
+      },
+      "blind_final": {
+        "tuning_eligible": false,
+        "cases": 600,
+        "supported_exact_route_accuracy": 0.6171875,
+        "near_domain_unsupported_rejection": 0.984375,
+        "out_of_domain_rejection": 1,
+        "false_routes": 3,
+        "wrong_tools": 1,
+        "wrong_endpoints": 37,
+        "errors": 0,
+        "workflow_run_id": 36246386089,
+        "artifact_id": 10907304722,
+        "artifact_sha256": "0ca1cb673bee4d64999194252de8ddfe13a408548b7b53f0980c70b2d4719460",
+        "corpus_sha256": "73863c15191d6e75d892a8b0024056abe562aad2ad11d334610871dc5e070596"
+      },
+      "decision": "blind_final_passed_for_optional_profile",
+      "paper_relevance": [
+        "contrastive reranking baseline",
+        "blind-final methodology",
+        "high rejection with moderate supported accuracy"
+      ],
+      "source_files": [
+        "benchmarks/operation-fit-0.10-cycle.json",
+        "benchmarks/operation-fit-0.10-confirmed-candidate.json",
+        "benchmarks/operation-fit-0.10-v13-result.json"
+      ]
+    },
+    {
+      "id": "0.10-cheap-first-cascade-v2",
+      "cycle": "0.10-operation-cascade-v2",
+      "hypothesis": "A MiniLM fast-path plus selective BGE reranking can reduce CPU latency while preserving preregistered quality floors.",
+      "development": {
+        "cases": 384,
+        "selected_candidate": "r030-a060-m005",
+        "supported_exact_route_accuracy": 0.6197916666666666,
+        "near_domain_unsupported_rejection": 0.96875,
+        "mean_latency_ms": 473.467,
+        "mean_latency_reduction_vs_full_bge_fraction": 0.10472007079538918,
+        "workflow_run_id": 36248873541
+      },
+      "calibration": {
+        "tuning_eligible": false,
+        "cases": 192,
+        "supported_exact_route_accuracy": 0.6145833333333334,
+        "near_domain_unsupported_rejection": 0.9479166666666666,
+        "false_routes": 5,
+        "mean_latency_ms": 428.946,
+        "mean_latency_reduction_vs_full_bge_fraction": 0.14982925074473624,
+        "workflow_run_id": 36251542594,
+        "artifact_id": 10909651834,
+        "artifact_sha256": "61d9fc86d50c30c37e4cb74a440bfd3d04f9eb16f8a738a772e5d179e637b8b8"
+      },
+      "decision": "rejected_on_calibration",
+      "failure_reason": "Near-domain unsupported rejection was 94.792%, below the preregistered 95% floor by one case; candidate was rejected rather than retuned.",
+      "paper_relevance": [
+        "quality-latency tradeoff",
+        "confirmation-only calibration discipline",
+        "negative result"
+      ],
+      "source_files": [
+        "benchmarks/operation-fit-0.10-cascade-dev-result.json",
+        "benchmarks/operation-fit-0.10-cascade-calibration-result.json"
+      ]
+    },
+    {
+      "id": "0.10-graph-projection-v3",
+      "cycle": "0.10-operation-graph-projection-v3",
+      "hypothesis": "A typed schema graph can own routing authority while semantic signals provide bounded soft evidence, reducing latency without sacrificing quality/safety.",
+      "branch": "research/graph-projection-v3",
+      "pull_request": 181,
+      "development": {
+        "cases": 1200,
+        "supported_exact_route_accuracy": 0.6328125,
+        "near_domain_unsupported_rejection": 0.953125,
+        "out_of_domain_rejection": 1,
+        "false_routes": 18,
+        "mean_latency_ms": 379.06725833333337,
+        "p95_latency_ms": 551.1995,
+        "paired_correctness_gains": 47,
+        "paired_correctness_losses": 5,
+        "all_preregistered_gates_passed": true,
+        "workflow_run_id": 36283873302,
+        "artifact_id": 10920740125,
+        "corpus_sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6"
+      },
+      "calibration": {
+        "tuning_eligible": false,
+        "cases": 600,
+        "supported_exact_route_accuracy": 0.6875,
+        "near_domain_unsupported_rejection": 0.9166666666666666,
+        "out_of_domain_rejection": 1,
+        "false_routes": 16,
+        "wrong_endpoints": 34,
+        "mean_latency_ms": 207.524,
+        "p95_latency_ms": 322.73,
+        "paired_correctness_gains": 14,
+        "paired_correctness_losses": 2,
+        "workflow_run_id": 36285587372,
+        "artifact_id": 10920004901,
+        "corpus_sha256": "9b9c42bf146637c9f5866cbcd7952b46e4d5dd46b1e5fbdf74829a7332bfb3ed"
+      },
+      "decision": "rejected_on_fresh_calibration",
+      "failure_reason": "Natural near-domain unsupported rejection was 91.67%, below the preregistered 95% floor despite supported-accuracy and latency gains.",
+      "integrity_events": [
+        {
+          "type": "invalidated_pre_result_calibration_attempt",
+          "workflow_run_id": 36285424108,
+          "reason": "Structural audit found reuse of development unsupported-operation families.",
+          "metrics_inspected": false,
+          "artifact_contents_inspected": false
+        }
+      ],
+      "paper_relevance": [
+        "schema-authority architecture",
+        "graph-first routing",
+        "behavior-preserving cache optimization",
+        "fresh calibration rejection",
+        "research-integrity case study"
+      ],
+      "source_files": [
+        "benchmarks/operation-fit-0.10-graph-cycle.json",
+        "benchmarks/operation-fit-0.10-graph-frozen-candidate.json",
+        "benchmarks/operation-fit-0.10-graph-calibration-result.json"
+      ]
+    },
+    {
+      "id": "0.11-v4-fresh-baseline",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "hypothesis": "Fresh natural-language development data can expose the post-0.10 routing bottleneck without reusing consumed calibration/blind evidence.",
+      "branch": "research/v4-dev-baseline-record",
+      "pull_request": 187,
+      "dataset": {
+        "role": "fresh_tuning_eligible_development",
+        "cases": 1800,
+        "supported_cases": 1152,
+        "near_domain_unsupported_cases": 576,
+        "out_of_domain_cases": 72,
+        "languages": [
+          "en",
+          "ko",
+          "es",
+          "ja",
+          "de",
+          "mixed"
+        ],
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+        "normalized_exact_overlap_with_consumed_corpora": 0
+      },
+      "result": {
+        "supported_exact_route_accuracy": 0.4401041666666667,
+        "near_domain_unsupported_rejection": 0.9409722222222222,
+        "false_route_rate": 0.05246913580246913,
+        "false_routes": 34,
+        "wrong_tools": 3,
+        "wrong_endpoints": 130,
+        "workflow_run_id": 36289671639,
+        "artifact_id": 10922301686
+      },
+      "decision": "baseline_only",
+      "paper_relevance": [
+        "fresh-cycle baseline",
+        "failure-stage localization",
+        "post-calibration data separation"
+      ]
+    },
+    {
+      "id": "0.11-hierarchical-tool-operation",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "hypothesis": "Separating tool-domain selection from within-tool operation selection will improve exact-route accuracy while preserving rejection.",
+      "branch": "research/v4-hierarchical-routing",
+      "pull_request": 189,
+      "preregistered": true,
+      "result": {
+        "cases": 1800,
+        "supported_exact_route_accuracy": 0.4262152777777778,
+        "near_domain_unsupported_rejection": 0.9409722222222222,
+        "false_route_rate": 0.05246913580246913,
+        "false_routes": 34,
+        "wrong_tools": 3,
+        "wrong_endpoints": 166,
+        "paired_gains": 91,
+        "paired_losses": 107,
+        "mean_latency_ms": 507.634,
+        "p95_latency_ms": 689.518,
+        "workflow_run_id": 36305345476,
+        "artifact_id": 10927038875,
+        "artifact_sha256": "6aeef6e37b60e413dfc3215874ea33bc08f4b05e994e5fc3d28bc76d9bc94f55",
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+      },
+      "decision": "rejected_on_development",
+      "failure_reason": "Wrong-tool errors were unchanged while wrong-endpoint errors increased, localizing the regression to within-tool operation resolution.",
+      "paper_relevance": [
+        "negative ablation",
+        "bottleneck localization"
+      ]
+    },
+    {
+      "id": "0.11-accepted-operation-selector",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "hypothesis": "If operation-fit already identifies a registered route, allowing that accepted route to control the single-call candidate will recover endpoint accuracy without changing the abstention boundary.",
+      "branch": "research/v4-operation-fit-selector",
+      "pull_request": 190,
+      "preregistered": true,
+      "result": {
+        "cases": 1800,
+        "baseline_supported_exact_route_accuracy": 0.4401041666666667,
+        "supported_exact_route_accuracy": 0.5408,
+        "near_domain_unsupported_rejection": 0.9409722222222222,
+        "false_route_rate": 0.05246913580246913,
+        "false_routes": 34,
+        "wrong_tools": 3,
+        "wrong_endpoints": 14,
+        "paired_gains": 129,
+        "paired_losses": 13,
+        "route_changes": 151,
+        "top_driven_route_changes": 151,
+        "invalid_plans": 0,
+        "execution_errors": 0,
+        "workflow_run_id": 36305969034,
+        "artifact_id": 10927253262,
+        "artifact_sha256": "7048a45e5bcc23a1cdd77558e47f86f9d2b2077b542a66cd74bd7de2377f948a",
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+      },
+      "decision": "standalone_candidate_rejected_primitive_retained",
+      "failure_reason": "Large endpoint-accuracy gain did not improve unsupported rejection or false-route rate, so the selector is useful only as one component of a safer composite architecture.",
+      "paper_relevance": [
+        "causal ablation",
+        "wrong-endpoint error reduction",
+        "separation of selection quality from rejection quality"
+      ]
+    },
+    {
+      "id": "0.11-stage-signal-diagnostics",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "hypothesis": "Candidate-fit score geometry can reveal which supported misses are recoverable and whether a global similarity threshold can separate supported from near-domain unsupported requests.",
+      "branch": "research/v4-stage-diagnostics",
+      "behavior_change": false,
+      "result": {
+        "cases": 1800,
+        "source_revision": "1cf7efc261b5bcb16b50a8794c8abbf84ed9265c",
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+        "candidate_fit_abstentions_all": 365,
+        "supported_abstentions": 94,
+        "supported_abstentions_where_top_route_was_expected": 43,
+        "supported_top_route_exact_rate_over_all_supported": 0.6206597222222222,
+        "near_domain_rejection_at_similarity_0_25": 0.3506944444444444,
+        "supported_gate_pass_rate_at_similarity_0_25": 0.9184027777777778,
+        "workflow_run_id": 36307347806,
+        "artifact_id": 10928107658,
+        "artifact_sha256": "c236c244a839fc8dfd00e2f20795bc26f7518ea9a971b887a2c57f54b8680224"
+      },
+      "decision": "diagnostic_supports_multi_signal_boundary_design",
+      "interpretation": "A single candidate-fit similarity threshold cannot provide both high supported recall and high near-domain rejection; rejection must use distinct negative/unknown capability evidence.",
+      "paper_relevance": [
+        "score-distribution analysis",
+        "threshold tradeoff",
+        "motivation for typed multi-signal projection"
+      ]
+    },
+    {
+      "id": "0.11-typed-evidence-infrastructure",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "behavior_change": false,
+      "pull_requests": [
+        185,
+        186
+      ],
+      "components": [
+        "typed DecisionEvidence emission",
+        "score-kind metadata",
+        "unknown-aware EvidenceProjector",
+        "no cross-kind raw-score averaging",
+        "fail-closed duplicate-observation handling"
+      ],
+      "decision": "infrastructure_retained_for_next_candidate",
+      "paper_relevance": [
+        "method design",
+        "uncertainty semantics",
+        "score-kind-safe evidence fusion"
+      ]
+    }
+  ],
+  "current_research_conclusion": {
+    "supported_selection_problem": "Accepted operation-fit selector materially reduces wrong-endpoint errors.",
+    "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
+    "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
+    "next_candidate_direction": [
+      "retain bounded accepted operation selector",
+      "retain registered-schema execution authority",
+      "use route/boundary-local thresholds where justified by fresh development only",
+      "introduce explicit negative-capability and unknown evidence",
+      "project incompatible evidence kinds independently",
+      "rerank only within authorized candidate sets"
+    ]
+  },
+  "paper_reconstruction_checklist": [
+    "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
+    "Report rejected ablations, not only successful candidates.",
+    "Preserve run IDs, artifact IDs, SHA-256 digests, source revisions, and corpus hashes in supplementary material.",
+    "State when calibration/blind evidence became permanently consumed.",
+    "Include invalidated pre-result attempts and reasons without using their metrics.",
+    "Separate architectural authority claims from empirical performance claims."
+  ]
+}
