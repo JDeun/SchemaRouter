@@ -6,6 +6,7 @@ on:
       - ".github/workflows/research-operation-routing-quality-v4.yml"
       - "benchmarks/operation-fit-0.11-quality-v4-cycle.json"
       - "benchmarks/operation-routing-v4-hierarchical-ablation.json"
+      - "benchmarks/operation-routing-v4-hierarchical-pairwise-tool-ablation.json"
       - "scripts/generate_decision_routing_quality_v4.py"
       - "scripts/audit_operation_routing_corpus.py"
       - "scripts/analyze_operation_routing_quality_v4_dev.py"
@@ -54,7 +55,7 @@ jobs:
           pytest -q             tests/test_decisions.py             tests/test_planner.py             tests/test_pairwise_decision_backend.py             tests/test_operation_routing_quality_v4_generator.py             tests/test_operation_routing_quality_v4_protocol.py             tests/test_operation_routing_quality_v4_analysis.py
 
 
-  candidate-hierarchical:
+  candidate-pairwise-tool:
     needs: contracts
     runs-on: ubuntu-latest
     timeout-minutes: 120
@@ -70,24 +71,24 @@ jobs:
       - run: pip install -e ".[dev]"
       - name: Generate identical fresh v4 development corpus
         run: |
-          mkdir -p artifacts/v4-hierarchical
+          mkdir -p artifacts/v4-pairwise-tool
           python scripts/generate_decision_routing_quality_v4.py \
             --seed "${V4_DEV_SEED}" \
             --source-revision "${SCHEMAROUTER_SOURCE_REVISION}" \
-            --out artifacts/v4-hierarchical/corpus.json \
-            --manifest artifacts/v4-hierarchical/corpus-manifest.json
+            --out artifacts/v4-pairwise-tool/corpus.json \
+            --manifest artifacts/v4-pairwise-tool/corpus-manifest.json
       - name: Audit corpus before model scoring
         run: |
           python scripts/audit_operation_routing_corpus.py \
-            --corpus artifacts/v4-hierarchical/corpus.json \
-            --out artifacts/v4-hierarchical/corpus-audit.json \
+            --corpus artifacts/v4-pairwise-tool/corpus.json \
+            --out artifacts/v4-pairwise-tool/corpus-audit.json \
             --near-duplicate-threshold 0.80 \
             --max-duplicate-examples 50
-      - name: Run hierarchical tool-then-operation ablation
+      - name: Run hierarchical pairwise-tool ablation
         run: |
-          CANDIDATE="keyword+graph-operation+graph-semantic-seed+graph-hierarchical+graph-propagation+selective-semantic-recall+selective-capability-fit+selective-operation-fit"
+          CANDIDATE="keyword+graph-operation+graph-semantic-seed+graph-pairwise-tool+graph-hierarchical+graph-propagation+selective-semantic-recall+selective-capability-fit+selective-operation-fit"
           python scripts/benchmark_decision_routing.py \
-            --corpus artifacts/v4-hierarchical/corpus.json \
+            --corpus artifacts/v4-pairwise-tool/corpus.json \
             --candidate-recall-embedding-callable benchmarks.multilingual_embedder:embed \
             --candidate-recall-limit 2 \
             --candidate-fit-embedding-callable benchmarks.multilingual_embedder:embed \
@@ -96,27 +97,25 @@ jobs:
             --operation-fit-min-score 0.01 \
             --operation-fit-min-margin 0.0 \
             --graph-operation-gate \
-            --graph-semantic-seed-embedding-callable benchmarks.multilingual_embedder:embed \
-            --graph-semantic-seed-min-similarity 0.45 \
-            --graph-semantic-seed-min-margin 0.10 \
+            --graph-semantic-seed-pairwise-callable benchmarks.bge_contrastive:score_pairs \
+            --graph-semantic-seed-min-score 0.0 \
+            --graph-semantic-seed-min-margin 0.0 \
             --graph-semantic-hierarchical \
-            --graph-semantic-direct-min-similarity 0.55 \
-            --graph-semantic-direct-min-margin 0.15 \
             --graph-semantic-propagation \
             --graph-semantic-propagation-on-abstain reject \
             --counterbalanced \
             --warmup-cases 24 \
             --planner-name "${CANDIDATE}" \
-            --hardware-label "GitHub Actions ubuntu-latest x64 CPU v4 hierarchical ablation" \
-            --json-out artifacts/v4-hierarchical/report.json
+            --hardware-label "GitHub Actions ubuntu-latest x64 CPU v4 pairwise tool ablation" \
+            --json-out artifacts/v4-pairwise-tool/report.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
-          name: operation-routing-quality-v4-hierarchical-${{ github.run_id }}
+          name: operation-routing-quality-v4-pairwise-tool-${{ github.run_id }}
           path: |
-            artifacts/v4-hierarchical/report.json
-            artifacts/v4-hierarchical/corpus-manifest.json
-            artifacts/v4-hierarchical/corpus-audit.json
+            artifacts/v4-pairwise-tool/report.json
+            artifacts/v4-pairwise-tool/corpus-manifest.json
+            artifacts/v4-pairwise-tool/corpus-audit.json
           if-no-files-found: error
           retention-days: 30
 
