@@ -2,9 +2,13 @@
   "cycle": "0.11-operation-routing-quality-v4",
   "experiment": "bounded-width2-action-embedding-diagnostic-v1",
   "work_item": 233,
-  "parent_work_items": [197, 226, 227],
-  "status": "preregistered_before_execution",
-  "source_parent_revision": "521dcc65e0269d68c76a372606f8d22b2ac57aa1",
+  "parent_work_items": [
+    197,
+    226,
+    227
+  ],
+  "status": "preregistered_revision_2_before_valid_execution",
+  "source_parent_revision": "e93f5ddd104b5d876b248a8607092e6900a6e0a3",
   "research_question": "Can cached multilingual MiniLM action-only evidence replace BGE inside the already-authorized semantic recall width-2 set while retaining enough ranking and open-set headroom to pass the DEV gates?",
   "architecture": {
     "candidate_recall_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
@@ -27,16 +31,31 @@
     ],
     "operation_fit_static_option_cache": true,
     "accepted_selector": true,
-    "diagnostic_min_similarity": -1.0,
-    "diagnostic_min_margin": 0.0,
+    "diagnostic_min_similarity": -1,
+    "diagnostic_min_margin": 0,
     "bge": false,
     "endpoint_disambiguation": false
   },
   "threshold_projection": {
     "semantics": "winner_only_rank_then_gate",
     "score_thresholds": "observed DEV winner cosine values plus boundary sentinels",
-    "fixed_margin_thresholds": [0.0, 0.02, 0.05, 0.08, 0.1, 0.15, 0.2],
-    "false_budgets": [0, 6, 12, 13, 24, 36],
+    "fixed_margin_thresholds": [
+      0,
+      0.02,
+      0.05,
+      0.08,
+      0.1,
+      0.15,
+      0.2
+    ],
+    "false_budgets": [
+      0,
+      6,
+      12,
+      13,
+      24,
+      36
+    ],
     "canonical_false_budget": 12,
     "note": "Retrospective DEV projection only. Any executable candidate must freeze the selected map before a new run."
   },
@@ -48,13 +67,14 @@
     "calibration_or_blind_forbidden": true
   },
   "diagnostic_gates": {
-    "supported_exact_route_accuracy_min": 0.70,
+    "supported_exact_route_accuracy_min": 0.7,
     "near_domain_unsupported_rejection_min": 0.96,
     "canonical_false_route_rate_max": 0.02,
-    "invalid_plan_rate_max": 0.0,
+    "invalid_plan_rate_max": 0,
     "execution_errors_max": 0,
     "latency_requirement": "materially lower than rejected #227 BGE candidate"
   },
   "behavior_change": false,
-  "authority": "Both stages may select only registered/schema-authorized route IDs; no stage may synthesize tools, endpoints, fields, arguments, credentials, or side effects."
+  "authority": "Both stages may select only registered/schema-authorized route IDs; no stage may synthesize tools, endpoints, fields, arguments, credentials, or side effects.",
+  "methodology_revision_note": "Run 36320476279 was invalidated before result inspection because projected metrics could use only valid_scored denominators. Revision 2 optimizes thresholds on scored rows but evaluates every projected metric against the full fixed 1800-case DEV population."
 }
