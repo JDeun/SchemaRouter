@@ -1,0 +1,95 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "candidate": "bge-m3-055-zero-false-crossmodel-rescue-v1",
+  "work_item": 265,
+  "parent_work_items": [197, 246, 259, 262],
+  "status": "frozen_before_executable_confirmation",
+  "base": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "threshold_profile": "budget-6-route-local-robust",
+    "comparison_epsilon": 1e-6,
+    "accepted_decisions_immutable": true,
+    "rank2_fallthrough": false
+  },
+  "rescue": {
+    "gte_model": "Alibaba-NLP/gte-multilingual-base",
+    "gte_revision": "087a024525fd6e2fe749cb4679d218d8bcc95bdd",
+    "gte_schema_weight": 0.25,
+    "gte_action_weight": 0.75,
+    "same_winner_required": true,
+    "reranker_model": "BAAI/bge-reranker-v2-m3",
+    "reranker_revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+    "reranker_max_length": 256,
+    "comparison_epsilon": 1e-6,
+    "enabled_routes": [
+      "calendar.create",
+      "finance.quote",
+      "materials.search",
+      "papers.search",
+      "support.create_ticket",
+      "users.lookup",
+      "weather.current",
+      "weather.forecast"
+    ],
+    "reranker_required_routes": [
+      "calendar.create",
+      "materials.search",
+      "support.create_ticket",
+      "weather.current"
+    ]
+  },
+  "tuning_dev_projection": {
+    "supported_correct": 982,
+    "supported_exact_route_accuracy": 0.8524305555555556,
+    "near_domain_unsupported_rejection": 0.9895833333333334,
+    "out_of_domain_rejection": 1.0,
+    "false_routes": 6,
+    "false_route_rate": 0.009259259259259259,
+    "additional_false_routes": 0,
+    "rescued_correct": 17,
+    "rescued_wrong_supported": 0
+  },
+  "confirmation": {
+    "same_corpus": {
+      "seed": "operation-routing-quality-v4-development-2026-09-27",
+      "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+      "direct_parity": true,
+      "expected_supported_correct": 982,
+      "expected_false_routes": 6,
+      "purpose": "executable parity and reproducibility only"
+    },
+    "fresh_dev": {
+      "seed": "operation-routing-quality-v4-confirmation-2026-09-27-a",
+      "seed_frozen_before_execution": true,
+      "direct_parity": true,
+      "expected_supported_correct": null,
+      "expected_false_routes": null,
+      "purpose": "fresh DEV generalization confirmation before calibration/blind"
+    },
+    "fresh_dev_gates": {
+      "supported_exact_route_accuracy_min": 0.85,
+      "near_domain_unsupported_rejection_min": 0.97,
+      "false_route_rate_max": 0.01,
+      "additional_false_routes_max": 0,
+      "rescued_false_routes_max": 0,
+      "invalid_plans_max": 0,
+      "execution_errors_max": 0,
+      "base_accept_changes_max": 0,
+      "winner_changes_on_rescue_max": 0,
+      "planner_direct_parity_mismatches_max": 0
+    }
+  },
+  "execution_order": [
+    "same_corpus_confirmation",
+    "fresh_dev_confirmation_only_if_same_corpus_passes"
+  ],
+  "post_confirmation_policy": {
+    "if_fresh_dev_passes": "candidate may advance to issue #198 fresh calibration and one-shot blind protocol",
+    "if_fresh_dev_fails": "record failure and do not consume calibration/blind data",
+    "no_post_run_threshold_or_rule_edits": true
+  },
+  "calibration_or_blind_used": false
+}
