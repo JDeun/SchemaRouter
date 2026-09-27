@@ -932,3 +932,22 @@ It keeps the immutable #246 strict 0.55/0.45 base and invokes a pinned BGE cross
 The validator may only rescue the same raw rank-1 winner; it cannot switch to rank 2 or create execution authority.
 
 Both lines remain DEV-only. Calibration/blind evidence remains blocked until a fully frozen candidate passes the complete development, numerical-stability, and runtime gates.
+
+
+## 27. Parallel numerical-stability experiment
+
+Work item #256 / PR #257 runs in parallel with the rejected-winner rescue line.
+
+Motivation:
+
+The global 0.55/0.45 BGE-M3 base is close to the final target, but #246 also showed that different routes prefer different schema/action fusion weights. Selecting each route's weight from the already-preregistered #246 grid gives a raw supported-ranking ceiling of **1046/1152**, compared with **1019/1152** for the global 0.55 ranker.
+
+The route-local fusion map was frozen before execution. To avoid repeating the #245 numerical-boundary failure, its threshold protocol is explicitly stability-oriented:
+
+- score thresholds are midpoints between adjacent observed winner scores, never an observed sample score itself;
+- selected minimum scores are rounded upward to 6 decimal places;
+- final full-population metrics are recomputed after rounding;
+- the strict profile must survive an adversarial **±1e-6** score/margin perturbation while keeping >=85% exact, >=97% near-domain rejection and <=1% false-route;
+- **±1e-5** is retained as a secondary stress diagnostic.
+
+This experiment is diagnostic only. Even a passing map requires a separate frozen executable confirmation before any calibration or blind evaluation.
