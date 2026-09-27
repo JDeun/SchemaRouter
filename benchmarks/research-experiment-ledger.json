@@ -577,8 +577,85 @@
       "branch": "research/v4-bounded-rerank-diagnostic",
       "preregistered": true,
       "source_parent_revision": "90af3e1fce3bf29f45fd3347c14afc2603b37d5e",
-      "status": "executing",
+      "status": "completed_development_diagnostic",
       "purpose": "Measure raw all-candidate BGE ranking ceiling and derive a development-only winner-only route-local threshold Pareto frontier without freezing behavior.",
+      "decision": "ranking_and_safety_headroom_confirmed_latency_width_optimization_required",
+      "source_revision": "f43535b6ef0acbc5492b9791e6757e28a343d9fa",
+      "workflow_run_id": 36310955824,
+      "artifact_id": 10929374346,
+      "artifact_sha256": "47a1d7a5716b100edd654607816a6cceeb630be09091348fcc788928a73fdb09",
+      "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+      "result": {
+        "raw_supported_top_exact": 0.9071180555555556,
+        "raw_supported_top_correct": 1045,
+        "zero_threshold_false_routes": 648,
+        "zero_threshold_mean_latency_ms": 1014.271,
+        "zero_threshold_p95_latency_ms": 1915.928,
+        "score_only_winner_frontier_false_12_supported": 0.7578125,
+        "posthoc_score_margin_false_12_supported": 0.7612847222222222,
+        "posthoc_score_margin_false_12_near_domain_rejection": 0.9809027777777778,
+        "posthoc_score_margin_false_12_ood_rejection": 0.9861111111111112,
+        "canonical_false_route_rate_at_12": 0.018518518518518517
+      }
+    },
+    {
+      "id": "0.11-winner-only-threshold-semantics",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "work_item": 207,
+      "pull_request": 208,
+      "branch": "research/v4-winner-only-threshold",
+      "base_architecture_pull_request": 195,
+      "source_merge_revision": "90cda2520b0faae396415a2d15699437507bfb35",
+      "behavior_change": "opt_in_only_default_unchanged",
+      "mechanism": {
+        "default": "filter_then_rank",
+        "experimental": "rank_then_gate",
+        "semantics": "fix raw winner first; apply that winner's route-local score/margin boundary; abstain on failure; never fall through to rank 2",
+        "multi_selection": "fail_closed"
+      },
+      "decision": "mechanism_merged_into_bounded_rerank_research_stack",
+      "paper_relevance": [
+        "threshold semantics",
+        "open-set fail-closed routing",
+        "causal repair of lower-ranked fallback"
+      ]
+    },
+    {
+      "id": "0.11-pairwise-hierarchy-winner-frontier-diagnostic",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "work_item": 212,
+      "source_pull_request": 193,
+      "role": "retrospective_tuning_eligible_development_diagnostic",
+      "source_workflow_run_id": 36306926184,
+      "source_artifact_id": 10927969192,
+      "source_artifact_sha256": "11369d9cd85f125f2bbb2f2ce1c1c9ba7a86d340144840e824a8a25cbb97e956",
+      "result": {
+        "raw_supported_top_ceiling": 0.9149305555555556,
+        "score_margin_winner_gate_false_routes": 12,
+        "projected_supported_exact_route_accuracy": 0.7586805555555556,
+        "projected_near_domain_unsupported_rejection": 0.9809027777777778,
+        "projected_ood_rejection": 0.9861111111111112,
+        "projected_canonical_false_route_rate": 0.018518518518518517
+      },
+      "interpretation": "Pairwise hierarchy had sufficient development ranking capacity; original quality failure was strongly affected by filter-then-rank semantics. Its measured two-stage BGE latency remained too high for promotion.",
+      "decision": "diagnostic_only_prioritize_single_stage_bounded_rerank"
+    },
+    {
+      "id": "0.11-bounded-rerank-width",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "work_item": 213,
+      "pull_request": 215,
+      "branch": "research/v4-rerank-width",
+      "status": "executing",
+      "preregistered": true,
+      "frozen_grid": {
+        "semantic_recall_limits": [
+          2,
+          3
+        ],
+        "width_4_reference_pull_request": 205
+      },
+      "selection_rule": "choose the smallest width whose score-only winner frontier passes >=70% supported, >=96% near-domain rejection, <=2% canonical false-route, zero invalid plans/errors",
       "decision": "pending"
     }
   ],
@@ -587,19 +664,20 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "retain bounded accepted operation selector",
-      "retain registered-schema execution authority",
-      "use route/boundary-local thresholds where justified by fresh development only",
-      "introduce explicit negative-capability and unknown evidence",
-      "project incompatible evidence kinds independently",
-      "rerank only within authorized candidate sets"
+      "choose the smallest bounded rerank width that preserves >=70% supported accuracy under the canonical winner-only false-route budget",
+      "freeze a score-only route-local threshold map on development only",
+      "run one paired-baseline executable rank_then_gate candidate",
+      "add typed negative/unknown capability evidence only if that candidate still misses the development gates",
+      "retain registered-schema execution authority throughout"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "bounded retrieve-rerank raw score diagnostic (#204 / PR #205)",
-    "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule."
+    "active_experiment": "bounded rerank width 2/3 ablation (#213 / PR #215)",
+    "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
+    "bounded_rerank_diagnostic": "Width 4 reaches 90.71% raw top exact and 75.78% supported at a 12-false-route score-only winner budget, but zero-threshold latency is ~1014 ms mean / ~1916 ms p95.",
+    "winner_gate_semantics": "Rank-then-gate is now implemented opt-in; rejected raw winners abstain and cannot fall through to lower-ranked routes."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
