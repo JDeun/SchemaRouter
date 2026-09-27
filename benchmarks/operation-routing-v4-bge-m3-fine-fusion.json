@@ -1,0 +1,48 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "bge-m3-fine-fusion-strict-open-set-v1",
+  "work_item": 246,
+  "parent_work_items": [197, 242, 243],
+  "status": "preregistered_before_execution",
+  "model": {
+    "name": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "trust_remote_code": false
+  },
+  "architecture": {
+    "query_embeddings_per_case": 1,
+    "route_views": "identical to #242 dual-view",
+    "schema_weights": [0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60],
+    "action_weight_rule": "1 - schema_weight",
+    "post_run_interpolation_forbidden": true,
+    "cross_encoder": false,
+    "learned_classifier": false
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "threshold_projection": {
+    "semantics": "winner_only_rank_then_gate",
+    "fixed_margin_thresholds": [0.0, 0.02, 0.05, 0.08, 0.10, 0.15, 0.20],
+    "false_budgets": [6, 12],
+    "primary_false_budget": 6,
+    "population_rule": "complete fixed 1800-case denominators"
+  },
+  "primary_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "canonical_false_route_rate_max": 0.01,
+    "invalid_plan_rate_max": 0.0,
+    "execution_errors_max": 0,
+    "p95_latency_ms_max": 250.0
+  },
+  "promotion_policy": "If a preregistered weight passes, freeze exactly that weight and its route-local threshold map in a separate candidate before any new validation run.",
+  "authority": "Ranks only registered routes and cannot synthesize execution authority."
+}
