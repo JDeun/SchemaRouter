@@ -17,6 +17,7 @@ env:
   SCHEMAROUTER_SOURCE_REVISION: ${{ github.event.pull_request.head.sha }}
   SCHEMAROUTER_BENCHMARK_EMBEDDING_MODEL: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
   SCHEMAROUTER_BENCHMARK_NLI_MODEL: "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli"
+  SCHEMAROUTER_BENCHMARK_NLI_REVISION: "0a71e92a985b6e1ad1828cf67ce9c459639c1dca"
   V4_DEV_SEED: "operation-routing-quality-v4-development-2026-09-27"
 
 concurrency:
