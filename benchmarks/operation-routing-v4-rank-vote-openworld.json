@@ -1,0 +1,70 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "relative-rank-vote-openworld-v1",
+  "work_item": 282,
+  "parent_work_items": [197, 221, 275, 277, 279],
+  "status": "preregistered_before_execution",
+  "route_authority": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "selection": "global registered raw top-1",
+    "positive_route_local_thresholds": false,
+    "evidence_can_select_route": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "near_domain_channel": {
+    "source": "unchanged route-conditioned 32 negative-capability prototypes from #275/#279",
+    "rule": "number of negative prototypes strictly outranking raw winner action-view score",
+    "negative_votes_min": [1, 2, 3, 4],
+    "absolute_similarity_thresholds": false
+  },
+  "ood_channel": {
+    "known_domain_anchor_count": 8,
+    "background_prototype_count": 16,
+    "top_k": [3, 5, 7],
+    "background_vote_requirement_modes": [
+      "strict_majority",
+      "two_thirds_ceiling",
+      "unanimous"
+    ],
+    "require_top1_background": [false, true],
+    "absolute_similarity_thresholds": false
+  },
+  "grid": {
+    "fixed_rule_count": 72,
+    "interpolation_forbidden": true,
+    "learned_classifier_forbidden": true,
+    "route_specific_tuning_forbidden": true
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "failed_270_fresh_surface_forbidden": true,
+    "calibration_or_blind_forbidden": true
+  },
+  "promotion_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "p95_latency_ms_max": 250.0
+  },
+  "selection_order": [
+    "highest supported exact",
+    "lowest false-route count",
+    "highest near-domain rejection",
+    "highest OOD rejection",
+    "lexical frozen rule id"
+  ],
+  "promotion_policy": "Diagnostic only. Freeze any passing rule unchanged in a separate executable candidate and confirm on a new preregistered fresh-surface DEV corpus distinct from #270 before calibration/blind use."
+}
