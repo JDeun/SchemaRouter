@@ -1556,6 +1556,36 @@
         }
       },
       "interpretation": "Relative prototype ordering carries signal but cannot jointly preserve supported recall and the 85/97/1/100 open-set safety target. The preregistered stopping rule is activated: no finer fixed-prototype thresholds, top-k grids, route-specific exceptions, or post-result hand rules."
+    },
+    {
+      "id": "0.11-grouped-oof-learned-winner-verifier",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 285,
+      "pull_request": 286,
+      "preregistered": true,
+      "status": "executing",
+      "workflow_run_id": 36360031386,
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "verifier_output": "match/no_match/unknown; only match executes",
+        "feature_schema": "19 runtime-observable geometry features + one-hot raw winner route ID",
+        "forbidden_features": [
+          "query text",
+          "expected route",
+          "category",
+          "language",
+          "unsupported family"
+        ],
+        "oof_group": "leave-one-language-out over de/en/es/ja/ko/mixed",
+        "classifiers": [
+          "fixed logistic regression",
+          "fixed shallow HistGradientBoosting"
+        ],
+        "acceptance_threshold_count": 12,
+        "fixed_rule_count": 24,
+        "veto_only": true
+      },
+      "decision": "executing"
     }
   ],
   "current_research_conclusion": {
@@ -1575,7 +1605,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "none; fixed-prototype heuristic line terminated by #281",
+    "active_experiment": "grouped-OOF learned winner verifier (#285 / PR #286)",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1640,9 +1670,12 @@
       279,
       281
     ],
-    "active_experiments": [],
+    "active_experiments": [
+      285
+    ],
     "active_pull_requests": [
-      235
+      235,
+      286
     ],
     "next_blocked_confirmation": 198,
     "next_research_direction": "learned or externally pretrained match/no_match/unknown capability verifier with veto-only authority"
@@ -2003,4 +2036,4 @@
       "note": "Generated only after freeze and permanently consumed after one evaluation."
     }
   ]
-}
+}\n
