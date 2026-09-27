@@ -3,15 +3,15 @@
   "experiment": "robust-bge-m3-abstention-rescue-diagnostic-v1",
   "work_item": 262,
   "parent_work_item": 259,
-  "status": "prepared_but_execution_blocked_on_parent_confirmation",
-  "execution_prerequisite": "#259 must pass executable confirmation before any workflow is enabled",
+  "status": "preregistered_after_parent_confirmation_before_execution",
+  "execution_prerequisite": "#259 passed executable confirmation in workflow 36325967632",
   "base_candidate": {
     "name": "bge-m3-dual-view-055-budget6-robust-v1",
     "model": "BAAI/bge-m3",
     "revision": "5617a9f61b028005a4858fdac845db406aefb181",
     "schema_weight": 0.55,
     "action_weight": 0.45,
-    "boundary_epsilon": 1e-6,
+    "boundary_epsilon": 0.000001,
     "already_accepted_decisions_immutable": true,
     "rescue_scope": "base abstentions only"
   },
@@ -45,13 +45,50 @@
     }
   },
   "fixed_grids": {
-    "additional_false_budgets": [0, 1, 2],
+    "additional_false_budgets": [
+      0,
+      1,
+      2
+    ],
     "primary_additional_false_budget": 0,
-    "gte_margin_thresholds": [0.0, 0.01, 0.02, 0.03, 0.05, 0.08, 0.1, 0.15],
-    "base_score_deficit_max": [0.001, 0.0025, 0.005, 0.01, 0.02, 0.05, 1.0],
-    "base_margin_deficit_max": [0.0, 0.005, 0.01, 0.02, 0.05, 1.0],
-    "gte_score_thresholds": "observed route-local DEV values plus accept-all/reject-all sentinels",
-    "reranker_thresholds": "observed route-local DEV values plus accept-all/reject-all sentinels for the cross-encoder variant"
+    "gte_margin_thresholds": [
+      0,
+      0.01,
+      0.02,
+      0.03,
+      0.05,
+      0.08,
+      0.1,
+      0.15
+    ],
+    "base_score_deficit_max": [
+      0.001,
+      0.0025,
+      0.005,
+      0.01,
+      0.02,
+      0.05,
+      1
+    ],
+    "base_margin_deficit_max": [
+      0,
+      0.005,
+      0.01,
+      0.02,
+      0.05,
+      1
+    ],
+    "gte_score_thresholds": "route-local quantiles at the preregistered levels plus accept-all/reject-all sentinels",
+    "reranker_thresholds": "route-local quantiles at the same preregistered levels plus accept-all/reject-all sentinels for the cross-encoder variant",
+    "score_quantiles": [
+      0,
+      0.1,
+      0.25,
+      0.5,
+      0.75,
+      0.9,
+      1
+    ]
   },
   "data": {
     "role": "tuning_eligible_development",
@@ -72,5 +109,6 @@
     "execution_errors_max": 0
   },
   "behavior_change": false,
-  "workflow_present": false
+  "workflow_present": true,
+  "methodology_revision_note": "Before execution, the all-observed-value Cartesian search was replaced with fixed route-local score quantiles to prevent combinatorial explosion. No rescue result had been observed."
 }
