@@ -1,0 +1,60 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "typed-two-view-bge-m3-open-set-gate-v1",
+  "work_item": 254,
+  "parent_work_item": 197,
+  "status": "prepared_but_execution_blocked_while_262_active",
+  "ranker": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.25,
+    "action_weight": 0.75,
+    "winner": "global registered-route top-1",
+    "rank2_fallback": false
+  },
+  "typed_winner_signals": [
+    "schema_score",
+    "action_score",
+    "fused_margin"
+  ],
+  "gate_families": [
+    "action-only",
+    "schema-only",
+    "typed-and"
+  ],
+  "margin_guards": [
+    0,
+    0.01,
+    0.02,
+    0.05
+  ],
+  "false_budgets": [
+    0,
+    3,
+    6,
+    12,
+    13,
+    24
+  ],
+  "primary_false_budget": 6,
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "success_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "false_route_rate_max": 0.01,
+    "p95_latency_ms_max": 250
+  },
+  "numerical_freeze_policy": "Diagnostic may estimate observed-score frontier; any executable successor must comply with #253 and use deterministic canonicalization before execution.",
+  "workflow_present": false,
+  "execution_condition": "Run only if #262 fails the zero-additional-false 85/97/1 rescue target.",
+  "behavior_change": false
+}
