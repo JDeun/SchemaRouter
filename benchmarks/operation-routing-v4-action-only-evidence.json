@@ -1,0 +1,81 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "cheap-action-only-evidence-diagnostic-v1",
+  "work_item": 226,
+  "parent_work_items": [
+    225,
+    197
+  ],
+  "status": "preregistered_before_execution",
+  "source_parent_revision": "50acfcc02929ffd8c05e3dc9e17811bb06a4d8dc",
+  "research_question": "Can a cheap multilingual embedding signal over operation action text only provide independent evidence for the width-selected BGE router without repeating broad domain similarity?",
+  "evidence_surface": {
+    "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "action_text": [
+      "normalized endpoint name",
+      "trusted operation_aliases"
+    ],
+    "excluded": [
+      "tool name",
+      "tool description",
+      "endpoint description",
+      "output fields",
+      "parameters",
+      "corpus templates",
+      "unsupported-operation labels"
+    ],
+    "authority": "rank/evidence over registered route IDs only; cannot synthesize executable authority"
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "fixed_diagnostic_grid": {
+    "score_thresholds": [
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8
+    ],
+    "margin_thresholds": [
+      0,
+      0.02,
+      0.05,
+      0.08,
+      0.1,
+      0.15,
+      0.2
+    ],
+    "precision_floors": [
+      0.9,
+      0.95,
+      0.97,
+      0.98,
+      0.99,
+      0.995,
+      1
+    ]
+  },
+  "required_diagnostics": [
+    "supported action-only raw top-route exact overall/per-language/per-route",
+    "supported expected-route similarity distribution",
+    "near-domain and OOD top-score/margin distributions",
+    "unsupported-family score and dominant-route slices",
+    "high-confidence fast-accept precision/coverage frontier",
+    "evidence-only reject/veto frontier",
+    "static-option embedding cost",
+    "per-query query-embedding plus cosine latency after warmup"
+  ],
+  "behavior_change": false,
+  "decision_policy": "Diagnostic only. No planner threshold, fast path, veto, or projection rule may be promoted from this run without a separate preregistered behavior-changing candidate."
+}
