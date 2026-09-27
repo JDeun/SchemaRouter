@@ -17,16 +17,17 @@ import analyze_dual_view_embedding_v4 as dual  # noqa: E402
 import analyze_embedding_backbone_screen_v4 as screen  # noqa: E402
 
 SCHEMA_WEIGHTS = (0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60)
+FINE_STRATEGIES = {
+    f"fusion_schema_{weight:.2f}": weight
+    for weight in SCHEMA_WEIGHTS
+}
 
 
 def run(cases: list[dict]) -> dict:
     _config, static_embedder, query_embedder = screen._build_embedders("bge-m3")
     original = dict(dual.WEIGHTED_STRATEGIES)
     try:
-        dual.WEIGHTED_STRATEGIES = {
-            f"fusion_schema_{weight:.2f}": weight
-            for weight in SCHEMA_WEIGHTS
-        }
+        dual.WEIGHTED_STRATEGIES = dict(FINE_STRATEGIES)
         result = dual.analyze(
             cases,
             static_embedder=static_embedder,
@@ -38,7 +39,7 @@ def run(cases: list[dict]) -> dict:
     strict: list[dict] = []
     secondary: list[dict] = []
     for strategy, modes in result["winner_only_route_local_frontiers"].items():
-        if strategy not in dual.WEIGHTED_STRATEGIES:
+        if strategy not in FINE_STRATEGIES:
             continue
         points = modes["none"]
         for point in points:
