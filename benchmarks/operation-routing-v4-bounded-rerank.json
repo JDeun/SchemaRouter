@@ -1,0 +1,41 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "architecture": "bounded-retrieve-rerank-v1",
+  "status": "architecture_frozen_before_execution",
+  "base_revision": "6f083a70c27d31ded30e2e0704c65ac98f11ed5b",
+  "principles": [
+    "Schema and policy remain the only execution authority.",
+    "Semantic recall may only retrieve registered route candidates.",
+    "Pairwise reranking may only select among the retrieved authorized candidates.",
+    "Unsupported requests fail closed through calibrated abstention.",
+    "No backend may synthesize a tool, endpoint, field, argument, credential, or side effect."
+  ],
+  "candidate_architecture": {
+    "semantic_recall_limit": 4,
+    "candidate_fit_gate": false,
+    "operation_fit_scope": "all_candidates",
+    "operation_fit_backend": "pairwise_bge_contrastive",
+    "operation_fit_select_accepted": true,
+    "endpoint_disambiguation": false,
+    "route_local_thresholds": "selected only from fresh v4 tuning-eligible development evidence before candidate freeze"
+  },
+  "motivation": [
+    "Wrong-tool errors are rare in the current baseline, while operation-fit abstention and wrong-endpoint errors dominate.",
+    "The existing candidate-fit stage only suppresses candidates and does not use its accepted option to route.",
+    "A bounded retrieve-then-rerank surface is simpler than the current gate cascade and gives the strongest semantic scorer direct control over the final registered route.",
+    "Route-local calibration is retained as a safety layer because global scalar thresholds cannot satisfy quality and unsupported-rejection goals simultaneously."
+  ],
+  "development_gates": {
+    "supported_exact_route_accuracy_min": 0.70,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0.0,
+    "execution_errors_max": 0
+  },
+  "long_term_target": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "unsupported_rejection_target": "0.97-0.99",
+    "false_route_rate_max": 0.01
+  },
+  "policy": "Architecture may be implemented before score-surface diagnostics complete, but no route-local threshold map may be frozen until the preregistered tuning-eligible diagnostic is analyzed. Calibration and blind corpora remain forbidden for tuning."
+}
