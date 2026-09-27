@@ -1,0 +1,121 @@
+{
+  "cycle": "0.10-operation-graph-projection-v3",
+  "stage": "graph_corroboration_development",
+  "status": "development_corroboration_no_candidate_passed",
+  "source_revision": "7955ae2d1d52ce2d03cdf678cd22029229730880",
+  "workflow_run_id": 36282239887,
+  "corpus_sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6",
+  "ranked_plus_siblings": {
+    "supported_operation_routed_accuracy": 0.6328125,
+    "near_domain_unsupported_operation_rejection": 0.953125,
+    "out_of_domain_rejection": 1,
+    "harmonic_mean_supported_rejection": 0.760621921182266,
+    "false_routes": 18,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "mean_latency_ms": 564.679,
+    "paired_baseline_mean_latency_ms": 606.6213058333334,
+    "paired_mean_delta_ms": -41.9424825,
+    "paired_mean_delta_bootstrap_ci95_ms": [
+      -53.19637489583334,
+      -31.899611583333336
+    ],
+    "baseline_p95_ms": 784.22015,
+    "candidate_p95_ms": 796.6590500000001,
+    "p95_delta_ms": 12.438900000000103,
+    "direct_seed_accepts": 15,
+    "direct_seed_accept_precision": 1,
+    "propagation_accepts": 124,
+    "propagation_accept_precision": 1,
+    "corroboration_accepts": 31,
+    "corroboration_accept_precision": 0.9354838709677419,
+    "corroboration_unsupported_accepts": 0,
+    "candidate_gains": 47,
+    "candidate_losses": 5,
+    "gates": {
+      "supported_operation_floor": true,
+      "near_domain_unsupported_rejection_floor": true,
+      "false_route_non_regression": true,
+      "invalid_plan_zero": true,
+      "execution_errors_zero": true,
+      "paired_mean_latency_improvement": true,
+      "paired_p95_latency_non_regression": false
+    }
+  },
+  "ranked_only": {
+    "supported_operation_routed_accuracy": 0.6328125,
+    "near_domain_unsupported_operation_rejection": 0.953125,
+    "out_of_domain_rejection": 1,
+    "harmonic_mean_supported_rejection": 0.760621921182266,
+    "false_routes": 18,
+    "invalid_plan_rate": 0,
+    "errors": 0,
+    "mean_latency_ms": 492.55,
+    "paired_baseline_mean_latency_ms": 533.2013591666667,
+    "paired_mean_delta_ms": -40.650929166666664,
+    "paired_mean_delta_bootstrap_ci95_ms": [
+      -50.50911664583333,
+      -31.832315395833334
+    ],
+    "baseline_p95_ms": 695.03795,
+    "candidate_p95_ms": 699.5618000000001,
+    "p95_delta_ms": 4.523850000000039,
+    "direct_seed_accepts": 15,
+    "direct_seed_accept_precision": 1,
+    "propagation_accepts": 125,
+    "propagation_accept_precision": 1,
+    "corroboration_accepts": 30,
+    "corroboration_accept_precision": 0.9333333333333333,
+    "corroboration_unsupported_accepts": 0,
+    "corroboration_disagreement_rejects": 12,
+    "candidate_gains": 47,
+    "candidate_losses": 5,
+    "gates": {
+      "supported_operation_floor": true,
+      "near_domain_unsupported_rejection_floor": true,
+      "false_route_non_regression": true,
+      "invalid_plan_zero": true,
+      "execution_errors_zero": true,
+      "paired_mean_latency_improvement": true,
+      "paired_p95_latency_non_regression": false
+    }
+  },
+  "slice_diagnosis": {
+    "ranked_only_supported_language_accuracy": {
+      "en": 0.859375,
+      "ko": 0.4609375,
+      "es": 0.65625,
+      "ja": 0.609375,
+      "de": 0.4765625,
+      "mixed": 0.734375
+    },
+    "ranked_only_regressed_route": {
+      "route": "weather.forecast",
+      "baseline_accuracy": 0.8333333333333334,
+      "candidate_accuracy": 0.7708333333333334
+    },
+    "paired_losses": {
+      "count": 5,
+      "concentration": "all five losses are weather.forecast cases in Korean/Japanese query variants"
+    },
+    "corroboration_wrong_routes": [
+      {
+        "expected": "papers.search",
+        "predicted": "materials.search",
+        "language": "ko"
+      },
+      {
+        "expected": "finance.quote",
+        "predicted": "inventory.search",
+        "language": "ja"
+      }
+    ],
+    "tail_observation": "The candidate p95 tail is dominated by graph-semantic-seed abstention followed by the unchanged downstream semantic recall/capability-fit/BGE path."
+  },
+  "promotion": {
+    "candidate_frozen": false,
+    "calibration_allowed": false,
+    "blind_v15_allowed": false
+  },
+  "next_stage": "behavior_preserving_embedding_reuse_development"
+}
