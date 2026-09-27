@@ -569,3 +569,39 @@ Every empirical result should preserve, where available:
 Rejected and invalidated experiments remain part of the record.
 
 The machine-readable ledger is the canonical source for generating future paper tables and reproducibility appendices.
+
+
+## 17. Complete repository-history audit
+
+The mainline history has been enumerated from the initial commit through the research-cycle baseline used for this reconstruction.
+
+Canonical audit manifest:
+
+- `benchmarks/repository-history-audit.json`
+- mainline commits enumerated: **140**
+- initial revision: `5691c3c922f0209231f112c06096fe8744681fc5`
+- audited main head: `526d0c588bbec053fba54c55d982cc67d2a74d56`
+
+Subject-index counts at the audit point:
+
+- 42 feature commits
+- 21 fixes
+- 14 research commits
+- 10 releases
+- 10 documentation commits
+- 9 test commits
+- 7 CI commits
+- 4 security commits
+- 4 benchmark commits
+- 3 performance commits
+- 15 chores
+- 1 initial/other commit
+
+This enumeration is deliberately broader than the narrative above. It prevents the research record from silently excluding early implementation work just because it predated the formal 0.10/0.11 experiment manifests.
+
+Rejected and unmerged research branches are not expected to appear in mainline history. They remain represented independently in `benchmarks/research-experiment-ledger.json` through PR, branch, workflow-run, artifact, and decision provenance.
+
+The audit therefore has two complementary axes:
+
+1. **mainline history completeness** — every commit from repository inception is enumerated;
+2. **research evidence completeness** — material unmerged/rejected experiments remain in the experiment ledger instead of disappearing when their PR is closed.
