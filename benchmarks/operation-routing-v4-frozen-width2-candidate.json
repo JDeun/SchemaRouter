@@ -1,0 +1,117 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "candidate": "bounded-rerank-width2-winner-score-budget12-v1",
+  "work_item": 224,
+  "parent_work_item": 197,
+  "status": "frozen_before_executable_development_run",
+  "frozen_at": "2026-09-27",
+  "selection_provenance": {
+    "width_selection_work_item": 214,
+    "width_workflow_run_id": 36313078885,
+    "width2_artifact_id": 10930665000,
+    "width2_artifact_sha256": "c6a2e794d4cee5d0d6862e317b17b153d688c6606d42aea7122f988833dce629",
+    "width2_source_revision": "9f4dbff423cdcb9151d00d1b15586f9b3d766235",
+    "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "rule": "Choose the smallest recall width whose winner-only false-budget-12 frontier reaches >=0.70 supported exact-route, <=0.02 canonical false-route, >=0.96 near-domain rejection lower bound, and zero invalid plans/errors. Width 2 passed, so width 3 cannot change the selection."
+  },
+  "frozen_architecture": {
+    "semantic_recall": {
+      "backend": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+      "limit": 2,
+      "min_similarity": -1,
+      "min_margin": 0
+    },
+    "candidate_fit": false,
+    "operation_fit": {
+      "scope": "all_candidates",
+      "backend": "BAAI/bge-reranker-v2-m3",
+      "contrastive_beta": 1,
+      "accepted_selector": true,
+      "threshold_application": "rank_then_gate",
+      "global_min_score": 0,
+      "global_min_margin": 0,
+      "route_local_min_score": {
+        "calendar.create": 0.0004207907551704739,
+        "calendar.list": 0.0004693468047293043,
+        "finance.history": 0.000041384542881440935,
+        "finance.quote": 0.013738197840866963,
+        "inventory.search": 0.007700659268386702,
+        "inventory.update": 0.016340143422138256,
+        "materials.search": 0.000239197628484152,
+        "materials.structure": 0.0018750830305426453,
+        "papers.citations": 0.0019093025002166364,
+        "papers.search": 0.0014375698120041836,
+        "support.create_ticket": 0.7359367946501093,
+        "support.search": 0.00413790789853153,
+        "users.lookup": 0.0016116826714426718,
+        "users.update": 0.0004977282132914147,
+        "weather.current": 0.016015052007939637,
+        "weather.forecast": 0.24072465268769136
+      },
+      "route_local_min_margin": {}
+    },
+    "endpoint_disambiguation": false,
+    "typed_evidence_projector": "available in stack but not wired into this candidate",
+    "negative_capability_model": false,
+    "nli_boundary": false,
+    "authority": "Only registered and currently authorized recalled routes may be scored or selected. Boundary failure abstains and never falls through to rank 2."
+  },
+  "development_projection": {
+    "cases": 1800,
+    "supported_cases": 1152,
+    "near_domain_unsupported_cases": 576,
+    "out_of_domain_cases": 72,
+    "supported_exact_route_accuracy": 0.7317708333333334,
+    "supported_correct": 843,
+    "near_domain_unsupported_rejection": 0.9809027777777778,
+    "out_of_domain_rejection": 0.9861111111111112,
+    "false_routes": 12,
+    "canonical_false_route_rate": 0.018518518518518517,
+    "wrong_tools": 7,
+    "wrong_endpoints": 27,
+    "missed_routes": 275,
+    "invalid_plan_rate": 0,
+    "execution_errors": 0
+  },
+  "paired_measurement_contract": {
+    "work_item": 222,
+    "pull_request": 223,
+    "warmup_cases": 24,
+    "same_process": true,
+    "shared_model_cache": true,
+    "order": "alternate baseline-first and candidate-first by case index",
+    "baseline": {
+      "semantic_recall_limit": 2,
+      "candidate_fit_min_similarity": 0.25,
+      "operation_fit_scope": "primary_tool",
+      "operation_fit_min_score": 0.01,
+      "operation_fit_min_margin": 0,
+      "operation_fit_select_accepted": false,
+      "endpoint_disambiguation_min_margin": 0.03
+    }
+  },
+  "development_gates": {
+    "supported_exact_route_accuracy_min": 0.7,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0,
+    "paired_mean_latency_must_not_regress": true,
+    "paired_p95_latency_must_not_regress": true,
+    "promotion_requires_all_gates": true
+  },
+  "data_policy": {
+    "eligible": [
+      "fresh v4 development corpus only"
+    ],
+    "forbidden": [
+      "v5 calibration",
+      "v12 design-known stress",
+      "v13 consumed blind-final",
+      "0.10 graph fresh calibration",
+      "future v4 calibration",
+      "future v4 blind-final"
+    ]
+  },
+  "decision_rule": "If every development gate passes in the counterbalanced executable run, freeze this exact source/configuration for fresh calibration under #198. If any gate fails, do not generate calibration and continue development using only tuning-eligible DEV evidence."
+}
