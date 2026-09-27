@@ -1,0 +1,162 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "bge-m3-strict-base-zero-additional-false-rescue-v1",
+  "work_item": 255,
+  "parent_work_items": [
+    197,
+    242,
+    245,
+    246
+  ],
+  "status": "preregistered_before_execution",
+  "execution_condition": {
+    "condition": "#246 has no strict 85/97/1 pass",
+    "satisfied": true,
+    "source_workflow_run_id": 36324755106,
+    "source_artifact_id": 10934145256,
+    "source_artifact_sha256": "60dfbb1d32f1f27873bd8fad4aa4888af80856365196e3ab6fb5be6b1e7f0af7"
+  },
+  "base_candidate": {
+    "ranker_model": "BAAI/bge-m3",
+    "ranker_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "selection": "global registered-route rank-1",
+    "threshold_semantics": "winner-only rank-then-gate",
+    "selected_false_budget": 6,
+    "observed_dev": {
+      "supported_correct": 965,
+      "supported_exact_route_accuracy": 0.8376736111111112,
+      "near_domain_unsupported_rejection": 0.9895833333333334,
+      "false_routes": 6,
+      "false_route_rate": 0.009259259259259259,
+      "p95_latency_ms": 195.9703148
+    },
+    "accepted_decisions_immutable": true,
+    "raw_winner_immutable": true,
+    "rank2_fallback": false,
+    "thresholds": {
+      "calendar.create": {
+        "min_score": 0.5207915599172316,
+        "min_margin": 0
+      },
+      "calendar.list": {
+        "min_score": 0.5549226120493271,
+        "min_margin": 0
+      },
+      "finance.history": {
+        "min_score": 0.44227107387387427,
+        "min_margin": 0
+      },
+      "finance.quote": {
+        "min_score": 0.4893408565908712,
+        "min_margin": 0.02
+      },
+      "inventory.search": {
+        "min_score": 0.5359938169033298,
+        "min_margin": 0
+      },
+      "inventory.update": {
+        "min_score": 0.5376021992095548,
+        "min_margin": 0
+      },
+      "materials.search": {
+        "min_score": 0.44967027419294425,
+        "min_margin": 0
+      },
+      "materials.structure": {
+        "min_score": 0.42728435995293546,
+        "min_margin": 0
+      },
+      "papers.citations": {
+        "min_score": 0.46196385844297233,
+        "min_margin": 0
+      },
+      "papers.search": {
+        "min_score": 0.4590736815129689,
+        "min_margin": 0
+      },
+      "support.create_ticket": {
+        "min_score": 0.5326329467130329,
+        "min_margin": 0
+      },
+      "support.search": {
+        "min_score": 0.4830030958690135,
+        "min_margin": 0
+      },
+      "users.lookup": {
+        "min_score": 0.49123020769781134,
+        "min_margin": 0
+      },
+      "users.update": {
+        "min_score": 0.5230594574881653,
+        "min_margin": 0
+      },
+      "weather.current": {
+        "min_score": 0.5397048468861396,
+        "min_margin": 0.02
+      },
+      "weather.forecast": {
+        "min_score": 0.5050024291985815,
+        "min_margin": 0
+      }
+    }
+  },
+  "validator": {
+    "model": "BAAI/bge-reranker-v2-m3",
+    "revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+    "max_length": 256,
+    "surface": [
+      "normalized endpoint action",
+      "trusted operation_aliases",
+      "endpoint description"
+    ],
+    "eligible_cases": "base gate rejections only",
+    "decision": "rescue same raw winner or preserve abstention",
+    "score": "sigmoid(single-pair sequence-classification logit)"
+  },
+  "threshold_search": {
+    "development_only": true,
+    "global_threshold": true,
+    "route_local_thresholds": true,
+    "rescue_false_budgets": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "primary_target_rescue_false_budget": 0,
+    "population_rule": "compose immutable base acceptances plus same-winner rescues over complete fixed 1800-case DEV population"
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "calibration_or_blind_forbidden": true
+  },
+  "primary_target": {
+    "additional_false_routes_max": 0,
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "total_false_route_rate_max": 0.01,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0
+  },
+  "promotion_policy": "Diagnostic only. A passing zero-additional-false profile must be frozen in a separate executable candidate before calibration.",
+  "forbidden": [
+    "changing base fusion weight",
+    "changing base route-local threshold map",
+    "changing a base-accepted decision",
+    "selecting rank 2",
+    "changing the raw winner",
+    "validator invocation on base-accepted traffic",
+    "calibration data",
+    "blind-final data",
+    "pseudo-routes",
+    "creating execution authority"
+  ]
+}
