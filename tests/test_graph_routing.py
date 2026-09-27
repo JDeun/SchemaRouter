@@ -897,7 +897,10 @@ def test_graph_corroboration_disagreement_is_negative_evidence_and_rejects() -> 
     assert propagation.calls == 1
     assert downstream.calls == 0
     assert plan.calls == []
-    assert any("bounded pairwise top route was weather.current" in warning for warning in plan.warnings)
+    assert any(
+        "bounded pairwise top route was weather.current" in warning
+        for warning in plan.warnings
+    )
 
 
 @pytest.mark.asyncio
