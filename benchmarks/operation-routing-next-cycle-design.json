@@ -1,0 +1,93 @@
+{
+  "cycle": "post-0.10-operation-routing-quality-next",
+  "stage": "design_only",
+  "status": "design_only_no_corpus_generated",
+  "objective": {
+    "primary": "Raise supported exact tool.endpoint accuracy while tightening safety toward the standing production target.",
+    "supported_exact_route_accuracy_min": 0.7,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0,
+    "execution_authority_violation_rate_max": 0,
+    "latency": "paired mean must not regress; p95 must not regress"
+  },
+  "standing_production_target_reference": "benchmarks/operation-routing-production-targets.json",
+  "design_principles": [
+    "Schema graph remains the sole source of routing authority.",
+    "Semantic models may attach evidence only to registered graph nodes/edges.",
+    "Prefer safe abstention to an executable false route.",
+    "No benchmark-authored alias, synonym, or unsupported-operation term may be added merely because it appears in development failures.",
+    "Language normalization and semantic representation changes must be generic and reusable across routes.",
+    "Per-language and per-route worst-case slices are first-class promotion evidence."
+  ],
+  "candidate_research_axes": [
+    {
+      "id": "multiview-node-representation",
+      "description": "Separate tool-domain, operation-action, response-field/concept, and qualifier views instead of one concatenated embedding surface; combine only over graph-authorized nodes."
+    },
+    {
+      "id": "graph-consistency-score",
+      "description": "Require agreement across operation and field/concept graph paths before direct accept; disagreement lowers confidence or abstains."
+    },
+    {
+      "id": "multilingual-canonicalization",
+      "description": "Use generic language-independent normalization or multilingual semantic representations without benchmark-specific phrase tables."
+    },
+    {
+      "id": "hard-negative-contrastive-training-surface",
+      "description": "Evaluate route siblings and near-domain unsupported operations as explicit negatives while keeping training/tuning data fully separate from calibration/blind corpora."
+    },
+    {
+      "id": "hierarchical-routing",
+      "description": "Resolve tool domain first, then operation within the authorized tool subgraph, with independent abstention thresholds and no cross-tool authority creation."
+    },
+    {
+      "id": "uncertainty-calibration",
+      "description": "Calibrate direct-accept versus rerank versus abstain boundaries using development data only, with reliability curves and expected calibration error reported."
+    }
+  ],
+  "evaluation_requirements": {
+    "fresh_development_corpus": "required",
+    "fresh_calibration_corpus": "required after candidate freeze",
+    "fresh_blind_corpus": "required only after calibration pass",
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "report_slices": [
+      "overall supported exact-route accuracy",
+      "near-domain unsupported rejection",
+      "false-route rate",
+      "per-language supported accuracy",
+      "per-route supported accuracy",
+      "worst-language accuracy",
+      "worst-route accuracy",
+      "paired correctness gains/losses",
+      "mean/p50/p95 latency",
+      "invalid plans",
+      "execution errors"
+    ]
+  },
+  "research_hygiene": {
+    "forbidden_for_tuning": [
+      "consumed v5 calibration",
+      "design-known v12",
+      "consumed v13 blind-final",
+      "retired v14",
+      "future v15 unless/until explicitly consumed by its frozen candidate",
+      "any future calibration or blind corpus"
+    ],
+    "current_0_10_graph_dev": "may be used only for retrospective diagnosis of the completed 0.10 cycle; do not reuse it as the sole selection corpus for the next cycle",
+    "corpus_generation": "Do not generate the next cycle's fresh corpora until the current graph-projection cycle is formally closed."
+  },
+  "promotion": {
+    "requires_all_gates": true,
+    "candidate_freeze_before_calibration": true,
+    "calibration_pass_before_blind_generation": true,
+    "no_retroactive_gate_changes": true
+  }
+}
