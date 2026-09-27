@@ -403,6 +403,35 @@ input text. This makes it compatible with application-owned SentenceTransformers
 semantic-router encoders, remote embedding APIs, or custom domain encoders without adding any of
 those packages to SchemaRouter's core dependency graph.
 
+### Cached static option embeddings
+
+For stable catalogs, `CachedEmbeddingDecisionBackend` preserves the same bounded cosine-ranking
+contract while reusing vectors for option texts that have already been embedded:
+
+```python
+from schemarouter import CachedEmbeddingDecisionBackend
+
+backend = CachedEmbeddingDecisionBackend(
+    embed_batch,
+    min_similarity=0.35,
+    min_margin=0.05,
+)
+```
+
+The cache key includes the option ID and the exact formatted option text. If a trusted schema
+description changes, the changed text produces a cache miss rather than silently reusing the old
+vector. `clear_cache()` explicitly discards all stored option vectors and is appropriate after
+application-controlled lifecycle changes.
+
+Only **static option vectors** are cached. The current query is embedded on every decision call.
+This keeps request text out of the long-lived option cache and means multiple decision stages that
+use the same embedding model may still recompute the query vector. Applications should therefore
+treat this backend as a catalog-embedding optimization, not a general request cache.
+
+Cached vectors remain non-authoritative: caching cannot add an option, alter the offered option IDs,
+or grant tool/endpoint/field/argument authority. Sync and async embedders follow the same validated
+bounded-decision contract.
+
 The default option-text formatter does not pass `DecisionOption.metadata` to the embedder. A
 custom `option_text` callback is trusted application code and may intentionally choose a different
 data boundary. A zero-norm vector, NaN/Infinity, dimension mismatch, wrong batch size, or malformed
