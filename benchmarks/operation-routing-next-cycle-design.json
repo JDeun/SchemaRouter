@@ -22,28 +22,28 @@
   ],
   "candidate_research_axes": [
     {
-      "id": "multiview-node-representation",
-      "description": "Separate tool-domain, operation-action, response-field/concept, and qualifier views instead of one concatenated embedding surface; combine only over graph-authorized nodes."
+      "id": "typed-multiview-evidence",
+      "description": "Represent tool-domain, operation-action, response-field/concept, qualifier, and negative-capability evidence as distinct score kinds. Never compare or average incompatible raw scores directly."
     },
     {
-      "id": "graph-consistency-score",
-      "description": "Require agreement across operation and field/concept graph paths before direct accept; disagreement lowers confidence or abstains."
+      "id": "unknown-aware-projection",
+      "description": "Preserve missing/failed signal evidence as unknown rather than zero. Each decision surface must declare whether unknown means no-match, escalation, or fail-closed."
+    },
+    {
+      "id": "hierarchical-authorized-filtering",
+      "description": "Filter the trusted schema graph first by caller/policy/health/tool-domain evidence, then resolve operation only inside that authorized subset."
+    },
+    {
+      "id": "negative-capability-boundaries",
+      "description": "Model natural unsupported-operation families as explicit negative capability evidence without benchmark-specific keyword lists or model-authored routes."
+    },
+    {
+      "id": "boundary-specific-calibration",
+      "description": "Calibrate direct-accept, rerank, and abstain thresholds per evidence/boundary kind instead of using one universal semantic threshold."
     },
     {
       "id": "multilingual-canonicalization",
-      "description": "Use generic language-independent normalization or multilingual semantic representations without benchmark-specific phrase tables."
-    },
-    {
-      "id": "hard-negative-contrastive-training-surface",
-      "description": "Evaluate route siblings and near-domain unsupported operations as explicit negatives while keeping training/tuning data fully separate from calibration/blind corpora."
-    },
-    {
-      "id": "hierarchical-routing",
-      "description": "Resolve tool domain first, then operation within the authorized tool subgraph, with independent abstention thresholds and no cross-tool authority creation."
-    },
-    {
-      "id": "uncertainty-calibration",
-      "description": "Calibrate direct-accept versus rerank versus abstain boundaries using development data only, with reliability curves and expected calibration error reported."
+      "description": "Improve Korean/Japanese and code-switched operation semantics using generic multilingual representations or canonicalization, validated with family-level holdout."
     }
   ],
   "evaluation_requirements": {
@@ -120,5 +120,36 @@
       ]
     },
     "design_implication": "Prioritize multilingual tool-domain separation before within-tool operation discrimination. Test hierarchical or multi-view graph evidence on fresh next-cycle development data rather than adding benchmark-specific aliases."
+  },
+  "source_level_ecosystem_audit": {
+    "document": "docs/project/router-ecosystem-source-code-audit.md",
+    "inspected_implementations": [
+      "aurelio-labs/semantic-router: BaseRouter/SemanticRouter/HybridRouter",
+      "lm-sys/RouteLLM: Router and Controller",
+      "run-llama/llama_index: RouterQueryEngine and ToolRetrieverRouterQueryEngine",
+      "deepset-ai/haystack: ConditionalRouter",
+      "BerriAI/litellm: QualityRouter and capability classifier",
+      "vllm-project/semantic-router: signal/projection/decision engine and tool selection config",
+      "langchain-ai/langgraph: conditional edges and bounded path maps"
+    ],
+    "adopted_patterns": [
+      "route/candidate filtering before semantic selection",
+      "separate deterministic rules from probabilistic evidence",
+      "explicit abstain/no-route outcome",
+      "typed structured uncertainty and boundary-specific thresholds",
+      "distinct signal/error/unknown states",
+      "do not compare confidence across incompatible score kinds",
+      "fail closed on unavailable critical evidence",
+      "bounded semantic tool filtering rather than authority creation",
+      "predeclared graph destinations remain execution topology"
+    ]
+  },
+  "prior_cycle_evidence": {
+    "cycle": "0.10-operation-graph-projection-v3",
+    "final_status": "fresh_calibration_rejected_cycle_closed",
+    "frozen_candidate_supported_accuracy": 0.6875,
+    "frozen_candidate_near_domain_unsupported_rejection": 0.9166666666666666,
+    "frozen_candidate_false_routes": 16,
+    "lesson": "Natural fresh calibration improved supported routing and latency but exposed insufficient unsupported-capability boundary modeling. Do not tune the frozen candidate; start fresh development."
   }
 }
