@@ -516,7 +516,11 @@
         "structured PlanExplanation without model chain-of-thought",
         "parallel read-only fan-out",
         "health recovery without permanent route blacklisting",
-        "generic none_of_the_above sentinel for empty-recall model routing was removed after full-corpus Laya evidence showed it was counterproductive; calibrated confidence/abstention remained the preferred no-route mechanism"
+        "generic none_of_the_above sentinel for empty-recall model routing was removed after full-corpus Laya evidence showed it was counterproductive; calibrated confidence/abstention remained the preferred no-route mechanism",
+        "retained multi-run benchmark history and machine-readable compatibility evidence",
+        "on-demand reproducible full-corpus research benchmark workflow",
+        "source revision + corpus SHA-256 + repeat/case-limit reproducibility manifests",
+        "opt-in empty lexical recall recovery and calibrated candidate-abstention/threshold tooling"
       ],
       "status": "retained"
     },
@@ -531,7 +535,10 @@
         "endpoint disambiguation inside the leading tool domain",
         "trusted explicit operation aliases only; no model-authored aliases",
         "multi-call coverage/corroboration/evidence revalidation",
-        "fresh holdout progression and explicit consumed-evidence rules"
+        "fresh holdout progression and explicit consumed-evidence rules",
+        "provenance-aware multi-provider evidence aggregation",
+        "routing error taxonomy and failure-stage attribution",
+        "operation-fit semantic surface simplified on v5 development/calibration before one-shot v10 generalization"
       ],
       "status": "retained_with_later_research_refinement"
     },
