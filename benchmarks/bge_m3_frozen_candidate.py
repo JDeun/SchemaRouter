@@ -21,26 +21,27 @@ from schemarouter.decisions import (
 
 MODEL_NAME = "BAAI/bge-m3"
 MODEL_REVISION = "5617a9f61b028005a4858fdac845db406aefb181"
-SCHEMA_WEIGHT = 0.50
-ACTION_WEIGHT = 0.50
+SCHEMA_WEIGHT = 0.55
+ACTION_WEIGHT = 0.45
+BOUNDARY_EPSILON = 1e-6
 
 FROZEN_THRESHOLDS: dict[str, dict[str, float]] = {
-    "calendar.create": {"min_score": 0.5292801944276883, "min_margin": 0.0},
-    "calendar.list": {"min_score": 0.5621905218231467, "min_margin": 0.0},
-    "finance.history": {"min_score": 0.4707406423828726, "min_margin": 0.0},
-    "finance.quote": {"min_score": 0.4954960146759477, "min_margin": 0.02},
-    "inventory.search": {"min_score": 0.5399746603642237, "min_margin": 0.0},
-    "inventory.update": {"min_score": 0.5417961416033495, "min_margin": 0.0},
-    "materials.search": {"min_score": 0.4501598106579401, "min_margin": 0.0},
-    "materials.structure": {"min_score": 0.4309823790571844, "min_margin": 0.0},
-    "papers.citations": {"min_score": 0.46308739913552904, "min_margin": 0.0},
-    "papers.search": {"min_score": 0.46760352196230276, "min_margin": 0.0},
-    "support.create_ticket": {"min_score": 0.5367359981974534, "min_margin": 0.0},
-    "support.search": {"min_score": 0.48680333676555776, "min_margin": 0.0},
-    "users.lookup": {"min_score": 0.4955420233706772, "min_margin": 0.0},
-    "users.update": {"min_score": 0.5130788502270399, "min_margin": 0.0},
-    "weather.current": {"min_score": 0.5432413821663619, "min_margin": 0.02},
-    "weather.forecast": {"min_score": 0.5125866061513324, "min_margin": 0.0},
+    "calendar.create": {"min_score": 0.5207915599172316, "min_margin": 0.0},
+    "calendar.list": {"min_score": 0.5549226120493271, "min_margin": 0.0},
+    "finance.history": {"min_score": 0.44227107387387427, "min_margin": 0.0},
+    "finance.quote": {"min_score": 0.4893408565908712, "min_margin": 0.02},
+    "inventory.search": {"min_score": 0.5359938169033298, "min_margin": 0.0},
+    "inventory.update": {"min_score": 0.5376021992095548, "min_margin": 0.0},
+    "materials.search": {"min_score": 0.44967027419294425, "min_margin": 0.0},
+    "materials.structure": {"min_score": 0.42728435995293546, "min_margin": 0.0},
+    "papers.citations": {"min_score": 0.46196385844297233, "min_margin": 0.0},
+    "papers.search": {"min_score": 0.4590736815129689, "min_margin": 0.0},
+    "support.create_ticket": {"min_score": 0.5326329467130329, "min_margin": 0.0},
+    "support.search": {"min_score": 0.4830030958690135, "min_margin": 0.0},
+    "users.lookup": {"min_score": 0.49123020769781134, "min_margin": 0.0},
+    "users.update": {"min_score": 0.5230594574881653, "min_margin": 0.0},
+    "weather.current": {"min_score": 0.5397048468861396, "min_margin": 0.02},
+    "weather.forecast": {"min_score": 0.5050024291985815, "min_margin": 0.0},
 }
 
 
@@ -202,8 +203,8 @@ class FrozenBgeM3DualViewBackend:
         margin = top_score - second_score if second_score is not None else 2.0
         boundary = FROZEN_THRESHOLDS[top_route]
         accepted = (
-            top_score >= boundary["min_score"]
-            and margin >= boundary["min_margin"]
+            top_score + BOUNDARY_EPSILON >= boundary["min_score"]
+            and margin + BOUNDARY_EPSILON >= boundary["min_margin"]
         )
         return {
             "top_route": top_route,
@@ -274,7 +275,8 @@ class FrozenBgeM3DualViewBackend:
                 "model_revision": MODEL_REVISION,
                 "schema_weight": SCHEMA_WEIGHT,
                 "action_weight": ACTION_WEIGHT,
-                "threshold_profile": "false-budget-6",
+                "threshold_profile": "false-budget-6-robust-epsilon",
+                "boundary_epsilon": BOUNDARY_EPSILON,
             },
         )
         self.last_result = validate_decision(request, decision)
