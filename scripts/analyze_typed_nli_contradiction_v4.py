@@ -35,7 +35,11 @@ from benchmarks.multilingual_nli_typed import (  # noqa: E402
 from benchmarks.multilingual_nli_typed import (  # noqa: E402
     MODEL_REVISION as NLI_MODEL_REVISION,
 )
-from benchmarks.multilingual_nli_typed import score_pair_typed, unload  # noqa: E402
+from benchmarks.multilingual_nli_typed import (  # noqa: E402
+    score_pair_typed,
+    score_pairs_typed,
+    unload,
+)
 
 CONTRADICTION_THRESHOLDS = (0.50, 0.65, 0.80, 0.90, 0.95, 0.98, 0.99)
 SCHEMA_WEIGHT = 0.55
@@ -406,6 +410,27 @@ def evaluate(cases: list[dict[str, Any]]) -> dict[str, Any]:
             },
         }
 
+    batch_sample = sorted(
+        rows,
+        key=lambda row: str(row["case_id"]),
+    )[: min(128, len(rows))]
+    batch_pairs = [
+        (
+            str(row["query"]),
+            surfaces[str(row["raw_top_route"])],
+        )
+        for row in batch_sample
+    ]
+    batch_started = time.perf_counter_ns()
+    batch_scores = score_pairs_typed(batch_pairs) if batch_pairs else []
+    batch_latency_ms = (
+        (time.perf_counter_ns() - batch_started) / 1_000_000
+        if batch_pairs
+        else 0.0
+    )
+    if len(batch_scores) != len(batch_pairs):
+        raise RuntimeError("typed NLI batch score count mismatch")
+
     threshold_results = [
         _metrics_at_threshold(rows, threshold)
         for threshold in CONTRADICTION_THRESHOLDS
@@ -427,6 +452,13 @@ def evaluate(cases: list[dict[str, Any]]) -> dict[str, Any]:
         "ranker_ms": _distribution(ranker_latencies),
         "nli_single_pair_ms": _distribution(nli_latencies),
         "sequential_ms": _distribution(sequential_latencies),
+        "nli_batch_sample_cases": len(batch_pairs),
+        "nli_batch_latency_ms": batch_latency_ms,
+        "nli_batch_cases_per_second": (
+            len(batch_pairs) / (batch_latency_ms / 1000.0)
+            if batch_latency_ms > 0
+            else None
+        ),
     }
     p95 = latency["sequential_ms"]["p95"]
     candidate_worthy = [
