@@ -1,0 +1,63 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "ablation": "route-local-operation-fit-safety-v1",
+  "status": "design_frozen_before_execution",
+  "parent_work_item": 197,
+  "work_item": 202,
+  "base_revision": "6f083a70c27d31ded30e2e0704c65ac98f11ed5b",
+  "source_evidence": {
+    "selector_workflow_run_id": 36305969034,
+    "selector_artifact_id": 10927253262,
+    "selector_artifact_sha256": "7048a45e5bcc23a1cdd77558e47f86f9d2b2077b542a66cd74bd7de2377f948a",
+    "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "tuning_eligible": true
+  },
+  "research_question": "How much safety can route-local operation-fit thresholds recover while retaining the accepted-selector endpoint-accuracy gain, without changing models or execution authority?",
+  "architecture": [
+    "Keep the accepted operation-fit selector from PR #190.",
+    "Keep candidate recall, candidate-fit, BGE scorer, endpoint descriptions, and endpoint-disambiguation configuration unchanged.",
+    "Set the global operation-fit min score to 0.0 and apply preregistered per-route min-score maps.",
+    "Thresholds affect only already-registered operation IDs and cannot create routes or authority.",
+    "Operation-fit abstention remains fail-closed.",
+    "No calibration, blind, or consumed predecessor rows are used."
+  ],
+  "candidate_maps": [
+    {
+      "name": "dev-safety-budget-12",
+      "threshold_file": "benchmarks/operation-routing-v4-route-local-thresholds.json#dev_safety_budget_12",
+      "objective": "maximize development supported top-route retention subject to <=12 unsupported false accepts in the top-score heuristic",
+      "intended_false_route_ceiling": 0.02
+    },
+    {
+      "name": "production-safety-budget-6",
+      "threshold_file": "benchmarks/operation-routing-v4-route-local-thresholds.json#production_safety_budget_6",
+      "objective": "maximize development supported top-route retention subject to <=6 unsupported false accepts in the top-score heuristic",
+      "intended_false_route_ceiling": 0.01
+    }
+  ],
+  "evaluation": {
+    "corpus": "fresh v4 1800-case development corpus only",
+    "note": "Threshold derivation and evaluation both use tuning-eligible development evidence; resulting metrics are development selection evidence and require fresh calibration after freeze.",
+    "metrics": [
+      "supported exact-route accuracy",
+      "near-domain unsupported rejection",
+      "false-route rate/count",
+      "missed-route/wrong-tool/wrong-endpoint counts",
+      "per-language supported accuracy",
+      "per-route supported accuracy",
+      "per-unsupported-family rejection",
+      "paired gains/losses vs accepted-selector baseline",
+      "mean/p50/p95 latency",
+      "invalid-plan rate",
+      "execution errors"
+    ],
+    "development_gates": {
+      "supported_exact_route_accuracy_min": 0.7,
+      "near_domain_unsupported_rejection_min": 0.96,
+      "false_route_rate_max": 0.02,
+      "invalid_plan_rate_max": 0,
+      "execution_errors_max": 0
+    }
+  },
+  "interpretation_rule": "This is a scalar route-local safety baseline. Even if safety gates pass, failure to reach the supported-accuracy gate means the architecture is diagnostic-only and motivates typed negative/unknown multi-view evidence rather than further calibration on consumed data."
+}
