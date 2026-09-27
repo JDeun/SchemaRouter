@@ -1,3 +1,5 @@
+"""Analyze the preregistered v4 bounded retrieve-rerank diagnostic."""
+
 from __future__ import annotations
 
 import argparse
