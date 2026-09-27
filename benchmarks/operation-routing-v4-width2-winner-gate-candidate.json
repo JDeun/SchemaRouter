@@ -1,0 +1,69 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "frozen-width2-winner-gate-executable-v1",
+  "work_item": 227,
+  "parent_work_item": 197,
+  "status": "preregistered_before_execution",
+  "selected_width_evidence": {
+    "work_item": 214,
+    "pull_request": 216,
+    "workflow_run_id": 36313078885,
+    "source_revision": "9f4dbff423cdcb9151d00d1b15586f9b3d766235",
+    "artifact_id": 10930665000,
+    "artifact_digest": "sha256:c6a2e794d4cee5d0d6862e317b17b153d688c6606d42aea7122f988833dce629",
+    "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+  },
+  "frozen_candidate": {
+    "candidate_recall_limit": 2,
+    "candidate_fit_gate": false,
+    "operation_fit_scope": "all_candidates",
+    "operation_fit_backend": "BAAI/bge-reranker-v2-m3 sibling-contrastive beta=1",
+    "operation_fit_select_accepted": true,
+    "threshold_application": "rank_then_gate",
+    "operation_fit_min_margin": 0,
+    "endpoint_disambiguation": false,
+    "winner_rejection": "abstain_without_rank2_fallback",
+    "min_score_by_option": {
+      "calendar.create": 0.0004207907551704739,
+      "calendar.list": 0.0004693468047293043,
+      "finance.history": 0.000041384542881440935,
+      "finance.quote": 0.013738197840866963,
+      "inventory.search": 0.007700659268386702,
+      "inventory.update": 0.016340143422138256,
+      "materials.search": 0.000239197628484152,
+      "materials.structure": 0.0018750830305426453,
+      "papers.citations": 0.0019093025002166364,
+      "papers.search": 0.0014375698120041836,
+      "support.create_ticket": 0.7359367946501093,
+      "support.search": 0.00413790789853153,
+      "users.lookup": 0.0016116826714426718,
+      "users.update": 0.0004977282132914147,
+      "weather.current": 0.016015052007939637,
+      "weather.forecast": 0.24072465268769136
+    }
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+  },
+  "pass_gates": {
+    "supported_exact_route_accuracy_min": 0.70,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "canonical_false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0
+  },
+  "latency": {
+    "comparison": "paired same-runner reference against current v4 baseline",
+    "required_metrics": ["mean_ms", "p50_ms", "p95_ms", "operation_fit_invocations"]
+  },
+  "forbidden": [
+    "threshold edits after observing this run",
+    "calibration data",
+    "blind-final data",
+    "rank-2 fallback after winner rejection",
+    "new NLI or negative model inside this candidate"
+  ]
+}
