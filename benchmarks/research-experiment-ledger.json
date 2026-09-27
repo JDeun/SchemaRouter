@@ -1052,7 +1052,7 @@
       "issue": 246,
       "pull_request": 248,
       "preregistered": true,
-      "status": "executing",
+      "status": "completed",
       "design": {
         "model": "BAAI/bge-m3@5617a9f61b028005a4858fdac845db406aefb181",
         "schema_weights": [
@@ -1071,14 +1071,41 @@
         "p95_latency_ms_max": 250,
         "interpolation_forbidden": true
       },
-      "decision": "pending"
+      "decision": "no_fusion_weight_reached_85_percent_strict_target",
+      "result": {
+        "workflow_run_id": 36324755106,
+        "source_revision": "9d6f5bdc18c933a35d4f8f9983c12c850ab9b0fb",
+        "artifact_id": 10934145256,
+        "artifact_sha256": "60dfbb1d32f1f27873bd8fad4aa4888af80856365196e3ab6fb5be6b1e7f0af7",
+        "best_strict_strategy": "schema_0.55_action_0.45",
+        "strict_false_budget": 6,
+        "strict_supported_correct": 965,
+        "strict_supported_exact_route_accuracy": 0.8376736111111112,
+        "strict_near_domain_unsupported_rejection": 0.9895833333333334,
+        "strict_false_routes": 6,
+        "strict_false_route_rate": 0.009259259259259259,
+        "strict_wrong_supported": 62,
+        "best_secondary_supported_correct": 970,
+        "best_secondary_supported_exact_route_accuracy": 0.8420138888888888,
+        "secondary_near_domain_unsupported_rejection": 0.9791666666666666,
+        "secondary_false_routes": 12,
+        "mean_latency_ms": 180.3421122183333,
+        "p95_latency_ms": 195.9703148,
+        "strict_gate_pass_count": 0
+      },
+      "failure_reason": "Best preregistered strict point was 83.77% exact at 98.96% near-domain rejection and 0.93% false-route. No interpolation or out-of-grid retuning was permitted.",
+      "paper_relevance": [
+        "fine-grained representation fusion ablation",
+        "strict <=1% open-set frontier",
+        "pre-registered negative result"
+      ]
     },
     {
       "id": "0.11-conditional-zero-false-rejected-winner-rescue",
       "cycle": "0.11-operation-routing-quality-v4",
       "issue": 255,
       "preregistered": true,
-      "status": "conditional_not_executed",
+      "status": "executing",
       "execution_condition": "Execute only if #246 has no strict 85/97/1 pass.",
       "base_selection_rule": "Highest supported exact among preregistered #246 weights at budget 6 subject to rejection/false-route/error/latency gates; tie by lower p95 then lower schema weight.",
       "validator": {
@@ -1088,7 +1115,19 @@
         "scope": "base-rejected raw rank-1 winner only",
         "primary_additional_false_budget": 0
       },
-      "decision": "pending_conditional"
+      "decision": "executing",
+      "execution_condition_result": {
+        "satisfied": true,
+        "selected_base": "BGE-M3 schema/action 0.55/0.45, false-budget 6",
+        "selected_base_supported_correct": 965,
+        "selected_base_supported_exact_route_accuracy": 0.8376736111111112,
+        "selected_base_near_domain_rejection": 0.9895833333333334,
+        "selected_base_false_route_rate": 0.009259259259259259,
+        "correct_rescues_needed_for_85_percent": 15
+      },
+      "pull_request": 258,
+      "branch": "research/v4-bge-m3-zero-false-rescue",
+      "workflow_run_id": 36325616293
     }
   ],
   "current_research_conclusion": {
