@@ -1263,6 +1263,15 @@ async def main() -> None:
         ),
     )
     parser.add_argument(
+        "--operation-fit-scope",
+        choices=("primary_tool", "all_candidates"),
+        default="primary_tool",
+        help=(
+            "Score only the leading tool's sibling operations, or all already-recalled "
+            "schema-authorized candidates. The default preserves existing behavior."
+        ),
+    )
+    parser.add_argument(
         "--operation-fit-min-score-by-option-json",
         default=None,
         help=(
@@ -1704,6 +1713,12 @@ async def main() -> None:
                 min_margin=args.endpoint_disambiguation_min_margin,
             )
 
+    operation_fit_name = (
+        "operation-fit-all-candidates"
+        if args.operation_fit_scope == "all_candidates"
+        else "operation-fit"
+    )
+
     planners: list[tuple[str, SchemaPlanner, RecordingDecisionBackend | None]] = [
         ("keyword", SchemaPlanner(registry), None)
     ]
@@ -1744,7 +1759,7 @@ async def main() -> None:
             operation_name_parts.append("semantic-recall")
         if candidate_fit_backend is not None:
             operation_name_parts.append("capability-fit")
-        operation_name_parts.append("operation-fit")
+        operation_name_parts.append(operation_fit_name)
         planners.append(
             (
                 "+".join(operation_name_parts),
@@ -1754,6 +1769,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_scope=args.operation_fit_scope,
                 ),
                 None,
             )
@@ -1766,7 +1782,7 @@ async def main() -> None:
         if candidate_fit_backend is not None:
             disambiguation_name_parts.append("capability-fit")
         if operation_fit_backend is not None:
-            disambiguation_name_parts.append("operation-fit")
+            disambiguation_name_parts.append(operation_fit_name)
         disambiguation_name_parts.append("endpoint-disambiguation")
         planners.append(
             (
@@ -1777,6 +1793,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_scope=args.operation_fit_scope,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 None,
@@ -1793,7 +1810,7 @@ async def main() -> None:
             selector_name_parts.append("semantic-recall")
         if candidate_fit_backend is not None:
             selector_name_parts.append("capability-fit")
-        selector_name_parts.extend(["operation-fit", "accepted-selector"])
+        selector_name_parts.extend([operation_fit_name, "accepted-selector"])
         if endpoint_disambiguation_backend is not None:
             selector_name_parts.append("endpoint-disambiguation")
         planners.append(
@@ -1805,6 +1822,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_scope=args.operation_fit_scope,
                     operation_fit_select_accepted=True,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
@@ -1862,6 +1880,7 @@ async def main() -> None:
                         args.graph_semantic_corroborate_abstain
                     ),
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_scope=args.operation_fit_scope,
                     endpoint_disambiguation_backend=graph_endpoint_disambiguation_backend,
                 ),
                 None,
@@ -1883,6 +1902,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_scope=args.operation_fit_scope,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 None,
@@ -1918,6 +1938,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_scope=args.operation_fit_scope,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1950,6 +1971,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_scope=args.operation_fit_scope,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -1985,6 +2007,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_scope=args.operation_fit_scope,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -2018,6 +2041,7 @@ async def main() -> None:
                     candidate_recall_limit=args.candidate_recall_limit,
                     candidate_fit_backend=candidate_fit_backend,
                     operation_fit_backend=operation_fit_backend,
+                    operation_fit_scope=args.operation_fit_scope,
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 recorder,
@@ -2085,6 +2109,7 @@ async def main() -> None:
             "min_score_by_option": operation_fit_min_score_by_option,
             "min_margin_by_option": operation_fit_min_margin_by_option,
             "accepted_selector_ablation": args.operation_fit_select_accepted,
+            "scope": args.operation_fit_scope,
         },
         "graph_operation": {
             "enabled": graph_operation_gate is not None,
