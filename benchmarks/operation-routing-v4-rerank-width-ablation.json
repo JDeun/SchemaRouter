@@ -1,0 +1,71 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "bounded-rerank-width-v1",
+  "work_item": 213,
+  "parent_work_item": 197,
+  "status": "preregistered_before_execution",
+  "base_revision": "8a9d086bbfa7ad69a8965fce715861e258637113",
+  "source_evidence": {
+    "experiment": "bounded-retrieve-rerank-score-surface-v1",
+    "workflow_run_id": 36310955824,
+    "artifact_id": 10929374346,
+    "artifact_sha256": "47a1d7a5716b100edd654607816a6cceeb630be09091348fcc788928a73fdb09",
+    "width_4_raw_supported_top_exact": 0.9071180555555556,
+    "width_4_mean_latency_ms": 1014.271,
+    "width_4_p95_latency_ms": 1915.928,
+    "width_4_score_only_supported_at_12_false": 0.7578125
+  },
+  "research_question": "Can smaller semantic-recall/rerank widths preserve enough raw ranking headroom for winner-only route-local score gating while reducing CPU latency?",
+  "frozen_grid": {
+    "semantic_recall_limits": [
+      2,
+      3
+    ],
+    "width_4_reference": "reuse completed #205 result; do not rerun",
+    "candidate_fit": false,
+    "operation_fit_scope": "all_candidates",
+    "operation_fit_backend": "BAAI/bge-reranker-v2-m3 sibling-contrastive beta=1",
+    "operation_fit_select_accepted": true,
+    "operation_fit_min_score": 0,
+    "operation_fit_min_margin": 0,
+    "endpoint_disambiguation": false
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "case_count": 1800,
+    "supported": 1152,
+    "near_domain_unsupported": 576,
+    "out_of_domain": 72,
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+  },
+  "required_analysis": [
+    "raw supported top exact",
+    "per-language supported raw top exact",
+    "per-route supported raw top exact",
+    "mean p50 p95 latency",
+    "winner-only route-local score-only Pareto frontier",
+    "exact near-domain and OOD rejection at each recorded false-route budget",
+    "supported exact accuracy under canonical false-route budget <=12",
+    "wrong-tool wrong-endpoint missed-route taxonomy",
+    "invalid plans and execution errors"
+  ],
+  "selection_rule": {
+    "choose_smallest_width_meeting_projected_quality": true,
+    "supported_exact_route_accuracy_min": 0.7,
+    "near_domain_unsupported_rejection_min": 0.96,
+    "canonical_false_route_rate_max": 0.02,
+    "invalid_plan_rate_max": 0,
+    "execution_errors_max": 0,
+    "score_margin_complexity": "do not add unless score-only fails"
+  },
+  "forbidden_tuning_evidence": [
+    "consumed v5 calibration",
+    "v12 design-known stress",
+    "v13 blind-final",
+    "0.10 graph calibration",
+    "future v4 calibration",
+    "future v4 blind-final"
+  ],
+  "next_step": "Freeze selected width and score-only route-local map, then execute one rank_then_gate candidate against a paired baseline."
+}
