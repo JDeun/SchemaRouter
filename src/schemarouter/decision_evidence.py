@@ -35,7 +35,7 @@ class EvidenceRequirement(BaseModel):
     on_unknown: EvidenceUnknownPolicy = "abstain"
 
     @model_validator(mode="after")
-    def validate_requirement(self) -> "EvidenceRequirement":
+    def validate_requirement(self) -> EvidenceRequirement:
         if not self.kind.strip():
             raise ValueError("evidence requirement kind must contain non-whitespace text")
         if self.source is not None and not self.source.strip():
