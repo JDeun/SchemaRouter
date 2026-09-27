@@ -2,8 +2,13 @@
   "cycle": "0.11-operation-routing-quality-v4",
   "experiment": "gte-winner-only-bge-rejector-diagnostic-v1",
   "work_item": 244,
-  "parent_work_items": [197, 227, 242, 243],
-  "status": "preregistered_before_execution",
+  "parent_work_items": [
+    197,
+    227,
+    242,
+    243
+  ],
+  "status": "preregistered_revision_2_before_valid_execution",
   "ranker": {
     "model": "Alibaba-NLP/gte-multilingual-base",
     "revision": "087a024525fd6e2fe749cb4679d218d8bcc95bdd",
@@ -30,9 +35,18 @@
         "endpoint description"
       ]
     },
-    "max_lengths": [128, 256],
+    "max_lengths": [
+      128,
+      256
+    ],
     "score": "sigmoid(raw relevance logit)",
-    "gte_margin_guards": [0.0, 0.02, 0.05, 0.08]
+    "gte_margin_guards": [
+      0,
+      0.02,
+      0.05,
+      0.08
+    ],
+    "revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e"
   },
   "data": {
     "role": "tuning_eligible_development",
@@ -47,7 +61,14 @@
   "threshold_projection": {
     "bge_thresholds": "observed DEV winner BGE scores plus reject-all sentinel",
     "threshold_scope": "route-local",
-    "false_budgets": [0, 6, 12, 13, 24, 36],
+    "false_budgets": [
+      0,
+      6,
+      12,
+      13,
+      24,
+      36
+    ],
     "canonical_false_budget": 12,
     "population_rule": "optimize on DEV rows but evaluate against complete fixed 1800-case population"
   },
@@ -55,7 +76,7 @@
     "supported_exact_route_accuracy_min": 0.85,
     "near_domain_unsupported_rejection_min": 0.97,
     "canonical_false_route_rate_max": 0.02,
-    "invalid_plan_rate_max": 0.0,
+    "invalid_plan_rate_max": 0,
     "execution_errors_max": 0,
     "mean_latency_ms_max": 765.187,
     "p95_latency_ms_max": 1836.868
@@ -66,5 +87,6 @@
     "unsupported_rejection_target": "0.97-0.99",
     "false_route_rate_max": 0.01
   },
-  "authority": "GTE selects only registered route IDs. BGE can only accept/reject the selected winner and cannot synthesize or switch tools/endpoints."
+  "authority": "GTE selects only registered route IDs. BGE can only accept/reject the selected winner and cannot synthesize or switch tools/endpoints.",
+  "revision_2_note": "Runs before the pinned BGE revision were invalidated before result inspection; revision 2 freezes the reranker model commit."
 }
