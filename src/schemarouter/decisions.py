@@ -314,6 +314,26 @@ class EmbeddingDecisionBackend:
         )
         return max(-1.0, min(1.0, value))
 
+    def _evidence(
+        self,
+        request: DecisionRequest,
+        ranked: list[tuple[int, float]],
+        *,
+        source: str,
+    ) -> list[DecisionEvidence]:
+        return [
+            DecisionEvidence(
+                kind=str(request.context.get("surface") or "embedding_similarity"),
+                state="match" if similarity >= self.min_similarity else "no_match",
+                source=source,
+                option_id=request.options[index].id,
+                score=similarity,
+                score_kind="cosine_similarity",
+                metadata={"threshold": self.min_similarity},
+            )
+            for index, similarity in ranked
+        ]
+
     def _result(
         self,
         request: DecisionRequest,
@@ -329,6 +349,11 @@ class EmbeddingDecisionBackend:
             key=lambda item: (-item[1], item[0]),
         )
         eligible = [item for item in ranked if item[1] >= self.min_similarity]
+        evidence = self._evidence(
+            request,
+            ranked,
+            source="embedding-similarity",
+        )
 
         metadata: dict[str, Any] = {
             "provider": "embedding-similarity",
@@ -356,6 +381,7 @@ class EmbeddingDecisionBackend:
                 request,
                 DecisionResult(
                     abstained=True,
+                    evidence=evidence,
                     metadata={**metadata, "reason": "below_min_similarity"},
                 ),
             )
@@ -370,6 +396,7 @@ class EmbeddingDecisionBackend:
                     request,
                     DecisionResult(
                         abstained=True,
+                        evidence=evidence,
                         metadata={**metadata, "reason": "ambiguous_selection_boundary"},
                     ),
                 )
@@ -384,6 +411,7 @@ class EmbeddingDecisionBackend:
                     )
                     for index, similarity in selected
                 ],
+                evidence=evidence,
                 metadata=metadata,
             ),
         )
@@ -498,6 +526,11 @@ class CachedEmbeddingDecisionBackend(EmbeddingDecisionBackend):
             key=lambda item: (-item[1], item[0]),
         )
         eligible = [item for item in ranked if item[1] >= self.min_similarity]
+        evidence = self._evidence(
+            request,
+            ranked,
+            source="embedding-similarity-cached",
+        )
         metadata: dict[str, Any] = {
             "provider": "embedding-similarity-cached",
             "dimensions": dimensions,
@@ -526,6 +559,7 @@ class CachedEmbeddingDecisionBackend(EmbeddingDecisionBackend):
                 request,
                 DecisionResult(
                     abstained=True,
+                    evidence=evidence,
                     metadata={**metadata, "reason": "below_min_similarity"},
                 ),
             )
@@ -540,6 +574,7 @@ class CachedEmbeddingDecisionBackend(EmbeddingDecisionBackend):
                     request,
                     DecisionResult(
                         abstained=True,
+                        evidence=evidence,
                         metadata={**metadata, "reason": "ambiguous_selection_boundary"},
                     ),
                 )
@@ -554,6 +589,7 @@ class CachedEmbeddingDecisionBackend(EmbeddingDecisionBackend):
                     )
                     for index, similarity in selected
                 ],
+                evidence=evidence,
                 metadata=metadata,
             ),
         )
