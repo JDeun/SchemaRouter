@@ -37,6 +37,7 @@ def _row(
     category: str,
     language: str = "en",
     invalid_plan: bool = False,
+    execution_authority_violation: bool | None = False,
     error: str | None = None,
 ) -> dict:
     return {
@@ -48,6 +49,11 @@ def _row(
         "category": category,
         "language": language,
         "invalid_plan": invalid_plan,
+        **(
+            {"execution_authority_violation": execution_authority_violation}
+            if execution_authority_violation is not None
+            else {}
+        ),
         "error": error,
     }
 
@@ -83,6 +89,8 @@ def test_scorecard_passes_long_term_targets() -> None:
     assert result["metrics"]["supported_exact_route_accuracy"] == 0.9
     assert result["metrics"]["unsupported_rejection"] == 1.0
     assert result["metrics"]["false_route_rate"] == 0.0
+    assert result["metrics"]["execution_authority_violation_rate"] == 0.0
+    assert result["gates"]["execution_authority_evidence_available"] is True
     assert result["production_target_passed"] is True
 
 
@@ -159,3 +167,67 @@ def test_scorecard_reports_language_and_route_worst_cases() -> None:
     assert result["metrics"]["worst_language_supported_accuracy"] == 0.0
     assert result["route_slices"]["weather.current"]["exact_route_accuracy"] == 0.5
     assert result["metrics"]["worst_route_accuracy"] == 0.5
+
+
+def test_scorecard_refuses_production_pass_without_authority_evidence() -> None:
+    module = _module()
+    rows = [
+        _row(
+            f"supported-{index}",
+            expected="weather.current",
+            predicted="weather.current",
+            correct=True,
+            category="supported",
+            execution_authority_violation=None,
+        )
+        for index in range(100)
+    ]
+    rows.extend(
+        _row(
+            f"near-{index}",
+            expected=None,
+            predicted=None,
+            correct=True,
+            category="near_domain_unsupported_operation",
+            execution_authority_violation=None,
+        )
+        for index in range(100)
+    )
+
+    result = module.evaluate({"rows": rows}, _targets(), backend="candidate")
+
+    assert result["metrics"]["execution_authority_evidence_available"] is False
+    assert result["metrics"]["execution_authority_violation_rate"] is None
+    assert result["gates"]["execution_authority_evidence_available"] is False
+    assert result["production_target_passed"] is False
+
+
+def test_scorecard_blocks_nonzero_execution_authority_violation() -> None:
+    module = _module()
+    rows = [
+        _row(
+            f"supported-{index}",
+            expected="weather.current",
+            predicted="weather.current",
+            correct=True,
+            category="supported",
+            execution_authority_violation=(index == 0),
+        )
+        for index in range(100)
+    ]
+    rows.extend(
+        _row(
+            f"near-{index}",
+            expected=None,
+            predicted=None,
+            correct=True,
+            category="near_domain_unsupported_operation",
+        )
+        for index in range(100)
+    )
+
+    result = module.evaluate({"rows": rows}, _targets(), backend="candidate")
+
+    assert result["metrics"]["execution_authority_violation_rate"] == 0.005
+    assert result["gates"]["execution_authority_violation_rate"] is False
+    assert result["production_target_passed"] is False
