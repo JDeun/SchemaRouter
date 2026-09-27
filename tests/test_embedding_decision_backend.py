@@ -378,3 +378,20 @@ def test_cached_embedding_backend_rejects_invalid_cache_limit(value: object) -> 
             embed,
             max_cache_entries=value,  # type: ignore[arg-type]
         )
+
+
+def test_cached_embedding_backend_is_safe_under_parallel_sync_calls() -> None:
+    def embed(texts: list[str]) -> list[list[float]]:
+        return [
+            [float((sum(ord(ch) for ch in text) % 13) + 1), 1.0]
+            for text in texts
+        ]
+
+    backend = CachedEmbeddingDecisionBackend(embed, max_cache_entries=2)
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = list(executor.map(lambda _index: choose_sync(backend, request()), range(40)))
+
+    assert len(results) == 40
+    assert all(result.selections or result.abstained for result in results)
+    assert len(backend._option_vector_cache) <= 2
