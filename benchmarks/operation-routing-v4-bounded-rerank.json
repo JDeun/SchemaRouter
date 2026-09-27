@@ -1,7 +1,7 @@
 {
   "cycle": "0.11-operation-routing-quality-v4",
   "architecture": "bounded-retrieve-rerank-v1",
-  "status": "architecture_frozen_before_execution",
+  "status": "architecture_plus_winner_gate_mechanism_frozen_thresholds_pending",
   "base_revision": "6f083a70c27d31ded30e2e0704c65ac98f11ed5b",
   "principles": [
     "Schema and policy remain the only execution authority.",
@@ -17,7 +17,9 @@
     "operation_fit_backend": "pairwise_bge_contrastive",
     "operation_fit_select_accepted": true,
     "endpoint_disambiguation": false,
-    "route_local_thresholds": "selected only from fresh v4 tuning-eligible development evidence before candidate freeze"
+    "route_local_thresholds": "not yet selected; blocked on #204/#205 development score diagnostic",
+    "threshold_application": "rank_then_gate",
+    "threshold_semantics": "raw winner is fixed before its route-local score/margin boundary; failure abstains and never falls through to a lower-ranked route"
   },
   "motivation": [
     "Wrong-tool errors are rare in the current baseline, while operation-fit abstention and wrong-endpoint errors dominate.",
@@ -26,10 +28,10 @@
     "Route-local calibration is retained as a safety layer because global scalar thresholds cannot satisfy quality and unsupported-rejection goals simultaneously."
   ],
   "development_gates": {
-    "supported_exact_route_accuracy_min": 0.70,
+    "supported_exact_route_accuracy_min": 0.7,
     "near_domain_unsupported_rejection_min": 0.96,
     "false_route_rate_max": 0.02,
-    "invalid_plan_rate_max": 0.0,
+    "invalid_plan_rate_max": 0,
     "execution_errors_max": 0
   },
   "long_term_target": {
@@ -37,5 +39,10 @@
     "unsupported_rejection_target": "0.97-0.99",
     "false_route_rate_max": 0.01
   },
-  "policy": "Architecture may be implemented before score-surface diagnostics complete, but no route-local threshold map may be frozen until the preregistered tuning-eligible diagnostic is analyzed. Calibration and blind corpora remain forbidden for tuning."
+  "policy": "Architecture may be implemented before score-surface diagnostics complete, but no route-local threshold map may be frozen until the preregistered tuning-eligible diagnostic is analyzed. Calibration and blind corpora remain forbidden for tuning.",
+  "mechanism_provenance": {
+    "winner_only_pr": 208,
+    "winner_only_merge_revision": "90cda2520b0faae396415a2d15699437507bfb35",
+    "work_item": 207
+  }
 }
