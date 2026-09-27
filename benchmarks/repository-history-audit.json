@@ -1,0 +1,875 @@
+{
+  "schema_version": 1,
+  "purpose": "Complete mainline commit enumeration used to verify the human design/experiment history and machine research ledger from repository inception.",
+  "audited_at": "2026-09-27",
+  "branch": "main",
+  "head_revision": "526d0c588bbec053fba54c55d982cc67d2a74d56",
+  "initial_revision": "5691c3c922f0209231f112c06096fe8744681fc5",
+  "commit_count": 140,
+  "counts_by_subject_kind": {
+    "research": 14,
+    "chore": 15,
+    "release": 10,
+    "docs": 10,
+    "feature": 42,
+    "performance": 3,
+    "fix": 21,
+    "test": 9,
+    "ci": 7,
+    "security": 4,
+    "benchmark": 4,
+    "other": 1
+  },
+  "review_contract": {
+    "all_mainline_commits_enumerated": true,
+    "material_architecture_crosscheck": [
+      "CHANGELOG.md",
+      "docs/research/design-and-experiment-history.md",
+      "benchmarks/research-experiment-ledger.json"
+    ],
+    "non_main_experiment_branches": "Tracked separately through experiment ledger PR/branch/run provenance; rejected research is not required to merge to main to remain evidence.",
+    "caveat": "Subject classification is an index, not a claim that only feat/research commits are material. Security/fix/CI commits remain enumerated and their material behavior changes are represented in CHANGELOG/history where applicable."
+  },
+  "commits": [
+    {
+      "sha": "526d0c588bbec053fba54c55d982cc67d2a74d56",
+      "date": "2026-09-26T15:35:30Z",
+      "subject": "research: close rejected operation cascade cycle (#180)",
+      "kind": "research"
+    },
+    {
+      "sha": "8b85148faa404fe4e1858c3b4321c3ecd37545c5",
+      "date": "2026-09-26T14:55:26Z",
+      "subject": "research: benchmark cheap-first operation cascade",
+      "kind": "research"
+    },
+    {
+      "sha": "5d7c972c8b13d03934c9cc88de3dc9e14159bcd5",
+      "date": "2026-09-26T14:27:19Z",
+      "subject": "research: reserve v14 cascade cycle",
+      "kind": "research"
+    },
+    {
+      "sha": "ecc6ba6f313df45545590297c7130a4abadf93f1",
+      "date": "2026-09-26T14:18:06Z",
+      "subject": "research: record consumed v13 blind evidence",
+      "kind": "research"
+    },
+    {
+      "sha": "14e1977011c5b926476731736f7a4a9e1876367a",
+      "date": "2026-09-26T13:45:41Z",
+      "subject": "research: freeze confirmed 0.10 operation-fit candidate",
+      "kind": "research"
+    },
+    {
+      "sha": "912c3790bba4f6104f4ccf5451170894f3b84f1f",
+      "date": "2026-09-26T13:41:22Z",
+      "subject": "research: contrastive operation-fit dev cycle",
+      "kind": "research"
+    },
+    {
+      "sha": "9ac1eb6b5f678d072ff41a54cc9988043e2a5f85",
+      "date": "2026-09-26T13:03:29Z",
+      "subject": "research: tighten holdout hygiene for 0.10 cycle",
+      "kind": "research"
+    },
+    {
+      "sha": "2d49bf447e5ec3509b7cb7e0b4d0153964829937",
+      "date": "2026-09-26T12:52:01Z",
+      "subject": "research: reserve v12 contrastive operation holdout",
+      "kind": "research"
+    },
+    {
+      "sha": "465f6780178a6d8ac275ef1f4d977664d8227656",
+      "date": "2026-09-26T12:43:27Z",
+      "subject": "chore: start 0.10.0 development",
+      "kind": "chore"
+    },
+    {
+      "sha": "7be1811a7fd0c2cc46ee3145b0b7e1e05e46d612",
+      "date": "2026-09-26T12:35:39Z",
+      "subject": "release: SchemaRouter 0.9.0",
+      "kind": "release"
+    },
+    {
+      "sha": "d20ab8f2bae2cff72bbd9352c2bfc5d62d6a7a92",
+      "date": "2026-09-26T12:19:11Z",
+      "subject": "docs: record consumed v11 evidence and remove one-shot workflow",
+      "kind": "docs"
+    },
+    {
+      "sha": "099cf009003df35f48571ecdc988fddaa11db904",
+      "date": "2026-09-26T11:57:41Z",
+      "subject": "research: diagnose frozen MiniLM baseline on consumed v11",
+      "kind": "research"
+    },
+    {
+      "sha": "57af2fd18d254fa1a9cd5855a158ae74b94adfc7",
+      "date": "2026-09-26T11:36:12Z",
+      "subject": "research: consume frozen v11 holdout once",
+      "kind": "research"
+    },
+    {
+      "sha": "632471b746525023a23d4c616b2a3a59689e940a",
+      "date": "2026-09-26T11:31:38Z",
+      "subject": "research: freeze v11 pairwise operation-fit evaluation",
+      "kind": "research"
+    },
+    {
+      "sha": "880451eb0e4adadd5e96290c8c576820614fbc7a",
+      "date": "2026-09-26T11:23:01Z",
+      "subject": "feat: add bounded pairwise decision backend",
+      "kind": "feature"
+    },
+    {
+      "sha": "fd8291a33261378b0f890e36ab12154d69b24a36",
+      "date": "2026-09-26T10:22:14Z",
+      "subject": "research: reserve v11 operation-generalization holdout (#154)",
+      "kind": "research"
+    },
+    {
+      "sha": "121e039082705c48bfde4a9f9995be3a691a0436",
+      "date": "2026-09-26T10:00:12Z",
+      "subject": "chore: start 0.9 development (#153)",
+      "kind": "chore"
+    },
+    {
+      "sha": "255bedad0da545175ce4821e4029afb6b5c6addd",
+      "date": "2026-09-26T09:51:05Z",
+      "subject": "release: SchemaRouter 0.8.0 (#152)",
+      "kind": "release"
+    },
+    {
+      "sha": "854d70bfeb5497011ee17cd507f04985415cdd4d",
+      "date": "2026-09-26T09:28:32Z",
+      "subject": "perf: simplify and recalibrate operation-fit semantic surface (#149)",
+      "kind": "performance"
+    },
+    {
+      "sha": "4c425695ac2964bd986213a054f815888d4eb753",
+      "date": "2026-09-26T07:52:22Z",
+      "subject": "perf: expose routing failure stages in benchmarks",
+      "kind": "performance"
+    },
+    {
+      "sha": "555e5de185c1e1b1cdac904482e5d83a96467279",
+      "date": "2026-09-26T07:49:01Z",
+      "subject": "research: freeze v10 routing benchmark and error taxonomy",
+      "kind": "research"
+    },
+    {
+      "sha": "850a0a0f2e4e646bbc5ce6fb4923db937429ade6",
+      "date": "2026-09-26T07:28:27Z",
+      "subject": "feat: add provenance-aware multi-provider evidence aggregation",
+      "kind": "feature"
+    },
+    {
+      "sha": "e75dd933c00c54aac9b6a4e1701208a2ee043d91",
+      "date": "2026-09-26T07:14:27Z",
+      "subject": "research: validate frozen operation fit on v9 holdout (#143)",
+      "kind": "research"
+    },
+    {
+      "sha": "14286ac795f32151593a4e2884c03aa04d81bb4e",
+      "date": "2026-09-26T06:19:01Z",
+      "subject": "feat: add bounded operation capability fit (#142)",
+      "kind": "feature"
+    },
+    {
+      "sha": "4975db03a5ca6bb68429309a8245e21722fac4b3",
+      "date": "2026-09-26T02:31:22Z",
+      "subject": "feat: add bounded same-tool endpoint disambiguation (#141)",
+      "kind": "feature"
+    },
+    {
+      "sha": "585d0dc0291d720d95dc764943d6081923953f80",
+      "date": "2026-09-26T01:43:09Z",
+      "subject": "feat: add bounded capability-fit gate (#136)",
+      "kind": "feature"
+    },
+    {
+      "sha": "5677758886b0f5804e50db44b743c7195aefe122",
+      "date": "2026-09-26T00:46:02Z",
+      "subject": "feat: add bounded semantic candidate recall and v2 benchmark (#133)",
+      "kind": "feature"
+    },
+    {
+      "sha": "431f8e761c103184a10fd186b27c0d9415a9e786",
+      "date": "2026-09-25T15:40:33Z",
+      "subject": "fix: harden global provenance and field evidence contracts (#131)",
+      "kind": "fix"
+    },
+    {
+      "sha": "95fcef0fc020d2f0283ab238b55cf559ee42881f",
+      "date": "2026-09-25T15:18:45Z",
+      "subject": "fix: revalidate evidence contracts at execution (#130)",
+      "kind": "fix"
+    },
+    {
+      "sha": "a12983c42fe542a29882bb9bf434779e53d2d975",
+      "date": "2026-09-25T14:36:57Z",
+      "subject": "feat: scope evidence requirements by semantic field (#128)",
+      "kind": "feature"
+    },
+    {
+      "sha": "fea2e146379eb73a3cf0a8390638dbb38022913f",
+      "date": "2026-09-25T14:10:22Z",
+      "subject": "feat: expose semantic field coverage in bounded plans (#127)",
+      "kind": "feature"
+    },
+    {
+      "sha": "1cb9a9800dd5da84ddc307f22b8f36733e7327d0",
+      "date": "2026-09-25T13:23:07Z",
+      "subject": "docs: add real-world field-first scenario (#126)",
+      "kind": "docs"
+    },
+    {
+      "sha": "8d6f5905de0427137328bdf53b78b598b0fba094",
+      "date": "2026-09-25T12:46:42Z",
+      "subject": "feat: cover heterogeneous fields across bounded multi-call plans (#125)",
+      "kind": "feature"
+    },
+    {
+      "sha": "c9abdafbff18d307efd60ed5cd3a5b6982b2917a",
+      "date": "2026-09-25T11:53:43Z",
+      "subject": "chore: begin SchemaRouter 0.8 development (#124)",
+      "kind": "chore"
+    },
+    {
+      "sha": "24e960ee3511828bdb7549efc745e59ed1470d8f",
+      "date": "2026-09-25T11:43:08Z",
+      "subject": "release: SchemaRouter 0.7.0 (#123)",
+      "kind": "release"
+    },
+    {
+      "sha": "80773cffed52ef11b8b08d729457b47d44bee1b6",
+      "date": "2026-09-25T11:36:32Z",
+      "subject": "fix: align OPTIMADE live smoke with field-first projection (#122)",
+      "kind": "fix"
+    },
+    {
+      "sha": "76d5bb6481b70302ebc94c05aa2a7d5b28cf19e1",
+      "date": "2026-09-25T11:31:09Z",
+      "subject": "docs: align 0.7 scientific contracts (#121)",
+      "kind": "docs"
+    },
+    {
+      "sha": "2e97122d7fb7782e08eef0e8b5045709e21bd477",
+      "date": "2026-09-25T11:22:14Z",
+      "subject": "feat: add exact scientific field qualifiers (#120)",
+      "kind": "feature"
+    },
+    {
+      "sha": "36ae98c1c76d4da7ad1af2a0138de0150e78d493",
+      "date": "2026-09-25T09:05:49Z",
+      "subject": "feat: route trusted parameter aliases across providers (#119)",
+      "kind": "feature"
+    },
+    {
+      "sha": "056a44d3485f961e1962d56893d7b6c84a776c36",
+      "date": "2026-09-25T08:45:39Z",
+      "subject": "fix: keep units optional while enforcing explicit evidence requirements (#118)",
+      "kind": "fix"
+    },
+    {
+      "sha": "3f7a6e1adb84f71ced27a21d03f0b0a8697be688",
+      "date": "2026-09-25T07:23:42Z",
+      "subject": "feat: add typed scientific field and unit contracts (#116)",
+      "kind": "feature"
+    },
+    {
+      "sha": "3c4e72be8f5059b2d84f28087f35546274962da6",
+      "date": "2026-09-25T03:14:07Z",
+      "subject": "fix: validate nested server projections conservatively (#115)",
+      "kind": "fix"
+    },
+    {
+      "sha": "b420c163b0668c105f0a6bce8898f67b50d091b2",
+      "date": "2026-09-25T03:03:20Z",
+      "subject": "fix: plan across execution-ready routes before fallback (#114)",
+      "kind": "fix"
+    },
+    {
+      "sha": "4d0855163aed42fe339652067f56291252928da9",
+      "date": "2026-09-25T01:23:08Z",
+      "subject": "fix: harden executable route readiness",
+      "kind": "fix"
+    },
+    {
+      "sha": "b6fed459a85d75537104359c66efaa3c95d38a5f",
+      "date": "2026-09-25T01:01:41Z",
+      "subject": "test: prove recovery from all-down access paths (#111)",
+      "kind": "test"
+    },
+    {
+      "sha": "0d02da90c0d248fd31b5bcc6c74fc142a3b28955",
+      "date": "2026-09-25T00:53:56Z",
+      "subject": "feat: harden field-first provider-aware execution",
+      "kind": "feature"
+    },
+    {
+      "sha": "6d3155603c7c4fefe848e7fcc7537ca882cef08a",
+      "date": "2026-09-24T16:03:21Z",
+      "subject": "feat: harden SchemaRouter 0.7 execution boundary",
+      "kind": "feature"
+    },
+    {
+      "sha": "617f9cee4fe22c9055a4cd94905ada502457d0cd",
+      "date": "2026-09-24T05:17:38Z",
+      "subject": "test: isolate lightweight optional-extra validation (#108)",
+      "kind": "test"
+    },
+    {
+      "sha": "8ea206abeebcdd06970696405c1ebcd2632b4309",
+      "date": "2026-09-24T04:20:14Z",
+      "subject": "test: verify published lightweight integration extras (#107)",
+      "kind": "test"
+    },
+    {
+      "sha": "2d65d06c205a620631b79c2316bc4e8310880eca",
+      "date": "2026-09-24T04:07:13Z",
+      "subject": "test: harden installed extras and live compatibility smokes (#106)",
+      "kind": "test"
+    },
+    {
+      "sha": "c6dfcf81bd8c0e083e63a4f15fc5c798eec11490",
+      "date": "2026-09-24T03:47:34Z",
+      "subject": "release: verify PyPI artifact digests against trusted build (#105)",
+      "kind": "release"
+    },
+    {
+      "sha": "948bb4fbddb260f27da067d59b000163306339ab",
+      "date": "2026-09-24T03:34:50Z",
+      "subject": "release: verify exact PyPI artifacts after publication (#104)",
+      "kind": "release"
+    },
+    {
+      "sha": "654d559845a2671bacd2485b7679c32e647b3f16",
+      "date": "2026-09-24T02:49:20Z",
+      "subject": "test: validate installed inspection CLI from package artifacts (#103)",
+      "kind": "test"
+    },
+    {
+      "sha": "da357495ba5c668f1d07da7814c00451004b8b39",
+      "date": "2026-09-24T02:33:15Z",
+      "subject": "test: validate published framework extras from PyPI (#102)",
+      "kind": "test"
+    },
+    {
+      "sha": "dd83a9ea93e35b8f4d7af419b9b91e7c06e904c4",
+      "date": "2026-09-24T02:16:44Z",
+      "subject": "test: verify published PyPI artifacts in compatibility smoke (#101)",
+      "kind": "test"
+    },
+    {
+      "sha": "1e0355e17dcc077aa95efe447f2e2487e59d2076",
+      "date": "2026-09-24T00:59:10Z",
+      "subject": "test: add installed-artifact consumer acceptance validation (#99)",
+      "kind": "test"
+    },
+    {
+      "sha": "efe27f3b8dd26322a2d09ea41ddc74906141a92b",
+      "date": "2026-09-24T00:03:08Z",
+      "subject": "docs: make contributing guide canonical (#97)",
+      "kind": "docs"
+    },
+    {
+      "sha": "0359b5134624ba639da5832f872e2d1f8e9f82f0",
+      "date": "2026-09-23T23:59:28Z",
+      "subject": "ci: make dependency audit merge-blocking (#96)",
+      "kind": "ci"
+    },
+    {
+      "sha": "29eb4f0b06150b8065f0d16e4b687345b67fca54",
+      "date": "2026-09-23T23:56:14Z",
+      "subject": "docs: make root changelog the canonical source (#95)",
+      "kind": "docs"
+    },
+    {
+      "sha": "ff3bd6c5d3336cdfb7c386abc79c28955e064bf6",
+      "date": "2026-09-23T19:42:50Z",
+      "subject": "security: tighten workflow permissions and PR SAST (#94)",
+      "kind": "security"
+    },
+    {
+      "sha": "87a3f22f1ff86a8f2d07fb17cec5b06087980bf9",
+      "date": "2026-09-23T19:38:09Z",
+      "subject": "security: pin workflow dependencies and harden release checkout (#93)",
+      "kind": "security"
+    },
+    {
+      "sha": "c27cd7f8a97270887d87d655f43d02630a6f6ab2",
+      "date": "2026-09-23T19:29:02Z",
+      "subject": "security: add release SBOM attestation (#92)",
+      "kind": "security"
+    },
+    {
+      "sha": "cbb4e9d407bb99cef3c4e4d47b635dce3a47c39f",
+      "date": "2026-09-23T19:23:44Z",
+      "subject": "security: add OpenSSF Scorecard analysis (#91)",
+      "kind": "security"
+    },
+    {
+      "sha": "3b62d9828037eb8d6d9be702b7e64f4d4a29df7e",
+      "date": "2026-09-23T19:20:44Z",
+      "subject": "bench: report Wilson confidence intervals (#90)",
+      "kind": "benchmark"
+    },
+    {
+      "sha": "c2d4b6452f6474dc1b37220c91950ad9277318cc",
+      "date": "2026-09-23T19:12:56Z",
+      "subject": "bench: add exact reproducibility manifest to benchmark reports (#89)",
+      "kind": "benchmark"
+    },
+    {
+      "sha": "7c5c635ec81bd79009dd2e50a901ffb851450928",
+      "date": "2026-09-23T19:03:44Z",
+      "subject": "bench: measure Laya with resident language checkpoints (#88)",
+      "kind": "benchmark"
+    },
+    {
+      "sha": "e41f57a044182deb374980c28d66863d637a691b",
+      "date": "2026-09-23T18:50:05Z",
+      "subject": "fix: remove ineffective no-route sentinel from empty-recall routing (#87)",
+      "kind": "fix"
+    },
+    {
+      "sha": "ad85b9fb7edf30df59832deea282fb2b049b0b71",
+      "date": "2026-09-23T14:29:09Z",
+      "subject": "fix: recover bounded decision routing after empty lexical recall (#85)",
+      "kind": "fix"
+    },
+    {
+      "sha": "8d8d9415483d56e940f3f716e53aa2e22b0c5e10",
+      "date": "2026-09-23T13:19:31Z",
+      "subject": "bench: add reproducible full-corpus research benchmark workflow (#84)",
+      "kind": "benchmark"
+    },
+    {
+      "sha": "1dd4e59b23c549655758e9b015180703f9da5cc4",
+      "date": "2026-09-23T13:02:05Z",
+      "subject": "feat: retain compatibility evidence and benchmark history (#83)",
+      "kind": "feature"
+    },
+    {
+      "sha": "59a7949a8fd745567d92177a759acf1f60e3c606",
+      "date": "2026-09-23T12:51:24Z",
+      "subject": "chore: harden 0.7 CI, serialization tests, and benchmark reporting (#82)",
+      "kind": "chore"
+    },
+    {
+      "sha": "01191ebce2fe477495c5a932b7e41633c622c80a",
+      "date": "2026-09-23T09:52:20Z",
+      "subject": "chore: begin SchemaRouter 0.7 development (#81)",
+      "kind": "chore"
+    },
+    {
+      "sha": "cdaa2de6f3be1e8f131b287672083ee2a35ee622",
+      "date": "2026-09-23T08:24:26Z",
+      "subject": "release: SchemaRouter 0.6.0 (#80)",
+      "kind": "release"
+    },
+    {
+      "sha": "f6ea410176c5b2f8d1f4f6d59085f671598a53ef",
+      "date": "2026-09-23T07:58:43Z",
+      "subject": "feat: serialize default OpenAPI parameter styles (#79)",
+      "kind": "feature"
+    },
+    {
+      "sha": "535b2f70f3e035d4e2d28fabd8076fc2f4499ad5",
+      "date": "2026-09-23T07:19:47Z",
+      "subject": "feat: normalize OpenAPI 3.0 nullable schemas (#78)",
+      "kind": "feature"
+    },
+    {
+      "sha": "3ae94ca2c0abd0a83754b8847bcdf10efa587b2a",
+      "date": "2026-09-23T06:58:00Z",
+      "subject": "feat: support generic typed OpenAPI root bodies (#76)",
+      "kind": "feature"
+    },
+    {
+      "sha": "f1746bc9ac09c606fa09821c3c1e49c6767c3daf",
+      "date": "2026-09-23T06:47:10Z",
+      "subject": "ci: use CPU-only PyTorch for Laya tests (#75)",
+      "kind": "ci"
+    },
+    {
+      "sha": "b85956a433f60e0ddf11bd18500b26607c51da42",
+      "date": "2026-09-23T06:44:12Z",
+      "subject": "feat: support discriminated OpenAPI request bodies (#74)",
+      "kind": "feature"
+    },
+    {
+      "sha": "1449ada7be7c00ed6cf413ff0f3152c19d63c259",
+      "date": "2026-09-23T06:32:23Z",
+      "subject": "feat: resolve bounded OpenAPI schema ids and anchors (#73)",
+      "kind": "feature"
+    },
+    {
+      "sha": "79210db92ce1b459e298a5b10d6d4e1cefcce7f0",
+      "date": "2026-09-23T06:21:47Z",
+      "subject": "feat: expose OpenAPI response variant fields (#72)",
+      "kind": "feature"
+    },
+    {
+      "sha": "264357faf9efb82857b1025d8819ccbb1ecdd7dc",
+      "date": "2026-09-23T06:00:32Z",
+      "subject": "docs: clarify SchemaRouter layer ownership (#71)",
+      "kind": "docs"
+    },
+    {
+      "sha": "713da488920885478b47e64269f1917bb518c5a4",
+      "date": "2026-09-23T05:26:50Z",
+      "subject": "feat: add live inspection and static dashboard (#70)",
+      "kind": "feature"
+    },
+    {
+      "sha": "c5c526b9c269c2a39b2d7a972695fa33fff4ce82",
+      "date": "2026-09-23T04:57:57Z",
+      "subject": "feat: add operational inspection CLI (#68)",
+      "kind": "feature"
+    },
+    {
+      "sha": "ab7ba1e7d683a8fe6acd42a11364e867b9b03340",
+      "date": "2026-09-23T04:38:04Z",
+      "subject": "feat: add local Laya bounded decision backend (#67)",
+      "kind": "feature"
+    },
+    {
+      "sha": "3072f81129e48c3df3f5dcfd56a4c8091c6b36b7",
+      "date": "2026-09-22T23:06:42Z",
+      "subject": "docs: streamline README and documentation UX (#66)",
+      "kind": "docs"
+    },
+    {
+      "sha": "c2e4194e4597e05367eeb27fefca8ff7303e57db",
+      "date": "2026-09-22T22:48:55Z",
+      "subject": "chore: begin SchemaRouter 0.6 development (#65)",
+      "kind": "chore"
+    },
+    {
+      "sha": "f54c589adce05ae397e88ba4cd2275a9ac5298d5",
+      "date": "2026-09-22T22:44:36Z",
+      "subject": "release: SchemaRouter 0.5.0 (#64)",
+      "kind": "release"
+    },
+    {
+      "sha": "05bbbf17574e44338b67428aac598b1eaa8292cb",
+      "date": "2026-09-22T22:21:21Z",
+      "subject": "fix: preserve multiple OpenAPI success response variants (#63)",
+      "kind": "fix"
+    },
+    {
+      "sha": "d0aa56f29c96627fae3187cf57740747d69df1c3",
+      "date": "2026-09-22T22:08:38Z",
+      "subject": "fix: avoid fabricating schema-less OpenAPI request bodies (#62)",
+      "kind": "fix"
+    },
+    {
+      "sha": "de3a1b13c7bc667145f26bb82f159fd082eb11b8",
+      "date": "2026-09-22T15:07:02Z",
+      "subject": "fix: ignore protocol-controlled OpenAPI header parameters (#61)",
+      "kind": "fix"
+    },
+    {
+      "sha": "4f8a24711cee135bb3f62cd71f3ab5dabf9ceba0",
+      "date": "2026-09-22T15:04:30Z",
+      "subject": "fix: preserve required OpenAPI JSON request bodies (#60)",
+      "kind": "fix"
+    },
+    {
+      "sha": "54e828286ba095c00b1931d0ccf135bc0d3aafd6",
+      "date": "2026-09-22T14:45:13Z",
+      "subject": "fix: make generated OpenAPI endpoint names collision-safe (#59)",
+      "kind": "fix"
+    },
+    {
+      "sha": "b2c43a7d9382af36b1b7ea690a9d5e9c329f5200",
+      "date": "2026-09-22T14:39:29Z",
+      "subject": "fix: honor OpenAPI operation parameter overrides (#58)",
+      "kind": "fix"
+    },
+    {
+      "sha": "1f4e903157698f8439b7dfdc7e4c28fca64f6bf8",
+      "date": "2026-09-22T14:18:54Z",
+      "subject": "fix: enforce elapsed budget across approval and hooks (#57)",
+      "kind": "fix"
+    },
+    {
+      "sha": "cfa74238ce7e7eddd678f0eee8b28c67c026b317",
+      "date": "2026-09-22T14:08:59Z",
+      "subject": "fix: cap the initial retry backoff (#56)",
+      "kind": "fix"
+    },
+    {
+      "sha": "498997170edb31d61be8a0b670845ae04ee06925",
+      "date": "2026-09-22T14:03:42Z",
+      "subject": "fix: bound retry backoff by wall-clock budget (#55)",
+      "kind": "fix"
+    },
+    {
+      "sha": "b58a29bcc1e1fce83673ded9302da90b577341df",
+      "date": "2026-09-22T13:59:40Z",
+      "subject": "feat: add transient-aware retry classification (#54)",
+      "kind": "feature"
+    },
+    {
+      "sha": "91e498ec90f64b6532e09f2ed8310369b10a9645",
+      "date": "2026-09-22T13:15:51Z",
+      "subject": "test: harden async wall-clock budget timing (#53)",
+      "kind": "test"
+    },
+    {
+      "sha": "b54386441b49f2952fa80ccaccf9cab706df91a9",
+      "date": "2026-09-22T13:11:39Z",
+      "subject": "chore: begin SchemaRouter 0.5 development (#52)",
+      "kind": "chore"
+    },
+    {
+      "sha": "aaf6585c2cf3badf117ed91efa7a418d632dab6d",
+      "date": "2026-09-22T13:06:40Z",
+      "subject": "release: SchemaRouter 0.4.0 (#51)",
+      "kind": "release"
+    },
+    {
+      "sha": "354e18e95aa33d0aed53eafc7f9a083b673f0bff",
+      "date": "2026-09-22T12:21:12Z",
+      "subject": "feat: add trusted before/after execution hooks (#50)",
+      "kind": "feature"
+    },
+    {
+      "sha": "2854f9bb590093ed1d1fde384960f242583da55b",
+      "date": "2026-09-22T12:06:05Z",
+      "subject": "feat: add bounded same-origin OpenAPI external refs (#49)",
+      "kind": "feature"
+    },
+    {
+      "sha": "bb2cb859594ac95c40a952bfcdc339dc908e65c3",
+      "date": "2026-09-22T11:22:29Z",
+      "subject": "perf: add exact-recall candidate indexing (#48)",
+      "kind": "performance"
+    },
+    {
+      "sha": "d478ae7ac32ff726b8b1786927bfe2546b7ba4a0",
+      "date": "2026-09-22T11:11:24Z",
+      "subject": "feat: add conservative evidence sufficiency decisions (#47)",
+      "kind": "feature"
+    },
+    {
+      "sha": "0d0fc3c3ccaecc918d6efece1ba2886ae3d24937",
+      "date": "2026-09-22T10:27:37Z",
+      "subject": "feat: add explicit nested field projection paths (#46)",
+      "kind": "feature"
+    },
+    {
+      "sha": "db03aa42dac88eb4743eda762de98541bf90c7c2",
+      "date": "2026-09-22T10:08:03Z",
+      "subject": "feat: add bounded output field selection (#45)",
+      "kind": "feature"
+    },
+    {
+      "sha": "497e8c9e236ac60cc317760d4d3bf9b5850be685",
+      "date": "2026-09-22T10:00:44Z",
+      "subject": "feat: add replayable persistent run traces (#44)",
+      "kind": "feature"
+    },
+    {
+      "sha": "1972ecea8683ddcc24c5d7e72fc97956a23ab076",
+      "date": "2026-09-22T09:32:09Z",
+      "subject": "feat: add transactional persistent SQLite registry (#43)",
+      "kind": "feature"
+    },
+    {
+      "sha": "6dfda34074f7c28375d66720c6ef5bbd12b5cad0",
+      "date": "2026-09-22T09:06:01Z",
+      "subject": "feat: add local Ollama bounded decision backend (#42)",
+      "kind": "feature"
+    },
+    {
+      "sha": "5ec8bfa7c3a438f12553099333322eb150008e49",
+      "date": "2026-09-22T08:27:29Z",
+      "subject": "feat: add provider-neutral embedding decision backend (#40)",
+      "kind": "feature"
+    },
+    {
+      "sha": "f5b08809a6b1f1776d8d98546b2a29586d6aaf94",
+      "date": "2026-09-22T08:15:45Z",
+      "subject": "feat: improve OpenAPI ref and composition fidelity (#39)",
+      "kind": "feature"
+    },
+    {
+      "sha": "aa597a0a3eaffbd3487d51f810adbfd8dec1d86d",
+      "date": "2026-09-22T08:07:55Z",
+      "subject": "feat: add native LangGraph StateGraph integration (#38)",
+      "kind": "feature"
+    },
+    {
+      "sha": "d4073490fba7de023ccbee4019630f535341599b",
+      "date": "2026-09-22T04:26:27Z",
+      "subject": "chore: remove one-off branch cleanup workflow (#37)",
+      "kind": "chore"
+    },
+    {
+      "sha": "890e276ce3a55552927ab2bbfd5470b959c6b460",
+      "date": "2026-09-22T04:24:02Z",
+      "subject": "chore: add one-off stale branch cleanup (#36)",
+      "kind": "chore"
+    },
+    {
+      "sha": "8a5ffed90ba5f8cbd5b2e41db0e86f9a54487daa",
+      "date": "2026-09-22T04:20:05Z",
+      "subject": "chore: begin 0.4.0 development (#35)",
+      "kind": "chore"
+    },
+    {
+      "sha": "76e5408beb91503627f0bc0db6efc38f41ccefe8",
+      "date": "2026-09-22T04:08:20Z",
+      "subject": "release: SchemaRouter 0.3.0 (#34)",
+      "kind": "release"
+    },
+    {
+      "sha": "7b281ee95112f9011eb37d44f8a7b2632a5761f6",
+      "date": "2026-09-22T03:05:38Z",
+      "subject": "chore(deps): bump GitHub artifact actions (#6)",
+      "kind": "chore"
+    },
+    {
+      "sha": "bb540cd7979133f9b2fd07f7e4e58db6906de893",
+      "date": "2026-09-22T02:36:57Z",
+      "subject": "ci: separate Python preview from release gate (#32)",
+      "kind": "ci"
+    },
+    {
+      "sha": "92ad56bb2e492417ca51da324da01c49759db0be",
+      "date": "2026-09-22T01:49:57Z",
+      "subject": "docs: align integration installs with published alpha (#31)",
+      "kind": "docs"
+    },
+    {
+      "sha": "4ec70ce454f701da6624303c839754d876986757",
+      "date": "2026-09-22T01:43:26Z",
+      "subject": "chore: begin 0.3.0a2 development (#30)",
+      "kind": "chore"
+    },
+    {
+      "sha": "26ae8bcb8929d559826ffe0bab1c66ef7412c64e",
+      "date": "2026-09-22T01:29:32Z",
+      "subject": "ci: separate Python preview from release-blocking CI (#27)",
+      "kind": "ci"
+    },
+    {
+      "sha": "6250015c5197fae39272caf71fe7da29bf7246f7",
+      "date": "2026-09-22T01:24:04Z",
+      "subject": "fix: preserve release tag ancestry history (#26)",
+      "kind": "fix"
+    },
+    {
+      "sha": "afc6c25b0b6ba04336df74d3093a6dade45d463b",
+      "date": "2026-09-22T01:11:40Z",
+      "subject": "ci: unify release tagging and publishing pipeline (#25)",
+      "kind": "ci"
+    },
+    {
+      "sha": "2a1a95642ea82e4364efc5f4b53bea30ed911927",
+      "date": "2026-09-22T00:54:26Z",
+      "subject": "ci: automate release tag creation after green main CI (#24)",
+      "kind": "ci"
+    },
+    {
+      "sha": "fc17588aaa8097145ed1f5b0feca2fd6e11b6ba0",
+      "date": "2026-09-22T00:17:17Z",
+      "subject": "release: SchemaRouter 0.3.0a1 (#23)",
+      "kind": "release"
+    },
+    {
+      "sha": "ac7833feceef21a1949fb70308ba86159037db21",
+      "date": "2026-09-21T21:20:03Z",
+      "subject": "feat: add production maturity controls and ecosystem contracts",
+      "kind": "feature"
+    },
+    {
+      "sha": "89b20c4bb2420877c89b46e0789ea758ece92762",
+      "date": "2026-09-21T17:09:39Z",
+      "subject": "chore: finish compatibility and release quality gates (#21)",
+      "kind": "chore"
+    },
+    {
+      "sha": "7bb16d72cb655a796d42ca408d87f0e6d5467aba",
+      "date": "2026-09-21T16:49:24Z",
+      "subject": "chore: harden release metadata and typed CI (#20)",
+      "kind": "chore"
+    },
+    {
+      "sha": "5599ed48ea300dc88dc0cefdc6ce9aa5a75cb38d",
+      "date": "2026-09-21T16:02:10Z",
+      "subject": "fix: bound OpenAPI runtime responses and finish hardening audit",
+      "kind": "fix"
+    },
+    {
+      "sha": "dfe4b85f12ae7356e085d93897b56f73272088db",
+      "date": "2026-09-21T15:52:30Z",
+      "subject": "feat: complete Jev decision backend, hardening, benchmarks, and Korean README",
+      "kind": "feature"
+    },
+    {
+      "sha": "a04b1dd6a8f5eb8a6621d0be5ce33b59b7d32500",
+      "date": "2026-09-21T15:25:09Z",
+      "subject": "docs: complete ecosystem runnable examples and compatibility policy",
+      "kind": "docs"
+    },
+    {
+      "sha": "d131d005b604f4b0ff86106b56ff624d98c02959",
+      "date": "2026-09-21T15:20:58Z",
+      "subject": "docs: align ecosystem readiness and published alpha status",
+      "kind": "docs"
+    },
+    {
+      "sha": "207739cca531dd20ebb6fe16b342fb23e736e1f7",
+      "date": "2026-09-21T15:16:20Z",
+      "subject": "feat: add first-class LlamaIndex integration",
+      "kind": "feature"
+    },
+    {
+      "sha": "7c25ae95439a9cc07a5ab7b6d81db50dea791d89",
+      "date": "2026-09-21T15:08:31Z",
+      "subject": "feat: add provider-neutral bounded decision backends",
+      "kind": "feature"
+    },
+    {
+      "sha": "b4e134b920ff2d61e5fd7eb0b24e80be3e4633eb",
+      "date": "2026-09-21T14:00:18Z",
+      "subject": "fix: support web-created releases in publish workflow",
+      "kind": "fix"
+    },
+    {
+      "sha": "8d88ccaaa83f8b858fdee52684024704b18fec62",
+      "date": "2026-09-20T06:02:10Z",
+      "subject": "ci: guard GitHub Pages deployment until enabled",
+      "kind": "ci"
+    },
+    {
+      "sha": "4eab1a216660e4997848ff666f26d607e2c94043",
+      "date": "2026-09-20T05:58:42Z",
+      "subject": "chore: prepare SchemaRouter 0.2.0a1 release",
+      "kind": "chore"
+    },
+    {
+      "sha": "1de6b4e14f4bb6607f58e6fc73b6b62d21e9473d",
+      "date": "2026-09-20T05:44:57Z",
+      "subject": "feat: add v0.2 adapter ecosystem and OPTIMADE support",
+      "kind": "feature"
+    },
+    {
+      "sha": "55e2563966b7c656a59f6fe1862ff7d01ef87bee",
+      "date": "2026-09-20T04:57:07Z",
+      "subject": "feat: establish SchemaRouter v0.1 framework core",
+      "kind": "feature"
+    },
+    {
+      "sha": "5691c3c922f0209231f112c06096fe8744681fc5",
+      "date": "2026-09-20T01:58:57Z",
+      "subject": "Initial commit",
+      "kind": "other"
+    }
+  ]
+}

@@ -1,0 +1,975 @@
+{
+  "schema_version": 1,
+  "title": "SchemaRouter Design and Research Evidence Ledger",
+  "purpose": "Machine-readable provenance index for reproducibility, follow-up papers, ablation reporting, and research-integrity review.",
+  "scope": "Complete material design and experiment lineage from the initial repository implementation through the active 0.11 routing-quality cycle. Routine bugfix-only commits are referenced by Git history but are not treated as independent design experiments unless they changed an architectural invariant, evaluation protocol, or empirical claim.",
+  "updated_at": "2026-09-27",
+  "governance": {
+    "calibration_and_blind_are_never_tuning_data": true,
+    "failed_candidates_are_retained": true,
+    "invalidated_runs_are_retained_with_reason": true,
+    "artifacts_require_run_and_digest_when_available": true,
+    "default_promotion_requires_preregistered_gates": true,
+    "semantic_evidence_never_creates_execution_authority": true
+  },
+  "standing_targets": {
+    "development_next_cycle": {
+      "supported_exact_route_accuracy_min": 0.7,
+      "near_domain_unsupported_rejection_min": 0.96,
+      "false_route_rate_max": 0.02,
+      "invalid_plan_rate_max": 0,
+      "execution_errors_max": 0
+    },
+    "production": {
+      "supported_exact_route_accuracy_min": 0.85,
+      "near_domain_unsupported_rejection_range": [
+        0.97,
+        0.99
+      ],
+      "false_route_rate_max": 0.01,
+      "invalid_plan_rate_max": 0,
+      "execution_authority_violation_rate_max": 0
+    }
+  },
+  "legacy_evidence_inventory": {
+    "corpus_files": [
+      "benchmarks/decision-routing-v1.json",
+      "benchmarks/decision-routing-v2.json",
+      "benchmarks/decision-routing-v3.json",
+      "benchmarks/decision-routing-v4-operation-holdout.json",
+      "benchmarks/decision-routing-v5-operation-calibration.json",
+      "benchmarks/decision-routing-v6-operation-holdout.json",
+      "benchmarks/decision-routing-v7-operation-post-change-holdout.json",
+      "benchmarks/decision-routing-v8-operation-alias-holdout.json",
+      "benchmarks/decision-routing-v9-operation-alias-holdout.json",
+      "benchmarks/decision-routing-v10-operation-generalization-holdout.json",
+      "benchmarks/decision-routing-v11-operation-generalization-holdout.json",
+      "benchmarks/decision-routing-v12-operation-contrastive-holdout.json",
+      "benchmarks/decision-routing-v13-operation-contrastive-holdout.json"
+    ],
+    "note": "Legacy files and their Git history preserve the earlier routing/holdout lineage. Later cycles below contain explicit freeze/run/artifact provenance suitable for paper-level reconstruction."
+  },
+  "experiments": [
+    {
+      "id": "pre-0.8-no-route-sentinel-ablation",
+      "source_revision": "e41f57a044182deb374980c28d66863d637a691b",
+      "issue": 87,
+      "hypothesis": "An explicit none_of_the_above pseudo-option could improve empty-recall no-route discrimination.",
+      "dataset": {
+        "cases": 144,
+        "hardware": "GitHub-hosted ubuntu-latest x64 CPU",
+        "backend": "Laya"
+      },
+      "result": {
+        "no_sentinel_recall_on_empty": {
+          "overall_accuracy": 0.6181,
+          "korean_accuracy": 0.4364,
+          "ood_adversarial_accuracy": 0,
+          "final_no_route_recall": 0
+        },
+        "no_sentinel_confidence_025": {
+          "overall_accuracy": 0.6042,
+          "korean_accuracy": 0.3818,
+          "ood_adversarial_accuracy": 0.5,
+          "final_no_route_recall": 0.4375
+        },
+        "sentinel_recall_on_empty": {
+          "overall_accuracy": 0.5625,
+          "korean_accuracy": 0.2909
+        },
+        "sentinel_confidence_025": {
+          "overall_accuracy": 0.5417,
+          "korean_accuracy": 0.2545
+        },
+        "sentinel_no_route_selections": 16,
+        "sentinel_false_no_route_on_valid_korean": 13,
+        "sentinel_true_no_route": 3
+      },
+      "decision": "sentinel_removed",
+      "failure_reason": "The catch-all pseudo-route suppressed valid multilingual in-domain recall and provided weak open-set discrimination.",
+      "paper_relevance": [
+        "negative-capability design history",
+        "pseudo-route failure",
+        "multilingual open-set routing"
+      ]
+    },
+    {
+      "id": "0.10-contrastive-bge-v1",
+      "cycle": "0.10-operation-contrastive-v1",
+      "hypothesis": "Sibling-contrastive BGE operation-fit can improve supported operation routing while retaining near-domain unsupported rejection.",
+      "data_policy": {
+        "development": "decision-routing-v5 split=dev",
+        "calibration": "decision-routing-v5 split=calibration; selected candidate only",
+        "design_known_stress": "v12; not tuning eligible",
+        "blind_final": "v13; generated/scored only after full candidate freeze"
+      },
+      "frozen_candidate": {
+        "architecture": "sibling-contrastive BGE operation-fit",
+        "model": "BAAI/bge-reranker-v2-m3",
+        "beta": 1,
+        "operation_fit_min_score": 0.01,
+        "operation_fit_min_margin": 0
+      },
+      "development": {
+        "cases": 384,
+        "supported_exact_route_accuracy": 0.65625,
+        "near_domain_unsupported_rejection": 0.9583333333333334,
+        "harmonic_mean": 0.779032258064516,
+        "workflow_run_id": 36244752578,
+        "artifact_id": 10906539444,
+        "artifact_sha256": "81ad5f1a385ab61d58c9424c125ef38b24667272d194c7c271a3481570723ccc"
+      },
+      "calibration": {
+        "tuning_eligible": false,
+        "cases": 192,
+        "supported_exact_route_accuracy": 0.625,
+        "near_domain_unsupported_rejection": 0.9791666666666666,
+        "false_routes": 2,
+        "wrong_endpoints": 8,
+        "workflow_run_id": 36245567627,
+        "artifact_id": 10907402275,
+        "artifact_sha256": "95ac1d052f1aa5bd4f3c0dfb4f2b0ec6aafe3dcb7911a41b7fd434bdec895d5d"
+      },
+      "blind_final": {
+        "tuning_eligible": false,
+        "cases": 600,
+        "supported_exact_route_accuracy": 0.6171875,
+        "near_domain_unsupported_rejection": 0.984375,
+        "out_of_domain_rejection": 1,
+        "false_routes": 3,
+        "wrong_tools": 1,
+        "wrong_endpoints": 37,
+        "errors": 0,
+        "workflow_run_id": 36246386089,
+        "artifact_id": 10907304722,
+        "artifact_sha256": "0ca1cb673bee4d64999194252de8ddfe13a408548b7b53f0980c70b2d4719460",
+        "corpus_sha256": "73863c15191d6e75d892a8b0024056abe562aad2ad11d334610871dc5e070596"
+      },
+      "decision": "blind_final_passed_for_optional_profile",
+      "paper_relevance": [
+        "contrastive reranking baseline",
+        "blind-final methodology",
+        "high rejection with moderate supported accuracy"
+      ],
+      "source_files": [
+        "benchmarks/operation-fit-0.10-cycle.json",
+        "benchmarks/operation-fit-0.10-confirmed-candidate.json",
+        "benchmarks/operation-fit-0.10-v13-result.json"
+      ]
+    },
+    {
+      "id": "0.10-cheap-first-cascade-v2",
+      "cycle": "0.10-operation-cascade-v2",
+      "hypothesis": "A MiniLM fast-path plus selective BGE reranking can reduce CPU latency while preserving preregistered quality floors.",
+      "development": {
+        "cases": 384,
+        "selected_candidate": "r030-a060-m005",
+        "supported_exact_route_accuracy": 0.6197916666666666,
+        "near_domain_unsupported_rejection": 0.96875,
+        "mean_latency_ms": 473.467,
+        "mean_latency_reduction_vs_full_bge_fraction": 0.10472007079538918,
+        "workflow_run_id": 36248873541
+      },
+      "calibration": {
+        "tuning_eligible": false,
+        "cases": 192,
+        "supported_exact_route_accuracy": 0.6145833333333334,
+        "near_domain_unsupported_rejection": 0.9479166666666666,
+        "false_routes": 5,
+        "mean_latency_ms": 428.946,
+        "mean_latency_reduction_vs_full_bge_fraction": 0.14982925074473624,
+        "workflow_run_id": 36251542594,
+        "artifact_id": 10909651834,
+        "artifact_sha256": "61d9fc86d50c30c37e4cb74a440bfd3d04f9eb16f8a738a772e5d179e637b8b8"
+      },
+      "decision": "rejected_on_calibration",
+      "failure_reason": "Near-domain unsupported rejection was 94.792%, below the preregistered 95% floor by one case; candidate was rejected rather than retuned.",
+      "paper_relevance": [
+        "quality-latency tradeoff",
+        "confirmation-only calibration discipline",
+        "negative result"
+      ],
+      "source_files": [
+        "benchmarks/operation-fit-0.10-cascade-dev-result.json",
+        "benchmarks/operation-fit-0.10-cascade-calibration-result.json"
+      ]
+    },
+    {
+      "id": "0.10-graph-projection-v3",
+      "cycle": "0.10-operation-graph-projection-v3",
+      "hypothesis": "A typed schema graph can own routing authority while semantic signals provide bounded soft evidence, reducing latency without sacrificing quality/safety.",
+      "branch": "research/graph-projection-v3",
+      "pull_request": 181,
+      "development": {
+        "cases": 1200,
+        "supported_exact_route_accuracy": 0.6328125,
+        "near_domain_unsupported_rejection": 0.953125,
+        "out_of_domain_rejection": 1,
+        "false_routes": 18,
+        "mean_latency_ms": 379.06725833333337,
+        "p95_latency_ms": 551.1995,
+        "paired_correctness_gains": 47,
+        "paired_correctness_losses": 5,
+        "all_preregistered_gates_passed": true,
+        "workflow_run_id": 36283873302,
+        "artifact_id": 10920740125,
+        "corpus_sha256": "dde8196ee4e342012e286cdc435a6e450bdf319912966add67343c8fcd386ac6"
+      },
+      "calibration": {
+        "tuning_eligible": false,
+        "cases": 600,
+        "supported_exact_route_accuracy": 0.6875,
+        "near_domain_unsupported_rejection": 0.9166666666666666,
+        "out_of_domain_rejection": 1,
+        "false_routes": 16,
+        "wrong_endpoints": 34,
+        "mean_latency_ms": 207.524,
+        "p95_latency_ms": 322.73,
+        "paired_correctness_gains": 14,
+        "paired_correctness_losses": 2,
+        "workflow_run_id": 36285587372,
+        "artifact_id": 10920004901,
+        "corpus_sha256": "9b9c42bf146637c9f5866cbcd7952b46e4d5dd46b1e5fbdf74829a7332bfb3ed"
+      },
+      "decision": "rejected_on_fresh_calibration",
+      "failure_reason": "Natural near-domain unsupported rejection was 91.67%, below the preregistered 95% floor despite supported-accuracy and latency gains.",
+      "integrity_events": [
+        {
+          "type": "invalidated_pre_result_calibration_attempt",
+          "workflow_run_id": 36285424108,
+          "reason": "Structural audit found reuse of development unsupported-operation families.",
+          "metrics_inspected": false,
+          "artifact_contents_inspected": false
+        }
+      ],
+      "paper_relevance": [
+        "schema-authority architecture",
+        "graph-first routing",
+        "behavior-preserving cache optimization",
+        "fresh calibration rejection",
+        "research-integrity case study"
+      ],
+      "source_files": [
+        "benchmarks/operation-fit-0.10-graph-cycle.json",
+        "benchmarks/operation-fit-0.10-graph-frozen-candidate.json",
+        "benchmarks/operation-fit-0.10-graph-calibration-result.json"
+      ]
+    },
+    {
+      "id": "0.11-v4-fresh-baseline",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "hypothesis": "Fresh natural-language development data can expose the post-0.10 routing bottleneck without reusing consumed calibration/blind evidence.",
+      "branch": "research/v4-dev-baseline-record",
+      "pull_request": 187,
+      "dataset": {
+        "role": "fresh_tuning_eligible_development",
+        "cases": 1800,
+        "supported_cases": 1152,
+        "near_domain_unsupported_cases": 576,
+        "out_of_domain_cases": 72,
+        "languages": [
+          "en",
+          "ko",
+          "es",
+          "ja",
+          "de",
+          "mixed"
+        ],
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+        "normalized_exact_overlap_with_consumed_corpora": 0
+      },
+      "result": {
+        "supported_exact_route_accuracy": 0.4401041666666667,
+        "near_domain_unsupported_rejection": 0.9409722222222222,
+        "false_route_rate": 0.05246913580246913,
+        "false_routes": 34,
+        "wrong_tools": 3,
+        "wrong_endpoints": 130,
+        "workflow_run_id": 36289671639,
+        "artifact_id": 10922301686
+      },
+      "decision": "baseline_only",
+      "paper_relevance": [
+        "fresh-cycle baseline",
+        "failure-stage localization",
+        "post-calibration data separation"
+      ]
+    },
+    {
+      "id": "0.11-hierarchical-tool-operation",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "hypothesis": "Separating tool-domain selection from within-tool operation selection will improve exact-route accuracy while preserving rejection.",
+      "branch": "research/v4-hierarchical-routing",
+      "pull_request": 189,
+      "preregistered": true,
+      "result": {
+        "cases": 1800,
+        "supported_exact_route_accuracy": 0.4262152777777778,
+        "near_domain_unsupported_rejection": 0.9409722222222222,
+        "false_route_rate": 0.05246913580246913,
+        "false_routes": 34,
+        "wrong_tools": 3,
+        "wrong_endpoints": 166,
+        "paired_gains": 91,
+        "paired_losses": 107,
+        "mean_latency_ms": 507.634,
+        "p95_latency_ms": 689.518,
+        "workflow_run_id": 36305345476,
+        "artifact_id": 10927038875,
+        "artifact_sha256": "6aeef6e37b60e413dfc3215874ea33bc08f4b05e994e5fc3d28bc76d9bc94f55",
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+      },
+      "decision": "rejected_on_development",
+      "failure_reason": "Wrong-tool errors were unchanged while wrong-endpoint errors increased, localizing the regression to within-tool operation resolution.",
+      "paper_relevance": [
+        "negative ablation",
+        "bottleneck localization"
+      ]
+    },
+    {
+      "id": "0.11-accepted-operation-selector",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "hypothesis": "If operation-fit already identifies a registered route, allowing that accepted route to control the single-call candidate will recover endpoint accuracy without changing the abstention boundary.",
+      "branch": "research/v4-operation-fit-selector",
+      "pull_request": 190,
+      "preregistered": true,
+      "result": {
+        "cases": 1800,
+        "baseline_supported_exact_route_accuracy": 0.4401041666666667,
+        "supported_exact_route_accuracy": 0.5408,
+        "near_domain_unsupported_rejection": 0.9409722222222222,
+        "false_route_rate": 0.05246913580246913,
+        "false_routes": 34,
+        "wrong_tools": 3,
+        "wrong_endpoints": 14,
+        "paired_gains": 129,
+        "paired_losses": 13,
+        "route_changes": 151,
+        "top_driven_route_changes": 151,
+        "invalid_plans": 0,
+        "execution_errors": 0,
+        "workflow_run_id": 36305969034,
+        "artifact_id": 10927253262,
+        "artifact_sha256": "7048a45e5bcc23a1cdd77558e47f86f9d2b2077b542a66cd74bd7de2377f948a",
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+      },
+      "decision": "standalone_candidate_rejected_primitive_retained",
+      "failure_reason": "Large endpoint-accuracy gain did not improve unsupported rejection or false-route rate, so the selector is useful only as one component of a safer composite architecture.",
+      "paper_relevance": [
+        "causal ablation",
+        "wrong-endpoint error reduction",
+        "separation of selection quality from rejection quality"
+      ]
+    },
+    {
+      "id": "0.11-stage-signal-diagnostics",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "hypothesis": "Candidate-fit score geometry can reveal which supported misses are recoverable and whether a global similarity threshold can separate supported from near-domain unsupported requests.",
+      "branch": "research/v4-stage-diagnostics",
+      "behavior_change": false,
+      "result": {
+        "cases": 1800,
+        "source_revision": "1cf7efc261b5bcb16b50a8794c8abbf84ed9265c",
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+        "candidate_fit_abstentions_all": 365,
+        "supported_abstentions": 94,
+        "supported_abstentions_where_top_route_was_expected": 43,
+        "supported_top_route_exact_rate_over_all_supported": 0.6206597222222222,
+        "near_domain_rejection_at_similarity_0_25": 0.3506944444444444,
+        "supported_gate_pass_rate_at_similarity_0_25": 0.9184027777777778,
+        "workflow_run_id": 36307347806,
+        "artifact_id": 10928107658,
+        "artifact_sha256": "c236c244a839fc8dfd00e2f20795bc26f7518ea9a971b887a2c57f54b8680224"
+      },
+      "decision": "diagnostic_supports_multi_signal_boundary_design",
+      "interpretation": "A single candidate-fit similarity threshold cannot provide both high supported recall and high near-domain rejection; rejection must use distinct negative/unknown capability evidence.",
+      "paper_relevance": [
+        "score-distribution analysis",
+        "threshold tradeoff",
+        "motivation for typed multi-signal projection"
+      ]
+    },
+    {
+      "id": "0.11-typed-evidence-infrastructure",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "behavior_change": false,
+      "pull_requests": [
+        185,
+        186
+      ],
+      "components": [
+        "typed DecisionEvidence emission",
+        "score-kind metadata",
+        "unknown-aware EvidenceProjector",
+        "no cross-kind raw-score averaging",
+        "fail-closed duplicate-observation handling"
+      ],
+      "decision": "infrastructure_retained_for_next_candidate",
+      "paper_relevance": [
+        "method design",
+        "uncertainty semantics",
+        "score-kind-safe evidence fusion"
+      ]
+    },
+    {
+      "id": "0.11-route-local-threshold-ablation",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 191,
+      "branch": "research/v4-route-local-thresholds",
+      "preregistered": true,
+      "hypothesis": "Per-route pairwise minimum-score thresholds can recover open-set safety while preserving the operation-narrow supported-routing gain.",
+      "result": {
+        "cases": 1800,
+        "supported_exact_route_accuracy": 0.7161,
+        "near_domain_unsupported_rejection": 0.9358,
+        "false_routes": 38,
+        "canonical_false_route_rate": 0.05864197530864197,
+        "out_of_domain_rejection": 0.9861,
+        "invalid_plan_rate": 0,
+        "execution_errors": 0,
+        "workflow_run_id": 36305873119,
+        "artifact_id": 10928065296
+      },
+      "decision": "rejected_on_development",
+      "failure_reason": "Filter-then-rank route-local threshold semantics allowed a lower-ranked route to survive after the raw top route failed its own threshold, increasing executable false routes.",
+      "paper_relevance": [
+        "threshold-semantics ablation",
+        "rank-then-gate motivation",
+        "negative result"
+      ]
+    },
+    {
+      "id": "0.11-nli-boundary-superseded",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 192,
+      "branch": "research/v4-nli-operation-boundary",
+      "decision": "superseded_before_result_interpretation",
+      "tuning_eligible": false,
+      "reason": "Stacked on the weaker generic candidate pipeline. Frozen NLI hypothesis/grid was carried unchanged to #194; #192 results are not eligible for threshold selection.",
+      "paper_relevance": [
+        "research hygiene",
+        "superseded preregistration"
+      ]
+    },
+    {
+      "id": "0.11-pairwise-tool-hierarchy",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 193,
+      "branch": "research/v4-hierarchical-pairwise-tool",
+      "preregistered": true,
+      "result": {
+        "cases": 1800,
+        "supported_exact_route_accuracy": 0.7048611111111112,
+        "near_domain_unsupported_rejection": 0.9166666666666666,
+        "out_of_domain_rejection": 1,
+        "false_routes": 48,
+        "canonical_false_route_rate": 0.07407407407407407,
+        "wrong_tools": 1,
+        "wrong_endpoints": 13,
+        "invalid_plan_rate": 0,
+        "execution_errors": 0,
+        "mean_latency_ms": 1160.047,
+        "p95_latency_ms": 1355.556,
+        "workflow_run_id": 36306926184,
+        "artifact_id": 10927969192,
+        "artifact_sha256": "11369d9cd85f125f2bbb2f2ce1c1c9ba7a86d340144840e824a8a25cbb97e956"
+      },
+      "decision": "rejected_on_development",
+      "failure_reason": "Pairwise tool ranking crossed the 70% supported gate but did not provide an open-set capability boundary and badly missed rejection/false-route gates.",
+      "paper_relevance": [
+        "hierarchy ablation",
+        "selection-vs-rejection separation",
+        "negative result"
+      ]
+    },
+    {
+      "id": "0.11-direct-multilingual-nli-boundary",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 194,
+      "branch": "research/v4-nli-operation-narrow",
+      "preregistered": true,
+      "frozen_model": "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli",
+      "frozen_thresholds": [
+        0.2,
+        0.35,
+        0.5,
+        0.65,
+        0.8,
+        0.9
+      ],
+      "result": {
+        "workflow_run_id": 36307128063,
+        "threshold_sweep": [
+          {
+            "threshold": 0.2,
+            "supported_exact_route_accuracy": 0.1753472222222222,
+            "near_domain_unsupported_rejection": 0.9079861111111112,
+            "false_routes": 55
+          },
+          {
+            "threshold": 0.35,
+            "supported_exact_route_accuracy": 0.13194444444444445,
+            "near_domain_unsupported_rejection": 0.9722222222222222,
+            "false_routes": 17
+          },
+          {
+            "threshold": 0.5,
+            "supported_exact_route_accuracy": 0.1171875,
+            "near_domain_unsupported_rejection": 0.9774305555555556,
+            "false_routes": 13
+          },
+          {
+            "threshold": 0.65,
+            "supported_exact_route_accuracy": 0.1111111111111111,
+            "near_domain_unsupported_rejection": 0.9774305555555556,
+            "false_routes": 13
+          },
+          {
+            "threshold": 0.8,
+            "supported_exact_route_accuracy": 0.11024305555555555,
+            "near_domain_unsupported_rejection": 0.9774305555555556,
+            "false_routes": 13
+          },
+          {
+            "threshold": 0.9,
+            "supported_exact_route_accuracy": 0.11024305555555555,
+            "near_domain_unsupported_rejection": 0.9774305555555556,
+            "false_routes": 13
+          }
+        ],
+        "invalid_plan_rate": 0,
+        "execution_errors": 0
+      },
+      "decision": "rejected_on_development",
+      "failure_reason": "Conservative entailment thresholds improved unsupported rejection but collapsed supported recall; direct NLI is unsuitable as the operation selector/gate tested here.",
+      "paper_relevance": [
+        "independent-boundary ablation",
+        "precision-recall tradeoff",
+        "negative result"
+      ]
+    },
+    {
+      "id": "0.11-bounded-retrieve-rerank-architecture",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 195,
+      "branch": "research/v4-bounded-rerank",
+      "source_revision": "90af3e1fce3bf29f45fd3347c14afc2603b37d5e",
+      "behavior_change": "opt_in_only",
+      "components": [
+        "semantic recall over registered authorized candidates",
+        "operation_fit_scope=all_candidates",
+        "accepted operation-fit selector",
+        "candidate-fit optional/omittable",
+        "default primary_tool behavior preserved"
+      ],
+      "decision": "architecture_implemented_diagnostic_pending",
+      "work_item": 197,
+      "paper_relevance": [
+        "retrieve-rerank architecture",
+        "bounded authority"
+      ]
+    },
+    {
+      "id": "0.11-bounded-rerank-score-diagnostic",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 205,
+      "work_item": 204,
+      "branch": "research/v4-bounded-rerank-diagnostic",
+      "preregistered": true,
+      "source_parent_revision": "90af3e1fce3bf29f45fd3347c14afc2603b37d5e",
+      "status": "executing",
+      "purpose": "Measure raw all-candidate BGE ranking ceiling and derive a development-only winner-only route-local threshold Pareto frontier without freezing behavior.",
+      "decision": "pending"
+    }
+  ],
+  "current_research_conclusion": {
+    "supported_selection_problem": "Accepted operation-fit selector materially reduces wrong-endpoint errors.",
+    "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
+    "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
+    "next_candidate_direction": [
+      "retain bounded accepted operation selector",
+      "retain registered-schema execution authority",
+      "use route/boundary-local thresholds where justified by fresh development only",
+      "introduce explicit negative-capability and unknown evidence",
+      "project incompatible evidence kinds independently",
+      "rerank only within authorized candidate sets"
+    ],
+    "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
+    "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
+    "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
+    "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
+    "active_experiment": "bounded retrieve-rerank raw score diagnostic (#204 / PR #205)",
+    "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule."
+  },
+  "paper_reconstruction_checklist": [
+    "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
+    "Report rejected ablations, not only successful candidates.",
+    "Preserve run IDs, artifact IDs, SHA-256 digests, source revisions, and corpus hashes in supplementary material.",
+    "State when calibration/blind evidence became permanently consumed.",
+    "Include invalidated pre-result attempts and reasons without using their metrics.",
+    "Separate architectural authority claims from empirical performance claims."
+  ],
+  "work_tracking": {
+    "canonical_tracker_issue": 200,
+    "history_backfill_issue": 196,
+    "active_research_issue": 197,
+    "confirmation_evaluation_issue": 198,
+    "follow_up_paper_issue": 199,
+    "existing_open_work": [
+      10,
+      15,
+      98,
+      100
+    ],
+    "session_resume_rule": "Read issue #200, then the active child issue, then this ledger and the active preregistration before changing code."
+  },
+  "design_lineage": [
+    {
+      "phase": "v0.1-framework-core",
+      "date": "2026-09-20",
+      "source_revision": "55e2563966b7c656a59f6fe1862ff7d01ef87bee",
+      "design_goal": "Establish a schema-aware planning/execution boundary between LLM/orchestrator intent and executable tools.",
+      "material_decisions": [
+        "typed Tool/Endpoint/Parameter/Field/Plan/Result contracts",
+        "schema-aware planning and field projection",
+        "runtime argument/output validation",
+        "fail-closed policy for mutation/destructive/unclassified remote calls",
+        "schema and invoker-binding drift checks",
+        "separate credentials from model-visible arguments",
+        "OpenAPI, MCP and Python callable ingestion",
+        "LangChain bridge without making SchemaRouter an agent framework"
+      ],
+      "status": "foundation_retained"
+    },
+    {
+      "phase": "v0.2-adapter-ecosystem",
+      "date": "2026-09-20",
+      "source_revision": "1de6b4e14f4bb6607f58e6fc73b6b62d21e9473d",
+      "design_goal": "Generalize capability ingestion/execution behind explicit adapter contracts.",
+      "material_decisions": [
+        "SourceAdapter/AdapterRegistry plugin model",
+        "OPTIMADE discovery and field-aware response_fields execution",
+        "call-aware protocol invokers",
+        "live compatibility smoke evidence",
+        "explicit security boundaries for adapter/runtime credentials"
+      ],
+      "status": "retained"
+    },
+    {
+      "phase": "v0.3-bounded-decision-and-production-controls",
+      "date": "2026-09-21/22",
+      "source_revisions": [
+        "7c25ae95439a9cc07a5ab7b6d81db50dea791d89",
+        "dfe4b85f12ae7356e085d93897b56f73272088db",
+        "ac7833feceef21a1949fb70308ba86159037db21"
+      ],
+      "design_goal": "Permit model-assisted routing without transferring execution authority to the model.",
+      "material_decisions": [
+        "provider-neutral DecisionBackend over finite locally authorized option IDs",
+        "deterministic fallback and fail-closed unknown-ID validation",
+        "opt-in granular DecisionPolicy",
+        "Jev/TypeSafe adapter with credential isolation",
+        "LlamaIndex bridge",
+        "trusted approvals, execution budgets and privacy-preserving telemetry",
+        "explicit third-party adapter loading",
+        "first checked-in multilingual/adversarial decision-routing benchmark"
+      ],
+      "status": "retained"
+    },
+    {
+      "phase": "v0.4-persistence-local-decisions-and-evidence",
+      "date": "2026-09-22",
+      "source_revision_range": "aa597a0..354e18e",
+      "design_goal": "Make routing observable, persistent, provider-neutral and richer in bounded evidence.",
+      "material_decisions": [
+        "native LangGraph StateGraph integration",
+        "EmbeddingDecisionBackend and local Ollama backend",
+        "transactional SQLite registry and replayable traces",
+        "bounded field selection and nested field projection",
+        "conservative evidence-sufficiency decisions",
+        "exact-recall candidate indexing",
+        "bounded same-origin OpenAPI external references",
+        "trusted non-transforming before/after execution hooks"
+      ],
+      "status": "retained"
+    },
+    {
+      "phase": "v0.5-runtime-and-openapi-hardening",
+      "date": "2026-09-22/23",
+      "design_goal": "Strengthen operational correctness without broadening routing authority.",
+      "material_decisions": [
+        "transient-aware retry classification",
+        "wall-clock-bounded retry/approval/hook semantics",
+        "OpenAPI parameter override correctness",
+        "collision-safe endpoint naming",
+        "required request-body preservation",
+        "protocol/auth header isolation",
+        "multi-2xx response contract handling"
+      ],
+      "status": "retained"
+    },
+    {
+      "phase": "v0.6-local-decision-observability",
+      "date": "2026-09-23",
+      "design_goal": "Expose what SchemaRouter built and allow practical local bounded-decision deployments.",
+      "material_decisions": [
+        "read-only inspection API and CLI",
+        "self-contained local HTML dashboard",
+        "Laya local decision backend with device/runtime observability",
+        "more spec-faithful OpenAPI composition/serialization handling"
+      ],
+      "status": "retained"
+    },
+    {
+      "phase": "v0.7-field-first-provider-access-scientific-contracts",
+      "date": "2026-09-25",
+      "design_goal": "Make requested data semantics primary and execution route secondary.",
+      "material_decisions": [
+        "field-first route-second architecture",
+        "provider/access identities and read-only fallback contracts",
+        "server-side field projection",
+        "typed scientific datatype/unit/qualifier contracts",
+        "trusted parameter aliases",
+        "schema-diff and operation-scoped policy rules",
+        "structured PlanExplanation without model chain-of-thought",
+        "parallel read-only fan-out",
+        "health recovery without permanent route blacklisting",
+        "generic none_of_the_above sentinel for empty-recall model routing was removed after full-corpus Laya evidence showed it was counterproductive; calibrated confidence/abstention remained the preferred no-route mechanism",
+        "retained multi-run benchmark history and machine-readable compatibility evidence",
+        "on-demand reproducible full-corpus research benchmark workflow",
+        "source revision + corpus SHA-256 + repeat/case-limit reproducibility manifests",
+        "opt-in empty lexical recall recovery and calibrated candidate-abstention/threshold tooling"
+      ],
+      "status": "retained"
+    },
+    {
+      "phase": "v0.8-semantic-routing-and-holdout-discipline",
+      "date": "2026-09-26",
+      "design_goal": "Improve natural-language routing with multiple bounded semantic stages while preserving fail-closed authority.",
+      "material_decisions": [
+        "semantic candidate recall",
+        "candidate-fit no-route gate",
+        "operation-fit sibling-operation gate",
+        "endpoint disambiguation inside the leading tool domain",
+        "trusted explicit operation aliases only; no model-authored aliases",
+        "multi-call coverage/corroboration/evidence revalidation",
+        "fresh holdout progression and explicit consumed-evidence rules",
+        "provenance-aware multi-provider evidence aggregation",
+        "routing error taxonomy and failure-stage attribution",
+        "operation-fit semantic surface simplified on v5 development/calibration before one-shot v10 generalization"
+      ],
+      "status": "retained_with_later_research_refinement"
+    },
+    {
+      "phase": "v0.9-pairwise-operation-fit",
+      "date": "2026-09-26",
+      "source_revision": "880451eb0e4adadd5e96290c8c576820614fbc7a",
+      "design_goal": "Use bounded cross-encoder/reranker pair scores without making the scorer authoritative.",
+      "material_decisions": [
+        "PairwiseDecisionBackend",
+        "local mapping from score positions to opaque authorized option IDs",
+        "strict finite [0,1] score validation",
+        "v11 one-shot generalization holdout",
+        "BGE not promoted to unconditional default because rejection improved while supported recall and latency regressed"
+      ],
+      "status": "primitive_retained_default_rejected"
+    },
+    {
+      "phase": "v0.10-contrastive-cascade-graph-research",
+      "date": "2026-09-26/27",
+      "design_goal": "Improve operation rejection/accuracy and then latency while maintaining strict holdout hygiene.",
+      "material_decisions": [
+        "sibling-contrastive BGE beta=1 optional profile",
+        "frozen v13 blind-final protocol",
+        "cheap-first MiniLM→BGE cascade rejected on confirmation safety",
+        "graph-first authorized topology with bounded semantic seed/propagation/corroboration",
+        "counterbalanced paired latency measurement",
+        "behavior-preserving static option embedding cache",
+        "fresh calibration rejection without retuning",
+        "invalidated pre-result calibration attempt retained as research-integrity evidence"
+      ],
+      "status": "cycle_closed"
+    },
+    {
+      "phase": "v0.11-typed-multiview-routing-quality",
+      "date": "2026-09-27",
+      "design_goal": "Separate route-selection quality from unsupported-capability rejection using typed, unknown-aware, score-kind-safe evidence.",
+      "material_decisions": [
+        "fresh 1,800-case natural multilingual development corpus",
+        "typed DecisionEvidence and score_kind metadata",
+        "EvidenceProjector with explicit unknown policy and no cross-kind raw-score averaging",
+        "hierarchical tool→operation representation rejected",
+        "accepted operation-fit selector retained after large wrong-endpoint reduction",
+        "stage diagnostics show one global candidate-fit similarity threshold is insufficient",
+        "next candidate combines selector, boundary-local calibration and explicit negative/unknown capability evidence"
+      ],
+      "status": "active",
+      "work_item": 197
+    }
+  ],
+  "early_experiment_lineage": [
+    {
+      "corpus": "decision-routing-v1.json",
+      "introduced_in": "v0.3.0a1",
+      "role": "checked-in multilingual/adversarial benchmark",
+      "cases": 144,
+      "note": "First stable benchmark harness/corpus. Exact historical workflow artifact provenance is not yet fully backfilled; tracked by #196."
+    },
+    {
+      "id": "pre-v0.7-empty-recall-and-no-route-sentinel",
+      "source_prs": [
+        84,
+        85,
+        87
+      ],
+      "corpus": "decision-routing-v1.json",
+      "cases": 144,
+      "hardware": "GitHub-hosted ubuntu-latest x64 CPU",
+      "context": "Laya bounded decision routing after empty lexical candidate recall",
+      "initial_diagnosis": {
+        "observation": "Most Korean failures occurred before Laya inference because lexical recall returned zero candidates.",
+        "response": "Add opt-in recall_on_empty to expose only the trusted registered endpoint catalog."
+      },
+      "sentinel_experiment": {
+        "hypothesis": "A generic none_of_the_above option can improve no-route handling after empty-recall expansion.",
+        "pr85_results": {
+          "lexical_only": {
+            "accuracy": 0.4861,
+            "korean_accuracy": 0.0545,
+            "ood_adversarial_accuracy": 0.0833,
+            "final_no_route_recall": 0.3125
+          },
+          "recall_on_empty_with_sentinel": {
+            "accuracy": 0.5625,
+            "korean_accuracy": 0.2909,
+            "ood_adversarial_accuracy": 0.0833,
+            "final_no_route_recall": 0.1875
+          },
+          "confidence_0_25_no_route": {
+            "accuracy": 0.5417,
+            "korean_accuracy": 0.2545,
+            "ood_adversarial_accuracy": 0.5,
+            "final_no_route_recall": 0.5
+          }
+        },
+        "follow_up_evidence": {
+          "explicit_no_route_selections": 16,
+          "valid_korean_in_domain_misrejected": 13,
+          "true_no_route": 3
+        },
+        "pr87_results_after_removal": {
+          "lexical_only": {
+            "accuracy": 0.5069,
+            "korean_accuracy": 0.0545,
+            "ood_adversarial_accuracy": 0.0833,
+            "final_no_route_recall": 0.3125
+          },
+          "recall_on_empty_no_sentinel": {
+            "accuracy": 0.6181,
+            "korean_accuracy": 0.4364,
+            "ood_adversarial_accuracy": 0,
+            "final_no_route_recall": 0
+          },
+          "confidence_0_25_no_route": {
+            "accuracy": 0.6042,
+            "korean_accuracy": 0.3818,
+            "ood_adversarial_accuracy": 0.5,
+            "final_no_route_recall": 0.4375
+          }
+        },
+        "decision": "generic_sentinel_removed",
+        "retained_components": [
+          "recall_on_empty",
+          "independent candidate_abstention",
+          "fail-closed provider failure/abstention after empty recall",
+          "confidence metrics",
+          "offline threshold calibration"
+        ],
+        "interpretation": "The generic sentinel confused multilingual semantic selection and disproportionately rejected valid Korean requests. Confidence-gated abstention remained configurable, but no single confidence threshold was treated as universal."
+      },
+      "relevance_to_v0_11": "Do not repeat a catch-all sentinel. Negative capability must be represented as a distinct typed boundary signal rather than an extra pseudo-route."
+    },
+    {
+      "corpus": "decision-routing-v2.json",
+      "introduced_in": "v0.8 development",
+      "role": "1,200-case multilingual stress corpus with fixed dev/calibration/test splits",
+      "note": "Used to establish split/language metrics and reproducibility contracts."
+    },
+    {
+      "corpus": "decision-routing-v3.json",
+      "role": "600-case untouched capability-fit holdout",
+      "note": "Kept separate from already-consumed v2 test evidence."
+    },
+    {
+      "corpus": "decision-routing-v4-operation-holdout.json",
+      "role": "operation-fit holdout",
+      "note": "Predecessor operation-routing evidence; detailed run provenance remains a #196 backfill target."
+    },
+    {
+      "corpus": "decision-routing-v5-operation-calibration.json",
+      "role": "operation-fit development + calibration source",
+      "note": "Later reused only according to explicitly recorded split/consumption rules."
+    },
+    {
+      "corpus": "decision-routing-v6-operation-holdout.json",
+      "role": "600-case multilingual operation regression holdout",
+      "note": "Consumed before tool-domain-label cleanup and retained as regression evidence, not reused for a fresh untouched claim."
+    },
+    {
+      "corpus": "decision-routing-v7-operation-post-change-holdout.json",
+      "role": "600-case post-change holdout",
+      "note": "Consumed once as distribution-shift evidence."
+    },
+    {
+      "corpus": "decision-routing-v8-operation-alias-holdout.json",
+      "role": "reserved alias-aware holdout",
+      "note": "Accidentally consumed by a calibration diagnostic path; this hygiene event motivated replacement with v9."
+    },
+    {
+      "corpus": "decision-routing-v9-operation-alias-holdout.json",
+      "role": "fresh alias-aware one-shot holdout",
+      "known_result": {
+        "overall_accuracy": 0.51167,
+        "supported_exact_route_accuracy": 0.38281,
+        "near_domain_unsupported_rejection": 0.70833,
+        "out_of_domain_rejection": 1
+      },
+      "tuning_eligible": false
+    },
+    {
+      "corpus": "decision-routing-v10-operation-generalization-holdout.json",
+      "role": "fresh post-representation one-shot generalization holdout",
+      "known_result": {
+        "overall_accuracy": 0.55667,
+        "supported_exact_route_accuracy": 0.42188,
+        "near_domain_unsupported_rejection": 0.77083,
+        "out_of_domain_rejection": 1
+      },
+      "tuning_eligible": false
+    },
+    {
+      "corpus": "decision-routing-v11-operation-generalization-holdout.json",
+      "role": "fresh 600-case pairwise generalization holdout",
+      "known_result": {
+        "bge_overall_accuracy": 0.51667,
+        "bge_supported_exact_route_accuracy": 0.25781,
+        "bge_near_domain_unsupported_rejection": 0.97396,
+        "minilm_diagnostic_supported_accuracy": 0.40625,
+        "minilm_diagnostic_near_domain_rejection": 0.77604
+      },
+      "tuning_eligible": false
+    },
+    {
+      "corpus": "decision-routing-v12-operation-contrastive-holdout.json",
+      "role": "design-known stress evidence",
+      "tuning_eligible": false,
+      "note": "Inspected before architecture selection, so explicitly not treated as blind evidence."
+    },
+    {
+      "corpus": "decision-routing-v13-operation-contrastive-holdout.json",
+      "role": "one-shot blind-final",
+      "tuning_eligible": false,
+      "note": "Generated only after freeze and permanently consumed after one evaluation."
+    }
+  ]
+}
