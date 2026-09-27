@@ -1,0 +1,28 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "diagnostic": "ungated-operation-fit-score-surface-v1",
+  "status": "design_frozen_before_execution",
+  "base_revision": "6f083a70c27d31ded30e2e0704c65ac98f11ed5b",
+  "purpose": "Expose operation-fit pairwise scores for requests currently blocked by candidate-fit so route-local safety thresholds can be optimized from the complete tuning-eligible development surface.",
+  "behavior": {
+    "candidate_fit_gate": false,
+    "operation_fit_pairwise_min_score": 0.0,
+    "operation_fit_pairwise_min_margin": 0.0,
+    "operation_fit_select_accepted": true,
+    "candidate_recall_limit": 2,
+    "promotion_eligible": false
+  },
+  "analysis_plan": [
+    "Measure maximum pairwise top-route exact accuracy over all supported requests reaching operation-fit.",
+    "Compute route-local min-score thresholds that maximize supported exact routes under false-route budgets 34, 23, 17, 12, and 6.",
+    "Report near-domain unsupported rejection and overall false-route rate for each budget.",
+    "Identify routes whose supported and unsupported score distributions overlap most strongly.",
+    "Do not select a confirmation candidate from this diagnostic alone; freeze a separate candidate configuration first."
+  ],
+  "policy": [
+    "Use only the existing fresh v4 tuning-eligible development corpus.",
+    "Do not use calibration or blind evidence.",
+    "The min_score=0 run is intentionally unsafe and diagnostic-only.",
+    "No result from this run changes production defaults."
+  ]
+}
