@@ -16,6 +16,7 @@ for _path in (_PROJECT_ROOT, _SCRIPTS_DIR):
         sys.path.insert(0, str(_path))
 
 import analyze_winner_rescue_validator_v4 as one_d  # noqa: E402
+
 from benchmarks.bge_m3_frozen_candidate import FROZEN_THRESHOLDS  # noqa: E402
 from benchmarks.bge_winner_validator import unload  # noqa: E402
 
