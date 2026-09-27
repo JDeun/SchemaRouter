@@ -90,6 +90,15 @@ class BenchmarkRow:
     graph_semantic_seed_decision: str | None = None
     graph_propagation_decision: str | None = None
     graph_corroboration_decision: str | None = None
+    candidate_fit_invoked: bool = False
+    candidate_fit_surface: str | None = None
+    candidate_fit_top_option_id: str | None = None
+    candidate_fit_top_route_label: str | None = None
+    candidate_fit_top_similarity: float | None = None
+    candidate_fit_second_similarity: float | None = None
+    candidate_fit_top_margin: float | None = None
+    candidate_fit_abstained: bool = False
+    candidate_fit_reason: str | None = None
     operation_fit_invoked: bool = False
     operation_fit_surface: str | None = None
     operation_fit_top_option_id: str | None = None
@@ -529,6 +538,7 @@ async def benchmark_planner(
     *,
     allowed_routes: set[str],
     recorder: RecordingDecisionBackend | None = None,
+    candidate_fit_recorder: RecordingDecisionBackend | None = None,
     operation_fit_recorder: RecordingDecisionBackend | None = None,
     input_cost_per_million: float | None = None,
     output_cost_per_million: float | None = None,
@@ -539,6 +549,10 @@ async def benchmark_planner(
             recorder.last_request = None
             recorder.last_result = None
             recorder.last_invoked = False
+        if candidate_fit_recorder is not None:
+            candidate_fit_recorder.last_request = None
+            candidate_fit_recorder.last_result = None
+            candidate_fit_recorder.last_invoked = False
         if operation_fit_recorder is not None:
             operation_fit_recorder.last_request = None
             operation_fit_recorder.last_result = None
@@ -590,7 +604,83 @@ async def benchmark_planner(
                 and math.isfinite(float(raw_confidence))
                 else None
             )
+
+            def _finite_optional(value: Any) -> float | None:
+                if (
+                    isinstance(value, (int, float))
+                    and not isinstance(value, bool)
+                    and math.isfinite(float(value))
+                ):
+                    return float(value)
+                return None
+
+            candidate_fit_result = (
+                candidate_fit_recorder.last_result
+                if candidate_fit_recorder is not None
+                else None
+            )
+            candidate_fit_request = (
+                candidate_fit_recorder.last_request
+                if candidate_fit_recorder is not None
+                else None
+            )
+            candidate_fit_metadata = (
+                getattr(candidate_fit_result, "metadata", {})
+                if candidate_fit_result is not None
+                else {}
+            )
+            candidate_fit_context = (
+                getattr(candidate_fit_request, "context", {})
+                if candidate_fit_request is not None
+                else {}
+            )
+            candidate_fit_surface = (
+                candidate_fit_context.get("surface")
+                if isinstance(candidate_fit_context.get("surface"), str)
+                else None
+            )
+            candidate_fit_ranked = candidate_fit_metadata.get("ranked_options")
+            candidate_fit_top_option_id = None
+            if (
+                isinstance(candidate_fit_ranked, list)
+                and candidate_fit_ranked
+                and isinstance(candidate_fit_ranked[0], dict)
+                and isinstance(candidate_fit_ranked[0].get("option_id"), str)
+            ):
+                candidate_fit_top_option_id = candidate_fit_ranked[0]["option_id"]
+            candidate_fit_top_route_label = None
+            if (
+                candidate_fit_request is not None
+                and candidate_fit_top_option_id is not None
+            ):
+                candidate_fit_top_route_label = next(
+                    (
+                        option.label
+                        for option in candidate_fit_request.options
+                        if option.id == candidate_fit_top_option_id
+                    ),
+                    None,
+                )
+            candidate_fit_top_similarity = _finite_optional(
+                candidate_fit_metadata.get("top_similarity")
+            )
+            candidate_fit_second_similarity = _finite_optional(
+                candidate_fit_metadata.get("second_similarity")
+            )
+            candidate_fit_top_margin = _finite_optional(
+                candidate_fit_metadata.get("top_margin")
+            )
+            candidate_fit_reason = (
+                candidate_fit_metadata.get("reason")
+                if isinstance(candidate_fit_metadata.get("reason"), str)
+                else None
+            )
+            candidate_fit_abstained = bool(
+                getattr(candidate_fit_result, "abstained", False)
+            )
+
             operation_fit_result = (
+                operation_fit_recorder.last_result
                 operation_fit_recorder.last_result
                 if operation_fit_recorder is not None
                 else None
@@ -620,15 +710,6 @@ async def benchmark_planner(
                 if isinstance(operation_fit_metadata.get("top_option_id"), str)
                 else None
             )
-            def _finite_optional(value: Any) -> float | None:
-                if (
-                    isinstance(value, (int, float))
-                    and not isinstance(value, bool)
-                    and math.isfinite(float(value))
-                ):
-                    return float(value)
-                return None
-
             operation_fit_top_score = _finite_optional(
                 operation_fit_metadata.get("top_score")
             )
@@ -696,6 +777,18 @@ async def benchmark_planner(
                     graph_semantic_seed_decision=graph_semantic_seed_decision,
                     graph_propagation_decision=graph_propagation_decision,
                     graph_corroboration_decision=graph_corroboration_decision,
+                    candidate_fit_invoked=bool(
+                        candidate_fit_recorder
+                        and candidate_fit_recorder.last_invoked
+                    ),
+                    candidate_fit_surface=candidate_fit_surface,
+                    candidate_fit_top_option_id=candidate_fit_top_option_id,
+                    candidate_fit_top_route_label=candidate_fit_top_route_label,
+                    candidate_fit_top_similarity=candidate_fit_top_similarity,
+                    candidate_fit_second_similarity=candidate_fit_second_similarity,
+                    candidate_fit_top_margin=candidate_fit_top_margin,
+                    candidate_fit_abstained=candidate_fit_abstained,
+                    candidate_fit_reason=candidate_fit_reason,
                     operation_fit_invoked=bool(
                         operation_fit_recorder
                         and operation_fit_recorder.last_invoked
@@ -943,6 +1036,18 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
             sum(row.graph_corroboration_decision == "accept" for row in rows) / total
             if total
             else 0.0
+        ),
+        "candidate_fit_invocations": sum(row.candidate_fit_invoked for row in rows),
+        "candidate_fit_invocation_rate": (
+            sum(row.candidate_fit_invoked for row in rows) / total if total else 0.0
+        ),
+        "candidate_fit_abstentions": sum(row.candidate_fit_abstained for row in rows),
+        "candidate_fit_surfaces": sorted(
+            {
+                row.candidate_fit_surface
+                for row in rows
+                if row.candidate_fit_surface is not None
+            }
         ),
         "operation_fit_invocations": sum(row.operation_fit_invoked for row in rows),
         "operation_fit_invocation_rate": (
@@ -1574,16 +1679,20 @@ async def main() -> None:
         )
 
     candidate_fit_backend = None
+    candidate_fit_recorder = None
     if args.candidate_fit_embedding_callable:
         candidate_fit_embedder = load_callable(
             args.candidate_fit_embedding_callable,
             option_name="--candidate-fit-embedding-callable",
         )
-        candidate_fit_backend = EmbeddingDecisionBackend(
-            candidate_fit_embedder,
-            min_similarity=args.candidate_fit_min_similarity,
-            min_margin=args.candidate_fit_min_margin,
+        candidate_fit_recorder = RecordingDecisionBackend(
+            EmbeddingDecisionBackend(
+                candidate_fit_embedder,
+                min_similarity=args.candidate_fit_min_similarity,
+                min_margin=args.candidate_fit_min_margin,
+            )
         )
+        candidate_fit_backend = candidate_fit_recorder
 
     operation_fit_backend = None
     operation_fit_recorder = None
@@ -2192,6 +2301,7 @@ async def main() -> None:
                         [case],
                         allowed_routes=allowed_routes,
                         recorder=recorder,
+                        candidate_fit_recorder=candidate_fit_recorder,
                         operation_fit_recorder=operation_fit_recorder,
                         input_cost_per_million=args.input_cost_per_million,
                         output_cost_per_million=args.output_cost_per_million,
@@ -2212,6 +2322,7 @@ async def main() -> None:
                 cases,
                 allowed_routes=allowed_routes,
                 recorder=recorder,
+                candidate_fit_recorder=candidate_fit_recorder,
                 operation_fit_recorder=operation_fit_recorder,
                 input_cost_per_million=args.input_cost_per_million,
                 output_cost_per_million=args.output_cost_per_million,
