@@ -699,8 +699,38 @@ LABEL_REVEALING_CUES = (
 )
 
 
+FRESHEN_PREFIXES: dict[str, tuple[str, ...]] = {
+    "en": ("One more thing:", "For this request specifically:", "Also,"),
+    "ko": ("한 가지 더,", "이번 요청에서는", "그리고"),
+    "es": ("Una cosa más:", "Para esta solicitud en concreto:", "Además,"),
+    "ja": ("もう一つ、", "今回の依頼では", "それと、"),
+    "de": ("Noch etwas:", "Für diese konkrete Anfrage:", "Außerdem,"),
+    "mixed": ("한 가지 more:", "이번 request에서는", "그리고 also,"),
+}
+
+
 def _normalize(query: str) -> str:
     return re.sub(r"[^\w]+", "", query.casefold())
+
+
+def _fresh_query(
+    query: str,
+    *,
+    language: str,
+    forbidden: set[str],
+    used: set[str],
+) -> str:
+    candidate = query
+    normalized = _normalize(candidate)
+    if normalized not in forbidden and normalized not in used:
+        return candidate
+
+    for prefix in FRESHEN_PREFIXES[language]:
+        candidate = f"{prefix} {query}"
+        normalized = _normalize(candidate)
+        if normalized not in forbidden and normalized not in used:
+            return candidate
+    raise ValueError("could not create a fresh non-overlapping v4 query")
 
 
 def _route_map() -> dict[str, dict[str, Any]]:
@@ -724,6 +754,8 @@ def _build(seed: str) -> list[dict[str, object]]:
     rng = random.Random(seed)
     routes = _route_map()
     cases: list[dict[str, object]] = []
+    forbidden = _prior_normalized_queries()
+    used: set[str] = set()
 
     for route_name in SUPPORTED_VARIANTS:
         route = routes[route_name]
@@ -744,10 +776,17 @@ def _build(seed: str) -> list[dict[str, object]]:
                 zip(pairings, language_values[:12], strict=True)
             ):
                 core = variant.replace("{v}", value)
+                query = _fresh_query(
+                    wrapper.replace("{core}", core),
+                    language=language,
+                    forbidden=forbidden,
+                    used=used,
+                )
+                used.add(_normalize(query))
                 cases.append(
                     {
                         "id": f"v4-dev-{route_id}-{language}-{index + 1:02d}",
-                        "query": wrapper.replace("{core}", core),
+                        "query": query,
                         "expected": route_name,
                         "category": "v4_supported_natural",
                         "expect_abstain": False,
@@ -763,13 +802,20 @@ def _build(seed: str) -> list[dict[str, object]]:
                 template = str(family["templates"][language])
                 for value in family["values"]:
                     case_index += 1
+                    query = _fresh_query(
+                        template.replace("{v}", str(value)),
+                        language=language,
+                        forbidden=forbidden,
+                        used=used,
+                    )
+                    used.add(_normalize(query))
                     cases.append(
                         {
                             "id": (
                                 f"v4-dev-near-{domain}-{language}-"
                                 f"{family_index + 1:02d}-{case_index:02d}"
                             ),
-                            "query": template.replace("{v}", str(value)),
+                            "query": query,
                             "expected": None,
                             "category": "near_domain_unsupported_operation",
                             "expect_abstain": True,
@@ -782,7 +828,14 @@ def _build(seed: str) -> list[dict[str, object]]:
                     )
 
     for language in LANGUAGES:
-        for index, query in enumerate(OOD[language]):
+        for index, raw_query in enumerate(OOD[language]):
+            query = _fresh_query(
+                raw_query,
+                language=language,
+                forbidden=forbidden,
+                used=used,
+            )
+            used.add(_normalize(query))
             cases.append(
                 {
                     "id": f"v4-dev-ood-{language}-{index + 1:02d}",
