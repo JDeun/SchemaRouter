@@ -90,6 +90,15 @@ class BenchmarkRow:
     graph_semantic_seed_decision: str | None = None
     graph_propagation_decision: str | None = None
     graph_corroboration_decision: str | None = None
+    graph_seed_invoked: bool = False
+    graph_seed_surface: str | None = None
+    graph_seed_top_option_id: str | None = None
+    graph_seed_top_similarity: float | None = None
+    graph_seed_second_similarity: float | None = None
+    graph_seed_top_margin: float | None = None
+    graph_seed_ranked_options: list[dict[str, Any]] | None = None
+    graph_seed_abstained: bool = False
+    graph_seed_reason: str | None = None
     operation_fit_invoked: bool = False
     operation_fit_surface: str | None = None
     operation_fit_top_option_id: str | None = None
@@ -530,6 +539,7 @@ async def benchmark_planner(
     allowed_routes: set[str],
     recorder: RecordingDecisionBackend | None = None,
     operation_fit_recorder: RecordingDecisionBackend | None = None,
+    graph_seed_recorder: RecordingDecisionBackend | None = None,
     input_cost_per_million: float | None = None,
     output_cost_per_million: float | None = None,
 ) -> list[BenchmarkRow]:
@@ -543,6 +553,10 @@ async def benchmark_planner(
             operation_fit_recorder.last_request = None
             operation_fit_recorder.last_result = None
             operation_fit_recorder.last_invoked = False
+        if graph_seed_recorder is not None:
+            graph_seed_recorder.last_request = None
+            graph_seed_recorder.last_result = None
+            graph_seed_recorder.last_invoked = False
 
         started = time.perf_counter()
         try:
@@ -590,6 +604,63 @@ async def benchmark_planner(
                 and math.isfinite(float(raw_confidence))
                 else None
             )
+            graph_seed_result = (
+                graph_seed_recorder.last_result
+                if graph_seed_recorder is not None
+                else None
+            )
+            graph_seed_request = (
+                graph_seed_recorder.last_request
+                if graph_seed_recorder is not None
+                else None
+            )
+            graph_seed_metadata = (
+                getattr(graph_seed_result, "metadata", {})
+                if graph_seed_result is not None
+                else {}
+            )
+            graph_seed_context = (
+                getattr(graph_seed_request, "context", {})
+                if graph_seed_request is not None
+                else {}
+            )
+            graph_seed_surface = (
+                graph_seed_context.get("surface")
+                if isinstance(graph_seed_context.get("surface"), str)
+                else None
+            )
+            graph_seed_top_option_id = (
+                graph_seed_metadata.get("top_option_id")
+                if isinstance(graph_seed_metadata.get("top_option_id"), str)
+                else None
+            )
+            if graph_seed_top_option_id is None:
+                raw_ranked = graph_seed_metadata.get("ranked_options")
+                if (
+                    isinstance(raw_ranked, list)
+                    and raw_ranked
+                    and isinstance(raw_ranked[0], dict)
+                    and isinstance(raw_ranked[0].get("option_id"), str)
+                ):
+                    graph_seed_top_option_id = raw_ranked[0]["option_id"]
+            graph_seed_ranked_options = (
+                [
+                    dict(item)
+                    for item in graph_seed_metadata.get("ranked_options", [])
+                    if isinstance(item, dict)
+                ]
+                if isinstance(graph_seed_metadata.get("ranked_options"), list)
+                else None
+            )
+            graph_seed_abstained = bool(
+                getattr(graph_seed_result, "abstained", False)
+            )
+            graph_seed_reason = (
+                graph_seed_metadata.get("reason")
+                if isinstance(graph_seed_metadata.get("reason"), str)
+                else None
+            )
+
             operation_fit_result = (
                 operation_fit_recorder.last_result
                 if operation_fit_recorder is not None
@@ -628,6 +699,16 @@ async def benchmark_planner(
                 ):
                     return float(value)
                 return None
+
+            graph_seed_top_similarity = _finite_optional(
+                graph_seed_metadata.get("top_similarity")
+            )
+            graph_seed_second_similarity = _finite_optional(
+                graph_seed_metadata.get("second_similarity")
+            )
+            graph_seed_top_margin = _finite_optional(
+                graph_seed_metadata.get("top_margin")
+            )
 
             operation_fit_top_score = _finite_optional(
                 operation_fit_metadata.get("top_score")
@@ -696,6 +777,17 @@ async def benchmark_planner(
                     graph_semantic_seed_decision=graph_semantic_seed_decision,
                     graph_propagation_decision=graph_propagation_decision,
                     graph_corroboration_decision=graph_corroboration_decision,
+                    graph_seed_invoked=bool(
+                        graph_seed_recorder and graph_seed_recorder.last_invoked
+                    ),
+                    graph_seed_surface=graph_seed_surface,
+                    graph_seed_top_option_id=graph_seed_top_option_id,
+                    graph_seed_top_similarity=graph_seed_top_similarity,
+                    graph_seed_second_similarity=graph_seed_second_similarity,
+                    graph_seed_top_margin=graph_seed_top_margin,
+                    graph_seed_ranked_options=graph_seed_ranked_options,
+                    graph_seed_abstained=graph_seed_abstained,
+                    graph_seed_reason=graph_seed_reason,
                     operation_fit_invoked=bool(
                         operation_fit_recorder
                         and operation_fit_recorder.last_invoked
@@ -943,6 +1035,18 @@ def summarize(rows: list[BenchmarkRow]) -> dict[str, Any]:
             sum(row.graph_corroboration_decision == "accept" for row in rows) / total
             if total
             else 0.0
+        ),
+        "graph_seed_invocations": sum(row.graph_seed_invoked for row in rows),
+        "graph_seed_invocation_rate": (
+            sum(row.graph_seed_invoked for row in rows) / total if total else 0.0
+        ),
+        "graph_seed_abstentions": sum(row.graph_seed_abstained for row in rows),
+        "graph_seed_surfaces": sorted(
+            {
+                row.graph_seed_surface
+                for row in rows
+                if row.graph_seed_surface is not None
+            }
         ),
         "operation_fit_invocations": sum(row.operation_fit_invoked for row in rows),
         "operation_fit_invocation_rate": (
@@ -1662,16 +1766,20 @@ async def main() -> None:
     )
 
     graph_semantic_seed_backend = None
+    graph_seed_recorder = None
     if args.graph_semantic_seed_embedding_callable:
         graph_semantic_seed_embedder = load_callable(
             args.graph_semantic_seed_embedding_callable,
             option_name="--graph-semantic-seed-embedding-callable",
         )
-        graph_semantic_seed_backend = CachedEmbeddingDecisionBackend(
-            graph_semantic_seed_embedder,
-            min_similarity=args.graph_semantic_seed_min_similarity,
-            min_margin=args.graph_semantic_seed_min_margin,
+        graph_seed_recorder = RecordingDecisionBackend(
+            CachedEmbeddingDecisionBackend(
+                graph_semantic_seed_embedder,
+                min_similarity=args.graph_semantic_seed_min_similarity,
+                min_margin=args.graph_semantic_seed_min_margin,
+            )
         )
+        graph_semantic_seed_backend = graph_seed_recorder
 
     endpoint_disambiguation_backend = None
     if args.endpoint_disambiguation_embedding_callable:
@@ -2213,6 +2321,7 @@ async def main() -> None:
                         allowed_routes=allowed_routes,
                         recorder=recorder,
                         operation_fit_recorder=operation_fit_recorder,
+                        graph_seed_recorder=graph_seed_recorder,
                         input_cost_per_million=args.input_cost_per_million,
                         output_cost_per_million=args.output_cost_per_million,
                     )
@@ -2233,6 +2342,7 @@ async def main() -> None:
                 allowed_routes=allowed_routes,
                 recorder=recorder,
                 operation_fit_recorder=operation_fit_recorder,
+                graph_seed_recorder=graph_seed_recorder,
                 input_cost_per_million=args.input_cost_per_million,
                 output_cost_per_million=args.output_cost_per_million,
             )
