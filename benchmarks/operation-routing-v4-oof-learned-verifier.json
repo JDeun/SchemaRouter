@@ -1,0 +1,92 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "grouped-oof-learned-winner-verifier-v1",
+  "work_item": 285,
+  "parent_work_items": [197, 221, 281],
+  "status": "preregistered_before_execution",
+  "route_authority": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "selection": "global registered raw top-1",
+    "verifier_can_select_route": false,
+    "rank2_fallback": false,
+    "pseudo_route": false,
+    "verifier_outputs": ["match", "no_match", "unknown"],
+    "execution_requires": "match"
+  },
+  "training_target": "1 iff expected is not null and raw_top_route equals expected; otherwise 0",
+  "feature_policy": {
+    "raw_query_text": false,
+    "expected_route": false,
+    "category_label": false,
+    "language_as_feature": false,
+    "unsupported_family_as_feature": false,
+    "runtime_geometry_only": true,
+    "categorical_features": ["raw_top_route"],
+    "continuous_feature_count": 19
+  },
+  "oof_protocol": {
+    "kind": "leave_one_language_out",
+    "languages": ["de", "en", "es", "ja", "ko", "mixed"],
+    "language_used_as_feature": false
+  },
+  "classifier_families": {
+    "logistic": {
+      "scaler": "StandardScaler",
+      "route_encoder": "OneHotEncoder(handle_unknown=ignore,sparse_output=false)",
+      "C": 1.0,
+      "penalty": "l2",
+      "solver": "lbfgs",
+      "max_iter": 2000,
+      "random_state": 20260928
+    },
+    "hgb": {
+      "scaler": "StandardScaler",
+      "route_encoder": "OneHotEncoder(handle_unknown=ignore,sparse_output=false)",
+      "learning_rate": 0.05,
+      "max_iter": 150,
+      "max_leaf_nodes": 7,
+      "min_samples_leaf": 20,
+      "l2_regularization": 5.0,
+      "random_state": 20260928
+    }
+  },
+  "acceptance_thresholds": [
+    0.50,
+    0.60,
+    0.70,
+    0.80,
+    0.85,
+    0.90,
+    0.925,
+    0.95,
+    0.97,
+    0.98,
+    0.99,
+    0.995
+  ],
+  "fixed_rule_count": 24,
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "failed_270_fresh_surface_forbidden": true,
+    "calibration_or_blind_forbidden": true
+  },
+  "promotion_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "combined_p95_latency_ms_max": 250.0
+  },
+  "promotion_policy": "Diagnostic only. A passing OOF rule must be frozen in a separate executable candidate, trained once on all original tuning DEV, exported deterministically, and confirmed on a new preregistered zero-overlap fresh-surface DEV distinct from #270 before calibration/blind use. If no rule passes, stop learning additional complexity from this DEV geometry and move to an externally pretrained semantic capability verifier."
+}
