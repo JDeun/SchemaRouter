@@ -75,6 +75,9 @@ def test_graph_cycle_is_preregistered_before_implementation() -> None:
         ROOT / "benchmarks" / "operation-fit-0.10-graph-calibration-plan.json"
     ).exists()
     assert (
+        ROOT / "benchmarks" / "operation-fit-0.10-graph-calibration-attempts.json"
+    ).exists()
+    assert (
         ROOT / "benchmarks" / "operation-fit-0.10-graph-frozen-candidate.json"
     ).exists()
     assert (
@@ -112,6 +115,18 @@ def test_graph_cycle_is_preregistered_before_implementation() -> None:
         is True
     )
     assert cycle["preregistered_gates"]["paired_p95_latency_must_not_exceed_full_bge"] is True
+    attempts = json.loads(
+        (
+            ROOT
+            / "benchmarks"
+            / "operation-fit-0.10-graph-calibration-attempts.json"
+        ).read_text(encoding="utf-8")
+    )
+    invalidated = attempts["invalidated_attempts"][0]
+    assert invalidated["workflow_run_id"] == 36285424108
+    assert invalidated["metrics_inspected"] is False
+    assert invalidated["artifact_contents_inspected"] is False
+    assert invalidated["tuning_use"] is False
 
 
 def test_graph_authority_is_stricter_than_semantic_evidence() -> None:
