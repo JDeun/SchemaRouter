@@ -1,0 +1,47 @@
+{
+  "status": "diagnostic_only_not_a_production_claim",
+  "source": "0.10 graph-v1 development / ranked_only corroboration candidate",
+  "source_result": "benchmarks/operation-fit-0.10-graph-corroboration-dev-result.json",
+  "benchmark_caveat": "graph-v1 is a synthetic development-selection surface with known wrapper/template leakage; this snapshot measures research distance only and cannot establish production quality.",
+  "current_best_development": {
+    "supported_exact_route_accuracy": 0.6328125,
+    "near_domain_unsupported_rejection": 0.953125,
+    "ordinary_ood_rejection": 1,
+    "false_route_count": 18,
+    "no_route_case_count": 432,
+    "false_route_rate_all_no_route": 0.041666666666666664,
+    "invalid_plan_rate": 0,
+    "execution_errors": 0,
+    "worst_language": {
+      "language": "ko",
+      "supported_exact_route_accuracy": 0.4609375
+    },
+    "worst_route": {
+      "route": "papers.citations",
+      "exact_route_accuracy": 0.20833333333333334
+    }
+  },
+  "standing_production_target": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "near_domain_unsupported_rejection_preferred": 0.99,
+    "false_route_rate_max": 0.01,
+    "invalid_plan_rate_max": 0,
+    "execution_authority_violation_rate_max": 0
+  },
+  "gaps": {
+    "supported_exact_route_accuracy_pp": 21.71875,
+    "near_domain_rejection_to_min_pp": 1.6875,
+    "near_domain_rejection_to_preferred_pp": 3.6875,
+    "false_route_rate_reduction_required_pp": 3.166666666666666,
+    "worst_language_accuracy_gap_to_85_pp": 38.90625,
+    "worst_route_accuracy_gap_to_85_pp": 64.16666666666666
+  },
+  "next_cycle_priorities": [
+    "Remove label-revealing/template-family shortcuts from fresh evaluation data before making production claims.",
+    "Improve multilingual tool-domain discrimination, especially Korean and Japanese.",
+    "Improve operation semantics for papers.citations without benchmark-specific phrase tables.",
+    "Separate tool-domain evidence from operation-action evidence to prevent cross-tool corroboration errors.",
+    "Reduce false routes from 4.17% of all no-route cases toward <=1% while increasing supported recall."
+  ]
+}
