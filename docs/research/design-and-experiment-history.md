@@ -1075,3 +1075,177 @@ The canonical current state is:
 The architectural invariant remains:
 
 > Semantic models may rank, reject, or rescue only among locally registered authority. They do not create execution authority.
+
+
+## 30. Cross-model rescue, fresh-surface failure, and typed open-set evidence
+
+### #262 — cross-model zero-false abstention rescue
+
+Starting from the confirmed #259 BGE-M3 strict base, #262 restricted rescue authority to base abstentions and preserved the same raw BGE-M3 winner.
+
+Two preregistered variants were evaluated:
+
+1. GTE 0.25/0.75 dual-view top-1 must agree with the frozen BGE-M3 raw top-1;
+2. the same agreement condition plus a winner-only BGE reranker score.
+
+The GTE-only variant recovered 12 correct supported cases with zero additional false routes, reaching **977/1152 = 84.81%** exact.
+
+The GTE + winner-only reranker variant recovered **17** correct supported cases, **0** wrong-supported cases and **0** additional false routes:
+
+- supported exact: **982/1152 = 85.2431%**;
+- near-domain rejection: **98.9583%**;
+- OOD rejection: **100%**;
+- total false-route: **6/648 = 0.9259%**.
+
+Decision: the cross-model variant crossed the full tuning-DEV target and was selected for a separate frozen executable candidate.
+
+### #265 / PR #270 — frozen candidate and fresh-surface confirmation
+
+The #262 winner was frozen before confirmation with:
+
+- immutable #259 BGE-M3 base;
+- GTE same-winner agreement;
+- eight rescue-enabled routes only;
+- a pinned BGE reranker for the four routes requiring a positive reranker threshold;
+- global comparison epsilon **1e-6**;
+- no rank-2 fallback and no route-authority expansion.
+
+Same-corpus executable confirmation reproduced the frozen DEV projection exactly:
+
+- exact: **85.2431%**;
+- near-domain rejection: **98.9583%**;
+- false-route: **0.9259%**;
+- planner/direct mismatch: **0**;
+- GTE invocation: **28.17%**;
+- reranker invocation: **4.28%**;
+- planner p95: **239.32 ms**.
+
+The preregistered second stage then used a deterministic zero-overlap fresh-surface DEV corpus.
+
+Result:
+
+- supported exact: **86.7188%**;
+- near-domain rejection: **77.7778%**;
+- false-route: **128/648 = 19.7531%**;
+- base false routes before rescue: **122**;
+- rescue-added false routes: **6**;
+- planner/direct mismatch: **0**;
+- invalid plans / execution errors: **0 / 0**.
+
+Decision: **rejected**.
+
+This is a central late-stage result:
+
+> The route-ranking capacity generalized to new request surfaces, but the positive route-score open-set acceptance boundary did not.
+
+The failed fresh-surface corpus is confirmation-only evidence and is permanently excluded from threshold or row-level retuning.
+
+## 31. #273 — contradiction-only multilingual NLI veto
+
+To avoid positive route-score calibration, #273 removed route-local positive acceptance thresholds and used BGE-M3 raw top-1 as the only route authority. A multilingual NLI model could only veto the winner when contradiction probability exceeded a preregistered global threshold.
+
+Runtime remained practical:
+
+- BGE-M3 ranking mean/p95: **151.15 / 177.15 ms**;
+- NLI single-pair mean/p95: **14.13 / 15.29 ms**;
+- sequential mean/p95: **165.28 / 192.02 ms**.
+
+However, both supported and unsupported pairs were overwhelmingly classified as **neutral**, not contradiction.
+
+Correct-supported winners:
+
+- contradiction median: **0.1034**;
+- neutral median: **0.8432**.
+
+Near-domain unsupported:
+
+- contradiction median: **0.0876**;
+- neutral median: **0.8627**.
+
+No preregistered contradiction threshold reached the 85/97/1 target.
+
+Decision: **rejected**.
+
+Interpretation: generic textual contradiction is not equivalent to absence of a registered operation capability. Open-set rejection needs explicit negative-capability semantics.
+
+## 32. #275 — explicit negative-capability prototype veto
+
+#275 introduced 32 explicit unsupported-action prototypes, four per tool domain, while preserving BGE-M3 raw registered top-1 as the only route authority.
+
+The experiment evaluated 588 preregistered combinations of:
+
+- winner-domain minimum similarity;
+- optional winner/top-domain agreement;
+- negative prototype minimum similarity;
+- negative-over-action advantage.
+
+Raw BGE-M3 supported top-1 remained **88.45%** and p95 latency remained **139.79 ms**.
+
+The explicit negative evidence showed real semantic separation:
+
+- correct-supported negative-advantage median: **-0.0935**;
+- near-domain unsupported median: **+0.1708**.
+
+But no rule passed the full gate.
+
+The dominant failure was not the negative-capability signal itself. To reject OOD at 100%, the single winner-domain absolute-score veto entered the low-score tail of otherwise correct supported queries and removed too much supported recall.
+
+Decision: **reject the combined architecture, retain the negative-capability finding**.
+
+The architectural decomposition therefore becomes:
+
+1. route ranking;
+2. near-domain negative-capability veto;
+3. OOD membership detection.
+
+These must not be collapsed into one route-local positive threshold.
+
+## 33. #266 and #271 — rejected rescue ablations
+
+Two additional abstention-rescue ablations confirmed that the remaining gap was not easily recoverable from the existing strict base.
+
+### #266 — robust-base same-winner cross-encoder rescue
+
+- base abstentions: **767**;
+- correct-winner headroom: **54**;
+- zero-additional-false rescues: **5**;
+- composed exact: **84.20%**;
+- composed p95: **472.69 ms**.
+
+Decision: rejected.
+
+### #271 — native BGE-M3 abstention geometry
+
+Using only existing BGE-M3 score/margin/agreement geometry:
+
+- zero-additional-false rescues: **4**;
+- composed exact: **84.11%**;
+- near-domain rejection: **98.96%**;
+- false-route: **0.93%**.
+
+Decision: rejected.
+
+These ablations support moving the open-set architecture away from strict-base rescue and toward explicit typed capability evidence.
+
+## 34. Active experiment — global signed capability bank
+
+Work item #277 / PR #278 is the active DEV-only experiment.
+
+It removes route-local positive acceptance thresholds entirely and constructs a global signed capability space:
+
+- 16 registered positive operation capability prototypes;
+- 32 explicit unsupported negative capability prototypes;
+- one BGE-M3 query embedding;
+- raw BGE-M3 registered top-1 remains the only route authority.
+
+Typed veto evidence is separated into:
+
+- **capability envelope**: low maximum similarity to both positive and negative capability banks => OOD no-match;
+- **signed capability advantage**: negative prototype sufficiently stronger than the best positive capability => near-domain no-match;
+- optional positive-prototype/raw-winner consistency => veto only, never reroute.
+
+The fixed preregistered grid contains **504** rules.
+
+The failed #270 fresh-surface corpus is forbidden for tuning. Calibration/blind evidence remains untouched.
+
+If a rule passes tuning DEV, it must be frozen unchanged and evaluated on a new preregistered fresh-surface DEV corpus distinct from #270 before #198 can proceed.
