@@ -28,7 +28,8 @@
         "role": null,
         "name": null,
         "revision": null,
-        "provider": null
+        "provider": null,
+        "revision_kind": null
       }
     ],
     "runtime": {
