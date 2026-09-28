@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "kind": "operation-routing-freeze-manifest",
+  "status": "template",
+  "production_target": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "combined_p95_ms_max": 250
+  },
+  "candidate": {
+    "candidate_id": null,
+    "source_revision": null,
+    "architecture_id": null,
+    "authority": {
+      "route_authority": null,
+      "verifier_role": null,
+      "finite_registered_ids_only": true,
+      "rank2_fallback": false,
+      "pseudo_route": false,
+      "provider_can_create_execution_authority": false
+    },
+    "models": [
+      {
+        "role": null,
+        "name": null,
+        "revision": null,
+        "provider": null,
+        "revision_kind": null
+      }
+    ],
+    "runtime": {
+      "python": null,
+      "dependency_versions": {},
+      "hardware_label": null,
+      "optimization": null
+    },
+    "representation": {
+      "query_representation_sha256": null,
+      "capability_representation_sha256": null,
+      "prompt_or_instruction_sha256": null,
+      "option_ordering_rule": null
+    },
+    "decision_rule": {
+      "rule_id": null,
+      "threshold": null,
+      "parameters": {}
+    }
+  },
+  "evidence": {
+    "development": {
+      "corpus_seed": null,
+      "corpus_sha256": null,
+      "workflow_run_id": null,
+      "artifact_id": null,
+      "artifact_sha256": null,
+      "metrics": null
+    },
+    "fresh_confirmation": {
+      "surface_id": null,
+      "corpus_seed": null,
+      "corpus_sha256": null,
+      "zero_overlap_audit_artifact": null,
+      "workflow_run_id": null,
+      "artifact_id": null,
+      "artifact_sha256": null,
+      "metrics": null
+    }
+  },
+  "governance": {
+    "failed_confirmation_tuning_forbidden": [
+      270,
+      287
+    ],
+    "semantic_retuning_after_freeze_allowed": false,
+    "runtime_only_optimization_after_quality_pass_requires_same_semantics": true,
+    "calibration_or_blind_inspected": false,
+    "calibration_issue": 198,
+    "paper_evidence_issue": 199,
+    "canonical_tracker_issue": 200
+  },
+  "created_at_utc": null,
+  "notes": null
+}

@@ -165,6 +165,7 @@ nav:
           - 0.3.0: releases/0.3.0.md
           - 0.3.0a1: releases/0.3.0a1.md
           - 0.2.0a1: releases/0.2.0a1.md
+      - Research freeze protocol: research/operation-routing-freeze-protocol.md
       - Release checklist: release-checklist.md
       - Contributing: contributing.md
       - Changelog: changelog.md
