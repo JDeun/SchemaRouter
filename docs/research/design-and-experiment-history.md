@@ -1772,7 +1772,18 @@ Infrastructure supporting this policy is now merged:
 - #291 / PR #292 — generic System One backend;
 - #297 / PR #298 — generic System One benchmark CLI;
 - #304 / PR #305 — arbitrary bounded decision callable benchmark path, merged as
-  `c9678b95a6dc592a1c3b850a6aea8b1675ff94a4`.
+  `c9678b95a6dc592a1c3b850a6aea8b1675ff94a4`;
+- #306 / PR #308 — reusable third-party `schemarouter.decision_backends` entry-point
+  discovery/loading, benchmark plugin selection, security documentation, and candidate-registry
+  validation, squash-merged as `e782ebb87f80cdb2cefe5a716f77f546cd6309b1`.
+
+The final extension hierarchy is therefore:
+1. System One wire-compatible provider → `SystemOneDecisionBackend`;
+2. one-off bounded research adapter → `CallableDecisionBackend`;
+3. reusable non-wire integration → explicit third-party entry-point plugin.
+
+Discovery is metadata-only. Plugin code is imported only by exact trusted name; plugin execution is
+not sandboxed, and local finite-option validation remains authoritative.
 
 ## 45. #301 / PR #302 — pinned Laya native noul veto
 
