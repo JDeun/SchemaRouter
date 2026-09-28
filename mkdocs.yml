@@ -168,6 +168,9 @@ nav:
           - 0.3.0a1: releases/0.3.0a1.md
           - 0.2.0a1: releases/0.2.0a1.md
       - Routing research status: research/routing-status.md
+      - Complete experiment index: research/experiment-index.md
+      - Design and experiment history: research/design-and-experiment-history.md
+      - Terminal 0.11 report: research/operation-routing-v4-terminal-report.md
       - Research freeze protocol: research/operation-routing-freeze-protocol.md
       - Release checklist: release-checklist.md
       - Contributing: contributing.md
