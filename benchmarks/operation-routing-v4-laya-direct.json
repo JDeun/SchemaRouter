@@ -1,0 +1,69 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "direct-laya-system-one-routing-v1",
+  "work_item": 293,
+  "status": "preregistered_before_execution",
+  "routing": {
+    "provider": "laya",
+    "package_version": "0.3.11",
+    "model_mode": "auto",
+    "device": "cpu",
+    "preload": true,
+    "max_loaded": 2,
+    "candidate_scope": "full_registered_route_set",
+    "route_count": 16,
+    "bge_retrieval_used": false,
+    "rank2_fallback": false,
+    "pseudo_route": false,
+    "authority": "provider may select only one locally registered finite route ID; SchemaRouter validates the ID before acceptance"
+  },
+  "option_contract": {
+    "trusted_sources": [
+      "route id",
+      "tool description",
+      "endpoint description",
+      "operation aliases"
+    ],
+    "benchmark_row_text": false,
+    "expected_route": false,
+    "category": false,
+    "language": false,
+    "unsupported_family": false,
+    "scope_rule": "This endpoint supports only the capability explicitly stated above. Unlisted operations are not supported by this endpoint."
+  },
+  "acceptance_thresholds": [
+    0.5,
+    0.7,
+    0.8,
+    0.9,
+    0.95,
+    0.98,
+    0.99,
+    0.995
+  ],
+  "fixed_rule_count": 8,
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "failed_270_fresh_surface_forbidden": true,
+    "failed_287_fresh_surface_forbidden": true,
+    "calibration_or_blind_forbidden": true
+  },
+  "quality_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0
+  },
+  "runtime_target": {
+    "single_request_p95_ms_max": 250.0
+  },
+  "decision_policy": "If no fixed confidence threshold passes, reject direct Laya choice+confidence routing without post-result prompt/threshold changes. The next preregistered System One experiment may test an independent noul capability gate."
+}
