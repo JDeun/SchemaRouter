@@ -87,3 +87,23 @@ def test_staged_anyjev_candidate_is_recorded() -> None:
     assert anyjev["active_pull_request"] == 313
     assert "guarded by marker/manual dispatch" in anyjev["schemarouter_status"]
     assert anyjev["source_revision"] == "45add301a7aa60ed3420c83d15c061e84e5bce61"
+
+
+def test_discovery_candidates_record_observed_upstream_revisions() -> None:
+    data = _load()
+    candidates = {item["id"]: item for item in data["candidates"]}
+
+    assert "not promotion pins" in data["discovery_revision_note"]
+    for candidate_id in (
+        "mapika-decider",
+        "decis",
+        "litevar-system-one",
+        "bespoke-nimble",
+        "system-one-open",
+        "openjev-siliconlab",
+    ):
+        candidate = candidates[candidate_id]
+        assert candidate["upstream_default_branch_seen"]
+        revision = candidate["upstream_source_revision_seen"]
+        assert len(revision) == 40
+        assert all(character in "0123456789abcdef" for character in revision)
