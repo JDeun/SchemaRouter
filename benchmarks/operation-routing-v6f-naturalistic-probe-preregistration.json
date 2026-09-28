@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "cycle": "0.13-schema-derived-open-set-membership",
+  "experiment": "naturalistic-generic-operation-linear-probe-membership-v1",
+  "issue": 404,
+  "parents": [
+    382,
+    388,
+    389,
+    390
+  ],
+  "predecessor": {
+    "issue": 401,
+    "protocol": "V6E",
+    "status": "terminal_dev_quality_fail"
+  },
+  "status": "preregistered_before_v6f_corpus_freeze_or_scoring",
+  "route_authority": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "raw_global_top1_is_sole_positive_selector": true,
+    "positive_rerank": false,
+    "endpoint_switch": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "semantic_encoder": {
+    "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42",
+    "normalize_embeddings": true,
+    "weights_frozen": true
+  },
+  "probes": {
+    "scope": {
+      "labels": [
+        "TOOL_OPERATION",
+        "BACKGROUND"
+      ]
+    },
+    "operation": {
+      "labels": [
+        "search",
+        "retrieve",
+        "list",
+        "create",
+        "update",
+        "delete",
+        "cancel",
+        "refund",
+        "send",
+        "share",
+        "export",
+        "translate",
+        "summarize",
+        "compare",
+        "merge",
+        "restart",
+        "execute",
+        "forecast"
+      ]
+    },
+    "classifier": "sklearn.linear_model.LogisticRegression",
+    "penalty": "l2",
+    "C": 1,
+    "solver": "lbfgs",
+    "max_iter": 3000,
+    "random_state": 20260929,
+    "class_weight": null,
+    "sample_weight": null,
+    "probability_threshold": null,
+    "margin_threshold": null,
+    "dev_selected_hyperparameters": false
+  },
+  "training_bank": {
+    "path": "benchmarks/v6f-naturalistic-utterance-bank.json",
+    "operation_examples": 432,
+    "background_examples": 384,
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "generated_before_v6f_catalog_scoring": true,
+    "failed_dev_rows_used": false,
+    "benchmark_queries_used": false,
+    "benchmark_resource_or_route_ids_used": false,
+    "sha256": null
+  },
+  "decision_order": [
+    "BGE raw top-1 anchors tool T",
+    "unknown operation semantics in T -> preserve raw BGE winner",
+    "scope probe BACKGROUND -> NO_ROUTE",
+    "scope probe TOOL_OPERATION -> operation probe",
+    "predicted operation not in registered leaf set S(T) -> NO_ROUTE",
+    "predicted operation in S(T) -> preserve raw BGE top-1 exactly"
+  ],
+  "data_protocol": {
+    "protocol": "V6F",
+    "development": {
+      "case_count": 552,
+      "supported": 228,
+      "near_domain_unsupported": 252,
+      "ood": 72,
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "case_count": 552,
+      "supported": 228,
+      "near_domain_unsupported": 252,
+      "ood": 72,
+      "generated_before_dev_scoring": true,
+      "corpus_sha256": null
+    },
+    "routes_per_surface": 19,
+    "tools_per_surface": 7,
+    "adapters": [
+      "native",
+      "openapi",
+      "mcp"
+    ],
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "disjoint_from": [
+      "all 0.11 corpora",
+      "all 0.12 corpora",
+      "V6A/#384",
+      "V6B/#395",
+      "V6C/#397",
+      "V6D/#399",
+      "V6E/#401",
+      "each other"
+    ],
+    "evaluation_exact_string_disjoint_from_training_bank": true
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "positive_route_switches_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "dev_quality_fail": "terminal reject exact V6F bank + probes + decision rule",
+    "forbidden_repairs": [
+      "C",
+      "solver",
+      "probability threshold",
+      "margin threshold",
+      "class weights",
+      "sample weights",
+      "bank wording",
+      "languages",
+      "background families",
+      "operation examples",
+      "decision order"
+    ],
+    "quality_pass_latency_fail": "separately preregister runtime-only optimization with exact row-level decision parity",
+    "dev_pass": "score already-generated frozen confirmation once",
+    "confirmation_fail": "terminal reject",
+    "both_pass": "eligible for brand-new zero-overlap natural-language fresh confirmation"
+  }
+}
