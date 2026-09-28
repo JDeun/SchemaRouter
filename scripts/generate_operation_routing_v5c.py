@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Generate disjoint 0.12-C corpora for hierarchical capability ontology experiment #354."""
 
 from __future__ import annotations
