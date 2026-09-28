@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **63** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **64** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [machine-readable ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — exact provenance index.
@@ -151,9 +151,33 @@ ontology filtering destroyed that good signal. The ontology is therefore useful 
 representation of registered capability semantics, **not as a noisy positive selector with endpoint
 removal authority**.
 
-The active successor hypothesis is #358: preserve the raw BGE winner exactly and use ontology only
-as **asymmetric unsupported-membership evidence**. Semantic evidence may veto a route under a fixed
-independent-agreement rule, but it may never select or rerank another endpoint.
+## 0.12 asymmetric ontology veto
+
+Experiment #358 preserved the raw BGE-M3 top-1 as the sole positive selector and allowed ontology
+evidence only to veto to `NO_ROUTE`. It never filtered to another endpoint and never reranked a
+positive route.
+
+DEV result:
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **96.05%** |
+| Raw supported exact | **96.05%** |
+| Raw supported tool accuracy | **99.56%** |
+| Raw-correct winners vetoed | **0 / 0%** |
+| Near-domain unsupported rejection | **26.59%** |
+| OOD rejection | **84.72%** |
+| False-route | **60.49%** |
+| Veto precision | **99.22%** |
+| Veto recall | **39.51%** |
+| p95 | **236.02 ms** |
+| Authority / execution errors | **0 / 0** |
+
+This is a useful authority result but not a quality pass. Negative-only ontology evidence can preserve
+supported routing when it is not allowed to choose another endpoint, but requiring exact same-leaf
+agreement across independent signals is far too conservative to provide enough unsupported recall.
+
+The exact #358 rule is terminal. Its frozen confirmation corpus remains **unscored**.
 
 ## Reproducibility
 
