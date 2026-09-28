@@ -1,0 +1,144 @@
+name: Research V5D Asymmetric Ontology Veto DEV
+
+on:
+  push:
+    branches:
+      - "research/0.12-asymmetric-ontology-veto"
+    paths:
+      - ".github/workflows/research-v5d-asymmetric-veto-dev.yml"
+      - "scripts/evaluate_asymmetric_ontology_veto_v5d.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FROZEN_SOURCE: "e29b6e0006dd64bab31c613b97ea68de8c2931f6"
+  DEV_SHA256: "e2f3ab0f93584d896f401c94200200d7a39c8f00a4983addd4ebc8889757ee07"
+  CONFIRM_SHA256: "bbe4984681472ad5ffe1ed881fd2b92937668fed453a45d6afbba587ffa376e8"
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+
+      - name: Verify frozen behavior and corpus source
+        run: |
+          git diff --exit-code "${FROZEN_SOURCE}" -- \
+            benchmarks/operation-routing-v5d-asymmetric-veto-preregistration.json \
+            benchmarks/asymmetric_ontology_veto.py \
+            benchmarks/operation_routing_v5d_catalog.py \
+            scripts/generate_operation_routing_v5d.py \
+            tests/test_asymmetric_ontology_veto.py \
+            tests/test_operation_routing_v5d_protocol.py
+
+      - name: Validate evaluator and protocol tests
+        run: |
+          ruff check scripts/evaluate_asymmetric_ontology_veto_v5d.py
+          pytest -q \
+            tests/test_asymmetric_ontology_veto.py \
+            tests/test_operation_routing_v5d_protocol.py
+
+  evaluate-development:
+    needs: protocol
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers>=4.44,<5" "sentence-transformers>=3,<6" einops
+      - run: pip install -e ".[dev]"
+
+      - name: Recreate both frozen corpora
+        run: |
+          python scripts/generate_operation_routing_v5d.py \
+            --out-dir artifacts/operation-routing-v5d
+
+      - name: Verify both frozen identities before scoring
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/operation-routing-v5d")
+          freeze = json.loads((root / "freeze-manifest.json").read_text())
+          if freeze["development"]["corpus_sha256"] != os.environ["DEV_SHA256"]:
+              raise SystemExit("DEV corpus identity drifted")
+          if freeze["confirmation"]["corpus_sha256"] != os.environ["CONFIRM_SHA256"]:
+              raise SystemExit("confirmation corpus identity drifted")
+          if freeze["development"]["case_count"] != 552:
+              raise SystemExit("unexpected DEV case count")
+          if freeze["confirmation"]["case_count"] != 552:
+              raise SystemExit("unexpected confirmation case count")
+          print("both frozen corpus identities verified; confirmation remains unscored")
+          PY
+
+      - name: Score development only
+        run: |
+          python scripts/evaluate_asymmetric_ontology_veto_v5d.py \
+            --development artifacts/operation-routing-v5d/development.json \
+            --out artifacts/operation-routing-v5d/dev-analysis.json
+
+      - name: Validate governance and authority invariants
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(
+              Path("artifacts/operation-routing-v5d/dev-analysis.json").read_text()
+          )
+          policy = data["policy"]
+          if policy["confirmation_scored"]:
+              raise SystemExit("confirmation was scored before DEV pass")
+          if policy["prior_failed_rows_used_for_tuning"]:
+              raise SystemExit("prior failed evidence leaked into candidate")
+          if not policy["raw_bge_is_sole_positive_selector"]:
+              raise SystemExit("raw BGE route authority changed")
+          if policy["ontology_positive_rerank"] or policy["endpoint_filter"]:
+              raise SystemExit("ontology gained forbidden positive selection authority")
+          if policy["confidence_or_similarity_threshold"] or policy["learned_veto"]:
+              raise SystemExit("forbidden threshold or learned veto detected")
+          if policy["cross_tool_fallback"] or policy["pseudo_route"]:
+              raise SystemExit("forbidden route authority detected")
+
+          metrics = data["metrics"]
+          if metrics["positive_route_switches"] != 0:
+              raise SystemExit("veto switched to another positive route")
+          if metrics["authority_violations"] != 0:
+              raise SystemExit("authority violation")
+          if metrics["execution_errors"] != 0:
+              raise SystemExit("execution errors")
+
+          print("development_pass=", data["surface_pass"])
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: operation-routing-v5d-dev-${{ github.run_id }}
+          path: |
+            artifacts/operation-routing-v5d/dev-analysis.json
+            artifacts/operation-routing-v5d/development-manifest.json
+            artifacts/operation-routing-v5d/confirmation-manifest.json
+            benchmarks/operation-routing-v5d-asymmetric-veto-preregistration.json
+          if-no-files-found: warn
+          retention-days: 30
