@@ -6,6 +6,12 @@ to embed in larger ecosystems.
 
 This document tracks framework-level maturity rather than research metrics.
 
+> **0.10.0 maturity note:** the typed registry, execution, validation, policy, health, projection,
+> persistence, inspection, and integration surfaces are beta product capabilities. The standing
+> multilingual open-set operation-routing target is **not** independently validated for promotion:
+> the strongest canonical DEV candidate passed the target but its unchanged zero-overlap fresh
+> confirmation failed. See [Routing research status](research/routing-status.md).
+
 | Capability | Current main | Direction |
 | --- | --- | --- |
 | Typed tool / endpoint / parameter / field contracts | Implemented | Core invariant |
@@ -37,7 +43,7 @@ This document tracks framework-level maturity rather than research metrics.
 | Jev / TypeSafe decision provider | Implemented optional adapter | Gather live workload evidence before claiming quality gains |
 | Local Laya decision provider | Optional local choice adapter with auto language routing, confidence abstention, lazy/preloaded checkpoints, and shared benchmark support | Gather checkpoint/hardware-specific evidence before choosing defaults |
 | Local Ollama decision provider | Implemented over structured-output HTTP API | Benchmark specific local models/hardware before quality claims |
-| Decision benchmark harness | 1,200-case multilingual v2 stress corpus plus separate v3 capability-fit, v4 endpoint-disambiguation, v5 operation-fit calibration, consumed v6/v7/v8 diagnostics, consumed v9 alias-aware holdout, and consumed fresh one-shot v10 operation-generalization holdout; JSON/CSV metrics + Wilson intervals + single-run and multi-run self-contained HTML summaries | Gather dated live-provider evidence and reserve a fresh holdout before any post-v10 tuning |
+| Decision benchmark harness | Versioned multilingual stress/calibration/fresh-confirmation corpora, machine-readable freeze/terminal evidence, JSON/CSV/HTML reporting, and an explicit 85/97/100/1 + 250 ms standing target; latest closed cycle has no promoted target candidate | Continue only with preregistered materially new capability evidence and independent fresh confirmation |
 | Framework callbacks / exporters | Typed redacted events + optional OpenTelemetry exporter | Add additional trusted sinks as needed |
 | Middleware interception | Trusted ordered before/after execution hooks with detached snapshots | Add organization-specific hook libraries only when needed |
 | Composition / DAG runtime | Out of scope for core | Integrate with LangGraph rather than duplicate it |
