@@ -1,0 +1,141 @@
+name: Research V5H Independent Capability Entailment DEV
+
+on:
+  push:
+    branches:
+      - "research/0.12-independent-capability-entailment"
+    paths:
+      - ".github/workflows/research-v5h-independent-entailment-dev.yml"
+      - "scripts/evaluate_independent_capability_entailment_v5h.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FROZEN_SOURCE: "b545999528b17a2782c76e6b6e546703b7b11da5"
+  DEV_SHA256: "c68bf11e52f960a7c8600d9d36b7fe13ab0b7b6e215a87f5b2bcffb783a67310"
+  CONFIRM_SHA256: "ac4be0d6febda04fea60ae351691dfeebb932c1ec1161f14cf7754c44f49eefd"
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+
+      - name: Verify frozen behavior and corpus source
+        run: |
+          git diff --exit-code "${FROZEN_SOURCE}" --             benchmarks/operation-routing-v5h-independent-entailment-preregistration.json             benchmarks/independent_capability_entailment.py             benchmarks/operation_routing_v5h_catalog.py             scripts/generate_operation_routing_v5h.py             tests/test_independent_capability_entailment.py             tests/test_operation_routing_v5h_protocol.py
+
+      - name: Validate evaluator and frozen protocol tests
+        run: |
+          ruff check scripts/evaluate_independent_capability_entailment_v5h.py
+          pytest -q             tests/test_independent_capability_entailment.py             tests/test_operation_routing_v5h_protocol.py
+
+  evaluate-development:
+    needs: protocol
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "sentence-transformers>=3,<6" einops
+      - run: pip install -e ".[dev]"
+
+      - name: Recreate both frozen corpora
+        run: |
+          python scripts/generate_operation_routing_v5h.py             --out-dir artifacts/operation-routing-v5h
+
+      - name: Verify both frozen corpus identities before scoring
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/operation-routing-v5h")
+          freeze = json.loads((root / "freeze-manifest.json").read_text())
+          if freeze["development"]["corpus_sha256"] != os.environ["DEV_SHA256"]:
+              raise SystemExit("DEV corpus identity drifted")
+          if freeze["confirmation"]["corpus_sha256"] != os.environ["CONFIRM_SHA256"]:
+              raise SystemExit("confirmation corpus identity drifted")
+          if freeze["development"]["case_count"] != 552:
+              raise SystemExit("unexpected DEV case count")
+          if freeze["confirmation"]["case_count"] != 552:
+              raise SystemExit("unexpected confirmation case count")
+          print("both frozen corpus identities verified; confirmation remains unscored")
+          PY
+
+      - name: Score development only
+        run: |
+          python scripts/evaluate_independent_capability_entailment_v5h.py             --development artifacts/operation-routing-v5h/development.json             --out artifacts/operation-routing-v5h/dev-analysis.json
+
+      - name: Validate governance and authority invariants
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(
+              Path("artifacts/operation-routing-v5h/dev-analysis.json").read_text()
+          )
+          policy = data["policy"]
+          if policy["confirmation_scored"]:
+              raise SystemExit("confirmation was scored before DEV pass")
+          if policy["prior_failed_rows_used_for_tuning"]:
+              raise SystemExit("prior failed evidence leaked into candidate")
+          if not policy["raw_bge_is_sole_positive_selector"]:
+              raise SystemExit("raw BGE positive authority changed")
+          if not policy["nli_veto_only"]:
+              raise SystemExit("NLI is not veto-only")
+          if policy["nli_positive_rerank"] or policy["endpoint_filter"]:
+              raise SystemExit("NLI gained positive route authority")
+          if policy["confidence_or_similarity_threshold"]:
+              raise SystemExit("forbidden threshold detected")
+          if policy["learned_on_schemarouter"]:
+              raise SystemExit("forbidden SchemaRouter training detected")
+          if policy["cross_tool_fallback"] or policy["pseudo_route"]:
+              raise SystemExit("forbidden fallback authority detected")
+          if not policy["independent_leaf_pairs"] or not policy["batched_nli_per_query"]:
+              raise SystemExit("independent batched NLI invariant changed")
+
+          metrics = data["metrics"]
+          if metrics["positive_route_switches"] != 0:
+              raise SystemExit("NLI switched a positive route")
+          if metrics["authority_violations"] != 0:
+              raise SystemExit("authority violation")
+          if metrics["execution_errors"] != 0:
+              raise SystemExit("execution errors")
+
+          print("quality_pass=", data["quality_pass"])
+          print("runtime_gate=", data["runtime_gate"])
+          print("surface_pass=", data["surface_pass"])
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: operation-routing-v5h-dev-${{ github.run_id }}
+          path: |
+            artifacts/operation-routing-v5h/dev-analysis.json
+            artifacts/operation-routing-v5h/development-manifest.json
+            artifacts/operation-routing-v5h/confirmation-manifest.json
+            benchmarks/operation-routing-v5h-independent-entailment-preregistration.json
+          if-no-files-found: warn
+          retention-days: 30
