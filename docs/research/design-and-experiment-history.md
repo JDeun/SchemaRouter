@@ -2821,3 +2821,60 @@ route-local repair may use this DEV. The frozen confirmation surface remains uno
 
 The next materially distinct hypothesis is to condition the actual anchored tool capability set
 directly in a binary entailment/not-entailment question.
+
+
+## 60. #374 / PR #375 — set-conditioned binary entailment collapses to universal rejection
+
+#374 tested the direct set-conditioned NLI formulation suggested by #371's failure.
+
+The architecture remained authority-safe:
+- frozen BGE-M3 raw top-1 was the sole positive route selector;
+- the anchored tool's registered capability leaves were compiled from trusted schema metadata;
+- one sequence-pair NLI judgment received the raw query as premise and the finite registered
+  capability set as hypothesis;
+- entailment preserved the raw route; not-entailment vetoed to `NO_ROUTE`;
+- no threshold, calibration, language rule, rank-2 fallback, pseudo-route, or positive reranking.
+
+The new V5G corpora were frozen before scoring:
+- freeze workflow `36421851941`;
+- frozen behavior/corpus source `c456214daba7d98d6822f99bd74aa50fb887a8f4`;
+- freeze artifact `10969746736`;
+- digest `sha256:d52241d155c043ae4398a471a25b9ce35700229d46377da5f86a41e02b851d8d`;
+- DEV: **552** cases, SHA
+  `f24d874afb5c248ff0ece71da27f89fd4d442e745e6e610269a9300c1851c034`;
+- confirmation: **552** cases, SHA
+  `214d59f25e755c73d15d9d6814363604ff88d5f7f6e66a93e1c0f133b0633332`;
+- confirmation remained unopened.
+
+DEV evaluation:
+- workflow `36422168708`;
+- evaluated source `e61058d0aa31819bf99b182f4bd5947dd0d11fab`;
+- artifact `10970342078`;
+- digest
+  `sha256:4584f55a67b6744ba8ba3454290a2acb5e7cee1ce58695a0362618ab07f7faf8`.
+
+Results:
+- supported exact **0.0000%**;
+- raw BGE supported exact **92.5439%**;
+- raw BGE tool accuracy **99.5614%**;
+- near-domain rejection **100%**;
+- OOD rejection **100%**;
+- false-route **0%**;
+- entailment / not-entailment decisions **0 / 552**;
+- raw-correct winners vetoed **211 / 100%**;
+- veto precision **58.6957%**;
+- veto recall **100%**;
+- NLI p95 **56.1598 ms**;
+- end-to-end p95 **254.5495 ms**;
+- positive route switches / authority violations / execution errors **0 / 0 / 0**.
+
+This is the semantic mirror image of #371. The multiclass OUTSIDE formulation almost never rejected;
+the aggregate set-entailment formulation rejected everything. The external model itself is fast
+enough to remain technically interesting, but neither extreme formulation provides a useful
+open-set capability-membership boundary.
+
+Decision: **terminal reject**. No hypothesis rewrite, threshold, language-specific rule or
+failed-row-driven repair is permitted. The frozen confirmation surface remains unopened.
+
+The successor must change the semantic decomposition itself rather than interpolate between these
+two outcomes with post-hoc thresholds.
