@@ -22,7 +22,7 @@ from benchmarks.operation_routing_v6b_catalog import (  # noqa: E402
     confirmation_registry,
     development_registry,
 )
-from benchmarks.schema_adb_baseline import ACTION_PHRASES, compile_registry_contracts  # noqa: E402
+from benchmarks.schema_adb_baseline import compile_registry_contracts  # noqa: E402
 from benchmarks.schema_hard_negative_ellipsoid import hard_negative_texts  # noqa: E402
 
 ACTIONS: dict[str, dict[str, str]] = {
