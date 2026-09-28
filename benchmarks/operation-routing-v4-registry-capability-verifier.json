@@ -26,7 +26,11 @@
     "openapi_import_required": true,
     "mcp_import_required": true,
     "operation_aliases_may_be_empty": true,
-    "variable_endpoint_counts_required": [1, 3, 5],
+    "variable_endpoint_counts_required": [
+      1,
+      3,
+      5
+    ],
     "route_ids_forbidden_as_learned_features": true,
     "benchmark_domain_keyword_rules_forbidden": true,
     "route_local_thresholds_forbidden": true,
@@ -54,13 +58,17 @@
     "out_of_domain_cases": 72,
     "seed": "operation-routing-quality-v4-development-2026-09-27",
     "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
-    "forbidden_fresh_issues": [270, 287, 326],
+    "forbidden_fresh_issues": [
+      270,
+      287,
+      326
+    ],
     "calibration_or_blind_forbidden": true
   },
   "candidate_worthiness_gate": {
     "supported_exact_route_accuracy_min": 0.85,
     "near_domain_unsupported_rejection_min": 0.97,
-    "out_of_domain_rejection": 1.0,
+    "out_of_domain_rejection": 1,
     "false_route_rate_max": 0.01,
     "authority_violations_max": 0,
     "execution_errors_max": 0,
@@ -74,7 +82,7 @@
   "registration_holdout_gate": {
     "supported_exact_route_accuracy_min": 0.85,
     "near_domain_unsupported_rejection_min": 0.97,
-    "out_of_domain_rejection": 1.0,
+    "out_of_domain_rejection": 1,
     "false_route_rate_max": 0.01,
     "authority_violations_max": 0,
     "execution_errors_max": 0
@@ -83,5 +91,20 @@
     "if_canonical_or_registration_holdout_fails": "terminal_reject_without_label_driven_repair",
     "if_both_pass": "freeze exact compiler ontology head threshold and runtime then create brand-new zero-overlap fresh confirmation",
     "issue_198": "remains_blocked_until_new_fresh_confirmation_passes"
+  },
+  "data_contract_ir": {
+    "preserve_semantic_id": true,
+    "preserve_json_schema_type_shape": true,
+    "preserve_source_unit": true,
+    "preserve_unit_normalization": [
+      "dimension",
+      "canonical_unit",
+      "scale",
+      "offset"
+    ],
+    "preserve_qualifiers": true,
+    "openapi_and_mcp_same_ir": true,
+    "unknown_metadata_policy": "preserve_unknown_without_inventing_semantics",
+    "enforcement_role": "deterministic_registered_metadata_not_model_authority"
   }
 }
