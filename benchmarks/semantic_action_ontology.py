@@ -1,3 +1,4 @@
+# ruff: noqa: E501 -- multilingual ontology literals are intentionally explicit.
 """Registry-independent semantic action ontology for experiment #349.
 
 Research-only. One frozen BGE-M3 query embedding is reused for action classification and route
