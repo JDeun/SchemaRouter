@@ -180,3 +180,12 @@ def test_validator_requires_fresh_provenance_for_fresh_phase() -> None:
 
     with pytest.raises(module.FreezeManifestError):
         module.validate_manifest(manifest, phase="fresh")
+
+
+def test_validator_accepts_provider_model_version_and_prefixed_artifact_digest() -> None:
+    module = _module()
+    manifest = _manifest()
+    manifest["candidate"]["models"][0]["revision"] = "provider-snapshot-2026-09-28"
+    manifest["evidence"]["development"]["artifact_sha256"] = "sha256:" + "e" * 64
+
+    module.validate_manifest(manifest, phase="dev")
