@@ -1,0 +1,46 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "laya-choice-noul-open-set-v1",
+  "work_item": 295,
+  "status": "preregistered_before_execution",
+  "provider": {
+    "name": "laya",
+    "package_version": "0.3.11",
+    "model_mode": "auto",
+    "device": "cpu",
+    "preload": true,
+    "max_loaded": 2,
+    "language_routing": "Laya detector over original query only; benchmark language labels forbidden"
+  },
+  "candidate_scope": {
+    "kind": "full_registered_route_set",
+    "route_count": 16,
+    "bge_used": false
+  },
+  "choice": {
+    "instructions": "Choose the single registered endpoint that can fully execute the user's requested operation. Use only capabilities explicitly stated in the registered capability catalog. Do not infer unlisted operations or capabilities. Return exactly one offered route ID.",
+    "route_authority": "finite locally registered IDs only"
+  },
+  "noul": {
+    "instructions": "At least one registered endpoint listed in the capability catalog can fully execute the user's requested operation exactly as requested, using only capabilities explicitly stated in that catalog. Do not infer unlisted operations or capabilities.",
+    "semantics": "veto-only P(true)"
+  },
+  "acceptance_thresholds": [0.5, 0.7, 0.8, 0.9, 0.95, 0.98, 0.99, 0.995],
+  "data": {
+    "case_count": 1800,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "failed_270_fresh_surface_forbidden": true,
+    "failed_287_fresh_surface_forbidden": true,
+    "calibration_or_blind_forbidden": true
+  },
+  "quality_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0
+  },
+  "runtime_target": {"single_request_p95_ms_max": 250.0}
+}
