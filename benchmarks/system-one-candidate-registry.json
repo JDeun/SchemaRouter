@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-09-28",
+  "purpose": "Discovery registry for replaceable typed decision models. Presence is not promotion evidence.",
+  "promotion_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "combined_p95_ms_target_max": 250
+  },
+  "integration_policy": {
+    "system_one_wire_compatible": "Use SystemOneDecisionBackend and generic System One benchmark CLI. No model-specific core class.",
+    "non_wire_typed_decision": "Use CallableDecisionBackend / --decision-callable first. Permanent integration only after API stability and benchmark evidence.",
+    "authority": "All providers are bounded by locally registered finite IDs. Compatibility never creates execution authority."
+  },
+  "candidates": [
+    {
+      "id": "laya",
+      "repository": "NandhaKishorM/laya",
+      "upstream_model_family": "convaiinnovations/laya",
+      "license": "Apache-2.0",
+      "protocol": "direct Python Router; native choice/score/noul",
+      "integration_path": "LayaDecisionBackend for product; callable/research harness for native noul variants",
+      "status": "active_research",
+      "evidence": [
+        "#293 direct full-catalog choice rejected",
+        "#301 pinned noul veto active"
+      ],
+      "notes": "Direct 16-way auto English/multilingual choice is rejected. Native noul remains under evaluation."
+    },
+    {
+      "id": "kev",
+      "repository": "jaredpalmer/kev",
+      "license": "Apache-2.0",
+      "protocol": "TypeSafe/Jev-compatible POST /v1/systemone; native choice/noul/score",
+      "integration_path": "SystemOneDecisionBackend",
+      "model_sizes": [
+        "0.8B",
+        "4B",
+        "9B",
+        "27B"
+      ],
+      "status": "active_research",
+      "evidence": [
+        "#299 pinned Kev-0.8B choice+noul active"
+      ],
+      "notes": "Larger sizes require separate preregistered runs; do not extrapolate from 0.8B."
+    },
+    {
+      "id": "decis",
+      "repository": "chaitin/Decis",
+      "license": "Apache-2.0",
+      "protocol": "TypeSafe System One v1 /v1/systemone",
+      "integration_path": "SystemOneDecisionBackend",
+      "status": "discovery_verified_not_benchmarked",
+      "notes": "Serving/runtime layer with interchangeable engines including Laya and Kev; benchmark the underlying engine and runtime identity separately."
+    },
+    {
+      "id": "litevar-system-one",
+      "repository": "LiteVar/system-one",
+      "license": "MIT for runtime source; upstream model/runtime assets retain upstream licenses",
+      "protocol": "Jev-shaped POST /v1/systemone; choice/score/noul",
+      "integration_path": "SystemOneDecisionBackend",
+      "status": "discovery_verified_not_benchmarked",
+      "notes": "Local-first Rust runtime; current first backend is Laya Multilingual. Treat runtime and model evidence separately."
+    },
+    {
+      "id": "anyjev",
+      "repository": "nokia-applied-research/AnyJev",
+      "license": "Apache-2.0",
+      "protocol": "typed choice/yes-no/score over arbitrary open LLMs; runtime-specific API",
+      "integration_path": "CallableDecisionBackend / --decision-callable",
+      "status": "discovery_verified_not_benchmarked",
+      "notes": "Levels L0/L1/L2 have different label/calibration requirements. Any level using SchemaRouter labels would be a distinct supervised experiment."
+    },
+    {
+      "id": "bespoke-nimble",
+      "repository": "bespokelabsai/nimble",
+      "license": "verify model/code license before execution",
+      "protocol": "typed enum/boolean scoring; no assumed TypeSafe wire compatibility",
+      "integration_path": "CallableDecisionBackend / --decision-callable",
+      "status": "discovery_verified_not_benchmarked",
+      "notes": "Bespoke-Nimble-9B is Qwen3.5-9B-based. Pin model revision and probability temperature semantics before any threshold experiment."
+    },
+    {
+      "id": "system-one-open",
+      "repository": "mithalouni/system-one-open",
+      "license": "MIT for repository code; verify base-model weight terms for selected checkpoint",
+      "protocol": "Jev-style choice/score/noul through project-specific decide API",
+      "integration_path": "CallableDecisionBackend / --decision-callable unless exact System One wire compatibility is independently verified",
+      "status": "discovery_verified_not_benchmarked",
+      "notes": "Gemma-family replica; use external claims only for discovery, never SchemaRouter promotion."
+    }
+  ],
+  "intake_checklist": [
+    "pin repository/source revision",
+    "pin model/checkpoint revision",
+    "verify code and weight licenses separately",
+    "identify wire-compatible vs callable integration path",
+    "freeze question/capability representation before inference",
+    "run tuning-eligible DEV only",
+    "freeze any passing semantics before a new zero-overlap confirmation",
+    "never use failed fresh confirmation rows for tuning"
+  ]
+}
