@@ -1,0 +1,1354 @@
+{
+  "schema_version": 1,
+  "experiment": "V6F-naturalistic-generic-operation-probe",
+  "issue": 404,
+  "languages": [
+    "en",
+    "ko",
+    "es",
+    "ja",
+    "de",
+    "mixed"
+  ],
+  "operation_labels": [
+    "search",
+    "retrieve",
+    "list",
+    "create",
+    "update",
+    "delete",
+    "cancel",
+    "refund",
+    "send",
+    "share",
+    "export",
+    "translate",
+    "summarize",
+    "compare",
+    "merge",
+    "restart",
+    "execute",
+    "forecast"
+  ],
+  "operation_utterances": {
+    "search": {
+      "en": [
+        "Find records that match these conditions.",
+        "Look for any items satisfying the filters.",
+        "Search the collection using the given criteria.",
+        "Show me matching entries even though I do not know their IDs."
+      ],
+      "ko": [
+        "이 조건에 맞는 기록을 찾아줘.",
+        "주어진 필터를 만족하는 항목들을 검색해줘.",
+        "조건으로 컬렉션을 검색해줘.",
+        "ID는 모르지만 조건에 맞는 항목을 찾아줘."
+      ],
+      "es": [
+        "Busca registros que cumplan estas condiciones.",
+        "Encuentra elementos que satisfagan los filtros.",
+        "Busca en la colección usando estos criterios.",
+        "Muéstrame entradas coincidentes aunque no conozca sus identificadores."
+      ],
+      "ja": [
+        "この条件に合う記録を探して。",
+        "指定した条件を満たす項目を検索して。",
+        "この条件でコレクションを検索して。",
+        "IDは分からないけれど条件に合う項目を探して。"
+      ],
+      "de": [
+        "Finde Datensätze, die diese Bedingungen erfüllen.",
+        "Suche nach Einträgen, die zu den Filtern passen.",
+        "Durchsuche die Sammlung mit diesen Kriterien.",
+        "Zeige passende Einträge, auch wenn ich ihre IDs nicht kenne."
+      ],
+      "mixed": [
+        "이 criteria에 맞는 records를 찾아줘.",
+        "filters를 만족하는 items를 search해줘.",
+        "이 조건으로 collection을 검색해줘.",
+        "ID는 모르는데 matching entries를 찾아줘."
+      ]
+    },
+    "retrieve": {
+      "en": [
+        "Get the existing record with this identifier.",
+        "Bring back the one item whose ID I already have.",
+        "Retrieve the details for this known entry.",
+        "Open the specific existing resource I named."
+      ],
+      "ko": [
+        "이 식별자의 기존 기록을 가져와줘.",
+        "이미 ID를 아는 항목 하나를 조회해줘.",
+        "이 특정 항목의 상세 정보를 불러줘.",
+        "내가 지정한 기존 리소스 하나를 열어줘."
+      ],
+      "es": [
+        "Obtén el registro existente con este identificador.",
+        "Recupera el único elemento cuyo ID ya conozco.",
+        "Trae los detalles de esta entrada conocida.",
+        "Abre el recurso existente específico que indiqué."
+      ],
+      "ja": [
+        "この識別子の既存レコードを取得して。",
+        "IDが分かっている項目を一件取得して。",
+        "この既知の項目の詳細を取得して。",
+        "指定した既存リソースを一つ開いて。"
+      ],
+      "de": [
+        "Rufe den vorhandenen Datensatz mit dieser Kennung ab.",
+        "Hole genau das Element, dessen ID ich schon kenne.",
+        "Lade die Details dieses bekannten Eintrags.",
+        "Öffne die konkret angegebene vorhandene Ressource."
+      ],
+      "mixed": [
+        "이 identifier의 existing record를 가져와줘.",
+        "이미 ID를 아는 item 하나 retrieve해줘.",
+        "이 known entry의 details를 불러줘.",
+        "지정한 existing resource 하나 open해줘."
+      ]
+    },
+    "list": {
+      "en": [
+        "List all existing entries in the collection.",
+        "Show the collection as a complete list.",
+        "Enumerate the resources that already exist.",
+        "Give me the current set of entries without filtering by a query."
+      ],
+      "ko": [
+        "컬렉션의 기존 항목을 모두 목록으로 보여줘.",
+        "전체 컬렉션을 리스트로 보여줘.",
+        "이미 존재하는 리소스들을 나열해줘.",
+        "검색 조건 없이 현재 항목 목록을 보여줘."
+      ],
+      "es": [
+        "Lista todas las entradas existentes de la colección.",
+        "Muestra la colección como una lista completa.",
+        "Enumera los recursos que ya existen.",
+        "Dame el conjunto actual de entradas sin aplicar una búsqueda."
+      ],
+      "ja": [
+        "コレクション内の既存項目をすべて一覧にして。",
+        "コレクション全体をリスト表示して。",
+        "すでに存在するリソースを列挙して。",
+        "検索条件なしで現在の項目一覧を見せて。"
+      ],
+      "de": [
+        "Liste alle vorhandenen Einträge der Sammlung auf.",
+        "Zeige die Sammlung als vollständige Liste.",
+        "Zähle die bereits vorhandenen Ressourcen auf.",
+        "Gib mir die aktuelle Eintragsliste ohne Suchfilter."
+      ],
+      "mixed": [
+        "collection의 existing entries를 전부 list해줘.",
+        "전체 collection을 complete list로 보여줘.",
+        "이미 있는 resources를 enumerate해줘.",
+        "search filter 없이 current entries를 보여줘."
+      ]
+    },
+    "create": {
+      "en": [
+        "Create a new resource from these details.",
+        "Add a brand-new entry using this information.",
+        "Register a new item that does not exist yet.",
+        "Make a fresh record with the supplied fields."
+      ],
+      "ko": [
+        "이 내용으로 새 리소스를 만들어줘.",
+        "주어진 정보로 새로운 항목을 추가해줘.",
+        "아직 없는 새 항목을 등록해줘.",
+        "제공한 필드로 신규 기록을 생성해줘."
+      ],
+      "es": [
+        "Crea un recurso nuevo con estos datos.",
+        "Añade una entrada totalmente nueva con esta información.",
+        "Registra un elemento nuevo que todavía no existe.",
+        "Crea un registro nuevo con los campos proporcionados."
+      ],
+      "ja": [
+        "この内容で新しいリソースを作成して。",
+        "この情報を使って新規項目を追加して。",
+        "まだ存在しない新しい項目を登録して。",
+        "指定したフィールドで新規レコードを作って。"
+      ],
+      "de": [
+        "Erstelle mit diesen Angaben eine neue Ressource.",
+        "Füge mit diesen Informationen einen ganz neuen Eintrag hinzu.",
+        "Registriere ein neues Element, das noch nicht existiert.",
+        "Lege einen neuen Datensatz mit den angegebenen Feldern an."
+      ],
+      "mixed": [
+        "이 details로 new resource를 만들어줘.",
+        "이 information으로 brand-new entry를 add해줘.",
+        "아직 없는 item을 새로 register해줘.",
+        "제공한 fields로 fresh record를 create해줘."
+      ]
+    },
+    "update": {
+      "en": [
+        "Change the stored fields on this existing item.",
+        "Update this record with the new values.",
+        "Edit the settings of the resource I identified.",
+        "Modify the existing entry rather than creating another one."
+      ],
+      "ko": [
+        "이 기존 항목의 저장된 필드를 바꿔줘.",
+        "이 기록을 새 값으로 업데이트해줘.",
+        "지정한 리소스의 설정을 수정해줘.",
+        "새로 만들지 말고 기존 항목을 변경해줘."
+      ],
+      "es": [
+        "Cambia los campos guardados de este elemento existente.",
+        "Actualiza este registro con los nuevos valores.",
+        "Edita la configuración del recurso que indiqué.",
+        "Modifica la entrada existente en vez de crear otra."
+      ],
+      "ja": [
+        "この既存項目の保存済みフィールドを変更して。",
+        "このレコードを新しい値で更新して。",
+        "指定したリソースの設定を編集して。",
+        "新規作成せず既存項目を変更して。"
+      ],
+      "de": [
+        "Ändere die gespeicherten Felder dieses vorhandenen Elements.",
+        "Aktualisiere diesen Datensatz mit den neuen Werten.",
+        "Bearbeite die Einstellungen der angegebenen Ressource.",
+        "Ändere den bestehenden Eintrag, statt einen neuen anzulegen."
+      ],
+      "mixed": [
+        "이 existing item의 stored fields를 바꿔줘.",
+        "이 record를 new values로 update해줘.",
+        "지정한 resource settings를 edit해줘.",
+        "새로 create하지 말고 existing entry를 modify해줘."
+      ]
+    },
+    "delete": {
+      "en": [
+        "Permanently remove this existing resource.",
+        "Delete the record so it no longer exists.",
+        "Erase this stored item for good.",
+        "Remove the identified entry rather than merely hiding it."
+      ],
+      "ko": [
+        "이 기존 리소스를 영구적으로 삭제해줘.",
+        "이 기록이 더 이상 존재하지 않게 지워줘.",
+        "저장된 항목을 완전히 제거해줘.",
+        "숨기기만 하지 말고 지정한 항목을 삭제해줘."
+      ],
+      "es": [
+        "Elimina permanentemente este recurso existente.",
+        "Borra el registro para que deje de existir.",
+        "Elimina definitivamente este elemento guardado.",
+        "Quita la entrada indicada en lugar de solo ocultarla."
+      ],
+      "ja": [
+        "この既存リソースを完全に削除して。",
+        "このレコードが残らないよう削除して。",
+        "保存済み項目を永久に消して。",
+        "隠すだけでなく指定した項目を削除して。"
+      ],
+      "de": [
+        "Entferne diese vorhandene Ressource dauerhaft.",
+        "Lösche den Datensatz, sodass er nicht mehr existiert.",
+        "Entferne dieses gespeicherte Element endgültig.",
+        "Lösche den angegebenen Eintrag, statt ihn nur auszublenden."
+      ],
+      "mixed": [
+        "이 existing resource를 permanently remove해줘.",
+        "이 record가 더는 없도록 delete해줘.",
+        "stored item을 완전히 erase해줘.",
+        "hide만 하지 말고 identified entry를 remove해줘."
+      ]
+    },
+    "cancel": {
+      "en": [
+        "Cancel the active request before it finishes.",
+        "Stop this process that is currently running.",
+        "Revoke the request that is still in progress.",
+        "Abort the active operation rather than deleting its history."
+      ],
+      "ko": [
+        "진행 중인 요청을 완료 전에 취소해줘.",
+        "현재 실행 중인 프로세스를 중단해줘.",
+        "아직 진행 중인 요청을 철회해줘.",
+        "기록을 삭제하지 말고 활성 작업을 취소해줘."
+      ],
+      "es": [
+        "Cancela la solicitud activa antes de que termine.",
+        "Detén este proceso que está en ejecución.",
+        "Revoca la solicitud que sigue en curso.",
+        "Anula la operación activa sin borrar su historial."
+      ],
+      "ja": [
+        "進行中の依頼を完了前にキャンセルして。",
+        "現在実行中の処理を止めて。",
+        "まだ進行している依頼を取り消して。",
+        "履歴を削除せずアクティブな処理を中止して。"
+      ],
+      "de": [
+        "Storniere die aktive Anfrage, bevor sie abgeschlossen ist.",
+        "Stoppe diesen derzeit laufenden Prozess.",
+        "Ziehe die noch laufende Anfrage zurück.",
+        "Brich den aktiven Vorgang ab, ohne seinen Verlauf zu löschen."
+      ],
+      "mixed": [
+        "진행 중인 request를 finish 전에 cancel해줘.",
+        "currently running process를 stop해줘.",
+        "still in progress인 request를 revoke해줘.",
+        "history는 두고 active operation만 abort해줘."
+      ]
+    },
+    "refund": {
+      "en": [
+        "Refund the money from this completed payment.",
+        "Return the charged amount to the payer.",
+        "Issue a refund for the finished transaction.",
+        "Send the payment amount back rather than cancelling a pending request."
+      ],
+      "ko": [
+        "완료된 결제 금액을 환불해줘.",
+        "청구된 금액을 결제자에게 돌려줘.",
+        "완료된 거래에 대해 환불 처리해줘.",
+        "대기 요청 취소가 아니라 결제 금액을 되돌려줘."
+      ],
+      "es": [
+        "Reembolsa el dinero de este pago completado.",
+        "Devuelve el importe cobrado al pagador.",
+        "Emite un reembolso para la transacción finalizada.",
+        "Devuelve el importe del pago en vez de cancelar una solicitud pendiente."
+      ],
+      "ja": [
+        "完了した支払いの金額を返金して。",
+        "請求済みの金額を支払者へ戻して。",
+        "完了した取引について返金して。",
+        "保留中の依頼をキャンセルするのではなく支払額を戻して。"
+      ],
+      "de": [
+        "Erstatte das Geld für diese abgeschlossene Zahlung.",
+        "Zahle den belasteten Betrag an den Zahlenden zurück.",
+        "Veranlasse eine Rückerstattung für die abgeschlossene Transaktion.",
+        "Zahle den Betrag zurück, statt eine ausstehende Anfrage zu stornieren."
+      ],
+      "mixed": [
+        "completed payment의 money를 refund해줘.",
+        "charged amount를 payer에게 return해줘.",
+        "finished transaction에 refund를 issue해줘.",
+        "pending request cancel 말고 payment amount를 돌려줘."
+      ]
+    },
+    "send": {
+      "en": [
+        "Send this item to the specified destination.",
+        "Deliver the message to the recipient.",
+        "Transmit this resource to the address I provided.",
+        "Dispatch the content outward to its target."
+      ],
+      "ko": [
+        "이 항목을 지정한 목적지로 보내줘.",
+        "메시지를 수신자에게 전달해줘.",
+        "이 리소스를 내가 준 주소로 전송해줘.",
+        "콘텐츠를 대상에게 발송해줘."
+      ],
+      "es": [
+        "Envía este elemento al destino indicado.",
+        "Entrega el mensaje al destinatario.",
+        "Transmite este recurso a la dirección proporcionada.",
+        "Despacha el contenido hacia su destino."
+      ],
+      "ja": [
+        "この項目を指定した宛先へ送って。",
+        "メッセージを受信者へ届けて。",
+        "このリソースを指定したアドレスへ送信して。",
+        "コンテンツを対象へ発送して。"
+      ],
+      "de": [
+        "Sende dieses Element an das angegebene Ziel.",
+        "Stelle die Nachricht dem Empfänger zu.",
+        "Übermittle diese Ressource an die angegebene Adresse.",
+        "Versende den Inhalt an sein Ziel."
+      ],
+      "mixed": [
+        "이 item을 specified destination으로 send해줘.",
+        "message를 recipient에게 deliver해줘.",
+        "이 resource를 provided address로 transmit해줘.",
+        "content를 target으로 dispatch해줘."
+      ]
+    },
+    "share": {
+      "en": [
+        "Give another user access to this existing resource.",
+        "Share this item with a collaborator.",
+        "Grant someone permission to use the resource.",
+        "Let the specified person access the existing record."
+      ],
+      "ko": [
+        "다른 사용자에게 이 기존 리소스 접근권을 줘.",
+        "이 항목을 협업자와 공유해줘.",
+        "누군가 이 리소스를 사용할 수 있게 권한을 줘.",
+        "지정한 사람이 기존 기록에 접근할 수 있게 해줘."
+      ],
+      "es": [
+        "Da a otro usuario acceso a este recurso existente.",
+        "Comparte este elemento con un colaborador.",
+        "Concede a alguien permiso para usar el recurso.",
+        "Permite que la persona indicada acceda al registro existente."
+      ],
+      "ja": [
+        "別のユーザーにこの既存リソースへのアクセス権を与えて。",
+        "この項目を共同作業者と共有して。",
+        "このリソースを使える権限を付与して。",
+        "指定した人が既存レコードへアクセスできるようにして。"
+      ],
+      "de": [
+        "Gib einem anderen Nutzer Zugriff auf diese vorhandene Ressource.",
+        "Teile dieses Element mit einem Mitwirkenden.",
+        "Erteile jemandem die Berechtigung, die Ressource zu nutzen.",
+        "Lass die angegebene Person auf den bestehenden Datensatz zugreifen."
+      ],
+      "mixed": [
+        "다른 user에게 existing resource access를 줘.",
+        "이 item을 collaborator와 share해줘.",
+        "누군가 resource를 쓰도록 permission grant해줘.",
+        "specified person이 existing record에 access하게 해줘."
+      ]
+    },
+    "export": {
+      "en": [
+        "Export these stored data to a file.",
+        "Download the existing records as an external file.",
+        "Create a file containing the data already in the system.",
+        "Save the collection outside the service in a portable format."
+      ],
+      "ko": [
+        "저장된 데이터를 파일로 내보내줘.",
+        "기존 기록을 외부 파일로 다운로드해줘.",
+        "시스템에 있는 데이터로 파일을 만들어줘.",
+        "컬렉션을 서비스 밖에서 쓸 수 있는 형식으로 저장해줘."
+      ],
+      "es": [
+        "Exporta estos datos guardados a un archivo.",
+        "Descarga los registros existentes como archivo externo.",
+        "Crea un archivo con los datos que ya están en el sistema.",
+        "Guarda la colección fuera del servicio en un formato portable."
+      ],
+      "ja": [
+        "保存済みデータをファイルに書き出して。",
+        "既存レコードを外部ファイルとしてダウンロードして。",
+        "システム内の既存データを含むファイルを作って。",
+        "コレクションをサービス外で使える形式で保存して。"
+      ],
+      "de": [
+        "Exportiere diese gespeicherten Daten in eine Datei.",
+        "Lade die vorhandenen Datensätze als externe Datei herunter.",
+        "Erzeuge eine Datei mit den bereits im System vorhandenen Daten.",
+        "Speichere die Sammlung außerhalb des Dienstes in einem portablen Format."
+      ],
+      "mixed": [
+        "stored data를 file로 export해줘.",
+        "existing records를 external file로 download해줘.",
+        "system에 있는 data로 file을 만들어줘.",
+        "collection을 service 밖 portable format으로 save해줘."
+      ]
+    },
+    "translate": {
+      "en": [
+        "Translate this content into another language.",
+        "Render the text in the requested human language.",
+        "Convert the wording from one language to another.",
+        "Give me a translated version while preserving the meaning."
+      ],
+      "ko": [
+        "이 콘텐츠를 다른 언어로 번역해줘.",
+        "텍스트를 요청한 언어로 옮겨줘.",
+        "문장을 한 언어에서 다른 언어로 바꿔줘.",
+        "의미를 유지한 번역본을 만들어줘."
+      ],
+      "es": [
+        "Traduce este contenido a otro idioma.",
+        "Expresa el texto en el idioma humano solicitado.",
+        "Convierte la redacción de un idioma a otro.",
+        "Dame una versión traducida conservando el significado."
+      ],
+      "ja": [
+        "この内容を別の言語に翻訳して。",
+        "テキストを指定した言語に訳して。",
+        "文章を一つの言語から別の言語へ変換して。",
+        "意味を保った翻訳版を作って。"
+      ],
+      "de": [
+        "Übersetze diesen Inhalt in eine andere Sprache.",
+        "Gib den Text in der gewünschten menschlichen Sprache wieder.",
+        "Übertrage die Formulierung von einer Sprache in eine andere.",
+        "Erstelle eine übersetzte Version mit gleicher Bedeutung."
+      ],
+      "mixed": [
+        "이 content를 another language로 translate해줘.",
+        "text를 requested language로 옮겨줘.",
+        "wording을 one language에서 another로 convert해줘.",
+        "meaning 유지한 translated version을 줘."
+      ]
+    },
+    "summarize": {
+      "en": [
+        "Summarize this content into the main points.",
+        "Give me a concise overview of the material.",
+        "Condense the text while keeping its essential ideas.",
+        "Turn the document into a short summary."
+      ],
+      "ko": [
+        "이 콘텐츠의 핵심만 요약해줘.",
+        "자료를 간결하게 개요로 정리해줘.",
+        "중요한 생각은 유지하면서 텍스트를 압축해줘.",
+        "문서를 짧은 요약으로 만들어줘."
+      ],
+      "es": [
+        "Resume este contenido en sus puntos principales.",
+        "Dame una visión general concisa del material.",
+        "Condensa el texto conservando sus ideas esenciales.",
+        "Convierte el documento en un resumen breve."
+      ],
+      "ja": [
+        "この内容を要点にまとめて。",
+        "資料の簡潔な概要を作って。",
+        "重要な考えを残して文章を短くして。",
+        "文書を短い要約にして。"
+      ],
+      "de": [
+        "Fasse diesen Inhalt auf die Hauptpunkte zusammen.",
+        "Gib mir einen knappen Überblick über das Material.",
+        "Verdichte den Text und behalte die wesentlichen Aussagen.",
+        "Mache aus dem Dokument eine kurze Zusammenfassung."
+      ],
+      "mixed": [
+        "이 content를 main points로 summarize해줘.",
+        "material을 concise overview로 정리해줘.",
+        "essential ideas는 남기고 text를 condense해줘.",
+        "document를 short summary로 만들어줘."
+      ]
+    },
+    "compare": {
+      "en": [
+        "Compare these items and show their differences.",
+        "Tell me how the resources are similar and different.",
+        "Contrast the entries side by side.",
+        "Evaluate multiple items against each other."
+      ],
+      "ko": [
+        "이 항목들을 비교해서 차이점을 보여줘.",
+        "리소스들의 공통점과 차이점을 알려줘.",
+        "항목들을 나란히 놓고 대조해줘.",
+        "여러 항목을 서로 비교해서 평가해줘."
+      ],
+      "es": [
+        "Compara estos elementos y muestra sus diferencias.",
+        "Dime en qué se parecen y en qué difieren los recursos.",
+        "Contrasta las entradas una al lado de la otra.",
+        "Evalúa varios elementos entre sí."
+      ],
+      "ja": [
+        "これらの項目を比較して違いを示して。",
+        "リソースの共通点と相違点を教えて。",
+        "項目を並べて対比して。",
+        "複数の項目を互いに比較して評価して。"
+      ],
+      "de": [
+        "Vergleiche diese Elemente und zeige ihre Unterschiede.",
+        "Sag mir, worin sich die Ressourcen ähneln und unterscheiden.",
+        "Stelle die Einträge direkt gegenüber.",
+        "Bewerte mehrere Elemente im Vergleich zueinander."
+      ],
+      "mixed": [
+        "이 items를 compare해서 differences를 보여줘.",
+        "resources의 similarities와 differences를 알려줘.",
+        "entries를 side by side로 contrast해줘.",
+        "multiple items를 서로 evaluate해줘."
+      ]
+    },
+    "merge": {
+      "en": [
+        "Merge these resources into one result.",
+        "Combine the separate records into a single resource.",
+        "Join multiple items together as one output.",
+        "Unify the selected entries instead of keeping them separate."
+      ],
+      "ko": [
+        "이 리소스들을 하나의 결과로 병합해줘.",
+        "따로 있는 기록들을 하나의 리소스로 합쳐줘.",
+        "여러 항목을 하나의 출력으로 결합해줘.",
+        "선택한 항목들을 따로 두지 말고 통합해줘."
+      ],
+      "es": [
+        "Fusiona estos recursos en un solo resultado.",
+        "Combina los registros separados en un único recurso.",
+        "Une varios elementos en una sola salida.",
+        "Unifica las entradas seleccionadas en vez de mantenerlas separadas."
+      ],
+      "ja": [
+        "これらのリソースを一つの結果に統合して。",
+        "別々のレコードを一つのリソースにまとめて。",
+        "複数の項目を一つの出力として結合して。",
+        "選択した項目を分けたままにせず統合して。"
+      ],
+      "de": [
+        "Führe diese Ressourcen zu einem Ergebnis zusammen.",
+        "Kombiniere die getrennten Datensätze zu einer Ressource.",
+        "Verbinde mehrere Elemente zu einer Ausgabe.",
+        "Vereinige die ausgewählten Einträge, statt sie getrennt zu lassen."
+      ],
+      "mixed": [
+        "이 resources를 one result로 merge해줘.",
+        "separate records를 single resource로 combine해줘.",
+        "multiple items를 one output으로 join해줘.",
+        "selected entries를 separate하지 말고 unify해줘."
+      ]
+    },
+    "restart": {
+      "en": [
+        "Restart the running service.",
+        "Reboot this existing worker process.",
+        "Stop and start the job again.",
+        "Bring the active runtime back up from a fresh start."
+      ],
+      "ko": [
+        "실행 중인 서비스를 재시작해줘.",
+        "이 기존 워커 프로세스를 다시 부팅해줘.",
+        "작업을 멈췄다가 다시 시작해줘.",
+        "활성 런타임을 처음부터 다시 올려줘."
+      ],
+      "es": [
+        "Reinicia el servicio que está en ejecución.",
+        "Reinicia este proceso trabajador existente.",
+        "Detén y vuelve a iniciar el trabajo.",
+        "Vuelve a levantar el entorno activo desde un inicio limpio."
+      ],
+      "ja": [
+        "実行中のサービスを再起動して。",
+        "この既存ワーカープロセスをリブートして。",
+        "ジョブを止めてもう一度開始して。",
+        "稼働中のランタイムを新しく起動し直して。"
+      ],
+      "de": [
+        "Starte den laufenden Dienst neu.",
+        "Boote diesen vorhandenen Worker-Prozess neu.",
+        "Stoppe den Job und starte ihn erneut.",
+        "Fahre die aktive Laufzeitumgebung frisch wieder hoch."
+      ],
+      "mixed": [
+        "running service를 restart해줘.",
+        "이 existing worker process를 reboot해줘.",
+        "job을 stop했다가 다시 start해줘.",
+        "active runtime을 fresh start로 다시 올려줘."
+      ]
+    },
+    "execute": {
+      "en": [
+        "Run the registered workflow now.",
+        "Execute this operation using its existing definition.",
+        "Launch the configured job.",
+        "Start the predefined procedure and let it run."
+      ],
+      "ko": [
+        "등록된 워크플로를 지금 실행해줘.",
+        "기존 정의대로 이 작업을 실행해줘.",
+        "설정된 작업을 시작해줘.",
+        "미리 정의된 절차를 실행해줘."
+      ],
+      "es": [
+        "Ejecuta ahora el flujo de trabajo registrado.",
+        "Ejecuta esta operación usando su definición existente.",
+        "Lanza el trabajo configurado.",
+        "Inicia el procedimiento predefinido y deja que se ejecute."
+      ],
+      "ja": [
+        "登録済みワークフローを今実行して。",
+        "既存の定義を使ってこの操作を実行して。",
+        "設定済みジョブを起動して。",
+        "定義済みの手順を開始して実行して。"
+      ],
+      "de": [
+        "Führe den registrierten Workflow jetzt aus.",
+        "Führe diese Operation nach ihrer bestehenden Definition aus.",
+        "Starte den konfigurierten Job.",
+        "Beginne den vordefinierten Ablauf und führe ihn aus."
+      ],
+      "mixed": [
+        "registered workflow를 지금 run해줘.",
+        "existing definition대로 operation을 execute해줘.",
+        "configured job을 launch해줘.",
+        "predefined procedure를 start해서 run해줘."
+      ]
+    },
+    "forecast": {
+      "en": [
+        "Forecast the future value from the available information.",
+        "Predict how this measurement will change later.",
+        "Estimate the upcoming trend rather than report the current value.",
+        "Give me a prediction for the next state."
+      ],
+      "ko": [
+        "사용 가능한 정보로 미래 값을 예측해줘.",
+        "이 측정값이 앞으로 어떻게 변할지 예측해줘.",
+        "현재 값을 말하는 대신 향후 추세를 추정해줘.",
+        "다음 상태에 대한 예측을 줘."
+      ],
+      "es": [
+        "Pronostica el valor futuro con la información disponible.",
+        "Predice cómo cambiará esta medición más adelante.",
+        "Estima la tendencia próxima en vez de informar el valor actual.",
+        "Dame una predicción del siguiente estado."
+      ],
+      "ja": [
+        "利用できる情報から将来の値を予測して。",
+        "この測定値が今後どう変わるか予測して。",
+        "現在値ではなく今後の傾向を推定して。",
+        "次の状態について予測して。"
+      ],
+      "de": [
+        "Prognostiziere den zukünftigen Wert aus den verfügbaren Informationen.",
+        "Sage voraus, wie sich diese Messgröße später ändern wird.",
+        "Schätze den kommenden Trend, statt den aktuellen Wert zu nennen.",
+        "Gib mir eine Vorhersage für den nächsten Zustand."
+      ],
+      "mixed": [
+        "available information으로 future value를 forecast해줘.",
+        "이 measurement가 later 어떻게 변할지 predict해줘.",
+        "current value 말고 upcoming trend를 estimate해줘.",
+        "next state prediction을 줘."
+      ]
+    }
+  },
+  "background_families": [
+    "sports",
+    "travel",
+    "food",
+    "medical",
+    "legal",
+    "programming",
+    "language",
+    "entertainment",
+    "shopping",
+    "news",
+    "maps",
+    "communication",
+    "visual",
+    "math",
+    "productivity",
+    "knowledge"
+  ],
+  "background_utterances": {
+    "sports": {
+      "en": [
+        "Explain the score and standings from last night's match.",
+        "I have a general question about the score and standings from last night's match.",
+        "Help me understand the score and standings from last night's match.",
+        "Tell me about the score and standings from last night's match."
+      ],
+      "ko": [
+        "어젯밤 경기 점수와 순위을 설명해줘.",
+        "어젯밤 경기 점수와 순위에 대해 궁금해.",
+        "어젯밤 경기 점수와 순위을 이해할 수 있게 알려줘.",
+        "어젯밤 경기 점수와 순위에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica el marcador y la clasificación del partido de anoche.",
+        "Tengo una pregunta general sobre el marcador y la clasificación del partido de anoche.",
+        "Ayúdame a entender el marcador y la clasificación del partido de anoche.",
+        "Cuéntame sobre el marcador y la clasificación del partido de anoche."
+      ],
+      "ja": [
+        "昨夜の試合結果と順位を説明して。",
+        "昨夜の試合結果と順位について質問がある。",
+        "昨夜の試合結果と順位を分かりやすく教えて。",
+        "昨夜の試合結果と順位について教えて。"
+      ],
+      "de": [
+        "Erkläre den Spielstand und die Tabelle vom gestrigen Spiel.",
+        "Ich habe eine allgemeine Frage zu den Spielstand und die Tabelle vom gestrigen Spiel.",
+        "Hilf mir, den Spielstand und die Tabelle vom gestrigen Spiel zu verstehen.",
+        "Erzähl mir etwas über den Spielstand und die Tabelle vom gestrigen Spiel."
+      ],
+      "mixed": [
+        "어젯밤 game score와 standings을 explain해줘.",
+        "어젯밤 game score와 standings에 대해 general question이 있어.",
+        "어젯밤 game score와 standings을 understand하게 도와줘.",
+        "어젯밤 game score와 standings에 대해 tell me."
+      ]
+    },
+    "travel": {
+      "en": [
+        "Explain a weekend flight and hotel itinerary.",
+        "I have a general question about a weekend flight and hotel itinerary.",
+        "Help me understand a weekend flight and hotel itinerary.",
+        "Tell me about a weekend flight and hotel itinerary."
+      ],
+      "ko": [
+        "주말 항공편과 호텔 일정을 설명해줘.",
+        "주말 항공편과 호텔 일정에 대해 궁금해.",
+        "주말 항공편과 호텔 일정을 이해할 수 있게 알려줘.",
+        "주말 항공편과 호텔 일정에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica un itinerario de vuelos y hotel para el fin de semana.",
+        "Tengo una pregunta general sobre un itinerario de vuelos y hotel para el fin de semana.",
+        "Ayúdame a entender un itinerario de vuelos y hotel para el fin de semana.",
+        "Cuéntame sobre un itinerario de vuelos y hotel para el fin de semana."
+      ],
+      "ja": [
+        "週末の航空券とホテルの旅程を説明して。",
+        "週末の航空券とホテルの旅程について質問がある。",
+        "週末の航空券とホテルの旅程を分かりやすく教えて。",
+        "週末の航空券とホテルの旅程について教えて。"
+      ],
+      "de": [
+        "Erkläre eine Flug- und Hotelroute fürs Wochenende.",
+        "Ich habe eine allgemeine Frage zu eine Flug- und Hotelroute fürs Wochenende.",
+        "Hilf mir, eine Flug- und Hotelroute fürs Wochenende zu verstehen.",
+        "Erzähl mir etwas über eine Flug- und Hotelroute fürs Wochenende."
+      ],
+      "mixed": [
+        "주말 flight와 hotel itinerary을 explain해줘.",
+        "주말 flight와 hotel itinerary에 대해 general question이 있어.",
+        "주말 flight와 hotel itinerary을 understand하게 도와줘.",
+        "주말 flight와 hotel itinerary에 대해 tell me."
+      ]
+    },
+    "food": {
+      "en": [
+        "Explain a dinner recipe using vegetables and rice.",
+        "I have a general question about a dinner recipe using vegetables and rice.",
+        "Help me understand a dinner recipe using vegetables and rice.",
+        "Tell me about a dinner recipe using vegetables and rice."
+      ],
+      "ko": [
+        "채소와 밥으로 만드는 저녁 레시피을 설명해줘.",
+        "채소와 밥으로 만드는 저녁 레시피에 대해 궁금해.",
+        "채소와 밥으로 만드는 저녁 레시피을 이해할 수 있게 알려줘.",
+        "채소와 밥으로 만드는 저녁 레시피에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica una receta para cenar con verduras y arroz.",
+        "Tengo una pregunta general sobre una receta para cenar con verduras y arroz.",
+        "Ayúdame a entender una receta para cenar con verduras y arroz.",
+        "Cuéntame sobre una receta para cenar con verduras y arroz."
+      ],
+      "ja": [
+        "野菜とご飯を使った夕食レシピを説明して。",
+        "野菜とご飯を使った夕食レシピについて質問がある。",
+        "野菜とご飯を使った夕食レシピを分かりやすく教えて。",
+        "野菜とご飯を使った夕食レシピについて教えて。"
+      ],
+      "de": [
+        "Erkläre ein Abendessenrezept mit Gemüse und Reis.",
+        "Ich habe eine allgemeine Frage zu ein Abendessenrezept mit Gemüse und Reis.",
+        "Hilf mir, ein Abendessenrezept mit Gemüse und Reis zu verstehen.",
+        "Erzähl mir etwas über ein Abendessenrezept mit Gemüse und Reis."
+      ],
+      "mixed": [
+        "채소와 rice로 만드는 dinner recipe을 explain해줘.",
+        "채소와 rice로 만드는 dinner recipe에 대해 general question이 있어.",
+        "채소와 rice로 만드는 dinner recipe을 understand하게 도와줘.",
+        "채소와 rice로 만드는 dinner recipe에 대해 tell me."
+      ]
+    },
+    "medical": {
+      "en": [
+        "Explain what these cold symptoms might mean.",
+        "I have a general question about what these cold symptoms might mean.",
+        "Help me understand what these cold symptoms might mean.",
+        "Tell me about what these cold symptoms might mean."
+      ],
+      "ko": [
+        "이 감기 증상이 무엇을 의미할 수 있는지을 설명해줘.",
+        "이 감기 증상이 무엇을 의미할 수 있는지에 대해 궁금해.",
+        "이 감기 증상이 무엇을 의미할 수 있는지을 이해할 수 있게 알려줘.",
+        "이 감기 증상이 무엇을 의미할 수 있는지에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica qué podrían significar estos síntomas de resfriado.",
+        "Tengo una pregunta general sobre qué podrían significar estos síntomas de resfriado.",
+        "Ayúdame a entender qué podrían significar estos síntomas de resfriado.",
+        "Cuéntame sobre qué podrían significar estos síntomas de resfriado."
+      ],
+      "ja": [
+        "この風邪の症状が何を意味するかを説明して。",
+        "この風邪の症状が何を意味するかについて質問がある。",
+        "この風邪の症状が何を意味するかを分かりやすく教えて。",
+        "この風邪の症状が何を意味するかについて教えて。"
+      ],
+      "de": [
+        "Erkläre was diese Erkältungssymptome bedeuten könnten.",
+        "Ich habe eine allgemeine Frage zu was diese Erkältungssymptome bedeuten könnten.",
+        "Hilf mir, was diese Erkältungssymptome bedeuten könnten zu verstehen.",
+        "Erzähl mir etwas über was diese Erkältungssymptome bedeuten könnten."
+      ],
+      "mixed": [
+        "이 cold symptoms가 뭘 의미할지을 explain해줘.",
+        "이 cold symptoms가 뭘 의미할지에 대해 general question이 있어.",
+        "이 cold symptoms가 뭘 의미할지을 understand하게 도와줘.",
+        "이 cold symptoms가 뭘 의미할지에 대해 tell me."
+      ]
+    },
+    "legal": {
+      "en": [
+        "Explain the legal meaning of a contract clause.",
+        "I have a general question about the legal meaning of a contract clause.",
+        "Help me understand the legal meaning of a contract clause.",
+        "Tell me about the legal meaning of a contract clause."
+      ],
+      "ko": [
+        "계약 조항의 법적 의미을 설명해줘.",
+        "계약 조항의 법적 의미에 대해 궁금해.",
+        "계약 조항의 법적 의미을 이해할 수 있게 알려줘.",
+        "계약 조항의 법적 의미에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica el significado jurídico de una cláusula contractual.",
+        "Tengo una pregunta general sobre el significado jurídico de una cláusula contractual.",
+        "Ayúdame a entender el significado jurídico de una cláusula contractual.",
+        "Cuéntame sobre el significado jurídico de una cláusula contractual."
+      ],
+      "ja": [
+        "契約条項の法的な意味を説明して。",
+        "契約条項の法的な意味について質問がある。",
+        "契約条項の法的な意味を分かりやすく教えて。",
+        "契約条項の法的な意味について教えて。"
+      ],
+      "de": [
+        "Erkläre die rechtliche Bedeutung einer Vertragsklausel.",
+        "Ich habe eine allgemeine Frage zu die rechtliche Bedeutung einer Vertragsklausel.",
+        "Hilf mir, die rechtliche Bedeutung einer Vertragsklausel zu verstehen.",
+        "Erzähl mir etwas über die rechtliche Bedeutung einer Vertragsklausel."
+      ],
+      "mixed": [
+        "contract clause의 legal meaning을 explain해줘.",
+        "contract clause의 legal meaning에 대해 general question이 있어.",
+        "contract clause의 legal meaning을 understand하게 도와줘.",
+        "contract clause의 legal meaning에 대해 tell me."
+      ]
+    },
+    "programming": {
+      "en": [
+        "Explain why this Python function throws an exception.",
+        "I have a general question about why this Python function throws an exception.",
+        "Help me understand why this Python function throws an exception.",
+        "Tell me about why this Python function throws an exception."
+      ],
+      "ko": [
+        "이 파이썬 함수가 예외를 내는 이유을 설명해줘.",
+        "이 파이썬 함수가 예외를 내는 이유에 대해 궁금해.",
+        "이 파이썬 함수가 예외를 내는 이유을 이해할 수 있게 알려줘.",
+        "이 파이썬 함수가 예외를 내는 이유에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica por qué esta función de Python lanza una excepción.",
+        "Tengo una pregunta general sobre por qué esta función de Python lanza una excepción.",
+        "Ayúdame a entender por qué esta función de Python lanza una excepción.",
+        "Cuéntame sobre por qué esta función de Python lanza una excepción."
+      ],
+      "ja": [
+        "このPython関数が例外を出す理由を説明して。",
+        "このPython関数が例外を出す理由について質問がある。",
+        "このPython関数が例外を出す理由を分かりやすく教えて。",
+        "このPython関数が例外を出す理由について教えて。"
+      ],
+      "de": [
+        "Erkläre warum diese Python-Funktion eine Ausnahme auslöst.",
+        "Ich habe eine allgemeine Frage zu warum diese Python-Funktion eine Ausnahme auslöst.",
+        "Hilf mir, warum diese Python-Funktion eine Ausnahme auslöst zu verstehen.",
+        "Erzähl mir etwas über warum diese Python-Funktion eine Ausnahme auslöst."
+      ],
+      "mixed": [
+        "이 Python function이 exception을 내는 이유을 explain해줘.",
+        "이 Python function이 exception을 내는 이유에 대해 general question이 있어.",
+        "이 Python function이 exception을 내는 이유을 understand하게 도와줘.",
+        "이 Python function이 exception을 내는 이유에 대해 tell me."
+      ]
+    },
+    "language": {
+      "en": [
+        "Explain how to say this sentence naturally in another language.",
+        "I have a general question about how to say this sentence naturally in another language.",
+        "Help me understand how to say this sentence naturally in another language.",
+        "Tell me about how to say this sentence naturally in another language."
+      ],
+      "ko": [
+        "이 문장을 다른 언어로 자연스럽게 말하는 법을 설명해줘.",
+        "이 문장을 다른 언어로 자연스럽게 말하는 법에 대해 궁금해.",
+        "이 문장을 다른 언어로 자연스럽게 말하는 법을 이해할 수 있게 알려줘.",
+        "이 문장을 다른 언어로 자연스럽게 말하는 법에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica cómo decir esta frase de forma natural en otro idioma.",
+        "Tengo una pregunta general sobre cómo decir esta frase de forma natural en otro idioma.",
+        "Ayúdame a entender cómo decir esta frase de forma natural en otro idioma.",
+        "Cuéntame sobre cómo decir esta frase de forma natural en otro idioma."
+      ],
+      "ja": [
+        "この文を別の言語で自然に言う方法を説明して。",
+        "この文を別の言語で自然に言う方法について質問がある。",
+        "この文を別の言語で自然に言う方法を分かりやすく教えて。",
+        "この文を別の言語で自然に言う方法について教えて。"
+      ],
+      "de": [
+        "Erkläre wie man diesen Satz in einer anderen Sprache natürlich sagt.",
+        "Ich habe eine allgemeine Frage zu wie man diesen Satz in einer anderen Sprache natürlich sagt.",
+        "Hilf mir, wie man diesen Satz in einer anderen Sprache natürlich sagt zu verstehen.",
+        "Erzähl mir etwas über wie man diesen Satz in einer anderen Sprache natürlich sagt."
+      ],
+      "mixed": [
+        "이 sentence를 another language로 자연스럽게 말하는 법을 explain해줘.",
+        "이 sentence를 another language로 자연스럽게 말하는 법에 대해 general question이 있어.",
+        "이 sentence를 another language로 자연스럽게 말하는 법을 understand하게 도와줘.",
+        "이 sentence를 another language로 자연스럽게 말하는 법에 대해 tell me."
+      ]
+    },
+    "entertainment": {
+      "en": [
+        "Explain a movie recommendation for tonight.",
+        "I have a general question about a movie recommendation for tonight.",
+        "Help me understand a movie recommendation for tonight.",
+        "Tell me about a movie recommendation for tonight."
+      ],
+      "ko": [
+        "오늘 밤 볼 영화 추천을 설명해줘.",
+        "오늘 밤 볼 영화 추천에 대해 궁금해.",
+        "오늘 밤 볼 영화 추천을 이해할 수 있게 알려줘.",
+        "오늘 밤 볼 영화 추천에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica una recomendación de película para esta noche.",
+        "Tengo una pregunta general sobre una recomendación de película para esta noche.",
+        "Ayúdame a entender una recomendación de película para esta noche.",
+        "Cuéntame sobre una recomendación de película para esta noche."
+      ],
+      "ja": [
+        "今夜見る映画のおすすめを説明して。",
+        "今夜見る映画のおすすめについて質問がある。",
+        "今夜見る映画のおすすめを分かりやすく教えて。",
+        "今夜見る映画のおすすめについて教えて。"
+      ],
+      "de": [
+        "Erkläre eine Filmempfehlung für heute Abend.",
+        "Ich habe eine allgemeine Frage zu eine Filmempfehlung für heute Abend.",
+        "Hilf mir, eine Filmempfehlung für heute Abend zu verstehen.",
+        "Erzähl mir etwas über eine Filmempfehlung für heute Abend."
+      ],
+      "mixed": [
+        "오늘 밤 movie recommendation을 explain해줘.",
+        "오늘 밤 movie recommendation에 대해 general question이 있어.",
+        "오늘 밤 movie recommendation을 understand하게 도와줘.",
+        "오늘 밤 movie recommendation에 대해 tell me."
+      ]
+    },
+    "shopping": {
+      "en": [
+        "Explain which laptop offers better value for the price.",
+        "I have a general question about which laptop offers better value for the price.",
+        "Help me understand which laptop offers better value for the price.",
+        "Tell me about which laptop offers better value for the price."
+      ],
+      "ko": [
+        "어떤 노트북이 가격 대비 더 나은지을 설명해줘.",
+        "어떤 노트북이 가격 대비 더 나은지에 대해 궁금해.",
+        "어떤 노트북이 가격 대비 더 나은지을 이해할 수 있게 알려줘.",
+        "어떤 노트북이 가격 대비 더 나은지에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica qué portátil ofrece mejor relación calidad-precio.",
+        "Tengo una pregunta general sobre qué portátil ofrece mejor relación calidad-precio.",
+        "Ayúdame a entender qué portátil ofrece mejor relación calidad-precio.",
+        "Cuéntame sobre qué portátil ofrece mejor relación calidad-precio."
+      ],
+      "ja": [
+        "どのノートPCが価格に対してお得かを説明して。",
+        "どのノートPCが価格に対してお得かについて質問がある。",
+        "どのノートPCが価格に対してお得かを分かりやすく教えて。",
+        "どのノートPCが価格に対してお得かについて教えて。"
+      ],
+      "de": [
+        "Erkläre welcher Laptop das bessere Preis-Leistungs-Verhältnis bietet.",
+        "Ich habe eine allgemeine Frage zu welcher Laptop das bessere Preis-Leistungs-Verhältnis bietet.",
+        "Hilf mir, welcher Laptop das bessere Preis-Leistungs-Verhältnis bietet zu verstehen.",
+        "Erzähl mir etwas über welcher Laptop das bessere Preis-Leistungs-Verhältnis bietet."
+      ],
+      "mixed": [
+        "어떤 laptop이 price 대비 better value인지을 explain해줘.",
+        "어떤 laptop이 price 대비 better value인지에 대해 general question이 있어.",
+        "어떤 laptop이 price 대비 better value인지을 understand하게 도와줘.",
+        "어떤 laptop이 price 대비 better value인지에 대해 tell me."
+      ]
+    },
+    "news": {
+      "en": [
+        "Explain what happened in today's major news.",
+        "I have a general question about what happened in today's major news.",
+        "Help me understand what happened in today's major news.",
+        "Tell me about what happened in today's major news."
+      ],
+      "ko": [
+        "오늘 주요 뉴스에 무슨 일이 있었는지을 설명해줘.",
+        "오늘 주요 뉴스에 무슨 일이 있었는지에 대해 궁금해.",
+        "오늘 주요 뉴스에 무슨 일이 있었는지을 이해할 수 있게 알려줘.",
+        "오늘 주요 뉴스에 무슨 일이 있었는지에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica qué ocurrió en las principales noticias de hoy.",
+        "Tengo una pregunta general sobre qué ocurrió en las principales noticias de hoy.",
+        "Ayúdame a entender qué ocurrió en las principales noticias de hoy.",
+        "Cuéntame sobre qué ocurrió en las principales noticias de hoy."
+      ],
+      "ja": [
+        "今日の主要ニュースで何が起きたかを説明して。",
+        "今日の主要ニュースで何が起きたかについて質問がある。",
+        "今日の主要ニュースで何が起きたかを分かりやすく教えて。",
+        "今日の主要ニュースで何が起きたかについて教えて。"
+      ],
+      "de": [
+        "Erkläre was heute in den wichtigsten Nachrichten passiert ist.",
+        "Ich habe eine allgemeine Frage zu was heute in den wichtigsten Nachrichten passiert ist.",
+        "Hilf mir, was heute in den wichtigsten Nachrichten passiert ist zu verstehen.",
+        "Erzähl mir etwas über was heute in den wichtigsten Nachrichten passiert ist."
+      ],
+      "mixed": [
+        "오늘 major news에 무슨 일이 있었는지을 explain해줘.",
+        "오늘 major news에 무슨 일이 있었는지에 대해 general question이 있어.",
+        "오늘 major news에 무슨 일이 있었는지을 understand하게 도와줘.",
+        "오늘 major news에 무슨 일이 있었는지에 대해 tell me."
+      ]
+    },
+    "maps": {
+      "en": [
+        "Explain directions from the station to the museum.",
+        "I have a general question about directions from the station to the museum.",
+        "Help me understand directions from the station to the museum.",
+        "Tell me about directions from the station to the museum."
+      ],
+      "ko": [
+        "역에서 박물관까지 가는 길을 설명해줘.",
+        "역에서 박물관까지 가는 길에 대해 궁금해.",
+        "역에서 박물관까지 가는 길을 이해할 수 있게 알려줘.",
+        "역에서 박물관까지 가는 길에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica indicaciones desde la estación hasta el museo.",
+        "Tengo una pregunta general sobre indicaciones desde la estación hasta el museo.",
+        "Ayúdame a entender indicaciones desde la estación hasta el museo.",
+        "Cuéntame sobre indicaciones desde la estación hasta el museo."
+      ],
+      "ja": [
+        "駅から博物館までの行き方を説明して。",
+        "駅から博物館までの行き方について質問がある。",
+        "駅から博物館までの行き方を分かりやすく教えて。",
+        "駅から博物館までの行き方について教えて。"
+      ],
+      "de": [
+        "Erkläre die Wegbeschreibung vom Bahnhof zum Museum.",
+        "Ich habe eine allgemeine Frage zu die Wegbeschreibung vom Bahnhof zum Museum.",
+        "Hilf mir, die Wegbeschreibung vom Bahnhof zum Museum zu verstehen.",
+        "Erzähl mir etwas über die Wegbeschreibung vom Bahnhof zum Museum."
+      ],
+      "mixed": [
+        "station에서 museum까지 directions을 explain해줘.",
+        "station에서 museum까지 directions에 대해 general question이 있어.",
+        "station에서 museum까지 directions을 understand하게 도와줘.",
+        "station에서 museum까지 directions에 대해 tell me."
+      ]
+    },
+    "communication": {
+      "en": [
+        "Explain a polite email to reschedule a meeting.",
+        "I have a general question about a polite email to reschedule a meeting.",
+        "Help me understand a polite email to reschedule a meeting.",
+        "Tell me about a polite email to reschedule a meeting."
+      ],
+      "ko": [
+        "회의 일정을 바꾸는 정중한 이메일을 설명해줘.",
+        "회의 일정을 바꾸는 정중한 이메일에 대해 궁금해.",
+        "회의 일정을 바꾸는 정중한 이메일을 이해할 수 있게 알려줘.",
+        "회의 일정을 바꾸는 정중한 이메일에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica un correo educado para cambiar una reunión.",
+        "Tengo una pregunta general sobre un correo educado para cambiar una reunión.",
+        "Ayúdame a entender un correo educado para cambiar una reunión.",
+        "Cuéntame sobre un correo educado para cambiar una reunión."
+      ],
+      "ja": [
+        "会議の日程変更をお願いする丁寧なメールを説明して。",
+        "会議の日程変更をお願いする丁寧なメールについて質問がある。",
+        "会議の日程変更をお願いする丁寧なメールを分かりやすく教えて。",
+        "会議の日程変更をお願いする丁寧なメールについて教えて。"
+      ],
+      "de": [
+        "Erkläre eine höfliche E-Mail zur Verschiebung eines Termins.",
+        "Ich habe eine allgemeine Frage zu eine höfliche E-Mail zur Verschiebung eines Termins.",
+        "Hilf mir, eine höfliche E-Mail zur Verschiebung eines Termins zu verstehen.",
+        "Erzähl mir etwas über eine höfliche E-Mail zur Verschiebung eines Termins."
+      ],
+      "mixed": [
+        "meeting reschedule하는 polite email을 explain해줘.",
+        "meeting reschedule하는 polite email에 대해 general question이 있어.",
+        "meeting reschedule하는 polite email을 understand하게 도와줘.",
+        "meeting reschedule하는 polite email에 대해 tell me."
+      ]
+    },
+    "visual": {
+      "en": [
+        "Explain an illustration of a quiet city at night.",
+        "I have a general question about an illustration of a quiet city at night.",
+        "Help me understand an illustration of a quiet city at night.",
+        "Tell me about an illustration of a quiet city at night."
+      ],
+      "ko": [
+        "조용한 밤 도시의 일러스트을 설명해줘.",
+        "조용한 밤 도시의 일러스트에 대해 궁금해.",
+        "조용한 밤 도시의 일러스트을 이해할 수 있게 알려줘.",
+        "조용한 밤 도시의 일러스트에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica una ilustración de una ciudad tranquila de noche.",
+        "Tengo una pregunta general sobre una ilustración de una ciudad tranquila de noche.",
+        "Ayúdame a entender una ilustración de una ciudad tranquila de noche.",
+        "Cuéntame sobre una ilustración de una ciudad tranquila de noche."
+      ],
+      "ja": [
+        "静かな夜の街のイラストを説明して。",
+        "静かな夜の街のイラストについて質問がある。",
+        "静かな夜の街のイラストを分かりやすく教えて。",
+        "静かな夜の街のイラストについて教えて。"
+      ],
+      "de": [
+        "Erkläre eine Illustration einer ruhigen Stadt bei Nacht.",
+        "Ich habe eine allgemeine Frage zu eine Illustration einer ruhigen Stadt bei Nacht.",
+        "Hilf mir, eine Illustration einer ruhigen Stadt bei Nacht zu verstehen.",
+        "Erzähl mir etwas über eine Illustration einer ruhigen Stadt bei Nacht."
+      ],
+      "mixed": [
+        "quiet city at night illustration을 explain해줘.",
+        "quiet city at night illustration에 대해 general question이 있어.",
+        "quiet city at night illustration을 understand하게 도와줘.",
+        "quiet city at night illustration에 대해 tell me."
+      ]
+    },
+    "math": {
+      "en": [
+        "Explain the result of a multi-step arithmetic problem.",
+        "I have a general question about the result of a multi-step arithmetic problem.",
+        "Help me understand the result of a multi-step arithmetic problem.",
+        "Tell me about the result of a multi-step arithmetic problem."
+      ],
+      "ko": [
+        "여러 단계 산술 문제의 답을 설명해줘.",
+        "여러 단계 산술 문제의 답에 대해 궁금해.",
+        "여러 단계 산술 문제의 답을 이해할 수 있게 알려줘.",
+        "여러 단계 산술 문제의 답에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica el resultado de un problema aritmético de varios pasos.",
+        "Tengo una pregunta general sobre el resultado de un problema aritmético de varios pasos.",
+        "Ayúdame a entender el resultado de un problema aritmético de varios pasos.",
+        "Cuéntame sobre el resultado de un problema aritmético de varios pasos."
+      ],
+      "ja": [
+        "複数段階の算数問題の答えを説明して。",
+        "複数段階の算数問題の答えについて質問がある。",
+        "複数段階の算数問題の答えを分かりやすく教えて。",
+        "複数段階の算数問題の答えについて教えて。"
+      ],
+      "de": [
+        "Erkläre das Ergebnis einer mehrstufigen Rechenaufgabe.",
+        "Ich habe eine allgemeine Frage zu das Ergebnis einer mehrstufigen Rechenaufgabe.",
+        "Hilf mir, das Ergebnis einer mehrstufigen Rechenaufgabe zu verstehen.",
+        "Erzähl mir etwas über das Ergebnis einer mehrstufigen Rechenaufgabe."
+      ],
+      "mixed": [
+        "multi-step arithmetic problem의 result을 explain해줘.",
+        "multi-step arithmetic problem의 result에 대해 general question이 있어.",
+        "multi-step arithmetic problem의 result을 understand하게 도와줘.",
+        "multi-step arithmetic problem의 result에 대해 tell me."
+      ]
+    },
+    "productivity": {
+      "en": [
+        "Explain a concise plan for organizing my notes.",
+        "I have a general question about a concise plan for organizing my notes.",
+        "Help me understand a concise plan for organizing my notes.",
+        "Tell me about a concise plan for organizing my notes."
+      ],
+      "ko": [
+        "내 노트를 정리하는 간단한 계획을 설명해줘.",
+        "내 노트를 정리하는 간단한 계획에 대해 궁금해.",
+        "내 노트를 정리하는 간단한 계획을 이해할 수 있게 알려줘.",
+        "내 노트를 정리하는 간단한 계획에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica un plan breve para organizar mis notas.",
+        "Tengo una pregunta general sobre un plan breve para organizar mis notas.",
+        "Ayúdame a entender un plan breve para organizar mis notas.",
+        "Cuéntame sobre un plan breve para organizar mis notas."
+      ],
+      "ja": [
+        "メモを整理するための簡潔な計画を説明して。",
+        "メモを整理するための簡潔な計画について質問がある。",
+        "メモを整理するための簡潔な計画を分かりやすく教えて。",
+        "メモを整理するための簡潔な計画について教えて。"
+      ],
+      "de": [
+        "Erkläre einen kurzen Plan zum Ordnen meiner Notizen.",
+        "Ich habe eine allgemeine Frage zu einen kurzen Plan zum Ordnen meiner Notizen.",
+        "Hilf mir, einen kurzen Plan zum Ordnen meiner Notizen zu verstehen.",
+        "Erzähl mir etwas über einen kurzen Plan zum Ordnen meiner Notizen."
+      ],
+      "mixed": [
+        "내 notes 정리하는 concise plan을 explain해줘.",
+        "내 notes 정리하는 concise plan에 대해 general question이 있어.",
+        "내 notes 정리하는 concise plan을 understand하게 도와줘.",
+        "내 notes 정리하는 concise plan에 대해 tell me."
+      ]
+    },
+    "knowledge": {
+      "en": [
+        "Explain why the sky appears blue during the day.",
+        "I have a general question about why the sky appears blue during the day.",
+        "Help me understand why the sky appears blue during the day.",
+        "Tell me about why the sky appears blue during the day."
+      ],
+      "ko": [
+        "낮에 하늘이 파랗게 보이는 이유을 설명해줘.",
+        "낮에 하늘이 파랗게 보이는 이유에 대해 궁금해.",
+        "낮에 하늘이 파랗게 보이는 이유을 이해할 수 있게 알려줘.",
+        "낮에 하늘이 파랗게 보이는 이유에 대해 이야기해줘."
+      ],
+      "es": [
+        "Explica por qué el cielo se ve azul durante el día.",
+        "Tengo una pregunta general sobre por qué el cielo se ve azul durante el día.",
+        "Ayúdame a entender por qué el cielo se ve azul durante el día.",
+        "Cuéntame sobre por qué el cielo se ve azul durante el día."
+      ],
+      "ja": [
+        "昼間に空が青く見える理由を説明して。",
+        "昼間に空が青く見える理由について質問がある。",
+        "昼間に空が青く見える理由を分かりやすく教えて。",
+        "昼間に空が青く見える理由について教えて。"
+      ],
+      "de": [
+        "Erkläre warum der Himmel tagsüber blau erscheint.",
+        "Ich habe eine allgemeine Frage zu warum der Himmel tagsüber blau erscheint.",
+        "Hilf mir, warum der Himmel tagsüber blau erscheint zu verstehen.",
+        "Erzähl mir etwas über warum der Himmel tagsüber blau erscheint."
+      ],
+      "mixed": [
+        "낮에 sky가 blue로 보이는 이유을 explain해줘.",
+        "낮에 sky가 blue로 보이는 이유에 대해 general question이 있어.",
+        "낮에 sky가 blue로 보이는 이유을 understand하게 도와줘.",
+        "낮에 sky가 blue로 보이는 이유에 대해 tell me."
+      ]
+    }
+  },
+  "constraints": {
+    "operation_examples_per_label_language": 4,
+    "background_examples_per_family_language": 4,
+    "benchmark_queries_used": false,
+    "route_or_tool_ids_used": false,
+    "failed_dev_rows_used": false
+  }
+}
