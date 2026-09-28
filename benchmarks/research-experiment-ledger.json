@@ -1801,8 +1801,8 @@
       "issue": 299,
       "pull_request": 300,
       "preregistered": true,
-      "status": "queued",
-      "decision": "queued",
+      "status": "executing",
+      "decision": "executing",
       "workflow_run_id": 36366508183,
       "design": {
         "kev_source_revision": "d32a973cc2375f1c76e898cbf6e759c4499042de",
@@ -1830,16 +1830,18 @@
       "status": "executing",
       "design": {
         "route_authority": "BGE-M3 raw registered top-1 only",
+        "bge_revision": "5617a9f61b028005a4858fdac845db406aefb181",
         "laya_package": "0.3.11",
         "laya_hub_repo": "convaiinnovations/laya",
         "laya_hub_revision": "458d7563c5cab85ff9f7f6e06cf2dd166fb697e2",
         "primitive": "noul",
-        "verifier_authority": "veto-only",
-        "fixed_rule_count": 8,
-        "checkpoint_snapshot_pinned": true
+        "veto_only": true,
+        "threshold_count": 8,
+        "failed_fresh_sets_used": false
       },
-      "decision": "executing_after_contract_fix",
-      "workflow_run_id": 36367249147
+      "decision": "executing",
+      "workflow_run_id": 36367249147,
+      "source_revision": "46af3c3d0156b7b7bfd40686aa5639571f91a936"
     },
     {
       "id": "0.11-laya-choice-noul-full-catalog",
@@ -1848,12 +1850,12 @@
       "pull_request": 296,
       "preregistered": true,
       "status": "closed_without_execution",
-      "decision": "superseded_by_direct_choice_ceiling",
+      "decision": "superseded_by_raw_choice_ceiling",
       "result": {
         "quality_evidence_consumed": false,
         "reason": "direct Laya full-catalog raw supported top-1 was 60.0694%; adding veto-only noul cannot raise exact-route above that ceiling"
       },
-      "interpretation": "Do not execute a structurally dominated full-catalog choice+noul variant. Preserve noul as a separate capability boundary over stronger route authority."
+      "interpretation": "Direct Laya full-catalog raw supported top-1 was 60.07%, so adding a veto-only noul gate cannot reach the >=85% exact target while preserving Laya choice as route authority."
     },
     {
       "id": "0.11-topk-system-one-capability-routing",
@@ -1914,7 +1916,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "parallel typed capability boundaries: Kev-0.8B #299 and pinned Laya noul #301",
+    "active_experiment": "parallel typed capability boundaries: pinned Kev-0.8B #299 and pinned Laya noul veto #301",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1933,7 +1935,9 @@
     "model_swap_infrastructure": "#291/#292, #297/#298, and #304/#305 merged: System One wire-compatible and arbitrary bounded callable models can both be swapped and benchmarked without model-specific planner changes.",
     "direct_laya_status": "#293/#294 direct full-catalog Laya rejected: raw exact 60.07%, 0/8 rules pass, p95 1041ms; PR closed unmerged.",
     "contingent_architecture": "#303 preregisters BGE top-4 recall + provider-neutral per-candidate noul routing, but must not execute unless winner-only capability veto cannot promote.",
-    "qwen3_external_verifier_status": "#289/#290 rejected: 0/8 rules pass; safe p=0.99 gives 62.76% exact despite 99.13% near rejection / 0.77% false-route; combined CPU p95 2059ms."
+    "qwen3_external_verifier_status": "#289/#290 rejected: 0/8 rules pass; safe p=0.99 gives 62.76% exact despite 99.13% near rejection / 0.77% false-route; combined CPU p95 2059ms.",
+    "laya_typed_checkpoint_note": "Official Laya typed-decisions checkpoint is fine-tuned on four specific typed-decision workflows; its published strong noul result is not a zero-shot SchemaRouter result. Any use requires a separate pinned frozen-harness experiment.",
+    "system_one_extension_status": "#291/#292 generic SystemOneDecisionBackend, #297/#298 generic System One benchmark CLI, and #304/#305 callable benchmark path are merged; #306/#308 adds reusable third-party entry-point plugins and is under CI."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -1998,10 +2002,12 @@
     "active_pull_requests": [
       235,
       300,
-      302
+      302,
+      308,
+      310
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "finish pinned Kev-0.8B #299 and pinned Laya noul #301; activate #303 only if winner-only typed capability veto cannot promote",
+    "next_research_direction": "finish pinned Laya noul #301 and Kev-0.8B choice+noul #299; activate preregistered top-K #303 only if winner-only typed capability veto cannot promote",
     "contingent_experiments": [
       303
     ],
