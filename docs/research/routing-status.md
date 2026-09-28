@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **66** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **67** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [machine-readable ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — exact provenance index.
@@ -245,6 +245,39 @@ terminal and its separately frozen confirmation corpus remains **unscored**.
 
 The next candidate must condition the actual registered capability set directly in the membership
 question instead of asking one generic OUTSIDE label to compete with concrete positive labels.
+
+
+## 0.12 set-conditioned binary entailment
+
+Experiment #374 removed #371's generic OUTSIDE label and instead conditioned one binary NLI
+premise/hypothesis pair on the BGE-anchored tool's complete registered capability set. Frozen BGE-M3
+remained the sole positive route selector; NLI could only preserve that winner or veto to
+`NO_ROUTE`.
+
+DEV result:
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **0.00%** |
+| Raw supported exact | **92.54%** |
+| Raw supported tool accuracy | **99.56%** |
+| Near-domain unsupported rejection | **100%** |
+| OOD rejection | **100%** |
+| False-route | **0%** |
+| NLI decisions | **0 entailment / 552 not-entailment** |
+| Raw-correct winners vetoed | **211 / 100%** |
+| NLI p95 | **56.16 ms** |
+| End-to-end p95 | **254.55 ms** |
+| Positive route switches / authority / execution errors | **0 / 0 / 0** |
+
+The aggregate capability-set hypothesis collapsed to an all-negative decision. It solved rejection
+only by rejecting every supported request, so the exact formulation is terminal. Its separately
+frozen 552-case confirmation corpus remains **unscored**.
+
+Together, #371 and #374 show two opposite failure modes for the same external model: generic
+OUTSIDE multiclass competition almost never vetoes, while one disjunctive set-membership hypothesis
+vetoes everything. The next materially distinct test should use the model's native **independent
+per-capability binary entailment** semantics rather than another aggregate membership sentence.
 
 ## Reproducibility
 
