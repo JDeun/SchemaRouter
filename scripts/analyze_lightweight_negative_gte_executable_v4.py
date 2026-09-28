@@ -20,6 +20,7 @@ for _path in (_PROJECT_ROOT, _SCRIPTS_DIR):
 import analyze_dual_view_embedding_v4 as dual  # noqa: E402
 import analyze_embedding_backbone_screen_v4 as screen  # noqa: E402
 from benchmark_decision_routing import reference_registry  # noqa: E402
+
 from benchmarks.bge_m3_frozen_candidate import (  # noqa: E402
     ACTION_WEIGHT,
     BOUNDARY_EPSILON,
