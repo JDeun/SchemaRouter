@@ -95,6 +95,21 @@ def _validate_metrics(metrics_value: Any, path: str) -> None:
     errors = _metric_float(metrics, "execution_errors", path)
     p95 = _metric_float(metrics, "combined_p95_ms", path)
 
+    for name, value in (
+        ("supported_exact_route_accuracy", exact),
+        ("near_domain_unsupported_rejection", near),
+        ("out_of_domain_rejection", ood),
+        ("false_route_rate", false_rate),
+    ):
+        if not 0.0 <= value <= 1.0:
+            raise FreezeManifestError(f"{path}.{name} must be between 0 and 1")
+    if p95 < 0.0:
+        raise FreezeManifestError(f"{path}.combined_p95_ms must be >= 0")
+    if authority < 0.0:
+        raise FreezeManifestError(f"{path}.authority_violations must be >= 0")
+    if errors < 0.0:
+        raise FreezeManifestError(f"{path}.execution_errors must be >= 0")
+
     if exact < EXPECTED_TARGET["supported_exact_route_accuracy_min"]:
         raise FreezeManifestError(f"{path} misses supported exact-route target")
     if near < EXPECTED_TARGET["near_domain_unsupported_rejection_min"]:
