@@ -1,0 +1,109 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "bge-m3-colbert-operation-contract-v1",
+  "work_item": 328,
+  "status": "preregistered_before_execution",
+  "reference_authority": {
+    "issue": 259,
+    "workflow_run_id": 36325967632,
+    "artifact_id": 10934635124,
+    "artifact_sha256": "aabe4321e039dbb2e0b0805553e4dfd7d6c4bcf63893e23da028ceb668608462",
+    "required_raw_winner_parity_mismatches": 0
+  },
+  "model": {
+    "name": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "inference_library": "FlagEmbedding",
+    "inference_library_version": "1.4.2",
+    "use_fp16": false,
+    "device": "cpu",
+    "query_max_length": 128,
+    "schema_max_length": 128,
+    "action_max_length": 64
+  },
+  "dense_authority": {
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "raw_registered_top1_only": true,
+    "colbert_can_change_route": false,
+    "sparse_can_change_route": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "operation_contract": {
+    "fields": [
+      "normalized_endpoint_name",
+      "trusted_operation_aliases"
+    ],
+    "include_tool_description": false,
+    "include_endpoint_description": false,
+    "include_output_fields": false,
+    "include_unsupported_examples": false,
+    "include_fresh_examples": false
+  },
+  "rule_families": {
+    "A": {
+      "id": "colbert_global_agreement_only",
+      "agreement": "colbert_global_top1_equals_dense_winner",
+      "threshold": null
+    },
+    "B": {
+      "id": "colbert_same_tool_agreement_only",
+      "agreement": "colbert_same_tool_top1_equals_dense_winner",
+      "threshold": null
+    },
+    "C": {
+      "id": "colbert_global_agreement_global_score_threshold",
+      "agreement": "colbert_global_top1_equals_dense_winner",
+      "threshold_scope": "one_global_threshold",
+      "false_route_budgets": [
+        0,
+        6,
+        12
+      ]
+    },
+    "D": {
+      "id": "colbert_same_tool_agreement_global_score_threshold",
+      "agreement": "colbert_same_tool_top1_equals_dense_winner",
+      "threshold_scope": "one_global_threshold",
+      "false_route_budgets": [
+        0,
+        6,
+        12
+      ]
+    }
+  },
+  "sparse_policy": {
+    "diagnostic_only": true,
+    "may_define_promoted_rule": false
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "forbidden_fresh_issues": [
+      270,
+      287,
+      326
+    ],
+    "calibration_or_blind_forbidden": true
+  },
+  "candidate_worthiness_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "dense_route_parity_mismatches_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "if_none_pass": "reject this representation without adding margin thresholds, route-local thresholds, a second threshold dimension, or fresh-derived repair",
+    "if_pass": "freeze exactly one preregistered family/rule in a separate executable candidate before any new fresh surface"
+  }
+}
