@@ -2062,3 +2062,46 @@ PR #320 was merged as `acaca1e14b2f387094100dde3e1186aa4520d01d`.
 
 `scripts/validate_routing_runtime_parity.py` is the mandatory gate for any later quality-pass/runtime-fail optimization. It rejects case-set drift, route drift, execute/abstain threshold crossings, execution errors, and authority violations while recording probability drift and reference boundary margin.
 
+## 47. Lightweight BGE composition becomes active frontier
+
+The expensive autoregressive typed-decision path was retired for the CPU product target. The next
+candidate reuses only previously measured lightweight evidence.
+
+### #322 / PR #323 — offline composition PASS
+
+Immutable source artifacts:
+- #262 GTE-only rescue: workflow `36326745694`, artifact `10934337695`,
+  digest `sha256:7881a3594ecdab6a242a946a60cfde14d64e3c452ec9d0956c9cfa75a1e0c748`;
+- #275 negative-capability diagnostic: workflow `36352558325`, artifact `10942243493`,
+  digest `sha256:a831a35098b546c8003435ea04927fb8767aab1435320823ba4763e0b6608ae1`.
+
+Frozen composition:
+- #259 strict BGE base;
+- negative veto only on original base accepts at max-negative >=0.55 and advantage >=0.05;
+- vetoed base accepts cannot enter rescue;
+- exact #262 GTE-only route rules with rescue false budget 4;
+- rescue only original base abstentions and only the same raw BGE winner.
+
+Workflow `36379888054`, artifact `10951119927`,
+digest `sha256:1e86c0ebd881ff98f73d30d65ea618ff4525ead164f7f8a0b04c4ccf98190303`.
+
+Result:
+- exact: **980/1152 = 85.0694%**;
+- near rejection: **572/576 = 99.3056%**;
+- OOD rejection: **100%**;
+- false-route: **4/648 = 0.6173%**;
+- authority/errors: **0/0**.
+
+This is a tuning-DEV offline artifact composition, not executable or generalization evidence.
+
+### #324 / PR #325 — executable candidate
+
+#324 freezes the exact #322 semantics and recomputes them from the models:
+- BGE query embedding is shared between route scoring and negative prototypes;
+- GTE is invoked only on original #259 base abstentions;
+- the executable output must have exact row-level parity with #322;
+- directly measured total p95 must be <=250 ms.
+
+If #324 passes, the next step is no longer architecture search: create the #316 freeze manifest and
+run a new zero-overlap fresh confirmation distinct from #270/#287.
+
