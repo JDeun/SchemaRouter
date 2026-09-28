@@ -42,6 +42,7 @@ from schemarouter.integrations import (  # noqa: E402
     JevDecisionBackend,
     LayaDecisionBackend,
     OllamaDecisionBackend,
+    SystemOneDecisionBackend,
 )
 
 
@@ -1042,6 +1043,30 @@ async def main() -> None:
     parser.add_argument("--jev-model", default=None)
     parser.add_argument("--min-confidence", type=float, default=0.0)
     parser.add_argument(
+        "--system-one-base-url",
+        default=None,
+        help=(
+            "Run a generic System One-compatible backend against this trusted base URL. "
+            "Set the API key through --system-one-api-key-env when the client/server requires one."
+        ),
+    )
+    parser.add_argument("--system-one-model", default=None)
+    parser.add_argument(
+        "--system-one-provider",
+        default="system-one-compatible",
+        help="Stable provider label recorded in benchmark rows and reports.",
+    )
+    parser.add_argument("--system-one-timeout", type=float, default=60.0)
+    parser.add_argument("--system-one-min-confidence", type=float, default=0.0)
+    parser.add_argument(
+        "--system-one-api-key-env",
+        default="SYSTEM_ONE_API_KEY",
+        help=(
+            "Environment variable containing the System One provider API key. "
+            "The credential value is never written to benchmark output."
+        ),
+    )
+    parser.add_argument(
         "--laya",
         action="store_true",
         help="Run the local Laya bounded-decision backend.",
@@ -1144,6 +1169,19 @@ async def main() -> None:
         raise ValueError("--laya-max-loaded must be >= 1")
     if not 0.0 <= args.laya_min_confidence <= 1.0:
         raise ValueError("--laya-min-confidence must be between 0 and 1")
+    if args.system_one_timeout <= 0:
+        raise ValueError("--system-one-timeout must be > 0")
+    if not 0.0 <= args.system_one_min_confidence <= 1.0:
+        raise ValueError("--system-one-min-confidence must be between 0 and 1")
+    if not args.system_one_provider.strip():
+        raise ValueError("--system-one-provider must not be empty")
+    if not args.system_one_api_key_env.strip():
+        raise ValueError("--system-one-api-key-env must not be empty")
+    system_one_api_key = (
+        os.environ.get(args.system_one_api_key_env)
+        if args.system_one_base_url
+        else None
+    )
     ollama_options = parse_json_mapping(
         args.ollama_options_json,
         option_name="--ollama-options-json",
@@ -1411,6 +1449,45 @@ async def main() -> None:
             )
         )
 
+    if args.system_one_base_url:
+        recorder = RecordingDecisionBackend(
+            SystemOneDecisionBackend(
+                api_key=system_one_api_key,
+                model=args.system_one_model,
+                provider_name=args.system_one_provider,
+                min_confidence=args.system_one_min_confidence,
+                timeout=args.system_one_timeout,
+                base_url=args.system_one_base_url,
+                async_mode=True,
+            )
+        )
+        system_one_name = (
+            f"system-one:{args.system_one_provider}:"
+            f"{args.system_one_model or 'default'}"
+        )
+        planners.append(
+            (
+                system_one_name,
+                SchemaPlanner(
+                    registry,
+                    decision_backend=recorder,
+                    decision_policy=DecisionPolicy(
+                        enabled=True,
+                        endpoint_selection=True,
+                        recall_on_empty=args.decision_recall_on_empty,
+                        candidate_abstention=args.candidate_abstention,
+                        fallback="deterministic",
+                    ),
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
+                    endpoint_disambiguation_backend=endpoint_disambiguation_backend,
+                ),
+                recorder,
+            )
+        )
+
     if args.laya:
         recorder = RecordingDecisionBackend(
             LayaDecisionBackend(
@@ -1541,6 +1618,21 @@ async def main() -> None:
             "hardware_label": args.hardware_label,
         },
         "local_runtime": {
+            "system_one": (
+                {
+                    "enabled": True,
+                    "provider": args.system_one_provider,
+                    "model": args.system_one_model or "provider-default",
+                    "base_url": args.system_one_base_url,
+                    "timeout": args.system_one_timeout,
+                    "min_confidence": args.system_one_min_confidence,
+                    "api_key_env": args.system_one_api_key_env,
+                    "api_key_configured": system_one_api_key is not None,
+                    "package_version": _installed_version("typesafe-sdk"),
+                }
+                if args.system_one_base_url
+                else {"enabled": False}
+            ),
             "laya": (
                 {
                     "enabled": True,
