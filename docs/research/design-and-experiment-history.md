@@ -1886,3 +1886,65 @@ threshold.
 model/checkpoint. The only active model-quality experiment at this checkpoint is pinned Kev-0.8B
 #299 / PR #300.
 
+## 46. Current target-distance checkpoint — Kev active, AnyJev staged
+
+The numeric 0.11 target remains:
+
+- supported exact-route >= **85%**;
+- near-domain unsupported rejection >= **97%**;
+- OOD rejection = **100%**;
+- false-route <= **1%**;
+- authority violations / execution errors = **0**;
+- target p95 <= **250 ms**.
+
+An important distinction is now explicit:
+
+> The target operating point has already been reached repeatedly on the tuning/development surface.
+> The unresolved problem is preserving that operating point under independent surface shift.
+
+Evidence:
+- grouped-OOF/frozen learned verifier reached the target on DEV/same-corpus;
+- #287 fresh confirmation then fell to **82.64% exact / 93.23% near rejection / 6.02% false-route**;
+- generic Qwen3 capability gating (#289) and pinned Laya native noul (#301) both failed to provide a safer surface-invariant boundary;
+- direct Laya route authority (#293) was capacity-limited at **60.07%** supported top-1.
+
+Therefore the research problem is no longer ordinary route-ranking accuracy. BGE-M3 already exposes
+**88.4549% raw supported top-1 capacity** on the canonical DEV. The remaining bottleneck is a
+replaceable open-set capability decision that can retain most of those correct winners while rejecting
+unsupported requests with <=1% false routing.
+
+### Active — #299 / PR #300 pinned Kev-0.8B
+
+The only active model-quality run is Kev-0.8B native System One `choice+noul`.
+
+Before inference:
+- contracts passed;
+- pinned Kev runtime installed;
+- local server started successfully;
+- canonical 1,800-case DEV SHA was verified;
+- corpus audit passed.
+
+The full 1,800-row typed-decision diagnostic is executing. No result-driven semantic changes are
+permitted.
+
+### Staged fallback — #311 / PR #313 AnyJev L0
+
+A second architecture is fully staged but deliberately **not executed while Kev is unresolved**:
+
+- AnyJev source revision `45add301a7aa60ed3420c83d15c061e84e5bce61`;
+- zero-label L0;
+- content-free prior rather than evaluation-batch prior;
+- Qwen3-0.6B pinned base revision;
+- BGE raw top-1 remains sole route authority;
+- AnyJev native `noul` is veto-only;
+- eight fixed global thresholds;
+- no L1/L2 fitting on SchemaRouter data;
+- workflow is manual-dispatch only.
+
+#312 was closed as a duplicate of #311 so the research line has one canonical fallback record.
+
+Operationally, the framework is now prepared for rapid model replacement:
+- Jev-wire-compatible engines use `SystemOneDecisionBackend`;
+- arbitrary bounded models can enter through `CallableDecisionBackend` and the generic callable benchmark path;
+- model discovery remains separate from stable execution authority.
+
