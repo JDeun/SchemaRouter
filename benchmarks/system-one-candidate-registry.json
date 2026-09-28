@@ -24,12 +24,12 @@
       "license": "Apache-2.0",
       "protocol": "direct Python Router; native choice/score/noul",
       "integration_path": "LayaDecisionBackend for product; callable/research harness for native noul variants",
-      "status": "active_research",
+      "status": "rejected_current_base_routes",
       "evidence": [
         "#293 direct full-catalog choice rejected",
-        "#301 pinned noul veto active"
+        "#301 pinned BGE-winner noul veto rejected"
       ],
-      "notes": "Direct 16-way auto English/multilingual choice is rejected. Native noul remains under evaluation."
+      "notes": "Current pinned English/multilingual checkpoints are rejected for SchemaRouter v4 direct choice and winner-only noul. typed-decisions is a separate fine-tuned checkpoint and requires an independent pinned experiment before any claim."
     },
     {
       "id": "kev",
