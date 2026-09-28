@@ -18,6 +18,8 @@ from benchmarks.operation_routing_v6c_catalog import (  # noqa: E402
     CONFIRM_ROUTE_SPECS,
     DEV_ROUTE_SPECS,
 )
+from scripts.generate_operation_routing_v6a import build as build_v6a  # noqa: E402
+from scripts.generate_operation_routing_v6b import build as build_v6b  # noqa: E402
 from scripts.generate_operation_routing_v6c import build  # noqa: E402
 
 
@@ -62,6 +64,20 @@ def test_v6c_dev_and_confirmation_counts_and_query_identities() -> None:
     dev_queries = {row["query"] for row in dev}
     confirm_queries = {row["query"] for row in confirm}
     assert dev_queries.isdisjoint(confirm_queries)
+
+
+def test_v6c_query_identities_are_disjoint_from_v6a_and_v6b() -> None:
+    v6c_queries: set[str] = set()
+    for role in ("development", "confirmation"):
+        rows, _ = build(role)
+        v6c_queries.update(str(row["query"]) for row in rows)
+
+    for builder in (build_v6a, build_v6b):
+        prior_queries: set[str] = set()
+        for role in ("development", "confirmation"):
+            rows, _ = builder(role)
+            prior_queries.update(str(row["query"]) for row in rows)
+        assert v6c_queries.isdisjoint(prior_queries)
 
 
 def test_v6c_expected_routes_match_frozen_specs() -> None:
