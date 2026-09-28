@@ -2495,6 +2495,72 @@
         "selection authority separation",
         "raw tool anchor evidence"
       ]
+    },
+    {
+      "id": "0.12-asymmetric-ontology-veto-v1",
+      "cycle": "0.12-asymmetric-ontology-veto",
+      "issue": 358,
+      "pull_request": 360,
+      "branch": "research/0.12-asymmetric-ontology-veto",
+      "preregistered": true,
+      "hypothesis": "Preserve the frozen BGE-M3 raw top-1 as the sole positive route selector and use ontology evidence only as an asymmetric unsupported-membership veto under a fixed independent-agreement rule.",
+      "freeze": {
+        "workflow_run_id": 36411756496,
+        "source_revision": "e29b6e0006dd64bab31c613b97ea68de8c2931f6",
+        "artifact_id": 10965015475,
+        "artifact_sha256": "1d93e8441224051ce63aacc050eb6cd99979f613945e5a21419abc5aa65b0a39"
+      },
+      "data_protocol": {
+        "development": {
+          "cases": 552,
+          "supported_cases": 228,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "e2f3ab0f93584d896f401c94200200d7a39c8f00a4983addd4ebc8889757ee07"
+        },
+        "confirmation": {
+          "cases": 552,
+          "supported_cases": 228,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "bbe4984681472ad5ffe1ed881fd2b92937668fed453a45d6afbba587ffa376e8",
+          "scored": false
+        }
+      },
+      "result": {
+        "workflow_run_id": 36412029437,
+        "source_revision": "759359882c3deb1be310fc540bbb1780b1543885",
+        "artifact_id": 10964703106,
+        "artifact_sha256": "6b25f94698650175475a4c7339526298e7582b1be43366a8c695cfeecdcf9aaa",
+        "development": {
+          "supported_exact_route_accuracy": 0.9605263157894737,
+          "raw_supported_exact_route_accuracy": 0.9605263157894737,
+          "raw_supported_tool_accuracy": 0.9956140350877193,
+          "near_domain_unsupported_rejection": 0.26587301587301587,
+          "out_of_domain_rejection": 0.8472222222222222,
+          "false_route_rate": 0.6049382716049383,
+          "false_routes": 196,
+          "raw_correct_winner_veto_rate": 0,
+          "raw_correct_winner_vetoed": 0,
+          "veto_precision": 0.9922480620155039,
+          "veto_recall": 0.3950617283950617,
+          "vetoes": 129,
+          "true_unsupported_vetoes": 128,
+          "positive_route_switches": 0,
+          "p95_latency_ms": 236.02026389999997,
+          "authority_violations": 0,
+          "execution_errors": 0
+        }
+      },
+      "decision": "terminal_rejected_high_precision_low_recall_asymmetric_veto",
+      "failure_reason": "The negative-only ontology authority separation preserved every raw-correct supported winner and achieved 99.22% veto precision, but exact same-leaf independent agreement was too strict: veto recall was only 39.51%, leaving near-domain rejection at 26.59% and false-route at 60.49%.",
+      "paper_relevance": [
+        "negative-only ontology authority",
+        "selection-versus-veto separation",
+        "high-precision low-recall boundary evidence",
+        "supported-winner preservation",
+        "unscored confirmation discipline"
+      ]
     }
   ],
   "current_research_conclusion": {
@@ -2635,7 +2701,8 @@
     },
     "final_finding": "The remaining bottleneck is surface-invariant capability membership/open-set rejection, not registered-route ranking capacity. Repeated tuning on the current DEV is no longer justified.",
     "successor_rule": "Any later cycle must introduce a materially new source of capability evidence and a new preregistered protocol; it must not repair from #270/#287/#326 fresh rows or extend terminal 0.11 families post hoc.",
-    "bge_gte_consensus_status": "#336/#337 rejected: 81.34% exact / 43.58% near rejection / 81.94% OOD / 52.16% false-route."
+    "bge_gte_consensus_status": "#336/#337 rejected: 81.34% exact / 43.58% near rejection / 81.94% OOD / 52.16% false-route.",
+    "asymmetric_ontology_veto_status": "#358 preserved raw BGE positive selection exactly (96.05% exact, zero raw-correct winner vetoes) and achieved 99.22% veto precision, but same-leaf agreement recall was only 39.51%; exact rule rejected."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
