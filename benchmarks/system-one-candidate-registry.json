@@ -99,7 +99,7 @@
       "fallback_integration_path": "research_callable",
       "lifecycle": "discovery",
       "license_status": "verify model/code license for selected release before promotion",
-      "schemarouter_status": "Fast-moving checkpoint/calibration; pin exact revision before any comparison."
+      "schemarouter_status": "No SchemaRouter quality evidence yet; fast-moving checkpoint/calibration, so pin exact revision before any comparison."
     },
     {
       "id": "system-one-open",
