@@ -537,7 +537,7 @@ def _choose_threshold(
     return scored[0]
 
 
-def fit_generic_head(embedder: Embedder) -> tuple[GenericHead, dict[str, list[float]]]:
+def fit_generic_head(embedder: Embedder) -> tuple[GenericHead, dict[str, Any]]:
     """Fit the route-identity-free verifier head on generic synthetic semantics."""
 
     try:
@@ -570,31 +570,35 @@ def fit_generic_head(embedder: Embedder) -> tuple[GenericHead, dict[str, list[fl
             ): contract
             for _, contract, _ in examples
         }
-        compiled = _compile_vectors(contracts_by_key.values(), embedder)
-        # Synthetic route IDs are identical, so recover vectors by semantic key.
-        compiled_by_key: dict[tuple[str | None, str, str | None], CompiledVectors] = {}
-        for contract in contracts_by_key.values():
-            unique = CapabilityContract(
-                route_id=(
-                    f"synthetic::{contract.declared_action}::"
-                    f"{contract.object_text}::{contract.temporal_scope}"
-                ),
-                tool_key=contract.tool_key,
-                endpoint_name=contract.endpoint_name,
-                adapter=contract.adapter,
-                operation_text=contract.operation_text,
-                object_text=contract.object_text,
-                contract_text=contract.contract_text,
-                declared_action=contract.declared_action,
-                temporal_scope=contract.temporal_scope,
-                read_only=contract.read_only,
-                destructive=contract.destructive,
-                method=contract.method,
+        unique_contracts: list[CapabilityContract] = []
+        route_by_key: dict[tuple[str | None, str, str | None], str] = {}
+        for key, contract in contracts_by_key.items():
+            route_id = (
+                f"synthetic::{contract.declared_action}::"
+                f"{contract.object_text}::{contract.temporal_scope}"
             )
-            vectors = _compile_vectors([unique], embedder)[unique.route_id]
-            compiled_by_key[
-                (contract.declared_action, contract.object_text, contract.temporal_scope)
-            ] = vectors
+            route_by_key[key] = route_id
+            unique_contracts.append(
+                CapabilityContract(
+                    route_id=route_id,
+                    tool_key=contract.tool_key,
+                    endpoint_name=contract.endpoint_name,
+                    adapter=contract.adapter,
+                    operation_text=contract.operation_text,
+                    object_text=contract.object_text,
+                    contract_text=contract.contract_text,
+                    declared_action=contract.declared_action,
+                    temporal_scope=contract.temporal_scope,
+                    read_only=contract.read_only,
+                    destructive=contract.destructive,
+                    method=contract.method,
+                )
+            )
+        compiled_by_route = _compile_vectors(unique_contracts, embedder)
+        compiled_by_key = {
+            key: compiled_by_route[route_id]
+            for key, route_id in route_by_key.items()
+        }
 
         query_vectors = _to_vectors(embedder([query for query, _, _ in examples]))
         matrix: list[list[float]] = []
