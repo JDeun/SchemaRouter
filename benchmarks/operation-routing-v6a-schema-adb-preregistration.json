@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "cycle": "0.13-schema-derived-open-set-boundary",
+  "experiment": "schema-derived-adb-baseline-v1",
+  "issue": 383,
+  "parent_issue": 382,
+  "status": "preregistered_before_corpus_generation_or_scoring",
+  "research_basis": [
+    "Zhang et al. AAAI 2021 Adaptive Decision Boundary",
+    "positive-only class-specific center/radius boundary"
+  ],
+  "positive_route_authority": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "sole_positive_selector": true,
+    "endpoint_switch": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "positive_view_bank": {
+    "source": "trusted registered schema metadata only",
+    "minimum_unique_views": 4,
+    "templates": [
+      "endpoint description",
+      "The user wants to {endpoint description}.",
+      "Request: {endpoint description}.",
+      "{tool description}. Operation: {endpoint description}.",
+      "{normalized endpoint name}. {endpoint description}.",
+      "{trusted aliases}. {endpoint description}. when aliases exist",
+      "{endpoint description}. Returned data: {non-identifier fields}. when fields exist",
+      "{tool description}. The user wants to {endpoint description}. Returned data: {fields}. when fields exist"
+    ],
+    "benchmark_query_access": false,
+    "model_generated_aliases": false
+  },
+  "representation": {
+    "encoder": "BAAI/bge-m3",
+    "encoder_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "l2_normalized": true,
+    "center": "normalized arithmetic mean of endpoint positive-view embeddings",
+    "distance": "euclidean in normalized embedding space",
+    "encoder_finetuning": false
+  },
+  "adb": {
+    "radius_parameter": "softplus(delta_hat)",
+    "initial_delta_hat": 0,
+    "optimizer": "Adam",
+    "learning_rate": 0.05,
+    "steps": 200,
+    "beta1": 0.9,
+    "beta2": 0.999,
+    "epsilon": 1e-8,
+    "weight_decay": 0,
+    "seed": 20260928,
+    "training_data": "schema-derived positive views only",
+    "oos_training_examples": false,
+    "benchmark_labels": false
+  },
+  "decision": {
+    "anchored_scope": "endpoints registered under raw BGE top-1 tool",
+    "preserve_if": "query lies inside at least one known endpoint ADB boundary",
+    "veto_if": "query lies outside all known endpoint ADB boundaries",
+    "unknown_boundary_policy": "preserve raw BGE winner",
+    "boundary_positive_rerank": false
+  },
+  "typed_contract": {
+    "preserves": [
+      "semantic_id",
+      "json datatype/shape",
+      "source unit",
+      "canonical unit",
+      "dimension",
+      "scale",
+      "offset",
+      "qualifiers",
+      "identifier role",
+      "read_only",
+      "destructive",
+      "http method"
+    ]
+  },
+  "data_protocol": {
+    "forbidden": [
+      "0.11 reference/fresh/calibration/blind rows",
+      "#338 labels",
+      "#347 DEV/confirmation",
+      "#349 DEV/confirmation",
+      "#354 DEV/confirmation",
+      "#358 DEV/confirmation",
+      "#363 DEV/confirmation",
+      "#371 DEV/confirmation",
+      "#374 DEV/confirmation",
+      "#377 DEV/confirmation",
+      "#378 DEV/confirmation"
+    ],
+    "development": {
+      "role": "new 0.13-A screen",
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "role": "frozen confirmation only",
+      "generated_before_development_scoring": true,
+      "corpus_sha256": null
+    }
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "positive_route_switches_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "dev_quality_fail": "terminal reject exact positive-only schema-derived ADB baseline",
+    "dev_quality_pass_latency_fail": "runtime-only parity optimization may be separately preregistered",
+    "dev_pass": "freeze exact source and score already-generated confirmation once",
+    "confirmation_fail": "terminal reject",
+    "both_pass": "eligible for new zero-overlap natural-language fresh confirmation",
+    "next_child_if_baseline_recorded": "schema-derived hard-negative boundary"
+  }
+}
