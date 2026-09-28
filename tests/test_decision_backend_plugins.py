@@ -8,6 +8,7 @@ from schemarouter import (
     DecisionOption,
     DecisionRequest,
     DecisionResult,
+    PlanningError,
     DecisionSelection,
     choose_sync,
     discover_decision_backend_plugins,
@@ -181,5 +182,5 @@ def test_plugin_output_remains_locally_bounded(monkeypatch) -> None:
     )
 
     backend = load_decision_backend_plugin("demo")
-    with pytest.raises(Exception, match="unknown option"):
+    with pytest.raises(PlanningError, match="unknown option"):
         choose_sync(backend, _request())
