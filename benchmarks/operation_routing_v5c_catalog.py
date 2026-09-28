@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Disjoint 0.12-C catalogs for hierarchical capability ontology experiment #354."""
 
 from __future__ import annotations
