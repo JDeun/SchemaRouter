@@ -1916,7 +1916,8 @@
         "schemarouter_labels_used": false,
         "question_count": 1,
         "threshold_count": 8,
-        "workflow_dispatch_only": true
+        "workflow_dispatch_only": true,
+        "activation": "guarded marker push or manual dispatch; marker allowed only for kev_family_non_promotable after issue 299"
       }
     },
     {
@@ -1934,7 +1935,8 @@
         "new_kev_inference": false,
         "threshold_count": 8,
         "rank2_fallback": false,
-        "failed_fresh_sets_used": false
+        "failed_fresh_sets_used": false,
+        "activation": "guarded marker push or manual dispatch; marker pins #299 workflow run and exact artifact id"
       }
     }
   ],
@@ -2000,7 +2002,8 @@
       "changed_semantics": false,
       "allowed_change": "GitHub Actions evaluate timeout 180 -> 360 minutes only",
       "dispatch_rule": "manual only if active run terminates by timeout without a valid terminal analysis artifact"
-    }
+    },
+    "activation_protocol": "Staged #314/#315 and #311/#313 remain dormant until explicit guarded activation. #314 can be triggered by committing its activation JSON with the exact #299 artifact ID/source run; #311 can be triggered only after Kev-family non-promotion using an activation marker declaring after_issue=299 and reason=kev_family_non_promotable."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
