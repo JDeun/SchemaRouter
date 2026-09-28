@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "cycle": "0.11-operation-routing-quality-v4",
+  "status": "closed_without_promoted_candidate",
+  "closed_at": "2026-09-28",
+  "production_target": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "executable_p95_ms_max": 250
+  },
+  "canonical_dev": {
+    "cases": 1800,
+    "supported": 1152,
+    "near_domain_unsupported": 576,
+    "out_of_domain": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+  },
+  "strongest_dev_candidate": {
+    "issue": 324,
+    "pull_request": 325,
+    "workflow_run_id": 36380771103,
+    "artifact_id": 10952711288,
+    "artifact_sha256": "4ad9d0cc76500dd8705e0db0f677a21e44dbebb74cc3a9ca097723eb453abdc3",
+    "metrics": {
+      "supported_exact_route_accuracy": 0.8506944444444444,
+      "near_domain_unsupported_rejection": 0.9930555555555556,
+      "out_of_domain_rejection": 1,
+      "false_route_rate": 0.006172839506172839,
+      "executable_p95_ms": 176.9436,
+      "authority_violations": 0,
+      "execution_errors": 0
+    },
+    "development_gate_passed": true
+  },
+  "decisive_fresh_confirmation": {
+    "issue": 326,
+    "pull_request": 327,
+    "workflow_run_id": 36382647406,
+    "artifact_id": 10953393563,
+    "artifact_sha256": "e65911416065f87500de670274c093b7711094ca4ad137abccbfa48e38148cbb",
+    "corpus_sha256": "7d960bb43924569eede34748acc95f5bcd2cc04f2b9f8e396ec59c495dd3e1ec",
+    "normalized_exact_overlap": {
+      "canonical_dev": 0,
+      "fresh_270": 0,
+      "fresh_287": 0
+    },
+    "metrics": {
+      "supported_exact_route_accuracy": 0.8480902777777778,
+      "near_domain_unsupported_rejection": 0.9045138888888888,
+      "out_of_domain_rejection": 1,
+      "false_route_rate": 0.08487654320987655,
+      "executable_p95_ms": 278.3747833,
+      "authority_violations": 0,
+      "execution_errors": 0
+    },
+    "promotion_gate_passed": false,
+    "tuning_eligible": false
+  },
+  "post_fresh_nonrepair_experiments": [
+    {
+      "issue": 328,
+      "pull_request": 329,
+      "representation": "BGE-M3 ColBERT/sparse operation contract",
+      "decision": "reject",
+      "candidate_worthy_rules": 0,
+      "note": "safe false-route frontiers collapsed supported exact and executable p95 exceeded target"
+    },
+    {
+      "issue": 332,
+      "pull_request": 333,
+      "representation": "registry-self-calibrated alias envelope",
+      "decision": "reject",
+      "candidate_worthy_rules": 0,
+      "note": "registry cohesion rejected unsupported traffic only by collapsing supported exact; false-route still >1%"
+    },
+    {
+      "issue": 336,
+      "pull_request": 337,
+      "representation": "threshold-free BGE/GTE raw-route consensus",
+      "decision": "reject",
+      "candidate_worthy_rules": 0,
+      "note": "ranker agreement did not distinguish unsupported capability membership"
+    }
+  ],
+  "retained_conservative_reference": {
+    "issue": 259,
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "metrics": {
+      "supported_exact_route_accuracy": 0.837674,
+      "near_domain_unsupported_rejection": 0.989583,
+      "false_route_rate": 0.009259,
+      "planner_p95_ms": 134.9514
+    },
+    "production_target_passed": false,
+    "reason": "misses >=85% supported exact target"
+  },
+  "final_evaluation": {
+    "issue": 198,
+    "calibration_run": false,
+    "blind_final_run": false,
+    "reason": "fresh-confirmed freeze entry requirement was never satisfied"
+  },
+  "governance": {
+    "failed_fresh_surfaces_forbidden_for_tuning": [
+      270,
+      287,
+      326
+    ],
+    "terminal_families_must_not_be_repaired_posthoc": true,
+    "successor_requires_materially_new_capability_evidence": true,
+    "successor_requires_new_preregistration": true
+  },
+  "conclusion": "0.11 closes as a valid negative research cycle. Route ranking capacity is sufficient; surface-invariant open-set capability membership remains unresolved."
+}
