@@ -2,6 +2,11 @@ name: V4 Top4 Laya Noul Routing
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "research/v4-topk-laya-noul-routing"
+    paths:
+      - ".github/workflows/research-v4-top4-laya-noul-routing.yml"
 
 permissions:
   contents: read
