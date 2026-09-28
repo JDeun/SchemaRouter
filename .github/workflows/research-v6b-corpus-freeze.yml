@@ -13,6 +13,14 @@ on:
       - "tests/test_schema_hard_negative_ellipsoid.py"
       - "tests/test_operation_routing_v6b_protocol.py"
   pull_request:
+    paths:
+      - ".github/workflows/research-v6b-corpus-freeze.yml"
+      - "benchmarks/operation-routing-v6b-hard-negative-ellipsoid-preregistration.json"
+      - "benchmarks/schema_hard_negative_ellipsoid.py"
+      - "benchmarks/operation_routing_v6b_catalog.py"
+      - "scripts/generate_operation_routing_v6b.py"
+      - "tests/test_schema_hard_negative_ellipsoid.py"
+      - "tests/test_operation_routing_v6b_protocol.py"
   workflow_dispatch:
 
 permissions:
