@@ -16,10 +16,9 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 from benchmark_decision_routing import load_corpus, reference_registry  # noqa: E402
+
 from benchmarks.bge_m3_frozen_candidate import (  # noqa: E402
     ACTION_WEIGHT,
-    MODEL_NAME,
-    MODEL_REVISION,
     SCHEMA_WEIGHT,
     _action_text,
     _schema_text,
