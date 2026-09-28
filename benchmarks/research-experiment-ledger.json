@@ -1699,34 +1699,60 @@
       "interpretation": "System One provider compatibility is now a stable protocol-level boundary. Future wire-compatible models should be configuration changes rather than new planner classes; quality promotion remains benchmark-gated."
     },
     {
-      "id": "0.11-direct-laya-system-one-routing",
+      "id": "0.11-pluggable-system-one-routing",
       "cycle": "0.11-operation-routing-quality-v4",
       "issue": 293,
       "pull_request": 294,
       "preregistered": true,
       "status": "executing",
       "design": {
-        "provider": "laya",
-        "package_version": "0.3.11",
-        "model_mode": "auto",
-        "device": "cpu",
-        "preload": true,
-        "max_loaded": 2,
-        "candidate_scope": "full 16 registered routes",
-        "bge_used": false,
-        "acceptance_thresholds": [
-          0.5,
-          0.7,
-          0.8,
-          0.9,
-          0.95,
-          0.98,
-          0.99,
-          0.995
+        "infrastructure_issue": 291,
+        "infrastructure_pull_request": 292,
+        "infrastructure_merged": true,
+        "direct_laya": {
+          "package_version": "0.3.11",
+          "model_mode": "auto",
+          "device": "cpu",
+          "preload": true,
+          "max_loaded": 2,
+          "candidate_scope": "full_registered_route_set",
+          "threshold_count": 8,
+          "workflow_run_id": 36365434284
+        },
+        "future_provider_contract": "SystemOneDecisionBackend(base_url, model, provider_name)",
+        "initial_followups": [
+          "Kev via TypeSafe-compatible /v1/systemone",
+          "choice+noul capability gate"
         ],
-        "route_authority": "Laya may select only from locally registered finite route IDs; SchemaRouter validates the ID"
+        "authority": "finite registered IDs only; provider cannot create execution authority"
       },
       "decision": "executing"
+    },
+    {
+      "id": "0.11-kev-08b-choice-noul-screen",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 299,
+      "pull_request": 300,
+      "preregistered": true,
+      "status": "queued",
+      "decision": "queued",
+      "workflow_run_id": 36366508183,
+      "design": {
+        "kev_source_revision": "d32a973cc2375f1c76e898cbf6e759c4499042de",
+        "model": "jaredpalmer/kev-0.8b",
+        "model_revision": "9a45d25eb2ab761841196625383fa1dff0e56c1e",
+        "base_model": "Qwen/Qwen3.5-0.8B-Base",
+        "base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+        "typesafe_sdk": "0.7.2",
+        "question_types": [
+          "choice",
+          "noul"
+        ],
+        "fixed_rule_count": 16,
+        "schemarouter_training": false,
+        "candidate_scope": "all 16 registered endpoints",
+        "authority": "finite registered IDs only; no rank-2 fallback"
+      }
     }
   ],
   "current_research_conclusion": {
@@ -1745,7 +1771,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "parallel external semantic verifier (#289) and pluggable System One routing (#293)",
+    "active_experiment": "parallel external verifier/System One comparison: Qwen3 #289, Laya #293, Kev-0.8B #299",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1760,7 +1786,8 @@
     "generic_nli_status": "#273 rejected contradiction-only NLI because both supported and unsupported operation pairs were predominantly neutral.",
     "explicit_negative_prototype_status": "#275 showed useful near-domain signal, while #277/#279/#281 demonstrated that fixed scalar and relative-rank prototype heuristics cannot meet the 85/97/1/100 target. This heuristic family is closed.",
     "learned_verifier_status": "#285 grouped OOF passed, but #287 frozen fit-once HGB failed zero-overlap fresh-surface DEV at 82.64% exact / 93.23% near rejection / 6.02% false-route / 252.77 ms p95. Same model SHA was reused without refit.",
-    "system_one_provider_status": "#291/#292 merged a generic Jev-compatible SystemOneDecisionBackend; future compatible models can swap base_url/model/provider_name without a new planner class."
+    "system_one_provider_status": "#291/#292 merged a generic Jev-compatible SystemOneDecisionBackend; future compatible models can swap base_url/model/provider_name without a new planner class.",
+    "model_swap_infrastructure": "#291/#292 merged generic SystemOneDecisionBackend; #297/#298 generalizes the shared benchmark CLI so compatible models can be swapped by configuration."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -1816,15 +1843,17 @@
     ],
     "active_experiments": [
       289,
-      293
+      293,
+      299
     ],
     "active_pull_requests": [
       235,
       290,
-      294
+      294,
+      300
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "terminal results of external Qwen3 verifier #289 and direct Laya/System One routing #293"
+    "next_research_direction": "terminal results of Qwen3 #289, direct Laya #293, and pinned Kev-0.8B choice+noul #299"
   },
   "design_lineage": [
     {
