@@ -177,7 +177,8 @@ def _write_markdown(path: Path, package: dict[str, Any]) -> None:
         f"Ledger updated: `{package.get('ledger_updated_at')}`  ",
         f"Experiments: **{package['experiment_count']}**",
         "",
-        "| ID | Status | Decision | Data role | Exact | Near reject | OOD reject | False-route | p95 ms | Run |",
+        "| ID | Status | Decision | Data role | Exact | Near reject | OOD reject | "
+        "False-route | p95 ms | Run |",
         "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in rows:
