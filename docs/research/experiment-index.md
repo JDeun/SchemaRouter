@@ -19,6 +19,11 @@ The canonical machine-readable source is
 The narrative source is
 [Design and experiment history](design-and-experiment-history.md).
 
+For **what to try next and why**, use the
+[Prior-art roadmap](prior-art-roadmap.md) and GitHub issue **#388**. Those surfaces map literature
+to canonical work items and record active/next/backlog/deferred state so a new session does not
+recreate terminal experiments.
+
 ## How to read the evidence
 
 A Git commit is not the same thing as an experiment. One squashed PR may contain implementation,

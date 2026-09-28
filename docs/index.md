@@ -179,7 +179,8 @@ candidate passed the standing target, but the exact zero-overlap fresh confirmat
 experimental learned router was promoted as an unconditional production default.
 
 [Read the 0.10.0 release notes →](releases/0.10.0.md) ·
-[Read the routing research status →](research/routing-status.md)
+[Read the routing research status →](research/routing-status.md) ·
+[Read the prior-art roadmap →](research/prior-art-roadmap.md)
 
 ## Go deeper
 

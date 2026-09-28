@@ -1,6 +1,9 @@
 # SchemaRouter design and experiment history
 
-> Canonical session-resume tracker: GitHub issue #200  
+> Canonical research/session roadmap: GitHub issue #388  
+> Prior-art roadmap: `docs/research/prior-art-roadmap.md`  
+> Machine-readable prior-art registry: `benchmarks/research-prior-art-registry.json`  
+> Historical session-resume tracker: GitHub issue #200  
 > Machine-readable evidence ledger: `benchmarks/research-experiment-ledger.json`
 
 This document reconstructs the material design and research lineage of SchemaRouter from the initial repository implementation onward. It is intentionally broader than release notes: it records architectural intent, empirical questions, rejected alternatives, data-consumption rules, and why the project moved from one routing design to the next.
