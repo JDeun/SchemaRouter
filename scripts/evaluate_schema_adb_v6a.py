@@ -1,4 +1,4 @@
-"""Evaluate frozen V6A schema-derived ADB baseline on DEV only."""
+"""Evaluate frozen V6A schema-derived ADB baseline on DEV only.\n\nEvaluator-only changes do not alter the frozen boundary or corpus semantics.\n"""
 
 from __future__ import annotations
 
