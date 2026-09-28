@@ -134,7 +134,9 @@ Use the actual frozen route/score field and threshold. For a BGE+external-gate c
 - a recorded probability-drift distribution and reference decision-boundary margin.
 
 Any route change or threshold crossing means the runtime is semantically different and must not be
-treated as a runtime-only optimization.
+treated as a runtime-only optimization. When parity fails, the validator writes the requested JSON
+report first and then exits non-zero, so the mismatch cases and probability drift remain available as
+terminal research evidence.
 
 The optimized runtime needs its own recorded identity and confirmation before calibration.
 
