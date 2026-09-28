@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "cycle": "0.12-asymmetric-ontology-veto",
+  "experiment": "asymmetric-ontology-veto-v1",
+  "issue": 358,
+  "parent_issue": 340,
+  "status": "preregistered_before_corpus_generation_or_scoring",
+  "route_ranker": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "role": "sole positive route selector"
+  },
+  "independent_vote": {
+    "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42",
+    "role": "unsupported ontology vote only",
+    "route_ranking": false
+  },
+  "ontology": {
+    "leaves": [
+      "search",
+      "retrieve",
+      "list",
+      "create",
+      "update",
+      "delete",
+      "cancel",
+      "refund",
+      "send",
+      "share",
+      "export",
+      "translate",
+      "summarize",
+      "compare",
+      "merge",
+      "restart",
+      "execute",
+      "forecast",
+      "compose",
+      "explain",
+      "calculate",
+      "chat"
+    ],
+    "non_tool_leaves": [
+      "compose",
+      "explain",
+      "calculate",
+      "chat"
+    ],
+    "bge_projection": "argmax fixed multilingual generic leaf prototypes",
+    "minilm_projection": "argmax same fixed multilingual generic leaf prototypes",
+    "explicit_parser": "fixed high-precision generic multilingual operation parser with UNKNOWN allowed",
+    "thresholds": false,
+    "learned_head": false
+  },
+  "veto_rule": {
+    "raw_bge_route_preserved_unless_veto": true,
+    "rule_a": "explicit parser names unsupported leaf AND BGE or MiniLM semantic vote agrees on same unsupported leaf -> veto",
+    "rule_b": "explicit parser UNKNOWN AND BGE and MiniLM votes agree on same unsupported leaf -> veto",
+    "rule_c": "otherwise preserve raw BGE route exactly",
+    "positive_rerank": false,
+    "endpoint_filter": false,
+    "cross_tool_fallback": false,
+    "pseudo_route": false,
+    "route_specific_thresholds": false,
+    "unknown_endpoint_contract_policy": "if anchored tool contains any operation-unknown endpoint, semantic veto cannot prove leaf absence and is disabled for that query"
+  },
+  "data_protocol": {
+    "forbidden": [
+      "0.11-dev",
+      "#270",
+      "#287",
+      "#326",
+      "#338",
+      "#347-dev",
+      "#347-confirmation",
+      "#349-dev",
+      "#349-confirmation",
+      "#354-dev",
+      "#354-confirmation",
+      "#198-calibration",
+      "#198-blind"
+    ],
+    "development": {
+      "role": "new 0.12-D screen",
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "role": "frozen confirmation only",
+      "generated_before_development_scoring": true,
+      "corpus_sha256": null
+    },
+    "requirements": [
+      "native",
+      "openapi",
+      "mcp",
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed",
+      "supported",
+      "same-domain-unsupported",
+      "ood",
+      "sibling-operation-contrasts",
+      "opaque-endpoint-names",
+      "variable-endpoint-counts"
+    ]
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "diagnostics": [
+    "raw_bge_exact",
+    "raw_bge_tool_accuracy",
+    "raw_correct_winner_veto_rate",
+    "veto_precision",
+    "veto_recall"
+  ],
+  "stopping_rule": {
+    "dev_fail": "terminal_reject_without_row-driven phrase/prototype/agreement repair",
+    "dev_pass": "freeze exact source and score already-generated confirmation",
+    "confirmation_fail": "terminal_reject",
+    "both_pass": "eligible_for brand-new zero-overlap natural-language fresh confirmation"
+  }
+}
