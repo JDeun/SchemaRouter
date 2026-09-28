@@ -1869,6 +1869,25 @@ Before inference:
 The full 1,800-row typed-decision diagnostic is executing. No result-driven semantic changes are
 permitted.
 
+### Staged Kev composition — #314 / PR #315
+
+A zero-new-inference Kev composition was preregistered before #299 result inspection.
+
+- BGE-M3 raw registered top-1 remains sole route authority;
+- the exact frozen #299 `supported_probability` is reused as veto-only evidence;
+- exact #299 per-row Kev request latency is reused for combined latency;
+- Kev route choice and choice confidence are ignored;
+- no new Kev model call is allowed;
+- eight fixed global thresholds are retained;
+- the manual workflow requires the exact terminal #299 artifact ID and validates its source run, artifact name, case IDs, probabilities, latency, execution errors, and authority violations before composition.
+
+This isolates a useful research question without adding another learned component:
+
+> if Kev's own 16-way route choice is weak, is its independently emitted global support-membership
+> probability still a useful open-set gate for the stronger BGE route authority?
+
+The staging PR is #315. It must remain unexecuted until #299 is terminal.
+
 ### Staged fallback — #311 / PR #313 AnyJev L0
 
 A second architecture is fully staged but deliberately **not executed while Kev is unresolved**:
