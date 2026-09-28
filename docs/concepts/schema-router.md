@@ -1,8 +1,11 @@
 # What SchemaRouter is
 
-SchemaRouter is a **schema-aware planning and execution layer**.
+SchemaRouter is a **typed capability retrieval, planning, and execution layer**.
 
-Its job is narrower than a general agent framework and deeper than a semantic tool router.
+Its job is narrower than a general agent framework and deeper than a semantic tool router. A useful
+mental model is RAG infrastructure for APIs/tools: adapters parse capability sources into typed
+endpoint/field contracts, the registry indexes those contracts, and SchemaRouter retrieves the
+smallest trusted executable data surface for the surrounding application.
 
 The ownership boundary is explicit:
 
@@ -69,7 +72,8 @@ When a query-to-field match is clear:
 Pruning too aggressively can also destroy recall. When field intent is genuinely ambiguous, the
 default planner prefers the declared field set rather than pretending one field is sufficient.
 
-See [Field-first execution](field-first-execution.md).
+See [Capability catalog and RAG analogy](capability-catalog.md) and
+[Field-first execution](field-first-execution.md).
 
 ## Why the executor validates again
 
