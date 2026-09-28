@@ -56,7 +56,8 @@ TRUE_CRITERION = (
     "The registered endpoint explicitly supports every operation requested by the user."
 )
 FALSE_CRITERION = (
-    "The registered endpoint cannot fully execute the request or would require an unlisted capability."
+    "The registered endpoint cannot fully execute the request or would require "
+    "an unlisted capability."
 )
 
 
