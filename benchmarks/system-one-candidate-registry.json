@@ -55,6 +55,17 @@
       "schemarouter_status": "Pinned Kev-0.8B choice+noul #299 / PR #300 executing; larger checkpoints require separate preregistration."
     },
     {
+      "id": "mapika-decider",
+      "project": "Mapika decider",
+      "repository": "Mapika/decider",
+      "integration_path": "system_one_wire",
+      "lifecycle": "contingent_discovery",
+      "license_status": "Apache-2.0",
+      "schemarouter_status": "No SchemaRouter quality evidence yet. decider-0.8B is a resource-compatible fallback candidate if the active Kev-0.8B screen does not promote; pin exact model revision before execution.",
+      "upstream_source_revision_seen": "23579f7a7e8f10e1045be492af3c1c05a005d67c",
+      "upstream_package_version_seen": "1.6.0"
+    },
+    {
       "id": "decis",
       "project": "Decis",
       "repository": "chaitin/Decis",
