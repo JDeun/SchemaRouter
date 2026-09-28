@@ -2293,52 +2293,48 @@ Decision: **reject and close the BGE-M3 native ColBERT/sparse operation-contract
 
 #198 remains blocked. The next behavior-changing architecture, if any, must be separately preregistered using only tuning-eligible DEV plus registry-defined operational semantics; failed fresh-confirmation surfaces #270/#287/#326 remain permanently non-tuning.
 
-## 49. #328 ColBERT operation-contract gate — terminal reject
+## 50. #332 / PR #333 — registry-self-calibrated alias envelope rejected
 
-Canonical workflow `36385740263` completed successfully at source
-`4c72f2dd1939edb6ecf8415d620dbb5d58683fa0`.
+After ColBERT failed, #332 tested whether trusted registry metadata itself could define a
+surface-independent operation boundary without another query model or a labeled-DEV threshold.
 
-Artifact `10955036349`, digest
-`sha256:6e6bfbd2cb352aba03e2d98683ae6967a64115f90a04cf49f74e7cd1ab76dde7`.
+Frozen design:
+- BGE-M3 raw registered top-1 remained the sole route authority;
+- the same normalized query embedding was reused for route ranking and the gate;
+- alias banks contained only normalized endpoint name + trusted `operation_aliases`;
+- route margin/cohesion floors were derived only from leave-one-out alias self-cohesion and
+  same-tool sibling separation;
+- exactly four fixed families A/B/C/D were evaluated;
+- #270/#287/#326 fresh surfaces were excluded.
 
-Technical validity:
-- all 1,800 DEV rows scored;
-- BGE raw-winner parity mismatches 0;
-- authority/errors 0/0;
-- raw supported top-1 88.4549%.
+Canonical evidence:
+- workflow `36388641609`;
+- source `fa091f43296eb1ca680f39921010482275bb4cda`;
+- artifact `10955736650`;
+- digest `sha256:21166d8c10009401b34380e6e24ddbcdcf4ec06c760d86b4d19eaf99930a1e1e`;
+- canonical DEV SHA `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`;
+- dense raw supported top-1 **88.4549%**;
+- dense parity / authority / execution errors **0 / 0 / 0**;
+- routing-path p95 **198.0714 ms**.
 
-ColBERT agreement-only:
-- global agreement exact 82.5521%, false-route 64.5062%;
-- same-tool agreement exact 83.7674%, false-route 91.2037%.
+Results:
+- A sibling contrast: **84.8958% exact / 11.9792% near rejection / 18.0556% OOD / 87.3457% false-route**;
+- B registry margin: **72.3090% exact / 24.1319% near rejection / 68.0556% OOD / 70.9877% false-route**;
+- C registry cohesion: **24.3056% exact / 98.4375% near rejection / 100% OOD / 1.3889% false-route**;
+- D joint envelope: **23.5243% exact / 98.4375% near rejection / 100% OOD / 1.3889% false-route**.
 
-At the <=6 false-route frontier:
-- family C exact 38.6285%, near rejection 98.9583%, OOD 100%, false-route 0.9259%;
-- family D exact 38.7153%, near rejection 98.9583%, OOD 100%, false-route 0.9259%.
+No fixed family passed the standing 85/97/100/1 target.
 
-The winner-score representation separates groups in aggregate but its unsupported upper tail overlaps
-supported traffic too strongly. Safe thresholds collapse recall.
+The result is structurally informative. Same-tool alias contrast is useful for operation preference but
+does not establish capability membership: unsupported requests usually still prefer one registered
+sibling. Conversely, the alias self-cohesion floor becomes a strong rejection mechanism only by
+demanding supported natural-language requests look nearly as internally coherent as curated registry
+aliases, which collapses supported recall.
 
-Pre-result PR #331 correctly noted that sparse lexical scoring is diagnostic-only. Recomputing
-executable latency from row components (query encode + dense scoring + ColBERT scoring) gives:
-- mean 365.43 ms;
-- p50 354.79 ms;
-- p95 398.61 ms.
+The representation is therefore terminal. Per preregistration, it is not repaired with a
+DEV-fitted score threshold, a second threshold dimension, route/language/family exceptions, or failed
+fresh-confirmation rows.
 
-Thus the representation fails both quality and the <=250 ms target. Sparse diagnostics are also
-non-viable as a successor: at <=6 false routes, supported exact is only 12.67%.
-
-Decision: terminate this representation without margin thresholds, second dimensions, route-local
-DEV-fitted thresholds, or fresh-derived repair.
-
-### Next representation hypothesis
-
-The next experiment should keep one BGE query embedding and derive acceptance calibration from
-registry metadata rather than DEV score distributions.
-
-Candidate concept:
-- embed each endpoint name and trusted operation alias separately;
-- compare the dense winner's alias bank only against its same-tool sibling alias bank;
-- derive support/contrast envelopes from alias self-cohesion and sibling separation, not labeled DEV;
-- no additional query-model inference;
-- dense BGE raw winner remains sole route authority.
-
+The 0.11 cycle now has no active candidate. #198 remains blocked. A subsequent behavior-changing
+hypothesis must provide a materially different source of open-set capability evidence rather than
+another transformation of the same dense score/alias geometry.

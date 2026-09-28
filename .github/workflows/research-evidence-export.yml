@@ -1,0 +1,44 @@
+name: Research Evidence Export
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/research-experiment-ledger.json"
+      - "scripts/export_research_evidence.py"
+      - "tests/test_export_research_evidence.py"
+      - "docs/research/paper-evidence-package.md"
+      - ".github/workflows/research-evidence-export.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Validate exporter
+        run: |
+          ruff check scripts/export_research_evidence.py tests/test_export_research_evidence.py
+          pytest -q tests/test_export_research_evidence.py
+      - name: Generate paper evidence package
+        run: |
+          rm -rf /tmp/schemarouter-research-evidence
+          python scripts/export_research_evidence.py             --out-dir /tmp/schemarouter-research-evidence
+          test -s /tmp/schemarouter-research-evidence/research-evidence-package.json
+          test -s /tmp/schemarouter-research-evidence/research-experiments.csv
+          test -f /tmp/schemarouter-research-evidence/invalidated-runs.csv
+          test -s /tmp/schemarouter-research-evidence/research-evidence-table.md
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: research-evidence-package-${{ github.run_id }}
+          path: /tmp/schemarouter-research-evidence/
+          if-no-files-found: error
+          retention-days: 30

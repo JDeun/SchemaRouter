@@ -2108,6 +2108,105 @@
         "diagnostic_total_p95_ms": 398.68482555
       },
       "interpretation": "token-level ColBERT/sparse operation evidence has signal but safe global boundaries collapse supported recall; representation also misses <=250 ms CPU runtime"
+    },
+    {
+      "id": "0.11-bge-registry-alias-envelope",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 332,
+      "pull_request": 333,
+      "preregistered": true,
+      "status": "completed",
+      "decision": "reject",
+      "source_revision": "fa091f43296eb1ca680f39921010482275bb4cda",
+      "workflow_run_id": 36388641609,
+      "artifact_id": 10955736650,
+      "artifact_sha256": "21166d8c10009401b34380e6e24ddbcdcf4ec06c760d86b4d19eaf99930a1e1e",
+      "dataset": {
+        "role": "tuning_eligible_development",
+        "cases": 1800,
+        "supported_cases": 1152,
+        "near_domain_unsupported_cases": 576,
+        "out_of_domain_cases": 72,
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+      },
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "model": "BAAI/bge-m3",
+        "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "query_model_calls_for_gate": 0,
+        "alias_surface": "normalized endpoint name + trusted operation_aliases",
+        "floor_source": "registry alias self-cohesion and same-tool sibling separation only",
+        "dev_fitted_thresholds": false,
+        "families": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "failed_fresh_sets_used": false
+      },
+      "result": {
+        "dense_raw_supported_top1_accuracy": 0.8845486111111112,
+        "dense_route_parity_mismatches": 0,
+        "authority_violations": 0,
+        "execution_errors": 0,
+        "candidate_worthy_rule_count": 0,
+        "total_p95_ms": 198.07140665,
+        "family_A": {
+          "supported_exact_route_accuracy": 0.8489583333333334,
+          "near_domain_unsupported_rejection": 0.11979166666666667,
+          "out_of_domain_rejection": 0.18055555555555555,
+          "false_route_rate": 0.8734567901234568
+        },
+        "family_B": {
+          "supported_exact_route_accuracy": 0.7230902777777778,
+          "near_domain_unsupported_rejection": 0.24131944444444445,
+          "out_of_domain_rejection": 0.6805555555555556,
+          "false_route_rate": 0.7098765432098766
+        },
+        "family_C": {
+          "supported_exact_route_accuracy": 0.24305555555555555,
+          "near_domain_unsupported_rejection": 0.984375,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0.013888888888888888
+        },
+        "family_D": {
+          "supported_exact_route_accuracy": 0.23524305555555555,
+          "near_domain_unsupported_rejection": 0.984375,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0.013888888888888888
+        }
+      },
+      "invalid_pre_runs": [
+        {
+          "run_id": 36388210464,
+          "reason": "cancelled by pre-result implementation update before model evaluation"
+        },
+        {
+          "run_id": 36388261000,
+          "reason": "technical failure during alias-envelope diagnostic before analysis artifact"
+        },
+        {
+          "run_id": 36388454297,
+          "reason": "technical failure during alias-envelope diagnostic before analysis artifact"
+        },
+        {
+          "run_id": 36388457554,
+          "reason": "technical failure during alias-envelope diagnostic before analysis artifact"
+        }
+      ],
+      "failure_reason": "Registry-derived sibling contrast preserves recall but accepts unsupported requests; registry cohesion rejects unsupported requests only by collapsing supported exact to ~24% and still misses the <=1% false-route ceiling.",
+      "interpretation": [
+        "The registry-only boundary is deployment-realistic in latency but not quality-safe.",
+        "Trusted alias self-cohesion is not a sufficient universal support envelope for natural request wording.",
+        "Do not repair this family with DEV-fitted thresholds or route/language/family exceptions."
+      ],
+      "paper_relevance": [
+        "negative result",
+        "registry-derived calibration",
+        "open-set boundary vs supported recall",
+        "cheap single-embedding veto architecture"
+      ]
     }
   ],
   "current_research_conclusion": {
@@ -2115,16 +2214,16 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "keep #198 blocked; no calibration or blind-final without a new fresh-confirmed frozen candidate",
-      "do not reuse #270/#287/#326 fresh rows for tuning or candidate design",
-      "do not extend the rejected BGE-M3 ColBERT/sparse operation-contract family with post-hoc second thresholds, route-local exceptions, or margin search",
-      "next behavior-changing experiment must be separately preregistered from canonical tuning DEV plus registry-defined operational semantics and must be deployment-realistic at <=250 ms"
+      "keep #198 blocked until a materially new candidate passes DEV and a new zero-overlap fresh confirmation",
+      "do not use #270/#287/#326 fresh rows for design or tuning",
+      "do not extend ColBERT/sparse or registry alias-envelope families with post-hoc threshold dimensions or exceptions",
+      "the next hypothesis must introduce a materially different source of open-set capability evidence while preserving finite registered authority and a credible <=250 ms runtime path"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "none; #328/#329 terminally rejected",
+    "active_experiment": "none; #332/#333 terminally rejected",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -2215,7 +2314,8 @@
       }
     },
     "colbert_operation_contract_status": "#328/#329 rejected: 0 candidate-worthy rules; <=1% false-route frontier preserves only ~38.6-38.7% exact; executable p95 ~398.61 ms.",
-    "colbert_status": "#328 rejected: safe ColBERT score frontiers retain only ~38.6-38.7% exact at <=1% false routes; executable p95 ~398.6 ms. Sparse diagnostic also non-viable."
+    "colbert_status": "#328 rejected: safe ColBERT score frontiers retain only ~38.6-38.7% exact at <=1% false routes; executable p95 ~398.6 ms. Sparse diagnostic also non-viable.",
+    "alias_envelope_status": "#332/#333 rejected: 0 candidate-worthy rules; p95 198.07 ms; safe C/D rules collapse exact to ~24% and still yield 1.39% false-route."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
