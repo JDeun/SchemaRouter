@@ -103,6 +103,35 @@ Source: `ef75100abc1bb03a80ef2d7cfbd9d463accfb623`
 Artifact: `10957952613`  
 Digest: `sha256:2a24d50c563ee872fdad8d498e30ab7a55e6c82e0650bf27ac4bfbadc4fc4269`
 
+## 0.12 query-first typed-frame screen
+
+The first 0.12 successor experiment (#347) changed the representation rather than adding another
+endpoint-similarity threshold. It parsed a registry-independent explicit request frame, used frozen
+BGE-M3 only to anchor the tool/domain, and then filtered that tool's endpoints by trusted typed
+contract contradictions before one bounded ranking decision.
+
+A new 936-case DEV corpus and a separate 1,008-case registration confirmation corpus were generated
+and frozen before any scoring. The confirmation surface remains **unscored** because DEV failed.
+
+DEV result:
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **97.22%** |
+| Raw supported tool accuracy | **99.54%** |
+| Near-domain unsupported rejection | **70.37%** |
+| OOD rejection | **95.83%** |
+| False-route | **25.99%** |
+| p95 | **179.53 ms** |
+| Authority / execution errors | **0 / 0** |
+
+The result shows that typed query-side filtering can preserve supported routing and runtime very
+well, but a high-precision lexical frame does not cover enough natural-language operation intent to
+solve open-set membership. This exact candidate is terminal and is not repaired from DEV rows.
+
+The next successor hypothesis must add a materially broader **query-side semantic operation signal**
+without turning endpoint similarity back into capability authority.
+
 ## Reproducibility
 
 The closed-cycle machine-readable decision is stored at
