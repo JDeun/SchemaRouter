@@ -5,7 +5,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from schemarouter import EndpointSpec, FieldSpec, InDigestryRegistry, ToolSpec, UnitNormalizationSpec
+from schemarouter import (
+    EndpointSpec,
+    FieldSpec,
+    InMemoryRegistry,
+    ToolSpec,
+    UnitNormalizationSpec,
+)
 from schemarouter.adapters.mcp import tool_from_mcp
 from schemarouter.adapters.openapi import tool_from_openapi
 
@@ -20,8 +26,8 @@ class RouteCaseSpec:
     temporal_scope: str | None = None
 
 
-def development_registry() -> InDigestryRegistry:
-    registry = InDigestryRegistry()
+def development_registry() -> InMemoryRegistry:
+    registry = InMemoryRegistry()
 
     registry.register(
         tool_from_openapi(
@@ -217,8 +223,8 @@ def development_registry() -> InDigestryRegistry:
     return registry
 
 
-def confirmation_registry() -> InDigestryRegistry:
-    registry = InDigestryRegistry()
+def confirmation_registry() -> InMemoryRegistry:
+    registry = InMemoryRegistry()
 
     registry.register(
         tool_from_openapi(
