@@ -100,7 +100,7 @@
       "fallback_integration_path": "research_callable",
       "lifecycle": "discovery",
       "license_status": "Apache-2.0 reported by upstream",
-      "schemarouter_status": "Runtime/readout contract must be pinned before benchmark."
+      "schemarouter_status": "No SchemaRouter quality evidence yet. Runtime/readout contract must be pinned before benchmark."
     },
     {
       "id": "bespoke-nimble",
