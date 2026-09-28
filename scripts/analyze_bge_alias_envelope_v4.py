@@ -70,7 +70,7 @@ def _safe_rate(numerator: int, denominator: int) -> float:
 
 
 def _dot(left: Any, right: Any) -> float:
-    if len(left) != len(right) or not left:
+    if len(left) != len(right) or len(left) == 0:
         raise ValueError("vectors must be non-empty and dimensionally aligned")
     value = sum(float(a) * float(b) for a, b in zip(left, right, strict=True))
     if not math.isfinite(value):
