@@ -1896,6 +1896,28 @@
         "intended_path": "non-System-One-wire typed decision models"
       },
       "interpretation": "Future non-wire decision models can enter the shared benchmark through a thin trusted wrapper instead of a new core integration."
+    },
+    {
+      "id": "0.11-anyjev-l0-content-free-noul-veto",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 311,
+      "pull_request": 313,
+      "preregistered": true,
+      "status": "staged_dormant",
+      "decision": "await_kev_299_terminal_before_manual_execution",
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "anyjev_source_revision": "45add301a7aa60ed3420c83d15c061e84e5bce61",
+        "base_model": "Qwen/Qwen3-0.6B",
+        "base_model_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+        "level": "L0",
+        "prior": "content_free",
+        "prior_strength": 1,
+        "schemarouter_labels_used": false,
+        "question_count": 1,
+        "threshold_count": 8,
+        "workflow_dispatch_only": true
+      }
     }
   ],
   "current_research_conclusion": {
@@ -1940,7 +1962,8 @@
     "topk_same_laya_status": "#310 closed without execution: at p>=0.95 the same Laya signal has a hard best-case exact bound of 151/1152=13.11%, so compute would be wasted.",
     "laya_winner_noul_status": "#301/#302 rejected: 0/8 pass; correct-supported median P(true)=0.6784 vs near unsupported=0.67245; combined p95=1098.75ms.",
     "top4_typed_routing_status": "#303 remains provider-neutral contingency only; same pinned Laya top-4 is mathematically dominated and not canonical evidence.",
-    "external_verifier_status": "Qwen3 direct semantic verifier #289 rejected; pinned Laya noul veto #301 rejected; full-catalog Laya choice+noul #295 superseded before execution."
+    "external_verifier_status": "Qwen3 direct semantic verifier #289 rejected; pinned Laya noul veto #301 rejected; full-catalog Laya choice+noul #295 superseded before execution.",
+    "next_external_candidate": "#311/#313 stages AnyJev L0 with content_free prior and Qwen3-0.6B; manual-only until Kev terminal."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2005,15 +2028,19 @@
     "active_pull_requests": [
       235,
       300,
-      308
+      308,
+      313
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "finish pinned Kev-0.8B #299; use #303 only with a materially different provider/checkpoint if evidence justifies it",
+    "next_research_direction": "finish Kev-0.8B #299; activate staged AnyJev L0 #311/#313 only if Kev is terminal without promotion",
     "contingent_experiments": [
       303
     ],
     "active_tracking_issues": [
       293
+    ],
+    "staged_experiments": [
+      311
     ]
   },
   "design_lineage": [
