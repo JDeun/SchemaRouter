@@ -1,0 +1,130 @@
+name: Research V6F Naturalistic Probe DEV
+
+on:
+  push:
+    branches:
+      - "research/0.13-naturalistic-operation-probe"
+    paths:
+      - ".github/workflows/research-v6f-naturalistic-probe-dev.yml"
+      - "scripts/evaluate_naturalistic_operation_probe_v6f.py"
+  pull_request:
+    paths:
+      - ".github/workflows/research-v6f-naturalistic-probe-dev.yml"
+      - "scripts/evaluate_naturalistic_operation_probe_v6f.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FROZEN_SOURCE: "fb5902a6a3193d9e3e088efa3244ba45dc140a7b"
+  DEV_SHA256: "b3cfffd5ec3aa748484673f924b968ac839f33cefb0fa4d93fd7163337af8511"
+  CONFIRM_SHA256: "b7a3caf7706323b541ddaf646e020e14934c7b517591e909ab6b4de97fba510a"
+  BANK_SHA256: "c9bf9d378f8f9ef7388fde833e9a04c941871514319961b4a0666d97983caa68"
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Verify frozen behavior and evidence source
+        run: |
+          git diff --exit-code "${FROZEN_SOURCE}" -- \
+            benchmarks/operation-routing-v6f-naturalistic-probe-preregistration.json \
+            benchmarks/operation_routing_v6f_catalog.py \
+            benchmarks/schema_naturalistic_operation_probe.py \
+            benchmarks/v6f-naturalistic-utterance-bank.json \
+            scripts/generate_operation_routing_v6f.py
+      - name: Validate evaluator and frozen protocol
+        run: |
+          ruff check scripts/evaluate_naturalistic_operation_probe_v6f.py
+          PYTHONPATH=. pytest -q tests/test_schema_naturalistic_operation_probe.py tests/test_operation_routing_v6f_protocol.py
+
+  evaluate-development:
+    needs: protocol
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers>=4.44,<5" "sentence-transformers>=3,<6" "scikit-learn>=1.4,<2" einops
+      - run: pip install -e ".[dev]"
+      - name: Recreate frozen corpora
+        run: |
+          python scripts/generate_operation_routing_v6f.py \
+            --out-dir artifacts/operation-routing-v6f
+      - name: Verify frozen identities and bank
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          root = Path("artifacts/operation-routing-v6f")
+          freeze = json.loads((root / "freeze-manifest.json").read_text())
+          if freeze["development"]["corpus_sha256"] != os.environ["DEV_SHA256"]:
+              raise SystemExit("DEV corpus drifted")
+          if freeze["confirmation"]["corpus_sha256"] != os.environ["CONFIRM_SHA256"]:
+              raise SystemExit("confirmation corpus drifted")
+          bank = Path("benchmarks/v6f-naturalistic-utterance-bank.json")
+          if hashlib.sha256(bank.read_bytes()).hexdigest() != os.environ["BANK_SHA256"]:
+              raise SystemExit("naturalistic bank drifted")
+          print("frozen #404 identities verified; confirmation unscored")
+          PY
+      - name: Score development only
+        run: |
+          python scripts/evaluate_naturalistic_operation_probe_v6f.py \
+            --development artifacts/operation-routing-v6f/development.json \
+            --out artifacts/operation-routing-v6f/dev-analysis.json
+      - name: Validate governance
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path("artifacts/operation-routing-v6f/dev-analysis.json").read_text())
+          p = data["policy"]
+          if p["confirmation_scored"]:
+              raise SystemExit("confirmation scored")
+          if not p["raw_bge_is_sole_positive_selector"] or not p["probe_veto_only"]:
+              raise SystemExit("authority drift")
+          if p["positive_rerank"] or p["endpoint_switch"] or p["rank2_fallback"] or p["pseudo_route"]:
+              raise SystemExit("forbidden route mutation")
+          if p["probability_threshold"] is not None or p["margin_threshold"] is not None:
+              raise SystemExit("threshold detected")
+          if p["dev_selected_hyperparameters"]:
+              raise SystemExit("DEV-selected tuning")
+          m = data["metrics"]
+          if m["authority_violations"] or m["positive_route_switches"] or m["execution_errors"]:
+              raise SystemExit("governance/runtime errors")
+          print("quality_pass=", data["quality_pass"])
+          print("runtime_gate=", data["runtime_gate"])
+          print("surface_pass=", data["surface_pass"])
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: operation-routing-v6f-probe-dev-${{ github.run_id }}
+          path: |
+            artifacts/operation-routing-v6f/dev-analysis.json
+            artifacts/operation-routing-v6f/development-manifest.json
+            artifacts/operation-routing-v6f/confirmation-manifest.json
+            artifacts/operation-routing-v6f/freeze-manifest.json
+            benchmarks/operation-routing-v6f-naturalistic-probe-preregistration.json
+          if-no-files-found: warn
+          retention-days: 30
