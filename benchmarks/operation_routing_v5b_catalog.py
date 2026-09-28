@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Disjoint 0.12-B catalogs for semantic-action-ontology experiment #349."""
 
 from __future__ import annotations
