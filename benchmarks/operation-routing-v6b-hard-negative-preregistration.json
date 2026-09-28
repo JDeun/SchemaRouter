@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "cycle": "0.13-schema-hard-negative-boundary",
+  "experiment": "schema-derived-hard-negative-adaptive-boundary-v1",
+  "issue": 393,
+  "parent_issue": 382,
+  "roadmap_issue": 388,
+  "prior_art_issue": 389,
+  "status": "preregistered_before_v6b_corpus_generation_or_scoring",
+  "base_behavior_source": "7dd8914f75203c56ef99d229b4fb3af8b6381d49",
+  "research_basis": [
+    "LREC-COLING 2024 hard-negative OOS generation",
+    "LREC-COLING 2024 DETER dual encoding and threshold-based OOS",
+    "0.13-A #384 positive-only schema-derived ADB baseline"
+  ],
+  "positive_selector": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "authority": "sole positive route selector"
+  },
+  "positive_views": {
+    "inherited_from_issue": 384,
+    "count_per_route": 18,
+    "modification_allowed": false
+  },
+  "hard_negatives": {
+    "source": "registered tool capability complement",
+    "same_resource": true,
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "surfaces_per_absent_leaf_per_route": 6,
+    "model_generated": false,
+    "benchmark_text": false
+  },
+  "boundary": {
+    "center": "normalized mean of normalized positive BGE embeddings",
+    "distance": "euclidean",
+    "radius": "softplus(delta_hat)",
+    "delta_hat_initial": 0,
+    "optimizer": "deterministic scalar Adam",
+    "learning_rate": 0.05,
+    "steps": 200,
+    "beta1": 0.9,
+    "beta2": 0.999,
+    "epsilon": 1e-8,
+    "loss": "mean_pos(relu(d_pos-radius)) + mean_neg(relu(radius-d_neg))",
+    "margin": null,
+    "dev_calibration": false,
+    "percentile_scaling": false
+  },
+  "authority": {
+    "anchored_tool": "tool of global frozen BGE raw top-1",
+    "positive_route_on_membership": "preserve raw BGE top-1 exactly",
+    "rejection": "outside all valid endpoint boundaries -> NO_ROUTE",
+    "positive_rerank": false,
+    "endpoint_switch": false,
+    "rank2_fallback": false,
+    "pseudo_route": false,
+    "unknown_boundary_fail_open": true
+  },
+  "typed_contract": {
+    "preserves": [
+      "semantic_id",
+      "json datatype/shape",
+      "source unit",
+      "canonical unit",
+      "dimension",
+      "scale",
+      "offset",
+      "qualifiers",
+      "identifier role",
+      "read_only",
+      "destructive",
+      "method"
+    ]
+  },
+  "data_protocol": {
+    "forbidden": [
+      "all consumed 0.11/0.12 DEV/fresh/confirmation rows",
+      "V6A #384 DEV rows and confirmation",
+      "#198 calibration",
+      "#198 blind"
+    ],
+    "development": {
+      "role": "new V6B screen",
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "role": "frozen confirmation only",
+      "generated_before_development_scoring": true,
+      "corpus_sha256": null
+    },
+    "evaluation_wording_disjoint_from_positive_and_hard_negative_banks": true
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "positive_route_switches_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "dev_quality_fail": "terminal reject exact hard-negative boundary without row-driven repair",
+    "quality_pass_latency_fail": "runtime-only optimization only under separate preregistration with row-level parity",
+    "dev_pass": "freeze exact source and open already-generated confirmation once",
+    "confirmation_fail": "terminal reject",
+    "both_pass": "eligible for brand-new zero-overlap fresh natural-language confirmation",
+    "terminal_next_family": "energy/density/open-space scoring"
+  }
+}
