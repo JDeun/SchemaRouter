@@ -127,7 +127,7 @@ _ACTION_PATTERNS: dict[str, tuple[str, ...]] = {
         "change",
         "modify",
         "rename",
-        "set ",
+        "set",
         "수정",
         "변경",
         "바꿔",
@@ -236,6 +236,8 @@ _ACTION_PATTERNS: dict[str, tuple[str, ...]] = {
     ),
     "translate": (
         "translate",
+        "translated",
+        "translation",
         "번역",
         "traduce",
         "traducir",
@@ -256,7 +258,7 @@ _ACTION_PATTERNS: dict[str, tuple[str, ...]] = {
     "compare": (
         "compare",
         "contrast",
-        "diff ",
+        "diff",
         "비교",
         "compara",
         "comparar",
@@ -287,7 +289,7 @@ _ACTION_PATTERNS: dict[str, tuple[str, ...]] = {
     ),
     "execute": (
         "execute",
-        "run ",
+        "run",
         "trigger",
         "invoke",
         "실행",
@@ -295,7 +297,7 @@ _ACTION_PATTERNS: dict[str, tuple[str, ...]] = {
         "ejecutar",
         "実行",
         "ausführen",
-        "starte ",
+        "starte",
     ),
     "forecast": (
         "forecast",
@@ -390,7 +392,7 @@ _TEMPORAL_PATTERNS: dict[str, tuple[str, ...]] = {
         "upcoming",
         "forecast",
         "predicted",
-        "next ",
+        "next",
         "앞으로",
         "예정",
         "예측",
@@ -471,16 +473,21 @@ def _normalize(text: str) -> str:
 
 
 def _ascii_token_phrase_present(normalized: str, phrase: str) -> bool:
-    padded = f" {normalized} "
-    return f" {phrase} " in padded
+    escaped = re.escape(phrase)
+    return re.search(
+        rf"(?<![a-z0-9]){escaped}(?![a-z0-9])",
+        normalized,
+    ) is not None
 
 
 def _pattern_present(normalized: str, pattern: str) -> bool:
     pattern_n = _normalize(pattern)
     if not pattern_n:
         return False
-    # CJK/Korean and intentionally suffix-like stems are matched as substrings.
-    if any(ord(ch) > 127 for ch in pattern_n) or pattern.endswith(" "):
+    # CJK/Korean stems are intentionally substring matched. ASCII tokens use
+    # ASCII-alphanumeric boundaries so mixed forms such as "delete해줘" remain valid
+    # while "set" cannot match the middle of "asset".
+    if any(ord(ch) > 127 for ch in pattern_n):
         return pattern_n in normalized
     if " " in pattern_n:
         return pattern_n in normalized
@@ -667,6 +674,15 @@ def _action_contradiction(frame: RequestFrame, contract: RouteContract) -> bool:
 
     if action == _READ_ACTION and contract.destructive is True:
         return True
+
+    # A future-scoped read request can be satisfied by an explicitly forecast capability.
+    # The request wording may be "show future X" rather than "forecast X".
+    if (
+        action == _READ_ACTION
+        and frame.temporal_scope == "future"
+        and contract.action == "forecast"
+    ):
+        return False
 
     # Unknown endpoint semantics do not create a contradiction unless trusted structural
     # metadata above proves one.
