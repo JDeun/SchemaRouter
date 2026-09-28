@@ -7,8 +7,6 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from schemarouter import EndpointSpec, InMemoryRegistry, ToolSpec
-
 from benchmarks.operation_routing_v5g_catalog import (  # noqa: E402
     confirmation_registry,
     development_registry,
@@ -20,6 +18,7 @@ from benchmarks.set_conditioned_entailment import (  # noqa: E402
     compile_registry_contracts,
     decide_entailment,
 )
+from schemarouter import EndpointSpec, InMemoryRegistry, ToolSpec  # noqa: E402
 
 
 def test_capability_hypothesis_is_ordered_and_set_conditioned() -> None:
