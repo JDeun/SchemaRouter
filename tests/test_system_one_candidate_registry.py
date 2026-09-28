@@ -69,3 +69,15 @@ def test_discovery_registry_does_not_claim_unmeasured_promotion() -> None:
                 or "pin one backend/model before benchmark" in status
                 or "repository currently archived" in status
             )
+
+
+def test_staged_anyjev_candidate_is_recorded() -> None:
+    data = _load()
+    candidates = {item["id"]: item for item in data["candidates"]}
+
+    anyjev = candidates["anyjev"]
+    assert anyjev["lifecycle"] == "staged_research"
+    assert anyjev["active_issue"] == 311
+    assert anyjev["active_pull_request"] == 313
+    assert "manual-dispatch" in anyjev["schemarouter_status"]
+    assert anyjev["source_revision"] == "45add301a7aa60ed3420c83d15c061e84e5bce61"
