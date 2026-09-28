@@ -15,8 +15,6 @@ from typing import Any
 from benchmarks.schema_adb_baseline import (
     ACTION_PHRASES,
     ACTION_WEIGHT,
-    BGE_MODEL,
-    BGE_REVISION,
     LANGUAGES,
     SCHEMA_WEIGHT,
     _action_text,
