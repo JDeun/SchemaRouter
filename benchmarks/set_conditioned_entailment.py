@@ -375,14 +375,14 @@ class SetConditionedEntailmentRouter:
             contract.leaf is None
             for contract in tool_contracts
         )
-        hypothesis = capability_hypothesis(supported_leaves)
-
         if tool_has_unknown:
+            hypothesis = None
             top_label = None
             scores = None
             veto = False
             veto_reason = "unknown_endpoint_semantics_preserve"
         else:
+            hypothesis = capability_hypothesis(supported_leaves)
             result = self.nli_classifier(query, hypothesis)
             top_label = str(result["top_label"])
             raw_scores = result.get("scores")
