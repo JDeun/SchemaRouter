@@ -35,7 +35,7 @@ Record the exact:
 - SchemaRouter source revision;
 - architecture identifier;
 - route-authority and verifier/veto roles;
-- model, checkpoint, provider, and runtime revisions;
+- model, checkpoint, provider, and runtime revisions; model revision may be an immutable Git/Hugging Face commit or an immutable provider model/version ID;
 - Python/dependency/hardware identity;
 - query/capability/prompt representation digests;
 - option ordering rule;
@@ -110,7 +110,7 @@ For every terminal phase, preserve:
 - source SHA;
 - corpus seed/hash;
 - workflow run ID;
-- artifact ID and digest;
+- artifact ID and digest (raw SHA-256 or GitHub's `sha256:`-prefixed form);
 - exact model/runtime identity;
 - aggregate and required slice metrics;
 - authority/error counts;
