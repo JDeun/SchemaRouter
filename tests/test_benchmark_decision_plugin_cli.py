@@ -23,3 +23,40 @@ def test_benchmark_cli_exposes_decision_plugin_options() -> None:
 
     assert "--decision-plugin" in completed.stdout
     assert "--decision-plugin-config-env" in completed.stdout
+
+
+def test_plugin_runtime_metadata_omits_config_values() -> None:
+    import importlib.util
+    from types import SimpleNamespace
+
+    spec = importlib.util.spec_from_file_location(
+        "benchmark_decision_routing",
+        SCRIPT,
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError("cannot load benchmark_decision_routing")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    metadata = module._decision_plugin_runtime_metadata(
+        plugin_name="anyjev",
+        config_env="SCHEMAROUTER_DECISION_PLUGIN_CONFIG",
+        config={
+            "model": "example/model",
+            "api_key": "super-secret-value",
+        },
+        plugin_info=SimpleNamespace(
+            distribution="schemarouter-anyjev",
+            version="1.2.3",
+        ),
+    )
+
+    assert metadata == {
+        "enabled": True,
+        "name": "anyjev",
+        "config_env": "SCHEMAROUTER_DECISION_PLUGIN_CONFIG",
+        "config_keys": ["api_key", "model"],
+        "distribution": "schemarouter-anyjev",
+        "version": "1.2.3",
+    }
+    assert "super-secret-value" not in repr(metadata)
