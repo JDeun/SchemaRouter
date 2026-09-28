@@ -27,6 +27,7 @@ if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
 from schemarouter import (  # noqa: E402
+    CallableDecisionBackend,
     DecisionPolicy,
     EmbeddingDecisionBackend,
     EndpointSpec,
@@ -981,6 +982,21 @@ async def main() -> None:
         help="Optional ModelQueryAnalyzer callable in module:function form.",
     )
     parser.add_argument(
+        "--decision-callable",
+        help=(
+            "Optional bounded decision callable in module:function form. "
+            "It receives DecisionRequest and returns DecisionResult or an equivalent mapping."
+        ),
+    )
+    parser.add_argument(
+        "--decision-callable-name",
+        default=None,
+        help=(
+            "Optional stable report label for --decision-callable. "
+            "Defaults to the module:function reference."
+        ),
+    )
+    parser.add_argument(
         "--embedding-callable",
         help=(
             "Optional embedding batch callable in module:function form. "
@@ -1182,6 +1198,8 @@ async def main() -> None:
         if args.system_one_base_url
         else None
     )
+    if args.decision_callable_name is not None and not args.decision_callable_name.strip():
+        raise ValueError("--decision-callable-name must not be empty")
     ollama_options = parse_json_mapping(
         args.ollama_options_json,
         option_name="--ollama-options-json",
@@ -1379,6 +1397,42 @@ async def main() -> None:
                     endpoint_disambiguation_backend=endpoint_disambiguation_backend,
                 ),
                 None,
+            )
+        )
+
+    if args.decision_callable:
+        decision_callable = load_callable(
+            args.decision_callable,
+            option_name="--decision-callable",
+        )
+        recorder = RecordingDecisionBackend(
+            CallableDecisionBackend(decision_callable)
+        )
+        decision_callable_name = (
+            args.decision_callable_name.strip()
+            if isinstance(args.decision_callable_name, str)
+            else args.decision_callable
+        )
+        planners.append(
+            (
+                f"callable:{decision_callable_name}",
+                SchemaPlanner(
+                    registry,
+                    decision_backend=recorder,
+                    decision_policy=DecisionPolicy(
+                        enabled=True,
+                        endpoint_selection=True,
+                        recall_on_empty=args.decision_recall_on_empty,
+                        candidate_abstention=args.candidate_abstention,
+                        fallback="deterministic",
+                    ),
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
+                    endpoint_disambiguation_backend=endpoint_disambiguation_backend,
+                ),
+                recorder,
             )
         )
 
@@ -1618,6 +1672,19 @@ async def main() -> None:
             "hardware_label": args.hardware_label,
         },
         "local_runtime": {
+            "decision_callable": (
+                {
+                    "enabled": True,
+                    "callable": args.decision_callable,
+                    "name": (
+                        args.decision_callable_name.strip()
+                        if isinstance(args.decision_callable_name, str)
+                        else args.decision_callable
+                    ),
+                }
+                if args.decision_callable
+                else {"enabled": False}
+            ),
             "system_one": (
                 {
                     "enabled": True,
