@@ -6,6 +6,15 @@ or blind evaluation.
 The purpose of the freeze is to make the evaluated system a reproducible object rather than a moving
 research configuration.
 
+## Canonical production target
+
+The machine-readable source of truth is:
+
+`benchmarks/operation-routing-production-targets.json`
+
+The freeze manifest copies that exact target block, and the validator rejects any drift between the
+manifest and the canonical target file.
+
 ## When to freeze
 
 Freeze only after a candidate passes every canonical development target:
