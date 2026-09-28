@@ -29,6 +29,7 @@ The project is pre-1.0 and follows the compatibility rules in
 - consolidated the stable default around field-first deterministic planning, typed registry contracts, bounded optional decision backends, fail-closed policy/schema validation, provider/access health, and conservative fallback;
 - kept experimental open-set capability verifiers and model-specific research paths outside the unconditional production default until they pass preregistered generalization and fresh-confirmation gates;
 - formally closed the 0.11 operation-routing architecture-search cycle without a promoted production-target candidate after its strongest canonical DEV pass failed exact frozen zero-overlap fresh confirmation.
+- evaluated the first registry-compiled arbitrary-tool capability verifier on canonical DEV and a separate unseen native/OpenAPI/MCP registration holdout; the typed compiler preserved authority and data contracts, but the synthetic learned veto retained only 5.69% / 2.46% of raw-correct winners and was terminally rejected without label-driven repair.
 
 ## 0.9.0 - 2026-09-26
 

@@ -230,8 +230,9 @@ Version `0.10.0` is a consolidation release rather than a claim that open-set ro
   standing target, but its frozen zero-overlap fresh confirmation failed, so no production-target
   candidate was promoted.
 
-The successor registry-compiled capability verifier remains a research prototype and is **not** the
-0.10.0 default.
+The first registry-compiled capability-verifier experiment preserved provider-neutral native/OpenAPI/
+MCP contracts but over-rejected supported requests (5.03% canonical exact, 2.08% unseen-registration
+exact). That learned veto is terminally rejected and is **not** the 0.10.0 default.
 
 [0.10.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.10.0/) ·
 [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)

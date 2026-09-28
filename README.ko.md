@@ -256,7 +256,9 @@ DAG/workflow, memory, prompt system, autonomous tool loop는 계속 범위 밖�
 - benchmark도 정직하게 공개: 가장 강한 DEV 후보는 목표치를 통과했지만 frozen zero-overlap
   fresh confirmation에서 실패했으므로 production-target candidate로 승격하지 않음.
 
-후속 registry-compiled capability verifier는 research prototype이며 0.10.0 기본 경로가 아닙니다.
+첫 registry-compiled capability-verifier 실험은 native/OpenAPI/MCP의 provider-neutral contract는
+유지했지만 supported 요청을 과도하게 거부해 canonical exact 5.03%, 미등록-tool holdout exact
+2.08%에 그쳤습니다. 이 learned veto는 terminal reject이며 0.10.0 기본 경로가 아닙니다.
 
 [0.10.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.10.0/) ·
 [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
