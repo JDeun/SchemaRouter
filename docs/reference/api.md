@@ -99,3 +99,20 @@ The top-level `schemarouter` package exposes the stable public surface intended 
 ## PairwiseDecisionBackend
 
 ::: schemarouter.PairwiseDecisionBackend
+
+
+## CallableDecisionBackend
+
+::: schemarouter.CallableDecisionBackend
+
+## DecisionBackendPluginInfo
+
+::: schemarouter.DecisionBackendPluginInfo
+
+## discover_decision_backend_plugins
+
+::: schemarouter.discover_decision_backend_plugins
+
+## load_decision_backend_plugin
+
+::: schemarouter.load_decision_backend_plugin

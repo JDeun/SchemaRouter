@@ -19,6 +19,12 @@ from .aggregation import (
 )
 from .analyzers import ModelCallable, ModelQueryAnalyzer
 from .dashboard import render_dashboard, write_dashboard
+from .decision_plugins import (
+    DECISION_BACKEND_ENTRY_POINT_GROUP,
+    DecisionBackendPluginInfo,
+    discover_decision_backend_plugins,
+    load_decision_backend_plugin,
+)
 from .decision_policy import DecisionFallback, DecisionPolicy
 from .decisions import (
     CallableDecisionBackend,
@@ -155,6 +161,10 @@ __all__ = [
     "BeforeExecutionHook",
     "BindingDriftError",
     "ConfiguredSchemaRouter",
+    "DECISION_BACKEND_ENTRY_POINT_GROUP",
+    "DecisionBackendPluginInfo",
+    "discover_decision_backend_plugins",
+    "load_decision_backend_plugin",
     "CallableDecisionBackend",
     "DecisionBackend",
     "DecisionFallback",
@@ -256,9 +266,7 @@ __all__ = [
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
-    "aggregate_records",
     "analyze_openapi_compatibility",
-    "canonical_identity",
     "choose_async",
     "choose_sync",
     "compare_endpoint_specs",

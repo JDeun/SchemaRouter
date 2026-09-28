@@ -37,6 +37,8 @@ from schemarouter import (  # noqa: E402
     PlanRequest,
     SchemaPlanner,
     ToolSpec,
+    discover_decision_backend_plugins,
+    load_decision_backend_plugin,
 )
 from schemarouter.analyzers import ModelQueryAnalyzer  # noqa: E402
 from schemarouter.integrations import (  # noqa: E402
@@ -432,6 +434,29 @@ def _installed_version(package: str) -> str | None:
         return version(package)
     except PackageNotFoundError:
         return None
+
+
+def _decision_plugin_runtime_metadata(
+    *,
+    plugin_name: str | None,
+    config_env: str,
+    config: dict[str, Any],
+    plugin_info: Any | None,
+) -> dict[str, Any]:
+    """Return reproducibility metadata without persisting plugin config values."""
+
+    if plugin_name is None:
+        return {"enabled": False}
+    return {
+        "enabled": True,
+        "name": plugin_name.strip(),
+        "config_env": config_env,
+        "config_keys": sorted(config),
+        "distribution": (
+            plugin_info.distribution if plugin_info is not None else None
+        ),
+        "version": plugin_info.version if plugin_info is not None else None,
+    }
 
 
 def _corpus_sha256(path: str | os.PathLike[str] | None) -> str:
@@ -997,6 +1022,22 @@ async def main() -> None:
         ),
     )
     parser.add_argument(
+        "--decision-plugin",
+        default=None,
+        help=(
+            "Optional installed schemarouter.decision_backends entry-point name. "
+            "The plugin is imported only when this exact option is supplied."
+        ),
+    )
+    parser.add_argument(
+        "--decision-plugin-config-env",
+        default="SCHEMAROUTER_DECISION_PLUGIN_CONFIG",
+        help=(
+            "Environment variable containing a JSON object passed to the selected "
+            "decision plugin factory/class. Values are never written to benchmark output."
+        ),
+    )
+    parser.add_argument(
         "--embedding-callable",
         help=(
             "Optional embedding batch callable in module:function form. "
@@ -1200,6 +1241,27 @@ async def main() -> None:
     )
     if args.decision_callable_name is not None and not args.decision_callable_name.strip():
         raise ValueError("--decision-callable-name must not be empty")
+    if args.decision_plugin is not None and not args.decision_plugin.strip():
+        raise ValueError("--decision-plugin must not be empty")
+    if not args.decision_plugin_config_env.strip():
+        raise ValueError("--decision-plugin-config-env must not be empty")
+    decision_plugin_config = parse_json_mapping(
+        os.environ.get(args.decision_plugin_config_env)
+        if args.decision_plugin
+        else None,
+        option_name=args.decision_plugin_config_env,
+    )
+    decision_plugin_info = None
+    if args.decision_plugin:
+        plugin_name = args.decision_plugin.strip()
+        decision_plugin_info = next(
+            (
+                plugin
+                for plugin in discover_decision_backend_plugins()
+                if plugin.name == plugin_name
+            ),
+            None,
+        )
     ollama_options = parse_json_mapping(
         args.ollama_options_json,
         option_name="--ollama-options-json",
@@ -1416,6 +1478,37 @@ async def main() -> None:
         planners.append(
             (
                 f"callable:{decision_callable_name}",
+                SchemaPlanner(
+                    registry,
+                    decision_backend=recorder,
+                    decision_policy=DecisionPolicy(
+                        enabled=True,
+                        endpoint_selection=True,
+                        recall_on_empty=args.decision_recall_on_empty,
+                        candidate_abstention=args.candidate_abstention,
+                        fallback="deterministic",
+                    ),
+                    candidate_recall_backend=candidate_recall_backend,
+                    candidate_recall_limit=args.candidate_recall_limit,
+                    candidate_fit_backend=candidate_fit_backend,
+                    operation_fit_backend=operation_fit_backend,
+                    endpoint_disambiguation_backend=endpoint_disambiguation_backend,
+                ),
+                recorder,
+            )
+        )
+
+    if args.decision_plugin:
+        plugin_name = args.decision_plugin.strip()
+        recorder = RecordingDecisionBackend(
+            load_decision_backend_plugin(
+                plugin_name,
+                config=decision_plugin_config,
+            )
+        )
+        planners.append(
+            (
+                f"plugin:{plugin_name}",
                 SchemaPlanner(
                     registry,
                     decision_backend=recorder,
@@ -1672,6 +1765,12 @@ async def main() -> None:
             "hardware_label": args.hardware_label,
         },
         "local_runtime": {
+            "decision_plugin": _decision_plugin_runtime_metadata(
+                plugin_name=args.decision_plugin,
+                config_env=args.decision_plugin_config_env,
+                config=decision_plugin_config,
+                plugin_info=decision_plugin_info,
+            ),
             "decision_callable": (
                 {
                     "enabled": True,

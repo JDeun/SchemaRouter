@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-09-28",
+  "purpose": "Discovery and benchmark intake registry for replaceable typed-decision/System One providers. Presence is not a recommendation or quality claim.",
+  "promotion_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "target_p95_ms_max": 250
+  },
+  "integration_paths": {
+    "system_one_wire": "SystemOneDecisionBackend(base_url, model, provider_name)",
+    "direct_laya": "LayaDecisionBackend",
+    "research_callable": "CallableDecisionBackend / --decision-callable module:function",
+    "reusable_plugin": "schemarouter.decision_backends entry point"
+  },
+  "intake_checklist": [
+    "pin repository/runtime/model revisions",
+    "verify license before distribution or default promotion",
+    "preserve finite local option authority",
+    "record model/runtime identity and latency",
+    "run frozen v4 development protocol",
+    "freeze semantics before a new zero-overlap confirmation",
+    "never tune on failed confirmation corpora"
+  ],
+  "candidates": [
+    {
+      "id": "jev-hosted",
+      "project": "TypeSafe Jev",
+      "repository": null,
+      "integration_path": "system_one_wire",
+      "lifecycle": "credentialed_optional_comparison",
+      "license_status": "hosted_provider_terms_apply",
+      "schemarouter_status": "JevDecisionBackend available; not a CI dependency"
+    },
+    {
+      "id": "laya",
+      "project": "Laya",
+      "repository": "he-jev/laya",
+      "integration_path": "direct_laya",
+      "lifecycle": "integrated_research",
+      "license_status": "Apache-2.0 reported by upstream",
+      "schemarouter_status": "Direct full-catalog choice #293 rejected; pinned winner-only noul #301 rejected. Different checkpoint/provider protocol requires new evidence."
+    },
+    {
+      "id": "kev",
+      "project": "Kev",
+      "repository": "jaredpalmer/kev",
+      "integration_path": "system_one_wire",
+      "lifecycle": "active_research",
+      "license_status": "Apache-2.0",
+      "schemarouter_status": "Pinned Kev-0.8B choice+noul #299 / PR #300 executing on the frozen 1,800-row v4 DEV; larger checkpoints require separate preregistration.",
+      "active_issue": 299,
+      "active_pull_request": 300
+    },
+    {
+      "id": "mapika-decider",
+      "project": "Mapika decider",
+      "repository": "Mapika/decider",
+      "integration_path": "system_one_wire",
+      "lifecycle": "contingent_discovery",
+      "license_status": "Apache-2.0",
+      "schemarouter_status": "No SchemaRouter quality evidence yet. decider-0.8B is a resource-compatible fallback candidate if the active Kev-0.8B screen does not promote; pin exact model revision before execution.",
+      "upstream_source_revision_seen": "23579f7a7e8f10e1045be492af3c1c05a005d67c",
+      "upstream_package_version_seen": "1.6.0"
+    },
+    {
+      "id": "decis",
+      "project": "Decis",
+      "repository": "chaitin/Decis",
+      "integration_path": "system_one_wire",
+      "lifecycle": "discovery",
+      "license_status": "verify exact release before promotion",
+      "schemarouter_status": "No SchemaRouter quality evidence yet."
+    },
+    {
+      "id": "litevar-system-one",
+      "project": "LiteVar System One",
+      "repository": "LiteVar/system-one",
+      "integration_path": "system_one_wire",
+      "lifecycle": "discovery",
+      "license_status": "verify exact release before promotion",
+      "schemarouter_status": "No SchemaRouter quality evidence yet."
+    },
+    {
+      "id": "laya-serve",
+      "project": "laya-serve",
+      "repository": "stiermid/laya-serve",
+      "integration_path": "system_one_wire",
+      "lifecycle": "archived_discovery",
+      "license_status": "verify exact release before use",
+      "schemarouter_status": "Repository currently archived; prefer maintained runtime when possible."
+    },
+    {
+      "id": "anyjev",
+      "project": "AnyJev",
+      "repository": "nokia-applied-research/AnyJev",
+      "integration_path": "reusable_plugin",
+      "fallback_integration_path": "research_callable",
+      "lifecycle": "staged_research",
+      "license_status": "Apache-2.0 reported by upstream",
+      "schemarouter_status": "AnyJev L0 content-free noul #311 / PR #313 is preregistered and staged; workflow is manual-dispatch only until Kev #299 is terminal and non-promotable. No SchemaRouter quality evidence yet.",
+      "source_revision": "45add301a7aa60ed3420c83d15c061e84e5bce61",
+      "active_issue": 311,
+      "active_pull_request": 313
+    },
+    {
+      "id": "bespoke-nimble",
+      "project": "Bespoke Nimble",
+      "repository": "bespokelabsai/nimble",
+      "integration_path": "reusable_plugin",
+      "fallback_integration_path": "research_callable",
+      "lifecycle": "discovery",
+      "license_status": "verify model/code license for selected release before promotion",
+      "schemarouter_status": "No SchemaRouter quality evidence yet; fast-moving checkpoint/calibration, so pin exact revision before any comparison."
+    },
+    {
+      "id": "system-one-open",
+      "project": "System One Open",
+      "repository": "mithalouni/system-one-open",
+      "integration_path": "reusable_plugin",
+      "fallback_integration_path": "research_callable",
+      "lifecycle": "discovery",
+      "license_status": "MIT reported by upstream",
+      "schemarouter_status": "Different serving contract; no SchemaRouter quality evidence yet."
+    },
+    {
+      "id": "openjev-siliconlab",
+      "project": "OpenJev",
+      "repository": "SiliconLabAI/OpenJev",
+      "integration_path": "reusable_plugin",
+      "fallback_integration_path": "research_callable",
+      "lifecycle": "discovery",
+      "license_status": "verify backend/model license independently",
+      "schemarouter_status": "Multiple backend modes; pin one backend/model before benchmark."
+    }
+  ]
+}

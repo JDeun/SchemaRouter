@@ -151,6 +151,17 @@ class. Existing **GPT, Gemini, Claude, or other hosted/local decision clients** 
 through the provider-neutral `ModelQueryAnalyzer` or `CallableDecisionBackend` contracts. None of
 these paths bypass SchemaRouter's policy, schema validation, or execution boundary.
 
+Decision models are replaceable without moving execution authority into the model:
+
+- Jev/System-One-compatible servers use `SystemOneDecisionBackend` and can swap
+  `base_url/model/provider_name` by configuration;
+- one-off local or hosted experiments can use `CallableDecisionBackend`;
+- reusable third-party runtimes can publish a `schemarouter.decision_backends` entry-point plugin.
+
+SchemaRouter still validates the returned finite option ID locally. See the
+[decision backend plugin guide](https://jdeun.github.io/SchemaRouter/integrations/decision-backend-plugins/)
+and [decision-model ecosystem intake](https://jdeun.github.io/SchemaRouter/integrations/decision-model-ecosystem/).
+
 ## What 0.6 adds
 
 0.6 adds optional local/model-assisted decision backends, operational inspection/dashboard

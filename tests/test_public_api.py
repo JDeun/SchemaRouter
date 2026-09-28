@@ -24,7 +24,9 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "BindingDriftError",
         "ConfiguredSchemaRouter",
         "CallableDecisionBackend",
+        "DECISION_BACKEND_ENTRY_POINT_GROUP",
         "DecisionBackend",
+        "DecisionBackendPluginInfo",
         "DecisionFallback",
         "DecisionPolicy",
         "DecisionCallable",
@@ -129,6 +131,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "compare_endpoint_specs",
         "compare_tool_specs",
         "discover_adapter_plugins",
+        "discover_decision_backend_plugins",
         "inspect_registry",
         "inspect_router",
         "inspect_run_trace",
@@ -137,6 +140,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "inspect_trace",
         "inspect_traces",
         "load_adapter_plugins",
+        "load_decision_backend_plugin",
         "tool_spec_document",
         "record_run_events",
         "render_dashboard",
@@ -144,6 +148,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "write_dashboard",
     }
 
+    assert len(schemarouter.__all__) == len(set(schemarouter.__all__))
     assert set(schemarouter.__all__) == expected
     for name in expected:
         assert hasattr(schemarouter, name)

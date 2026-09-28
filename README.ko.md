@@ -60,9 +60,10 @@ Agent / graph / application orchestrator
         capability sources
  OpenAPI / MCP / OPTIMADE / Python
 
-Laya / Ollama / Jev는 SchemaRouter 내부의 제한된 선택 단계를 보조하는
-optional decision backend일 뿐입니다.
-에이전트가 되지 않으며, tool loop를 실행하지 않고, 실행 권한도 받지 않습니다.
+Laya / Ollama / Jev / System One 호환 모델은 SchemaRouter 내부의 제한된 선택 단계를
+보조하는 optional decision backend일 뿐입니다. 재사용 가능한 비표준 runtime은
+`schemarouter.decision_backends` plugin으로 연결할 수 있습니다.
+어떤 backend도 에이전트가 되지 않으며, tool loop를 실행하지 않고, 실행 권한도 받지 않습니다.
 ```
 
 > **현재 안정판: 0.9.0** · `pip install schemarouter` · pre-1.0
@@ -146,6 +147,23 @@ telemetry export입니다. **Jev / TypeSafe, Laya, Ollama는 optional decision b
 기존 시스템이 사용하는 **GPT, Gemini, Claude 또는 다른 cloud model client**도
 provider-neutral `ModelQueryAnalyzer` 또는 `CallableDecisionBackend`로 주입할 수 있습니다.
 어떤 경로도 SchemaRouter의 policy/schema validation/execution 경계를 우회하지 않습니다.
+
+decision model은 실행 권한을 모델로 넘기지 않은 채 교체할 수 있습니다.
+
+- Jev/System-One 호환 서버는 `SystemOneDecisionBackend`를 사용하고
+  `base_url/model/provider_name` 설정만 교체합니다.
+- 일회성 로컬/호스팅 연구 모델은 `CallableDecisionBackend`로 연결할 수 있습니다.
+- 반복 사용되는 비호환 runtime은 `schemarouter.decision_backends` entry-point plugin으로
+  별도 패키지화할 수 있습니다.
+
+SchemaRouter는 어떤 경로에서도 반환된 finite option ID를 로컬에서 다시 검증합니다.
+설치된 plugin은 신뢰된 Python 코드로 취급되므로 자동 import하지 않으며, 명시적으로 선택한
+plugin만 로드합니다. 호환성은 품질 보증이 아니며 새 모델/checkpoint는 동일한 frozen benchmark를
+통과해야 합니다.
+
+[decision backend plugin 가이드](https://jdeun.github.io/SchemaRouter/integrations/decision-backend-plugins/)와
+[decision-model ecosystem intake](https://jdeun.github.io/SchemaRouter/integrations/decision-model-ecosystem/)를
+참고하세요.
 
 ## SchemaRouter가 구축한 구조 확인
 

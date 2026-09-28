@@ -134,6 +134,23 @@ importing it, but never auto-loads discovered plugins. Actual import requires an
 allowlist supplied by trusted application code. Remote content and model output cannot select an
 installed plugin to import.
 
+### Third-party decision-backend plugins
+
+Decision-backend entry points are also trusted local executable code. Discovery reads only package
+metadata; no plugin module is imported until trusted application code requests one exact plugin
+name. Duplicate names fail before import so package-install order cannot silently choose an
+implementation.
+
+A loaded decision backend still receives only the finite option set created by SchemaRouter.
+Unknown option IDs, duplicate selections, malformed results, and invalid scores fail closed through
+the normal `DecisionBackend` validation path. Plugin code itself is trusted Python code and may
+perform arbitrary local actions, so applications must treat plugin installation/loading as a code
+trust decision rather than as model output.
+
+Shared benchmark configuration is passed explicitly from a selected environment variable. Reports
+record plugin identity, distribution/version, the configuration environment-variable name, and
+configuration keys only; configuration values are intentionally not persisted.
+
 ### Human-readable documentation
 
 Documentation-derived schemas remain non-executable proposals until grounding and explicit approval
@@ -152,6 +169,7 @@ Changes affecting any of the following require adversarial regression tests:
 - input/output validation;
 - event payload redaction and telemetry export;
 - adapter plugin loading;
+- decision-backend plugin discovery/loading and benchmark secret handling;
 - MCP authenticated/custom transports;
 - per-call approval or execution budgets;
 - trusted execution hooks;
