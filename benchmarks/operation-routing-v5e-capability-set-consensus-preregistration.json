@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "cycle": "0.12-capability-set-consensus",
+  "experiment": "asymmetric-capability-set-consensus-v1",
+  "issue": 362,
+  "parent_issue": 340,
+  "status": "preregistered_before_corpus_generation_or_scoring",
+  "route_ranker": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "role": "sole positive route selector"
+  },
+  "independent_vote": {
+    "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42",
+    "role": "capability-set OUTSIDE/INSIDE vote only",
+    "route_ranking": false
+  },
+  "evidence_reuse": {
+    "source_issue": 358,
+    "exact_explicit_parser_semantics": true,
+    "exact_multilingual_leaf_prototypes": true,
+    "prototype_wording_changes": false,
+    "model_changes": false
+  },
+  "veto_rule": {
+    "unit": "anchored tool registered supported-leaf set membership",
+    "explicit_inside": "preserve raw winner",
+    "explicit_outside": "veto if BGE or MiniLM is also OUTSIDE the supported set",
+    "explicit_unknown": "veto only if BGE and MiniLM are both OUTSIDE the supported set",
+    "same_leaf_agreement_required": false,
+    "positive_rerank": false,
+    "endpoint_filter": false,
+    "cross_tool_fallback": false,
+    "pseudo_route": false,
+    "thresholds": false,
+    "unknown_endpoint_contract_policy": "if anchored tool contains any operation-unknown endpoint, semantic absence cannot be proven and veto is disabled"
+  },
+  "data_protocol": {
+    "forbidden": [
+      "0.11-dev",
+      "#270",
+      "#287",
+      "#326",
+      "#338",
+      "#347-dev",
+      "#347-confirmation",
+      "#349-dev",
+      "#349-confirmation",
+      "#354-dev",
+      "#354-confirmation",
+      "#358-dev",
+      "#358-confirmation",
+      "#198-calibration",
+      "#198-blind"
+    ],
+    "development": {
+      "role": "new 0.12-E screen",
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "role": "frozen confirmation only",
+      "generated_before_development_scoring": true,
+      "corpus_sha256": null
+    },
+    "requirements": [
+      "native",
+      "openapi",
+      "mcp",
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed",
+      "supported",
+      "same-domain-unsupported",
+      "ood",
+      "sibling-operation-contrasts",
+      "opaque-endpoint-names",
+      "variable-endpoint-counts",
+      "typed-datatype-unit-qualifier-preservation"
+    ]
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "diagnostics": [
+    "raw_supported_exact",
+    "raw_supported_tool_accuracy",
+    "raw_correct_winner_veto_rate",
+    "veto_precision",
+    "veto_recall",
+    "explicit_inside_shield_count",
+    "dual_semantic_outside_consensus_count"
+  ],
+  "stopping_rule": {
+    "dev_fail": "terminal_reject_without_row-driven_rule_or_phrase_repair",
+    "dev_pass": "freeze exact source and score already-generated confirmation",
+    "confirmation_fail": "terminal_reject",
+    "both_pass": "eligible_for brand-new zero-overlap natural-language fresh confirmation"
+  }
+}
