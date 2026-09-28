@@ -93,6 +93,7 @@ def evaluate(rows: list[dict[str, Any]]) -> dict[str, Any]:
     total_vetoes = 0
     true_unsupported_vetoes = 0
     inside_counts: list[float] = []
+    min_boundary_ratios: list[float] = []
 
     for case in rows:
         started = time.perf_counter_ns()
@@ -107,6 +108,14 @@ def evaluate(rows: list[dict[str, Any]]) -> dict[str, Any]:
             vetoed = predicted is None
             inside_count = int(result["inside_boundary_count"])
             inside_counts.append(float(inside_count))
+            ratios = [
+                float(row["distance"]) / float(row["radius"])
+                for row in result["boundary_rows"]
+                if float(row["radius"]) > 0.0
+            ]
+            min_boundary_ratio = min(ratios) if ratios else None
+            if min_boundary_ratio is not None:
+                min_boundary_ratios.append(min_boundary_ratio)
 
             if predicted is not None and predicted not in allowed:
                 authority_violations += 1
@@ -141,6 +150,7 @@ def evaluate(rows: list[dict[str, Any]]) -> dict[str, Any]:
                     "raw_tool": result["raw_tool"],
                     "tool_has_unknown_leaf": result["tool_has_unknown_leaf"],
                     "inside_boundary_count": inside_count,
+                    "min_boundary_ratio": min_boundary_ratio,
                     "boundary_rows": result["boundary_rows"],
                     "reason": result["reason"],
                     "latency_ms": elapsed_ms,
@@ -163,6 +173,7 @@ def evaluate(rows: list[dict[str, Any]]) -> dict[str, Any]:
                     "raw_tool": None,
                     "tool_has_unknown_leaf": None,
                     "inside_boundary_count": None,
+                    "min_boundary_ratio": None,
                     "boundary_rows": [],
                     "reason": "exception",
                     "latency_ms": elapsed_ms,
@@ -215,6 +226,7 @@ def evaluate(rows: list[dict[str, Any]]) -> dict[str, Any]:
             else 0.0
         ),
         "inside_boundary_count": _distribution(inside_counts),
+        "query_min_boundary_ratio": _distribution(min_boundary_ratios),
         "boundary_radius": _distribution(radii),
         "boundary_compile_ms": boundary_compile_ms,
         "positive_route_switches": positive_route_switches,
