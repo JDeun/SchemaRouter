@@ -1,0 +1,66 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "top4-bge-recall-laya-noul-routing-v1",
+  "work_item": 303,
+  "status": "implemented_not_executed",
+  "activation_rule": "Run only if winner-only external capability veto cannot promote.",
+  "recall": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "width": 4,
+    "role": "candidate_recall_only"
+  },
+  "selector": {
+    "provider": "laya",
+    "package_version": "0.3.11",
+    "source_revision": "1e28ac20c0896b1c37a744cd11f740eb98f8b178",
+    "hub_repo": "convaiinnovations/laya",
+    "hub_revision": "458d7563c5cab85ff9f7f6e06cf2dd166fb697e2",
+    "device": "cpu",
+    "primitive": "one independent noul per recalled candidate",
+    "route_selection": "highest P(true) among top-4",
+    "exact_tie_break": "lexicographically smaller registered route ID",
+    "bge_rank_tie_break": false
+  },
+  "thresholds": [
+    0.5,
+    0.7,
+    0.8,
+    0.9,
+    0.95,
+    0.98,
+    0.99,
+    0.995
+  ],
+  "authority": {
+    "provider_can_score_only_recalled_registered_ids": true,
+    "provider_can_create_route": false,
+    "pseudo_route": false,
+    "rank2_fallback": false
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "failed_270_fresh_surface_forbidden": true,
+    "failed_287_fresh_surface_forbidden": true,
+    "calibration_or_blind_forbidden": true
+  },
+  "quality_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0
+  },
+  "runtime_target": {
+    "combined_p95_ms_max": 250
+  }
+}
