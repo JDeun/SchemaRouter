@@ -2154,6 +2154,23 @@
     "expensive_typed_decision_status": "CPU Laya/Qwen/Kev/AnyJev product-path experiments are terminal; current work is BGE-native/lightweight and <=250 ms by design.",
     "runtime_only_policy": "#318 is model-neutral and dormant: activate only after a frozen candidate passes quality + semantic parity but misses p95<=250ms; #320/#321 parity tooling is mandatory.",
     "active_candidate": {
+      "issue": 328,
+      "pull_request": 329,
+      "status": "diagnostic_executing",
+      "workflow_run_id": 36384892825,
+      "source_revision": "6a9185106a19d5a2dbb59eaeae88965d40a0db48",
+      "evaluator_blob_sha": "e0d73b806d5ea026ffe5ea40f774e4b5d4b2f8ee",
+      "latest_branch_head": "eb0ceab276a2ae385772e5a7b513990afccfdb99",
+      "model": "BAAI/bge-m3",
+      "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+      "representation": "native ColBERT operation-contract veto; sparse diagnostic-only",
+      "data_role": "canonical tuning-eligible DEV only"
+    },
+    "active_workflow_run_id": 36384892825,
+    "fresh_contract_status": "#326 terminal valid fresh failure; corpus consumed confirmation-only. #198 remains blocked.",
+    "latest_fresh_result": "#326 valid zero-overlap fresh confirmation failed: exact 84.8090%, near rejection 90.4514%, OOD 100%, false-route 8.4877%, p95 278.3748 ms; candidate terminated, fresh surface consumed and non-tuning.",
+    "generalization_status": "Three independent candidate families have now shown DEV-to-fresh open-set degradation (#270, #287, #326). Next architecture must reduce dependence on DEV-fitted acceptance geometry.",
+    "last_frozen_candidate": {
       "issue": 326,
       "pull_request": 327,
       "semantic_source_revision": "caca039aff1c7b2960d167196f883e3bcbc5d431",
@@ -2167,15 +2184,21 @@
         "false_route": 0.006172839506172839,
         "p95_ms": 176.9435595
       },
-      "fresh_workflow_run_id": 36382202178,
+      "fresh_workflow_run_id": 36382647406,
       "fresh_seed": "operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a",
       "fresh_surface": "lightweight-bge-gte-operational-envelope-v1",
-      "freeze_status": "frozen-dev"
-    },
-    "active_workflow_run_id": 36382647406,
-    "fresh_contract_status": "contracts PASS at head b19d7b0255ee9717464b6fa65ce1ebdeaf58a1bd; evaluate queued",
-    "latest_fresh_result": "#326 valid zero-overlap fresh confirmation failed: exact 84.8090%, near rejection 90.4514%, OOD 100%, false-route 8.4877%, p95 278.3748 ms; candidate terminated, fresh surface consumed and non-tuning.",
-    "generalization_status": "Three independent candidate families have now shown DEV-to-fresh open-set degradation (#270, #287, #326). Next architecture must reduce dependence on DEV-fitted acceptance geometry."
+      "freeze_status": "frozen-dev",
+      "status": "rejected_after_valid_fresh_failure",
+      "terminal_issue": 326,
+      "terminal_pull_request": 327,
+      "fresh_metrics": {
+        "exact": 0.8480902777777778,
+        "near_rejection": 0.9045138888888888,
+        "ood_rejection": 1,
+        "false_route": 0.08487654320987655,
+        "p95_ms": 278.3747833
+      }
+    }
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2250,7 +2273,7 @@
       329
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "await first model-quality run 36384892825 for #328; earlier runs 36384727564/36384796110 are invalid technical pre-runs",
+    "next_research_direction": "finish #328/#329 BGE-M3 ColBERT operation-contract DEV diagnostic; interpret all preregistered A/B/C/D frontier points, including false budgets 0 and 6; freeze only if full 85/97/100/1 + p95<=250 + parity/authority gates pass",
     "contingent_experiments": [
       303
     ],
