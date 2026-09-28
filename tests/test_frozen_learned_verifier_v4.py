@@ -20,23 +20,26 @@ def _module(path: str, name: str):
 
 
 def test_frozen_selection_matches_successful_oof_rule() -> None:
-    freeze = _module(
-        "scripts/freeze_learned_verifier_v4.py",
-        "freeze_learned_verifier_v4",
-    )
     analysis = _module(
         "scripts/analyze_oof_learned_verifier_v4.py",
         "analyze_oof_learned_verifier_v4_contract",
     )
-    assert freeze.SELECTED_CLASSIFIER == "hgb"
-    assert freeze.SELECTED_THRESHOLD == 0.50
-    assert freeze.PINNED_SKLEARN_VERSION == "1.7.2"
-    assert freeze.SELECTED_THRESHOLD in analysis.ACCEPTANCE_THRESHOLDS
+    path = ROOT / "benchmarks" / (
+        "operation-routing-v4-frozen-learned-verifier.json"
+    )
+    data = json.loads(path.read_text(encoding="utf-8"))
+    selected = data["selected_rule"]
+    assert selected["classifier"] == "HistGradientBoostingClassifier"
+    assert selected["acceptance_threshold"] == 0.50
+    assert selected["scikit_learn"] == "1.7.2"
+    assert selected["acceptance_threshold"] in analysis.ACCEPTANCE_THRESHOLDS
     assert len(analysis.CONTINUOUS_FEATURES) == 19
     assert analysis.CATEGORICAL_FEATURES == ("raw_top_route",)
 
 
 def test_evaluator_requires_same_model_sha(tmp_path: Path) -> None:
+    pytest.importorskip("joblib")
+    pytest.importorskip("sklearn")
     evaluator = _module(
         "scripts/evaluate_frozen_learned_verifier_v4.py",
         "evaluate_frozen_learned_verifier_v4",
