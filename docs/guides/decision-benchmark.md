@@ -170,6 +170,47 @@ The checked-in research callable uses
 The Research Benchmark compares recall widths on the calibration split first and sweeps confidence
 thresholds offline. The held-out test split is evaluated only after a configuration is selected.
 
+## Generic System One-compatible provider
+
+Use the model-neutral System One backend when a hosted or self-hosted runtime exposes the
+Jev-compatible `/v1/systemone` contract. This lets the same benchmark compare Kev or future
+compatible decision models without adding another backend implementation.
+
+Install the neutral extra:
+
+```bash
+pip install -e ".[systemone]"
+```
+
+For a local Kev-style server:
+
+```bash
+export SYSTEM_ONE_API_KEY="local"
+python scripts/benchmark_decision_routing.py \
+  --corpus benchmarks/decision-routing-v1.json \
+  --system-one-base-url http://127.0.0.1:8009 \
+  --system-one-provider kev-local \
+  --system-one-model kev-latest \
+  --system-one-min-confidence 0.70
+```
+
+Available controls:
+
+- `--system-one-base-url URL` enables the generic compatible backend;
+- `--system-one-model MODEL` pins the provider model/checkpoint alias;
+- `--system-one-provider NAME` records a stable provider label in rows and reports;
+- `--system-one-timeout SECONDS`;
+- `--system-one-min-confidence FLOAT`;
+- `--system-one-api-key-env NAME` selects the environment variable containing credentials.
+
+Credential values are never written to benchmark output. Reports record only whether a key was
+configured, plus the non-secret provider/model/base-URL/runtime configuration required for
+reproducibility.
+
+Wire compatibility is not a quality claim. When changing model/checkpoint/runtime, recalibrate
+confidence only on development/calibration evidence and evaluate the frozen configuration on an
+untouched holdout.
+
 ## Jev
 
 Install the optional integration and configure TypeSafe locally:
