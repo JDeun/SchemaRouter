@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "policy_id": "operation-routing-runtime-preflight-v1",
+  "production_target_p95_ms": 250,
+  "preflight": {
+    "sample_count": 48,
+    "selection": "deterministic longest-query stratified sample",
+    "strata": {
+      "languages": [
+        "de",
+        "en",
+        "es",
+        "ja",
+        "ko",
+        "mixed"
+      ],
+      "per_language": {
+        "supported": 4,
+        "near_domain_unsupported": 3,
+        "out_of_domain": 1
+      }
+    },
+    "labels_used_for_selection_only": true,
+    "quality_metrics_forbidden": true
+  },
+  "full_screen_budget": {
+    "max_preflight_p95_ms": 1000,
+    "max_projected_serial_minutes": 45
+  },
+  "decision": {
+    "target_feasible": "preflight p95 <= 250 ms",
+    "full_screen_allowed": "preflight p95 <= 1000 ms AND projected serial runtime <= 45 min",
+    "otherwise": "stop before full 1800-case quality evaluation unless a separately preregistered accelerated runtime is used"
+  }
+}
