@@ -2018,3 +2018,19 @@ The canonical ownership boundary is now enforced in documentation and machine-re
 - #197 owns DEV qualification → exact freeze → NEW zero-overlap fresh confirmation;
 - #198 begins only after a validated `fresh-confirmed` manifest and owns calibration → one-shot blind-final.
 
+### Runtime-only parity infrastructure merged — #320
+
+PR #320 was squash-merged as `acaca1e14b2f387094100dde3e1186aa4520d01d`.
+
+`scripts/validate_routing_runtime_parity.py` now provides the mandatory gate for any
+quality-pass/runtime-fail optimization under #318. It rejects:
+- case-set drift;
+- selected-route drift;
+- execute/abstain threshold crossings;
+- execution errors;
+- authority violations.
+
+It also records probability-drift distributions and the frozen reference boundary margin. A runtime
+that crosses the frozen decision boundary is a different semantic candidate, not a runtime-only
+optimization.
+
