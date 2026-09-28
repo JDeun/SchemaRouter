@@ -1832,3 +1832,57 @@ Infrastructure supporting this policy is now merged:
 - #304 / PR #305 — arbitrary bounded decision callable benchmark path, merged as
   `c9678b95a6dc592a1c3b850a6aea8b1675ff94a4`.
 
+## 45. #301 / PR #302 — pinned Laya native noul veto
+
+The winner-only Laya capability-boundary experiment is terminal and rejected.
+
+Frozen protocol:
+- BGE-M3 raw registered top-1 remained sole route authority;
+- Laya was veto-only through native `noul`;
+- `laya==0.3.11`;
+- exact Hub family revision `458d7563c5cab85ff9f7f6e06cf2dd166fb697e2` was materialized locally before inference;
+- eight fixed global P(true) thresholds;
+- failed fresh surfaces, calibration, and blind evidence remained excluded.
+
+Result:
+- raw BGE supported top-1: **88.4549%**;
+- passing rules: **0/8**;
+- p=0.50: **83.2465% exact / 7.9861% near rejection / 8.3333% OOD / 91.9753% false-route**;
+- p=0.90: **5.2083% exact / 95.4861% near rejection / 91.6667% OOD / 4.9383% false-route**;
+- p=0.95: **1.5625% exact / 99.4792% near rejection / 100% OOD / 0.4630% false-route**.
+
+Mean P(true):
+- correct supported BGE winner: **0.6842**;
+- wrong supported winner: **0.6214**;
+- near-domain unsupported: **0.6738**;
+- OOD: **0.7316**.
+
+OOD requests were scored more capable on average than correct supported traffic, so the current
+Laya base checkpoints do not supply a usable capability-existence boundary for this workload.
+
+Runtime:
+- BGE p95 **200.21 ms**;
+- Laya single-request p95 **906.09 ms**;
+- combined p95 **1098.75 ms**;
+- errors / authority violations **0 / 0**.
+
+Provenance:
+- source revision `46af3c3d0156b7b7bfd40686aa5639571f91a936`;
+- workflow `36367249147`;
+- artifact `10948736462`;
+- artifact digest `sha256:5f7876d2c8e9c4a33eed62c05ba4df2889ad922322daeb5424d5f11bb18ec738`.
+
+### Consequence for staged top-4 Laya
+
+The staged #310 branch used the same Laya P(true) signal. It was closed **without executing** the
+manual research workflow. At p>=0.95—the first preregistered winner-only threshold satisfying the
+canonical false-route gate—only 18 of 1,019 already-correct BGE winners survive. Even granting the
+impossible best case that all remaining 133 supported rows are recovered from top-4 and exceed the
+same threshold, exact is bounded by **151/1152 = 13.1076%**. Taking max P(true) over four candidates
+also cannot reduce unsupported acceptance relative to the winner-only candidate at the same
+threshold.
+
+#303 remains only as a **provider-neutral** top-K architecture contingency for a materially different
+model/checkpoint. The only active model-quality experiment at this checkpoint is pinned Kev-0.8B
+#299 / PR #300.
+
