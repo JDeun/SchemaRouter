@@ -1571,7 +1571,7 @@ Provenance:
 - artifact: `10946681188`;
 - artifact digest: `sha256:e7695598b07d5a0f9757f62c04f74f09b03c201de2bbb3f7699f6d8f18059938`.
 
-## 40. Current resume point
+## 40. Resume checkpoint after #287
 
 The 0.11 architecture-search evidence now supports a stronger conclusion:
 
@@ -1646,3 +1646,114 @@ The broader System One intake policy is now:
 3. only stable, benchmark-validated integrations are promoted into permanent product-specific adapters.
 
 Initial open candidates after Laya are Kev and other reproducible System One engines; hosted Jev remains an optional credentialed comparison.
+
+## 41. System One provider abstraction and direct Laya routing
+
+After #287 closed learned development-geometry refinement, the research line moved to externally
+pretrained typed decision models rather than training another classifier on the same 1,800-row DEV
+surface.
+
+### Provider infrastructure — #291 / PR #292
+
+SchemaRouter already had direct `JevDecisionBackend` and `LayaDecisionBackend` integrations.
+#291 generalized the Jev-compatible wire boundary instead of adding one class per new model family.
+
+PR #292 merged a generic `SystemOneDecisionBackend` to main:
+
+- compatible providers are configured by `base_url`, `model`, and `provider_name`;
+- the provider receives only finite locally authorized option IDs;
+- returned IDs are revalidated locally before confidence handling;
+- malformed/non-finite confidence fails closed;
+- `DecisionOption.metadata` and credentials are not forwarded into model decision state;
+- `JevDecisionBackend` remains backward compatible as a thin specialization;
+- no compatible provider can create endpoints, fields, arguments, policy, or execution authority.
+
+The benchmark-side companion #297 / PR #298 also merged to main, making the shared decision-routing
+benchmark model-neutral for System One-compatible providers. New compatible models can therefore be
+benchmarked by configuration rather than another code change.
+
+### Direct full-catalog Laya — #293 / PR #294
+
+A preregistered direct-routing diagnostic then tested whether Laya itself could replace the BGE route
+authority over all 16 registered endpoints.
+
+Protocol:
+
+- `laya==0.3.11`;
+- CPU;
+- auto English/multilingual checkpoint routing;
+- preload enabled, max_loaded=2;
+- full 16-route catalog;
+- no BGE retrieval;
+- eight fixed confidence thresholds;
+- failed #270/#287 fresh surfaces excluded.
+
+Result:
+
+- raw supported top-1: **692/1152 = 60.0694%**;
+- passing rules: **0/8**;
+- p>=0.50: **57.2917% exact / 27.0833% near rejection / 51.3889% OOD / 70.2160% false-route**;
+- p>=0.995: **24.0451% exact / 77.6042% near rejection / 97.2222% OOD / 20.2160% false-route**;
+- mean / p95 latency: **657.73 / 1041.43 ms**;
+- errors / authority violations: **0 / 0**.
+
+Raw supported top-1 by language:
+
+- de **48.9583%**;
+- en **87.5000%**;
+- es **63.5417%**;
+- ja **55.2083%**;
+- ko **40.1042%**;
+- mixed **65.1042%**.
+
+Confidence did not solve the open-set boundary. Mean confidence was **0.8881** for correct supported
+choices, **0.7087** for wrong supported choices, and **0.7132** for near-domain unsupported requests.
+
+Decision: **reject direct full-catalog Laya route authority**. PR #294 was closed unmerged.
+
+Provenance:
+
+- source revision: `48e329ee949d0d7a42d93a7c06c7ecbc62edfedc`;
+- workflow: `36365434284`;
+- artifact: `10947876029`;
+- artifact digest: `sha256:f361f12844cf1da0374ba345051f9c35a0f50c2735c5e7fc9f2b6dbe62d39add`.
+
+This negative result does not reject Laya as a veto signal. Laya's native `noul` primitive is a
+different semantic question from 16-way route choice.
+
+## 42. Current resume point — external typed capability boundaries
+
+Calibration/blind remains blocked and untouched.
+
+Active experiments:
+
+1. **#289 / PR #290 — Qwen3 external semantic capability verifier**
+   - immutable BGE-M3 raw top-1 route authority;
+   - Qwen3-Reranker-0.6B veto only;
+   - no SchemaRouter verifier training;
+   - eight fixed yes-probability thresholds.
+
+2. **#299 / PR #300 — pinned Kev-0.8B choice + noul**
+   - pinned Kev source and Hub model revisions;
+   - 16 registered routes only;
+   - native System One `choice` and `noul` in one request;
+   - separate fixed choice-confidence and noul-capability rule families.
+
+3. **#301 / PR #302 — pinned Laya noul veto**
+   - BGE-M3 raw registered top-1 remains sole route authority;
+   - Laya may only return native `P(true)` capability evidence for that winner;
+   - `laya==0.3.11`;
+   - exact Hub family revision `458d7563c5cab85ff9f7f6e06cf2dd166fb697e2`;
+   - the workflow materializes the immutable Hub snapshot locally before model construction;
+   - eight fixed global `P(true)` thresholds.
+
+The current architectural hypothesis is now narrower:
+
+> route ranking and open-set capability acceptance should remain separate concerns. High-capacity
+> registered-route ranking may stay with BGE-M3, while externally pretrained typed decision models
+> are evaluated as replaceable capability boundaries. Direct decision-model route authority is not
+> assumed merely because a provider supports `choice`.
+
+System One wire compatibility is infrastructure, not quality evidence. Every model/checkpoint still
+requires the same frozen v4 gate and, if promoted, a new zero-overlap fresh-surface confirmation.
+
