@@ -37,26 +37,75 @@ def development_registry() -> InMemoryRegistry:
         "info": {
             "title": "Specimen Registry",
             "version": "1.0.0",
-            "description": "Laboratory specimen records with identifiers, labels and storage metadata",
+            "description": (
+                "Laboratory specimen records with identifiers, labels "
+                "and storage metadata"
+            ),
         },
         "paths": {
             "/specimens/{specimen_id}": {
                 "get": {
                     "operationId": "s17",
                     "summary": "Retrieve one laboratory specimen record",
-                    "parameters": [{"name": "specimen_id", "in": "path", "required": True, "description": "laboratory specimen identifier", "schema": {"type": "string"}}],
-                    "responses": {"200": {"description": "specimen", "content": {"application/json": {"schema": {"type": "object", "properties": {"specimen_id": {"type": "string"}, "label": {"type": "string"}, "storage_temperature": {"type": "number", "x-unit": "K"}}}}}},
+                    "parameters": [
+                        {
+                            "name": "specimen_id",
+                            "in": "path",
+                            "required": True,
+                            "description": "laboratory specimen identifier",
+                            "schema": {"type": "string"},
+                        }
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "specimen",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "specimen_id": {"type": "string"},
+                                            "label": {"type": "string"},
+                                            "storage_temperature": {
+                                                "type": "number",
+                                                "x-unit": "K",
+                                            },
+                                        },
+                                    }
+                                }
+                            },
+                        }
+                    },
                 },
                 "patch": {
                     "operationId": "s28",
-                    "summary": "Update storage metadata for an existing laboratory specimen",
-                    "parameters": [{"name": "specimen_id", "in": "path", "required": True, "description": "laboratory specimen identifier", "schema": {"type": "string"}}],
+                    "summary": (
+                        "Update storage metadata for an existing "
+                        "laboratory specimen"
+                    ),
+                    "parameters": [
+                        {
+                            "name": "specimen_id",
+                            "in": "path",
+                            "required": True,
+                            "description": "laboratory specimen identifier",
+                            "schema": {"type": "string"},
+                        }
+                    ],
                     "responses": {"200": {"description": "updated"}},
                 },
                 "delete": {
                     "operationId": "s39",
                     "summary": "Delete an existing laboratory specimen record",
-                    "parameters": [{"name": "specimen_id", "in": "path", "required": True, "description": "laboratory specimen identifier", "schema": {"type": "string"}}],
+                    "parameters": [
+                        {
+                            "name": "specimen_id",
+                            "in": "path",
+                            "required": True,
+                            "description": "laboratory specimen identifier",
+                            "schema": {"type": "string"},
+                        }
+                    ],
                     "responses": {"204": {"description": "deleted"}},
                 },
             }
