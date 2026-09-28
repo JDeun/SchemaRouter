@@ -112,6 +112,30 @@ Calibration and blind evidence become consumed after use and cannot be recycled 
 If quality passes but latency fails, runtime optimization may change implementation details such as
 quantization or execution backend only when the exact semantic decision function is preserved.
 
+Before accepting an optimized runtime, compare its complete analysis rows with the frozen reference:
+
+```bash
+python scripts/validate_routing_runtime_parity.py \
+  --reference artifacts/reference/analysis.json \
+  --candidate artifacts/optimized/analysis.json \
+  --route-field predicted \
+  --score-field supported_probability \
+  --threshold 0.95 \
+  --out artifacts/runtime-parity.json
+```
+
+Use the actual frozen route/score field and threshold. For a BGE+external-gate composition,
+`raw_top_route` can be the route field. The validator requires:
+
+- identical case IDs;
+- zero execution and authority errors;
+- identical selected route for every case;
+- identical execute/abstain decision for every case;
+- a recorded probability-drift distribution and reference decision-boundary margin.
+
+Any route change or threshold crossing means the runtime is semantically different and must not be
+treated as a runtime-only optimization.
+
 The optimized runtime needs its own recorded identity and confirmation before calibration.
 
 ## Evidence recording
