@@ -1,4 +1,4 @@
-name: Research V6C Corpus Freeze
+# V6C preregistered freeze workflow\nname: Research V6C Corpus Freeze
 
 on:
   push:
