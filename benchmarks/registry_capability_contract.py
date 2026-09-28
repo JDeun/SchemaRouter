@@ -389,7 +389,7 @@ def _parameter_contract(parameter: Any) -> DataFieldContract:
         required=bool(parameter.required),
         identifier=False,
         source_unit=_schema_unit(parameter.json_schema),
-        canonical_unit=_schema_unit(parameter.json_schema),
+        canonical_unit=None,
         dimension=None,
         unit_scale=None,
         unit_offset=None,
@@ -397,12 +397,16 @@ def _parameter_contract(parameter: Any) -> DataFieldContract:
     )
 
 
-def _output_contract(field: Any) -> DataFieldContract:
+def _output_contract(
+    field: Any,
+    *,
+    required: bool = False,
+) -> DataFieldContract:
     normalization = getattr(field, "unit_normalization", None)
     canonical_unit = (
         str(normalization.canonical_unit)
         if normalization is not None
-        else (str(field.unit) if getattr(field, "unit", None) else None)
+        else None
     )
     dimension = (
         str(normalization.dimension)
@@ -421,7 +425,7 @@ def _output_contract(field: Any) -> DataFieldContract:
         ),
         role="output",
         data_type=_schema_type_label(field.json_schema),
-        required=False,
+        required=required,
         identifier=bool(field.identifier),
         source_unit=(str(field.unit) if getattr(field, "unit", None) else None),
         canonical_unit=canonical_unit,
@@ -509,6 +513,29 @@ def _field_text(endpoint: Any) -> str:
     return _normalized_text(parts)
 
 
+def _output_required_names(endpoint: Any) -> set[str]:
+    required: set[str] = set()
+    metadata = getattr(endpoint, "metadata", None)
+    if isinstance(metadata, dict):
+        raw = metadata.get("output_required")
+        if isinstance(raw, list):
+            required.update(str(value) for value in raw if isinstance(value, str))
+
+    schema = getattr(endpoint, "output_schema", None)
+    if isinstance(schema, dict):
+        candidate = schema
+        if candidate.get("type") == "array" and isinstance(candidate.get("items"), dict):
+            candidate = candidate["items"]
+        raw_required = candidate.get("required")
+        if isinstance(raw_required, list):
+            required.update(
+                str(value)
+                for value in raw_required
+                if isinstance(value, str)
+            )
+    return required
+
+
 def compile_endpoint(tool: Any, endpoint: Any) -> CapabilityContract:
     route_id = f"{tool.key}.{endpoint.name}"
     operation_name = _split_identifier(str(endpoint.name))
@@ -540,7 +567,11 @@ def compile_endpoint(tool: Any, endpoint: Any) -> CapabilityContract:
     )
 
     input_fields = tuple(_parameter_contract(item) for item in endpoint.parameters)
-    output_fields = tuple(_output_contract(item) for item in endpoint.output_fields)
+    required_outputs = _output_required_names(endpoint)
+    output_fields = tuple(
+        _output_contract(item, required=item.name in required_outputs)
+        for item in endpoint.output_fields
+    )
     data_contract_text = _data_contract_text(input_fields, output_fields)
 
     path_text = _split_identifier(str(endpoint.path or "").strip("/").replace("/", " "))
