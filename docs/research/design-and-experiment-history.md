@@ -2759,3 +2759,65 @@ still could not provide enough open-set coverage and began harming correct suppo
 Decision: **terminal reject**. No membership-combination diagnostic or failed row is used to tune
 another rule on this DEV, and the frozen confirmation is not opened. The next candidate must use a
 materially different semantic membership evidence source.
+
+
+## 59. #371 / PR #372 — external multilingual zero-shot OUTSIDE-label membership rejected
+
+#371 introduced a materially different semantic evidence source after the BGE/MiniLM ontology-vote
+family was closed. Frozen BGE-M3 remained the sole positive route selector, while an independently
+pretrained multilingual zero-shot classifier could only preserve that winner or veto to
+`NO_ROUTE`.
+
+For each anchored tool, the candidate label set consisted of:
+- one fixed descriptive label for every registered operation leaf;
+- one generic `request an operation outside the registered capabilities of this tool` label.
+
+No classifier output could select, rerank, filter to, or fall through to another endpoint. No
+probability/margin threshold or SchemaRouter fine-tuning was used.
+
+The pair of V5F corpora was frozen before scoring:
+- freeze run `36419226642`;
+- frozen behavior/corpus source `6c02c313a022740100377ead5890fd1f0d782978`;
+- freeze artifact `10968721554`;
+- digest
+  `sha256:1820bafd0e5c745e7175e75cca32e6e27f20a7b3bafd53b7138a138d11429a62`;
+- DEV: **552** cases, SHA
+  `64a89e96a2beaf90e9b44febdef033a2ec9a17c60459c909a0718b759dd9baae`;
+- confirmation: **552** cases, SHA
+  `9beebb5957f1bfd264a14349582c74ad9b15627c6530324f792d3e1d249ecbe9`;
+- typed unit-bearing fields were preserved, including `degC -> K` and `kPa -> Pa`;
+- confirmation remained unopened.
+
+The external model was pinned at runtime from tag `v1.1` to immutable revision
+`d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4`.
+
+DEV evaluation:
+- workflow `36419512215`;
+- evaluated source `5e6dde0c3860ff46f0961c74233d7196e6c86f59`;
+- artifact `10968782843`;
+- digest
+  `sha256:fe53e28362d9d9d78573e68f41bcb1cce6eab0c26294f1b73a599d36fafbb6d5`.
+
+Results:
+- supported exact **93.4211%**;
+- raw BGE exact **93.8596%**;
+- raw BGE tool accuracy **99.1228%**;
+- near-domain rejection **1.5873%**;
+- OOD rejection **2.7778%**;
+- false-route **98.1481%**;
+- veto precision **85.7143%**;
+- veto recall **1.8519%**;
+- one raw-correct supported winner vetoed (**0.4673%**);
+- zero positive route switches / authority violations / execution errors;
+- external classifier p95 **93.1540 ms**;
+- end-to-end p95 **274.5241 ms**.
+
+The external model was fast enough to be operationally interesting as a bounded semantic verifier,
+but the generic OUTSIDE catch-all almost never beat the concrete supported labels under native
+single-label normalization. The failure is therefore semantic formulation, not only runtime.
+
+Decision: **terminal reject**. No label wording, hypothesis-template, threshold, language rule, or
+route-local repair may use this DEV. The frozen confirmation surface remains unopened.
+
+The next materially distinct hypothesis is to condition the actual anchored tool capability set
+directly in a binary entailment/not-entailment question.
