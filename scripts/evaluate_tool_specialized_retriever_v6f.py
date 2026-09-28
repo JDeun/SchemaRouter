@@ -19,13 +19,14 @@ if str(ROOT) not in sys.path:
 from benchmarks.operation_routing_v6f_catalog import development_registry  # noqa: E402
 from benchmarks.schema_adb_baseline import (  # noqa: E402
     ACTION_WEIGHT,
+    BGE_MODEL,
+    BGE_REVISION,
     SCHEMA_WEIGHT,
     _action_text,
     _cosine,
     _schema_text,
     _to_vectors,
 )
-from benchmarks.schema_adb_baseline import BGE_MODEL, BGE_REVISION  # noqa: E402
 from benchmarks.tool_specialized_retriever import (  # noqa: E402
     ToolSpecializedRouteRetriever,
 )
