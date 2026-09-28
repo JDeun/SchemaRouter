@@ -1757,3 +1757,49 @@ The current architectural hypothesis is now narrower:
 System One wire compatibility is infrastructure, not quality evidence. Every model/checkpoint still
 requires the same frozen v4 gate and, if promoted, a new zero-overlap fresh-surface confirmation.
 
+## 43. #289 / PR #290 — external Qwen3 capability verifier
+
+The first externally pretrained reranker-as-capability-verifier experiment is terminal and rejected.
+
+Frozen protocol:
+- BGE-M3 raw registered top-1 remained sole route authority;
+- verifier: `Qwen/Qwen3-Reranker-0.6B` at revision
+  `e61197ed45024b0ed8a2d74b80b4d909f1255473`;
+- no SchemaRouter verifier training;
+- one fixed capability instruction;
+- eight global yes-probability thresholds;
+- verifier veto-only;
+- failed #270/#287 fresh sets, calibration, and blind evidence excluded.
+
+Result:
+- raw BGE supported top-1: **88.4549%**;
+- passing rules: **0/8**;
+- p=0.50: **82.8993% exact / 77.9514% near rejection / 97.2222% OOD / 19.9074% false-route**;
+- p=0.98: **68.7500% exact / 97.3958% near rejection / 100% OOD / 2.3148% false-route**;
+- p=0.99: **62.7604% exact / 99.1319% near rejection / 100% OOD / 0.7716% false-route**;
+- p=0.995: **52.7778% exact / 100% near rejection / 100% OOD / 0% false-route**.
+
+Mean verifier P(yes):
+- correct supported winner: **0.9266**;
+- wrong supported winner: **0.6271**;
+- near unsupported: **0.2325**;
+- OOD: **0.0417**.
+
+The semantic signal is real, but the upper tails overlap too strongly for one safe global boundary.
+
+Runtime:
+- Qwen single-request p95: **1864.44 ms**;
+- combined BGE + Qwen p95: **2059.42 ms**;
+- errors / authority violations: **0 / 0**.
+
+Decision: **reject direct generic reranker yes/no gating**. Quality failure means runtime optimization is not a valid rescue.
+
+Provenance:
+- source revision: `68e812ab5c72bd42664e21f8c9f62a760465cb03`;
+- workflow: `36363863046`;
+- artifact: `10947604859`;
+- artifact digest: `sha256:4e89707dce04d37aece8e803e00751ea86fdd12e5fd9282531ccecc830a9c96c`.
+
+The active external typed-decision paths are now #299 (Kev) and #301 (pinned Laya native noul).
+#303 remains a preregistered top-K provider-neutral contingency and is not active yet.
+
