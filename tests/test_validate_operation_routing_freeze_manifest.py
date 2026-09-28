@@ -189,3 +189,25 @@ def test_validator_accepts_provider_model_version_and_prefixed_artifact_digest()
     manifest["evidence"]["development"]["artifact_sha256"] = "sha256:" + "e" * 64
 
     module.validate_manifest(manifest, phase="dev")
+
+
+@pytest.mark.parametrize(
+    ("key", "value"),
+    [
+        ("supported_exact_route_accuracy", 1.1),
+        ("near_domain_unsupported_rejection", -0.1),
+        ("out_of_domain_rejection", 1.1),
+        ("false_route_rate", -0.01),
+        ("combined_p95_ms", -1.0),
+    ],
+)
+def test_validator_rejects_impossible_metric_ranges(
+    key: str,
+    value: float,
+) -> None:
+    module = _module()
+    manifest = _manifest()
+    manifest["evidence"]["development"]["metrics"][key] = value
+
+    with pytest.raises(module.FreezeManifestError):
+        module.validate_manifest(manifest, phase="dev")
