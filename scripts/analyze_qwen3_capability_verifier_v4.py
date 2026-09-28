@@ -19,12 +19,17 @@ for _path in (_PROJECT_ROOT, _SCRIPTS_DIR):
         sys.path.insert(0, str(_path))
 
 from benchmark_decision_routing import reference_registry  # noqa: E402
+
 from benchmarks.bge_m3_frozen_candidate import (  # noqa: E402
     ACTION_WEIGHT,
-    MODEL_NAME as BGE_MODEL_NAME,
-    MODEL_REVISION as BGE_MODEL_REVISION,
     SCHEMA_WEIGHT,
     FrozenBgeM3DualViewBackend,
+)
+from benchmarks.bge_m3_frozen_candidate import (  # noqa: E402
+    MODEL_NAME as BGE_MODEL_NAME,
+)
+from benchmarks.bge_m3_frozen_candidate import (  # noqa: E402
+    MODEL_REVISION as BGE_MODEL_REVISION,
 )
 
 QWEN_MODEL_NAME = "Qwen/Qwen3-Reranker-0.6B"
