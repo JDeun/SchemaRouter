@@ -121,6 +121,29 @@ python scripts/benchmark_decision_routing.py \
 The callable receives the same structured request used by `ModelQueryAnalyzer` and may be sync or
 async. This keeps the benchmark provider-neutral.
 
+## Arbitrary bounded decision callable
+
+For a typed decision model that does not expose the Jev/System One wire protocol, wrap its
+runtime as a normal SchemaRouter bounded decision callable and load it explicitly:
+
+```bash
+python scripts/benchmark_decision_routing.py \
+  --corpus benchmarks/decision-routing-v1.json \
+  --decision-callable my_decision_provider:decide \
+  --decision-callable-name anyjev-local
+```
+
+The callable receives a `DecisionRequest` and returns either `DecisionResult` or an equivalent
+mapping. SchemaRouter wraps it with `CallableDecisionBackend` and still validates every returned
+option ID against the finite offered set.
+
+This is the preferred research seam for non-wire-compatible System One-style runtimes such as
+experimental AnyJev/Nimble adapters. It avoids adding a permanent core integration merely to
+benchmark a new model family.
+
+The callable is explicitly named trusted local Python code. SchemaRouter does not auto-discover or
+auto-import arbitrary installed decision providers.
+
 ## Embedding backend
 
 Pass a batch embedding callable using `module:function` syntax:
