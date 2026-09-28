@@ -2292,3 +2292,53 @@ A post-hoc sparse-only diagnostic was also checked strictly as non-promotion evi
 Decision: **reject and close the BGE-M3 native ColBERT/sparse operation-contract representation for this cycle**. Do not add a post-hoc second threshold, route-local exception, margin search, rank-2 fallback, or pseudo-route to repair it.
 
 #198 remains blocked. The next behavior-changing architecture, if any, must be separately preregistered using only tuning-eligible DEV plus registry-defined operational semantics; failed fresh-confirmation surfaces #270/#287/#326 remain permanently non-tuning.
+
+## 49. #328 ColBERT operation-contract gate — terminal reject
+
+Canonical workflow `36385740263` completed successfully at source
+`4c72f2dd1939edb6ecf8415d620dbb5d58683fa0`.
+
+Artifact `10955036349`, digest
+`sha256:6e6bfbd2cb352aba03e2d98683ae6967a64115f90a04cf49f74e7cd1ab76dde7`.
+
+Technical validity:
+- all 1,800 DEV rows scored;
+- BGE raw-winner parity mismatches 0;
+- authority/errors 0/0;
+- raw supported top-1 88.4549%.
+
+ColBERT agreement-only:
+- global agreement exact 82.5521%, false-route 64.5062%;
+- same-tool agreement exact 83.7674%, false-route 91.2037%.
+
+At the <=6 false-route frontier:
+- family C exact 38.6285%, near rejection 98.9583%, OOD 100%, false-route 0.9259%;
+- family D exact 38.7153%, near rejection 98.9583%, OOD 100%, false-route 0.9259%.
+
+The winner-score representation separates groups in aggregate but its unsupported upper tail overlaps
+supported traffic too strongly. Safe thresholds collapse recall.
+
+Pre-result PR #331 correctly noted that sparse lexical scoring is diagnostic-only. Recomputing
+executable latency from row components (query encode + dense scoring + ColBERT scoring) gives:
+- mean 365.43 ms;
+- p50 354.79 ms;
+- p95 398.61 ms.
+
+Thus the representation fails both quality and the <=250 ms target. Sparse diagnostics are also
+non-viable as a successor: at <=6 false routes, supported exact is only 12.67%.
+
+Decision: terminate this representation without margin thresholds, second dimensions, route-local
+DEV-fitted thresholds, or fresh-derived repair.
+
+### Next representation hypothesis
+
+The next experiment should keep one BGE query embedding and derive acceptance calibration from
+registry metadata rather than DEV score distributions.
+
+Candidate concept:
+- embed each endpoint name and trusted operation alias separately;
+- compare the dense winner's alias bank only against its same-tool sibling alias bank;
+- derive support/contrast envelopes from alias self-cohesion and sibling separation, not labeled DEV;
+- no additional query-model inference;
+- dense BGE raw winner remains sole route authority.
+
