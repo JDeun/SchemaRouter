@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "cycle": "0.12-tool-conditioned-counterfactual-membership",
+  "experiment": "tool-conditioned-supported-vs-counterfactual-v1",
+  "issue": 370,
+  "parent_issue": 340,
+  "status": "preregistered_before_corpus_generation_or_scoring",
+  "models": {
+    "bge": {
+      "name": "BAAI/bge-m3",
+      "revision": "5617a9f61b028005a4858fdac845db406aefb181"
+    },
+    "auxiliary": {
+      "name": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+      "revision": "e8f8c211226b894fcb81acc59f3b34ba3efd5f42"
+    },
+    "route_fusion": {
+      "schema_weight": 0.55,
+      "action_weight": 0.45
+    }
+  },
+  "resource_context": {
+    "trusted_facts": [
+      "tool_key",
+      "tool_name",
+      "namespace",
+      "parameter_name",
+      "parameter_description",
+      "parameter_json_type",
+      "output_field_name",
+      "output_field_description",
+      "semantic_id",
+      "output_json_type",
+      "source_unit",
+      "canonical_unit",
+      "dimension",
+      "qualifier_keys"
+    ],
+    "forbidden_facts": [
+      "endpoint_name",
+      "operation_aliases",
+      "endpoint_description",
+      "http_method",
+      "read_only",
+      "destructive",
+      "benchmark_label",
+      "expected_route"
+    ]
+  },
+  "semantic_evidence": {
+    "leaf_prototypes": "exact #358/#363 generic multilingual leaf prototypes without wording changes",
+    "representation": "tool resource context + unchanged generic leaf prototype",
+    "supported_bank": "conditioned leaves registered under anchored tool",
+    "counterfactual_bank": "conditioned generic leaves not registered under anchored tool",
+    "model_vote": "SUPPORTED iff max supported cosine >= max counterfactual cosine; otherwise OUTSIDE_SET",
+    "score_threshold": null,
+    "margin_threshold": null,
+    "learned_head": false
+  },
+  "authority": {
+    "positive_selector": "frozen BGE-M3 raw top-1 only",
+    "veto_rule": [
+      "explicit SUPPORTED -> preserve",
+      "explicit OUTSIDE_SET plus at least one semantic OUTSIDE_SET -> veto",
+      "explicit UNKNOWN plus both semantic OUTSIDE_SET -> veto",
+      "otherwise preserve"
+    ],
+    "endpoint_rerank": false,
+    "endpoint_filter": false,
+    "rank2_fallback": false,
+    "cross_tool_fallback": false,
+    "pseudo_route": false,
+    "unknown_endpoint_disables_absence_claim": true
+  },
+  "data_protocol": {
+    "forbidden": [
+      "0.11-dev",
+      "#270",
+      "#287",
+      "#326",
+      "#338",
+      "#347",
+      "#349",
+      "#354",
+      "#358",
+      "#363",
+      "#198-calibration",
+      "#198-blind"
+    ],
+    "development": {
+      "role": "new 0.12-F screen",
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "role": "frozen confirmation only",
+      "generated_before_development_scoring": true,
+      "corpus_sha256": null
+    }
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "positive_route_switches_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "dev_fail": "terminal_reject_without_row_driven_context_prototype_or_rule_repair",
+    "dev_pass": "freeze exact source and open already-generated confirmation",
+    "confirmation_fail": "terminal_reject",
+    "both_pass": "eligible_for_brand_new_zero-overlap natural-language fresh confirmation"
+  }
+}
