@@ -1,0 +1,50 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "pinned-laya-noul-veto-v1",
+  "work_item": 301,
+  "status": "preregistered_before_execution",
+  "route_authority": {
+    "ranker": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "selection": "global registered raw top-1",
+    "laya_can_select_route": false,
+    "rank2_fallback": false
+  },
+  "verifier": {
+    "package": "laya==0.3.11",
+    "package_source_revision": "1e28ac20c0896b1c37a744cd11f740eb98f8b178",
+    "hub_repo": "convaiinnovations/laya",
+    "hub_revision": "458d7563c5cab85ff9f7f6e06cf2dd166fb697e2",
+    "device": "cpu",
+    "preload": true,
+    "max_loaded": 2,
+    "primitive": "noul",
+    "fine_tuned_on_schemarouter": false
+  },
+  "acceptance_thresholds": [0.5, 0.7, 0.8, 0.9, 0.95, 0.98, 0.99, 0.995],
+  "fixed_rule_count": 8,
+  "data": {
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "failed_270_fresh_surface_forbidden": true,
+    "failed_287_fresh_surface_forbidden": true,
+    "calibration_or_blind_forbidden": true
+  },
+  "quality_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0
+  },
+  "runtime_target": {
+    "combined_single_request_p95_ms_max": 250.0
+  }
+}
