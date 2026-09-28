@@ -1878,6 +1878,24 @@
           "future System One-compatible models"
         ]
       }
+    },
+    {
+      "id": "0.11-generic-decision-callable-benchmark",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 304,
+      "pull_request": 305,
+      "preregistered": false,
+      "status": "merged_infrastructure",
+      "source_revision": "c9678b95a6dc592a1c3b850a6aea8b1675ff94a4",
+      "decision": "accepted_reusable_infrastructure",
+      "design": {
+        "cli_option": "--decision-callable module:function",
+        "backend": "CallableDecisionBackend",
+        "explicit_opt_in_import": true,
+        "finite_option_revalidation": true,
+        "intended_path": "non-System-One-wire typed decision models"
+      },
+      "interpretation": "Future non-wire decision models can enter the shared benchmark through a thin trusted wrapper instead of a new core integration."
     }
   ],
   "current_research_conclusion": {
@@ -1912,7 +1930,7 @@
     "explicit_negative_prototype_status": "#275 showed useful near-domain signal, while #277/#279/#281 demonstrated that fixed scalar and relative-rank prototype heuristics cannot meet the 85/97/1/100 target. This heuristic family is closed.",
     "learned_verifier_status": "#285 grouped OOF passed, but #287 frozen fit-once HGB failed zero-overlap fresh-surface DEV at 82.64% exact / 93.23% near rejection / 6.02% false-route / 252.77 ms p95. Same model SHA was reused without refit.",
     "system_one_provider_status": "#291/#292 merged a generic Jev-compatible SystemOneDecisionBackend; future compatible models can swap base_url/model/provider_name without a new planner class.",
-    "model_swap_infrastructure": "#291/#292 and #297/#298 merged: System One-compatible providers and shared benchmark are both model-neutral by configuration.",
+    "model_swap_infrastructure": "#291/#292, #297/#298, and #304/#305 merged: System One wire-compatible and arbitrary bounded callable models can both be swapped and benchmarked without model-specific planner changes.",
     "direct_laya_status": "#293/#294 direct full-catalog Laya rejected: raw exact 60.07%, 0/8 rules pass, p95 1041ms; PR closed unmerged.",
     "contingent_architecture": "#303 preregisters BGE top-4 recall + provider-neutral per-candidate noul routing, but must not execute unless winner-only capability veto cannot promote.",
     "qwen3_external_verifier_status": "#289/#290 rejected: 0/8 rules pass; safe p=0.99 gives 62.76% exact despite 99.13% near rejection / 0.77% false-route; combined CPU p95 2059ms."
@@ -1971,7 +1989,8 @@
       291,
       293,
       297,
-      289
+      289,
+      304
     ],
     "active_experiments": [
       299,
