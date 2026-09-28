@@ -186,6 +186,20 @@ _DESTRUCTIVE_ACTIONS = {"delete"}
 
 
 @dataclass(frozen=True)
+class DataFieldContract:
+    name: str
+    semantic_id: str | None
+    role: str
+    data_type: str
+    required: bool
+    identifier: bool
+    source_unit: str | None
+    canonical_unit: str | None
+    dimension: str | None
+    qualifiers: tuple[tuple[str, str], ...]
+
+
+@dataclass(frozen=True)
 class CapabilityContract:
     route_id: str
     tool_key: str
@@ -193,7 +207,10 @@ class CapabilityContract:
     adapter: str | None
     operation_text: str
     object_text: str
+    data_contract_text: str
     contract_text: str
+    input_fields: tuple[DataFieldContract, ...]
+    output_fields: tuple[DataFieldContract, ...]
     declared_action: str | None
     temporal_scope: str | None
     read_only: bool | None
@@ -316,6 +333,120 @@ def _adapter(tool: Any) -> str | None:
     return None
 
 
+def _schema_type_label(schema: Any) -> str:
+    if not isinstance(schema, dict) or not schema:
+        return "unknown"
+    raw_type = schema.get("type")
+    if isinstance(raw_type, list):
+        types = [str(value) for value in raw_type if isinstance(value, str)]
+        non_null = [value for value in types if value != "null"]
+        nullable = len(non_null) != len(types)
+        if len(non_null) == 1:
+            base = non_null[0]
+        elif non_null:
+            base = "|".join(sorted(dict.fromkeys(non_null)))
+        else:
+            base = "null"
+        if nullable and base != "null":
+            base += "|null"
+    elif isinstance(raw_type, str):
+        base = raw_type
+    elif isinstance(schema.get("oneOf"), list):
+        base = "oneOf"
+    elif isinstance(schema.get("anyOf"), list):
+        base = "anyOf"
+    elif isinstance(schema.get("properties"), dict):
+        base = "object"
+    else:
+        base = "unknown"
+
+    if base == "array" and isinstance(schema.get("items"), dict):
+        base = f"array<{_schema_type_label(schema['items'])}>"
+    raw_format = schema.get("format")
+    if isinstance(raw_format, str) and raw_format.strip():
+        base += f"[{raw_format.strip()}]"
+    return base
+
+
+def _parameter_contract(parameter: Any) -> DataFieldContract:
+    return DataFieldContract(
+        name=str(parameter.name),
+        semantic_id=None,
+        role="input",
+        data_type=_schema_type_label(parameter.json_schema),
+        required=bool(parameter.required),
+        identifier=False,
+        source_unit=None,
+        canonical_unit=None,
+        dimension=None,
+        qualifiers=(),
+    )
+
+
+def _output_contract(field: Any) -> DataFieldContract:
+    normalization = getattr(field, "unit_normalization", None)
+    canonical_unit = (
+        str(normalization.canonical_unit)
+        if normalization is not None
+        else (str(field.unit) if getattr(field, "unit", None) else None)
+    )
+    dimension = (
+        str(normalization.dimension)
+        if normalization is not None
+        else None
+    )
+    qualifiers = tuple(
+        sorted((str(key), str(value)) for key, value in field.qualifiers.items())
+    )
+    return DataFieldContract(
+        name=str(field.name),
+        semantic_id=(
+            str(field.semantic_id)
+            if getattr(field, "semantic_id", None)
+            else None
+        ),
+        role="output",
+        data_type=_schema_type_label(field.json_schema),
+        required=False,
+        identifier=bool(field.identifier),
+        source_unit=(str(field.unit) if getattr(field, "unit", None) else None),
+        canonical_unit=canonical_unit,
+        dimension=dimension,
+        qualifiers=qualifiers,
+    )
+
+
+def _data_field_text(field: DataFieldContract) -> str:
+    parts = [
+        f"{field.role} {field.semantic_id or field.name}",
+        f"type {field.data_type}",
+    ]
+    if field.required:
+        parts.append("required")
+    if field.identifier:
+        parts.append("identifier")
+    if field.source_unit is not None:
+        parts.append(f"source unit {field.source_unit}")
+    if field.canonical_unit is not None:
+        parts.append(f"canonical unit {field.canonical_unit}")
+    if field.dimension is not None:
+        parts.append(f"dimension {field.dimension}")
+    if field.qualifiers:
+        parts.append(
+            "qualifiers "
+            + ", ".join(f"{key}={value}" for key, value in field.qualifiers)
+        )
+    return "; ".join(parts)
+
+
+def _data_contract_text(
+    input_fields: tuple[DataFieldContract, ...],
+    output_fields: tuple[DataFieldContract, ...],
+) -> str:
+    rows = [_data_field_text(field) for field in (*input_fields, *output_fields)]
+    return _normalized_text(rows)
+
+
 def _field_text(endpoint: Any) -> str:
     parts: list[str] = []
     for parameter in endpoint.parameters:
@@ -340,6 +471,21 @@ def _field_text(endpoint: Any) -> str:
             parts.extend(str(value) for value in aliases)
         if getattr(field, "unit", None):
             parts.append(str(field.unit))
+        normalization = getattr(field, "unit_normalization", None)
+        if normalization is not None:
+            parts.extend(
+                [
+                    str(normalization.dimension),
+                    str(normalization.canonical_unit),
+                ]
+            )
+        if getattr(field, "json_schema", None):
+            parts.append(_schema_type_label(field.json_schema))
+        if getattr(field, "qualifiers", None):
+            parts.extend(
+                f"{key} {value}"
+                for key, value in sorted(field.qualifiers.items())
+            )
     return _normalized_text(parts)
 
 
@@ -373,18 +519,24 @@ def compile_endpoint(tool: Any, endpoint: Any) -> CapabilityContract:
         structural,
     )
 
+    input_fields = tuple(_parameter_contract(item) for item in endpoint.parameters)
+    output_fields = tuple(_output_contract(item) for item in endpoint.output_fields)
+    data_contract_text = _data_contract_text(input_fields, output_fields)
+
     path_text = _split_identifier(str(endpoint.path or "").strip("/").replace("/", " "))
     object_text = _normalized_text(
         _split_identifier(str(tool.name)),
         tool.description,
         path_text,
         _field_text(endpoint),
+        data_contract_text,
     )
 
     contract_text = _normalized_text(
         "Registered tool capability.",
         f"Operation: {operation_text}",
         f"Resource and schema: {object_text}",
+        f"Data contract: {data_contract_text}",
     )
 
     return CapabilityContract(
@@ -394,7 +546,10 @@ def compile_endpoint(tool: Any, endpoint: Any) -> CapabilityContract:
         adapter=_adapter(tool),
         operation_text=operation_text,
         object_text=object_text,
+        data_contract_text=data_contract_text,
         contract_text=contract_text,
+        input_fields=input_fields,
+        output_fields=output_fields,
         declared_action=declared_action,
         temporal_scope=temporal_scope,
         read_only=endpoint.read_only,
