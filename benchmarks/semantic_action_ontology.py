@@ -189,6 +189,7 @@ _TEMPORAL_PATTERNS: dict[str, tuple[str, ...]] = {
 }
 
 _CONTRACT_HINTS: dict[str, tuple[str, ...]] = {
+    "read": ("search", "find", "lookup", "look up", "retrieve", "get", "show", "list", "검색", "조회", "찾기", "buscar", "obtener", "取得", "検索", "suche", "abrufen"),
     "create": ("create", "add", "register", "schedule", "생성", "추가", "등록", "crear", "añadir", "作成", "追加", "erstellen", "hinzufügen"),
     "update": ("update", "edit", "change", "modify", "rename", "수정", "변경", "actualizar", "editar", "更新", "変更", "aktualisieren", "ändern"),
     "delete": ("delete", "remove", "purge", "erase", "삭제", "제거", "eliminar", "borrar", "削除", "löschen", "entfernen"),
