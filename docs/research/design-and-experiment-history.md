@@ -2554,3 +2554,101 @@ unscored.
 The architectural lesson is useful: the next materially new signal should improve **query-side
 operation-frame coverage** without returning to endpoint-similarity membership thresholds and
 without sacrificing the high supported-route retention demonstrated here.
+
+
+## 55. #349 / PR #352 — flat semantic action ontology rejected
+
+After #347 showed that explicit lexical request frames preserve supported routing but miss too many
+unsupported operations, #349 replaced the surface lexicon with a registry-independent multilingual
+semantic action ontology.
+
+The request was projected onto one generic action class by frozen BGE-M3 prototype similarity, then
+that action was used as a deterministic within-tool capability constraint. No learned veto,
+probability threshold, route-local threshold, pseudo-route, or cross-tool fallback was allowed.
+
+A new pair of corpora was generated and frozen before scoring:
+- DEV: **504** cases, SHA
+  `1a497bcd36192913840d7ecd4c6bed714c908468baed6f2b0b9f4367bf57ffc6`;
+- confirmation: **552** cases, SHA
+  `548fe42da09e7c8dc89530c43d409db05618f57a39c277fca27aebe79b6802b9`;
+- confirmation was never scored.
+
+DEV evidence:
+- workflow `36406845612`;
+- source `38ee7557565983746e33741897e6168bf4f35643`;
+- artifact `10962178834`;
+- digest
+  `sha256:de687d850e619cb1ce143648ef6fe21950f6a395a33bc6835a7564b24f9a03a1`.
+
+Results:
+- supported exact **44.9074%**;
+- raw BGE supported exact **77.3148%**;
+- raw BGE supported tool accuracy **94.4444%**;
+- near-domain unsupported rejection **56.4815%**;
+- OOD rejection **100%**;
+- false-route **32.6389%**;
+- p95 **197.549 ms**;
+- authority violations / execution errors **0 / 0**.
+
+The flat semantic ontology was therefore terminally rejected. The key lesson was not that an ontology
+is useless, but that a noisy semantic label must not receive hard endpoint-removal authority.
+
+## 56. #354 / PR #357 — hierarchical executable-capability ontology rejected as a hard filter
+
+#354 made the ontology explicit and hierarchical rather than flat.
+
+The generic ontology separated:
+- read: search / retrieve / list;
+- mutate: create / update / delete / cancel / refund;
+- transfer: send / share;
+- transform: export / translate / summarize / compare / merge;
+- control: restart / execute;
+- predict: forecast;
+- non-tool: compose / explain / calculate / chat.
+
+Request-side root/leaf evidence came from fixed multilingual contrastive prototypes. Endpoint
+root/leaf facts came from trusted registry metadata, with HTTP/read-only/destructive metadata taking
+precedence over semantic inference.
+
+The freeze completed before scoring:
+- freeze workflow `36408654108`;
+- frozen ontology/corpus source
+  `9777e1c76df27bff38cb3060d672d4f8baf65334`;
+- freeze artifact `10963536169`;
+- freeze digest
+  `sha256:ac8bb723e8def4dca002c21662504ccbc169d02d2bdcc72905d621710f128bd2`;
+- DEV: **564** cases, SHA
+  `3731ade0c1cfc69fbf234c00e9090a35b8fca5340af98077e1a18f98782d2a4a`;
+- confirmation: **576** cases, SHA
+  `1e965111a7835af002b397d0be6b4776ea2a9295f417991f5b7733f79f23a24e`;
+- confirmation remained unopened.
+
+DEV evaluation:
+- workflow `36408861468`;
+- evaluated source `250845bba058a704ab50cdde43326cc1e5c26d62`;
+- the workflow first verified all frozen ontology/corpus files were byte-identical to the frozen
+  source;
+- artifact `10964025921`;
+- digest
+  `sha256:40eb58bc091380257409d93b662bbfbfa9b966e8c752b9a63df04b68237f7e2b`.
+
+Results:
+- supported exact **30.4167%**;
+- raw BGE supported exact **85.4167%**;
+- raw BGE supported tool accuracy **100%**;
+- near-domain rejection **68.6508%**;
+- OOD rejection **88.8889%**;
+- false-route **26.8519%**;
+- p95 **164.328 ms**;
+- authority violations / execution errors **0 / 0**.
+
+This was a strong architectural negative result. On this new DEV, the raw BGE ranker already met the
+supported exact target and identified the correct tool for every supported case. The hierarchical
+ontology hard filter then destroyed that good signal.
+
+Decision: **terminal reject without row-driven repair**.
+
+The resulting design rule for the next candidate is sharper:
+
+> keep ontology as structured capability metadata and negative evidence, but do not let noisy
+> semantic ontology projection select, rerank, or remove supported endpoints.
