@@ -44,7 +44,8 @@ schemarouter.executor      plan, binding, schema, policy, availability and hook 
 schemarouter.adapters      adapter contracts + OpenAPI/MCP/OPTIMADE/Python implementations
 schemarouter.ingestion     AdapterRegistry dispatch, safe source loading, registry binding
 schemarouter.proposals     evidence-grounded HTML documentation proposals
-schemarouter.integrations  optional LangChain/LlamaIndex/Jev/OpenTelemetry integrations
+schemarouter.integrations  optional LangChain/LlamaIndex/System One/Laya/OpenTelemetry integrations
+schemarouter.decision_plugins  explicit third-party bounded decision-backend discovery/loading
 schemarouter.runtime       high-level invoke/batch/stream facade
 ```
 
