@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
-from benchmarks.registry_capability_contract import (
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from benchmarks.registry_capability_contract import (  # noqa: E402
     ACTION_FAMILIES,
     compile_endpoint,
     compile_registry,
     counterfactual_action_texts,
     structural_action_compatible,
 )
-from schemarouter import (
+from schemarouter import (  # noqa: E402
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
@@ -17,13 +22,13 @@ from schemarouter import (
     ToolSpec,
     UnitNormalizationSpec,
 )
-from schemarouter.adapters.mcp import tool_from_mcp
-from schemarouter.adapters.openapi import tool_from_openapi
+from schemarouter.adapters.mcp import tool_from_mcp  # noqa: E402
+from schemarouter.adapters.openapi import tool_from_openapi  # noqa: E402
 
 
 def test_compiler_has_no_canonical_benchmark_dependency() -> None:
     source = (
-        Path(__file__).resolve().parents[1]
+        ROOT
         / "benchmarks"
         / "registry_capability_contract.py"
     ).read_text(encoding="utf-8")
