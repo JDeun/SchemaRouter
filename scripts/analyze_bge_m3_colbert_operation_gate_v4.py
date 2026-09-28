@@ -330,6 +330,45 @@ def _gate_pass(
     )
 
 
+def _passing_frontier_rules(
+    frontier: dict[str, Any],
+    *,
+    family_id: str,
+    false_budgets: list[int],
+    p95_ms: float | None,
+    parity_mismatches: int,
+    authority_violations: int,
+    execution_errors: int,
+) -> list[dict[str, Any]]:
+    """Return unique preregistered frontier points that satisfy the full gate."""
+    by_key: dict[tuple[str, float], dict[str, Any]] = {}
+    selected = frontier["selected_by_false_budget"]
+    for budget in false_budgets:
+        point = selected.get(str(budget))
+        if point is None:
+            continue
+        if not _gate_pass(
+            point,
+            p95_ms=p95_ms,
+            parity_mismatches=parity_mismatches,
+            authority_violations=authority_violations,
+            execution_errors=execution_errors,
+        ):
+            continue
+        threshold = float(point["threshold"])
+        key = (family_id, threshold)
+        existing = by_key.get(key)
+        if existing is None:
+            by_key[key] = {
+                "family": family_id,
+                "selected_false_budgets": [budget],
+                "rule": point,
+            }
+        else:
+            existing["selected_false_budgets"].append(budget)
+    return list(by_key.values())
+
+
 def evaluate(
     cases: list[Any],
     *,
@@ -605,21 +644,22 @@ def evaluate(
         ("C", frontier_c),
         ("D", frontier_d),
     ):
-        budget6 = frontier["selected_by_false_budget"]["6"]
-        if budget6 is not None and _gate_pass(
-            budget6,
-            p95_ms=p95_ms,
-            parity_mismatches=len(parity_mismatches),
-            authority_violations=authority_violations,
-            execution_errors=execution_errors,
-        ):
-            passing_rules.append(
-                {
-                    "family": family_id,
-                    "false_budget": 6,
-                    "rule": budget6,
-                }
+        passing_rules.extend(
+            _passing_frontier_rules(
+                frontier,
+                family_id=family_id,
+                false_budgets=[
+                    int(value)
+                    for value in manifest["rule_families"][family_id][
+                        "false_route_budgets"
+                    ]
+                ],
+                p95_ms=p95_ms,
+                parity_mismatches=len(parity_mismatches),
+                authority_violations=authority_violations,
+                execution_errors=execution_errors,
             )
+        )
 
     return {
         "experiment": manifest["experiment"],
