@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **60** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **63** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [machine-readable ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — exact provenance index.
@@ -131,6 +131,29 @@ solve open-set membership. This exact candidate is terminal and is not repaired 
 
 The next successor hypothesis must add a materially broader **query-side semantic operation signal**
 without turning endpoint similarity back into capability authority.
+
+## 0.12 semantic ontology screens
+
+Two follow-up experiments tested whether a generic operation ontology could provide that broader
+signal without route-specific retraining.
+
+| Experiment | Supported exact | Near reject | OOD | False-route | Raw exact | Raw tool | p95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| #349 flat semantic action ontology | **44.91%** | **56.48%** | **100%** | **32.64%** | 77.31% | 94.44% | 197.55 ms |
+| #354 hierarchical capability ontology | **30.42%** | **68.65%** | **88.89%** | **26.85%** | **85.42%** | **100%** | 164.33 ms |
+
+Both candidates were terminally rejected on their newly frozen DEV surfaces; neither confirmation
+corpus was opened.
+
+The strongest architectural lesson comes from #354: the raw BGE ranker already met the supported
+exact target and selected the correct tool for every supported DEV request, but hard semantic
+ontology filtering destroyed that good signal. The ontology is therefore useful as a structured
+representation of registered capability semantics, **not as a noisy positive selector with endpoint
+removal authority**.
+
+The active successor hypothesis is #358: preserve the raw BGE winner exactly and use ontology only
+as **asymmetric unsupported-membership evidence**. Semantic evidence may veto a route under a fixed
+independent-agreement rule, but it may never select or rerank another endpoint.
 
 ## Reproducibility
 
