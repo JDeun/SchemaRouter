@@ -2496,3 +2496,61 @@ Decision: **terminal reject without label-driven repair**, exactly as preregiste
 
 PR #341 was closed without merge. The infrastructure lesson is retained; the learned-veto quality
 claim is not promoted into the library default.
+
+
+## 54. #347 / PR #348 — query-first typed frame preserves supported routes but under-rejects unsupported
+
+The first 0.12 successor experiment deliberately stopped comparing query/endpoint similarity for
+capability membership.
+
+Preregistered architecture:
+
+```text
+query
+  -> registry-independent explicit request frame
+  -> frozen BGE-M3 raw top tool/domain anchor
+  -> deterministic within-tool contract compatibility
+  -> unchanged BGE-M3 ranking inside the compatible endpoint set
+  -> route or NO_ROUTE
+```
+
+Unlike #338, there was no learned binary veto, probability threshold, route-local threshold,
+pseudo-route, or post-ranking rank-2 fallback.
+
+A new 0.12 data protocol was frozen before scoring:
+- development: **936** cases, SHA
+  `79a7cb9672e6633739e0acd08882019f5cfeff479df103f8199aabacb8501a9f`;
+- registration confirmation: **1,008** cases, SHA
+  `15587c646d64b4f3462127742c05d59092938f68a4c047b731e9a8c78c0eb673`;
+- both catalogs used new tool identities and native/OpenAPI/MCP registrations;
+- the confirmation corpus was generated and frozen before DEV scoring.
+
+DEV evidence:
+- workflow `36404647843`;
+- source `ef0e0a567f12129bf9f4b003d13f9f6e9679a216`;
+- artifact `10962450383`;
+- digest
+  `sha256:74df3e068421bb2c551a30c2b5c5cdb9547e17066bf3f4ce7f8154c11690849c`.
+
+Results:
+- supported exact **97.2222%**;
+- raw supported exact **96.7593%**;
+- raw supported tool accuracy **99.5370%**;
+- near-domain unsupported rejection **70.3704%**;
+- OOD rejection **95.8333%**;
+- false-route **25.9921%**;
+- p95 **179.526 ms**;
+- authority violations / execution errors **0 / 0**.
+
+This is almost the mirror image of #338. The query-first structural filter preserves valid
+supported requests extremely well and can correct some endpoint choices, but the high-precision
+lexical request frame leaves too many unsupported requests as structurally unknown. Those requests
+therefore fall back to the raw BGE domain anchor and still receive an executable destination.
+
+Decision: **terminal reject on DEV**. No row-driven lexicon expansion, per-language patching, or
+route-specific exception is allowed. The frozen 1,008-case confirmation corpus remains completely
+unscored.
+
+The architectural lesson is useful: the next materially new signal should improve **query-side
+operation-frame coverage** without returning to endpoint-similarity membership thresholds and
+without sacrificing the high supported-route retention demonstrated here.
