@@ -74,7 +74,13 @@
         "de",
         "mixed"
       ],
-      "corpus_sha256": null
+      "corpus_sha256": "79a7cb9672e6633739e0acd08882019f5cfeff479df103f8199aabacb8501a9f",
+      "case_count": 936,
+      "supported_cases": 432,
+      "near_domain_cases": 432,
+      "out_of_domain_cases": 72,
+      "route_count": 18,
+      "tool_count": 6
     },
     "registration_confirmation": {
       "role": "frozen_confirmation_only",
@@ -93,7 +99,13 @@
         "de",
         "mixed"
       ],
-      "corpus_sha256": null
+      "corpus_sha256": "15587c646d64b4f3462127742c05d59092938f68a4c047b731e9a8c78c0eb673",
+      "case_count": 1008,
+      "supported_cases": 504,
+      "near_domain_cases": 432,
+      "out_of_domain_cases": 72,
+      "route_count": 21,
+      "tool_count": 6
     }
   },
   "gates": {
@@ -110,5 +122,11 @@
     "development_pass": "freeze_exact_parser_compiler_ranker_before_opening_registration_confirmation",
     "confirmation_fail": "terminal_reject",
     "both_pass": "eligible_for_brand_new_zero_overlap_natural_language_fresh_confirmation"
+  },
+  "corpus_freeze": {
+    "workflow_run_id": 36404294625,
+    "source_revision": "99a0e615e863bdca468fd3f0d6745d467fcc935b",
+    "scored_at_freeze": false,
+    "both_corpora_generated_together": true
   }
 }
