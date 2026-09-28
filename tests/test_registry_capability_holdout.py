@@ -1,8 +1,19 @@
 from __future__ import annotations
 
-from benchmarks.registry_capability_holdout import build_registry, cases, manifest
-from schemarouter import InMemoryRegistry
-from scripts.benchmark_decision_routing import reference_registry
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from benchmarks.registry_capability_holdout import (  # noqa: E402
+    build_registry,
+    cases,
+    manifest,
+)
+from schemarouter import InMemoryRegistry  # noqa: E402
+from scripts.benchmark_decision_routing import reference_registry  # noqa: E402
 
 
 def test_registration_holdout_routes_are_disjoint_from_canonical_registry() -> None:
