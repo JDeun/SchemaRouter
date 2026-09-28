@@ -7,8 +7,9 @@ canonical DEV labels, fresh-confirmation rows, route IDs, or evaluation-tool ide
 from __future__ import annotations
 
 import math
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable
+from typing import Any
 
 from benchmarks.registry_capability_contract import (
     ACTION_PROTOTYPES,
