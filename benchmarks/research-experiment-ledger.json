@@ -2005,7 +2005,8 @@
     },
     "activation_protocol": "Staged #314/#315 and #311/#313 remain dormant until explicit guarded activation. #314 can be triggered by committing its activation JSON with the exact #299 artifact ID/source run; #311 can be triggered only after Kev-family non-promotion using an activation marker declaring after_issue=299 and reason=kev_family_non_promotable.",
     "runtime_optimization": "#318 is dormant and activates only after a Kev-based quality pass with latency failure; parity must preserve every frozen route/accept decision before optimized timing counts.",
-    "runtime_parity_infrastructure": "#320 acaca1e... adds runtime parity validation; #321 31bda6e... ensures failed parity writes mismatch/drift evidence before exiting non-zero."
+    "runtime_parity_infrastructure": "#320 acaca1e... adds runtime parity validation; #321 31bda6e... ensures failed parity writes mismatch/drift evidence before exiting non-zero.",
+    "runtime_realism": "Do not repeat multi-hour CPU/fp32 typed-decision screens. #299 may contribute a terminal semantic signal if it completes, but timeout means stop that runtime. Future Kev/AnyJev evaluation requires a plausibly deployable runtime path to <=250 ms."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2090,9 +2091,7 @@
       314
     ],
     "infrastructure_in_progress": [],
-    "contingent_pull_requests": [
-      317
-    ],
+    "contingent_pull_requests": [],
     "technical_contingencies": {
       "kev_299_timeout_retry": {
         "pull_request": 317,
@@ -2100,7 +2099,9 @@
         "activate_only_if_run": 36366508183,
         "required_conclusion": "technical_timeout_before_valid_artifact",
         "semantic_changes": false,
-        "only_runtime_change": "evaluate timeout-minutes 180 -> 360"
+        "only_runtime_change": "evaluate timeout-minutes 180 -> 360",
+        "status": "retired_unexecuted",
+        "reason": "CPU/fp32 runtime path is not product-relevant for <=250 ms target; no timeout retry"
       }
     },
     "dormant_contingencies": [
