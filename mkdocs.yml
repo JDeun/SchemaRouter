@@ -137,6 +137,7 @@ nav:
       - LlamaIndex: integrations/llamaindex.md
       - System One compatible: integrations/system-one.md
       - Decision backend plugins: integrations/decision-backend-plugins.md
+      - Decision-model ecosystem: integrations/decision-model-ecosystem.md
       - Jev / TypeSafe: integrations/jev.md
       - Laya decisions: integrations/laya.md
       - Ollama decisions: integrations/ollama.md
