@@ -6,8 +6,9 @@ import argparse
 import json
 import math
 import re
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 EXPECTED_TARGET = {
     "supported_exact_route_accuracy_min": 0.85,
