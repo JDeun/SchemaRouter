@@ -1,0 +1,63 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "bge-gte-threshold-free-route-consensus-v1",
+  "work_item": 336,
+  "status": "preregistered_before_execution",
+  "bge_authority": {
+    "issue": 259,
+    "workflow_run_id": 36325967632,
+    "artifact_id": 10934635124,
+    "artifact_sha256": "aabe4321e039dbb2e0b0805553e4dfd7d6c4bcf63893e23da028ceb668608462",
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "raw_registered_top1_only": true
+  },
+  "gte_consensus": {
+    "model": "Alibaba-NLP/gte-multilingual-base",
+    "revision": "087a024525fd6e2fe749cb4679d218d8bcc95bdd",
+    "schema_weight": 0.25,
+    "action_weight": 0.75,
+    "trust_remote_code": true,
+    "device": "cpu",
+    "role": "veto_only_consensus",
+    "can_change_route": false
+  },
+  "rule": {
+    "id": "global_top1_consensus",
+    "execute": "gte_raw_top1_equals_bge_raw_top1",
+    "score_threshold": null,
+    "margin_threshold": null,
+    "route_local_thresholds": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "forbidden_fresh_issues": [
+      270,
+      287,
+      326
+    ],
+    "calibration_or_blind_forbidden": true
+  },
+  "quality_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0
+  },
+  "promotion": {
+    "if_quality_pass": "freeze exact BGE+GTE executable consensus and directly measure combined planner p95 <=250ms before fresh confirmation",
+    "if_quality_fail": "reject exact consensus rule without score/margin threshold repair"
+  }
+}
