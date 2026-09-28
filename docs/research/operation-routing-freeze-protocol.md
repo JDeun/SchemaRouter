@@ -83,16 +83,18 @@ Failed confirmation corpora are permanently confirmation-only. They must never b
 
 Only a candidate that survives this independent confirmation may enter #198.
 
+Ownership is explicit:
+- **#197 owns DEV → exact freeze → independent fresh confirmation**;
+- **#198 owns calibration → one-shot blind-final** after a validated `fresh-confirmed` manifest exists.
+
 ## Calibration and blind-final
 
-#198 owns the final evidence sequence:
+After #197 has produced a validated `fresh-confirmed` manifest, #198 owns the remaining evidence sequence:
 
-1. freeze;
-2. independent fresh confirmation;
-3. new 900-case calibration corpus;
-4. one calibration evaluation;
-5. only after a calibration pass, generate a new 1,800-case blind-final corpus;
-6. evaluate blind-final exactly once.
+1. generate a new 900-case calibration corpus;
+2. evaluate calibration exactly once with the unchanged frozen candidate;
+3. only after a calibration pass, generate a new 1,800-case blind-final corpus;
+4. evaluate blind-final exactly once.
 
 Calibration and blind evidence become consumed after use and cannot be recycled into tuning.
 
