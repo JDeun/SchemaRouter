@@ -1,0 +1,189 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "lightweight-negative-veto-gte-rescue-offline-compose-v1",
+  "work_item": 322,
+  "status": "preregistered_before_execution",
+  "source_artifacts": {
+    "gte_rescue": {
+      "issue": 262,
+      "workflow_run_id": 36326745694,
+      "artifact_id": 10934337695,
+      "artifact_sha256": "7881a3594ecdab6a242a946a60cfde14d64e3c452ec9d0956c9cfa75a1e0c748",
+      "experiment": "robust-bge-m3-abstention-rescue-diagnostic-v1",
+      "variant": "gte-agreement"
+    },
+    "negative_capability": {
+      "issue": 275,
+      "workflow_run_id": 36352558325,
+      "artifact_id": 10942243493,
+      "artifact_sha256": "a831a35098b546c8003435ea04927fb8767aab1435320823ba4763e0b6608ae1",
+      "experiment": "negative-capability-prototype-veto-v1"
+    }
+  },
+  "canonical_dev": {
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "failed_270_fresh_forbidden": true,
+    "failed_287_fresh_forbidden": true,
+    "calibration_or_blind_forbidden": true
+  },
+  "route_authority": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "base_candidate": "#259 robust budget-6",
+    "comparison_epsilon": 0.000001,
+    "raw_registered_top1_only": true,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "negative_veto": {
+    "scope": "base accepted rows only",
+    "max_negative_score_min": 0.55,
+    "negative_advantage_min": 0.05,
+    "source": "#275 negative-capability evidence only; domain/OOD gate disabled",
+    "vetoed_base_accepts_rescue_eligible": false
+  },
+  "gte_rescue": {
+    "scope": "original #259 base abstentions only",
+    "model": "Alibaba-NLP/gte-multilingual-base",
+    "revision": "087a024525fd6e2fe749cb4679d218d8bcc95bdd",
+    "schema_weight": 0.25,
+    "action_weight": 0.75,
+    "same_bge_raw_winner_required": true,
+    "false_budget": 4,
+    "rules": {
+      "calendar.create": {
+        "min_gte_score": 0.5049319921240791,
+        "min_gte_margin": 0.02,
+        "max_base_score_deficit": 0.05,
+        "max_base_margin_deficit": 0
+      },
+      "calendar.list": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "finance.history": {
+        "min_gte_score": 1.000001,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "finance.quote": {
+        "min_gte_score": 0.5976878433819592,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.05,
+        "max_base_margin_deficit": 0
+      },
+      "inventory.search": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "inventory.update": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "materials.search": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "materials.structure": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "papers.citations": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "papers.search": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.02,
+        "max_base_margin_deficit": 0
+      },
+      "support.create_ticket": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0.1,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "support.search": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "users.lookup": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0.05,
+        "max_base_score_deficit": 0.02,
+        "max_base_margin_deficit": 0
+      },
+      "users.update": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.02,
+        "max_base_margin_deficit": 0
+      },
+      "weather.current": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0.1,
+        "max_base_score_deficit": 1,
+        "max_base_margin_deficit": 0
+      },
+      "weather.forecast": {
+        "min_gte_score": 0.5627313382685655,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.05,
+        "max_base_margin_deficit": 0
+      }
+    }
+  },
+  "composition_order": [
+    "use frozen #259 base decision",
+    "if base accepted, apply fixed negative veto; vetoed rows remain abstained",
+    "if base originally abstained, apply fixed GTE rescue to same raw BGE winner",
+    "never rescue a negative-vetoed base accept"
+  ],
+  "design_expectation": {
+    "supported_correct": 980,
+    "supported_exact_route_accuracy": 0.8506944444444444,
+    "near_domain_rejected": 572,
+    "near_domain_unsupported_rejection": 0.9930555555555556,
+    "out_of_domain_rejected": 72,
+    "out_of_domain_rejection": 1,
+    "false_routes": 4,
+    "false_route_rate": 0.006172839506172839
+  },
+  "runtime_feasibility": {
+    "prior_bge_negative_p95_ms": 139.79,
+    "prior_gte_p95_ms": 67.59,
+    "sequential_p95_sum_estimate_ms": 207.38,
+    "executable_measurement_required": true
+  },
+  "promotion_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0
+  }
+}
