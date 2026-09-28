@@ -23,7 +23,14 @@
       "pseudo_route": false,
       "provider_can_create_execution_authority": false
     },
-    "models": [],
+    "models": [
+      {
+        "role": null,
+        "name": null,
+        "revision": null,
+        "provider": null
+      }
+    ],
     "runtime": {
       "python": null,
       "dependency_versions": {},
