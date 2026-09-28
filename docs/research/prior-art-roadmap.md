@@ -25,7 +25,7 @@ Before creating a new routing experiment:
 | --- | ---: | --- | --- |
 | Adaptive/open decision boundaries | #384 | **terminal** | V6A positive-only spherical ADB rejected every DEV request |
 | Hard-negative OOS generation | #389 / #395 | **terminal** | V6B separated synthetic evidence but rejected every natural DEV query |
-| Energy/density/open-space scoring | #390 / #397 / #399 / #401 | **active** | V6C/V6D terminal; V6E non-parametric kNN membership active |
+| Energy/density/open-space scoring | #390 / #397 / #399 / #401 | **active research / no frozen successor** | V6C/V6D/V6E terminal; next method must be structurally different |
 | Selective/conformal abstention | #391 | deferred | Calibrate abstention only after a useful semantic membership score exists |
 | Tool/executable-schema retrieval | #392 | ongoing | Keep retrieval research aligned with the typed capability architecture |
 
@@ -146,9 +146,9 @@ Current 0.13 sequence:
 
 - **#397 / V6C — terminal tied-Gaussian density ratio.** Supported exact **93.86%**, near rejection **39.29%**, OOD rejection **56.94%**, false-route **56.79%**, zero raw-correct vetoes.
 - **#399 / V6D — terminal component Gaussian-mixture ratio.** Supported exact **89.91%**, near rejection **39.68%**, OOD rejection **5.56%**, false-route **67.90%**, zero raw-correct vetoes, p95 **250.49 ms**.
-- **#401 / V6E — active non-parametric local membership.** Fixed k=3 cosine-neighborhood comparison over the unchanged schema-positive bank, unchanged same-resource complement bank, and the pre-existing #279 16-anchor background bank. No threshold, margin, weighting, k sweep, or DEV-selected calibration.
+- **#401 / V6E — terminal non-parametric local membership.** Fixed k=3 cosine-neighborhood comparison reached supported exact **83.33%**, near rejection **60.71%**, OOD rejection **54.17%**, false-route **40.74%**, and p95 **176.50 ms**. Complement neighborhoods were informative but positive/complement manifolds still overlapped; confirmation remains unopened.
 
-V6C showed that relative evidence can preserve supported routes but one Gaussian per class collapses multimodal structure. V6D showed that simply preserving endpoint-level Gaussian modes still does not solve the synthetic-to-natural membership gap. V6E therefore removes the parametric Gaussian assumption rather than tuning V6D from consumed DEV rows.
+V6C showed that relative evidence can preserve supported routes but one Gaussian per class collapses multimodal structure. V6D showed that preserving endpoint-level Gaussian modes still does not solve the synthetic-to-natural membership gap. V6E removed the Gaussian assumption and improved unsupported recall, but remained far below the rejection targets and slightly damaged supported routing. The next experiment therefore must change the semantic signal or representation itself rather than tuning another distance threshold, neighborhood size, or Gaussian parameter from consumed DEV.
 
 ## 4. Selective prediction and conformal abstention
 
@@ -217,9 +217,10 @@ The current order is:
 1. retain **#384 / V6A** as the terminal positive-only spherical ADB reference; its confirmation stays unopened;
 2. retain **#395 / V6B** as the terminal hard-negative ellipsoid reference; its confirmation stays unopened;
 3. retain **#397 / V6C** and **#399 / V6D** as terminal relative-density controls; both confirmations stay unopened;
-4. execute **#401 / V6E**, the preregistered non-parametric kNN membership experiment from **#390**, without using V6D failed rows to tune k, evidence, thresholds, or decision order;
-5. if a useful semantic membership score exists, evaluate selective/conformal safety from **#391**;
-6. continuously maintain ToolRet/ToolReAGt architectural alignment in **#392**.
+4. retain **#401 / V6E** as the terminal non-parametric local-neighborhood reference; its confirmation stays unopened;
+5. before opening a successor, search prior art and repository history for a materially different semantic representation or membership signal; do not tune k, thresholds, weighting, background anchors, or schema wording from V6E DEV;
+6. if a useful semantic membership score exists, evaluate selective/conformal safety from **#391**;
+7. continuously maintain ToolRet/ToolReAGt architectural alignment in **#392**.
 
 This order is not a claim that later methods are superior. It is the governance sequence that avoids
 mixing hypotheses and reusing evidence.
