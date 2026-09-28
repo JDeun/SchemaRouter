@@ -11,7 +11,6 @@ from dataclasses import dataclass
 from typing import Any, Callable, Iterable
 
 from benchmarks.registry_capability_contract import (
-    ACTION_FAMILIES,
     ACTION_PROTOTYPES,
     TEMPORAL_PROTOTYPES,
     CapabilityContract,
@@ -699,10 +698,12 @@ def _raw_schema_text(tool: Any, endpoint: Any) -> str:
 
 def _raw_action_text(endpoint: Any) -> str:
     operation_name = endpoint.name.replace("_", " ").replace("-", " ")
+    aliases = list(endpoint.operation_aliases)
+    descriptive_fallback = endpoint.description.strip() if not aliases else ""
     return "\n".join(
         dict.fromkeys(
             part
-            for part in [operation_name, *endpoint.operation_aliases]
+            for part in [operation_name, *aliases, descriptive_fallback]
             if part
         )
     )
@@ -711,14 +712,22 @@ def _raw_action_text(endpoint: Any) -> str:
 class RegistryCapabilityVerifier:
     """Raw BGE top-1 route authority plus a generic learned veto gate."""
 
-    def __init__(self, registry: Any, embedder: Embedder) -> None:
+    def __init__(
+        self,
+        registry: Any,
+        embedder: Embedder,
+        *,
+        generic_state: tuple[GenericHead, dict[str, Any]] | None = None,
+    ) -> None:
         self.registry = registry
         self.embedder = embedder
         self.contracts = compile_registry(registry)
         if not self.contracts:
             raise ValueError("registry must contain at least one endpoint")
 
-        self.head, prototype_bundle = fit_generic_head(embedder)
+        self.head, prototype_bundle = (
+            generic_state if generic_state is not None else fit_generic_head(embedder)
+        )
         self.action_vectors = prototype_bundle["action_vectors"]
         self.temporal_vectors = prototype_bundle["temporal_vectors"]
 
