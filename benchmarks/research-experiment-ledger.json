@@ -2778,6 +2778,87 @@
         "semantic decomposition",
         "unscored confirmation discipline"
       ]
+    },
+    {
+      "id": "0.12-independent-per-capability-entailment-v1",
+      "cycle": "0.12-independent-capability-entailment",
+      "issue": 377,
+      "pull_request": 379,
+      "branch": "research/0.12-independent-capability-entailment",
+      "preregistered": true,
+      "hypothesis": "Judge every registered capability leaf independently with a pinned multilingual NLI model; preserve frozen BGE-M3 raw top-1 if any registered leaf is entailed, otherwise veto to NO_ROUTE.",
+      "external_model": {
+        "name": "Horizon-Labs/multilingual-zeroshot-small",
+        "revision": "d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4",
+        "role": "independent binary entailment over registered capability leaves only"
+      },
+      "freeze": {
+        "workflow_run_id": 36424007584,
+        "source_revision": "b545999528b17a2782c76e6b6e546703b7b11da5",
+        "artifact_id": 10970381458,
+        "artifact_sha256": "48afeead8687eb7d28aa2fce30485a017a368b2b5119b1278a162f7badad45af"
+      },
+      "data_protocol": {
+        "development": {
+          "cases": 552,
+          "supported_cases": 228,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "c68bf11e52f960a7c8600d9d36b7fe13ab0b7b6e215a87f5b2bcffb783a67310"
+        },
+        "confirmation": {
+          "cases": 552,
+          "supported_cases": 228,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "ac4be0d6febda04fea60ae351691dfeebb932c1ec1161f14cf7754c44f49eefd",
+          "scored": false
+        }
+      },
+      "result": {
+        "workflow_run_id": 36424336147,
+        "source_revision": "a872c9602dcad959ea1bf10f16a052592754d4ae",
+        "artifact_id": 10971456253,
+        "artifact_sha256": "153781b690336a863de5a4ad2f2a7cb0793a01718d5d6c053bcd99a3dd66a937",
+        "development": {
+          "supported_exact_route_accuracy": 0.45614035087719296,
+          "raw_supported_exact_route_accuracy": 0.9649122807017544,
+          "raw_supported_tool_accuracy": 1,
+          "near_domain_unsupported_rejection": 0.7103174603174603,
+          "out_of_domain_rejection": 0.9583333333333334,
+          "false_route_rate": 0.2345679012345679,
+          "false_routes": 76,
+          "vetoes": 371,
+          "true_unsupported_vetoes": 248,
+          "veto_precision": 0.6684636118598383,
+          "veto_recall": 0.7654320987654321,
+          "raw_correct_winner_vetoed": 116,
+          "raw_correct_winner_veto_rate": 0.5272727272727272,
+          "zero_entailment_count": 371,
+          "nli_p95_ms": 79.5342603,
+          "p95_latency_ms": 278.09170140000003,
+          "positive_route_switches": 0,
+          "authority_violations": 0,
+          "execution_errors": 0
+        }
+      },
+      "decision": "terminal_rejected_independent_entailment_over_veto",
+      "failure_reason": "Independent registered-leaf NLI materially improved unsupported recall but failed to entail any registered leaf for too many truly supported requests, vetoing 52.73% of raw-correct winners and missing both quality and latency gates.",
+      "interpretation": [
+        "Per-capability decomposition is more informative than one aggregate set hypothesis.",
+        "Negative-only authority still prevents route switching and execution-authority violations.",
+        "Independent binary argmax is too brittle as a membership rule because supported queries often receive zero entailment.",
+        "The frozen confirmation surface remains unopened.",
+        "The preregistered #378 supported-vs-counterfactual max comparison is the next admissible formulation."
+      ],
+      "paper_relevance": [
+        "per-capability NLI membership",
+        "negative-only authority",
+        "supported-winner over-veto",
+        "open-set recall tradeoff",
+        "runtime evidence",
+        "unscored confirmation discipline"
+      ]
     }
   ],
   "current_research_conclusion": {
@@ -2794,7 +2875,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": null,
+    "active_experiment": 378,
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -2922,7 +3003,8 @@
     "asymmetric_ontology_veto_status": "#358 preserved raw BGE positive selection exactly (96.05% exact, zero raw-correct winner vetoes) and achieved 99.22% veto precision, but same-leaf agreement recall was only 39.51%; exact rule rejected.",
     "capability_set_membership_status": "#363 raised veto recall to 64.20% while preserving 86.40% supported exact, but near rejection remained 54.76%, false-route 35.80%, and 18 raw-correct winners were vetoed; further rule tuning over the same BGE/MiniLM projections is closed.",
     "external_zeroshot_membership_status": "#371 preserved supported routing (93.42%) but OUTSIDE won only 7/552 rows; near rejection 1.59%, false-route 98.15%, p95 274.52 ms. Exact multiclass formulation rejected.",
-    "set_conditioned_entailment_status": "#374 returned not_entailment on all 552 DEV cases, preserving zero false routes but collapsing supported exact to 0%; exact formulation rejected."
+    "set_conditioned_entailment_status": "#374 returned not_entailment on all 552 DEV cases, preserving zero false routes but collapsing supported exact to 0%; exact formulation rejected.",
+    "independent_capability_entailment_status": "#377 raised veto recall to 76.54% but collapsed supported exact to 45.61%, vetoing 116 raw-correct winners; exact independent-pair argmax rule rejected."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
