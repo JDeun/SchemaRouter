@@ -240,8 +240,9 @@ def _cluster(action: str | None) -> str | None:
 @dataclass(frozen=True)
 class CompiledVectors:
     contract: CapabilityContract
-    schema_vector: list[float]
-    action_vector: list[float]
+    route_schema_vector: list[float]
+    route_action_vector: list[float]
+    capability_action_vector: list[float]
     object_vector: list[float]
     contract_vector: list[float]
     counterfactual_vectors: dict[str, list[float]]
@@ -280,7 +281,10 @@ def _synthetic_contract(
         adapter=None,
         operation_text=operation_text,
         object_text=object_text,
+        data_contract_text="",
         contract_text=contract_text,
+        input_fields=(),
+        output_fields=(),
         declared_action=action,
         temporal_scope=temporal_scope,
         read_only=read_only,
@@ -330,7 +334,7 @@ def _features(
 ) -> tuple[list[float], dict[str, Any]]:
     contract = compiled.contract
     contract_score = _dot(query_vector, compiled.contract_vector)
-    action_score = _dot(query_vector, compiled.action_vector)
+    action_score = _dot(query_vector, compiled.capability_action_vector)
     object_score = _dot(query_vector, compiled.object_vector)
 
     counter_scores = {
@@ -435,8 +439,9 @@ def _compile_vectors(
         counter_vectors = vectors[start + 3 : start + 3 + counter_count]
         result[contract.route_id] = CompiledVectors(
             contract=contract,
-            schema_vector=vectors[start],
-            action_vector=vectors[start + 1],
+            route_schema_vector=vectors[start],
+            route_action_vector=vectors[start + 1],
+            capability_action_vector=vectors[start + 1],
             object_vector=vectors[start + 2],
             contract_vector=vectors[start],
             counterfactual_vectors=dict(
@@ -586,7 +591,10 @@ def fit_generic_head(embedder: Embedder) -> tuple[GenericHead, dict[str, Any]]:
                     adapter=contract.adapter,
                     operation_text=contract.operation_text,
                     object_text=contract.object_text,
+                    data_contract_text=contract.data_contract_text,
                     contract_text=contract.contract_text,
+                    input_fields=contract.input_fields,
+                    output_fields=contract.output_fields,
                     declared_action=contract.declared_action,
                     temporal_scope=contract.temporal_scope,
                     read_only=contract.read_only,
@@ -740,8 +748,9 @@ class RegistryCapabilityVerifier:
             current = contract_vectors[route_id]
             contract_vectors[route_id] = CompiledVectors(
                 contract=current.contract,
-                schema_vector=raw_schema_vectors[route_id],
-                action_vector=raw_action_vectors[route_id],
+                route_schema_vector=raw_schema_vectors[route_id],
+                route_action_vector=raw_action_vectors[route_id],
+                capability_action_vector=current.capability_action_vector,
                 object_vector=current.object_vector,
                 contract_vector=current.contract_vector,
                 counterfactual_vectors=current.counterfactual_vectors,
@@ -754,8 +763,8 @@ class RegistryCapabilityVerifier:
         ranked: list[tuple[str, float]] = []
         for route_id in self.route_ids:
             compiled = self.compiled[route_id]
-            schema_score = _dot(query_vector, compiled.schema_vector)
-            action_score = _dot(query_vector, compiled.action_vector)
+            schema_score = _dot(query_vector, compiled.route_schema_vector)
+            action_score = _dot(query_vector, compiled.route_action_vector)
             fused = SCHEMA_WEIGHT * schema_score + ACTION_WEIGHT * action_score
             ranked.append((route_id, fused))
         ranked.sort(key=lambda item: (-item[1], item[0]))
