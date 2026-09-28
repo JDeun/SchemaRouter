@@ -1420,33 +1420,127 @@ The architectural invariant remains:
 
 > Semantic models may rank or veto only among locally registered authority. They do not create execution authority.
 
-## 38. Active experiment — grouped-OOF learned winner verifier
+## 38. #285 — grouped-OOF learned winner verifier
 
-Work item #285 / PR #286 is the first experiment after the fixed-prototype stopping rule.
+Work item #285 / PR #286 tested the first learned open-set boundary after the fixed-prototype stopping rule.
 
-The learned component is deliberately **not a router**. BGE-M3 raw registered global top-1 remains the sole route authority. The verifier only estimates whether that already-selected winner matches the request:
+The learned component was deliberately **not a router**. BGE-M3 raw registered global top-1 remained the sole route authority. The verifier could only output:
 
-- `match` permits the raw winner;
-- `no_match` abstains;
-- `unknown` abstains;
-- no rank-2 fallback;
-- no route switching;
-- no semantic authority creation.
+- `match` — permit the already-selected raw winner;
+- `no_match` — abstain;
+- `unknown` — abstain.
 
-To reduce surface memorization, evaluation uses six-fold **leave-one-language-out OOF** over `de/en/es/ja/ko/mixed`. Language is a grouping variable only and is forbidden as a model feature.
+No rank-2 fallback, route switching, pseudo-route, or semantic authority creation was allowed.
 
-The fixed feature schema contains 19 runtime-observable BGE/prototype geometry values plus one-hot raw winner route ID. Query text, benchmark IDs, expected route, category, language and unsupported-family labels are forbidden as classifier features.
+### Evaluation protocol
 
-Two classifier families and twelve acceptance thresholds were preregistered before execution:
+To reduce surface memorization, the experiment used six-fold **leave-one-language-out OOF** over:
+
+- de;
+- en;
+- es;
+- ja;
+- ko;
+- mixed.
+
+Language was a grouping variable only and was forbidden as a model feature.
+
+The fixed feature schema contained:
+
+- 19 runtime-observable BGE/prototype geometry values;
+- one-hot raw winner route ID.
+
+Forbidden classifier features included query text, benchmark IDs, expected route, category, language and unsupported-family labels.
+
+Exactly two classifier families and twelve thresholds were preregistered, for **24 fixed rules**:
 
 - regularized logistic regression;
 - shallow regularized histogram gradient boosting;
-- thresholds `0.50..0.995` from the fixed #285 grid;
-- total fixed learned rules: **24**.
+- thresholds from **0.50** to **0.995**.
 
-A passing OOF rule will still not unblock calibration. It must first be frozen, trained once on the full original tuning DEV, exported deterministically, and confirmed on a **new zero-overlap fresh-surface DEV distinct from #270**.
+### Result
 
-If all 24 learned rules fail, do not add more complexity to the same DEV geometry. Move to an externally pretrained semantic capability verifier.
+Three preregistered rules passed the full **85/97/1/100** DEV target under grouped OOF.
 
-Active workflow: `36360031386`.
-\n
+Selected rule by preregistered ordering:
+
+- **HGB @ p_match >= 0.50**;
+- supported exact: **1000/1152 = 86.8056%**;
+- near-domain rejection: **573/576 = 99.4792%**;
+- OOD rejection: **72/72 = 100%**;
+- false-route: **3/648 = 0.4630%**;
+- combined mean / p95 latency: **158.02 / 171.76 ms**;
+- authority violations / errors: **0 / 0**.
+
+Verifier discrimination:
+
+- logistic ROC-AUC: **0.98803**;
+- logistic average precision: **0.98871**;
+- HGB ROC-AUC: **0.98797**;
+- HGB average precision: **0.98902**.
+
+Per-language supported exact for the selected held-out predictions ranged from:
+
+- **81.77%** on de;
+- to **91.15%** on mixed.
+
+Per-language unsupported rejection remained approximately **99.07–100%**.
+
+Decision: **promote HGB p=0.50 to a separate frozen candidate**.
+
+This is the first 0.11 open-set design to pass the long-term target under a grouped OOF protocol without query-text features or benchmark labels.
+
+Provenance:
+
+- workflow: `36360129634`;
+- source revision: `cfaafb84bb651a6d6d38c4ce741f05ac61f37e9e`;
+- artifact: `10945581502`;
+- artifact digest: `sha256:eb417bb3aafa4d2f86aee4e79476ea64f49a2a3608269835d4d3b82f971d8054`.
+
+## 39. Active candidate — frozen HGB winner verifier
+
+Work item #287 / PR #288 freezes the #285-selected rule without post-result changes.
+
+Frozen selection:
+
+- `HistGradientBoostingClassifier`;
+- acceptance threshold **0.50**;
+- scikit-learn **1.7.2**;
+- the same 19 continuous geometry features;
+- raw winner route ID as the only categorical feature;
+- no query text or label-derived features.
+
+The confirmation workflow must:
+
+1. regenerate and verify the original tuning DEV;
+2. fit the selected verifier **exactly once** on all 1,800 original tuning rows;
+3. serialize that one fitted pipeline to a joblib file;
+4. compute and record its SHA-256;
+5. reuse the identical serialized file without refit for same-corpus confirmation;
+6. generate a new zero-overlap fresh-surface DEV using a seed and wrapper family distinct from #270;
+7. reuse the identical serialized model again for fresh-surface confirmation.
+
+Fresh confirmation seed:
+
+`operation-routing-quality-v4-learned-verifier-confirmation-2026-09-28-a`
+
+Fresh wrapper family:
+
+`learned-verifier-confirmation-wrappers-v1`
+
+Both same-corpus and fresh-surface confirmation must pass unchanged:
+
+- supported exact >= **85%**;
+- near-domain rejection >= **97%**;
+- OOD rejection = **100%**;
+- false-route <= **1%**;
+- authority violations/errors = **0**;
+- combined p95 <= **250 ms**.
+
+A fresh-surface pass unblocks #198. A fresh-surface failure ends additional learned-complexity tuning on this DEV geometry and moves the research path to an externally pretrained semantic capability verifier.
+
+Calibration/blind evidence remains untouched.
+
+The architectural invariant remains:
+
+> Learned semantic evidence may veto the locally registered raw winner, but it never creates or changes execution authority.
