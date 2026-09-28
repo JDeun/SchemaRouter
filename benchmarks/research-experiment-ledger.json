@@ -2108,6 +2108,73 @@
         "diagnostic_total_p95_ms": 398.68482555
       },
       "interpretation": "token-level ColBERT/sparse operation evidence has signal but safe global boundaries collapse supported recall; representation also misses <=250 ms CPU runtime"
+    },
+    {
+      "id": "0.11-bge-m3-registry-alias-envelope",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 332,
+      "pull_request": 333,
+      "preregistered": true,
+      "status": "completed",
+      "decision": "reject",
+      "source_revision": "fa091f43296eb1ca680f39921010482275bb4cda",
+      "workflow_run_id": 36388641609,
+      "artifact_id": 10955736650,
+      "artifact_sha256": "21166d8c10009401b34380e6e24ddbcdcf4ec06c760d86b4d19eaf99930a1e1e",
+      "design": {
+        "model": "BAAI/bge-m3",
+        "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "route_authority": "dense BGE-M3 raw registered top-1",
+        "gate_evidence": "normalized endpoint name + trusted operation_aliases only",
+        "boundary_source": "registry alias self-cohesion and same-tool sibling separation",
+        "additional_query_model_calls": 0,
+        "rule_families": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "dev_fitted_threshold": false,
+        "forbidden_fresh_issues": [
+          270,
+          287,
+          326
+        ]
+      },
+      "invalid_pre_runs": [
+        {
+          "workflow_run_id": 36388457554,
+          "reason": "numpy ndarray truth-value bug during static registry-floor derivation; failed before row scoring, no model-quality evidence"
+        }
+      ],
+      "result": {
+        "dense_raw_supported_top1_accuracy": 0.8845486111111112,
+        "dense_route_parity_mismatches": 0,
+        "authority_violations": 0,
+        "execution_errors": 0,
+        "candidate_worthy_rule_count": 0,
+        "family_A_exact": 0.8489583333333334,
+        "family_A_near_rejection": 0.11979166666666667,
+        "family_A_ood_rejection": 0.18055555555555555,
+        "family_A_false_route_rate": 0.8734567901234568,
+        "family_B_exact": 0.7230902777777778,
+        "family_B_near_rejection": 0.24131944444444445,
+        "family_B_ood_rejection": 0.6805555555555556,
+        "family_B_false_route_rate": 0.7098765432098766,
+        "family_C_exact": 0.24305555555555555,
+        "family_C_near_rejection": 0.984375,
+        "family_C_ood_rejection": 1,
+        "family_C_false_route_rate": 0.013888888888888888,
+        "family_D_exact": 0.23524305555555555,
+        "family_D_near_rejection": 0.984375,
+        "family_D_ood_rejection": 1,
+        "family_D_false_route_rate": 0.013888888888888888,
+        "query_encode_p95_ms": 192.3928082,
+        "dense_scoring_p95_ms": 4.6238156,
+        "alias_scoring_p95_ms": 1.1577791,
+        "total_p95_ms": 198.07140665
+      },
+      "interpretation": "Registry-derived alias geometry is deployment-realistic but cannot simultaneously preserve supported recall and enforce the <=1% false-route boundary. This family is terminal without DEV-fitted repair."
     }
   ],
   "current_research_conclusion": {
@@ -2116,15 +2183,15 @@
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
       "keep #198 blocked; no calibration or blind-final without a new fresh-confirmed frozen candidate",
-      "do not reuse #270/#287/#326 fresh rows for tuning or candidate design",
-      "do not extend the rejected BGE-M3 ColBERT/sparse operation-contract family with post-hoc second thresholds, route-local exceptions, or margin search",
-      "next behavior-changing experiment must be separately preregistered from canonical tuning DEV plus registry-defined operational semantics and must be deployment-realistic at <=250 ms"
+      "do not reuse #270/#287/#326 fresh rows for tuning, threshold repair, feature construction, or model selection",
+      "do not extend the rejected dense-threshold, negative-prototype, learned-verifier, ColBERT/sparse, or registry-alias-envelope families with post-hoc route/language/family exceptions",
+      "any next behavior-changing experiment must introduce a materially new information source or representation independent of the current dense-score/alias geometry, be separately preregistered, and have a credible <=250 ms serving path"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "none; #328/#329 terminally rejected",
+    "active_experiment": "none; #332/#333 terminally rejected",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -2215,7 +2282,9 @@
       }
     },
     "colbert_operation_contract_status": "#328/#329 rejected: 0 candidate-worthy rules; <=1% false-route frontier preserves only ~38.6-38.7% exact; executable p95 ~398.61 ms.",
-    "colbert_status": "#328 rejected: safe ColBERT score frontiers retain only ~38.6-38.7% exact at <=1% false routes; executable p95 ~398.6 ms. Sparse diagnostic also non-viable."
+    "colbert_status": "#328 rejected: safe ColBERT score frontiers retain only ~38.6-38.7% exact at <=1% false routes; executable p95 ~398.6 ms. Sparse diagnostic also non-viable.",
+    "registry_alias_envelope_status": "#332/#333 rejected: 0 candidate-worthy rules. Runtime passed at ~198.07 ms p95, but A preserved 84.90% exact with 87.35% false-route while C/D reached 98.44% near rejection / 100% OOD only by collapsing exact to ~24% and still missing the <=1% false-route budget at 1.39%.",
+    "cycle_status": "0.11 candidate search currently has no promotable frozen candidate after three fresh-generalization failures and terminal ColBERT/registry-alias representation tests."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
