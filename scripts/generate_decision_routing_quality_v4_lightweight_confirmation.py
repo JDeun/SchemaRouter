@@ -144,6 +144,7 @@ def _transform(
     seed: str,
     surface: str,
     wrappers_by_language: dict[str, tuple[str, ...]],
+    add_split_marker: bool,
 ) -> list[dict[str, object]]:
     cases = v4._build(seed)
     transformed: list[dict[str, object]] = []
@@ -179,6 +180,7 @@ def build_confirmation() -> tuple[list[dict[str, object]], dict[str, object]]:
             seed=seed,
             surface=surface,
             wrappers_by_language=wrappers,
+            add_split_marker=False,
         )
         actual_sha = _payload_sha(prior)
         if actual_sha != expected_sha:
@@ -196,6 +198,7 @@ def build_confirmation() -> tuple[list[dict[str, object]], dict[str, object]]:
         seed=FRESH_SEED,
         surface=SURFACE_VERSION,
         wrappers_by_language=WRAPPERS,
+        add_split_marker=True,
     )
     # Reuse the v4 structural/label-leak validation. This surface is confirmation-only.
     v4._validate(transformed)
