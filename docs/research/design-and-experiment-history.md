@@ -2105,3 +2105,41 @@ This is a tuning-DEV offline artifact composition, not executable or generalizat
 If #324 passes, the next step is no longer architecture search: create the #316 freeze manifest and
 run a new zero-overlap fresh confirmation distinct from #270/#287.
 
+### Lightweight executable candidate passes DEV — #324/#325
+
+The offline #322 composition was executed directly in workflow `36380771103` at semantic source
+`caca039aff1c7b2960d167196f883e3bcbc5d431`.
+
+Artifact `10952711288`, digest
+`sha256:4ad9d0cc76500dd8705e0db0f677a21e44dbebb74cc3a9ca097723eb453abdc3`.
+
+Result:
+- exact 85.0694%;
+- near-domain rejection 99.3056%;
+- OOD 100%;
+- false-route 0.6173%;
+- authority/errors 0/0;
+- offline row-level parity mismatches 0;
+- BGE p95 134.05 ms;
+- conditional GTE p95 54.39 ms;
+- end-to-end p95 176.94 ms;
+- GTE invoked on 42.61% of rows.
+
+This is the first current-cycle executable candidate to pass quality, authority/parity, and the standing
+250 ms runtime gate simultaneously.
+
+### Exact freeze and new fresh confirmation — #326/#327
+
+The candidate was frozen with a machine-readable `frozen-dev` manifest. Representation digests and
+the canonical production target validated successfully.
+
+Before fresh execution, a new confirmation surface was preregistered:
+- seed `operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a`;
+- surface `lightweight-bge-gte-operational-envelope-v1`;
+- confirmation-only, not tuning-eligible;
+- normalized exact overlap required to be zero against canonical DEV and deterministically regenerated
+  #270/#287 fresh surfaces;
+- frozen evaluator/manifest must be byte-diff clean against semantic source `caca039…`.
+
+Active fresh workflow: `36382202178`.
+
