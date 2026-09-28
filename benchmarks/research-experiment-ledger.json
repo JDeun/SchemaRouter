@@ -2561,6 +2561,71 @@
         "supported-winner preservation",
         "unscored confirmation discipline"
       ]
+    },
+    {
+      "id": "0.12-capability-set-membership-consensus-v1",
+      "cycle": "0.12-capability-set-membership-veto",
+      "issue": 363,
+      "pull_request": 364,
+      "branch": "research/0.12-capability-set-membership-veto",
+      "preregistered": true,
+      "hypothesis": "Replace exact unsupported-leaf agreement with anchored-tool capability-set membership consensus while preserving frozen BGE-M3 as the sole positive route selector.",
+      "freeze": {
+        "workflow_run_id": 36415762115,
+        "source_revision": "a1a9eb20622dd8a47082ca8fa5cd02c52d27e653",
+        "artifact_id": 10966724823,
+        "artifact_sha256": "d957f82e29bdec0723fb0dda0622098563354a8ecdb45e8108b4633bc3bc6915"
+      },
+      "data_protocol": {
+        "development": {
+          "cases": 552,
+          "supported_cases": 228,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "1d3d18975b33156d97f3b4fd518158cba418c449fae01e864977f8bdf77b5e62"
+        },
+        "confirmation": {
+          "cases": 552,
+          "supported_cases": 228,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "ba92c3c25da3601bd50f580dcfaf7b512ec2e26971e10ec9e501bb59cbf35d37",
+          "scored": false
+        }
+      },
+      "result": {
+        "workflow_run_id": 36415951667,
+        "source_revision": "f198f896c44860c27ce14b4c88200096ef0b754f",
+        "artifact_id": 10967871097,
+        "artifact_sha256": "799006f7d69b94a29bfa0cfc62384ca2a8640cba668ac69e04ab2702a08f3f93",
+        "development": {
+          "supported_exact_route_accuracy": 0.8640350877192983,
+          "raw_supported_exact_route_accuracy": 0.9429824561403509,
+          "raw_supported_tool_accuracy": 0.9956140350877193,
+          "near_domain_unsupported_rejection": 0.5476190476190477,
+          "out_of_domain_rejection": 0.9722222222222222,
+          "false_route_rate": 0.35802469135802467,
+          "false_routes": 116,
+          "veto_precision": 0.9122807017543859,
+          "veto_recall": 0.6419753086419753,
+          "raw_correct_winner_vetoed": 18,
+          "raw_correct_winner_veto_rate": 0.08372093023255814,
+          "positive_route_switches": 0,
+          "p95_latency_ms": 249.73025514999995,
+          "authority_violations": 0,
+          "execution_errors": 0
+        }
+      },
+      "decision": "terminal_rejected_membership_consensus_insufficient",
+      "failure_reason": "Capability-set consensus improved veto recall versus exact-leaf agreement but remained far below the open-set target and began vetoing correct supported winners; the same BGE/MiniLM ontology-projection evidence family is closed for further rule tuning on consumed DEV.",
+      "paper_relevance": [
+        "capability-set membership",
+        "negative-only ontology authority",
+        "precision-recall tradeoff",
+        "supported-winner preservation boundary",
+        "typed unit-bearing registration",
+        "unscored confirmation discipline"
+      ]
     }
   ],
   "current_research_conclusion": {
@@ -2702,7 +2767,8 @@
     "final_finding": "The remaining bottleneck is surface-invariant capability membership/open-set rejection, not registered-route ranking capacity. Repeated tuning on the current DEV is no longer justified.",
     "successor_rule": "Any later cycle must introduce a materially new source of capability evidence and a new preregistered protocol; it must not repair from #270/#287/#326 fresh rows or extend terminal 0.11 families post hoc.",
     "bge_gte_consensus_status": "#336/#337 rejected: 81.34% exact / 43.58% near rejection / 81.94% OOD / 52.16% false-route.",
-    "asymmetric_ontology_veto_status": "#358 preserved raw BGE positive selection exactly (96.05% exact, zero raw-correct winner vetoes) and achieved 99.22% veto precision, but same-leaf agreement recall was only 39.51%; exact rule rejected."
+    "asymmetric_ontology_veto_status": "#358 preserved raw BGE positive selection exactly (96.05% exact, zero raw-correct winner vetoes) and achieved 99.22% veto precision, but same-leaf agreement recall was only 39.51%; exact rule rejected.",
+    "capability_set_membership_status": "#363 raised veto recall to 64.20% while preserving 86.40% supported exact, but near rejection remained 54.76%, false-route 35.80%, and 18 raw-correct winners were vetoed; further rule tuning over the same BGE/MiniLM projections is closed."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",

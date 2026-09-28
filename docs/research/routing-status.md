@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **64** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **65** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [machine-readable ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — exact provenance index.
@@ -178,6 +178,37 @@ supported routing when it is not allowed to choose another endpoint, but requiri
 agreement across independent signals is far too conservative to provide enough unsupported recall.
 
 The exact #358 rule is terminal. Its frozen confirmation corpus remains **unscored**.
+
+## 0.12 capability-set membership consensus
+
+Experiment #363 relaxed #358's exact unsupported-leaf agreement into a finite-set membership question:
+each independent signal only had to agree that the requested capability lay outside the anchored
+tool's registered capability set. Raw BGE-M3 remained the sole positive selector; ontology evidence
+could only return `NO_ROUTE`.
+
+DEV result:
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **86.40%** |
+| Raw supported exact | **94.30%** |
+| Raw supported tool accuracy | **99.56%** |
+| Near-domain unsupported rejection | **54.76%** |
+| OOD rejection | **97.22%** |
+| False-route | **35.80%** |
+| Veto precision | **91.23%** |
+| Veto recall | **64.20%** |
+| Raw-correct winners vetoed | **18 / 8.37%** |
+| p95 | **249.73 ms** |
+| Positive route switches / authority / execution errors | **0 / 0 / 0** |
+
+Set-level consensus materially improved recall over #358 (39.51% -> 64.20%), but still missed the
+97% near-domain target and began rejecting correct supported winners. This closes further rule
+tuning over the same BGE/MiniLM ontology-projection evidence family on consumed DEV.
+
+The exact #363 rule is terminal. Its separately frozen 552-case confirmation corpus remains
+**unscored**. A successor must introduce a materially different semantic membership signal rather
+than another threshold or agreement variant over the same projections.
 
 ## Reproducibility
 
