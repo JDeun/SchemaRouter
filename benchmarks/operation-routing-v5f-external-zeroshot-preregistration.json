@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "cycle": "0.12-external-zeroshot-membership",
+  "experiment": "external-multilingual-zeroshot-membership-v1",
+  "issue": 371,
+  "parent_issue": 340,
+  "status": "preregistered_before_corpus_generation_or_scoring",
+  "bge": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "authority": "sole positive route selector"
+  },
+  "external_classifier": {
+    "model": "Horizon-Labs/multilingual-zeroshot-small",
+    "revision": "v1.1",
+    "resolved_commit_sha": null,
+    "architecture": "mmBERT/ModernBERT sequence-pair classifier",
+    "parameter_class_millions": 141,
+    "hypothesis_template": "The user wants to {}.",
+    "multi_label": false,
+    "outside_label": "request an operation outside the registered capabilities of this tool",
+    "threshold": null,
+    "margin_threshold": null,
+    "learned_on_schemarouter": false
+  },
+  "authority": {
+    "endpoint_selection_from_external_classifier": false,
+    "positive_rerank": false,
+    "endpoint_filter": false,
+    "cross_tool_fallback": false,
+    "pseudo_route": false,
+    "veto_only": true,
+    "unknown_endpoint_semantics_disables_veto": true
+  },
+  "typed_contract": {
+    "preserves": [
+      "semantic_id",
+      "json datatype/shape",
+      "source unit",
+      "canonical unit",
+      "dimension",
+      "scale",
+      "offset",
+      "qualifiers",
+      "identifier role"
+    ]
+  },
+  "data_protocol": {
+    "forbidden": [
+      "0.11 consumed/fresh evidence",
+      "#338 labels",
+      "#347 DEV/confirmation",
+      "#349 DEV/confirmation",
+      "#354 DEV/confirmation",
+      "#358 DEV/confirmation",
+      "#363 DEV/confirmation",
+      "#198 calibration",
+      "#198 blind"
+    ],
+    "development": {
+      "role": "new 0.12-F screen",
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "role": "frozen confirmation only",
+      "generated_before_development_scoring": true,
+      "corpus_sha256": null
+    }
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "positive_route_switches_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "dev_fail": "terminal reject without label/template/threshold repair from DEV rows",
+    "quality_pass_latency_fail": "runtime-only ONNX optimization allowed only under separate preregistration and row-level decision parity",
+    "dev_pass": "freeze exact source plus resolved external model SHA and open already-generated confirmation",
+    "confirmation_fail": "terminal reject",
+    "both_pass": "eligible for brand-new zero-overlap natural-language fresh confirmation"
+  }
+}
