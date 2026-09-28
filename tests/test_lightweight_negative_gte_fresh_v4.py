@@ -99,3 +99,17 @@ def test_fresh_gate_rejects_quality_or_runtime_failure() -> None:
     summary["supported_exact_route_accuracy"] = 0.86
     summary["total_latency_ms"]["p95"] = 251.0
     assert module._fresh_gate(summary, manifest) is False
+
+
+def test_new_surface_adds_split_marker_without_changing_prior_payloads() -> None:
+    module = _load(
+        "fresh_surface_split_contract",
+        "scripts/generate_decision_routing_quality_v4_lightweight_confirmation.py",
+    )
+    cases, metadata = module.build_confirmation()
+
+    assert all(case.get("split") == "fresh_confirmation" for case in cases)
+    assert metadata["prior_surface_regeneration_verified"] == {
+        "zero-false-confirmation-wrappers-v1": True,
+        "learned-verifier-confirmation-wrappers-v1": True,
+    }
