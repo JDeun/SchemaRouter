@@ -2705,3 +2705,42 @@ membership.
 Decision: **terminal reject** of the exact agreement rule. No failed row is used to add phrases,
 rewrite prototypes, tune thresholds or create route-specific exceptions. The already-generated
 confirmation corpus remains unopened.
+
+
+## 58. #363 — capability-set membership consensus improves recall but remains unsafe
+
+#363 kept #358's strongest architectural invariant: the frozen BGE-M3 raw top-1 remained the sole
+positive route selector. Ontology evidence could only preserve that winner or veto to `NO_ROUTE`.
+
+The preregistered change replaced exact unsupported-leaf agreement with finite anchored-tool
+capability-set membership. Each signal was mapped against the tool's registered leaf set as
+`SUPPORTED`, `OUTSIDE_SET`, or `UNKNOWN`.
+
+Frozen evidence:
+- freeze workflow `36415762115`;
+- behavior/corpus source `a1a9eb20622dd8a47082ca8fa5cd02c52d27e653`;
+- freeze artifact `10966724823`;
+- DEV SHA256 `1d3d18975b33156d97f3b4fd518158cba418c449fae01e864977f8bdf77b5e62`;
+- confirmation SHA256 `ba92c3c25da3601bd50f580dcfaf7b512ec2e26971e10ec9e501bb59cbf35d37`.
+
+DEV workflow `36415951667` produced:
+- supported exact **86.4035%**;
+- raw BGE exact **94.2982%**;
+- raw BGE tool accuracy **99.5614%**;
+- near-domain unsupported rejection **54.7619%**;
+- OOD rejection **97.2222%**;
+- false-route **35.8025%**;
+- veto precision **91.2281%**;
+- veto recall **64.1975%**;
+- 18 raw-correct supported winners vetoed (**8.3721%**);
+- p95 **249.7303 ms**;
+- authority violations / positive route switches / execution errors **0 / 0 / 0**.
+
+Compared with #358, set-level agreement raised veto recall substantially, confirming that exact leaf
+identity was unnecessarily strict. However, the same BGE/MiniLM ontology-projection evidence family
+still did not establish the required open-set membership boundary and began rejecting correct
+supported winners.
+
+Decision: **terminal reject**. No failed-row, language, route, confusion-pair, or score-distribution
+repair is allowed. The already-frozen confirmation surface remains unopened. A successor must use a
+materially different semantic membership evidence source.
