@@ -412,6 +412,7 @@ def evaluate(
         MODEL_NAME,
         revision=MODEL_REVISION,
         trust_remote_code=False,
+        device="cpu",
     )
     model_load_ms = (time.perf_counter_ns() - load_started) / 1_000_000
 
