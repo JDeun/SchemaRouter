@@ -1,0 +1,74 @@
+name: V4 Lightweight BGE GTE Freeze
+
+on:
+  push:
+    branches:
+      - "research/v4-lightweight-negative-gte-freeze"
+    paths:
+      - ".github/workflows/research-v4-lightweight-negative-gte-freeze.yml"
+      - "benchmarks/operation-routing-production-targets.json"
+      - "benchmarks/operation-routing-v4-lightweight-negative-gte-executable.json"
+      - "benchmarks/operation-routing-v4-lightweight-negative-gte-freeze.json"
+      - "scripts/validate_operation_routing_freeze_manifest.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v4-lightweight-negative-gte-freeze-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+      - name: Validate representation digests
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          freeze = json.loads(
+              Path("benchmarks/operation-routing-v4-lightweight-negative-gte-freeze.json")
+              .read_text(encoding="utf-8")
+          )
+          candidate = json.loads(
+              Path("benchmarks/operation-routing-v4-lightweight-negative-gte-executable.json")
+              .read_text(encoding="utf-8")
+          )
+          rep = freeze["candidate"]["representation"]
+
+          canonical = json.dumps(
+              candidate,
+              sort_keys=True,
+              separators=(",", ":"),
+              ensure_ascii=False,
+          ).encode("utf-8")
+          expected = {
+              "query_representation_sha256": hashlib.sha256(
+                  b"raw query text UTF-8 unchanged\n"
+              ).hexdigest(),
+              "capability_representation_sha256": hashlib.sha256(canonical).hexdigest(),
+              "prompt_or_instruction_sha256": hashlib.sha256(
+                  b"NO_PROMPT_OR_GENERATIVE_INSTRUCTION\n"
+              ).hexdigest(),
+          }
+          if {key: rep[key] for key in expected} != expected:
+              raise SystemExit(
+                  "freeze representation digest mismatch: "
+                  f"actual={rep} expected={expected}"
+              )
+          print(json.dumps(expected, sort_keys=True))
+          PY
+      - name: Validate frozen DEV manifest
+        run: |
+          python scripts/validate_operation_routing_freeze_manifest.py \
+            benchmarks/operation-routing-v4-lightweight-negative-gte-freeze.json \
+            --phase dev
