@@ -1497,50 +1497,93 @@ Provenance:
 - artifact: `10945581502`;
 - artifact digest: `sha256:eb417bb3aafa4d2f86aee4e79476ea64f49a2a3608269835d4d3b82f971d8054`.
 
-## 39. Active candidate — frozen HGB winner verifier
+## 39. #287 — frozen HGB winner verifier
 
-Work item #287 / PR #288 freezes the #285-selected rule without post-result changes.
+Work item #287 / PR #288 froze the #285-selected HGB verifier without changing classifier, features or threshold after OOF results were known.
 
-Frozen selection:
+### Freeze contract
 
-- `HistGradientBoostingClassifier`;
-- acceptance threshold **0.50**;
-- scikit-learn **1.7.2**;
-- the same 19 continuous geometry features;
-- raw winner route ID as the only categorical feature;
-- no query text or label-derived features.
+- classifier: `HistGradientBoostingClassifier`;
+- threshold: **0.50**;
+- scikit-learn: **1.7.2**;
+- fit exactly once on all 1,800 original tuning DEV rows;
+- serialized as one joblib file;
+- SHA-256 pinned before confirmation;
+- the same serialized model reused for same-corpus and fresh-surface evaluation;
+- no refit in either confirmation stage;
+- raw BGE-M3 registered top-1 remained the sole route authority.
 
-The confirmation workflow must:
+Frozen model SHA-256:
 
-1. regenerate and verify the original tuning DEV;
-2. fit the selected verifier **exactly once** on all 1,800 original tuning rows;
-3. serialize that one fitted pipeline to a joblib file;
-4. compute and record its SHA-256;
-5. reuse the identical serialized file without refit for same-corpus confirmation;
-6. generate a new zero-overlap fresh-surface DEV using a seed and wrapper family distinct from #270;
-7. reuse the identical serialized model again for fresh-surface confirmation.
+`8cdb8b526705482d2a51dee79f8f17ce10e19199e823cab651a434918c8aa239`
 
-Fresh confirmation seed:
+### Same-corpus executable confirmation — PASS
 
-`operation-routing-quality-v4-learned-verifier-confirmation-2026-09-28-a`
+- supported exact: **1010/1152 = 87.6736%**;
+- near-domain rejection: **575/576 = 99.8264%**;
+- OOD rejection: **72/72 = 100%**;
+- false-route: **1/648 = 0.1543%**;
+- combined p95: **221.33 ms**;
+- authority violations / errors: **0 / 0**.
 
-Fresh wrapper family:
+This confirmed the frozen implementation but is not independent generalization evidence.
 
-`learned-verifier-confirmation-wrappers-v1`
+### New zero-overlap fresh-surface DEV — FAIL
 
-Both same-corpus and fresh-surface confirmation must pass unchanged:
+Fresh corpus:
 
-- supported exact >= **85%**;
-- near-domain rejection >= **97%**;
-- OOD rejection = **100%**;
-- false-route <= **1%**;
-- authority violations/errors = **0**;
-- combined p95 <= **250 ms**.
+- seed: `operation-routing-quality-v4-learned-verifier-confirmation-2026-09-28-a`;
+- surface version: `learned-verifier-confirmation-wrappers-v1`;
+- corpus SHA-256: `c08068e7c68d466b04c96433abd17a6b5da62eaa47969b536f8551ed9db201c6`;
+- normalized exact overlap with original tuning DEV: **0**;
+- distinct from failed #270 seed/surface: **yes**;
+- failed #270 artifact read or used: **no**.
 
-A fresh-surface pass unblocks #198. A fresh-surface failure ends additional learned-complexity tuning on this DEV geometry and moves the research path to an externally pretrained semantic capability verifier.
+Fresh result:
 
-Calibration/blind evidence remains untouched.
+- supported exact: **952/1152 = 82.6389%**;
+- near-domain rejection: **537/576 = 93.2292%**;
+- OOD rejection: **72/72 = 100%**;
+- false-route: **39/648 = 6.0185%**;
+- combined p95: **252.77 ms**;
+- authority violations / errors: **0 / 0**.
 
-The architectural invariant remains:
+Per-language supported exact ranged from **75.00%** on German to **89.06%** on mixed. The worst unsupported-family rejection was `support.family_1` at **27.78%**, but this confirmation set is not tuning evidence and cannot be used for targeted repair.
 
-> Learned semantic evidence may veto the locally registered raw winner, but it never creates or changes execution authority.
+Decision: **rejected**.
+
+Interpretation:
+
+> Grouped OOF validation reduced ordinary random-split leakage, but the learned geometry boundary still captured development-surface regularities rather than a sufficiently invariant semantic notion of endpoint capability.
+
+The #287 stopping rule is therefore active:
+
+- do not tune threshold on the fresh set;
+- do not add route/family exceptions;
+- do not refit or increase learned-model complexity on the same tuning DEV;
+- do not use fresh-confirmation rows or errors as training/feature-design evidence;
+- do not generate calibration/blind evidence.
+
+Provenance:
+
+- source revision: `e5b10ee01ec23af6113c562b51e1db0c6d003d7a`;
+- workflow: `36362105765`;
+- artifact: `10946681188`;
+- artifact digest: `sha256:e7695598b07d5a0f9757f62c04f74f09b03c201de2bbb3f7699f6d8f18059938`.
+
+## 40. Current resume point
+
+The 0.11 architecture-search evidence now supports a stronger conclusion:
+
+1. BGE-M3 raw route ranking has sufficient capacity;
+2. positive score gates are surface-fragile;
+3. generic contradiction NLI does not represent missing capability;
+4. fixed semantic prototype thresholds and relative ranks do not provide a safe open-set boundary;
+5. a shallow learned verifier can pass grouped OOF but still fails zero-overlap fresh-surface confirmation;
+6. further supervised complexity on the same DEV geometry is prohibited by the preregistered stopping rule;
+7. #198 calibration/blind remains blocked and untouched;
+8. the next architecture must use an **externally pretrained semantic capability verifier** whose capability judgment is learned independently of this benchmark.
+
+The authority invariant remains unchanged:
+
+> External semantic evidence may veto the locally registered raw winner, but it may never select a different route or create execution authority.
