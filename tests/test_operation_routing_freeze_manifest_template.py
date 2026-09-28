@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / "benchmarks" / "operation-routing-freeze-manifest.template.json"
+TARGETS = ROOT / "benchmarks" / "operation-routing-production-targets.json"
 
 
 def _load() -> dict:
@@ -13,8 +14,13 @@ def _load() -> dict:
 
 def test_freeze_manifest_locks_standing_target() -> None:
     data = _load()
+    targets_document = json.loads(TARGETS.read_text(encoding="utf-8"))
     target = data["production_target"]
 
+    assert targets_document["schema_version"] == 1
+    assert targets_document["target_id"] == "operation-routing-production-v1"
+    assert targets_document["cycle"] == "0.11-operation-routing-quality-v4"
+    assert target == targets_document["metrics"]
     assert target["supported_exact_route_accuracy_min"] == 0.85
     assert target["near_domain_unsupported_rejection_min"] == 0.97
     assert target["out_of_domain_rejection"] == 1.0
