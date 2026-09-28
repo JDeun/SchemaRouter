@@ -13,6 +13,7 @@ on:
       - "scripts/evaluate_registry_capability_verifier_v4.py"
       - "tests/test_registry_capability_contract.py"
       - "tests/test_registry_capability_holdout.py"
+      - "tests/test_registry_capability_verifier_protocol.py"
   workflow_dispatch:
 
 permissions:
@@ -41,8 +42,10 @@ jobs:
       - name: Validate preregistration and contracts
         run: |
           python -m json.tool benchmarks/operation-routing-v4-registry-capability-verifier.json >/dev/null
-          ruff check             benchmarks/registry_capability_contract.py             benchmarks/registry_capability_holdout.py             benchmarks/registry_capability_verifier.py             scripts/evaluate_registry_capability_verifier_v4.py             tests/test_registry_capability_contract.py             tests/test_registry_capability_holdout.py
-          pytest -q             tests/test_registry_capability_contract.py             tests/test_registry_capability_holdout.py
+          ruff check             benchmarks/registry_capability_contract.py             benchmarks/registry_capability_holdout.py             benchmarks/registry_capability_verifier.py             scripts/evaluate_registry_capability_verifier_v4.py             tests/test_registry_capability_contract.py             tests/test_registry_capability_holdout.py \
+            tests/test_registry_capability_verifier_protocol.py
+          pytest -q             tests/test_registry_capability_contract.py             tests/test_registry_capability_holdout.py \
+            tests/test_registry_capability_verifier_protocol.py
 
   evaluate:
     needs: contracts
