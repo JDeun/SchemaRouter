@@ -1,0 +1,222 @@
+{
+  "schema_version": 1,
+  "kind": "operation-routing-freeze-manifest",
+  "status": "frozen-dev",
+  "production_target": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "combined_p95_ms_max": 250
+  },
+  "candidate": {
+    "candidate_id": "lightweight-bge-negative-gte-executable-v1",
+    "source_revision": "caca039aff1c7b2960d167196f883e3bcbc5d431",
+    "architecture_id": "bge-m3-strict-negative-veto-conditional-gte-rescue-v1",
+    "authority": {
+      "route_authority": "BAAI/bge-m3 raw registered top-1 only; final route may only be that winner or abstention",
+      "verifier_role": "BGE winner-domain negative veto on original base accepts; GTE same-winner rescue on original base abstentions only",
+      "finite_registered_ids_only": true,
+      "rank2_fallback": false,
+      "pseudo_route": false,
+      "provider_can_create_execution_authority": false
+    },
+    "models": [
+      {
+        "role": "route_authority_and_negative_veto_embedding",
+        "name": "BAAI/bge-m3",
+        "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "provider": "Hugging Face",
+        "revision_kind": "commit_sha"
+      },
+      {
+        "role": "conditional_same_winner_rescue_embedding",
+        "name": "Alibaba-NLP/gte-multilingual-base",
+        "revision": "087a024525fd6e2fe749cb4679d218d8bcc95bdd",
+        "provider": "Hugging Face",
+        "revision_kind": "commit_sha"
+      }
+    ],
+    "runtime": {
+      "python": "3.12.14",
+      "dependency_versions": {
+        "torch": "2.14.0+cpu",
+        "transformers": "4.57.6",
+        "sentence_transformers": "5.7.0",
+        "einops": "0.8.2"
+      },
+      "hardware_label": "GitHub-hosted ubuntu-latest x64 CPU",
+      "optimization": "BGE query embedding computed once per row and reused for route scoring and negative prototypes; GTE invoked only on original BGE base abstentions"
+    },
+    "representation": {
+      "query_representation_sha256": "34bb09618cd90cd4290fdd8b0cbc669a543f34944a501421e90c3023c10ca63b",
+      "capability_representation_sha256": "db21d795cfe05cfd470608690536127912cb3b1d5ad8c9fb65662100a47fbfe9",
+      "prompt_or_instruction_sha256": "99db8d4c42aacad34cff319377816c05a57190b0e811b3ce239b6adebd66abe7",
+      "option_ordering_rule": "registered route IDs sorted lexically; no rank-2 fallback"
+    },
+    "decision_rule": {
+      "rule_id": "strict-bge-budget6-neg055-adv005-gte-budget4-v1",
+      "threshold": null,
+      "parameters": {
+        "bge_schema_weight": 0.55,
+        "bge_action_weight": 0.45,
+        "bge_boundary_epsilon": 0.000001,
+        "bge_threshold_profile": "#259 budget-6 robust",
+        "negative_veto": {
+          "max_negative_score_min": 0.55,
+          "negative_advantage_min": 0.05,
+          "apply_only_to_original_base_accepts": true,
+          "vetoed_rows_rescue_eligible": false
+        },
+        "gte": {
+          "schema_weight": 0.25,
+          "action_weight": 0.75,
+          "invoke_only_for_original_base_abstentions": true,
+          "same_bge_raw_winner_required": true,
+          "rules": {
+            "calendar.create": {
+              "min_gte_score": 0.5049319921240791,
+              "min_gte_margin": 0.02,
+              "max_base_score_deficit": 0.05,
+              "max_base_margin_deficit": 0
+            },
+            "calendar.list": {
+              "min_gte_score": -1,
+              "min_gte_margin": 0,
+              "max_base_score_deficit": 0.001,
+              "max_base_margin_deficit": 0
+            },
+            "finance.history": {
+              "min_gte_score": 1.000001,
+              "min_gte_margin": 0,
+              "max_base_score_deficit": 0.001,
+              "max_base_margin_deficit": 0
+            },
+            "finance.quote": {
+              "min_gte_score": 0.5976878433819592,
+              "min_gte_margin": 0,
+              "max_base_score_deficit": 0.05,
+              "max_base_margin_deficit": 0
+            },
+            "inventory.search": {
+              "min_gte_score": -1,
+              "min_gte_margin": 0,
+              "max_base_score_deficit": 0.001,
+              "max_base_margin_deficit": 0
+            },
+            "inventory.update": {
+              "min_gte_score": -1,
+              "min_gte_margin": 0,
+              "max_base_score_deficit": 0.001,
+              "max_base_margin_deficit": 0
+            },
+            "materials.search": {
+              "min_gte_score": -1,
+              "min_gte_margin": 0,
+              "max_base_score_deficit": 0.001,
+              "max_base_margin_deficit": 0
+            },
+            "materials.structure": {
+              "min_gte_score": -1,
+              "min_gte_margin": 0,
+              "max_base_score_deficit": 0.001,
+              "max_base_margin_deficit": 0
+            },
+            "papers.citations": {
+              "min_gte_score": -1,
+              "min_gte_margin": 0,
+              "max_base_score_deficit": 0.001,
+              "max_base_margin_deficit": 0
+            },
+            "papers.search": {
+              "min_gte_score": -1,
+              "min_gte_margin": 0,
+              "max_base_score_deficit": 0.02,
+              "max_base_margin_deficit": 0
+            },
+            "support.create_ticket": {
+              "min_gte_score": -1,
+              "min_gte_margin": 0.1,
+              "max_base_score_deficit": 0.001,
+              "max_base_margin_deficit": 0
+            },
+            "support.search": {
+              "min_gte_score": -1,
+              "min_gte_margin": 0,
+              "max_base_score_deficit": 0.001,
+              "max_base_margin_deficit": 0
+            },
+            "users.lookup": {
+              "min_gte_score": -1,
+              "min_gte_margin": 0.05,
+              "max_base_score_deficit": 0.02,
+              "max_base_margin_deficit": 0
+            },
+            "users.update": {
+              "min_gte_score": -1,
+              "min_gte_margin": 0,
+              "max_base_score_deficit": 0.02,
+              "max_base_margin_deficit": 0
+            },
+            "weather.current": {
+              "min_gte_score": -1,
+              "min_gte_margin": 0.1,
+              "max_base_score_deficit": 1,
+              "max_base_margin_deficit": 0
+            },
+            "weather.forecast": {
+              "min_gte_score": 0.5627313382685655,
+              "min_gte_margin": 0,
+              "max_base_score_deficit": 0.05,
+              "max_base_margin_deficit": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "evidence": {
+    "development": {
+      "corpus_seed": "operation-routing-quality-v4-development-2026-09-27",
+      "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+      "workflow_run_id": 36380771103,
+      "artifact_id": 10952711288,
+      "artifact_sha256": "sha256:4ad9d0cc76500dd8705e0db0f677a21e44dbebb74cc3a9ca097723eb453abdc3",
+      "metrics": {
+        "supported_exact_route_accuracy": 0.8506944444444444,
+        "near_domain_unsupported_rejection": 0.9930555555555556,
+        "out_of_domain_rejection": 1,
+        "false_route_rate": 0.006172839506172839,
+        "authority_violations": 0,
+        "execution_errors": 0,
+        "combined_p95_ms": 176.94355950000002
+      }
+    },
+    "fresh_confirmation": {
+      "surface_id": null,
+      "corpus_seed": null,
+      "corpus_sha256": null,
+      "zero_overlap_audit_artifact": null,
+      "workflow_run_id": null,
+      "artifact_id": null,
+      "artifact_sha256": null,
+      "metrics": null
+    }
+  },
+  "governance": {
+    "failed_confirmation_tuning_forbidden": [
+      270,
+      287
+    ],
+    "semantic_retuning_after_freeze_allowed": false,
+    "runtime_only_optimization_after_quality_pass_requires_same_semantics": true,
+    "calibration_or_blind_inspected": false,
+    "calibration_issue": 198,
+    "paper_evidence_issue": 199,
+    "canonical_tracker_issue": 200
+  },
+  "created_at_utc": "2026-09-28T05:20:57Z",
+  "notes": "Representation digests: query = SHA256 of 'raw query text UTF-8 unchanged\\n'; capability = SHA256 of canonical sorted/minified operation-routing-v4-lightweight-negative-gte-executable.json; prompt = SHA256 of 'NO_PROMPT_OR_GENERATIVE_INSTRUCTION\\n'."
+}
