@@ -124,7 +124,7 @@ jobs:
             --corpus "${ROOT}/same/corpus.json" \
             --model "${ROOT}/model/verifier.joblib" \
             --manifest "${ROOT}/model/model-manifest.json" \
-            --source-revision "${SCHEMAROUTER_SOURCE_REVISION"
+            --source-revision "${SCHEMAROUTER_SOURCE_REVISION}"
 
       - name: Confirm frozen verifier on tuning DEV without refit
         run: |
