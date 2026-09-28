@@ -181,12 +181,12 @@ def development_registry() -> InMemoryRegistry:
 
     youngs_modulus = FieldSpec(
         name="youngs_modulus",
-        semantic_id="material.thermal_youngs_modulus",
+        semantic_id="material.youngs_modulus",
         description="Young's modulus measurement",
         json_schema={"type": "number"},
         unit="GPa",
         unit_normalization=UnitNormalizationSpec(
-            dimension="thermal_youngs_modulus",
+            dimension="elastic_modulus",
             canonical_unit="Pa",
             scale=1_000_000_000.0,
             offset=0.0,
@@ -380,14 +380,14 @@ def confirmation_registry() -> InMemoryRegistry:
 
     electrical_resistivity = FieldSpec(
         name="electrical_resistivity",
-        semantic_id="material.specific_electrical_resistivity",
+        semantic_id="material.electrical_resistivity",
         description="Electrical resistivity measurement",
         json_schema={"type": "number"},
         unit="Ω·m",
         unit_normalization=UnitNormalizationSpec(
-            dimension="specific_electrical_resistivity",
+            dimension="electrical_resistivity",
             canonical_unit="Ω·m",
-            scale=1_000_000_000.0,
+            scale=1.0,
             offset=0.0,
         ),
         qualifiers={"statistic": "instantaneous"},
@@ -399,19 +399,19 @@ def confirmation_registry() -> InMemoryRegistry:
             endpoints=[
                 EndpointSpec(
                     name="current",
-                    description="Retrieve the current heat-capacity value",
+                    description="Retrieve the current electrical resistivity value",
                     read_only=True,
                     output_fields=[electrical_resistivity],
                 ),
                 EndpointSpec(
                     name="history",
-                    description="Retrieve historical heat-capacity values",
+                    description="Retrieve historical electrical resistivity values",
                     read_only=True,
                     output_fields=[electrical_resistivity],
                 ),
                 EndpointSpec(
                     name="forecast",
-                    description="Forecast future heat-capacity values",
+                    description="Forecast future electrical resistivity values",
                     read_only=True,
                     output_fields=[electrical_resistivity],
                 ),
@@ -439,9 +439,9 @@ DEV_ROUTE_SPECS = (
     RouteCaseSpec("allocations.create", "create", {"en":"allocation","ko":"견적서","es":"cotización","ja":"見積書","de":"angebot","mixed":"allocation"}),
     RouteCaseSpec("allocations.cancel", "cancel", {"en":"allocation AL-6","ko":"견적서 AL-6","es":"cotización AL-6","ja":"見積書AL-6","de":"angebot AL-6","mixed":"allocation AL-6"}),
     RouteCaseSpec("allocations.refund", "refund", {"en":"allocation payment AL-6","ko":"견적 결제 AL-6","es":"pago de cotización AL-6","ja":"見積支払いAL-6","de":"angebotszahlung AL-6","mixed":"allocation payment AL-6"}),
-    RouteCaseSpec("youngs_modulus.current", "retrieve", {"en":"Young's modulus value","ko":"열팽창계수 값","es":"valor de coeficiente de expansión térmica","ja":"熱膨張係数値","de":"wärmeausdehnungskoeffizient","mixed":"Young's modulus 값"}, temporal_scope="current"),
-    RouteCaseSpec("youngs_modulus.history", "retrieve", {"en":"Young's modulus values","ko":"열팽창계수 값","es":"valores de coeficiente de expansión térmica","ja":"熱膨張係数値","de":"wärmeausdehnungskoeffiziente","mixed":"Young's modulus 값"}, temporal_scope="historical"),
-    RouteCaseSpec("youngs_modulus.forecast", "forecast", {"en":"Young's modulus values","ko":"열팽창계수 값","es":"valores de coeficiente de expansión térmica","ja":"熱膨張係数値","de":"wärmeausdehnungskoeffiziente","mixed":"Young's modulus 값"}, temporal_scope="future"),
+    RouteCaseSpec("youngs_modulus.current", "retrieve", {"en":"Young's modulus value","ko":"영률 값","es":"valor del módulo de Young","ja":"ヤング率","de":"young-modul","mixed":"Young's modulus 값"}, temporal_scope="current"),
+    RouteCaseSpec("youngs_modulus.history", "retrieve", {"en":"Young's modulus values","ko":"영률 값","es":"valores del módulo de Young","ja":"ヤング率","de":"young-module","mixed":"Young's modulus 값"}, temporal_scope="historical"),
+    RouteCaseSpec("youngs_modulus.forecast", "forecast", {"en":"Young's modulus values","ko":"영률 값","es":"valores del módulo de Young","ja":"ヤング率","de":"young-module","mixed":"Young's modulus 값"}, temporal_scope="future"),
 )
 
 
@@ -462,7 +462,7 @@ CONFIRM_ROUTE_SPECS = (
     RouteCaseSpec("agreements.retrieve", "retrieve", {"en":"agreement MB-6","ko":"구독 MB-6","es":"suscripción MB-6","ja":"購読MB-6","de":"abonnement MB-6","mixed":"agreement MB-6"}),
     RouteCaseSpec("agreements.cancel", "cancel", {"en":"agreement MB-6","ko":"구독 MB-6","es":"suscripción MB-6","ja":"購読MB-6","de":"abonnement MB-6","mixed":"agreement MB-6"}),
     RouteCaseSpec("agreements.refund", "refund", {"en":"agreement payment MB-6","ko":"구독 결제 MB-6","es":"pago de suscripción MB-6","ja":"購読支払いMB-6","de":"abonnementzahlung MB-6","mixed":"agreement payment MB-6"}),
-    RouteCaseSpec("electrical_resistivity.current", "retrieve", {"en":"heat-capacity value","ko":"비열용량 값","es":"valor de capacidad calorífica específica","ja":"比熱容量","de":"spezifischer-wärmekapazitätswert","mixed":"heat-capacity 값"}, temporal_scope="current"),
-    RouteCaseSpec("electrical_resistivity.history", "retrieve", {"en":"heat-capacity values","ko":"비열용량 값","es":"valores de capacidad calorífica específica","ja":"比熱容量","de":"spezifischer-wärmekapazitätswerte","mixed":"heat-capacity 값"}, temporal_scope="historical"),
-    RouteCaseSpec("electrical_resistivity.forecast", "forecast", {"en":"heat-capacity values","ko":"비열용량 값","es":"valores de capacidad calorífica específica","ja":"比熱容量","de":"spezifischer-wärmekapazitätswerte","mixed":"heat-capacity 값"}, temporal_scope="future"),
+    RouteCaseSpec("electrical_resistivity.current", "retrieve", {"en":"electrical resistivity value","ko":"전기 비저항 값","es":"valor de resistividad eléctrica","ja":"電気抵抗率","de":"elektrischer spezifischer widerstand","mixed":"electrical resistivity 값"}, temporal_scope="current"),
+    RouteCaseSpec("electrical_resistivity.history", "retrieve", {"en":"electrical resistivity values","ko":"전기 비저항 값","es":"valores de resistividad eléctrica","ja":"電気抵抗率","de":"elektrische spezifische widerstände","mixed":"electrical resistivity 값"}, temporal_scope="historical"),
+    RouteCaseSpec("electrical_resistivity.forecast", "forecast", {"en":"electrical resistivity values","ko":"전기 비저항 값","es":"valores de resistividad eléctrica","ja":"電気抵抗率","de":"elektrische spezifische widerstände","mixed":"electrical resistivity 값"}, temporal_scope="future"),
 )
