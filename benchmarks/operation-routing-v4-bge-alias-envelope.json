@@ -1,0 +1,96 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "bge-m3-registry-alias-envelope-v1",
+  "work_item": 332,
+  "status": "preregistered_before_execution",
+  "reference_authority": {
+    "issue": 259,
+    "workflow_run_id": 36325967632,
+    "artifact_id": 10934635124,
+    "artifact_sha256": "aabe4321e039dbb2e0b0805553e4dfd7d6c4bcf63893e23da028ceb668608462",
+    "required_raw_winner_parity_mismatches": 0
+  },
+  "model": {
+    "name": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "inference_library": "sentence-transformers",
+    "inference_library_spec": ">=3,<6",
+    "normalize_embeddings": true,
+    "trust_remote_code": false,
+    "device": "cpu"
+  },
+  "route_authority": {
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "raw_registered_top1_only": true,
+    "gate_can_change_route": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "alias_bank": {
+    "trusted_fields": [
+      "normalized_endpoint_name",
+      "operation_aliases"
+    ],
+    "individually_embedded": true,
+    "include_tool_description": false,
+    "include_endpoint_description": false,
+    "include_output_fields": false,
+    "require_exactly_two_endpoints_per_tool": true,
+    "query_embedding_reused_from_dense_ranking": true,
+    "additional_query_model_calls": 0
+  },
+  "registry_calibration": {
+    "labeled_dev_rows_used": false,
+    "own_neighbor": "leave-one-out max cosine to same-route alias",
+    "sibling_neighbor": "max cosine to sibling-route alias",
+    "route_margin_floor": "min(own_neighbor - sibling_neighbor)",
+    "route_cohesion_floor": "min(own_neighbor)",
+    "negative_margin_floor_clamp": 0,
+    "boundary_epsilon": 0.000001
+  },
+  "rule_families": {
+    "A": {
+      "id": "sibling_contrast_only"
+    },
+    "B": {
+      "id": "registry_margin_envelope"
+    },
+    "C": {
+      "id": "registry_cohesion_envelope"
+    },
+    "D": {
+      "id": "joint_registry_envelope"
+    }
+  },
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "forbidden_fresh_issues": [
+      270,
+      287,
+      326
+    ],
+    "calibration_or_blind_forbidden": true
+  },
+  "candidate_worthiness_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "dense_route_parity_mismatches_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "if_none_pass": "reject alias-envelope representation without DEV-fitted threshold or fresh-derived repair",
+    "if_multiple_pass": "select simplest passing family in order A,B,C,D",
+    "if_pass": "freeze exact model, registry, derived floors, rule, and runtime before a new zero-overlap fresh confirmation"
+  }
+}
