@@ -1,6 +1,11 @@
 name: V4 AnyJev L0 Noul Veto
 
 on:
+  push:
+    branches:
+      - "research/v4-anyjev-l0-noul-veto"
+    paths:
+      - "benchmarks/operation-routing-v4-anyjev-l0-noul-veto.activation.json"
   workflow_dispatch:
 
 permissions:
@@ -46,6 +51,30 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: python -m pip install --upgrade pip
+      - name: Validate push activation marker
+        if: github.event_name == 'push'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path(
+              "benchmarks/operation-routing-v4-anyjev-l0-noul-veto.activation.json"
+          )
+          if not path.exists():
+              raise SystemExit("activation marker is required for push-triggered execution")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          if data.get("activate") is not True:
+              raise SystemExit("activation marker must set activate=true")
+          if data.get("after_issue") != 299:
+              raise SystemExit("activation marker must declare after_issue=299")
+          if data.get("reason") != "kev_family_non_promotable":
+              raise SystemExit(
+                  "activation marker reason must be kev_family_non_promotable"
+              )
+          print("validated guarded AnyJev activation")
+          PY
+
       - name: Install pinned AnyJev runtime
         run: |
           pip install "torch>=2.3" --index-url https://download.pytorch.org/whl/cpu
