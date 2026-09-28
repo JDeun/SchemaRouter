@@ -173,7 +173,7 @@ def development_registry() -> InMemoryRegistry:
 
     humidity = FieldSpec(
         name="density",
-        semantic_id="environment.density",
+        semantic_id="materials.density",
         description="Measured density",
         json_schema={"type": "number"},
         unit="kg/m3",
@@ -364,8 +364,8 @@ def confirmation_registry() -> InMemoryRegistry:
     )
 
     masa = FieldSpec(
-        name="masa",
-        semantic_id="physical.masa",
+        name="mass",
+        semantic_id="physical.mass",
         description="Measured masa",
         json_schema={"type": "number"},
         unit="g",
@@ -379,7 +379,7 @@ def confirmation_registry() -> InMemoryRegistry:
     )
     registry.register(
         ToolSpec(
-            name="masa_probe",
+            name="mass_probe",
             description="Mass observations and forecast",
             endpoints=[
                 EndpointSpec(
@@ -407,12 +407,12 @@ def confirmation_registry() -> InMemoryRegistry:
 
 
 DEV_ROUTE_SPECS = (
-    RouteCaseSpec("certificate_records_api.l17","retrieve",{"en":"certificate L-8","ko":"인증서 L-8","es":"certificado L-8","ja":"証明書L-8","de":"zertifikat L-8","mixed":"certificate L-8"}),
-    RouteCaseSpec("certificate_records_api.l28","update",{"en":"certificate L-8","ko":"인증서 L-8","es":"certificado L-8","ja":"証明書L-8","de":"zertifikat L-8","mixed":"certificate L-8"}),
-    RouteCaseSpec("certificate_records_api.l39","delete",{"en":"certificate L-8","ko":"인증서 L-8","es":"certificado L-8","ja":"証明書L-8","de":"zertifikat L-8","mixed":"certificate L-8"}),
-    RouteCaseSpec("reference_index_ops.c17","search",{"en":"reference entries about composite","ko":"composite 관련 참조 항목","es":"entradas de referencia sobre composite","ja":"compositeに関する参照項目","de":"referenzeinträge zu composite","mixed":"composite 관련 reference entries"}),
-    RouteCaseSpec("reference_index_ops.c28","retrieve",{"en":"reference entry C-4","ko":"참조 항목 C-4","es":"entrada de referencia C-4","ja":"参照項目C-4","de":"referenzeintrag C-4","mixed":"reference entry C-4"}),
-    RouteCaseSpec("reference_index_ops.c39","list",{"en":"reference entries","ko":"참조 항목","es":"entradas de referencia","ja":"参照項目","de":"referenzeinträge","mixed":"reference entries"}),
+    RouteCaseSpec("certificate_records_api.z17","retrieve",{"en":"certificate L-8","ko":"인증서 L-8","es":"certificado L-8","ja":"証明書L-8","de":"zertifikat L-8","mixed":"certificate L-8"}),
+    RouteCaseSpec("certificate_records_api.z28","update",{"en":"certificate L-8","ko":"인증서 L-8","es":"certificado L-8","ja":"証明書L-8","de":"zertifikat L-8","mixed":"certificate L-8"}),
+    RouteCaseSpec("certificate_records_api.z39","delete",{"en":"certificate L-8","ko":"인증서 L-8","es":"certificado L-8","ja":"証明書L-8","de":"zertifikat L-8","mixed":"certificate L-8"}),
+    RouteCaseSpec("reference_index_ops.i17","search",{"en":"reference entries about composite","ko":"composite 관련 참조 항목","es":"entradas de referencia sobre composite","ja":"compositeに関する参照項目","de":"referenzeinträge zu composite","mixed":"composite 관련 reference entries"}),
+    RouteCaseSpec("reference_index_ops.i28","retrieve",{"en":"reference entry C-4","ko":"참조 항목 C-4","es":"entrada de referencia C-4","ja":"参照項目C-4","de":"referenzeintrag C-4","mixed":"reference entry C-4"}),
+    RouteCaseSpec("reference_index_ops.i39","list",{"en":"reference entries","ko":"참조 항목","es":"entradas de referencia","ja":"参照項目","de":"referenzeinträge","mixed":"reference entries"}),
     RouteCaseSpec("bundle_delivery.send","send",{"en":"bundle PX-5","ko":"번들 PX-5","es":"paquete de datos PX-5","ja":"バンドルPX-5","de":"datenbündel PX-5","mixed":"bundle PX-5"}),
     RouteCaseSpec("bundle_delivery.share","share",{"en":"bundle PX-5","ko":"번들 PX-5","es":"paquete de datos PX-5","ja":"バンドルPX-5","de":"datenbündel PX-5","mixed":"bundle PX-5"}),
     RouteCaseSpec("dossier_transform.export","export",{"en":"dossier AF-3","ko":"도시어 AF-3","es":"expediente AF-3","ja":"ドシエAF-3","de":"dossier AF-3","mixed":"dossier AF-3"}),
@@ -420,21 +420,21 @@ DEV_ROUTE_SPECS = (
     RouteCaseSpec("dossier_transform.merge","merge",{"en":"dossiers AF-3 and AF-4","ko":"도시어 AF-3과 AF-4","es":"expedientes AF-3 y AF-4","ja":"ドシエAF-3とAF-4","de":"dossiers AF-3 und AF-4","mixed":"dossiers AF-3 AF-4"}),
     RouteCaseSpec("engine_control.restart","restart",{"en":"engine D-2","ko":"엔진 D-2","es":"engine D-2","ja":"エンジンD-2","de":"engine D-2","mixed":"engine D-2"}),
     RouteCaseSpec("engine_control.execute","execute",{"en":"engine operation D-2","ko":"엔진 작업 D-2","es":"operación de motor D-2","ja":"エンジン操作D-2","de":"motor-operation D-2","mixed":"engine operation D-2"}),
-    RouteCaseSpec("voucher_requests.create","create",{"en":"voucher request","ko":"바우처 요청","es":"solicitud de vale","ja":"バウチャー申請","de":"gutschein-antrag","mixed":"service credit request"}),
-    RouteCaseSpec("voucher_requests.cancel","cancel",{"en":"voucher request SC-7","ko":"바우처 요청 SC-7","es":"solicitud de vale SC-7","ja":"バウチャー申請SC-7","de":"gutschein SC-7","mixed":"service credit SC-7"}),
-    RouteCaseSpec("voucher_requests.refund","refund",{"en":"voucher payment SC-7","ko":"바우처 결제 SC-7","es":"pago de vale SC-7","ja":"バウチャー支払いSC-7","de":"gutschein-zahlung SC-7","mixed":"service credit payment SC-7"}),
+    RouteCaseSpec("voucher_requests.create","create",{"en":"voucher request","ko":"바우처 요청","es":"solicitud de vale","ja":"バウチャー申請","de":"gutschein-antrag","mixed":"voucher request"}),
+    RouteCaseSpec("voucher_requests.cancel","cancel",{"en":"voucher request SC-7","ko":"바우처 요청 SC-7","es":"solicitud de vale SC-7","ja":"バウチャー申請SC-7","de":"gutschein SC-7","mixed":"voucher SC-7"}),
+    RouteCaseSpec("voucher_requests.refund","refund",{"en":"voucher payment SC-7","ko":"바우처 결제 SC-7","es":"pago de vale SC-7","ja":"バウチャー支払いSC-7","de":"gutschein-zahlung SC-7","mixed":"voucher payment SC-7"}),
     RouteCaseSpec("density_probe.current","retrieve",{"en":"density","ko":"밀도","es":"densidad","ja":"密度","de":"dichte","mixed":"density"},temporal_scope="current"),
-    RouteCaseSpec("density_probe.history","retrieve",{"en":"density values","ko":"밀도 값","es":"valores de densidad","ja":"密度値","de":"werte der relativen luftfeuchte","mixed":"density values"},temporal_scope="historical"),
-    RouteCaseSpec("density_probe.forecast","forecast",{"en":"density values","ko":"밀도 값","es":"valores de densidad","ja":"密度値","de":"werte der relativen luftfeuchte","mixed":"density values"},temporal_scope="future"),
+    RouteCaseSpec("density_probe.history","retrieve",{"en":"density values","ko":"밀도 값","es":"valores de densidad","ja":"密度値","de":"dichtewerte","mixed":"density values"},temporal_scope="historical"),
+    RouteCaseSpec("density_probe.forecast","forecast",{"en":"density values","ko":"밀도 값","es":"valores de densidad","ja":"密度値","de":"dichtewerte","mixed":"density values"},temporal_scope="future"),
 )
 
 CONFIRM_ROUTE_SPECS = (
-    RouteCaseSpec("approval_records_api.r17","retrieve",{"en":"approval R-6","ko":"승인 R-6","es":"aprobación R-6","ja":"承認R-6","de":"genehmigung R-6","mixed":"approval R-6"}),
-    RouteCaseSpec("approval_records_api.r28","update",{"en":"approval R-6","ko":"승인 R-6","es":"aprobación R-6","ja":"承認R-6","de":"genehmigung R-6","mixed":"approval R-6"}),
-    RouteCaseSpec("approval_records_api.r39","create",{"en":"approval","ko":"승인","es":"aprobación","ja":"承認","de":"genehmigung","mixed":"approval"}),
-    RouteCaseSpec("specimen_index_ops.a17","search",{"en":"specimen entries about coating","ko":"coating 관련 표본 항목","es":"entradas de archivo sobre coating","ja":"coatingに関する標本項目","de":"specimeninträge zu coating","mixed":"coating 관련 specimen entries"}),
-    RouteCaseSpec("specimen_index_ops.a28","retrieve",{"en":"specimen entry A-9","ko":"표본 항목 A-9","es":"entrada de archivo A-9","ja":"標本項目A-9","de":"specimenintrag A-9","mixed":"specimen entry A-9"}),
-    RouteCaseSpec("specimen_index_ops.a39","list",{"en":"specimen entries","ko":"표본 항목","es":"entradas de archivo","ja":"標本項目","de":"specimeninträge","mixed":"specimen entries"}),
+    RouteCaseSpec("approval_records_api.u17","retrieve",{"en":"approval R-6","ko":"승인 R-6","es":"aprobación R-6","ja":"承認R-6","de":"genehmigung R-6","mixed":"approval R-6"}),
+    RouteCaseSpec("approval_records_api.u28","update",{"en":"approval R-6","ko":"승인 R-6","es":"aprobación R-6","ja":"承認R-6","de":"genehmigung R-6","mixed":"approval R-6"}),
+    RouteCaseSpec("approval_records_api.u39","create",{"en":"approval","ko":"승인","es":"aprobación","ja":"承認","de":"genehmigung","mixed":"approval"}),
+    RouteCaseSpec("specimen_index_ops.s17","search",{"en":"specimen entries about coating","ko":"coating 관련 표본 항목","es":"elementos de espécimen sobre coating","ja":"coatingに関する標本項目","de":"specimeninträge zu coating","mixed":"coating 관련 specimen entries"}),
+    RouteCaseSpec("specimen_index_ops.s28","retrieve",{"en":"specimen entry A-9","ko":"표본 항목 A-9","es":"elemento de espécimen A-9","ja":"標本項目A-9","de":"specimenintrag A-9","mixed":"specimen entry A-9"}),
+    RouteCaseSpec("specimen_index_ops.s39","list",{"en":"specimen entries","ko":"표본 항목","es":"elementos de espécimen","ja":"標本項目","de":"specimeninträge","mixed":"specimen entries"}),
     RouteCaseSpec("notice_dispatch.send","send",{"en":"notice MR-2","ko":"공지 MR-2","es":"aviso MR-2","ja":"通知MR-2","de":"mitteilung MR-2","mixed":"notice MR-2"}),
     RouteCaseSpec("notice_dispatch.share","share",{"en":"notice MR-2","ko":"공지 MR-2","es":"aviso MR-2","ja":"通知MR-2","de":"mitteilung MR-2","mixed":"notice MR-2"}),
     RouteCaseSpec("report_transform.export","export",{"en":"report M-1","ko":"보고서 M-1","es":"informe M-1","ja":"レポートM-1","de":"bericht M-1","mixed":"report M-1"}),
@@ -442,10 +442,10 @@ CONFIRM_ROUTE_SPECS = (
     RouteCaseSpec("report_transform.compare","compare",{"en":"report M-1 and M-2","ko":"보고서 M-1과 M-2","es":"informes M-1 y M-2","ja":"レポートM-1とM-2","de":"berichte M-1 und M-2","mixed":"report M-1 M-2"}),
     RouteCaseSpec("pipeline_control.restart","restart",{"en":"pipeline S-5","ko":"파이프라인 S-5","es":"pipeline S-5","ja":"パイプラインS-5","de":"pipeline S-5","mixed":"pipeline S-5"}),
     RouteCaseSpec("pipeline_control.execute","execute",{"en":"pipeline workflow S-5","ko":"파이프라인 워크플로 S-5","es":"flujo del pipeline S-5","ja":"パイプラインワークフローS-5","de":"pipeline-workflow S-5","mixed":"pipeline workflow S-5"}),
-    RouteCaseSpec("billing_adjustments.retrieve","retrieve",{"en":"billing adjustment DP-4","ko":"청구 조정 DP-4","es":"reclamo de depósito DP-4","ja":"請求調整DP-4","de":"abrechnungsanpassung DP-4","mixed":"billing adjustment DP-4"}),
-    RouteCaseSpec("billing_adjustments.cancel","cancel",{"en":"billing adjustment DP-4","ko":"청구 조정 DP-4","es":"reclamo de depósito DP-4","ja":"請求調整DP-4","de":"abrechnungsanpassung DP-4","mixed":"billing adjustment DP-4"}),
-    RouteCaseSpec("billing_adjustments.refund","refund",{"en":"billing payment DP-4","ko":"보증금 결제 DP-4","es":"pago de depósito DP-4","ja":"請求支払いDP-4","de":"abrechnungszahlung DP-4","mixed":"billing payment DP-4"}),
-    RouteCaseSpec("masa_probe.current","retrieve",{"en":"masa","ko":"질량","es":"velocidad","ja":"質量","de":"masse","mixed":"masa"},temporal_scope="current"),
-    RouteCaseSpec("masa_probe.history","retrieve",{"en":"masa values","ko":"질량 값","es":"valores de velocidad","ja":"質量値","de":"massenwerte","mixed":"masa values"},temporal_scope="historical"),
-    RouteCaseSpec("masa_probe.forecast","forecast",{"en":"masa values","ko":"질량 값","es":"valores de velocidad","ja":"質量値","de":"massenwerte","mixed":"masa values"},temporal_scope="future"),
+    RouteCaseSpec("billing_adjustments.retrieve","retrieve",{"en":"billing adjustment DP-4","ko":"청구 조정 DP-4","es":"ajuste de facturación DP-4","ja":"請求調整DP-4","de":"abrechnungsanpassung DP-4","mixed":"billing adjustment DP-4"}),
+    RouteCaseSpec("billing_adjustments.cancel","cancel",{"en":"billing adjustment DP-4","ko":"청구 조정 DP-4","es":"ajuste de facturación DP-4","ja":"請求調整DP-4","de":"abrechnungsanpassung DP-4","mixed":"billing adjustment DP-4"}),
+    RouteCaseSpec("billing_adjustments.refund","refund",{"en":"billing payment DP-4","ko":"청구 결제 DP-4","es":"pago de facturación DP-4","ja":"請求支払いDP-4","de":"abrechnungszahlung DP-4","mixed":"billing payment DP-4"}),
+    RouteCaseSpec("mass_probe.current","retrieve",{"en":"mass","ko":"질량","es":"masa","ja":"質量","de":"masse","mixed":"mass"},temporal_scope="current"),
+    RouteCaseSpec("mass_probe.history","retrieve",{"en":"mass values","ko":"질량 값","es":"valores de masa","ja":"質量値","de":"massenwerte","mixed":"mass values"},temporal_scope="historical"),
+    RouteCaseSpec("mass_probe.forecast","forecast",{"en":"mass values","ko":"질량 값","es":"valores de masa","ja":"質量値","de":"massenwerte","mixed":"mass values"},temporal_scope="future"),
 )
