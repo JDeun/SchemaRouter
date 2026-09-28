@@ -2338,3 +2338,111 @@ fresh-confirmation rows.
 The 0.11 cycle now has no active candidate. #198 remains blocked. A subsequent behavior-changing
 hypothesis must provide a materially different source of open-set capability evidence rather than
 another transformation of the same dense score/alias geometry.
+
+
+## 51. #336 / PR #337 — threshold-free BGE/GTE consensus rejected
+
+The final lightweight 0.11 hypothesis isolated cross-backbone route agreement without adding
+another score threshold.
+
+Frozen rule:
+- BGE-M3 #259 raw registered top-1 remained the sole execution authority;
+- GTE multilingual base used the previously frozen 0.25/0.75 schema/action representation;
+- execute the BGE winner only when GTE raw top-1 exactly equals the BGE raw top-1;
+- otherwise abstain;
+- no score, margin, route-local, language, or family threshold;
+- no rank-2 fallback, pseudo-route, calibration, blind data, or failed fresh evidence.
+
+Canonical evidence:
+- workflow `36390328100`;
+- source `d25f427569fc4419a72963c6f31994fa170805f6`;
+- artifact `10956013271`;
+- digest `sha256:56fad4070ef97782f398a259192bc5ad0e4ec3ac7d6c0fd4d531f17bfc89ccf9`;
+- canonical DEV SHA `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`;
+- authority violations / execution errors **0 / 0**.
+
+Raw ranking capacity remained high:
+- BGE-M3 supported top-1 **88.4549%**;
+- GTE supported top-1 **89.1493%**.
+
+However, route agreement was not an open-set capability signal:
+- BGE/GTE route agreement over all rows **72.7222%**;
+- supported exact **937/1152 = 81.3368%**;
+- near-domain rejection **251/576 = 43.5764%**;
+- OOD rejection **59/72 = 81.9444%**;
+- false routes **338/648 = 52.1605%**;
+- wrong-supported accepted **34**.
+
+GTE query+scoring p95 was **83.3360 ms** and the frozen #259 BGE direct p95 was
+**132.1553 ms**, but no combined executable latency claim was made because quality failed first.
+
+Interpretation:
+
+> Agreement between two strong closed-set rankers measures selection confidence more than
+> capability membership. When an unsupported request is topically close to a registered operation,
+> both rankers can confidently choose the same wrong executable destination.
+
+The exact consensus rule is terminal. No post-result score/margin threshold is added.
+
+## 52. 0.11 operation-routing-quality-v4 — terminal cycle decision
+
+The 0.11 cycle closes **without a promoted production-target candidate**.
+
+The standing target was:
+- supported exact >=85%;
+- near-domain unsupported rejection >=97%;
+- OOD rejection =100%;
+- false-route <=1%;
+- authority/execution errors =0;
+- executable p95 <=250 ms.
+
+One executable DEV candidate (#324/#325) met the complete target:
+- exact **85.0694%**;
+- near rejection **99.3056%**;
+- OOD **100%**;
+- false-route **0.6173%**;
+- p95 **176.9436 ms**.
+
+The exact frozen candidate then failed its new zero-overlap fresh confirmation (#326/#327):
+- exact **84.8090%**;
+- near rejection **90.4514%**;
+- OOD **100%**;
+- false-route **8.4877%**;
+- p95 **278.3748 ms**.
+
+That failure is the decisive promotion result. Calibration and blind-final are therefore not run.
+
+After the fresh failure, the cycle tested materially different non-fresh-derived representations rather
+than repairing from confirmation rows:
+- BGE-M3 ColBERT/sparse operation evidence (#328/#329): terminal reject;
+- registry-self-calibrated alias envelope (#332/#333): terminal reject;
+- threshold-free BGE/GTE consensus (#336/#337): terminal reject.
+
+Combined with the earlier negative lines—positive dense thresholds, NLI, signed/negative prototypes,
+rank heuristics, learned DEV verifier geometry, Qwen/Laya/Kev/AnyJev typed-decision paths, and
+cross-encoder variants—the current canonical DEV has been mined far enough. Continuing to add
+thresholds or hand-written exceptions would increase selection bias without supplying independent
+evidence.
+
+The 0.11 research conclusion is therefore:
+
+1. **Registered-route ranking capacity is sufficient.** BGE-M3 raw top-1 is ~88.45%.
+2. **Open-set capability membership is the unresolved problem.**
+3. **A DEV pass is not sufficient evidence.** Three independent lines degraded under fresh request
+   surfaces, and the strongest current executable candidate failed the formal fresh gate.
+4. **The safe stopping action is to close the architecture-search cycle**, not tune against consumed
+   evidence.
+5. #198 calibration/blind-final remains intentionally unexecuted because its entry requirements were
+   never met.
+
+The robust #259 profile remains a useful conservative reference:
+- exact **83.7674%**;
+- near rejection **98.9583%**;
+- false-route **0.9259%**;
+- planner p95 ~**134.95 ms**.
+
+It is **not** relabeled as a production-target pass because it misses the 85% exact requirement.
+
+Any successor cycle must introduce a materially new source of capability evidence and a new
+preregistered protocol. It may not tune on #270/#287/#326, revive terminal 0.11 families with
+post-hoc thresholds, or convert compatibility evidence into quality evidence.
