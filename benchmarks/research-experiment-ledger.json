@@ -2005,7 +2005,7 @@
     },
     "activation_protocol": "Staged #314/#315 and #311/#313 remain dormant until explicit guarded activation. #314 can be triggered by committing its activation JSON with the exact #299 artifact ID/source run; #311 can be triggered only after Kev-family non-promotion using an activation marker declaring after_issue=299 and reason=kev_family_non_promotable.",
     "runtime_optimization": "#318 is dormant and activates only after a Kev-based quality pass with latency failure; parity must preserve every frozen route/accept decision before optimized timing counts.",
-    "runtime_parity_infrastructure": "#320 validates case-set, selected-route, execute/abstain parity, authority/errors, and probability drift before any runtime-only optimization from #318 can count."
+    "runtime_parity_infrastructure": "#320 merged as acaca1e14b2f387094100dde3e1186aa4520d01d: runtime-only optimization must preserve the complete case set, selected route, execute/abstain boundary, and zero authority/error state while recording probability drift."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2064,7 +2064,8 @@
       301,
       304,
       306,
-      316
+      316,
+      320
     ],
     "active_experiments": [
       299
@@ -2073,8 +2074,7 @@
       235,
       300,
       313,
-      315,
-      320
+      315
     ],
     "next_blocked_confirmation": 198,
     "next_research_direction": "finish Kev-0.8B #299; if complete row-level noul exists, evaluate preregistered BGE+Kev offline composition #314/#315; activate AnyJev #311/#313 only if no Kev-based candidate promotes",
@@ -2088,9 +2088,7 @@
       311,
       314
     ],
-    "infrastructure_in_progress": [
-      320
-    ],
+    "infrastructure_in_progress": [],
     "contingent_pull_requests": [
       317
     ],
