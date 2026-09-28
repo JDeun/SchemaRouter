@@ -28,7 +28,7 @@ def development_registry() -> InMemoryRegistry:
             "licenses_api",
             {
                 "openapi": "3.1.0",
-                "info": {"title": "License Service", "version": "1.0.0"},
+                "info": {"title": "License Service", "version": "1.0.0", "description": "License record management service"},
                 "paths": {
                     "/licenses/{license_id}": {
                         "get": {
@@ -159,7 +159,7 @@ def confirmation_registry() -> InMemoryRegistry:
             "certificates_api",
             {
                 "openapi": "3.1.0",
-                "info": {"title": "Certificate Service", "version": "1.0.0"},
+                "info": {"title": "Certificate Service", "version": "1.0.0", "description": "Certificate record management service"},
                 "paths": {
                     "/certificates/{certificate_id}": {
                         "get": {
