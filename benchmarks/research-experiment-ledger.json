@@ -2085,7 +2085,20 @@
       311,
       314
     ],
-    "infrastructure_in_progress": []
+    "infrastructure_in_progress": [],
+    "contingent_pull_requests": [
+      317
+    ],
+    "technical_contingencies": {
+      "kev_299_timeout_retry": {
+        "pull_request": 317,
+        "branch": "research/v4-kev-08b-system-one-timeout-retry",
+        "activate_only_if_run": 36366508183,
+        "required_conclusion": "technical_timeout_before_valid_artifact",
+        "semantic_changes": false,
+        "only_runtime_change": "evaluate timeout-minutes 180 -> 360"
+      }
+    }
   },
   "design_lineage": [
     {
