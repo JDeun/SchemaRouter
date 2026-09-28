@@ -50,17 +50,29 @@ jobs:
         run: |
           pip install "torch>=2.3" --index-url https://download.pytorch.org/whl/cpu
           pip install "transformers==4.57.6"
-          pip install "git+https://github.com/nokia-applied-research/AnyJev.git@${ANYJEV_SOURCE_REVISION}#egg=anyjev[hf]"
+          pip install "git+https://github.com/nokia-applied-research/AnyJev.git@${ANYJEV_SOURCE_REVISION}"
           pip install "sentence-transformers>=3,<6"
           pip install -e ".[dev]"
 
       - name: Verify installed AnyJev source
         run: |
           python - <<'PY'
-          from importlib.metadata import version
+          import json
+          import os
+          from importlib.metadata import distribution, version
 
           assert version("anyjev") == "0.1.0"
-          print("anyjev", version("anyjev"))
+          dist = distribution("anyjev")
+          direct_url = json.loads(dist.read_text("direct_url.json") or "{}")
+          commit_id = (
+              direct_url.get("vcs_info", {}).get("commit_id")
+          )
+          expected = os.environ["ANYJEV_SOURCE_REVISION"]
+          if commit_id != expected:
+              raise SystemExit(
+                  f"AnyJev source mismatch: expected {expected}, got {commit_id}"
+              )
+          print("anyjev", version("anyjev"), "commit", commit_id)
           PY
 
       - name: Generate immutable v4 tuning DEV
