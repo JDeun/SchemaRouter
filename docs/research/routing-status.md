@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **64** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **65** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [machine-readable ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — exact provenance index.
@@ -178,6 +178,43 @@ supported routing when it is not allowed to choose another endpoint, but requiri
 agreement across independent signals is far too conservative to provide enough unsupported recall.
 
 The exact #358 rule is terminal. Its frozen confirmation corpus remains **unscored**.
+
+## 0.12 capability-set membership consensus
+
+Experiment #363 relaxed #358's exact unsupported-leaf agreement into a finite-set membership
+consensus while preserving raw BGE-M3 top-1 as the sole positive route selector.
+
+Frozen before scoring:
+- DEV: **552** cases, SHA `1d3d18975b33156d97f3b4fd518158cba418c449fae01e864977f8bdf77b5e62`;
+- confirmation: **552** cases, SHA `ba92c3c25da3601bd50f580dcfaf7b512ec2e26971e10ec9e501bb59cbf35d37`;
+- the confirmation surface remains **unscored**.
+
+DEV result:
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **86.40%** |
+| Raw supported exact | **94.30%** |
+| Raw supported tool accuracy | **99.56%** |
+| Near-domain unsupported rejection | **54.76%** |
+| OOD rejection | **97.22%** |
+| False-route | **35.80%** |
+| Veto precision | **91.23%** |
+| Veto recall | **64.20%** |
+| Raw-correct winners vetoed | **18 / 8.37%** |
+| p95 | **249.73 ms** |
+| Authority / execution errors | **0 / 0** |
+
+This materially improved unsupported recall over #358, but it lost #358's strongest safety property:
+the relaxed set-membership rule vetoed 18 raw-correct supported winners. It still missed the required
+97% near rejection / <=1% false-route target by a wide margin.
+
+The exact #363 rule is therefore terminal. No failed-row, per-language, per-route, confusion-pair or
+score-distribution repair is permitted. Its frozen confirmation corpus remains unopened.
+
+The useful aggregate lesson is now sharper: **negative-only capability evidence is the correct
+authority boundary, but flat semantic membership votes are not yet reliable enough to establish
+absence of capability.**
 
 ## Reproducibility
 
