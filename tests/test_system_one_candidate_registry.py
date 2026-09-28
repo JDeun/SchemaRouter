@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "benchmarks" / "system-one-candidate-registry.json"
+TARGETS = ROOT / "benchmarks" / "operation-routing-production-targets.json"
 
 
 def _load() -> dict:
@@ -17,14 +18,19 @@ def test_system_one_candidate_registry_has_stable_shape() -> None:
     assert data["schema_version"] == 1
     assert data["updated_at"]
     assert data["purpose"]
+    canonical_targets = json.loads(TARGETS.read_text(encoding="utf-8"))["metrics"]
     assert data["promotion_gate"] == {
-        "supported_exact_route_accuracy_min": 0.85,
-        "near_domain_unsupported_rejection_min": 0.97,
-        "out_of_domain_rejection": 1.0,
-        "false_route_rate_max": 0.01,
-        "authority_violations_max": 0,
-        "execution_errors_max": 0,
-        "target_p95_ms_max": 250,
+        "supported_exact_route_accuracy_min": canonical_targets[
+            "supported_exact_route_accuracy_min"
+        ],
+        "near_domain_unsupported_rejection_min": canonical_targets[
+            "near_domain_unsupported_rejection_min"
+        ],
+        "out_of_domain_rejection": canonical_targets["out_of_domain_rejection"],
+        "false_route_rate_max": canonical_targets["false_route_rate_max"],
+        "authority_violations_max": canonical_targets["authority_violations_max"],
+        "execution_errors_max": canonical_targets["execution_errors_max"],
+        "target_p95_ms_max": canonical_targets["combined_p95_ms_max"],
     }
 
     allowed_paths = set(data["integration_paths"])
@@ -79,5 +85,5 @@ def test_staged_anyjev_candidate_is_recorded() -> None:
     assert anyjev["lifecycle"] == "staged_research"
     assert anyjev["active_issue"] == 311
     assert anyjev["active_pull_request"] == 313
-    assert "manual-dispatch" in anyjev["schemarouter_status"]
+    assert "guarded by marker/manual dispatch" in anyjev["schemarouter_status"]
     assert anyjev["source_revision"] == "45add301a7aa60ed3420c83d15c061e84e5bce61"
