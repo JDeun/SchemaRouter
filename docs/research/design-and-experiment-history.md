@@ -1920,6 +1920,21 @@ Operationally, the framework is now prepared for rapid model replacement:
 - arbitrary bounded models can enter through `CallableDecisionBackend` and the generic callable benchmark path;
 - model discovery remains separate from stable execution authority.
 
+### Precommitted Kev-family promotion policy
+
+Before #299 terminal metrics were available, the cross-candidate selection rule was fixed:
+
+1. complete #299 exactly as preregistered;
+2. if #299 yields complete valid row-level `supported_probability`, run the already-staged #314
+   offline composition even if Kev's own route choice fails;
+3. compare only full-gate passers;
+4. if both #299 and #314 pass quality and runtime, prefer #314 because it preserves the established
+   BGE registered-route authority and keeps Kev veto-only;
+5. if #314 fails but #299 passes, promote #299;
+6. do not select from post-hoc language/route/family slices, prompt variants, or failed-fresh behavior.
+
+This selection policy was committed before result inspection to avoid outcome-driven architecture choice.
+
 ## 47. Freeze and final-evaluation ownership
 
 The end of architecture search now has an explicit ownership boundary.
