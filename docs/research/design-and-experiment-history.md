@@ -2342,3 +2342,65 @@ Candidate concept:
 - no additional query-model inference;
 - dense BGE raw winner remains sole route authority.
 
+
+
+## 50. #332 / PR #333 — registry-self-calibrated BGE alias-envelope rejected
+
+After the ColBERT/sparse representation was rejected, #332 tested whether the acceptance
+boundary could be derived from trusted registry metadata rather than labeled DEV score
+distributions.
+
+Frozen design:
+- BGE-M3 revision `5617a9f61b028005a4858fdac845db406aefb181`;
+- schema/action fusion 0.55 / 0.45;
+- dense raw registered top-1 remains sole route authority;
+- one normalized query embedding is shared by route ranking and alias scoring;
+- static alias banks use only normalized endpoint name + `operation_aliases`;
+- route margin/cohesion floors derive only from alias self-cohesion and same-tool sibling
+  separation;
+- four fixed A/B/C/D rules; no threshold search or fresh-derived repair.
+
+Run `36388457554` failed before row scoring because a NumPy array was used in a Python
+truth-value guard. It produced no model-quality evidence. The type-only fix changed
+`not vector` to an explicit length check and did not alter the preregistered semantics.
+
+Canonical workflow `36388641609` then completed successfully at source
+`fa091f43296eb1ca680f39921010482275bb4cda`.
+
+Artifact:
+- id `10955736650`;
+- digest `sha256:21166d8c10009401b34380e6e24ddbcdcf4ec06c760d86b4d19eaf99930a1e1e`;
+- canonical DEV: all 1,800 rows;
+- dense raw supported top-1: **88.4549%**;
+- dense raw-winner parity mismatches: **0**;
+- authority violations / execution errors: **0 / 0**.
+
+Preregistered rule results:
+- A, sibling contrast: **84.8958% exact / 11.9792% near rejection / 18.0556% OOD /
+  87.3457% false-route**;
+- B, registry margin: **72.3090% exact / 24.1319% near rejection / 68.0556% OOD /
+  70.9877% false-route**;
+- C, registry cohesion: **24.3056% exact / 98.4375% near rejection / 100% OOD /
+  1.3889% false-route**;
+- D, joint envelope: **23.5243% exact / 98.4375% near rejection / 100% OOD /
+  1.3889% false-route**.
+
+No family passed the standing **85 / 97 / 100 / 1** quality gate.
+
+Unlike ColBERT, runtime was not the blocker:
+- query encode p95 **192.39 ms**;
+- dense scoring p95 **4.62 ms**;
+- alias scoring p95 **1.16 ms**;
+- total p95 **198.07 ms**.
+
+The experiment therefore validates the cost hypothesis but rejects the representation
+hypothesis. Registry-only alias geometry cannot simultaneously preserve supported recall and
+hold the open-set false-route boundary at <=1%.
+
+Decision: terminate this family without a DEV-fitted score threshold, route/language/family
+exceptions, rank-2 fallback, or use of consumed fresh surfaces #270/#287/#326.
+
+At the end of the current 0.11 search there is **no promotable frozen candidate**. #198 remains
+blocked. Any successor must be a separately preregistered architecture with a materially new
+information source or representation, not another refinement of the same dense/alias score
+geometry, and it must retain a credible <=250 ms product path.
