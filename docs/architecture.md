@@ -2,11 +2,24 @@
 
 ## Decision
 
-SchemaRouter is a **schema-aware planning and execution layer** for LLM tool ecosystems. It is not a general-purpose agent framework, model router, or MCP replacement.
+SchemaRouter is a **typed capability retrieval, planning, and execution layer** for LLM and RAG tool ecosystems. It is not a general-purpose agent framework, model router, graph runtime, or MCP replacement.
 
 The core is designed around one principle:
 
 > model output and remote schemas may describe capabilities, but only trusted local code grants execution authority.
+
+## Capability-index mental model
+
+Architecturally, SchemaRouter is close to a RAG retrieval layer for executable data sources:
+structured adapters parse APIs/tools into endpoint/field contracts, the registry/index organizes the
+resulting capability surface, and routing retrieves a bounded executable subset for the surrounding
+agent or RAG application.
+
+The registry can be viewed as a logical capability graph. A graph database is not required, and
+embeddings are not authority. Datatype, unit, qualifier, policy and side-effect semantics come from
+trusted registered contracts.
+
+See [Capability catalog: RAG for executable data sources](concepts/capability-catalog.md).
 
 ## Core flow
 
