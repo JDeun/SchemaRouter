@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "cycle": "0.13-schema-adb-baseline",
+  "experiment": "schema-derived-adaptive-decision-boundary-v1",
+  "issue": 384,
+  "parent_issue": 382,
+  "status": "preregistered_before_corpus_generation_or_scoring",
+  "research_basis": [
+    "arXiv:2012.10209 Deep Open Intent Classification with Adaptive Decision Boundary",
+    "arXiv:2203.05823 Learning Discriminative Representations and Decision Boundaries for Open Intent Detection"
+  ],
+  "positive_selector": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "authority": "sole positive route selector"
+  },
+  "boundary": {
+    "class_unit": "registered endpoint capability",
+    "synthetic_positive_count_per_route": 18,
+    "centroid": "mean frozen BGE-M3 embedding",
+    "distance": "euclidean",
+    "radius": "softplus(delta_hat)",
+    "delta_hat_initial": 0,
+    "optimizer": "deterministic scalar Adam",
+    "learning_rate": 0.05,
+    "steps": 200,
+    "beta1": 0.9,
+    "beta2": 0.999,
+    "epsilon": 1e-8,
+    "loss": "mean(abs(distance_to_centroid - radius))",
+    "hard_negatives": false,
+    "oos_training_examples": false,
+    "dev_selected_scaling": false,
+    "percentile_threshold": false
+  },
+  "authority": {
+    "anchored_tool": "tool of global frozen BGE-M3 raw top-1",
+    "membership": "inside at least one endpoint boundary under anchored tool",
+    "positive_route_on_membership": "preserve raw BGE-M3 top-1 exactly",
+    "rejection": "outside all endpoint boundaries -> NO_ROUTE",
+    "positive_rerank": false,
+    "endpoint_switch": false,
+    "rank2_fallback": false,
+    "pseudo_route": false,
+    "unknown_endpoint_semantics_disables_veto": true
+  },
+  "typed_contract": {
+    "preserves": [
+      "semantic_id",
+      "json datatype/shape",
+      "source unit",
+      "canonical unit",
+      "dimension",
+      "scale",
+      "offset",
+      "qualifiers",
+      "identifier role",
+      "read_only",
+      "destructive",
+      "method"
+    ]
+  },
+  "data_protocol": {
+    "forbidden": [
+      "all consumed 0.11/0.12 DEV/fresh/confirmation rows",
+      "#198 calibration",
+      "#198 blind"
+    ],
+    "development": {
+      "role": "new V6A screen",
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "role": "frozen confirmation only",
+      "generated_before_development_scoring": true,
+      "corpus_sha256": null
+    },
+    "evaluation_wording_disjoint_from_synthetic_training_surfaces": true
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "positive_route_switches_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "dev_quality_fail": "terminal reject exact positive-only ADB formulation",
+    "quality_pass_latency_fail": "runtime-only optimization only under separate preregistration with row-level parity",
+    "dev_pass": "freeze exact source and open already-generated confirmation once",
+    "confirmation_fail": "terminal reject",
+    "both_pass": "eligible for brand-new zero-overlap fresh confirmation"
+  }
+}
