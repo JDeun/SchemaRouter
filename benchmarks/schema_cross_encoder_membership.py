@@ -9,8 +9,9 @@ raw BGE winner or veto to NO_ROUTE.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from benchmarks.schema_adb_baseline import (
     ACTION_WEIGHT,
