@@ -96,7 +96,7 @@ def development_registry() -> InMemoryRegistry:
     registry.register(
         ToolSpec(
             name="parcels",
-            description="Parcel parcel delivery and delegated-access service",
+            description="Parcel delivery and delegated-access service",
             endpoints=[
                 EndpointSpec(
                     name="send",
