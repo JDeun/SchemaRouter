@@ -2048,7 +2048,7 @@
       "preregistered": true,
       "status": "executing",
       "decision": "executing",
-      "workflow_run_id": 36384892825,
+      "workflow_run_id": 36385740263,
       "design": {
         "model": "BAAI/bge-m3",
         "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
@@ -2078,8 +2078,13 @@
         {
           "run_id": 36384796110,
           "reason": "contract import-path failure before evaluation"
+        },
+        {
+          "run_id": 36384892825,
+          "reason": "cancelled by pre-result audit-fix merge before analysis.json; no quality result"
         }
-      ]
+      ],
+      "source_revision": "4c72f2dd1939edb6ecf8415d620dbb5d58683fa0"
     }
   ],
   "current_research_conclusion": {
@@ -2157,16 +2162,14 @@
       "issue": 328,
       "pull_request": 329,
       "status": "diagnostic_executing",
-      "workflow_run_id": 36384892825,
-      "source_revision": "6a9185106a19d5a2dbb59eaeae88965d40a0db48",
-      "evaluator_blob_sha": "e0d73b806d5ea026ffe5ea40f774e4b5d4b2f8ee",
-      "latest_branch_head": "eb0ceab276a2ae385772e5a7b513990afccfdb99",
+      "workflow_run_id": 36385740263,
+      "source_revision": "4c72f2dd1939edb6ecf8415d620dbb5d58683fa0",
       "model": "BAAI/bge-m3",
       "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
       "representation": "native ColBERT operation-contract veto; sparse diagnostic-only",
       "data_role": "canonical tuning-eligible DEV only"
     },
-    "active_workflow_run_id": 36384892825,
+    "active_workflow_run_id": 36385740263,
     "fresh_contract_status": "#326 terminal valid fresh failure; corpus consumed confirmation-only. #198 remains blocked.",
     "latest_fresh_result": "#326 valid zero-overlap fresh confirmation failed: exact 84.8090%, near rejection 90.4514%, OOD 100%, false-route 8.4877%, p95 278.3748 ms; candidate terminated, fresh surface consumed and non-tuning.",
     "generalization_status": "Three independent candidate families have now shown DEV-to-fresh open-set degradation (#270, #287, #326). Next architecture must reduce dependence on DEV-fitted acceptance geometry.",
@@ -2273,7 +2276,7 @@
       329
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "finish #328/#329 BGE-M3 ColBERT operation-contract DEV diagnostic; interpret all preregistered A/B/C/D frontier points, including false budgets 0 and 6; freeze only if full 85/97/100/1 + p95<=250 + parity/authority gates pass",
+    "next_research_direction": "finish canonical #328 run 36385740263 at head 4c72f2d; interpret A/B/C/D including all preregistered false budgets 0/6/12; freeze only on full quality+runtime+parity pass",
     "contingent_experiments": [
       303
     ],
