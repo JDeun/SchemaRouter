@@ -480,21 +480,32 @@ def _centroid(vectors: list[list[float]]) -> list[float]:
     width = len(vectors[0])
     if any(len(vector) != width for vector in vectors):
         raise ValueError("vectors must have consistent dimensions")
-    return [
+    mean = [
         sum(vector[index] for vector in vectors) / len(vectors)
         for index in range(width)
     ]
+    return _normalize_vector(mean)
+
+
+def _normalize_vector(vector: Iterable[float]) -> list[float]:
+    values = [float(value) for value in vector]
+    if not values:
+        raise ValueError("embedding vector must not be empty")
+    if any(not math.isfinite(value) for value in values):
+        raise ValueError("embedder returned non-finite values")
+    norm = math.sqrt(sum(value * value for value in values))
+    if norm == 0.0:
+        raise ValueError("embedding vector must have non-zero norm")
+    return [value / norm for value in values]
 
 
 def _to_vectors(raw: Iterable[Iterable[float]]) -> list[list[float]]:
-    vectors = [[float(value) for value in vector] for vector in raw]
-    if not vectors or any(not vector for vector in vectors):
+    vectors = [_normalize_vector(vector) for vector in raw]
+    if not vectors:
         raise ValueError("embedder returned empty vectors")
     width = len(vectors[0])
     if any(len(vector) != width for vector in vectors):
         raise ValueError("embedder returned inconsistent dimensions")
-    if any(not math.isfinite(value) for vector in vectors for value in vector):
-        raise ValueError("embedder returned non-finite values")
     return vectors
 
 
@@ -581,9 +592,9 @@ class SchemaAdbRouter:
         self.boundaries: dict[str, AdbBoundary] = {}
         for route_id in self.route_ids:
             contract = self.contracts[route_id]
-            if contract.leaf is None:
-                continue
             positives = list(contract.synthetic_positives)
+            if contract.leaf is None or len(positives) != 18:
+                continue
             vectors = _to_vectors(embedder(positives))
             center = _centroid(vectors)
             distances = [_euclidean(vector, center) for vector in vectors]
@@ -620,7 +631,10 @@ class SchemaAdbRouter:
             for contract in self.contracts.values()
             if contract.tool_key == raw_tool
         ]
-        tool_has_unknown = any(contract.leaf is None for contract in tool_contracts)
+        tool_has_unknown = any(
+            contract.leaf is None or contract.route_id not in self.boundaries
+            for contract in tool_contracts
+        )
 
         boundary_rows: list[dict[str, Any]] = []
         if tool_has_unknown:
