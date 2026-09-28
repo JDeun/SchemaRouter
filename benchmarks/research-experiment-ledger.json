@@ -1943,11 +1943,11 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "test externally pretrained Qwen3-Reranker-0.6B as a direct capability yes/no verifier with no SchemaRouter fine-tuning",
-      "use one fixed exact-capability instruction and trusted endpoint contract only",
-      "keep BGE-M3 raw registered top-1 as sole route authority and verifier veto-only",
-      "select only within eight preregistered global yes-probability thresholds",
-      "if quality passes but CPU latency fails, permit runtime-only optimization without semantic changes",
+      "finish pinned Kev-0.8B native choice+noul #299 without semantic changes",
+      "reuse the exact frozen #299 supported_probability in preregistered BGE-authority composition #314/#315 with no new Kev inference",
+      "if no Kev-based rule promotes, activate staged AnyJev L0 content-free noul #311/#313",
+      "keep BGE-M3 raw registered top-1 as the authority for veto-only compositions",
+      "freeze any passing semantics before a new zero-overlap fresh confirmation",
       "keep failed #270/#287 fresh surfaces and calibration/blind evidence excluded from tuning"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
@@ -1982,7 +1982,7 @@
     "top4_typed_routing_status": "#303 remains provider-neutral contingency only; same pinned Laya top-4 is mathematically dominated and not canonical evidence.",
     "external_verifier_status": "Qwen3 direct semantic verifier #289 rejected; pinned Laya noul veto #301 rejected; full-catalog Laya choice+noul #295 superseded before execution.",
     "next_external_candidate": "#311/#313 stages AnyJev L0 with content_free prior and Qwen3-0.6B; manual-only until Kev terminal.",
-    "kev_composition_contingency": "#314 preregisters BGE raw top-1 authority + the exact frozen #299 global Kev noul probability. It requires no new Kev inference and was defined before #299 results."
+    "kev_composition_contingency": "#314/#315 is fully staged before #299 result inspection: it reuses exact #299 global Kev noul probabilities and measured latency while BGE raw top-1 remains sole route authority; no new Kev inference."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2048,10 +2048,11 @@
       235,
       300,
       308,
-      313
+      313,
+      315
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "finish Kev-0.8B #299; evaluate preregistered BGE+Kev global noul #314 from the frozen #299 artifact; activate AnyJev #311/#313 only if no Kev composition promotes",
+    "next_research_direction": "finish Kev-0.8B #299; if complete row-level noul exists, evaluate preregistered BGE+Kev offline composition #314/#315; activate AnyJev #311/#313 only if no Kev-based candidate promotes",
     "contingent_experiments": [
       303
     ],
