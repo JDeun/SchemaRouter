@@ -255,16 +255,22 @@ def _near(specs: tuple[RouteCaseSpec, ...], prefix: str) -> list[dict[str, Any]]
         for language in LANGUAGES:
             obj = anchor.objects[language]
             for action_index, action in enumerate(unsupported, start=1):
-                template = ACTION_SURFACES[action][language][1]
-                rows.append({
-                    "id": f"{prefix}-near-{tool}-{language}-{action_index}",
-                    "query": template.format(obj=obj),
-                    "expected": None,
-                    "category": "near_domain_unsupported_operation",
-                    "language": language,
-                    "unsupported_action": action,
-                    "unsupported_family": f"{tool}.{action}",
-                })
+                for phrase_index, template in enumerate(
+                    ACTION_SURFACES[action][language],
+                    start=1,
+                ):
+                    rows.append({
+                        "id": (
+                            f"{prefix}-near-{tool}-{language}-"
+                            f"{action_index}-{phrase_index}"
+                        ),
+                        "query": template.format(obj=obj),
+                        "expected": None,
+                        "category": "near_domain_unsupported_operation",
+                        "language": language,
+                        "unsupported_action": action,
+                        "unsupported_family": f"{tool}.{action}",
+                    })
     return rows
 
 
