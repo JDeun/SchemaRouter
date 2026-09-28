@@ -13,6 +13,7 @@ on:
       - "scripts/generate_operation_routing_v6c.py"
       - "tests/test_schema_density_ratio.py"
       - "tests/test_operation_routing_v6c_protocol.py"
+  pull_request:
   workflow_dispatch:
 
 permissions:
