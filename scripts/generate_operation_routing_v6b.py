@@ -253,6 +253,46 @@ OOD = {
 }
 
 
+CONFIRM_OOD = {
+    "en": (
+        "explain how auroras form","write a haiku about snow","what is the capital of Chile",
+        "multiply 42 by 13","explain plate tectonics","suggest a blues turnaround",
+        "tell a short fable about a fox","why do seasons change","solve 203 minus 88",
+        "explain how antibodies recognize targets","write a brief congratulations note","name three Baroque composers",
+    ),
+    "ko": (
+        "오로라가 생기는 원리 설명해줘","눈에 대한 하이쿠 써줘","칠레의 수도가 어디야",
+        "42 곱하기 13 계산해줘","판 구조론 설명해줘","블루스 턴어라운드 추천해줘",
+        "여우에 대한 짧은 우화 이야기해줘","계절이 바뀌는 이유가 뭐야","203 빼기 88 계산해줘",
+        "항체가 표적을 인식하는 방식 설명해줘","짧은 축하 메시지 써줘","바로크 작곡가 세 명 알려줘",
+    ),
+    "es": (
+        "explica cómo se forman las auroras","escribe un haiku sobre la nieve","cuál es la capital de Chile",
+        "multiplica 42 por 13","explica la tectónica de placas","sugiere un turnaround de blues",
+        "cuenta una fábula corta sobre un zorro","por qué cambian las estaciones","resuelve 203 menos 88",
+        "explica cómo los anticuerpos reconocen objetivos","escribe una breve nota de felicitación","nombra tres compositores barrocos",
+    ),
+    "ja": (
+        "オーロラができる仕組みを説明して","雪について俳句を書いて","チリの首都はどこ",
+        "42掛ける13を計算して","プレートテクトニクスを説明して","ブルースのターンアラウンドを提案して",
+        "キツネについて短い寓話を話して","季節が変わる理由は何","203引く88を計算して",
+        "抗体が標的を認識する仕組みを説明して","短いお祝いメッセージを書いて","バロック作曲家を三人挙げて",
+    ),
+    "de": (
+        "erkläre wie polarlichter entstehen","schreibe ein haiku über schnee","was ist die hauptstadt von Chile",
+        "multipliziere 42 mit 13","erkläre plattentektonik","schlage einen blues-turnaround vor",
+        "erzähle eine kurze fabel über einen fuchs","warum wechseln die jahreszeiten","rechne 203 minus 88",
+        "erkläre wie antikörper ziele erkennen","schreibe eine kurze glückwunschnachricht","nenne drei barockkomponisten",
+    ),
+    "mixed": (
+        "aurora가 생기는 원리 explain해줘","snow에 대한 haiku 써줘","Chile capital이 어디야",
+        "42 multiply 13 계산해줘","plate tectonics 설명해줘","blues turnaround 추천해줘",
+        "fox에 대한 short fable 말해줘","seasons change 이유가 뭐야","203 minus 88 계산해줘",
+        "antibodies가 targets를 recognize하는 방식 설명해줘","brief congratulations note 써줘","Baroque composers 세 명 알려줘",
+    ),
+}
+
+
 def _canonical(rows: list[dict[str, Any]]) -> bytes:
     return json.dumps(
         rows,
@@ -333,7 +373,7 @@ def _near(
     return rows
 
 
-def _ood(prefix: str) -> list[dict[str, Any]]:
+def _ood(prefix: str, bank: dict[str, tuple[str, ...]]) -> list[dict[str, Any]]:
     return [
         {
             "id": f"{prefix}-ood-{language}-{index}",
@@ -343,7 +383,7 @@ def _ood(prefix: str) -> list[dict[str, Any]]:
             "language": language,
         }
         for language in LANGUAGES
-        for index, query in enumerate(OOD[language], start=1)
+        for index, query in enumerate(bank[language], start=1)
     ]
 
 
@@ -372,10 +412,12 @@ def build(role: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         registry = development_registry()
         specs = DEV_ROUTE_SPECS
         prefix = "v6b-dev"
+        ood_bank = OOD
     elif role == "confirmation":
         registry = confirmation_registry()
         specs = CONFIRM_ROUTE_SPECS
         prefix = "v6b-confirm"
+        ood_bank = CONFIRM_OOD
     else:
         raise ValueError("role must be development or confirmation")
 
@@ -402,7 +444,7 @@ def build(role: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     ):
         raise ValueError("every V6B route must compile exactly 18 positive views")
 
-    rows = [*_supported(specs, prefix), *_near(specs, prefix), *_ood(prefix)]
+    rows = [*_supported(specs, prefix), *_near(specs, prefix), *_ood(prefix, ood_bank)]
     supported = [row for row in rows if row["expected"] is not None]
     near = [
         row
