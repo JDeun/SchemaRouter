@@ -1748,7 +1748,7 @@
       "issue": 293,
       "pull_request": 294,
       "preregistered": true,
-      "status": "partial_terminal",
+      "status": "active_parent_with_terminal_direct_laya_child",
       "design": {
         "infrastructure_issue": 291,
         "infrastructure_pull_request": 292,
@@ -1770,7 +1770,7 @@
         ],
         "authority": "finite registered IDs only; provider cannot create execution authority"
       },
-      "decision": "direct_laya_rejected_continue_with_external_system_one_and_veto_variants",
+      "decision": "direct_laya_rejected_parent_remains_open_for_system_one_comparison",
       "workflow_run_id": 36365434284,
       "source_revision": "48e329ee949d0d7a42d93a7c06c7ecbc62edfedc",
       "artifact_id": 10947876029,
@@ -1987,7 +1987,6 @@
       285,
       287,
       291,
-      293,
       297,
       289,
       304
@@ -2005,6 +2004,9 @@
     "next_research_direction": "finish pinned Kev-0.8B #299 and pinned Laya noul #301; activate #303 only if winner-only typed capability veto cannot promote",
     "contingent_experiments": [
       303
+    ],
+    "active_tracking_issues": [
+      293
     ]
   },
   "design_lineage": [
