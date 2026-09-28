@@ -1587,3 +1587,62 @@ The 0.11 architecture-search evidence now supports a stronger conclusion:
 The authority invariant remains unchanged:
 
 > External semantic evidence may veto the locally registered raw winner, but it may never select a different route or create execution authority.
+
+
+## 41. #291 / PR #292 — model-neutral System One provider contract
+
+The product integration layer was generalized after confirming that the emerging System One ecosystem is larger than the existing direct Jev and Laya integrations.
+
+Merged infrastructure:
+- generic `SystemOneDecisionBackend`;
+- existing `JevDecisionBackend` retained as a backward-compatible specialization;
+- neutral `schemarouter[systemone]` optional extra;
+- configurable `base_url`, `model`, and `provider_name`;
+- finite option-ID revalidation remains local;
+- `DecisionOption.metadata` remains private;
+- malformed or out-of-range confidence remains fail-closed;
+- provider compatibility does not grant execution authority.
+
+PR #292 passed CI, Security Audit, CodeQL and Python Preview and was squash-merged to main as:
+
+`7f4118ea059ab448ca132a3ef83b7a43135318c8`
+
+Architectural interpretation:
+
+> System One model choice is now a replaceable provider concern. Jev-compatible future models should normally enter SchemaRouter through configuration rather than a new planner class, while model quality remains independently benchmark-gated.
+
+## 42. #293 / PR #294 — direct Laya full-registry routing
+
+A new preregistered v4 experiment tests whether Laya can replace the BGE route selector rather than merely act as an optional downstream bounded decision backend.
+
+Frozen diagnostic:
+- original 1,800-case tuning DEV only;
+- Laya package `0.3.11`;
+- auto model routing;
+- CPU;
+- preload enabled;
+- `max_loaded=2`;
+- full **16 registered endpoints** exposed as the finite choice set;
+- BGE retrieval disabled;
+- only trusted route/tool/endpoint/operation-alias metadata is used;
+- eight global confidence thresholds: 0.50, 0.70, 0.80, 0.90, 0.95, 0.98, 0.99, 0.995;
+- no rank-2 fallback;
+- no pseudo-route;
+- failed #270/#287 fresh surfaces, calibration and blind remain forbidden.
+
+Promotion target remains:
+- exact >=85%;
+- near-domain rejection >=97%;
+- OOD rejection =100%;
+- false-route <=1%;
+- authority/errors =0;
+- p95 target <=250 ms.
+
+If direct choice + confidence fails, the result is terminal for that variant. The next separate System One experiment may test a typed `noul` capability gate rather than post-result threshold or prompt repair.
+
+The broader System One intake policy is now:
+1. Jev-wire-compatible models use `SystemOneDecisionBackend` by configuration;
+2. typed-decision models with different APIs first use `CallableDecisionBackend` or a research-only adapter;
+3. only stable, benchmark-validated integrations are promoted into permanent product-specific adapters.
+
+Initial open candidates after Laya are Kev and other reproducible System One engines; hosted Jev remains an optional credentialed comparison.
