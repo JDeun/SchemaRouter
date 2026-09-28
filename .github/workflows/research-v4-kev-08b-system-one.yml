@@ -1,18 +1,11 @@
-name: V4 Kev 0.8B System One
+name: V4 Kev 0.8B System One Timeout Retry
 
 on:
   push:
     branches:
-      - "research/v4-kev-08b-system-one"
+      - "research/v4-kev-08b-system-one-timeout-retry"
     paths:
-      - ".github/workflows/research-v4-kev-08b-system-one.yml"
-      - "benchmarks/operation-routing-v4-kev-08b-system-one.json"
-      - "scripts/analyze_kev_system_one_v4.py"
-      - "scripts/generate_decision_routing_quality_v4.py"
-      - "scripts/audit_operation_routing_corpus.py"
-      - "scripts/benchmark_decision_routing.py"
-      - "tests/test_kev_system_one_v4.py"
-  workflow_dispatch:
+      - "benchmarks/operation-routing-v4-kev-08b-system-one-timeout-retry.activation.json"
 
 permissions:
   contents: read
@@ -26,7 +19,7 @@ env:
   KEV_DTYPE: "fp32"
 
 concurrency:
-  group: v4-kev-08b-system-one-${{ github.ref }}
+  group: v4-kev-08b-system-one-timeout-retry-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -50,8 +43,28 @@ jobs:
   evaluate:
     needs: contracts
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 360
     steps:
+      - name: Validate timeout-only activation
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path(
+              "benchmarks/operation-routing-v4-kev-08b-system-one-timeout-retry.activation.json"
+          )
+          if not path.exists():
+              raise SystemExit("timeout-retry activation marker is required")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          if data.get("activate") is not True:
+              raise SystemExit("activation marker must set activate=true")
+          if data.get("source_workflow_run_id") != 36366508183:
+              raise SystemExit("activation marker must reference source run 36366508183")
+          if data.get("reason") != "technical_timeout_only":
+              raise SystemExit("activation reason must be technical_timeout_only")
+          print("validated timeout-only retry activation")
+          PY
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
