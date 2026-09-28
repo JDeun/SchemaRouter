@@ -2054,7 +2054,26 @@
     "anyjev_status": "AnyJev CPU execution PR #313 retired unexecuted; architecture remains only as a runtime-gated option if a credible <=250 ms path exists.",
     "current_frontier": "#322 offline composition passed 85.0694% exact / 99.3056% near rejection / 100% OOD / 0.6173% false-route. #324 is measuring exact row parity and direct p95.",
     "expensive_typed_decision_status": "CPU Laya/Qwen/Kev/AnyJev product-path experiments are terminal; current work is BGE-native/lightweight and <=250 ms by design.",
-    "runtime_only_policy": "#318 is model-neutral and dormant: activate only after a frozen candidate passes quality + semantic parity but misses p95<=250ms; #320/#321 parity tooling is mandatory."
+    "runtime_only_policy": "#318 is model-neutral and dormant: activate only after a frozen candidate passes quality + semantic parity but misses p95<=250ms; #320/#321 parity tooling is mandatory.",
+    "active_candidate": {
+      "issue": 326,
+      "pull_request": 327,
+      "semantic_source_revision": "caca039aff1c7b2960d167196f883e3bcbc5d431",
+      "dev_workflow_run_id": 36380771103,
+      "dev_artifact_id": 10952711288,
+      "dev_artifact_digest": "sha256:4ad9d0cc76500dd8705e0db0f677a21e44dbebb74cc3a9ca097723eb453abdc3",
+      "dev_metrics": {
+        "exact": 0.8506944444444444,
+        "near_rejection": 0.9930555555555556,
+        "ood_rejection": 1,
+        "false_route": 0.006172839506172839,
+        "p95_ms": 176.9435595
+      },
+      "fresh_workflow_run_id": 36382202178,
+      "fresh_seed": "operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a",
+      "fresh_surface": "lightweight-bge-gte-operational-envelope-v1",
+      "freeze_status": "frozen-dev"
+    }
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2115,17 +2134,19 @@
       306,
       316,
       320,
-      321
+      321,
+      324,
+      325
     ],
     "active_experiments": [
-      324
+      326
     ],
     "active_pull_requests": [
       235,
-      325
+      327
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "finish #324 executable parity/runtime confirmation; if pass, freeze exact candidate and run a new zero-overlap fresh confirmation",
+    "next_research_direction": "finish frozen lightweight BGE+GTE fresh confirmation; pass => fresh-confirmed manifest and unblock #198; fail => terminate without retuning",
     "contingent_experiments": [
       303
     ],
