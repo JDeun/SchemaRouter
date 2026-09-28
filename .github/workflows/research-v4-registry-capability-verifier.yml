@@ -1,0 +1,142 @@
+name: V4 Registry Capability Verifier
+
+on:
+  push:
+    branches:
+      - "research/v4-registry-capability-verifier"
+    paths:
+      - ".github/workflows/research-v4-registry-capability-verifier.yml"
+      - "benchmarks/operation-routing-v4-registry-capability-verifier.json"
+      - "benchmarks/registry_capability_contract.py"
+      - "benchmarks/registry_capability_holdout.py"
+      - "benchmarks/registry_capability_verifier.py"
+      - "scripts/evaluate_registry_capability_verifier_v4.py"
+      - "tests/test_registry_capability_contract.py"
+      - "tests/test_registry_capability_holdout.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  V4_DEV_SEED: "operation-routing-quality-v4-development-2026-09-27"
+  V4_DEV_SHA256: "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+
+concurrency:
+  group: v4-registry-capability-verifier-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Validate preregistration and contracts
+        run: |
+          python -m json.tool benchmarks/operation-routing-v4-registry-capability-verifier.json >/dev/null
+          ruff check             benchmarks/registry_capability_contract.py             benchmarks/registry_capability_holdout.py             benchmarks/registry_capability_verifier.py             scripts/evaluate_registry_capability_verifier_v4.py             tests/test_registry_capability_contract.py             tests/test_registry_capability_holdout.py
+          pytest -q             tests/test_registry_capability_contract.py             tests/test_registry_capability_holdout.py
+
+  evaluate:
+    needs: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers>=4.44,<5" "sentence-transformers>=3,<6" "scikit-learn>=1.5,<2" einops
+      - run: pip install -e ".[dev]"
+
+      - name: Generate immutable canonical DEV
+        run: |
+          OUT="artifacts/v4-registry-capability-verifier"
+          mkdir -p "${OUT}"
+          python scripts/generate_decision_routing_quality_v4.py             --seed "${V4_DEV_SEED}"             --source-revision "${GITHUB_SHA}"             --out "${OUT}/canonical-corpus.json"             --manifest "${OUT}/canonical-manifest.json"
+
+      - name: Verify canonical DEV identity
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("artifacts/v4-registry-capability-verifier/canonical-manifest.json")
+          manifest = json.loads(path.read_text(encoding="utf-8"))
+          if manifest.get("corpus_sha256") != os.environ["V4_DEV_SHA256"]:
+              raise SystemExit("canonical DEV SHA mismatch")
+          if manifest.get("case_count") != 1800:
+              raise SystemExit("canonical DEV case-count mismatch")
+          print("canonical DEV identity verified")
+          PY
+
+      - name: Execute canonical and arbitrary-registration evaluation
+        run: |
+          python scripts/evaluate_registry_capability_verifier_v4.py             --canonical-corpus artifacts/v4-registry-capability-verifier/canonical-corpus.json             --out artifacts/v4-registry-capability-verifier/analysis.json
+
+      - name: Validate experiment invariants
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("artifacts/v4-registry-capability-verifier/analysis.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          policy = data["policy"]
+          if policy["fresh_270_used"] or policy["fresh_287_used"] or policy["fresh_326_used"]:
+              raise SystemExit("forbidden fresh evidence was used")
+          if policy["calibration_or_blind_used"]:
+              raise SystemExit("calibration/blind evidence was used")
+          if policy["labeled_dev_used_for_head_fit"]:
+              raise SystemExit("labeled DEV leaked into generic head fit")
+          if policy["verifier_can_change_route"]:
+              raise SystemExit("verifier gained route authority")
+          if policy["rank2_fallback"] or policy["pseudo_route"]:
+              raise SystemExit("forbidden fallback authority enabled")
+          if policy["registration_specific_training"]:
+              raise SystemExit("registration holdout identity leaked into training")
+
+          canonical = data["canonical_dev"]
+          registration = data["registration_generalization_holdout"]
+          if canonical["metrics"]["raw_route_parity_mismatches"] != 0:
+              raise SystemExit("raw BGE route authority drifted")
+          if canonical["metrics"]["authority_violations"] != 0:
+              raise SystemExit("canonical authority violation")
+          if registration["metrics"]["authority_violations"] != 0:
+              raise SystemExit("registration authority violation")
+          if canonical["metrics"]["execution_errors"] != 0:
+              raise SystemExit("canonical execution errors")
+          if registration["metrics"]["execution_errors"] != 0:
+              raise SystemExit("registration execution errors")
+
+          print(
+              "candidate_worthy=",
+              data["candidate_worthy"],
+              "canonical_pass=",
+              canonical["all_gates_pass"],
+              "registration_pass=",
+              registration["all_gates_pass"],
+          )
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: v4-registry-capability-verifier-${{ github.run_id }}
+          path: |
+            artifacts/v4-registry-capability-verifier/analysis.json
+            artifacts/v4-registry-capability-verifier/canonical-manifest.json
+            benchmarks/operation-routing-v4-registry-capability-verifier.json
+          if-no-files-found: warn
+          retention-days: 30
