@@ -1991,6 +1991,15 @@
       "fallback_if_314_fails_but_299_passes": "#299 Kev native choice+noul",
       "rationale": "preserve established BGE route authority and keep external model veto-only when both satisfy all gates",
       "no_posthoc_slice_prompt_or_failed_fresh_selection": true
+    },
+    "kev_timeout_rescue": {
+      "active_run_id": 36366508183,
+      "rescue_branch": "research/v4-kev-08b-system-one-timeout-rescue",
+      "rescue_commit": "6934e97c5cd6f837aea405e3545995d5cb481374",
+      "original_research_source_revision": "250513c70d08e926251ce28683b404fe97581527",
+      "changed_semantics": false,
+      "allowed_change": "GitHub Actions evaluate timeout 180 -> 360 minutes only",
+      "dispatch_rule": "manual only if active run terminates by timeout without a valid terminal analysis artifact"
     }
   },
   "paper_reconstruction_checklist": [
