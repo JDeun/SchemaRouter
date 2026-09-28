@@ -1704,7 +1704,7 @@
       "issue": 293,
       "pull_request": 294,
       "preregistered": true,
-      "status": "executing",
+      "status": "partial_terminal",
       "design": {
         "infrastructure_issue": 291,
         "infrastructure_pull_request": 292,
@@ -1726,7 +1726,30 @@
         ],
         "authority": "finite registered IDs only; provider cannot create execution authority"
       },
-      "decision": "executing"
+      "decision": "direct_laya_rejected_continue_with_external_system_one_and_veto_variants",
+      "workflow_run_id": 36365434284,
+      "source_revision": "48e329ee949d0d7a42d93a7c06c7ecbc62edfedc",
+      "artifact_id": 10947876029,
+      "artifact_sha256": "f361f12844cf1da0374ba345051f9c35a0f50c2735c5e7fc9f2b6dbe62d39add",
+      "result": {
+        "direct_laya": {
+          "raw_supported_choice_accuracy": 0.6006944444444444,
+          "passing_rules": 0,
+          "most_conservative_rule": {
+            "threshold": 0.995,
+            "supported_exact_route_accuracy": 0.2404513888888889,
+            "near_domain_unsupported_rejection": 0.7760416666666666,
+            "out_of_domain_rejection": 0.9722222222222222,
+            "false_routes": 131,
+            "false_route_rate": 0.2021604938271605
+          },
+          "mean_latency_ms": 657.7295553838889,
+          "p95_latency_ms": 1041.4286671,
+          "errors": 0,
+          "authority_violations": 0
+        }
+      },
+      "interpretation": "Direct 16-way Laya choice has insufficient multilingual ranking capacity and confidence cannot provide the required open-set boundary. Do not replace BGE route authority with this direct Laya configuration; Laya noul may only be evaluated separately as a veto."
     },
     {
       "id": "0.11-kev-08b-choice-noul-screen",
@@ -1787,7 +1810,8 @@
     "explicit_negative_prototype_status": "#275 showed useful near-domain signal, while #277/#279/#281 demonstrated that fixed scalar and relative-rank prototype heuristics cannot meet the 85/97/1/100 target. This heuristic family is closed.",
     "learned_verifier_status": "#285 grouped OOF passed, but #287 frozen fit-once HGB failed zero-overlap fresh-surface DEV at 82.64% exact / 93.23% near rejection / 6.02% false-route / 252.77 ms p95. Same model SHA was reused without refit.",
     "system_one_provider_status": "#291/#292 merged a generic Jev-compatible SystemOneDecisionBackend; future compatible models can swap base_url/model/provider_name without a new planner class.",
-    "model_swap_infrastructure": "#291/#292 merged generic SystemOneDecisionBackend; #297/#298 generalizes the shared benchmark CLI so compatible models can be swapped by configuration."
+    "model_swap_infrastructure": "#291/#292 merged generic SystemOneDecisionBackend; #297/#298 generalizes the shared benchmark CLI so compatible models can be swapped by configuration.",
+    "direct_laya_status": "#293/#294 direct full-catalog Laya rejected: raw exact 60.07%, 0/8 rules pass, p95 1041ms; PR closed unmerged."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -1843,17 +1867,16 @@
     ],
     "active_experiments": [
       289,
-      293,
       299
     ],
     "active_pull_requests": [
       235,
       290,
-      294,
-      300
+      300,
+      298
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "terminal results of Qwen3 #289, direct Laya #293, and pinned Kev-0.8B choice+noul #299"
+    "next_research_direction": "terminal results of Qwen3 #289 and pinned Kev-0.8B #299; optionally preregister BGE-winner + Laya noul veto after these direct results"
   },
   "design_lineage": [
     {
