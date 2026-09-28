@@ -2705,3 +2705,57 @@ membership.
 Decision: **terminal reject** of the exact agreement rule. No failed row is used to add phrases,
 rewrite prototypes, tune thresholds or create route-specific exceptions. The already-generated
 confirmation corpus remains unopened.
+
+
+## 58. #363 / PR #364 — capability-set membership consensus improves recall but remains insufficient
+
+#363 kept the authority rule established by #358: frozen BGE-M3 raw top-1 was the sole positive
+route selector, and ontology evidence could only veto to `NO_ROUTE`.
+
+The only behavioral change was the unit of semantic agreement. Instead of requiring BGE and MiniLM
+to name the exact same unsupported leaf, each signal was mapped against the anchored tool's finite
+registered capability set as `SUPPORTED`, `OUTSIDE_SET`, or `UNKNOWN`.
+
+The rule was preregistered before creating a new evaluation surface:
+- explicit `OUTSIDE_SET` plus at least one semantic `OUTSIDE_SET` -> veto;
+- explicit `UNKNOWN` plus both semantic encoders `OUTSIDE_SET` -> veto;
+- explicit `SUPPORTED` -> preserve raw BGE route;
+- otherwise preserve;
+- no threshold, learned head, endpoint filter, rank-2 fallback, pseudo-route, or positive rerank.
+
+A new native/OpenAPI/MCP pair was frozen before scoring:
+- freeze run `36415762115`;
+- frozen source `a1a9eb20622dd8a47082ca8fa5cd02c52d27e653`;
+- freeze artifact `10966724823`;
+- digest `sha256:d957f82e29bdec0723fb0dda0622098563354a8ecdb45e8108b4633bc3bc6915`;
+- DEV: 552 cases, SHA `1d3d18975b33156d97f3b4fd518158cba418c449fae01e864977f8bdf77b5e62`;
+- confirmation: 552 cases, SHA `ba92c3c25da3601bd50f580dcfaf7b512ec2e26971e10ec9e501bb59cbf35d37`;
+- typed numeric/unit examples were present (`W/m2`, `L/s`);
+- confirmation remained unopened.
+
+DEV evaluation:
+- run `36415951667`;
+- source `f198f896c44860c27ce14b4c88200096ef0b754f`;
+- artifact `10967871097`;
+- digest `sha256:799006f7d69b94a29bfa0cfc62384ca2a8640cba668ac69e04ab2702a08f3f93`.
+
+Results:
+- supported exact **86.4035%**;
+- raw BGE supported exact **94.2982%**;
+- raw BGE tool accuracy **99.5614%**;
+- near-domain rejection **54.7619%**;
+- OOD rejection **97.2222%**;
+- false-route **35.8025%**;
+- veto precision **91.2281%**;
+- veto recall **64.1975%**;
+- raw-correct winners vetoed **18 / 8.3721%**;
+- positive route switches **0**;
+- p95 **249.7303 ms**;
+- authority/execution errors **0 / 0**.
+
+Compared with #358, set membership increased veto recall substantially, but the same projection family
+still could not provide enough open-set coverage and began harming correct supported winners.
+
+Decision: **terminal reject**. No membership-combination diagnostic or failed row is used to tune
+another rule on this DEV, and the frozen confirmation is not opened. The next candidate must use a
+materially different semantic membership evidence source.
