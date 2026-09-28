@@ -1,0 +1,76 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "external-qwen3-semantic-capability-verifier-v1",
+  "work_item": 289,
+  "parent_work_items": [197, 221, 287],
+  "status": "preregistered_before_execution",
+  "route_authority": {
+    "ranker": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "selection": "global registered raw top-1",
+    "verifier_can_select_route": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "verifier": {
+    "model": "Qwen/Qwen3-Reranker-0.6B",
+    "revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473",
+    "transformers": "4.57.6",
+    "max_length": 256,
+    "fine_tuned_on_schemarouter": false,
+    "score": "normalized yes probability against no token",
+    "instruction": "Decide whether the registered endpoint capability can fully execute the user request. Judge exact operational capability, not topical similarity. Answer yes only if every requested operation is explicitly supported by the endpoint contract. Do not infer capabilities that are not stated. If the request asks for an operation outside the explicit contract, answer no."
+  },
+  "endpoint_contract": {
+    "trusted_sources": [
+      "route id",
+      "tool description",
+      "endpoint description",
+      "operation aliases"
+    ],
+    "benchmark_row_text": false,
+    "unsupported_family_text": false,
+    "handwritten_negative_prototypes": false,
+    "expected_route": false,
+    "category": false,
+    "language": false
+  },
+  "acceptance_thresholds": [
+    0.5,
+    0.7,
+    0.8,
+    0.9,
+    0.95,
+    0.98,
+    0.99,
+    0.995
+  ],
+  "fixed_rule_count": 8,
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "failed_270_fresh_surface_forbidden": true,
+    "failed_287_fresh_surface_forbidden": true,
+    "calibration_or_blind_forbidden": true
+  },
+  "quality_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0
+  },
+  "runtime_target": {
+    "combined_single_request_p95_ms_max": 250.0,
+    "quality_pass_latency_fail_action": "freeze semantics and run runtime-only optimization"
+  },
+  "promotion_policy": "If a fixed threshold passes quality and runtime, freeze the exact model revision, instruction, endpoint contract, and threshold in a separate executable candidate before new fresh-surface confirmation. If quality passes but latency fails, permit runtime-only optimization without semantic changes. If quality fails, reject direct pretrained reranker verification and do not tune prompts or thresholds beyond this grid."
+}
