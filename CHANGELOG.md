@@ -5,6 +5,8 @@ All notable changes to SchemaRouter are documented here.
 The project is pre-1.0 and follows the compatibility rules in
 [`docs/versioning.md`](docs/versioning.md).
 
+- add a frozen routing runtime-parity validator that rejects route changes, execute/abstain threshold crossings, case-set drift, execution errors, or authority violations while reporting probability drift for runtime-only optimization evidence;
+
 ## Unreleased
 
 ### Added
