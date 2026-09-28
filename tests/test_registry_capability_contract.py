@@ -9,7 +9,14 @@ from benchmarks.registry_capability_contract import (
     counterfactual_action_texts,
     structural_action_compatible,
 )
-from schemarouter import EndpointSpec, InMemoryRegistry, ToolSpec
+from schemarouter import (
+    EndpointSpec,
+    FieldSpec,
+    InMemoryRegistry,
+    ParameterSpec,
+    ToolSpec,
+    UnitNormalizationSpec,
+)
 from schemarouter.adapters.mcp import tool_from_mcp
 from schemarouter.adapters.openapi import tool_from_openapi
 
@@ -254,3 +261,144 @@ def test_structural_compatibility_fails_closed_for_write_against_read_only() -> 
     assert structural_action_compatible(contract, "update") is False
     assert structural_action_compatible(contract, "retrieve") is True
     assert structural_action_compatible(contract, None) is None
+
+
+
+def test_capability_ir_preserves_data_types_units_normalization_and_qualifiers() -> None:
+    tool = ToolSpec(
+        name="mechanics",
+        description="Mechanical-property service",
+        endpoints=[
+            EndpointSpec(
+                name="measure",
+                description="Retrieve measured tensile strength",
+                read_only=True,
+                parameters=[
+                    ParameterSpec(
+                        name="temperature",
+                        required=False,
+                        json_schema={"type": "number", "x-unit": "K"},
+                    )
+                ],
+                output_fields=[
+                    FieldSpec(
+                        name="strength",
+                        semantic_id="mechanical.tensile_strength",
+                        description="Ultimate tensile strength",
+                        json_schema={"type": "number"},
+                        unit="MPa",
+                        unit_normalization=UnitNormalizationSpec(
+                            dimension="pressure",
+                            canonical_unit="Pa",
+                            scale=1_000_000.0,
+                            offset=0.0,
+                        ),
+                        qualifiers={"condition": "room_temperature"},
+                    ),
+                    FieldSpec(
+                        name="sample_id",
+                        json_schema={"type": "string"},
+                        identifier=True,
+                    ),
+                ],
+            )
+        ],
+    )
+
+    contract = compile_endpoint(tool, tool.endpoints[0])
+    assert len(contract.input_fields) == 1
+    assert contract.input_fields[0].data_type == "number"
+    assert contract.input_fields[0].source_unit == "K"
+
+    by_name = {field.name: field for field in contract.output_fields}
+    strength = by_name["strength"]
+    assert strength.semantic_id == "mechanical.tensile_strength"
+    assert strength.data_type == "number"
+    assert strength.source_unit == "MPa"
+    assert strength.canonical_unit == "Pa"
+    assert strength.dimension == "pressure"
+    assert strength.unit_scale == 1_000_000.0
+    assert strength.unit_offset == 0.0
+    assert strength.qualifiers == (("condition", "room_temperature"),)
+    assert by_name["sample_id"].data_type == "string"
+    assert by_name["sample_id"].identifier is True
+    assert "mechanical.tensile_strength" in contract.data_contract_text
+    assert "canonical unit Pa" in contract.data_contract_text
+    assert "type number" in contract.data_contract_text
+
+
+def test_openapi_and_mcp_types_and_units_flow_into_same_capability_ir() -> None:
+    openapi = tool_from_openapi(
+        "lab_api",
+        {
+            "openapi": "3.1.0",
+            "info": {"title": "Lab", "version": "1.0"},
+            "paths": {
+                "/samples/{sample_id}": {
+                    "get": {
+                        "operationId": "read_sample",
+                        "summary": "Fetch sample dimensions",
+                        "parameters": [
+                            {
+                                "name": "sample_id",
+                                "in": "path",
+                                "required": True,
+                                "schema": {"type": "string"},
+                            }
+                        ],
+                        "responses": {
+                            "200": {
+                                "description": "ok",
+                                "content": {
+                                    "application/json": {
+                                        "schema": {
+                                            "type": "object",
+                                            "properties": {
+                                                "thickness": {
+                                                    "type": "number",
+                                                    "x-ucum-unit": "nm",
+                                                }
+                                            },
+                                        }
+                                    }
+                                },
+                            }
+                        },
+                    }
+                }
+            },
+        },
+    )
+    mcp = tool_from_mcp(
+        "lab_mcp",
+        {
+            "tools": [
+                {
+                    "name": "x1",
+                    "description": "Fetch sample mass",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "sample_id": {"type": "string"}
+                        },
+                    },
+                    "outputSchema": {
+                        "type": "object",
+                        "properties": {
+                            "mass": {"type": "number", "x-unit": "mg"}
+                        },
+                    },
+                }
+            ]
+        },
+    )
+
+    registry = InMemoryRegistry()
+    registry.register(openapi)
+    registry.register(mcp)
+    contracts = {item.route_id: item for item in compile_registry(registry)}
+
+    openapi_field = contracts["lab_api.read_sample"].output_fields[0]
+    mcp_field = contracts["lab_mcp.x1"].output_fields[0]
+    assert (openapi_field.data_type, openapi_field.source_unit) == ("number", "nm")
+    assert (mcp_field.data_type, mcp_field.source_unit) == ("number", "mg")
