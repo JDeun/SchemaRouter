@@ -129,7 +129,7 @@ def test_boundary_can_only_preserve_raw_winner_or_abstain() -> None:
 
 
 def test_core_source_contains_no_v6a_evaluation_route_identities() -> None:
-    source = (ROOT / "benchmarks" / "schema_adb_baseline.py").read_text()
+    source = (ROOT / "benchmarks" / "schema_adb_baseline.py").read_text(encoding="utf-8")
     for forbidden in (
         "licenses_api.l17",
         "registry_ops.g17",
