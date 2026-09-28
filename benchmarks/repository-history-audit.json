@@ -1,17 +1,17 @@
 {
   "schema_version": 1,
   "purpose": "Complete mainline commit enumeration used to verify the human design/experiment history and machine research ledger from repository inception.",
-  "audited_at": "2026-09-27",
+  "audited_at": "2026-09-28",
   "branch": "main",
-  "head_revision": "526d0c588bbec053fba54c55d982cc67d2a74d56",
+  "head_revision": "fad004cdfce8e40c2119d3758ab47332d52e6253",
   "initial_revision": "5691c3c922f0209231f112c06096fe8744681fc5",
-  "commit_count": 140,
+  "commit_count": 149,
   "counts_by_subject_kind": {
-    "research": 14,
+    "research": 18,
+    "feature": 46,
+    "docs": 11,
     "chore": 15,
     "release": 10,
-    "docs": 10,
-    "feature": 42,
     "performance": 3,
     "fix": 21,
     "test": 9,
@@ -28,9 +28,63 @@
       "benchmarks/research-experiment-ledger.json"
     ],
     "non_main_experiment_branches": "Tracked separately through experiment ledger PR/branch/run provenance; rejected research is not required to merge to main to remain evidence.",
-    "caveat": "Subject classification is an index, not a claim that only feat/research commits are material. Security/fix/CI commits remain enumerated and their material behavior changes are represented in CHANGELOG/history where applicable."
+    "caveat": "Subject classification is an index, not a claim that only feat/research commits are material. Security/fix/CI/docs and governance commits remain enumerated; non-main experimental evidence is tracked separately through the research ledger and terminal issue/PR provenance."
   },
   "commits": [
+    {
+      "sha": "fad004cdfce8e40c2119d3758ab47332d52e6253",
+      "date": "2026-09-28T03:55:31Z",
+      "subject": "research: standardize routing candidate freeze manifests",
+      "kind": "research"
+    },
+    {
+      "sha": "e782ebb87f80cdb2cefe5a716f77f546cd6309b1",
+      "date": "2026-09-28T02:43:17Z",
+      "subject": "feat: add pluggable decision backend entry points",
+      "kind": "feature"
+    },
+    {
+      "sha": "a1192e9aa0011fc466e0c33df91808f36cdff897",
+      "date": "2026-09-28T02:07:26Z",
+      "subject": "docs: surface swappable decision providers (#309)",
+      "kind": "docs"
+    },
+    {
+      "sha": "c9678b95a6dc592a1c3b850a6aea8b1675ff94a4",
+      "date": "2026-09-28T01:57:25Z",
+      "subject": "feat: benchmark arbitrary bounded decision callables (#305)",
+      "kind": "feature"
+    },
+    {
+      "sha": "5ab9703419f467746f567872715b3df3aca41224",
+      "date": "2026-09-28T01:45:39Z",
+      "subject": "feat: benchmark arbitrary System One-compatible providers (#298)",
+      "kind": "feature"
+    },
+    {
+      "sha": "7f4118ea059ab448ca132a3ef83b7a43135318c8",
+      "date": "2026-09-28T01:18:29Z",
+      "subject": "feat: generalize Jev-compatible System One providers (#292)",
+      "kind": "feature"
+    },
+    {
+      "sha": "2dc43f93cae2313cf45787b55a913196c367ed3d",
+      "date": "2026-09-27T12:26:36Z",
+      "subject": "research: record width2 winner-gate latency rejection (#229)",
+      "kind": "research"
+    },
+    {
+      "sha": "34b2e5017dee9c953e1bef5ca98946dcec09acff",
+      "date": "2026-09-27T10:50:02Z",
+      "subject": "research: record bounded rerank evidence and latency cycle (#218)",
+      "kind": "research"
+    },
+    {
+      "sha": "af087617c393236315c03dfcdccd57f7d91040cc",
+      "date": "2026-09-27T10:21:29Z",
+      "subject": "research: add complete evidence ledger and resumable research governance (#201)",
+      "kind": "research"
+    },
     {
       "sha": "526d0c588bbec053fba54c55d982cc67d2a74d56",
       "date": "2026-09-26T15:35:30Z",
