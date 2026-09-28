@@ -204,6 +204,8 @@ became too conservative and rejected most valid supported requests.
 See:
 
 - [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
+- [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/) — canonical literature/work-item map for cross-session research continuity
+- [Complete experiment index](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
 - [0.10.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.10.0/)
 - [Changelog](CHANGELOG.md)
 
@@ -234,6 +236,9 @@ schemarouter dashboard \
 - [MCP](https://jdeun.github.io/SchemaRouter/guides/mcp/)
 - [Architecture and maturity](https://jdeun.github.io/SchemaRouter/architecture/)
 - [Security model](https://jdeun.github.io/SchemaRouter/security/threat-model/)
+- [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
+- [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
+- [Complete experiment index](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
 
 ## Scope
 
