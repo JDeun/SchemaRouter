@@ -5,13 +5,14 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.9.0</span>
+<span class="sr-kicker">SchemaRouter 0.10.0</span>
 
 # Put a typed execution boundary between agents and tools
 
-SchemaRouter compiles a natural-language request into the **smallest declared data-field plan it can
-justify**, chooses a trusted provider/access path that can supply those fields, and validates policy,
-schema identity, arguments, availability, and raw output before execution is accepted.
+SchemaRouter parses registered APIs and tools into a typed capability catalog, compiles a natural-
+language request into the **smallest declared data-field plan it can justify**, chooses a trusted
+provider/access path that can supply those fields, and validates policy, schema identity, arguments,
+availability, datatype/unit contracts, and raw output before execution is accepted.
 
 ```bash
 pip install schemarouter
@@ -56,6 +57,13 @@ LangChain / LangGraph / LlamaIndex / your orchestrator
                          |
           OpenAPI / MCP / OPTIMADE / Python
 ```
+
+A useful mental model is **RAG for executable capabilities**. Document RAG turns source material
+into chunks + metadata before retrieval; SchemaRouter turns APIs/tools into endpoint + field
+contracts before bounded routing. Its registry is a logical capability graph/index, while the
+registered schema remains execution authority.
+
+[Read the capability-catalog model →](concepts/capability-catalog.md)
 
 SchemaRouter is deliberately narrower than an agent framework. The orchestrator owns conversation,
 graphs, model invocation strategy, memory, checkpoints, and agent loops. SchemaRouter owns the
@@ -181,6 +189,21 @@ equivalence, convert qualifier values, or synthesize measurement context.
 [Field-first execution and scientific contracts →](concepts/field-first-execution.md)
 
 [Read the 0.7.0 release notes →](releases/0.7.0.md)
+
+## 0.10 focus
+
+Version `0.10.0` consolidates the product model and research boundary. It keeps field-first,
+route-second planning as the stable path; treats declared JSON datatype/shape, semantic IDs, optional
+units, explicit affine unit normalization, and exact qualifiers as part of the capability contract;
+and keeps learned decision providers bounded and optional.
+
+The current open-set research target is not presented as solved. The strongest executable canonical
+DEV candidate passed the standing target, but the exact frozen zero-overlap fresh confirmation
+failed materially on near-domain rejection, false-route rate, supported exact routing, and p95.
+No production-target candidate was promoted from that cycle.
+
+[Read the 0.10.0 release notes →](releases/0.10.0.md) ·
+[Read the routing research status →](research/routing-status.md)
 
 ## 0.9 focus
 

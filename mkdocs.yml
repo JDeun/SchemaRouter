@@ -96,6 +96,7 @@ nav:
       - Choose an ingestion path: getting-started/ingestion-paths.md
   - Concepts:
       - What SchemaRouter is: concepts/schema-router.md
+      - Capability catalog and RAG analogy: concepts/capability-catalog.md
       - Design principles: concepts/design-principles.md
       - Tool and endpoint contracts: concepts/tool-endpoint.md
       - Planning and field projection: concepts/planning.md
@@ -156,6 +157,7 @@ nav:
   - Project:
       - Versioning: versioning.md
       - Release notes:
+          - 0.10.0: releases/0.10.0.md
           - 0.9.0: releases/0.9.0.md
           - 0.8.0: releases/0.8.0.md
           - 0.7.0: releases/0.7.0.md
@@ -165,6 +167,7 @@ nav:
           - 0.3.0: releases/0.3.0.md
           - 0.3.0a1: releases/0.3.0a1.md
           - 0.2.0a1: releases/0.2.0a1.md
+      - Routing research status: research/routing-status.md
       - Research freeze protocol: research/operation-routing-freeze-protocol.md
       - Release checklist: release-checklist.md
       - Contributing: contributing.md
