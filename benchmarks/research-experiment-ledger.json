@@ -2271,6 +2271,69 @@
         "selection confidence versus capability membership",
         "compute stopping rule"
       ]
+    },
+    {
+      "id": "0.11-registry-compiled-capability-verifier",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 338,
+      "pull_request": 341,
+      "branch": "research/v4-registry-capability-verifier",
+      "hypothesis": "A provider-neutral capability IR plus generic synthetic counterfactual supervision can veto unsupported operations for arbitrary newly registered native/OpenAPI/MCP tools without route-specific retraining.",
+      "preregistered": true,
+      "registration_generalization": {
+        "providers": [
+          "native ToolSpec",
+          "OpenAPI",
+          "MCP"
+        ],
+        "opaque_endpoint_names": true,
+        "operation_aliases_may_be_empty": true,
+        "route_specific_retraining": false,
+        "typed_data_contracts": [
+          "json datatype/shape",
+          "semantic_id",
+          "source unit",
+          "unit normalization",
+          "qualifiers"
+        ]
+      },
+      "result": {
+        "workflow_run_id": 36393153612,
+        "source_revision": "ef75100abc1bb03a80ef2d7cfbd9d463accfb623",
+        "artifact_id": 10957952613,
+        "artifact_sha256": "2a24d50c563ee872fdad8d498e30ab7a55e6c82e0650bf27ac4bfbadc4fc4269",
+        "canonical_dev": {
+          "cases": 1800,
+          "supported_exact_route_accuracy": 0.050347,
+          "near_domain_unsupported_rejection": 1,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0,
+          "correct_raw_winner_retention": 0.056919,
+          "p95_latency_ms": 196.93,
+          "raw_route_parity_mismatches": 0,
+          "authority_violations": 0,
+          "execution_errors": 0
+        },
+        "registration_holdout": {
+          "cases": 228,
+          "supported_exact_route_accuracy": 0.020833,
+          "near_domain_unsupported_rejection": 1,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0,
+          "correct_raw_winner_retention": 0.02459,
+          "p95_latency_ms": 192.85,
+          "authority_violations": 0,
+          "execution_errors": 0
+        }
+      },
+      "decision": "terminal_rejected_overconservative_veto",
+      "failure_reason": "The provider-neutral compiler and authority invariants worked, but the generic synthetic learned veto rejected nearly all valid supported requests. Per preregistration it was closed without label-driven repair.",
+      "paper_relevance": [
+        "arbitrary-tool registration generalization",
+        "typed capability IR",
+        "negative result for synthetic learned veto",
+        "abstention versus supported-recall tradeoff"
+      ]
     }
   ],
   "current_research_conclusion": {
