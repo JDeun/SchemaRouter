@@ -8,7 +8,7 @@ answers a different question: **what was actually tried?**
 
 Current machine-readable ledger:
 
-- independent experiment records: **66**;
+- independent experiment records: **67**;
 - legacy routing corpus lineage: **13** versioned corpora;
 - routine bugfix-only commits are not counted as independent experiments unless they changed an
   architecture invariant, evaluation protocol, or empirical claim;
@@ -167,6 +167,12 @@ The repository Git history remains the exhaustive engineering record.
 | # | Experiment | Decision | Hypothesis / purpose | Evidence |
 | ---: | --- | --- | --- | --- |
 | 1 | `0.12-external-multilingual-zeroshot-membership-v1` | **terminal_rejected_multiclass_outside_label_no_open_set_boundary** | A small externally pretrained multilingual zero-shot classifier can judge whether a request belongs to the finite capability set registered for the BGE-anchored tool, while remain… | [issue #371](https://github.com/JDeun/SchemaRouter/issues/371) · [PR #372](https://github.com/JDeun/SchemaRouter/pull/372) · [`5e6dde0c38`](https://github.com/JDeun/SchemaRouter/commit/5e6dde0c3860ff46f0961c74233d7196e6c86f59) |
+
+## 0.12-set-conditioned-entailment
+
+| # | Experiment | Decision | Hypothesis / purpose | Evidence |
+| ---: | --- | --- | --- | --- |
+| 1 | `0.12-set-conditioned-binary-entailment-v1` | **terminal_rejected_set_conditioned_nli_all_negative** | Condition one binary NLI judgment on the anchored tool's complete registered capability set while preserving frozen BGE-M3 as the sole positive route selector. | [issue #374](https://github.com/JDeun/SchemaRouter/issues/374) · [PR #375](https://github.com/JDeun/SchemaRouter/pull/375) · [`e61058d0aa`](https://github.com/JDeun/SchemaRouter/commit/e61058d0aa31819bf99b182f4bd5947dd0d11fab) |
 
 ## Why the summary page shows fewer rows
 
