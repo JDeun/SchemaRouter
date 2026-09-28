@@ -1,7 +1,7 @@
 # Prior-art roadmap for open-set capability routing
 
 This page is the human-readable companion to
-[`benchmarks/research-prior-art-registry.json`](../../benchmarks/research-prior-art-registry.json)
+[`benchmarks/research-prior-art-registry.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-prior-art-registry.json)
 and GitHub issue **#388**.
 
 Its purpose is continuity: a new research session should be able to reconstruct what literature has
@@ -23,8 +23,8 @@ Before creating a new routing experiment:
 
 | Workstream | Work item | State | Current SchemaRouter use |
 | --- | ---: | --- | --- |
-| Adaptive/open decision boundaries | #384 | **active** | V6A positive-only schema-derived ADB baseline |
-| Hard-negative OOS generation | #389 | next | Generate near-domain negatives from registered capability complement |
+| Adaptive/open decision boundaries | #384 | **terminal** | V6A positive-only spherical ADB rejected every DEV request |
+| Hard-negative OOS generation | #389 / #395 | **active** | V6B schema-derived hard-negative low-rank ellipsoid |
 | Energy/density/open-space scoring | #390 | backlog | Test membership scores that do not require an explicit `OUTSIDE` class |
 | Selective/conformal abstention | #391 | deferred | Calibrate abstention only after a useful semantic membership score exists |
 | Tool/executable-schema retrieval | #392 | ongoing | Keep retrieval research aligned with the typed capability architecture |
@@ -53,14 +53,19 @@ SchemaRouter difference:
 - therefore positive evidence must be compiled from schema at registration time;
 - route authority must remain registry-backed and must not be invented by the boundary model.
 
-Current canonical experiment:
+Terminal canonical experiment:
 
 - **#384**
 - branch: `research/0.13-schema-adb-baseline`
 - protocol: V6A
-- exact endpoint synthetic-positive budget: **18 views**
-- BGE-M3 remains the sole positive route selector;
-- ADB may only preserve the raw winner or return `NO_ROUTE`.
+- raw BGE supported exact: **91.67%**
+- ADB supported exact: **0%**
+- near-domain / OOD rejection: **100% / 100%**
+- all **209** raw-correct supported winners were vetoed;
+- all 552 DEV queries fell outside every spherical boundary;
+- confirmation remains unopened.
+
+The positive-only spherical formulation is terminal. It must not be repaired by rescaling the radius or rewriting the positive views from failed DEV evidence.
 
 Duplicate/superseded research artifacts are explicitly recorded in the machine-readable registry.
 
@@ -102,7 +107,7 @@ hard-negative OOS examples
 The generator must remain registry-independent. It must not use benchmark route names or failed DEV
 rows to write special negatives.
 
-Work item: **#389**.
+Work item: **#389**. The active concrete experiment is **#395**, which combines registry-derived same-resource hard negatives with a low-rank anisotropic ellipsoid boundary while keeping raw BGE-M3 as the only positive route authority.
 
 ## 3. Energy, density, and open-space scoring
 
@@ -199,9 +204,9 @@ The following rules apply across all workstreams:
 
 The current order is:
 
-1. finish **#384** positive-only ADB;
-2. open a separately preregistered hard-negative extension from **#389**;
-3. compare an energy/density/open-space signal from **#390**;
+1. retain **#384** as the terminal positive-only spherical ADB reference; its confirmation stays unopened;
+2. execute **#395**, the preregistered V6B hard-negative low-rank ellipsoid experiment instantiated from **#389** and informed by **#390**;
+3. if #395 is terminal, compare a separately preregistered energy/density/open-space signal from **#390** rather than tuning #395 from failed rows;
 4. if a useful score exists, evaluate selective/conformal safety from **#391**;
 5. continuously maintain ToolRet/ToolReAGt architectural alignment in **#392**.
 
