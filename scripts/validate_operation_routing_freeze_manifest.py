@@ -10,15 +10,10 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-EXPECTED_TARGET = {
-    "supported_exact_route_accuracy_min": 0.85,
-    "near_domain_unsupported_rejection_min": 0.97,
-    "out_of_domain_rejection": 1.0,
-    "false_route_rate_max": 0.01,
-    "authority_violations_max": 0,
-    "execution_errors_max": 0,
-    "combined_p95_ms_max": 250.0,
-}
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+_TARGETS_PATH = _PROJECT_ROOT / "benchmarks" / "operation-routing-production-targets.json"
+_TARGETS_DOCUMENT = json.loads(_TARGETS_PATH.read_text(encoding="utf-8"))
+EXPECTED_TARGET = _TARGETS_DOCUMENT["metrics"]
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _SHA256_DIGEST_RE = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
 _SOURCE_REVISION_RE = re.compile(r"^[0-9a-f]{40,64}$")
