@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "cycle": "0.12-factorized-resource-action",
+  "experiment": "factorized-resource-conditioned-action-v1",
+  "issue": 355,
+  "parent_issue": 340,
+  "status": "preregistered_before_corpus_generation_or_scoring",
+  "model": {
+    "name": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "endpoint_schema_weight": 0.55,
+    "endpoint_action_weight": 0.45
+  },
+  "representation": {
+    "resource_axis": {
+      "unit": "registered tool",
+      "input": "tool name/namespace/description + parameter/output field semantic metadata + datatype/unit/qualifier labels",
+      "action_terms_removed": true,
+      "operation_aliases_excluded": true,
+      "methods_excluded": true,
+      "read_write_destructive_excluded": true,
+      "scoring": "single frozen BGE-M3 cosine argmax over tools",
+      "threshold": null
+    },
+    "action_axis": {
+      "classes": [
+        "read",
+        "create",
+        "update",
+        "delete",
+        "cancel",
+        "refund",
+        "send",
+        "share",
+        "export",
+        "translate",
+        "summarize",
+        "compare",
+        "merge",
+        "restart",
+        "execute",
+        "forecast",
+        "compose",
+        "explain",
+        "calculate",
+        "chat"
+      ],
+      "prototypes": "copied unchanged from the pre-scoring #349 generic ontology",
+      "conditioned_on": "selected tool resource-only text shared across all classes",
+      "scoring": "max cosine per class; single argmax",
+      "threshold": null,
+      "margin_threshold": null,
+      "learned_head": false
+    },
+    "contract_intersection": {
+      "scope": "endpoints registered under selected resource tool only",
+      "endpoint_action_sources": [
+        "method",
+        "read_only",
+        "destructive",
+        "endpoint name",
+        "operation aliases",
+        "endpoint description"
+      ],
+      "no_cross_tool_fallback": true,
+      "empty_set": "NO_ROUTE"
+    }
+  },
+  "typed_contract_preservation": [
+    "input/output json datatype/shape",
+    "semantic_id",
+    "optional source unit",
+    "declared unit normalization",
+    "qualifiers"
+  ],
+  "forbidden_evidence": [
+    "0.11 DEV",
+    "#270 fresh",
+    "#287 fresh",
+    "#326 fresh",
+    "#338 holdout",
+    "#347 DEV",
+    "#347 confirmation",
+    "#349 DEV",
+    "#349 confirmation",
+    "#198 calibration",
+    "#198 blind"
+  ],
+  "data_protocol": {
+    "development": {
+      "role": "new 0.12-C screen",
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "role": "frozen confirmation only",
+      "generated_before_development_scoring": true,
+      "corpus_sha256": null
+    }
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "dev_fail": "terminal_reject_without_row-driven resource/action vocabulary repair",
+    "dev_pass": "freeze exact source and open already-generated confirmation",
+    "confirmation_fail": "terminal_reject_without repair",
+    "both_pass": "eligible for brand-new zero-overlap natural-language fresh confirmation"
+  }
+}
