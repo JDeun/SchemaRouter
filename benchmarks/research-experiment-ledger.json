@@ -1624,7 +1624,7 @@
         ],
         "verifier_authority": "veto-only"
       },
-      "decision": "rejected_direct_qwen3_capability_verifier",
+      "decision": "reject",
       "workflow_run_id": 36363863046,
       "source_revision": "68e812ab5c72bd42664e21f8c9f62a760465cb03",
       "artifact_id": 10947604859,
@@ -1632,41 +1632,16 @@
       "result": {
         "raw_supported_top1_accuracy": 0.8845486111111112,
         "passing_rule_count": 0,
-        "frontier": {
-          "p050": {
-            "supported_exact_route_accuracy": 0.8289930555555556,
-            "near_domain_unsupported_rejection": 0.7795138888888888,
-            "out_of_domain_rejection": 0.9722222222222222,
-            "false_route_rate": 0.19907407407407407
-          },
-          "p098": {
-            "supported_exact_route_accuracy": 0.6875,
-            "near_domain_unsupported_rejection": 0.9739583333333334,
-            "out_of_domain_rejection": 1,
-            "false_route_rate": 0.023148148148148147
-          },
-          "p099": {
-            "supported_exact_route_accuracy": 0.6276041666666666,
-            "near_domain_unsupported_rejection": 0.9913194444444444,
-            "out_of_domain_rejection": 1,
-            "false_route_rate": 0.007716049382716049
-          },
-          "p0995": {
-            "supported_exact_route_accuracy": 0.5277777777777778,
-            "near_domain_unsupported_rejection": 1,
-            "out_of_domain_rejection": 1,
-            "false_route_rate": 0
-          }
+        "best_false_route_compliant_rule": {
+          "threshold": 0.99,
+          "supported_exact_route_accuracy": 0.6276041666666666,
+          "near_domain_unsupported_rejection": 0.9913194444444444,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0.007716049382716049
         },
-        "probability_geometry_mean": {
-          "supported_correct_winner": 0.9266493506942384,
-          "supported_wrong_winner": 0.6271075994367479,
-          "near_domain_unsupported": 0.23253959416191744,
-          "out_of_domain": 0.041680927582724
-        },
-        "combined_single_request_p95_ms": 2059.41623895,
-        "execution_errors": 0,
-        "authority_violations": 0
+        "combined_p95_ms": 2059.42,
+        "authority_violations": 0,
+        "execution_errors": 0
       },
       "interpretation": "External pretrained reranker capability probability has strong semantic signal but no global boundary preserves >=85% supported exact while meeting 97/100/1 rejection safety. Direct generic reranker yes/no gating is rejected."
     },
@@ -1828,7 +1803,7 @@
       "pull_request": 302,
       "preregistered": true,
       "status": "completed",
-      "decision": "rejected_pinned_laya_noul_veto",
+      "decision": "reject",
       "workflow_run_id": 36367249147,
       "source_revision": "46af3c3d0156b7b7bfd40686aa5639571f91a936",
       "artifact_id": 10948736462,
@@ -1847,27 +1822,21 @@
       "result": {
         "raw_supported_top1_accuracy": 0.8845486111111112,
         "passing_rule_count": 0,
-        "p050": {
+        "threshold_0_50": {
           "supported_exact_route_accuracy": 0.8324652777777778,
           "near_domain_unsupported_rejection": 0.0798611111111111,
           "out_of_domain_rejection": 0.08333333333333333,
           "false_route_rate": 0.9197530864197531
         },
-        "p095": {
+        "threshold_0_95": {
           "supported_exact_route_accuracy": 0.015625,
           "near_domain_unsupported_rejection": 0.9947916666666666,
           "out_of_domain_rejection": 1,
           "false_route_rate": 0.004629629629629629
         },
-        "probability_geometry_median": {
-          "supported_correct_winner": 0.6784,
-          "supported_wrong_winner": 0.6208,
-          "near_domain_unsupported": 0.67245,
-          "out_of_domain": 0.74135
-        },
-        "combined_single_request_p95_ms": 1098.75412895,
-        "execution_errors": 0,
-        "authority_violations": 0
+        "combined_p95_ms": 1098.75412895,
+        "authority_violations": 0,
+        "execution_errors": 0
       },
       "interpretation": "Pinned Laya native noul over the immutable BGE winner does not separate exact capability from near-domain/OOD requests; correct-supported and near-unsupported medians overlap almost completely."
     },
@@ -1878,12 +1847,13 @@
       "pull_request": 296,
       "preregistered": true,
       "status": "closed_without_execution",
-      "decision": "superseded_by_raw_choice_ceiling",
+      "decision": "superseded_by_301",
       "result": {
         "quality_evidence_consumed": false,
         "reason": "direct Laya full-catalog raw supported top-1 was 60.0694%; adding veto-only noul cannot raise exact-route above that ceiling"
       },
-      "interpretation": "Direct Laya full-catalog raw supported top-1 was 60.07%, so adding a veto-only noul gate cannot reach the >=85% exact target while preserving Laya choice as route authority."
+      "interpretation": "Direct Laya full-catalog raw supported top-1 was 60.07%, so adding a veto-only noul gate cannot reach the >=85% exact target while preserving Laya choice as route authority.",
+      "reason": "direct Laya full-catalog raw choice ceiling 60.0694% is below the 85% exact gate, so a veto-only noul cannot make this architecture pass"
     },
     {
       "id": "0.11-top4-typed-capability-routing",
@@ -1942,7 +1912,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "parallel external typed-decision evidence: Kev-0.8B #299 and activated BGE-top4 + pinned Laya noul #303",
+    "active_experiment": "pinned Kev-0.8B choice+noul #299",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1967,7 +1937,8 @@
     "laya_noul_status": "#301/#302 rejected: P(true) does not separate correct supported from near/OOD; 0/8 rules pass; combined p95 1098.75ms.",
     "topk_same_laya_status": "#310 closed without execution: at p>=0.95 the same Laya signal has a hard best-case exact bound of 151/1152=13.11%, so compute would be wasted.",
     "laya_winner_noul_status": "#301/#302 rejected: 0/8 pass; correct-supported median P(true)=0.6784 vs near unsupported=0.67245; combined p95=1098.75ms.",
-    "top4_typed_routing_status": "#303 activated after #301 terminal failure; BGE-M3 supplies top-4 finite recall only and typed noul selects within that set."
+    "top4_typed_routing_status": "#303 activated after #301 terminal failure; BGE-M3 supplies top-4 finite recall only and typed noul selects within that set.",
+    "external_verifier_status": "Qwen3 direct semantic verifier #289 rejected; pinned Laya noul veto #301 rejected; full-catalog Laya choice+noul #295 superseded before execution."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2027,17 +1998,14 @@
       304
     ],
     "active_experiments": [
-      299,
-      303
+      299
     ],
     "active_pull_requests": [
       235,
-      300,
-      310,
-      308
+      300
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "finish pinned Kev-0.8B #299 and activated top-4 typed capability routing #303; promote only a frozen passing semantic rule to new fresh-surface confirmation",
+    "next_research_direction": "finish pinned Kev-0.8B choice+noul #299; if it fails, advance to the next preregistered System One/open typed-decision candidate rather than retuning Qwen/Laya",
     "contingent_experiments": [],
     "active_tracking_issues": [
       293
