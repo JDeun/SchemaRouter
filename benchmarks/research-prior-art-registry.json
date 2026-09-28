@@ -141,7 +141,7 @@
       "title": "Energy, density, and open-space membership scoring",
       "issue": 390,
       "parent_issue": 388,
-      "status": "active",
+      "status": "active_research_no_frozen_successor",
       "canonical_references": [
         {
           "title": "GEM: Gaussian Embedding Modeling for Out-of-Distribution Detection in GUI Agents",
@@ -175,19 +175,37 @@
         397,
         399
       ],
-      "trigger": "Run #401/V6E exactly as frozen. Do not use V6D failed rows to tune k, banks, thresholds, neighbor weighting, or decision order.",
+      "trigger": "No successor is frozen. Search prior art and repository history for a materially different semantic representation or membership signal. Do not tune V6E k, thresholds, weights, background anchors, evidence wording, or decision order from consumed DEV.",
       "current_experiment": {
         "issue": 401,
         "branch": "research/0.13-knn-membership",
         "protocol": "V6E",
-        "status": "frozen_pre_dev_scoring",
+        "status": "terminal_dev_quality_fail",
         "frozen_source": "f2bf26d8537ecde3f4f824bd30a078c6cbf9f736",
         "freeze_workflow_run_id": 36492993166,
         "freeze_artifact_id": 11002171476,
         "freeze_artifact_sha256": "529d679327a36ad903c65aa255910d3d226e00f9d6895de72e29873f23001ac3",
         "dev_corpus_sha256": "8e23375fa3858514415f9a62539a947dc4a488eff184f6c4e0a569e1df488e66",
         "confirmation_corpus_sha256": "bc09041a4ae10b9a1995748b86edd08cfd5f65914a809637c28c9e5b97be5001",
-        "confirmation_scored": false
+        "dev_workflow_run_id": 36493258035,
+        "dev_artifact_id": 11002338011,
+        "dev_artifact_sha256": "e151c1ed4668d0b8dbbc4f6b921caec4e0c39ccdcaf9a2feedcef471577d512e",
+        "result": {
+          "supported_exact": 0.8333333333333334,
+          "raw_supported_exact": 0.8421052631578947,
+          "raw_supported_tool_accuracy": 0.9429824561403509,
+          "near_domain_rejection": 0.6071428571428571,
+          "ood_rejection": 0.5416666666666666,
+          "false_route_rate": 0.4074074074074074,
+          "veto_precision": 0.9504950495049505,
+          "veto_recall": 0.5925925925925926,
+          "raw_correct_winner_veto_rate": 0.010416666666666666,
+          "p95_ms": 176.4985956,
+          "authority_violations": 0,
+          "positive_route_switches": 0,
+          "execution_errors": 0,
+          "confirmation_scored": false
+        }
       },
       "terminal_controls": [
         {
@@ -207,6 +225,16 @@
           "ood_rejection": 0.055556,
           "false_route_rate": 0.679012,
           "p95_ms": 250.48768,
+          "confirmation_scored": false
+        },
+        {
+          "issue": 401,
+          "protocol": "V6E",
+          "supported_exact": 0.8333333333333334,
+          "near_domain_rejection": 0.6071428571428571,
+          "ood_rejection": 0.5416666666666666,
+          "false_route_rate": 0.4074074074074074,
+          "p95_ms": 176.4985956,
           "confirmation_scored": false
         }
       ]
@@ -317,6 +345,10 @@
     {
       "issue": 399,
       "result": "V6D component Gaussian mixture: supported 89.91%, near/OOD rejection 39.68%/5.56%, false-route 67.90%; confirmation unopened"
+    },
+    {
+      "issue": 401,
+      "result": "V6E k=3 non-parametric membership: supported exact 83.33%, near/OOD rejection 60.71%/54.17%, false-route 40.74%, p95 176.50 ms; confirmation unopened"
     }
   ]
 }
