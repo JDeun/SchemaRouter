@@ -23,8 +23,8 @@ if str(ROOT) not in sys.path:
 from benchmarks.operation_routing_v6c_catalog import development_registry  # noqa: E402
 from benchmarks.schema_adb_baseline import BGE_MODEL, BGE_REVISION  # noqa: E402
 from benchmarks.schema_density_ratio import (  # noqa: E402
-    SchemaDensityRatioRouter,
     VARIANCE_FLOOR,
+    SchemaDensityRatioRouter,
 )
 
 
