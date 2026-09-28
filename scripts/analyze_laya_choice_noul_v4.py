@@ -130,6 +130,72 @@ def _evaluate_threshold(rows: list[dict[str, Any]], threshold: float) -> dict[st
     ood_rejection = _safe_rate(ood_rejected, len(ood))
     false_rate = _safe_rate(false_routes, len(unsupported))
 
+    per_language: dict[str, Any] = {}
+    for language in sorted({str(r["language"]) for r in rows}):
+        lang_rows = [r for r in rows if str(r["language"]) == language]
+        lang_supported = [r for r in lang_rows if r["expected"] is not None]
+        lang_unsupported = [r for r in lang_rows if r["expected"] is None]
+        per_language[language] = {
+            "cases": len(lang_rows),
+            "supported_exact_route_accuracy": _safe_rate(
+                sum(
+                    accepted(r) and r["predicted"] == r["expected"]
+                    for r in lang_supported
+                ),
+                len(lang_supported),
+            ),
+            "unsupported_rejection": _safe_rate(
+                sum(not accepted(r) for r in lang_unsupported),
+                len(lang_unsupported),
+            ),
+            "false_routes": sum(accepted(r) for r in lang_unsupported),
+        }
+
+    route_ids = sorted(
+        {
+            str(value)
+            for r in rows
+            for value in (r["expected"], r["predicted"])
+            if value is not None
+        }
+    )
+    per_route: dict[str, Any] = {}
+    for route in route_ids:
+        route_supported = [r for r in supported if r["expected"] == route]
+        per_route[route] = {
+            "supported_cases": len(route_supported),
+            "supported_correct_accepted": sum(
+                accepted(r) and r["predicted"] == route for r in route_supported
+            ),
+            "supported_exact_route_accuracy": _safe_rate(
+                sum(accepted(r) and r["predicted"] == route for r in route_supported),
+                len(route_supported),
+            ),
+            "unsupported_false_routes_to_route": sum(
+                accepted(r) and r["predicted"] == route for r in unsupported
+            ),
+        }
+
+    families = sorted(
+        {
+            str(r["unsupported_family"])
+            for r in rows
+            if r["unsupported_family"] is not None
+        }
+    )
+    per_family: dict[str, Any] = {}
+    for family in families:
+        family_rows = [
+            r for r in rows if str(r["unsupported_family"]) == family
+        ]
+        rejected = sum(not accepted(r) for r in family_rows)
+        per_family[family] = {
+            "cases": len(family_rows),
+            "rejected": rejected,
+            "rejection_rate": _safe_rate(rejected, len(family_rows)),
+            "false_routes": sum(accepted(r) for r in family_rows),
+        }
+
     return {
         "rule_id": f"laya-noul-p{threshold:.3f}",
         "threshold": threshold,
@@ -142,6 +208,9 @@ def _evaluate_threshold(rows: list[dict[str, Any]], threshold: float) -> dict[st
         "out_of_domain_rejection": ood_rejection,
         "false_routes": false_routes,
         "false_route_rate": false_rate,
+        "per_language": per_language,
+        "per_route": per_route,
+        "unsupported_family_rejection": per_family,
         "quality_gate_pass": (
             exact >= 0.85
             and near_rejection >= 0.97
@@ -149,7 +218,6 @@ def _evaluate_threshold(rows: list[dict[str, Any]], threshold: float) -> dict[st
             and false_rate <= 0.01
         ),
     }
-
 
 def evaluate(corpus_path: Path) -> dict[str, Any]:
     import laya
