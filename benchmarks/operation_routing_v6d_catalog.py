@@ -138,12 +138,12 @@ def development_registry() -> InMemoryRegistry:
 
     registry.register(
         ToolSpec(
-            name="daemons",
-            description="Daemon control system",
+            name="controllers",
+            description="Controller runtime service",
             endpoints=[
                 EndpointSpec(
                     name="restart",
-                    description="Restart an existing daemon",
+                    description="Restart an existing controller runtime",
                     read_only=False,
                 ),
                 EndpointSpec(
@@ -434,8 +434,8 @@ DEV_ROUTE_SPECS = (
     RouteCaseSpec("digests.export", "export", {"en":"digest document DG-5","ko":"메모 문서 DG-5","es":"documento digest DG-5","ja":"メモ文書DG-5","de":"digestdokument DG-5","mixed":"digest document DG-5"}),
     RouteCaseSpec("digests.summarize", "summarize", {"en":"digest document DG-5","ko":"메모 문서 DG-5","es":"documento digest DG-5","ja":"メモ文書DG-5","de":"digestdokument DG-5","mixed":"digest document DG-5"}),
     RouteCaseSpec("digests.merge", "merge", {"en":"digest documents DG-5 and DG-6","ko":"메모 문서 DG-5과 DG-6","es":"documentos digest DG-5 y DG-6","ja":"メモ文書DG-5とDG-6","de":"digestdokumente DG-5 und DG-6","mixed":"digest documents DG-5 DG-6"}),
-    RouteCaseSpec("daemons.restart", "restart", {"en":"daemon DM-4","ko":"등록 서비스 DM-4","es":"servicio registrado DM-4","ja":"登録サービスDM-4","de":"registrierter dienst DM-4","mixed":"daemon DM-4"}),
-    RouteCaseSpec("daemons.execute", "execute", {"en":"daemon operation DM-4","ko":"서비스 작업 DM-4","es":"operación de servicio DM-4","ja":"サービス操作DM-4","de":"dienstoperation DM-4","mixed":"daemon operation DM-4"}),
+    RouteCaseSpec("controllers.restart", "restart", {"en":"controller CT-4","ko":"등록 서비스 DM-4","es":"servicio registrado DM-4","ja":"登録サービスDM-4","de":"registrierter dienst DM-4","mixed":"controller CT-4"}),
+    RouteCaseSpec("controllers.execute", "execute", {"en":"controller operation CT-4","ko":"서비스 작업 DM-4","es":"operación de servicio DM-4","ja":"サービス操作DM-4","de":"dienstoperation DM-4","mixed":"controller operation CT-4"}),
     RouteCaseSpec("invoices.create", "create", {"en":"invoice","ko":"구매 주문","es":"orden de compra","ja":"購入注文","de":"bestellung","mixed":"invoice"}),
     RouteCaseSpec("invoices.cancel", "cancel", {"en":"invoice IN-8","ko":"구매 주문 IN-8","es":"orden IN-8","ja":"購入注文IN-8","de":"bestellung IN-8","mixed":"invoice IN-8"}),
     RouteCaseSpec("invoices.refund", "refund", {"en":"invoice payment IN-8","ko":"주문 결제 IN-8","es":"pago de pedido IN-8","ja":"注文支払いIN-8","de":"bestellzahlung IN-8","mixed":"invoice payment IN-8"}),
