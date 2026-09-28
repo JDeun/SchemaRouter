@@ -1983,7 +1983,15 @@
     "external_verifier_status": "Qwen3 direct semantic verifier #289 rejected; pinned Laya noul veto #301 rejected; full-catalog Laya choice+noul #295 superseded before execution.",
     "next_external_candidate": "#311/#313 stages AnyJev L0 with content_free prior and Qwen3-0.6B; manual-only until Kev terminal.",
     "kev_composition_contingency": "#314/#315 is fully staged before #299 result inspection: it reuses exact #299 global Kev noul probabilities and measured latency while BGE raw top-1 remains sole route authority; no new Kev inference.",
-    "freeze_infrastructure": "#316 standardizes candidate freeze manifests and validates target, authority invariants, source/model/runtime/representation provenance, DEV evidence, and fresh-confirmation provenance before #198."
+    "freeze_infrastructure": "#316 standardizes candidate freeze manifests and validates target, authority invariants, source/model/runtime/representation provenance, DEV evidence, and fresh-confirmation provenance before #198.",
+    "kev_family_promotion_policy": {
+      "preregistered_before_299_terminal": true,
+      "evaluate_299_then_314_if_complete_noul_exists": true,
+      "preferred_if_both_pass": "#314 BGE raw route authority + Kev global noul veto",
+      "fallback_if_314_fails_but_299_passes": "#299 Kev native choice+noul",
+      "rationale": "preserve established BGE route authority and keep external model veto-only when both satisfy all gates",
+      "no_posthoc_slice_prompt_or_failed_fresh_selection": true
+    }
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
