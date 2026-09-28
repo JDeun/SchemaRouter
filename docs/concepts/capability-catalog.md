@@ -1,46 +1,52 @@
-# Capability catalog: RAG for executable data sources
+# Structured retrieval and execution for RAG and agents
 
-A useful mental model for SchemaRouter is **RAG infrastructure for executable capabilities**.
+**RAG (Retrieval-Augmented Generation)** is a generation architecture in which a model's output is
+augmented with information retrieved from external, non-parametric sources.
 
-A conventional RAG pipeline takes documents, parses them into a machine-readable representation,
-indexes the resulting chunks and metadata, retrieves the smallest relevant context for a query, and
-hands that context to an application or agent.
-
-SchemaRouter applies the same separation of concerns to APIs and tools:
+SchemaRouter is **not RAG itself** and does not own the generation step. It can serve as part of the
+retrieval side of a RAG or agent system when the external information must be obtained from
+structured, executable sources such as OpenAPI endpoints, MCP tools, OPTIMADE services, or typed
+Python callables.
 
 ```text
-RAG
-document
-  -> parser
-  -> chunks + metadata
-  -> index / vector store
-  -> retriever
-  -> selected context
-  -> RAG / agent
-
+User query
+    |
+    v
+RAG / Agent / Application
+    |
+    | declares a data need
+    v
 SchemaRouter
-OpenAPI / MCP / OPTIMADE / Python
-  -> adapter
-  -> Tool / Endpoint / Parameter / Field contracts
-  -> typed capability registry / index
-  -> bounded router
-  -> selected endpoint + fields
-  -> validated data
-  -> RAG / agent / application
+    |
+    +--> registered capability retrieval
+    +--> endpoint + field selection
+    +--> policy / health / parameter validation
+    +--> trusted execution
+    +--> raw-output validation
+    +--> declared normalization / projection
+    |
+    v
+Typed external data
+    |
+    v
+Generation / reasoning in the surrounding system
 ```
 
-The analogy is architectural, not literal. SchemaRouter does not require a graph database or a vector
-database. Its registry forms a **logical capability graph** whose nodes and relationships include
-providers, access paths, tools, endpoints, parameters, output fields, policy and evidence contracts.
-Implementations may use deterministic indexes, embeddings, or bounded decision backends to search
-that graph, but the registered schema remains the authority.
+For document-centric RAG, the external source may be a corpus of passages or records and the
+retriever returns context. SchemaRouter addresses a different retrieval surface: **registered
+capabilities and the structured data they can return**.
 
-## The unit of retrieval is executable
+Its registry forms a logical capability graph whose relationships include providers, access paths,
+tools, endpoints, parameters, output fields, policy, availability, and evidence contracts. A graph
+database or vector database is not required. Deterministic indexes, embeddings, or bounded decision
+backends may help search the catalog, but the registered schema remains the authority.
 
-A text retriever can return a semantically similar chunk. SchemaRouter must additionally prove that
-the selected route can perform the requested operation and return the requested data surface.
+## The retrieved capability is executable
 
-That makes an endpoint closer to a typed executable chunk:
+A document retriever can return relevant context. SchemaRouter must additionally prove that the
+selected registered route can perform the requested operation and return the requested data surface.
+
+The resulting capability contract includes:
 
 ```text
 Endpoint
@@ -166,5 +172,5 @@ SchemaRouter answers a narrower question:
 > Given the registered capabilities, what is the smallest trusted executable data surface that can
 > satisfy this request?
 
-That scope is deliberate. It lets an agent or RAG system consume live structured data without giving
-an unconstrained model authority over the entire tool catalog.
+That scope is deliberate. It lets Retrieval-Augmented Generation or agent systems consume live
+structured data without giving an unconstrained model authority over the entire tool catalog.

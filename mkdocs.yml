@@ -1,5 +1,5 @@
 site_name: SchemaRouter
-site_description: Schema-aware planning and execution for LLM tool ecosystems
+site_description: Typed capability retrieval and execution for RAG and LLM agent systems
 site_author: Yong-eun Cho
 site_url: https://jdeun.github.io/SchemaRouter/
 copyright: © 2026 Yong-eun Cho · MIT License
@@ -96,7 +96,7 @@ nav:
       - Choose an ingestion path: getting-started/ingestion-paths.md
   - Concepts:
       - What SchemaRouter is: concepts/schema-router.md
-      - Capability catalog and RAG analogy: concepts/capability-catalog.md
+      - RAG positioning and capability retrieval: concepts/capability-catalog.md
       - Design principles: concepts/design-principles.md
       - Tool and endpoint contracts: concepts/tool-endpoint.md
       - Planning and field projection: concepts/planning.md

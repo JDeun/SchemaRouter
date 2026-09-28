@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<p align="center"><strong>LLM 도구 생태계를 위한 스키마 인지형 계획·실행 레이어</strong></p>
+<p align="center"><strong>RAG와 LLM Agent를 위한 typed capability routing·execution layer</strong></p>
 
 <p align="center">
   <a href="README.md">English</a> ·
@@ -21,107 +21,109 @@
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-SchemaRouter는 에이전트/RAG 애플리케이션과 데이터 제공 도구 사이에 위치합니다. OpenAPI,
-MCP, OPTIMADE, Python 또는 plugin capability를 typed catalog로 파싱하고, 요청을 충족할 수
-있는 가장 작은 선언된 실행 데이터 표면을 찾은 뒤 실제 실행 직전에도 그 계획을 다시 검증합니다.
+> **현재 안정판: 0.10.0** · `pip install schemarouter` · Beta / pre-1.0
+
+SchemaRouter는 RAG/Agent 애플리케이션과 외부의 구조화된 capability 사이에 위치합니다.
+OpenAPI, MCP, OPTIMADE, Python, plugin tool을 하나의 typed capability catalog로 정규화하고,
+질문에 필요한 데이터를 제공할 수 있는 제한된 실행 경로를 선택한 뒤 실행 전후에 계약을 다시
+검증합니다.
+
+SchemaRouter 자체가 범용 Agent framework나 LLM provider layer, 또는 최종 답변을 생성하는
+RAG generator는 아닙니다.
+
+## RAG에서 SchemaRouter의 위치
+
+**RAG(Retrieval-Augmented Generation, 검색 증강 생성)**는 외부의 비파라메트릭 정보원을
+retrieval하고, 그 결과를 이용해 generation을 증강하는 구조입니다.
+
+SchemaRouter는 generation을 담당하지 않습니다. 대신 RAG/Agent가 API·MCP·도구에서 최신의
+구조화된 외부 데이터를 가져올 때 사용할 수 있는 **retrieval + execution 계층**을 담당합니다.
 
 ```text
-Query
-  -> Tool
-  -> Endpoint
-  -> Parameters
-  -> Response fields
-  -> Policy / evidence
-  -> Schema validation
-  -> Execute
+사용자 질문
+    |
+    v
+RAG / Agent / Application
+    |
+    |  "탄성계수와 출처가 필요함"
+    v
+SchemaRouter
+    |
+    +--> 등록된 capability retrieval
+    +--> endpoint + 필요한 field 선택
+    +--> parameter / policy / health 검증
+    +--> trusted transport 실행
+    +--> raw output 검증
+    +--> 선언된 unit normalization / field projection
+    |
+    v
+Typed external data
+    |
+    v
+RAG generation / agent reasoning
 ```
 
-범용 에이전트 프레임워크를 대체하려는 프로젝트가 아닙니다. LangChain, LangGraph,
-LlamaIndex 또는 자체 orchestrator는 위에 두고, OpenAPI, MCP, OPTIMADE, Python callable,
-adapter plugin은 아래에 연결하는 **tool-schema boundary**입니다.
+문서 중심 RAG의 retriever가 문서 chunk나 record를 검색한다면, SchemaRouter가 다루는 retrieval
+surface는 **실행 가능한 capability와 그 capability가 반환할 수 있는 구조화 데이터**입니다.
 
-### mental model: 실행 가능한 capability를 위한 RAG
+[RAG에서의 위치와 capability model](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
 
-일반 RAG가 문서를 파싱해 chunk + metadata로 만들고 index에 적재한 뒤 질문에 필요한 context만
-retrieval하듯, SchemaRouter는 API/tool schema를 typed capability catalog로 컴파일합니다.
+## Field-first, route-second
+
+SchemaRouter는 먼저 **무슨 데이터가 필요한지**를 결정한 뒤 그 데이터를 실제로 제공할 수 있는
+등록된 경로를 선택합니다.
+
+예를 들어:
 
 ```text
-문서 -> parser -> chunk/metadata -> index -> retriever -> RAG
-API/tool -> adapter -> endpoint/field contract -> registry/index -> SchemaRouter -> RAG/agent
+질문: "이 소재의 300 K 탄성계수는?"
+
+필요 field
+  semantic_id: mechanical.elastic_modulus
+  datatype: number
+  unit: 해당되는 경우에만 선언
+  qualifiers:
+    temperature: 300 K
+
+가능한 경로
+  provider A / REST endpoint
+  provider A / OPTIMADE access
+  provider B / MCP tool
 ```
 
-차이는 retrieval 단위가 텍스트 조각이 아니라 **실행 가능한 endpoint와 field contract**라는
-점입니다. operation, parameter, output field, datatype/unit, policy/evidence, availability가
-함께 보존됩니다. registry는 논리적인 capability graph이며 실제 graph DB를 필수로 요구하지
-않습니다. embedding이나 optional decision backend를 사용해도 등록된 schema가 authority입니다.
+availability 때문에 route가 바뀔 수는 있지만 요청한 데이터 계약 자체가 조용히 바뀌어서는
+안 됩니다.
 
-[Capability catalog와 RAG 비유](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
+Field contract에는 다음을 담을 수 있습니다.
 
-### Field-first, route-second
+- JSON datatype / shape
+- semantic ID와 alias
+- optional source unit
+- 명시적인 canonical unit normalization
+- temperature, pressure, phase, orientation, method 등의 exact qualifier
+- provenance, license, source-type evidence
+- provider/access identity와 availability
 
-SchemaRouter는 먼저 **사용자 질문에 실제로 필요한 선언된 데이터 필드가 무엇인지**를
-결정한 뒤, 그 필드를 제공할 수 있는 provider/access path를 선택합니다. endpoint가
-server-side projection을 명시적으로 지원하면 계획된 필드만 upstream에 요청하고, raw
-schema 검증 후 final local projection을 다시 적용해 provider가 더 넓은 payload를 보내도
-downstream LLM context에는 필요한 데이터만 남깁니다.
+단위는 항상 필요한 것이 아닙니다. 텍스트, 식별자, boolean, 구조화 객체, dimensionless 값은
+정상적으로 unitless일 수 있습니다. 또한 SchemaRouter는 단위 문자열만 보고 과학적 동등성이나
+변환식을 임의로 추론하지 않습니다.
 
-가용성 문제는 route를 바꿀 수 있지만 data need 자체를 넓히지는 않습니다. 미리 컴파일된
-read-only fallback은 같은 provider의 다른 access mode로 우회하고, 명시적으로 허용한
-경우에만 다른 provider로 넘어갑니다. runtime에서 agent식 자율 재탐색은 하지 않습니다.
+## 실행 경계
 
 ```text
-Agent / graph / application orchestrator
-                 |
-           SchemaRouter
-      typed planning + validation
-                 |
-        capability sources
- OpenAPI / MCP / OPTIMADE / Python
-
-Laya / Ollama / Jev / System One 호환 모델은 SchemaRouter 내부의 제한된 선택 단계를
-보조하는 optional decision backend일 뿐입니다. 재사용 가능한 비표준 runtime은
-`schemarouter.decision_backends` plugin으로 연결할 수 있습니다.
-어떤 backend도 에이전트가 되지 않으며, tool loop를 실행하지 않고, 실행 권한도 받지 않습니다.
+LangChain / LangGraph / LlamaIndex / 자체 애플리케이션
+                         |
+                    SchemaRouter
+                         |
+          OpenAPI / MCP / OPTIMADE / Python
 ```
 
-> **현재 안정판: 0.10.0** · `pip install schemarouter` · pre-1.0
+상위 framework가 대화, decomposition, generation, memory, graph, agent loop를 담당하고,
+SchemaRouter는 typed capability와 실제 실행 경계를 담당합니다.
 
-## 왜 필요한가
-
-도구가 많아지면 단순한 tool selection만으로는 충분하지 않습니다. SchemaRouter는 실행
-경계를 다음처럼 명시적으로 만듭니다.
-
-- 선언된 tool/endpoint만 선택;
-- 선언된 parameter/output field만 허용;
-- 입력과 raw output을 JSON Schema로 검증;
-- 오래된 schema fingerprint와 invoker binding 차단;
-- mutation/destructive 권한을 로컬 정책에 유지;
-- credential과 model-visible argument 분리;
-- retry, elapsed time, remote call, response size 제한;
-- OpenAPI 호환성 한계를 추측하지 않고 명시적으로 보고.
-
-## 실사용 시나리오
-
-<p align="center">
-  <img src="docs/assets/real-world-scenario.ko.svg" alt="SchemaRouter 실사용 시나리오: field-first, route-second" width="100%">
-</p>
-
-하나의 요청이 서로 다른 provider의 필드를 동시에 필요로 할 수 있습니다. 예를 들어 소재 관련
-질문 하나가 Materials Project의 숫자형 `band_gap`과 arXiv의 텍스트형 `abstract`를 함께
-요구할 수 있습니다.
-
-SchemaRouter는 **필요한 semantic field를 먼저 결정**한 뒤, 제한된 `max_calls` 예산을
-그 필드들을 상호 보완적으로 충족하는 provider/access path에 사용합니다. health, policy,
-availability 때문에 route는 바뀔 수 있지만 필요한 데이터 contract 자체는 바뀌지 않습니다.
-
-```text
-band_gap  -> Materials Project / OpenAPI
-             ↳ OPTIMADE fallback
-abstract  -> arXiv API
-```
-
-최종 실행 계획은 계속 schema-validated, policy-bounded, fail-closed 원칙 안에 있습니다.
-하나의 route가 필요한 모든 field를 충족하면 `max_calls` 상한에 도달하기 전에 멈출 수 있습니다.
+Laya, Ollama, Jev/System-One, hosted model, embedding, pairwise decision backend는 이미 등록된
+후보 선택을 보조할 수 있지만 실행 권한이 되지는 않습니다. 새로운 tool/field/credential/permission/
+side effect를 만들어낼 수 없습니다.
 
 ## 빠른 시작
 
@@ -150,42 +152,61 @@ result = router.invoke(
 print(result[0].data)
 ```
 
-## capability 연결
+## Capability 연결
 
 | Source | 적합한 경우 | Entry point |
 | --- | --- | --- |
 | **Python** | 로컬 typed capability | `router.add_callable(...)` |
 | **OpenAPI** | HTTP API가 machine-readable contract 제공 | `SchemaRouter.from_url(..., kind="openapi")` |
-| **MCP** | MCP로 tool 제공 | `SchemaRouter.from_url(..., kind="mcp")` |
+| **MCP** | MCP로 capability 제공 | `SchemaRouter.from_url(..., kind="mcp")` |
 | **OPTIMADE** | materials data가 OPTIMADE 제공 | `SchemaRouter.from_url(..., kind="optimade")` |
-| **사람이 읽는 문서** | machine-readable schema가 없음 | inspect → proposal → 명시적 승인 |
+| **사람이 읽는 문서** | machine-readable contract가 없음 | inspect → proposal → 명시적 승인 |
 
-**LangChain, LangGraph, LlamaIndex**는 framework bridge이고, **OpenTelemetry**는 선택형
-telemetry export입니다. **Jev / TypeSafe, Laya, Ollama는 optional decision backend**입니다.
-기존 시스템이 사용하는 **GPT, Gemini, Claude 또는 다른 cloud model client**도
-provider-neutral `ModelQueryAnalyzer` 또는 `CallableDecisionBackend`로 주입할 수 있습니다.
-어떤 경로도 SchemaRouter의 policy/schema validation/execution 경계를 우회하지 않습니다.
+LangChain, LangGraph, LlamaIndex bridge와 선택형 OpenTelemetry export를 제공합니다.
+비표준 decision runtime은 `schemarouter.decision_backends` entry-point plugin으로 연결할 수
+있습니다.
 
-decision model은 실행 권한을 모델로 넘기지 않은 채 교체할 수 있습니다.
+## 0.10.0에서 실제로 작동하는 것
 
-- Jev/System-One 호환 서버는 `SystemOneDecisionBackend`를 사용하고
-  `base_url/model/provider_name` 설정만 교체합니다.
-- 일회성 로컬/호스팅 연구 모델은 `CallableDecisionBackend`로 연결할 수 있습니다.
-- 반복 사용되는 비호환 runtime은 `schemarouter.decision_backends` entry-point plugin으로
-  별도 패키지화할 수 있습니다.
+현재 배포 버전은 core architecture가 실제 동작하는 beta 구현입니다.
 
-SchemaRouter는 어떤 경로에서도 반환된 finite option ID를 로컬에서 다시 검증합니다.
-설치된 plugin은 신뢰된 Python 코드로 취급되므로 자동 import하지 않으며, 명시적으로 선택한
-plugin만 로드합니다. 호환성은 품질 보증이 아니며 새 모델/checkpoint는 동일한 frozen benchmark를
-통과해야 합니다.
+- typed Tool / Endpoint / Parameter / Field registry contract
+- Python, OpenAPI, MCP, OPTIMADE ingestion
+- field-first planning과 bounded multi-provider field coverage
+- input/raw-output JSON Schema validation
+- schema fingerprint와 binding drift 차단
+- read/write/destructive local policy와 per-call approval
+- 명시적 server-side projection + final local projection
+- optional datatype/unit normalization과 scientific qualifier
+- provider/access fallback, finite cooldown, trusted health recovery
+- sync/async invocation, batch, streaming, typed events, trace, inspect/dashboard
+- LangChain, LangGraph, LlamaIndex, Jev/System-One, Laya, Ollama, OpenTelemetry integration surface
 
-[decision backend plugin 가이드](https://jdeun.github.io/SchemaRouter/integrations/decision-backend-plugins/)와
-[decision-model ecosystem intake](https://jdeun.github.io/SchemaRouter/integrations/decision-model-ecosystem/)를
-참고하세요.
+따라서 **등록된 capability와 지원되는 routing case에 대해서는 지금 배포 버전이 실제로
+작동합니다.**
 
-## SchemaRouter가 구축한 구조 확인
+## 현재 한계: open-set 자연어 routing
 
-저장된 registry와 run trace를 실제 도구 실행 없이 확인할 수 있습니다.
+아직 해결되지 않은 연구 문제는 기본 실행이 아니라 다음 둘을 안정적으로 구분하는 것입니다.
+
+> "이 질문은 등록된 도메인과 비슷하다."
+
+> "이 질문에서 요구한 정확한 operation을 실제 등록 endpoint가 지원한다."
+
+가장 강한 frozen DEV 후보는 목표를 통과했지만 independent zero-overlap fresh confirmation에서
+실패했습니다. 따라서 0.10.0에서는 실험적 learned router를 unconditional production default로
+승격하지 않았습니다.
+
+첫 arbitrary-tool registry-compiled learned veto 역시 과도한 abstention 때문에 valid request를
+대부분 거부하여 terminal reject됐습니다.
+
+자세한 내용:
+
+- [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
+- [0.10.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.10.0/)
+- [Changelog](CHANGELOG.md)
+
+## Registry와 run 확인
 
 ```bash
 schemarouter inspect registry --db ./registry.sqlite3
@@ -201,126 +222,24 @@ schemarouter dashboard \
   --output ./artifacts/schemarouter-dashboard.html
 ```
 
-inspection 명령에 `--json`을 붙이면 자동화에 사용할 수 있는 구조화된 결과를 출력합니다.
-dashboard는 같은 inspection contract를 사용하는 self-contained read-only HTML 파일입니다.
-registry 화면에서는 tool/endpoint 구조, HTTP method/path, read-only/mutating 분류,
-parameter/output field 수, schema fingerprint를 확인할 수 있고, trace 화면에서는 저장된
-실행 이벤트와 오류/완료 상태를 확인할 수 있습니다.
-
-[Operational inspection 가이드](https://jdeun.github.io/SchemaRouter/guides/inspection/)
-
-## 0.6에서 달라진 점
-
-0.6은 bounded decision, 운영 관측, OpenAPI fidelity를 확장한 릴리스입니다.
-
-- CPU/CUDA/MPS를 지원하는 로컬 Laya decision backend;
-- 기존 GPT, Gemini, Claude 등 cloud model client를 재사용하는 provider-neutral 경로;
-- live/persistent inspection과 self-contained read-only HTML dashboard;
-- response `oneOf`/`anyOf` field discovery와 static same-origin `$id`/`$anchor` resolution;
-- typed JSON root request body, OpenAPI 3.0 nullable normalization, default parameter style 직렬화.
-
-자세한 내용은 [0.6.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.6.0/)를 참고하세요.
-
-## 0.7에서 달라진 점
-
-`0.7.0`은 agent orchestration을 확장하는 대신 기존 실행 경계를 더 단단하게 만든 릴리스입니다.
-
-- exact fingerprint 차단은 유지하면서 변경 원인을 설명하는 보수적 schema diff;
-- operation 단위의 로컬 allow/deny/approval policy rule;
-- SchemaRouter가 직접 관측 가능한 신호만 기록하는 구조화된 plan explanation;
-- 모든 call이 현재 시점에서 명시적 read-only일 때만 허용되는 flat parallel fan-out;
-- provider/access identity, bounded read-only fallback, server-side field projection contract,
-  복구 가능한 access-path health state;
-- 명시적 JSON datatype, optional unit metadata, canonical affine unit normalization, 그리고
-  temperature/phase/orientation/method 같은 exact qualifier를 갖는 typed scientific result contract;
-- 쿼리에 조건이 명시된 경우 동일한 scientific field를 qualifier로 구분하되 unit conversion이나
-  과학적 추론은 수행하지 않는 qualifier-aware routing;
-- 동일한 논리 인자를 provider별 로컬 parameter 이름으로 안전하게 연결하는 trusted
-  parameter alias.
-
-DAG/workflow, memory, prompt system, autonomous tool loop는 계속 범위 밖에 둡니다.
-
-자세한 내용은 [0.7.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.7.0/)를 참고하세요.
-
-## 0.10에서 정리된 점
-
-`0.10.0`은 open-set routing이 해결됐다고 선언하는 릴리스가 아니라, 지금까지의 구현과
-연구를 하나의 제품 구조로 정리하는 consolidation release입니다.
-
-- SchemaRouter를 agent/RAG를 위한 **typed capability retrieval/execution layer**로 명확히 정의;
-- **field-first, route-second**를 stable product architecture로 유지;
-- JSON datatype/shape, semantic ID, optional unit, explicit unit normalization, exact scientific
-  qualifier를 등록된 data contract의 일부로 취급;
-- OpenAPI/MCP/OPTIMADE/Python 등록을 benchmark-specific rule 없이 provider-neutral하게 유지;
-- learned decision backend는 bounded/optional로 유지;
-- benchmark도 정직하게 공개: 가장 강한 DEV 후보는 목표치를 통과했지만 frozen zero-overlap
-  fresh confirmation에서 실패했으므로 production-target candidate로 승격하지 않음.
-
-첫 registry-compiled capability-verifier 실험은 native/OpenAPI/MCP의 provider-neutral contract는
-유지했지만 supported 요청을 과도하게 거부해 canonical exact 5.03%, 미등록-tool holdout exact
-2.08%에 그쳤습니다. 이 learned veto는 terminal reject이며 0.10.0 기본 경로가 아닙니다.
-
-[0.10.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.10.0/) ·
-[Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
-
-## 0.9에서 달라진 점
-
-`0.9.0`은 cross-encoder/reranker 방식의 판단을 사용할 수 있도록 provider-neutral
-`PairwiseDecisionBackend`를 추가하면서도 실행 권한은 계속 로컬 경계 안에 유지합니다.
-
-- scorer는 이미 허용된 `(query, option)` 쌍만 평가합니다.
-- opaque option ID는 로컬에 남고 scorer가 새로운 route를 만들 수 없습니다.
-- score 개수 불일치, NaN/Infinity, 범위 밖 값은 fail-closed 처리합니다.
-- sync/async scorer를 지원하지만 Torch, Transformers, 특정 reranker를 core 의존성으로
-  추가하지 않습니다.
-- benchmark 결과에 pairwise scorer와 threshold 설정을 명시적으로 기록합니다.
-
-v5 개발/보정에서 선택된 BGE pairwise 후보를 fresh 600-case v11 holdout에 정확히 한 번
-실행한 결과 **전체 51.667%**, **지원 operation route 25.781%**, **near-domain 미지원
-operation 거부 97.396%**, **일반 OOD 거부 100%**였습니다. v11 소비 후 동일 corpus에서
-실행한 MiniLM 0.40 diagnostic은 **전체 54.833%**, **지원 operation 40.625%**,
-**near-domain 거부 77.604%**였습니다. BGE는 balanced objective는 높였지만 supported recall과
-CPU latency trade-off가 커서 기본값으로 승격하지 않았습니다.
-
-v11은 이미 소비된 evidence이며 이후 threshold/model 선택에 사용할 수 없습니다.
-
-자세한 내용은 [0.9.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.9.0/)와
-[decision routing benchmark 가이드](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/)를 참고하세요.
-
 ## 문서
 
-README보다 framework manual을 기준 문서로 사용합니다.
-
-- [설치와 빠른 시작](https://jdeun.github.io/SchemaRouter/getting-started/installation/)
-- [실행 모델 이해](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
-- [설계 원칙](https://jdeun.github.io/SchemaRouter/concepts/design-principles/)
-- [OpenAPI 가이드](https://jdeun.github.io/SchemaRouter/guides/openapi/)
-- [Runtime policy와 retry](https://jdeun.github.io/SchemaRouter/guides/execution-policy/)
-- [Framework integration](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
-- [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
-- [Architecture와 maturity](https://jdeun.github.io/SchemaRouter/architecture/)
+- [설치](https://jdeun.github.io/SchemaRouter/getting-started/installation/)
+- [Quickstart](https://jdeun.github.io/SchemaRouter/getting-started/quickstart/)
+- [SchemaRouter란](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
+- [RAG에서의 위치와 capability model](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
+- [Field-first execution](https://jdeun.github.io/SchemaRouter/concepts/field-first-execution/)
+- [OpenAPI](https://jdeun.github.io/SchemaRouter/guides/openapi/)
+- [MCP](https://jdeun.github.io/SchemaRouter/guides/mcp/)
+- [Architecture and maturity](https://jdeun.github.io/SchemaRouter/architecture/)
 - [Security model](https://jdeun.github.io/SchemaRouter/security/threat-model/)
 
-## 개발
+## 범위
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
+SchemaRouter는 별도의 chat abstraction, prompt framework, model-provider layer, conversation
+memory, checkpoint store, graph runtime을 다시 만들지 않습니다.
 
-ruff check .
-pytest -q -m "not mcp_integration"
-```
-
-보호된 CI는 Python 3.10–3.14, Windows, minimum dependencies, package artifact, Pyright,
-coverage, documentation, optional integration suite까지 검증합니다.
-
-## 프로젝트 범위
-
-SchemaRouter는 별도의 chat abstraction, model-provider layer, memory system, checkpoint store,
-graph runtime을 다시 만들지 않습니다.
-
-> **Natural-language request → typed tool execution plan → validated execution.**
+> **Natural-language request → typed capability plan → validated external data → surrounding RAG/agent**
 
 ## 연구와 라이선스
 

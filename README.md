@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<p align="center"><strong>Schema-aware planning and execution for LLM tool ecosystems.</strong></p>
+<p align="center"><strong>Typed capability routing and execution for RAG and LLM agent systems.</strong></p>
 
 <p align="center">
   <a href="README.md">English</a> ·
@@ -21,108 +21,108 @@
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-SchemaRouter sits between an agent/RAG application and its data-capable tools. It parses registered
-OpenAPI, MCP, OPTIMADE, Python, or plugin capabilities into a typed catalog, retrieves the smallest
-declared executable data surface that can satisfy a request, and validates the resulting plan again
-at runtime before anything executes.
+> **Stable release: 0.10.0** · `pip install schemarouter` · Beta / pre-1.0
+
+SchemaRouter sits between a RAG/agent application and its structured external capabilities. It
+normalizes OpenAPI, MCP, OPTIMADE, Python, and plugin-defined tools into a typed capability catalog,
+selects a bounded executable route for the requested data, and validates the contract again before
+and after execution.
+
+It is **not** a general agent framework, an LLM provider layer, or a RAG generator.
+
+## Where SchemaRouter fits in RAG
+
+**Retrieval-Augmented Generation (RAG)** augments generation with information retrieved from
+external, non-parametric sources.
+
+SchemaRouter does not perform the final generation step. Its role is narrower: it can provide the
+**structured retrieval and execution layer** that lets a RAG or agent system obtain live external
+data from APIs and tools under explicit schemas and policy.
 
 ```text
-Query
-  -> Tool
-  -> Endpoint
-  -> Parameters
-  -> Response fields
-  -> Policy / evidence
-  -> Schema validation
-  -> Execute
+User query
+    |
+    v
+RAG / Agent / Application
+    |
+    |  "I need elastic modulus + provenance"
+    v
+SchemaRouter
+    |
+    +--> retrieve a registered capability
+    +--> select endpoint + required fields
+    +--> validate parameters / policy / health
+    +--> execute trusted transport
+    +--> validate raw output
+    +--> normalize declared units / project fields
+    |
+    v
+Typed external data
+    |
+    v
+RAG generation / agent reasoning
 ```
 
-It is **not** another general agent framework. LangChain, LangGraph, LlamaIndex, or your own
-orchestrator can stay above it; OpenAPI, MCP, OPTIMADE, Python callables, and adapter plugins stay
-below it.
+For document-centric RAG, a retriever commonly searches chunks or records. SchemaRouter addresses a
+different retrieval surface: **executable capabilities and the structured data they can return**.
 
-### Mental model: RAG for executable capabilities
+[Read the RAG positioning and capability model](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
 
-A conventional RAG stack parses documents into chunks + metadata, indexes them, and retrieves the
-smallest relevant context. SchemaRouter applies the same separation to APIs and tools:
+## Field-first, route-second
+
+SchemaRouter first resolves **what data is required**, then chooses a registered route that can
+provide it.
+
+For example:
 
 ```text
-documents -> parser -> chunks/metadata -> index -> retriever -> RAG
-APIs/tools -> adapter -> endpoint/field contracts -> registry/index -> SchemaRouter -> RAG/agent
+Query: "What is the elastic modulus of this material at 300 K?"
+
+Required field
+  semantic_id: mechanical.elastic_modulus
+  datatype: number
+  unit: optional but declared when applicable
+  qualifiers:
+    temperature: 300 K
+
+Possible routes
+  provider A / REST endpoint
+  provider A / OPTIMADE access
+  provider B / MCP tool
 ```
 
-The retrieved unit is executable: endpoint operation, inputs, output fields, datatype/unit contracts,
-policy/evidence and availability. The registry is a logical capability graph; it does not require a
-graph database. Registered schema remains authority even when embeddings or optional decision
-backends help search it.
+Availability can change the route. It must not silently change the requested data contract.
 
-[Capability catalog and RAG analogy](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
+A field contract can carry:
 
-### Field-first, route-second
+- JSON datatype / shape;
+- semantic ID and aliases;
+- optional source unit;
+- explicit canonical unit normalization;
+- exact qualifiers such as temperature, pressure, phase, orientation, or method;
+- provenance, license, or source-type evidence;
+- provider/access identity and availability metadata.
 
-SchemaRouter first asks **which declared data fields are actually needed to answer the request**,
-then chooses a provider/access path that can supply those fields. When an endpoint explicitly
-supports server-side projection, only the planned fields are requested upstream; after raw schema
-validation, final local projection keeps the downstream LLM context narrow even if a provider sends
-extra data.
+Units are optional because many legitimate fields are text, identifiers, booleans, structured
+objects, or dimensionless values. SchemaRouter does not infer scientific equivalence or conversion
+factors from a unit string alone.
 
-Availability may change the route, but it does not broaden the data need. Precompiled read-only
-fallbacks can move from one access mode to another—and, when explicitly enabled, to another
-provider—without turning runtime into an autonomous agent loop.
+## Execution boundary
 
 ```text
-Agent / graph / application orchestrator
-                 |
-           SchemaRouter
-     typed planning + validation
-                 |
-        capability sources
- OpenAPI / MCP / OPTIMADE / Python
-
-Optional decision backends (Laya / Ollama / Jev / System One-compatible providers) plug into
-SchemaRouter's bounded selection step. Jev-compatible models can be swapped by configuration through
-`SystemOneDecisionBackend`; other trusted bounded runtimes can enter through
-`CallableDecisionBackend`. They do not become agents, do not run tool loops, and do not receive
-execution authority.
+LangChain / LangGraph / LlamaIndex / your application
+                         |
+                    SchemaRouter
+                         |
+          OpenAPI / MCP / OPTIMADE / Python
 ```
 
-> **Current stable release: 0.10.0** · `pip install schemarouter` · pre-1.0
+The surrounding framework owns conversation, decomposition, generation, memory, graphs, and agent
+loops. SchemaRouter owns the typed capability and execution boundary.
 
-## Why SchemaRouter
-
-Tool selection alone is not enough once an agent has many capabilities. SchemaRouter makes the
-execution boundary explicit:
-
-- choose a declared tool and endpoint;
-- accept only declared parameters and output fields;
-- validate inputs and raw outputs with JSON Schema;
-- reject stale schema fingerprints and stale invoker bindings;
-- keep mutation/destructive authority local and fail closed;
-- separate credentials from model-visible arguments;
-- bound retries, elapsed time, remote calls, and response size;
-- surface OpenAPI compatibility gaps instead of silently guessing.
-
-## Real-world scenario
-
-<p align="center">
-  <img src="docs/assets/real-world-scenario.svg" alt="SchemaRouter real-world scenario: field-first, route-second" width="100%">
-</p>
-
-A single request can require fields from different providers. For example, a materials question may
-need a numeric `band_gap` from Materials Project and a text `abstract` from arXiv.
-
-SchemaRouter resolves the **semantic field need first**, then spends the bounded `max_calls` budget
-on complementary provider/access paths that can satisfy those fields. A route can change because of
-health, policy, or availability; the required data contract does not.
-
-```text
-band_gap  -> Materials Project / OpenAPI
-             ↳ OPTIMADE fallback
-abstract  -> arXiv API
-```
-
-The final execution plan remains schema-validated, policy-bounded, and fail-closed. When one route
-already covers every matched field, SchemaRouter can stop before reaching the `max_calls` bound.
+Optional Laya, Ollama, Jev/System-One, hosted-model, embedding, or pairwise decision backends may
+assist selection over locally registered candidates. They do not become execution authority and
+cannot invent tools, fields, credentials, permissions, or side effects.
 
 ## Quickstart
 
@@ -157,114 +157,57 @@ print(result[0].data)
 | --- | --- | --- |
 | **Python** | capability is local and typed | `router.add_callable(...)` |
 | **OpenAPI** | HTTP API publishes a machine-readable contract | `SchemaRouter.from_url(..., kind="openapi")` |
-| **MCP** | tools are exposed through MCP | `SchemaRouter.from_url(..., kind="mcp")` |
+| **MCP** | capabilities are exposed through MCP | `SchemaRouter.from_url(..., kind="mcp")` |
 | **OPTIMADE** | materials data is exposed through OPTIMADE | `SchemaRouter.from_url(..., kind="optimade")` |
-| **Human-readable docs** | no machine-readable schema exists | inspect → proposal → explicit approval |
+| **Human-readable docs** | no machine-readable contract exists | inspect → proposal → explicit approval |
 
-Framework bridges are available for **LangChain, LangGraph, and LlamaIndex**. **OpenTelemetry**
-provides optional telemetry export. **Jev / TypeSafe, System One-compatible providers, Laya, and
-Ollama are optional decision backends**, not agent frameworks. Jev-wire-compatible models can reuse
-`SystemOneDecisionBackend` by changing provider/model configuration rather than adding a planner
-class. Existing **GPT, Gemini, Claude, or other hosted/local decision clients** can also be injected
-through the provider-neutral `ModelQueryAnalyzer` or `CallableDecisionBackend` contracts. None of
-these paths bypass SchemaRouter's policy, schema validation, or execution boundary.
+Framework bridges are available for LangChain, LangGraph, and LlamaIndex. OpenTelemetry is optional.
+Third-party bounded decision backends can be published through the
+`schemarouter.decision_backends` entry-point group.
 
-Decision models are replaceable without moving execution authority into the model:
+## What works in 0.10.0
 
-- Jev/System-One-compatible servers use `SystemOneDecisionBackend` and can swap
-  `base_url/model/provider_name` by configuration;
-- one-off local or hosted experiments can use `CallableDecisionBackend`;
-- reusable third-party runtimes can publish a `schemarouter.decision_backends` entry-point plugin.
+The released package provides a working beta implementation of the core architecture:
 
-SchemaRouter still validates the returned finite option ID locally. See the
-[decision backend plugin guide](https://jdeun.github.io/SchemaRouter/integrations/decision-backend-plugins/)
-and [decision-model ecosystem intake](https://jdeun.github.io/SchemaRouter/integrations/decision-model-ecosystem/).
+- typed Tool / Endpoint / Parameter / Field registry contracts;
+- Python, OpenAPI, MCP, and OPTIMADE ingestion paths;
+- field-first planning and bounded multi-provider field coverage;
+- input and raw-output JSON Schema validation;
+- schema fingerprints and binding-drift rejection;
+- read/write/destructive local policy gates and per-call approval hooks;
+- explicit server-side field projection plus final local projection;
+- optional datatype/unit normalization and exact scientific qualifiers;
+- provider/access fallback with finite cooldown and trusted health recovery;
+- sync/async invocation, batch, streaming, typed events, traces, and inspection/dashboard surfaces;
+- LangChain, LangGraph, LlamaIndex, Jev/System-One, Laya, Ollama, and OpenTelemetry integration
+  surfaces.
 
-## What 0.6 adds
+So **the architecture works today** for declared capabilities and supported routing cases.
 
-0.6 adds optional local/model-assisted decision backends, operational inspection/dashboard
-surfaces, and a broader fail-closed OpenAPI subset:
+## Current limitation: open-set natural-language routing
 
-- local Laya decisions with CPU/CUDA/MPS device controls and benchmark metadata;
-- provider-neutral reuse of existing GPT, Gemini, Claude, or other hosted clients;
-- live/persistent inspection plus a self-contained read-only HTML dashboard;
-- response `oneOf`/`anyOf` field discovery and static same-origin `$id`/`$anchor` resolution;
-- typed JSON root request bodies, OpenAPI 3.0 nullable normalization, and default parameter-style
-  serialization.
+The unresolved research problem is not basic execution. It is reliably distinguishing:
 
-See the [0.6.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.6.0/) for details.
+> "This request is similar to a registered domain"
 
-## What 0.7 adds
+from:
 
-Version `0.7.0` strengthens the same narrow execution boundary rather than adding agent orchestration:
+> "This exact operation is actually supported by a registered capability."
 
-- conservative schema-drift explanations while exact fingerprints still fail closed;
-- operation-scoped local allow/deny/approval policy rules;
-- structured, auditable plan explanations based on SchemaRouter-visible signals;
-- explicit flat parallel fan-out only when every planned call is currently trusted read-only;
-- provider/access identity, bounded read-only fallback, server-side field projection contracts,
-  and recoverable access-path health state;
-- typed scientific result contracts with explicit JSON datatypes, optional unit metadata, canonical
-  affine unit normalization, and exact measurement/material qualifiers such as temperature, phase,
-  orientation, or method;
-- qualifier-aware routing that can distinguish otherwise equivalent scientific fields when the
-  condition is explicitly present in the query, without unit conversion or scientific inference;
-- trusted parameter aliases so the same logical argument can bind safely to provider-specific local
-  parameter names without model-authored remapping.
+The strongest frozen development candidate met the standing target on canonical DEV, but failed the
+independent zero-overlap fresh confirmation. Therefore no experimental learned router is promoted as
+an unconditional production default in 0.10.0.
 
-Workflow/DAG semantics, memory, prompt systems, and autonomous tool loops remain out of scope.
+The first arbitrary-tool registry-compiled learned veto was also terminally rejected because it
+became too conservative and rejected most valid supported requests.
 
-See the [0.7.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.7.0/) for details.
+See:
 
-## What 0.10 consolidates
+- [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
+- [0.10.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.10.0/)
+- [Changelog](CHANGELOG.md)
 
-Version `0.10.0` is a consolidation release rather than a claim that open-set routing is solved.
-
-- clarifies SchemaRouter as a typed capability retrieval/execution layer for agent and RAG systems;
-- keeps **field-first, route-second** planning as the stable product architecture;
-- treats JSON datatype/shape, semantic IDs, optional units, explicit unit normalization, and exact
-  scientific qualifiers as part of the registered data contract;
-- keeps OpenAPI/MCP/OPTIMADE/Python registration provider-neutral rather than benchmark-specific;
-- keeps learned decision backends bounded and optional;
-- publishes the current routing benchmark outcome honestly: the strongest DEV candidate passed the
-  standing target, but its frozen zero-overlap fresh confirmation failed, so no production-target
-  candidate was promoted.
-
-The first registry-compiled capability-verifier experiment preserved provider-neutral native/OpenAPI/
-MCP contracts but over-rejected supported requests (5.03% canonical exact, 2.08% unseen-registration
-exact). That learned veto is terminally rejected and is **not** the 0.10.0 default.
-
-[0.10.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.10.0/) ·
-[Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
-
-## What 0.9 adds
-
-Version `0.9.0` adds a provider-neutral bounded pairwise scoring backend for applications that want
-cross-encoder or reranker-style decisions without moving execution authority into the model.
-
-- `PairwiseDecisionBackend` scores only the locally authorized `(query, option)` pairs;
-- opaque option IDs remain local and model/scorer output cannot invent a route;
-- malformed, non-finite, out-of-range, or wrong-length score batches fail closed;
-- sync and async scorers are supported without adding Torch, Transformers, or a specific model to
-  SchemaRouter core;
-- benchmark metadata now records pairwise scoring configuration for reproducibility.
-
-The frozen BGE pairwise candidate was evaluated exactly once on the fresh 600-case v11 holdout. It
-reached **51.667% overall accuracy**, **25.781% supported-operation routed accuracy**, **97.396%
-near-domain unsupported-operation rejection**, and **100% ordinary OOD rejection**. A post-consumption
-MiniLM 0.40 diagnostic on the same corpus reached **54.833% overall**, **40.625% supported**, and
-**77.604% near-domain rejection**. BGE improved the equal-weight supported/rejection balanced score,
-but materially reduced supported recall and more than doubled CPU latency, so it is **not** the
-library default.
-
-v11 is consumed evidence and is not eligible for further threshold/model selection.
-
-See the [0.9.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.9.0/) and the
-[decision routing benchmark guide](https://jdeun.github.io/SchemaRouter/guides/decision-benchmark/).
-
-## Inspect what SchemaRouter built
-
-Persisted registries and run traces can be inspected without executing tools:
+## Inspect the registry and runs
 
 ```bash
 schemarouter inspect registry --db ./registry.sqlite3
@@ -280,47 +223,24 @@ schemarouter dashboard \
   --output ./artifacts/schemarouter-dashboard.html
 ```
 
-Add `--json` to inspection commands for automation. The dashboard is a self-contained read-only
-HTML export built from the same inspection contracts. The registry view exposes tool/endpoint
-topology, method/path, mutation classification, parameter/output-field counts, and schema
-fingerprints; trace views expose persisted run/event history.
-
-[Operational inspection guide](https://jdeun.github.io/SchemaRouter/guides/inspection/)
-
 ## Documentation
 
-Start with the manual rather than this README:
-
-- [Install and quickstart](https://jdeun.github.io/SchemaRouter/getting-started/installation/)
-- [Understand the execution model](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
-- [Read the design principles](https://jdeun.github.io/SchemaRouter/concepts/design-principles/)
-- [OpenAPI guide](https://jdeun.github.io/SchemaRouter/guides/openapi/)
-- [Runtime policy and retry](https://jdeun.github.io/SchemaRouter/guides/execution-policy/)
-- [Framework integrations](https://jdeun.github.io/SchemaRouter/integrations/langchain/)
-- [API reference](https://jdeun.github.io/SchemaRouter/reference/api/)
+- [Installation](https://jdeun.github.io/SchemaRouter/getting-started/installation/)
+- [Quickstart](https://jdeun.github.io/SchemaRouter/getting-started/quickstart/)
+- [What SchemaRouter is](https://jdeun.github.io/SchemaRouter/concepts/schema-router/)
+- [RAG positioning and capability model](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
+- [Field-first execution](https://jdeun.github.io/SchemaRouter/concepts/field-first-execution/)
+- [OpenAPI](https://jdeun.github.io/SchemaRouter/guides/openapi/)
+- [MCP](https://jdeun.github.io/SchemaRouter/guides/mcp/)
 - [Architecture and maturity](https://jdeun.github.io/SchemaRouter/architecture/)
 - [Security model](https://jdeun.github.io/SchemaRouter/security/threat-model/)
 
-## Development
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
-
-ruff check .
-pytest -q -m "not mcp_integration"
-```
-
-The protected CI surface also covers Python 3.10–3.14, Windows, minimum dependencies, package
-artifacts, Pyright, coverage, documentation, and optional integration suites.
-
 ## Scope
 
-SchemaRouter intentionally does **not** implement another chat abstraction, model-provider layer,
-memory system, checkpoint store, or graph runtime.
+SchemaRouter intentionally does not implement another chat abstraction, prompt framework,
+model-provider layer, conversation memory, checkpoint store, or graph runtime.
 
-> **Natural-language request → typed tool execution plan → validated execution.**
+> **Natural-language request → typed capability plan → validated external data → surrounding RAG/agent**
 
 ## Research and license
 
