@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "cycle": "0.12-query-first-typed-capability",
+  "experiment": "query-first-typed-frame-v1",
+  "issue": 347,
+  "parent_issue": 340,
+  "status": "preregistered_before_corpus_generation_or_scoring",
+  "hypothesis": "A registry-independent explicit request frame plus deterministic within-tool contract filtering can turn same-domain unsupported operations into empty capability sets without learned abstention thresholds.",
+  "route_authority": {
+    "domain_anchor": "frozen BGE-M3 raw top route tool",
+    "within_tool_filter": "deterministic typed contradiction only",
+    "within_tool_ranker": "same BGE-M3 dual-view score",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "route_specific_thresholds": false,
+    "probability_thresholds": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "request_frame": {
+    "registry_independent": true,
+    "axes": [
+      "action",
+      "temporal_scope"
+    ],
+    "action_representation": "high-precision multilingual generic lexicon collapsed to generic semantic action classes",
+    "temporal_representation": "explicit current/future/historical lexicon",
+    "unknown_policy": "unknown axes never create a contradiction",
+    "compound_non_read_policy": "multiple distinct explicit action classes are unsatisfied by a single endpoint"
+  },
+  "contract_compiler": {
+    "trusted_sources": [
+      "endpoint.name",
+      "endpoint.operation_aliases",
+      "endpoint.description",
+      "endpoint.method",
+      "endpoint.read_only",
+      "endpoint.destructive",
+      "parameter/output schema metadata"
+    ],
+    "model_generated_authority": false,
+    "preserves_data_contract_metadata": [
+      "json_schema",
+      "semantic_id",
+      "source_unit",
+      "unit_normalization",
+      "qualifiers"
+    ]
+  },
+  "data_protocol": {
+    "tuning_or_selection_forbidden": [
+      "issue-270-fresh",
+      "issue-287-fresh",
+      "issue-326-fresh",
+      "issue-338-registration-holdout-labels",
+      "issue-198-calibration-or-blind"
+    ],
+    "old_0_11_dev_role": "not_used_for_selection_or_thresholding",
+    "development": {
+      "role": "new_tuning_eligible_0.12_screen",
+      "tool_identities": "disjoint_from_0.11_reference_registry",
+      "adapters": [
+        "native",
+        "openapi",
+        "mcp"
+      ],
+      "languages": [
+        "en",
+        "ko",
+        "es",
+        "ja",
+        "de",
+        "mixed"
+      ],
+      "corpus_sha256": null
+    },
+    "registration_confirmation": {
+      "role": "frozen_confirmation_only",
+      "generated_before_development_scoring": true,
+      "tool_identities": "disjoint_from_development_and_0.11_reference_registry",
+      "adapters": [
+        "native",
+        "openapi",
+        "mcp"
+      ],
+      "languages": [
+        "en",
+        "ko",
+        "es",
+        "ja",
+        "de",
+        "mixed"
+      ],
+      "corpus_sha256": null
+    }
+  },
+  "gates": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "development_fail": "terminal_reject_exact_representation_without_row_driven_repair",
+    "development_pass": "freeze_exact_parser_compiler_ranker_before_opening_registration_confirmation",
+    "confirmation_fail": "terminal_reject",
+    "both_pass": "eligible_for_brand_new_zero_overlap_natural_language_fresh_confirmation"
+  }
+}
