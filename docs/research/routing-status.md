@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **66** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **67** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [machine-readable ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — exact provenance index.
@@ -245,6 +245,38 @@ terminal and its separately frozen confirmation corpus remains **unscored**.
 
 The next candidate must condition the actual registered capability set directly in the membership
 question instead of asking one generic OUTSIDE label to compete with concrete positive labels.
+
+
+## 0.12 set-conditioned binary entailment
+
+Experiment #374 replaced #371's generic OUTSIDE-label competition with one direct NLI pair whose
+hypothesis explicitly enumerated the anchored tool's registered capability descriptions. Frozen
+BGE-M3 remained the sole positive selector; the NLI model could only preserve that route or veto to
+`NO_ROUTE`.
+
+DEV result:
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **0%** |
+| Raw supported exact | **92.54%** |
+| Raw supported tool accuracy | **99.56%** |
+| Near-domain unsupported rejection | **100%** |
+| OOD rejection | **100%** |
+| False-route | **0%** |
+| Entailment / not-entailment decisions | **0 / 552** |
+| Raw-correct winners vetoed | **211 / 100%** |
+| NLI p95 | **56.16 ms** |
+| End-to-end p95 | **254.55 ms** |
+| Positive route switches / authority / execution errors | **0 / 0 / 0** |
+
+The single disjunctive hypothesis collapsed to `not_entailment` for every DEV request, including
+all supported requests. The exact formulation is terminal, and its separately frozen confirmation
+corpus remains **unscored**.
+
+This establishes that finite capability-set membership should not be encoded as one long
+set-membership sentence for this NLI model. A successor must use a different contrastive
+representation rather than repairing the consumed hypothesis wording.
 
 ## Reproducibility
 
