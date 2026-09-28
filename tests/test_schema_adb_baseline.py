@@ -12,6 +12,7 @@ from benchmarks.operation_routing_v6a_catalog import (  # noqa: E402
     development_registry,
 )
 from benchmarks.schema_adb_baseline import (  # noqa: E402
+    AdbBoundary,
     SchemaAdbRouter,
     compile_registry_contracts,
     learn_adb_radius,
@@ -107,6 +108,16 @@ def test_boundary_can_only_preserve_raw_winner_or_abstain() -> None:
     router.action_vectors["demo.retrieve"] = [0.0, 1.0]
     router.schema_vectors["demo.update"] = [1.0, 0.0]
     router.action_vectors["demo.update"] = [1.0, 0.0]
+    existing = router.boundaries["demo.update"]
+    router.boundaries["demo.update"] = AdbBoundary(
+        route_id=existing.route_id,
+        tool_key=existing.tool_key,
+        leaf=existing.leaf,
+        centroid=(0.0, 1.0),
+        radius=0.01,
+        synthetic_count=existing.synthetic_count,
+        distances=existing.distances,
+    )
 
     result = router.route("cross")
     assert result["raw_top_route"] == "demo.retrieve"
