@@ -2334,6 +2334,62 @@
         "negative result for synthetic learned veto",
         "abstention versus supported-recall tradeoff"
       ]
+    },
+    {
+      "id": "0.12-query-first-typed-frame-v1",
+      "cycle": "0.12-query-first-typed-capability",
+      "issue": 347,
+      "pull_request": 348,
+      "branch": "research/0.12-query-first-typed-frame",
+      "hypothesis": "A registry-independent explicit request frame plus deterministic within-tool contract filtering can turn same-domain unsupported operations into empty capability sets without learned abstention thresholds.",
+      "preregistered": true,
+      "data_protocol": {
+        "development": {
+          "role": "new_tuning_eligible_0.12_screen",
+          "cases": 936,
+          "supported_cases": 432,
+          "near_domain_cases": 432,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "79a7cb9672e6633739e0acd08882019f5cfeff479df103f8199aabacb8501a9f"
+        },
+        "registration_confirmation": {
+          "role": "frozen_confirmation_only",
+          "cases": 1008,
+          "corpus_sha256": "15587c646d64b4f3462127742c05d59092938f68a4c047b731e9a8c78c0eb673",
+          "scored": false
+        }
+      },
+      "result": {
+        "workflow_run_id": 36404647843,
+        "source_revision": "ef0e0a567f12129bf9f4b003d13f9f6e9679a216",
+        "artifact_id": 10962450383,
+        "artifact_sha256": "74df3e068421bb2c551a30c2b5c5cdb9547e17066bf3f4ce7f8154c11690849c",
+        "development": {
+          "supported_exact_route_accuracy": 0.9722222222222222,
+          "raw_supported_exact_route_accuracy": 0.9675925925925926,
+          "raw_supported_tool_accuracy": 0.9953703703703703,
+          "near_domain_unsupported_rejection": 0.7037037037037037,
+          "out_of_domain_rejection": 0.9583333333333334,
+          "false_routes": 131,
+          "false_route_rate": 0.25992063492063494,
+          "wrong_tool": 0,
+          "wrong_endpoint": 6,
+          "authority_violations": 0,
+          "execution_errors": 0,
+          "p95_latency_ms": 179.52573625,
+          "changed_from_raw_count": 386,
+          "empty_typed_capability_set_count": 379
+        }
+      },
+      "decision": "terminal_rejected_insufficient_open_set_rejection",
+      "failure_reason": "The query-first typed filter preserved supported routing and runtime budget but a high-precision lexical frame left too many unsupported requests structurally unknown, allowing the raw BGE domain anchor to force a registered endpoint.",
+      "paper_relevance": [
+        "query-side typed capability representation",
+        "supported-recall preservation",
+        "open-set lexical-coverage limitation",
+        "deterministic capability filtering",
+        "unscored confirmation discipline"
+      ]
     }
   ],
   "current_research_conclusion": {
