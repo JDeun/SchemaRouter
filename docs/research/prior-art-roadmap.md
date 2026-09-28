@@ -24,8 +24,8 @@ Before creating a new routing experiment:
 | Workstream | Work item | State | Current SchemaRouter use |
 | --- | ---: | --- | --- |
 | Adaptive/open decision boundaries | #384 | **terminal** | V6A positive-only spherical ADB rejected every DEV request |
-| Hard-negative OOS generation | #389 / #395 | **active** | V6B schema-derived hard-negative low-rank ellipsoid |
-| Energy/density/open-space scoring | #390 | backlog | Test membership scores that do not require an explicit `OUTSIDE` class |
+| Hard-negative OOS generation | #389 / #395 | **terminal** | V6B separated synthetic evidence but rejected every natural DEV query |
+| Energy/density/open-space scoring | #390 / #397 / #399 / #401 | **active research / no frozen successor** | V6C/V6D/V6E terminal; next method must be structurally different |
 | Selective/conformal abstention | #391 | deferred | Calibrate abstention only after a useful semantic membership score exists |
 | Tool/executable-schema retrieval | #392 | ongoing | Keep retrieval research aligned with the typed capability architecture |
 
@@ -107,7 +107,9 @@ hard-negative OOS examples
 The generator must remain registry-independent. It must not use benchmark route names or failed DEV
 rows to write special negatives.
 
-Work item: **#389**. The active concrete experiment is **#395**, which combines registry-derived same-resource hard negatives with a low-rank anisotropic ellipsoid boundary while keeping raw BGE-M3 as the only positive route authority.
+Work item: **#389**. The concrete experiment **#395 / V6B** is terminal. It combined registry-derived same-resource hard negatives with a low-rank anisotropic ellipsoid boundary while keeping raw BGE-M3 as the only positive route authority.
+
+V6B DEV preserved perfect unsupported rejection but rejected **all supported requests** after every natural query fell outside the learned ellipsoids. Raw BGE supported exact remained **97.37%**. Its confirmation remains unopened. The hard-negative evidence bank remains reusable as schema-derived supervision; the exact ellipsoid formulation does not.
 
 ## 3. Energy, density, and open-space scoring
 
@@ -139,6 +141,14 @@ open-space membership score
 
 Earlier threshold/embedding families remain terminal in the experiment ledger and must not be
 silently recycled.
+
+Current 0.13 sequence:
+
+- **#397 / V6C — terminal tied-Gaussian density ratio.** Supported exact **93.86%**, near rejection **39.29%**, OOD rejection **56.94%**, false-route **56.79%**, zero raw-correct vetoes.
+- **#399 / V6D — terminal component Gaussian-mixture ratio.** Supported exact **89.91%**, near rejection **39.68%**, OOD rejection **5.56%**, false-route **67.90%**, zero raw-correct vetoes, p95 **250.49 ms**.
+- **#401 / V6E — terminal non-parametric local membership.** Fixed k=3 cosine-neighborhood comparison reached supported exact **83.33%**, near rejection **60.71%**, OOD rejection **54.17%**, false-route **40.74%**, and p95 **176.50 ms**. Complement neighborhoods were informative but positive/complement manifolds still overlapped; confirmation remains unopened.
+
+V6C showed that relative evidence can preserve supported routes but one Gaussian per class collapses multimodal structure. V6D showed that preserving endpoint-level Gaussian modes still does not solve the synthetic-to-natural membership gap. V6E removed the Gaussian assumption and improved unsupported recall, but remained far below the rejection targets and slightly damaged supported routing. The next experiment therefore must change the semantic signal or representation itself rather than tuning another distance threshold, neighborhood size, or Gaussian parameter from consumed DEV.
 
 ## 4. Selective prediction and conformal abstention
 
@@ -204,11 +214,13 @@ The following rules apply across all workstreams:
 
 The current order is:
 
-1. retain **#384** as the terminal positive-only spherical ADB reference; its confirmation stays unopened;
-2. execute **#395**, the preregistered V6B hard-negative low-rank ellipsoid experiment instantiated from **#389** and informed by **#390**;
-3. if #395 is terminal, compare a separately preregistered energy/density/open-space signal from **#390** rather than tuning #395 from failed rows;
-4. if a useful score exists, evaluate selective/conformal safety from **#391**;
-5. continuously maintain ToolRet/ToolReAGt architectural alignment in **#392**.
+1. retain **#384 / V6A** as the terminal positive-only spherical ADB reference; its confirmation stays unopened;
+2. retain **#395 / V6B** as the terminal hard-negative ellipsoid reference; its confirmation stays unopened;
+3. retain **#397 / V6C** and **#399 / V6D** as terminal relative-density controls; both confirmations stay unopened;
+4. retain **#401 / V6E** as the terminal non-parametric local-neighborhood reference; its confirmation stays unopened;
+5. before opening a successor, search prior art and repository history for a materially different semantic representation or membership signal; do not tune k, thresholds, weighting, background anchors, or schema wording from V6E DEV;
+6. if a useful semantic membership score exists, evaluate selective/conformal safety from **#391**;
+7. continuously maintain ToolRet/ToolReAGt architectural alignment in **#392**.
 
 This order is not a claim that later methods are superior. It is the governance sequence that avoids
 mixing hypotheses and reusing evidence.
