@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Registry-independent semantic action ontology for experiment #349.
 
 Research-only. One frozen BGE-M3 query embedding is reused for action classification and route
@@ -9,8 +10,9 @@ from __future__ import annotations
 
 import math
 import re
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
-from typing import Any, Iterable
+from typing import Any
 
 MODEL_NAME = "BAAI/bge-m3"
 MODEL_REVISION = "5617a9f61b028005a4858fdac845db406aefb181"
