@@ -2935,3 +2935,50 @@ Its confirmation corpus remains unopened.
 The already-preregistered #378 experiment is the next admissible step: compare the maximum
 entailment evidence among registered leaves with the maximum entailment evidence among
 counterfactual leaves while preserving BGE as the sole positive route selector.
+
+
+## 62. #378 / PR #380 — pairwise registered-vs-counterfactual NLI remains below target
+
+#378 was preregistered before #377 DEV was opened. It evaluated all 22 fixed generic operation
+hypotheses independently in one batch, then compared the maximum entailment score among the
+BGE-anchored tool's registered leaves with the maximum score among counterfactual tool/non-tool
+leaves.
+
+The authority rule remained asymmetric: counterfactual evidence could only veto to `NO_ROUTE`;
+frozen BGE-M3 raw top-1 remained the sole positive route selector.
+
+Freeze:
+- workflow `36424651535`;
+- source `7fccdb1eccb5f08d31ca87c798fc5f9f52a119f3`;
+- artifact `10971625459`;
+- digest `sha256:9a0f4cfa2f5fe3a47f81374a9867dd618ebe84fa17cbb0a09c2c8a2cd2503577`;
+- DEV SHA `75c7bab67de9c533df08ab5a76f7ce5e49acd92d3737f70b8dcfa50222c6abbd`;
+- confirmation SHA `caee6eb89b07e948b42130e4bb1ea3f6c1b4088fc76137f0d8e7cb394f8c6007`;
+- confirmation remained unopened.
+
+DEV:
+- workflow `36424971822`;
+- source `02aeefd4656f5b61a948142dfba74f51207bd979`;
+- artifact `10970443611`;
+- digest `sha256:8f24db27938f6924723d2088fd5ddc6811db433d0ceaf5b5e23c2412422dfd06`;
+- supported exact **67.5439%**;
+- raw BGE exact **95.1754%**;
+- raw BGE tool accuracy **98.2456%**;
+- near-domain rejection **55.9524%**;
+- OOD rejection **95.8333%**;
+- false-route **35.1852%**;
+- veto precision **75.5396%**;
+- veto recall **64.8148%**;
+- raw-correct winners vetoed **63 / 29.0323%**;
+- NLI batch p95 **387.8679 ms**;
+- end-to-end p95 **539.9184 ms**;
+- positive route switches / authority violations / execution errors **0 / 0 / 0**.
+
+Decision: **terminal reject**. The exact pairwise comparison neither met open-set quality nor runtime
+targets. No threshold, epsilon, tie rule, hypothesis wording, language rule or failed-row repair is
+permitted.
+
+This closes the Horizon zero-shot/NLI decomposition family (#371/#374/#377/#378). The next research
+cycle (#382) moves to a materially different family grounded in open-intent/OOS literature:
+schema-derived adaptive decision boundaries, then schema-derived hard negatives and energy-based
+open-set evidence.

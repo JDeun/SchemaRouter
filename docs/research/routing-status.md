@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **68** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **69** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [machine-readable ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — exact provenance index.
@@ -309,6 +309,36 @@ The exact #377 formulation is terminal and its frozen confirmation corpus remain
 
 The next preregistered experiment (#378) compares the strongest supported-leaf entailment with the
 strongest counterfactual-leaf entailment, without adding thresholds or positive reranking.
+
+
+## 0.12 pairwise supported-vs-counterfactual NLI
+
+Experiment #378 compared the strongest independent NLI entailment among the BGE-anchored tool's
+registered capability leaves with the strongest counterfactual tool/non-tool leaf. Counterfactual
+evidence could only veto to `NO_ROUTE`; frozen BGE-M3 remained the sole positive selector.
+
+DEV result:
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **67.54%** |
+| Raw supported exact | **95.18%** |
+| Raw supported tool accuracy | **98.25%** |
+| Near-domain unsupported rejection | **55.95%** |
+| OOD rejection | **95.83%** |
+| False-route | **35.19%** |
+| Veto precision | **75.54%** |
+| Veto recall | **64.81%** |
+| Raw-correct winners vetoed | **63 / 29.03%** |
+| NLI batch p95 | **387.87 ms** |
+| End-to-end p95 | **539.92 ms** |
+| Positive route switches / authority / execution errors | **0 / 0 / 0** |
+
+The exact formulation is terminal and its frozen confirmation corpus remains **unscored**. Together
+with #371, #374 and #377, this closes the current Horizon NLI semantic-decomposition family.
+
+Research has moved to #382/#383: schema-derived open-set decision boundaries following the
+ADB, hard-negative OOS and energy-based OOD literature.
 
 ## Reproducibility
 

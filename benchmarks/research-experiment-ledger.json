@@ -2859,6 +2859,84 @@
         "runtime evidence",
         "unscored confirmation discipline"
       ]
+    },
+    {
+      "id": "0.12-pairwise-supported-counterfactual-nli-v1",
+      "cycle": "0.12-pairwise-nli-membership",
+      "issue": 378,
+      "pull_request": 380,
+      "branch": "research/0.12-pairwise-nli-membership",
+      "preregistered": true,
+      "hypothesis": "Compare maximum independent NLI entailment over the anchored tool's registered capability leaves against maximum entailment over counterfactual tool/non-tool leaves; veto only when counterfactual evidence is strictly stronger.",
+      "external_model": {
+        "name": "Horizon-Labs/multilingual-zeroshot-small",
+        "revision": "d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4",
+        "role": "independent pairwise supported-vs-counterfactual semantic evidence"
+      },
+      "freeze": {
+        "workflow_run_id": 36424651535,
+        "source_revision": "7fccdb1eccb5f08d31ca87c798fc5f9f52a119f3",
+        "artifact_id": 10971625459,
+        "artifact_sha256": "9a0f4cfa2f5fe3a47f81374a9867dd618ebe84fa17cbb0a09c2c8a2cd2503577"
+      },
+      "data_protocol": {
+        "development": {
+          "cases": 552,
+          "supported_cases": 228,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "75c7bab67de9c533df08ab5a76f7ce5e49acd92d3737f70b8dcfa50222c6abbd"
+        },
+        "confirmation": {
+          "cases": 552,
+          "supported_cases": 228,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "caee6eb89b07e948b42130e4bb1ea3f6c1b4088fc76137f0d8e7cb394f8c6007",
+          "scored": false
+        }
+      },
+      "result": {
+        "workflow_run_id": 36424971822,
+        "source_revision": "02aeefd4656f5b61a948142dfba74f51207bd979",
+        "artifact_id": 10970443611,
+        "artifact_sha256": "8f24db27938f6924723d2088fd5ddc6811db433d0ceaf5b5e23c2412422dfd06",
+        "development": {
+          "supported_exact_route_accuracy": 0.6754385964912281,
+          "raw_supported_exact_route_accuracy": 0.9517543859649122,
+          "raw_supported_tool_accuracy": 0.9824561403508771,
+          "near_domain_unsupported_rejection": 0.5595238095238095,
+          "out_of_domain_rejection": 0.9583333333333334,
+          "false_route_rate": 0.35185185185185186,
+          "false_routes": 114,
+          "raw_correct_winner_vetoed": 63,
+          "raw_correct_winner_veto_rate": 0.2903225806451613,
+          "veto_precision": 0.7553956834532374,
+          "veto_recall": 0.6481481481481481,
+          "nli_batch_p95_ms": 387.867883,
+          "p95_latency_ms": 539.9183819,
+          "positive_route_switches": 0,
+          "authority_violations": 0,
+          "execution_errors": 0
+        }
+      },
+      "decision": "terminal_rejected_pairwise_nli_membership_and_latency",
+      "failure_reason": "Max-entailment comparison over registered versus counterfactual leaves remained far below open-set quality targets, vetoed 29.03% of raw-correct supported winners, and exceeded the latency budget by more than 2x.",
+      "interpretation": [
+        "Pairwise supported-vs-counterfactual comparison is more balanced than the OUTSIDE-label and aggregate-set NLI extremes but still does not establish a safe membership boundary.",
+        "The Horizon NLI semantic-decomposition family is closed after #371, #374, #377 and #378.",
+        "Positive route authority remained safe: no endpoint switch or authority violation occurred.",
+        "The frozen confirmation surface remains unopened.",
+        "The next cycle moves to schema-derived open-set decision boundaries following ADB/hard-negative/energy literature."
+      ],
+      "paper_relevance": [
+        "pairwise NLI membership",
+        "supported-vs-counterfactual evidence",
+        "negative-only authority",
+        "latency limit",
+        "terminal semantic-decomposition family",
+        "unscored confirmation discipline"
+      ]
     }
   ],
   "current_research_conclusion": {
@@ -2875,7 +2953,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": 378,
+    "active_experiment": 383,
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -3004,7 +3082,8 @@
     "capability_set_membership_status": "#363 raised veto recall to 64.20% while preserving 86.40% supported exact, but near rejection remained 54.76%, false-route 35.80%, and 18 raw-correct winners were vetoed; further rule tuning over the same BGE/MiniLM projections is closed.",
     "external_zeroshot_membership_status": "#371 preserved supported routing (93.42%) but OUTSIDE won only 7/552 rows; near rejection 1.59%, false-route 98.15%, p95 274.52 ms. Exact multiclass formulation rejected.",
     "set_conditioned_entailment_status": "#374 returned not_entailment on all 552 DEV cases, preserving zero false routes but collapsing supported exact to 0%; exact formulation rejected.",
-    "independent_capability_entailment_status": "#377 raised veto recall to 76.54% but collapsed supported exact to 45.61%, vetoing 116 raw-correct winners; exact independent-pair argmax rule rejected."
+    "independent_capability_entailment_status": "#377 raised veto recall to 76.54% but collapsed supported exact to 45.61%, vetoing 116 raw-correct winners; exact independent-pair argmax rule rejected.",
+    "pairwise_nli_membership_status": "#378 reached 67.54% supported exact / 55.95% near rejection / 35.19% false-route with p95 539.92 ms; Horizon NLI decomposition family closed."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
