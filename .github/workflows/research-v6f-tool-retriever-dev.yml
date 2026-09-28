@@ -1,0 +1,159 @@
+name: Research V6F Tool Specialized Retriever DEV
+
+on:
+  push:
+    branches:
+      - "research/0.13-tool-specialized-retriever"
+    paths:
+      - ".github/workflows/research-v6f-tool-retriever-dev.yml"
+      - "scripts/evaluate_tool_specialized_retriever_v6f.py"
+  pull_request:
+    paths:
+      - ".github/workflows/research-v6f-tool-retriever-dev.yml"
+      - "scripts/evaluate_tool_specialized_retriever_v6f.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FROZEN_SOURCE: "f40252c57a608cf19c255784ad6d2fb3c1f9a27d"
+  DEV_SHA256: "23fa9eaa24e919ea6dcf78c7c5c1fa34b4294df304e67d7343d744d1f54473e0"
+  CONFIRM_SHA256: "1eb392415dea0b6e735833e48be742a48edd227f1f3f7673abd910d1740e31ab"
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+
+      - name: Verify frozen V6F behavior and corpus source
+        run: |
+          git diff --exit-code "${FROZEN_SOURCE}" -- \
+            benchmarks/operation-routing-v6f-tool-specialized-retriever-preregistration.json \
+            benchmarks/operation_routing_v6f_catalog.py \
+            benchmarks/tool_specialized_retriever.py \
+            scripts/generate_operation_routing_v6f.py \
+            tests/test_tool_specialized_retriever.py \
+            tests/test_operation_routing_v6f_protocol.py
+
+      - name: Validate evaluator and frozen protocol
+        run: |
+          ruff check scripts/evaluate_tool_specialized_retriever_v6f.py
+          PYTHONPATH=. pytest -q \
+            tests/test_tool_specialized_retriever.py \
+            tests/test_operation_routing_v6f_protocol.py
+
+  evaluate-development:
+    needs: protocol
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "sentence-transformers>=3,<6" einops
+      - run: pip install -e ".[dev]"
+
+      - name: Recreate both frozen V6F corpora
+        run: |
+          python scripts/generate_operation_routing_v6f.py \
+            --out-dir artifacts/operation-routing-v6f
+
+      - name: Verify both frozen identities before scoring
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/operation-routing-v6f")
+          freeze = json.loads(
+              (root / "freeze-manifest.json").read_text(encoding="utf-8")
+          )
+          if freeze["development"]["corpus_sha256"] != os.environ["DEV_SHA256"]:
+              raise SystemExit("V6F DEV corpus identity drifted")
+          if freeze["confirmation"]["corpus_sha256"] != os.environ["CONFIRM_SHA256"]:
+              raise SystemExit("V6F confirmation corpus identity drifted")
+          for role in ("development", "confirmation"):
+              manifest = freeze[role]
+              if manifest["case_count"] != 228:
+                  raise SystemExit(f"unexpected {role} case count")
+              if manifest["supported_cases"] != 228:
+                  raise SystemExit(f"unexpected {role} supported count")
+              if manifest["near_domain_cases"] != 0 or manifest["out_of_domain_cases"] != 0:
+                  raise SystemExit(f"V6F {role} unexpectedly contains open-set rows")
+          print("frozen V6F identities verified; confirmation remains unscored")
+          PY
+
+      - name: Score development only
+        run: |
+          python scripts/evaluate_tool_specialized_retriever_v6f.py \
+            --development artifacts/operation-routing-v6f/development.json \
+            --out artifacts/operation-routing-v6f/dev-analysis.json
+
+      - name: Validate governance invariants
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(
+              Path("artifacts/operation-routing-v6f/dev-analysis.json")
+              .read_text(encoding="utf-8")
+          )
+          policy = data["policy"]
+          if policy["confirmation_scored"]:
+              raise SystemExit("confirmation scored before DEV pass")
+          if not policy["supported_only"]:
+              raise SystemExit("V6F consumed non-supported evidence")
+          if not policy["tool_embed_is_sole_positive_selector"]:
+              raise SystemExit("Tool-Embed positive authority changed")
+          if not policy["bge_is_diagnostic_only"]:
+              raise SystemExit("BGE affected V6F route authority")
+          if policy["bge_fusion"] or policy["reranker"] or policy["abstention"]:
+              raise SystemExit("unregistered V6F decision layer detected")
+          if policy["rank2_fallback"] or policy["pseudo_route"]:
+              raise SystemExit("forbidden fallback authority")
+          if policy["score_threshold"] is not None or policy["margin_threshold"] is not None:
+              raise SystemExit("DEV threshold detected")
+          if not policy["schema_only_profile"] or policy["model_generated_expansion"]:
+              raise SystemExit("profile provenance drifted")
+          if policy["limitations_field"]:
+              raise SystemExit("open-set limitations leaked into V6F")
+          if policy["dev_selected_hyperparameters"]:
+              raise SystemExit("DEV-selected tuning detected")
+          if data["metrics"]["execution_errors"] != 0:
+              raise SystemExit("execution errors")
+          print("quality_pass=", data["quality_pass"])
+          print("runtime_gate=", data["runtime_gate"])
+          print("surface_pass=", data["surface_pass"])
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: operation-routing-v6f-dev-${{ github.run_id }}
+          path: |
+            artifacts/operation-routing-v6f/dev-analysis.json
+            artifacts/operation-routing-v6f/development-manifest.json
+            artifacts/operation-routing-v6f/confirmation-manifest.json
+            artifacts/operation-routing-v6f/freeze-manifest.json
+            benchmarks/operation-routing-v6f-tool-specialized-retriever-preregistration.json
+          if-no-files-found: warn
+          retention-days: 30
