@@ -61,8 +61,11 @@ Agent / graph / application orchestrator
         capability sources
  OpenAPI / MCP / OPTIMADE / Python
 
-Optional decision backends (Laya / Ollama / Jev) plug into SchemaRouter's bounded selection step.
-They do not become agents, do not run tool loops, and do not receive execution authority.
+Optional decision backends (Laya / Ollama / Jev / System One-compatible providers) plug into
+SchemaRouter's bounded selection step. Jev-compatible models can be swapped by configuration through
+`SystemOneDecisionBackend`; other trusted bounded runtimes can enter through
+`CallableDecisionBackend`. They do not become agents, do not run tool loops, and do not receive
+execution authority.
 ```
 
 > **Current stable release: 0.9.0** · `pip install schemarouter` · pre-1.0
@@ -141,11 +144,12 @@ print(result[0].data)
 | **Human-readable docs** | no machine-readable schema exists | inspect → proposal → explicit approval |
 
 Framework bridges are available for **LangChain, LangGraph, and LlamaIndex**. **OpenTelemetry**
-provides optional telemetry export. **Jev / TypeSafe, Laya, and Ollama are optional decision
-backends**, not agent frameworks. Existing **GPT, Gemini, Claude, or other hosted model clients**
-can also be injected through the provider-neutral `ModelQueryAnalyzer` or
-`CallableDecisionBackend` contracts. None of these paths bypass SchemaRouter's policy, schema
-validation, or execution boundary.
+provides optional telemetry export. **Jev / TypeSafe, System One-compatible providers, Laya, and
+Ollama are optional decision backends**, not agent frameworks. Jev-wire-compatible models can reuse
+`SystemOneDecisionBackend` by changing provider/model configuration rather than adding a planner
+class. Existing **GPT, Gemini, Claude, or other hosted/local decision clients** can also be injected
+through the provider-neutral `ModelQueryAnalyzer` or `CallableDecisionBackend` contracts. None of
+these paths bypass SchemaRouter's policy, schema validation, or execution boundary.
 
 ## What 0.6 adds
 
