@@ -5,12 +5,16 @@ All notable changes to SchemaRouter are documented here.
 The project is pre-1.0 and follows the compatibility rules in
 [`docs/versioning.md`](docs/versioning.md).
 
-- add a frozen routing runtime-parity validator that rejects route changes, execute/abstain threshold crossings, case-set drift, execution errors, or authority violations while reporting probability drift for runtime-only optimization evidence;
-
 ## Unreleased
+
+## 0.10.0 - 2026-09-28
 
 ### Added
 
+- clarified SchemaRouter's product model as typed capability retrieval/execution infrastructure: APIs and tools are parsed into registered endpoint/field contracts and searched like an executable analog of RAG indexing, while orchestration remains outside the package;
+- documented JSON datatype/shape, semantic IDs, optional source units, explicit canonical unit normalization, and exact qualifiers as first-class capability/data-contract metadata rather than model-inferred semantics;
+- published a public routing-research status page that separates development evidence, independent fresh confirmation, conservative reference profiles, and successor research prototypes;
+- added a frozen routing runtime-parity validator that rejects route changes, execute/abstain threshold crossings, case-set drift, execution errors, or authority violations while reporting probability drift for runtime-only optimization evidence;
 - added a machine-validated operation-routing freeze protocol that records immutable source/model/runtime/representation/rule provenance, DEV and independent fresh-confirmation artifact evidence, standing 85/97/100/1 quality gates, authority invariants, and the #197 → #198 handoff before calibration/blind evaluation.
 - added explicit third-party bounded decision-backend entry points through the `schemarouter.decision_backends` package metadata group; discovery is metadata-only, loading is explicit by exact name, duplicate names fail before import, returned options remain locally bounded, and shared benchmark reports record only non-secret plugin metadata/config keys.
 - generalized Jev-compatible decision providers behind `SystemOneDecisionBackend`, preserving `JevDecisionBackend` while allowing compatible hosted/self-hosted runtimes to swap `base_url`, model, and provider label without changing planner semantics.
@@ -22,7 +26,9 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Changed
 
-- post-release development has resumed as `0.10.0.dev0`; published `0.9.0` artifacts remain immutable.
+- consolidated the stable default around field-first deterministic planning, typed registry contracts, bounded optional decision backends, fail-closed policy/schema validation, provider/access health, and conservative fallback;
+- kept experimental open-set capability verifiers and model-specific research paths outside the unconditional production default until they pass preregistered generalization and fresh-confirmation gates;
+- formally closed the 0.11 operation-routing architecture-search cycle without a promoted production-target candidate after its strongest canonical DEV pass failed exact frozen zero-overlap fresh confirmation.
 
 ## 0.9.0 - 2026-09-26
 
