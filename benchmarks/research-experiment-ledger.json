@@ -2039,6 +2039,37 @@
         "authority_violations": 0,
         "execution_errors": 0
       }
+    },
+    {
+      "id": "0.11-bge-m3-colbert-operation-contract",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 328,
+      "pull_request": 329,
+      "preregistered": true,
+      "status": "executing",
+      "decision": "executing",
+      "workflow_run_id": 36384796110,
+      "design": {
+        "model": "BAAI/bge-m3",
+        "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "flagembedding_version": "1.4.2",
+        "route_authority": "dense BGE-M3 raw registered top-1",
+        "colbert_role": "veto-only operation-contract evidence",
+        "sparse_role": "diagnostic-only",
+        "rule_families": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "route_local_thresholds": false,
+        "margin_threshold_search": false,
+        "forbidden_fresh_issues": [
+          270,
+          287,
+          326
+        ]
+      }
     }
   ],
   "current_research_conclusion": {
@@ -2046,16 +2077,17 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "retain BGE-M3 as the practical route-ranking backbone",
-      "prefer gates that reuse the existing query embedding or negligible CPU logic",
-      "do not add another local autoregressive/typed-decision model unless a realistic serving runtime is preregistered",
-      "preserve <=250 ms as a first-class architecture constraint rather than a post-hoc optimization goal"
+      "test a new BGE-M3 token-level operation representation rather than another dense threshold repair",
+      "keep dense raw BGE winner as sole route authority",
+      "use ColBERT only as global/same-tool operation-contract veto evidence",
+      "keep sparse lexical evidence diagnostic-only",
+      "freeze only if one preregistered global family passes 85/97/100/1 and p95<=250ms with zero dense-route parity mismatch"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": null,
+    "active_experiment": "#328 / PR #329 BGE-M3 ColBERT operation-contract diagnostic",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -2200,12 +2232,15 @@
       326,
       327
     ],
-    "active_experiments": [],
+    "active_experiments": [
+      328
+    ],
     "active_pull_requests": [
-      235
+      235,
+      329
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "fresh #326 failed; keep #198 blocked and design next candidate from tuning-eligible DEV + registry-level operational invariants only, without using fresh row/family failures for tuning",
+    "next_research_direction": "execute #328 BGE-M3 ColBERT operation-contract diagnostic on canonical DEV; do not use #270/#287/#326 fresh evidence",
     "contingent_experiments": [
       303
     ],
