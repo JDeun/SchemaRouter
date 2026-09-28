@@ -21,8 +21,9 @@
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-SchemaRouter는 에이전트와 도구 사이에 위치합니다. 자연어 요청과 등록된 capability catalog를
-작고 타입이 명확한 실행 계획으로 만들고, 실제 실행 직전에도 그 계획을 다시 검증합니다.
+SchemaRouter는 에이전트/RAG 애플리케이션과 데이터 제공 도구 사이에 위치합니다. OpenAPI,
+MCP, OPTIMADE, Python 또는 plugin capability를 typed catalog로 파싱하고, 요청을 충족할 수
+있는 가장 작은 선언된 실행 데이터 표면을 찾은 뒤 실제 실행 직전에도 그 계획을 다시 검증합니다.
 
 ```text
 Query
@@ -38,6 +39,23 @@ Query
 범용 에이전트 프레임워크를 대체하려는 프로젝트가 아닙니다. LangChain, LangGraph,
 LlamaIndex 또는 자체 orchestrator는 위에 두고, OpenAPI, MCP, OPTIMADE, Python callable,
 adapter plugin은 아래에 연결하는 **tool-schema boundary**입니다.
+
+### mental model: 실행 가능한 capability를 위한 RAG
+
+일반 RAG가 문서를 파싱해 chunk + metadata로 만들고 index에 적재한 뒤 질문에 필요한 context만
+retrieval하듯, SchemaRouter는 API/tool schema를 typed capability catalog로 컴파일합니다.
+
+```text
+문서 -> parser -> chunk/metadata -> index -> retriever -> RAG
+API/tool -> adapter -> endpoint/field contract -> registry/index -> SchemaRouter -> RAG/agent
+```
+
+차이는 retrieval 단위가 텍스트 조각이 아니라 **실행 가능한 endpoint와 field contract**라는
+점입니다. operation, parameter, output field, datatype/unit, policy/evidence, availability가
+함께 보존됩니다. registry는 논리적인 capability graph이며 실제 graph DB를 필수로 요구하지
+않습니다. embedding이나 optional decision backend를 사용해도 등록된 schema가 authority입니다.
+
+[Capability catalog와 RAG 비유](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
 
 ### Field-first, route-second
 
@@ -66,7 +84,7 @@ Laya / Ollama / Jev / System One 호환 모델은 SchemaRouter 내부의 제한�
 어떤 backend도 에이전트가 되지 않으며, tool loop를 실행하지 않고, 실행 권한도 받지 않습니다.
 ```
 
-> **현재 안정판: 0.9.0** · `pip install schemarouter` · pre-1.0
+> **현재 안정판: 0.10.0** · `pip install schemarouter` · pre-1.0
 
 ## 왜 필요한가
 
@@ -223,6 +241,25 @@ parameter/output field 수, schema fingerprint를 확인할 수 있고, trace �
 DAG/workflow, memory, prompt system, autonomous tool loop는 계속 범위 밖에 둡니다.
 
 자세한 내용은 [0.7.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.7.0/)를 참고하세요.
+
+## 0.10에서 정리된 점
+
+`0.10.0`은 open-set routing이 해결됐다고 선언하는 릴리스가 아니라, 지금까지의 구현과
+연구를 하나의 제품 구조로 정리하는 consolidation release입니다.
+
+- SchemaRouter를 agent/RAG를 위한 **typed capability retrieval/execution layer**로 명확히 정의;
+- **field-first, route-second**를 stable product architecture로 유지;
+- JSON datatype/shape, semantic ID, optional unit, explicit unit normalization, exact scientific
+  qualifier를 등록된 data contract의 일부로 취급;
+- OpenAPI/MCP/OPTIMADE/Python 등록을 benchmark-specific rule 없이 provider-neutral하게 유지;
+- learned decision backend는 bounded/optional로 유지;
+- benchmark도 정직하게 공개: 가장 강한 DEV 후보는 목표치를 통과했지만 frozen zero-overlap
+  fresh confirmation에서 실패했으므로 production-target candidate로 승격하지 않음.
+
+후속 registry-compiled capability verifier는 research prototype이며 0.10.0 기본 경로가 아닙니다.
+
+[0.10.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.10.0/) ·
+[Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
 
 ## 0.9에서 달라진 점
 
