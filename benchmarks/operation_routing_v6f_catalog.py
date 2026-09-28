@@ -181,12 +181,12 @@ def development_registry() -> InMemoryRegistry:
 
     refractive_index = FieldSpec(
         name="refractive_index",
-        semantic_id="material.thermal_refractive_index",
+        semantic_id="material.refractive_index",
         description="Refractive-index measurement",
         json_schema={"type": "number"},
         unit="1",
         unit_normalization=UnitNormalizationSpec(
-            dimension="thermal_refractive_index",
+            dimension="refractive_index",
             canonical_unit="1",
             scale=1.0,
             offset=0.0,
@@ -380,12 +380,12 @@ def confirmation_registry() -> InMemoryRegistry:
 
     dielectric_constant = FieldSpec(
         name="dielectric_constant",
-        semantic_id="material.specific_dielectric_constant",
+        semantic_id="material.relative_permittivity",
         description="Relative-permittivity measurement",
         json_schema={"type": "number"},
         unit="1",
         unit_normalization=UnitNormalizationSpec(
-            dimension="specific_dielectric_constant",
+            dimension="relative_permittivity",
             canonical_unit="1",
             scale=1.0,
             offset=0.0,
