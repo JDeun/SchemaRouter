@@ -5,10 +5,12 @@ from .laya import LayaDecisionBackend
 from .llamaindex import to_llamaindex_tool, to_llamaindex_tools
 from .ollama import OllamaDecisionBackend
 from .opentelemetry import OpenTelemetryRunExporter, trace_run_events
+from .system_one import SystemOneDecisionBackend
 
 __all__ = [
     "JevDecisionBackend",
     "LayaDecisionBackend",
+    "SystemOneDecisionBackend",
     "OllamaDecisionBackend",
     "OpenTelemetryRunExporter",
     "LangGraphRequestFactory",

@@ -135,6 +135,7 @@ nav:
       - LangChain: integrations/langchain.md
       - LangGraph: integrations/langgraph.md
       - LlamaIndex: integrations/llamaindex.md
+      - System One compatible: integrations/system-one.md
       - Jev / TypeSafe: integrations/jev.md
       - Laya decisions: integrations/laya.md
       - Ollama decisions: integrations/ollama.md

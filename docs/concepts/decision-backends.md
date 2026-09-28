@@ -7,6 +7,12 @@ Decision backends are not plan generators. They receive a finite set of locally 
 IDs and may select only from that set. SchemaRouter still constructs the typed execution plan and
 retains policy, schema-validation, fingerprint, and execution authority.
 
+The provider layer is replaceable. In addition to direct backends such as Laya and Ollama,
+`SystemOneDecisionBackend` can target Jev-compatible hosted or self-hosted System One
+endpoints by configuration. New compatible model families therefore do not require a new
+SchemaRouter planner implementation; they must still pass the same local option validation and
+workload-specific quality evaluation.
+
 They are also **not agents or orchestrators**. A decision backend does not own a conversation loop,
 does not decide when to call tools, does not execute tools, does not manage memory, and does not
 construct arbitrary multi-step plans. It is closer to a replaceable classifier/ranker behind one
