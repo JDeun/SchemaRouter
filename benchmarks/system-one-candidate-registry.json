@@ -52,7 +52,9 @@
       "integration_path": "system_one_wire",
       "lifecycle": "active_research",
       "license_status": "Apache-2.0",
-      "schemarouter_status": "Pinned Kev-0.8B choice+noul #299 / PR #300 executing; larger checkpoints require separate preregistration."
+      "schemarouter_status": "Pinned Kev-0.8B choice+noul #299 / PR #300 executing on the frozen 1,800-row v4 DEV; larger checkpoints require separate preregistration.",
+      "active_issue": 299,
+      "active_pull_request": 300
     },
     {
       "id": "mapika-decider",
@@ -98,9 +100,12 @@
       "repository": "nokia-applied-research/AnyJev",
       "integration_path": "reusable_plugin",
       "fallback_integration_path": "research_callable",
-      "lifecycle": "discovery",
+      "lifecycle": "staged_research",
       "license_status": "Apache-2.0 reported by upstream",
-      "schemarouter_status": "No SchemaRouter quality evidence yet. Runtime/readout contract must be pinned before benchmark."
+      "schemarouter_status": "AnyJev L0 content-free noul #311 / PR #313 is preregistered and staged; workflow is manual-dispatch only until Kev #299 is terminal and non-promotable. No SchemaRouter quality evidence yet.",
+      "source_revision": "45add301a7aa60ed3420c83d15c061e84e5bce61",
+      "active_issue": 311,
+      "active_pull_request": 313
     },
     {
       "id": "bespoke-nimble",
