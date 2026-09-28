@@ -24,7 +24,11 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_v6b_preregistration_is_frozen_before_scoring() -> None:
-    path = (\n        ROOT\n        / "benchmarks"\n        / "operation-routing-v6b-hard-negative-ellipsoid-preregistration.json"\n    )
+    path = (
+        ROOT
+        / "benchmarks"
+        / "operation-routing-v6b-hard-negative-ellipsoid-preregistration.json"
+    )
     data = json.loads(path.read_text(encoding="utf-8"))
 
     assert data["issue"] == 395
