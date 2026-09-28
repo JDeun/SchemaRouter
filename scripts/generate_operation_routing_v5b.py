@@ -152,7 +152,7 @@ ACTION_SURFACES: dict[str, dict[str, tuple[str, str]]] = {
         "ja": ("{obj}の今後を見積もって", "{obj}の将来値を予測して"),
         "de": ("schätze die zukünftige Entwicklung von {obj}", "projiziere die Zukunft von {obj}"),
         "mixed": ("{obj} future 예측해줘", "forecast {obj}"),
-    ),
+    },
 }
 
 TEMPORAL_WORDS: dict[str, dict[str, str]] = {
