@@ -12,7 +12,6 @@ on:
       - "scripts/generate_operation_routing_v6b.py"
       - "tests/test_schema_hard_negative_ellipsoid.py"
       - "tests/test_operation_routing_v6b_protocol.py"
-  pull_request:
   workflow_dispatch:
 
 permissions:
