@@ -3,14 +3,14 @@
   "purpose": "Complete mainline commit enumeration used to verify the human design/experiment history and machine research ledger from repository inception.",
   "audited_at": "2026-09-28",
   "branch": "main",
-  "head_revision": "fad004cdfce8e40c2119d3758ab47332d52e6253",
+  "head_revision": "26e6ff4480c9dae83bda4691260827a171ac24d8",
   "initial_revision": "5691c3c922f0209231f112c06096fe8744681fc5",
-  "commit_count": 149,
+  "commit_count": 150,
   "counts_by_subject_kind": {
+    "chore": 16,
     "research": 18,
     "feature": 46,
     "docs": 11,
-    "chore": 15,
     "release": 10,
     "performance": 3,
     "fix": 21,
@@ -31,6 +31,12 @@
     "caveat": "Subject classification is an index, not a claim that only feat/research commits are material. Security/fix/CI/docs and governance commits remain enumerated; non-main experimental evidence is tracked separately through the research ledger and terminal issue/PR provenance."
   },
   "commits": [
+    {
+      "sha": "26e6ff4480c9dae83bda4691260827a171ac24d8",
+      "date": "2026-09-28T04:21:11Z",
+      "subject": "chore: align decision candidate registry with canonical targets",
+      "kind": "chore"
+    },
     {
       "sha": "fad004cdfce8e40c2119d3758ab47332d52e6253",
       "date": "2026-09-28T03:55:31Z",
