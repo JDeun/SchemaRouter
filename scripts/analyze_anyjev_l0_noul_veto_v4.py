@@ -388,6 +388,42 @@ def _evaluate_threshold(
     }
 
 
+def _diagnostic_summary(
+    diagnostics: list[dict[str, Any]],
+) -> dict[str, Any]:
+    numeric_keys = (
+        "order_flip_raw",
+        "order_flip_l0",
+        "permutations",
+        "shifts_used",
+        "prior_strength",
+    )
+    numeric: dict[str, Any] = {}
+    for key in numeric_keys:
+        values = [
+            float(item[key])
+            for item in diagnostics
+            if isinstance(item.get(key), (int, float))
+            and math.isfinite(float(item[key]))
+        ]
+        numeric[key] = _distribution(values)
+
+    categorical: dict[str, dict[str, int]] = {}
+    for key in ("prior_method", "readout"):
+        counts: dict[str, int] = {}
+        for item in diagnostics:
+            value = item.get(key)
+            if value is not None:
+                label = str(value)
+                counts[label] = counts.get(label, 0) + 1
+        categorical[key] = counts
+
+    return {
+        "numeric": numeric,
+        "categorical": categorical,
+    }
+
+
 def _probability_geometry(
     rows: list[dict[str, Any]],
     probabilities: list[float],
@@ -488,6 +524,7 @@ def evaluate(cases: list[dict[str, Any]]) -> dict[str, Any]:
                 level: levels.count(level) for level in sorted(set(levels))
             },
             "diagnostic_key_counts": diagnostic_keys,
+            "anyjev_diagnostics": _diagnostic_summary(diagnostics),
             "probability_geometry": _probability_geometry(rows, probabilities),
         },
         "bge_runtime": bge_runtime,
@@ -505,10 +542,15 @@ def evaluate(cases: list[dict[str, Any]]) -> dict[str, Any]:
                 "raw_correct": row["raw_correct"],
                 "p_true": probability,
                 "level": level,
+                "order_flip_raw": diagnostic.get("order_flip_raw"),
+                "order_flip_l0": diagnostic.get("order_flip_l0"),
+                "permutations": diagnostic.get("permutations"),
+                "prior_method": diagnostic.get("prior_method"),
+                "prior_strength": diagnostic.get("prior_strength"),
                 "bge_latency_ms": row["bge_latency_ms"],
             }
-            for row, probability, level in zip(
-                rows, probabilities, levels, strict=True
+            for row, probability, level, diagnostic in zip(
+                rows, probabilities, levels, diagnostics, strict=True
             )
         ],
         "policy": {
