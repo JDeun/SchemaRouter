@@ -1,0 +1,158 @@
+name: Research V6B Hard-Negative Ellipsoid DEV
+
+on:
+  push:
+    branches:
+      - "research/0.13-hard-negative-ellipsoid"
+    paths:
+      - ".github/workflows/research-v6b-ellipsoid-dev.yml"
+      - "scripts/evaluate_schema_ellipsoid_v6b.py"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FROZEN_SOURCE: "62cd3a3d4d00e4362e994f300596573dae39695a"
+  DEV_SHA256: "91f798dcd2bd25896b9dfae60ea75b60eb25456dd935bc13d5a005e22cad34bd"
+  CONFIRM_SHA256: "d611d523d3e014d5ae29e8a5e148a6de8aeb4089a2af5870f62a87c750ec02b2"
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+
+      - name: Verify frozen V6B behavior and corpus source
+        run: |
+          git diff --exit-code "${FROZEN_SOURCE}" -- \
+            benchmarks/operation-routing-v6b-hard-negative-ellipsoid-preregistration.json \
+            benchmarks/schema_hard_negative_ellipsoid.py \
+            benchmarks/operation_routing_v6b_catalog.py \
+            scripts/generate_operation_routing_v6b.py \
+            tests/test_schema_hard_negative_ellipsoid.py \
+            tests/test_operation_routing_v6b_protocol.py
+
+      - name: Validate evaluator and frozen protocol
+        run: |
+          ruff check scripts/evaluate_schema_ellipsoid_v6b.py
+          PYTHONPATH=. pytest -q \
+            tests/test_schema_hard_negative_ellipsoid.py \
+            tests/test_operation_routing_v6b_protocol.py
+
+  evaluate-development:
+    needs: protocol
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers>=4.44,<5" "sentence-transformers>=3,<6" einops
+      - run: pip install -e ".[dev]"
+
+      - name: Recreate both frozen V6B corpora
+        run: |
+          python scripts/generate_operation_routing_v6b.py \
+            --out-dir artifacts/operation-routing-v6b
+
+      - name: Verify both frozen identities before scoring
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/operation-routing-v6b")
+          freeze = json.loads((root / "freeze-manifest.json").read_text())
+          if freeze["development"]["corpus_sha256"] != os.environ["DEV_SHA256"]:
+              raise SystemExit("DEV corpus identity drifted")
+          if freeze["confirmation"]["corpus_sha256"] != os.environ["CONFIRM_SHA256"]:
+              raise SystemExit("confirmation corpus identity drifted")
+          for role in ("development", "confirmation"):
+              manifest = freeze[role]
+              if manifest["case_count"] != 552:
+                  raise SystemExit(f"unexpected {role} case count")
+              if manifest["supported_cases"] != 228:
+                  raise SystemExit(f"unexpected {role} supported count")
+              if manifest["near_domain_cases"] != 252:
+                  raise SystemExit(f"unexpected {role} near-domain count")
+              if manifest["out_of_domain_cases"] != 72:
+                  raise SystemExit(f"unexpected {role} OOD count")
+          print("frozen V6B identities verified; confirmation remains unscored")
+          PY
+
+      - name: Score development only
+        run: |
+          python scripts/evaluate_schema_ellipsoid_v6b.py \
+            --development artifacts/operation-routing-v6b/development.json \
+            --out artifacts/operation-routing-v6b/dev-analysis.json
+
+      - name: Validate authority and governance invariants
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(
+              Path("artifacts/operation-routing-v6b/dev-analysis.json").read_text()
+          )
+          policy = data["policy"]
+          if policy["confirmation_scored"]:
+              raise SystemExit("confirmation scored before DEV pass")
+          if policy["prior_failed_rows_used_for_tuning"]:
+              raise SystemExit("prior failed evidence leaked")
+          if not policy["raw_bge_is_sole_positive_selector"]:
+              raise SystemExit("positive route authority changed")
+          if not policy["ellipsoid_veto_only"]:
+              raise SystemExit("ellipsoid gained positive authority")
+          if not policy["schema_derived_hard_negatives"]:
+              raise SystemExit("schema-derived hard negatives missing")
+          if policy["benchmark_rows_used_for_boundary_fit"]:
+              raise SystemExit("benchmark rows used for boundary fit")
+          if policy["positive_rerank"] or policy["endpoint_switch"]:
+              raise SystemExit("forbidden positive route mutation")
+          if policy["rank2_fallback"] or policy["pseudo_route"]:
+              raise SystemExit("forbidden fallback authority")
+          if policy["dev_selected_threshold"] or policy["dev_selected_hyperparameters"]:
+              raise SystemExit("DEV-selected tuning detected")
+          metrics = data["metrics"]
+          if metrics["positive_route_switches"] != 0:
+              raise SystemExit("positive route switch detected")
+          if metrics["authority_violations"] != 0:
+              raise SystemExit("authority violation")
+          if metrics["execution_errors"] != 0:
+              raise SystemExit("execution errors")
+          print("quality_pass=", data["quality_pass"])
+          print("runtime_gate=", data["runtime_gate"])
+          print("surface_pass=", data["surface_pass"])
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: operation-routing-v6b-dev-${{ github.run_id }}
+          path: |
+            artifacts/operation-routing-v6b/dev-analysis.json
+            artifacts/operation-routing-v6b/development-manifest.json
+            artifacts/operation-routing-v6b/confirmation-manifest.json
+            artifacts/operation-routing-v6b/freeze-manifest.json
+            benchmarks/operation-routing-v6b-hard-negative-ellipsoid-preregistration.json
+          if-no-files-found: warn
+          retention-days: 30
