@@ -1,0 +1,87 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "registry-compiled-capability-verifier-v1",
+  "work_item": 338,
+  "status": "preregistered_before_execution",
+  "model": {
+    "embedding_model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "normalize_embeddings": true,
+    "device": "cpu",
+    "learned_head": "logistic_regression",
+    "head_supervision": "generic_synthetic_capability_pairs_only"
+  },
+  "route_authority": {
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "raw_registered_top1_only": true,
+    "verifier_veto_only": true,
+    "verifier_can_change_route": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "registry_generalization": {
+    "compiler_input": "ToolSpec/EndpointSpec only",
+    "native_tools_required": true,
+    "openapi_import_required": true,
+    "mcp_import_required": true,
+    "operation_aliases_may_be_empty": true,
+    "variable_endpoint_counts_required": [1, 3, 5],
+    "route_ids_forbidden_as_learned_features": true,
+    "benchmark_domain_keyword_rules_forbidden": true,
+    "route_local_thresholds_forbidden": true,
+    "new_tool_requires_route_specific_retraining": false
+  },
+  "synthetic_supervision": {
+    "labeled_dev_rows_used": false,
+    "fresh_rows_used": false,
+    "calibration_blind_used": false,
+    "generic_action_ontology_only": true,
+    "resource_split_between_fit_and_calibration": true,
+    "counterfactuals": [
+      "action_swap",
+      "read_write_flip",
+      "destructive_flip",
+      "temporal_scope_mutation",
+      "same_resource_unsupported_operation",
+      "object_mismatch"
+    ]
+  },
+  "canonical_dev": {
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "forbidden_fresh_issues": [270, 287, 326],
+    "calibration_or_blind_forbidden": true
+  },
+  "candidate_worthiness_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "raw_winner_parity_mismatches_max": 0,
+    "p95_ms_max": 250
+  },
+  "internal_verifier_targets": {
+    "correct_raw_winner_retention_min": 0.97,
+    "unsupported_false_positive_rate_max": 0.005
+  },
+  "registration_holdout_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0
+  },
+  "stopping_rule": {
+    "if_canonical_or_registration_holdout_fails": "terminal_reject_without_label_driven_repair",
+    "if_both_pass": "freeze exact compiler ontology head threshold and runtime then create brand-new zero-overlap fresh confirmation",
+    "issue_198": "remains_blocked_until_new_fresh_confirmation_passes"
+  }
+}
