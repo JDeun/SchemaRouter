@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Generate disjoint 0.12-B corpora for semantic-action-ontology experiment #349."""
 
 from __future__ import annotations
