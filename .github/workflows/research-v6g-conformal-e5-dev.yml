@@ -1,0 +1,178 @@
+name: Research V6G Conformal E5 DEV
+
+on:
+  push:
+    branches:
+      - "research/0.13-conformal-e5-membership"
+    paths:
+      - ".github/workflows/research-v6g-conformal-e5-dev.yml"
+      - "scripts/evaluate_conformal_e5_v6g.py"
+  pull_request:
+    paths:
+      - ".github/workflows/research-v6g-conformal-e5-dev.yml"
+      - "scripts/evaluate_conformal_e5_v6g.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FROZEN_SOURCE: "fa47fa57c08338a86a01d1e254f9d82b8e7a3895"
+  CAL_SHA256: "79dadf6a384cc959b9b58fa617fcc173ceeb1ecdae83686257b0cd80b656a292"
+  DEV_SHA256: "4aa787f2100486daa4765723cc2aa1bf279fb8a7af26f329b3c902e7687d2ad2"
+  CONFIRM_SHA256: "c57bbfb6154cc672b1aba1234048897ea56c81811823b920ebb48faffe023122"
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+
+      - name: Verify frozen V6G behavior and corpus source
+        run: |
+          git diff --exit-code "${FROZEN_SOURCE}" -- \
+            benchmarks/operation-routing-v6g-conformal-e5-preregistration.json \
+            benchmarks/operation_routing_v6g_catalog.py \
+            benchmarks/conformal_e5_membership.py \
+            scripts/generate_operation_routing_v6g.py \
+            scripts/evaluate_conformal_e5_v6g.py \
+            tests/test_operation_routing_v6g_protocol.py
+
+      - name: Validate evaluator and frozen protocol
+        run: |
+          ruff check scripts/evaluate_conformal_e5_v6g.py
+          PYTHONPATH=. pytest -q tests/test_operation_routing_v6g_protocol.py
+
+  evaluate-development:
+    needs: protocol
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers>=4.44,<5" "sentence-transformers>=3,<6" sentencepiece einops
+      - run: pip install -e ".[dev]"
+
+      - name: Recreate all frozen V6G corpora
+        run: |
+          python scripts/generate_operation_routing_v6g.py \
+            --out-dir artifacts/operation-routing-v6g
+
+      - name: Verify all frozen identities before scoring
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/operation-routing-v6g")
+          freeze = json.loads(
+              (root / "freeze-manifest.json").read_text(encoding="utf-8")
+          )
+          expected = {
+              "calibration": os.environ["CAL_SHA256"],
+              "development": os.environ["DEV_SHA256"],
+              "confirmation": os.environ["CONFIRM_SHA256"],
+          }
+          for role, expected_hash in expected.items():
+              manifest = freeze[role]
+              if manifest["corpus_sha256"] != expected_hash:
+                  raise SystemExit(f"{role} corpus identity drifted")
+              if manifest["case_count"] != 552:
+                  raise SystemExit(f"unexpected {role} case count")
+              if manifest["supported_cases"] != 228:
+                  raise SystemExit(f"unexpected {role} supported count")
+              if manifest["near_domain_cases"] != 252:
+                  raise SystemExit(f"unexpected {role} near count")
+              if manifest["out_of_domain_cases"] != 72:
+                  raise SystemExit(f"unexpected {role} OOD count")
+              if manifest["unsupported_cases"] != 324:
+                  raise SystemExit(f"unexpected {role} unsupported count")
+          print("V6G identities verified; confirmation remains unscored")
+          PY
+
+      - name: Score calibration and development only
+        run: |
+          python scripts/evaluate_conformal_e5_v6g.py \
+            --calibration artifacts/operation-routing-v6g/calibration.json \
+            --development artifacts/operation-routing-v6g/development.json \
+            --out artifacts/operation-routing-v6g/dev-analysis.json
+
+      - name: Validate governance invariants
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(
+              Path("artifacts/operation-routing-v6g/dev-analysis.json")
+              .read_text(encoding="utf-8")
+          )
+          policy = data["policy"]
+          if policy["confirmation_scored"]:
+              raise SystemExit("confirmation scored before DEV pass")
+          if not policy["calibration_used_for_rule"]:
+              raise SystemExit("calibration protocol not applied")
+          if policy["calibration_supported_changes_rule"]:
+              raise SystemExit("supported calibration changed rule")
+          if policy["calibration_unsupported_count"] != 324:
+              raise SystemExit("unexpected unsupported calibration count")
+          if policy["conformal_alpha"] != 0.01:
+              raise SystemExit("alpha drifted")
+          if not policy["unsupported_null"] or not policy["conservative_tie_rule"]:
+              raise SystemExit("conformal null/tie semantics drifted")
+          if policy["dev_selected_threshold"] or policy["alpha_sweep"]:
+              raise SystemExit("DEV-selected conformal tuning detected")
+          if policy["score_threshold_grid"] or policy["platt"] or policy["isotonic"]:
+              raise SystemExit("unregistered calibration method detected")
+          if not policy["raw_bge_is_sole_positive_selector"]:
+              raise SystemExit("positive authority changed")
+          if policy["e5_has_positive_route_authority"]:
+              raise SystemExit("E5 gained route authority")
+          if policy["positive_rerank"] or policy["endpoint_switch"]:
+              raise SystemExit("forbidden positive route mutation")
+          if policy["rank2_fallback"] or policy["pseudo_route"]:
+              raise SystemExit("forbidden fallback authority")
+          if policy["score_fusion"]:
+              raise SystemExit("BGE/E5 score fusion detected")
+          metrics = data["metrics"]
+          if metrics["positive_route_switches"] != 0:
+              raise SystemExit("positive route switch detected")
+          if metrics["authority_violations"] != 0:
+              raise SystemExit("authority violation")
+          if metrics["execution_errors"] != 0:
+              raise SystemExit("execution errors")
+          print("quality_pass=", data["quality_pass"])
+          print("runtime_gate=", data["runtime_gate"])
+          print("surface_pass=", data["surface_pass"])
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: operation-routing-v6g-dev-${{ github.run_id }}
+          path: |
+            artifacts/operation-routing-v6g/dev-analysis.json
+            artifacts/operation-routing-v6g/calibration-manifest.json
+            artifacts/operation-routing-v6g/development-manifest.json
+            artifacts/operation-routing-v6g/confirmation-manifest.json
+            artifacts/operation-routing-v6g/freeze-manifest.json
+            benchmarks/operation-routing-v6g-conformal-e5-preregistration.json
+          if-no-files-found: warn
+          retention-days: 30
