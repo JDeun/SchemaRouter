@@ -1982,7 +1982,8 @@
     "top4_typed_routing_status": "#303 remains provider-neutral contingency only; same pinned Laya top-4 is mathematically dominated and not canonical evidence.",
     "external_verifier_status": "Qwen3 direct semantic verifier #289 rejected; pinned Laya noul veto #301 rejected; full-catalog Laya choice+noul #295 superseded before execution.",
     "next_external_candidate": "#311/#313 stages AnyJev L0 with content_free prior and Qwen3-0.6B; manual-only until Kev terminal.",
-    "kev_composition_contingency": "#314/#315 is fully staged before #299 result inspection: it reuses exact #299 global Kev noul probabilities and measured latency while BGE raw top-1 remains sole route authority; no new Kev inference."
+    "kev_composition_contingency": "#314/#315 is fully staged before #299 result inspection: it reuses exact #299 global Kev noul probabilities and measured latency while BGE raw top-1 remains sole route authority; no new Kev inference.",
+    "freeze_infrastructure": "#316 standardizes candidate freeze manifests and validates target, authority invariants, source/model/runtime/representation provenance, DEV evidence, and fresh-confirmation provenance before #198."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2049,7 +2050,8 @@
       235,
       300,
       313,
-      315
+      315,
+      316
     ],
     "next_blocked_confirmation": 198,
     "next_research_direction": "finish Kev-0.8B #299; if complete row-level noul exists, evaluate preregistered BGE+Kev offline composition #314/#315; activate AnyJev #311/#313 only if no Kev-based candidate promotes",
@@ -2062,6 +2064,9 @@
     "staged_experiments": [
       311,
       314
+    ],
+    "infrastructure_in_progress": [
+      316
     ]
   },
   "design_lineage": [
