@@ -8,7 +8,7 @@ answers a different question: **what was actually tried?**
 
 Current machine-readable ledger:
 
-- independent experiment records: **68**;
+- independent experiment records: **69**;
 - legacy routing corpus lineage: **13** versioned corpora;
 - routine bugfix-only commits are not counted as independent experiments unless they changed an
   architecture invariant, evaluation protocol, or empirical claim;
@@ -179,6 +179,12 @@ The repository Git history remains the exhaustive engineering record.
 | # | Experiment | Decision | Hypothesis / purpose | Evidence |
 | ---: | --- | --- | --- | --- |
 | 1 | `0.12-independent-per-capability-entailment-v1` | **terminal_rejected_independent_entailment_over_veto** | Judge every registered capability leaf independently with a pinned multilingual NLI model; preserve frozen BGE-M3 raw top-1 if any registered leaf is entailed, otherwise veto to N… | [issue #377](https://github.com/JDeun/SchemaRouter/issues/377) · [PR #379](https://github.com/JDeun/SchemaRouter/pull/379) · [`a872c9602d`](https://github.com/JDeun/SchemaRouter/commit/a872c9602dcad959ea1bf10f16a052592754d4ae) |
+
+## 0.12-pairwise-nli-membership
+
+| # | Experiment | Decision | Hypothesis / purpose | Evidence |
+| ---: | --- | --- | --- | --- |
+| 1 | `0.12-pairwise-supported-counterfactual-nli-v1` | **terminal_rejected_pairwise_nli_membership_and_latency** | Compare maximum independent NLI entailment over the anchored tool's registered capability leaves against maximum entailment over counterfactual tool/non-tool leaves; veto only whe… | [issue #378](https://github.com/JDeun/SchemaRouter/issues/378) · [PR #380](https://github.com/JDeun/SchemaRouter/pull/380) · [`02aeefd465`](https://github.com/JDeun/SchemaRouter/commit/02aeefd4656f5b61a948142dfba74f51207bd979) |
 
 ## Why the summary page shows fewer rows
 
