@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "cycle": "0.12-semantic-action-ontology",
+  "experiment": "semantic-action-ontology-v1",
+  "issue": 349,
+  "parent_issue": 340,
+  "status": "preregistered_before_corpus_generation_or_scoring",
+  "model": {
+    "name": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45
+  },
+  "action_ontology": {
+    "classes": [
+      "read",
+      "create",
+      "update",
+      "delete",
+      "cancel",
+      "refund",
+      "send",
+      "share",
+      "export",
+      "translate",
+      "summarize",
+      "compare",
+      "merge",
+      "restart",
+      "execute",
+      "forecast",
+      "compose",
+      "explain",
+      "calculate",
+      "chat"
+    ],
+    "non_tool_classes": [
+      "compose",
+      "explain",
+      "calculate",
+      "chat"
+    ],
+    "representation": "fixed multilingual generic semantic prototypes",
+    "scoring": "maximum cosine over prototypes in each class",
+    "selection": "single argmax class",
+    "threshold": null,
+    "margin_threshold": null,
+    "learned_head": false,
+    "registry_independent": true,
+    "route_identity_features": false
+  },
+  "route_authority": {
+    "domain_anchor": "tool identity of global frozen BGE-M3 raw top route",
+    "candidate_scope": "registered endpoints under anchored tool only",
+    "compatibility": "deterministic generic action contract and explicit temporal contradiction",
+    "final_ranker": "unchanged BGE-M3 dual-view score over compatible endpoints",
+    "cross_tool_fallback": false,
+    "pseudo_route": false,
+    "route_specific_thresholds": false
+  },
+  "data_protocol": {
+    "forbidden": [
+      "0.11-dev",
+      "#270",
+      "#287",
+      "#326",
+      "#338-holdout",
+      "#347-dev",
+      "#347-confirmation",
+      "#198-calibration",
+      "#198-blind"
+    ],
+    "development": {
+      "role": "new 0.12-B screen",
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "role": "frozen confirmation only",
+      "generated_before_development_scoring": true,
+      "corpus_sha256": null
+    }
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "dev_fail": "terminal_reject_without_prototype_rewording_from_dev_rows",
+    "dev_pass": "freeze exact source and open already-generated confirmation",
+    "confirmation_fail": "terminal_reject",
+    "both_pass": "eligible_for_brand_new_zero_overlap natural-language fresh confirmation"
+  }
+}
