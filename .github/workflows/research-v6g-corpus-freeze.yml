@@ -1,0 +1,93 @@
+name: Research V6G Corpus Freeze
+
+on:
+  push:
+    branches:
+      - "research/0.13-relative-cross-encoder-gate"
+    paths:
+      - ".github/workflows/research-v6g-corpus-freeze.yml"
+      - "benchmarks/operation-routing-v6g-relative-cross-encoder-preregistration.json"
+      - "benchmarks/operation_routing_v6g_catalog.py"
+      - "benchmarks/schema_cross_encoder_membership.py"
+      - "scripts/generate_operation_routing_v6g.py"
+      - "tests/test_schema_cross_encoder_membership.py"
+      - "tests/test_operation_routing_v6g_protocol.py"
+  pull_request:
+    paths:
+      - ".github/workflows/research-v6g-corpus-freeze.yml"
+      - "benchmarks/operation-routing-v6g-relative-cross-encoder-preregistration.json"
+      - "benchmarks/operation_routing_v6g_catalog.py"
+      - "benchmarks/schema_cross_encoder_membership.py"
+      - "scripts/generate_operation_routing_v6g.py"
+      - "tests/test_schema_cross_encoder_membership.py"
+      - "tests/test_operation_routing_v6g_protocol.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+
+      - name: Validate preregistration and source
+        run: |
+          ruff check \
+            benchmarks/operation_routing_v6g_catalog.py \
+            benchmarks/schema_cross_encoder_membership.py \
+            scripts/generate_operation_routing_v6g.py \
+            tests/test_schema_cross_encoder_membership.py \
+            tests/test_operation_routing_v6g_protocol.py
+          PYTHONPATH=. pytest -q \
+            tests/test_schema_cross_encoder_membership.py \
+            tests/test_operation_routing_v6g_protocol.py
+
+      - name: Generate DEV and confirmation together before scoring
+        run: |
+          python scripts/generate_operation_routing_v6g.py \
+            --out-dir artifacts/operation-routing-v6g
+
+      - name: Validate frozen counts
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          freeze = json.loads(
+              Path("artifacts/operation-routing-v6g/freeze-manifest.json")
+              .read_text(encoding="utf-8")
+          )
+          for role in ("development", "confirmation"):
+              manifest = freeze[role]
+              assert manifest["case_count"] == 552
+              assert manifest["supported_cases"] == 228
+              assert manifest["near_domain_cases"] == 252
+              assert manifest["out_of_domain_cases"] == 72
+              assert manifest["route_count"] == 19
+              assert manifest["tool_count"] == 7
+              assert manifest["endpoint_counts"] == [2, 2, 3, 3, 3, 3, 3]
+              assert manifest["supported_document_count"] == 19
+              assert manifest["background_document_count"] == 16
+              assert manifest["complement_document_count"] > 0
+              assert manifest["corpus_sha256"]
+          assert (
+              freeze["development"]["corpus_sha256"]
+              != freeze["confirmation"]["corpus_sha256"]
+          )
+          print("V6G DEV+confirmation frozen together without scoring")
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: operation-routing-v6g-freeze-${{ github.run_id }}
+          path: artifacts/operation-routing-v6g/
+          retention-days: 30
