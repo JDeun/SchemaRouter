@@ -34,7 +34,7 @@
   "registered_context": {
     "format": "User request: <query>\\nRegistered operations:\\n- <leaf>: <fixed generic English description>...",
     "sorted_leaves": true,
-    "unknown_endpoint_policy": "if any anchored-tool endpoint has unknown operation semantics, explicit UNKNOWN preserves raw route and NLI veto is disabled"
+    "unknown_endpoint_policy": "if any anchored-tool endpoint has unknown operation semantics, the capability set is incomplete; all parser/NLI absence vetoes are disabled and the raw route is preserved"
   },
   "authority": {
     "positive_selector": "raw BGE-M3 top-1 only",
