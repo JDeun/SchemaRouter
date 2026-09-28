@@ -203,6 +203,8 @@ LangChain, LangGraph, LlamaIndex bridge와 선택형 OpenTelemetry export를 제
 자세한 내용:
 
 - [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
+- [선행연구 로드맵](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/) — 세션이 바뀌어도 동일한 연구 work item에서 재개하기 위한 canonical 지도
+- [전체 실험 인덱스](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
 - [0.10.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.10.0/)
 - [Changelog](CHANGELOG.md)
 
@@ -233,6 +235,9 @@ schemarouter dashboard \
 - [MCP](https://jdeun.github.io/SchemaRouter/guides/mcp/)
 - [Architecture and maturity](https://jdeun.github.io/SchemaRouter/architecture/)
 - [Security model](https://jdeun.github.io/SchemaRouter/security/threat-model/)
+- [선행연구 로드맵](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
+- [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
+- [전체 실험 인덱스](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
 
 ## 범위
 
