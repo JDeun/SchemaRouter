@@ -1,3 +1,4 @@
+# ruff: noqa: E501 -- multilingual benchmark fixtures are intentionally literal.
 """Disjoint 0.12 development and confirmation catalogs for experiment #347."""
 
 from __future__ import annotations
