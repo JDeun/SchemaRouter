@@ -1,0 +1,6 @@
+{
+  "activate": false,
+  "after_issue": 299,
+  "reason": "kev_family_non_promotable",
+  "instructions": "Copy to operation-routing-v4-anyjev-l0-noul-veto.activation.json only after #299 and #314 are terminal and non-promotable, then set activate=true."
+}
