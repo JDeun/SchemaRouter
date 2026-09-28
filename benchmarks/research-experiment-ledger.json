@@ -1593,7 +1593,7 @@
       "issue": 287,
       "pull_request": 288,
       "preregistered": true,
-      "status": "executing",
+      "status": "completed",
       "design": {
         "selected_classifier": "HistGradientBoostingClassifier",
         "acceptance_threshold": 0.5,
@@ -1607,7 +1607,34 @@
         "route_authority": "BGE-M3 raw registered top-1 only",
         "verifier_authority": "veto-only"
       },
-      "decision": "executing"
+      "decision": "rejected_fresh_surface_generalization_failure",
+      "workflow_run_id": 36362105765,
+      "source_revision": "e5b10ee01ec23af6113c562b51e1db0c6d003d7a",
+      "artifact_id": 10946681188,
+      "artifact_sha256": "e7695598b07d5a0f9757f62c04f74f09b03c201de2bbb3f7699f6d8f18059938",
+      "model_sha256": "8cdb8b526705482d2a51dee79f8f17ce10e19199e823cab651a434918c8aa239",
+      "result": {
+        "same_corpus": {
+          "supported_exact_route_accuracy": 0.8767361111111112,
+          "near_domain_unsupported_rejection": 0.9982638888888888,
+          "out_of_domain_rejection": 1,
+          "false_routes": 1,
+          "false_route_rate": 0.0015432098765432098,
+          "p95_ms": 221.3280521,
+          "quality_gate_pass": true
+        },
+        "fresh_surface": {
+          "corpus_sha256": "c08068e7c68d466b04c96433abd17a6b5da62eaa47969b536f8551ed9db201c6",
+          "supported_exact_route_accuracy": 0.8263888888888888,
+          "near_domain_unsupported_rejection": 0.9322916666666666,
+          "out_of_domain_rejection": 1,
+          "false_routes": 39,
+          "false_route_rate": 0.06018518518518518,
+          "p95_ms": 252.7670991,
+          "quality_gate_pass": false
+        }
+      },
+      "interpretation": "Grouped OOF geometry learning was useful in-distribution, but the fit-once frozen classifier still degraded under a new independent surface shift. Per preregistration, stop increasing learned complexity on the same DEV geometry."
     },
     {
       "id": "0.11-frozen-hgb-winner-verifier",
@@ -1645,6 +1672,30 @@
         }
       },
       "interpretation": "Grouped language-OOF success did not generalize to a new zero-overlap surface. Learned geometry on the same DEV is now closed; move to externally pretrained semantic capability verification."
+    },
+    {
+      "id": "0.11-external-qwen3-semantic-capability-verifier",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 289,
+      "pull_request": 290,
+      "preregistered": true,
+      "status": "executing",
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "verifier_model": "Qwen/Qwen3-Reranker-0.6B",
+        "verifier_revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473",
+        "schemarouter_training": false,
+        "fixed_instruction_count": 1,
+        "fixed_threshold_count": 8,
+        "endpoint_contract_sources": [
+          "route id",
+          "tool description",
+          "endpoint description",
+          "operation aliases"
+        ],
+        "verifier_authority": "veto-only"
+      },
+      "decision": "executing"
     }
   ],
   "current_research_conclusion": {
@@ -1652,17 +1703,18 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "stop additional supervised model complexity on the original v4 DEV geometry after #287",
-      "identify and preregister an externally pretrained multilingual semantic capability verifier independent of SchemaRouter benchmark labels",
-      "retain BGE-M3 raw registered top-1 as sole route authority and use the external verifier only for match/no_match/unknown veto",
-      "do not use #270 or #287 fresh confirmation rows, families, errors or metrics to tune verifier behavior",
-      "keep calibration/blind evidence untouched until an external verifier passes a newly preregistered fresh-surface DEV unchanged"
+      "test externally pretrained Qwen3-Reranker-0.6B as a direct capability yes/no verifier with no SchemaRouter fine-tuning",
+      "use one fixed exact-capability instruction and trusted endpoint contract only",
+      "keep BGE-M3 raw registered top-1 as sole route authority and verifier veto-only",
+      "select only within eight preregistered global yes-probability thresholds",
+      "if quality passes but CPU latency fails, permit runtime-only optimization without semantic changes",
+      "keep failed #270/#287 fresh surfaces and calibration/blind evidence excluded from tuning"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "none; #287 rejected on frozen fresh-surface confirmation",
+    "active_experiment": "external Qwen3 semantic capability verifier (#289 / PR #290)",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1730,12 +1782,15 @@
       285,
       287
     ],
-    "active_experiments": [],
+    "active_experiments": [
+      289
+    ],
     "active_pull_requests": [
-      235
+      235,
+      290
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "externally pretrained multilingual semantic capability verifier with veto-only authority"
+    "next_research_direction": "terminal result of external Qwen3 semantic capability verifier #289"
   },
   "design_lineage": [
     {
@@ -1924,11 +1979,14 @@
         "next architecture is a learned or externally pretrained match/no_match/unknown capability verifier with strict veto-only authority",
         "grouped leave-one-language-out HGB winner verification passed 85/97/1/100 on tuning DEV without query-text features",
         "the exact fit-once HGB model then failed new zero-overlap fresh-surface confirmation at 82.64% exact / 93.23% near rejection / 6.02% false-route, so learned geometry on the same DEV is closed",
-        "next architecture must use an externally pretrained semantic capability verifier whose semantic boundary is independent of this benchmark"
+        "next architecture must use an externally pretrained semantic capability verifier whose semantic boundary is independent of this benchmark",
+        "grouped-OOF HGB verifier passed 85/97/1/100 but its fit-once frozen model failed new zero-overlap fresh confirmation at 82.64% exact / 93.23% near rejection / 6.02% false-route",
+        "learned classifiers over the same BGE/prototype geometry are now closed; next architecture uses externally pretrained semantic capability verification without SchemaRouter fine-tuning",
+        "Qwen3-Reranker-0.6B direct yes/no capability verification is the active externally pretrained experiment with one fixed instruction and trusted endpoint contracts"
       ],
-      "status": "active_external_pretrained_verifier_next",
+      "status": "active_external_pretrained_capability_verifier",
       "work_item": 197,
-      "current_next_action": "Preregister an externally pretrained multilingual semantic capability verifier; keep #198 blocked and all failed fresh-confirmation evidence forbidden for tuning."
+      "current_next_action": "Evaluate #289 without using failed fresh confirmations, calibration, or blind evidence."
     }
   ],
   "early_experiment_lineage": [
