@@ -1920,3 +1920,56 @@ Operationally, the framework is now prepared for rapid model replacement:
 - arbitrary bounded models can enter through `CallableDecisionBackend` and the generic callable benchmark path;
 - model discovery remains separate from stable execution authority.
 
+## 47. Freeze and final-evaluation ownership
+
+The end of architecture search now has an explicit ownership boundary.
+
+### #197 owns architecture closure
+
+A DEV candidate that meets the standing target does not immediately enter calibration.
+
+#197 must first:
+1. select the exact passing DEV rule;
+2. freeze source, architecture, authority semantics, models, runtime, representations and threshold;
+3. write a machine-readable freeze manifest;
+4. validate the manifest against the standing target and authority invariants;
+5. generate a NEW zero-overlap fresh confirmation surface distinct from #270 and #287;
+6. run the frozen candidate once without semantic retuning;
+7. update the manifest to `fresh-confirmed` only if the fresh target also passes.
+
+PR #316 introduces the reusable freeze-manifest template, validator and protocol documentation.
+
+### #198 owns only the final consumed evidence
+
+#198 remains blocked until a validated `fresh-confirmed` manifest exists.
+
+After that point it owns:
+1. a NEW 900-case calibration corpus and one evaluation;
+2. only after calibration passes, a NEW 1,800-case blind-final corpus and one evaluation.
+
+Calibration and blind-final are consumed evidence. They are never recycled into tuning.
+
+This removes an earlier procedural ambiguity where #198's title/body could be read as owning freeze/fresh
+while the tracker simultaneously treated #198 as blocked until fresh confirmation. The canonical
+sequence is now:
+
+```text
+architecture search
+    ↓
+DEV pass
+    ↓
+#197 exact freeze
+    ↓
+NEW zero-overlap fresh confirmation
+    ↓
+validated fresh-confirmed manifest
+    ↓
+#198 calibration
+    ↓
+#198 one-shot blind-final
+```
+
+No semantic change is allowed after freeze. A quality-pass/latency-fail candidate may undergo only a
+preregistered runtime-only optimization with unchanged semantics, and that optimized runtime must
+itself pass fresh confirmation before #198.
+
