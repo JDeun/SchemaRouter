@@ -2053,7 +2053,8 @@
     "kev_status": "Kev-0.8B CPU/fp32 #299 ended cancelled without analysis.json after ~3h; no quality conclusion, exact runtime path retired.",
     "anyjev_status": "AnyJev CPU execution PR #313 retired unexecuted; architecture remains only as a runtime-gated option if a credible <=250 ms path exists.",
     "current_frontier": "#322 offline composition passed 85.0694% exact / 99.3056% near rejection / 100% OOD / 0.6173% false-route. #324 is measuring exact row parity and direct p95.",
-    "expensive_typed_decision_status": "CPU Laya/Qwen/Kev/AnyJev product-path experiments are terminal; current work is BGE-native/lightweight and <=250 ms by design."
+    "expensive_typed_decision_status": "CPU Laya/Qwen/Kev/AnyJev product-path experiments are terminal; current work is BGE-native/lightweight and <=250 ms by design.",
+    "runtime_only_policy": "#318 is model-neutral and dormant: activate only after a frozen candidate passes quality + semantic parity but misses p95<=250ms; #320/#321 parity tooling is mandatory."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2146,8 +2147,10 @@
         "reason": "CPU/fp32 runtime path is not product-relevant for <=250 ms target; no timeout retry"
       }
     },
-    "dormant_contingencies": [],
-    "runtime_only_contingency": null
+    "dormant_contingencies": [
+      318
+    ],
+    "runtime_only_contingency": 318
   },
   "design_lineage": [
     {
