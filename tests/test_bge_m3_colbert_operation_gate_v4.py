@@ -173,3 +173,74 @@ def test_candidate_gate_requires_parity_runtime_and_full_quality() -> None:
         authority_violations=0,
         execution_errors=0,
     )
+
+
+def test_frontier_gate_checks_budget_zero_not_only_budget_six() -> None:
+    module = _module()
+    passing = {
+        "threshold": 0.91,
+        "supported_exact_route_accuracy": 0.86,
+        "near_domain_unsupported_rejection": 1.0,
+        "out_of_domain_rejection": 1.0,
+        "false_route_rate": 0.0,
+    }
+    failing_budget6 = {
+        "threshold": 0.72,
+        "supported_exact_route_accuracy": 0.88,
+        "near_domain_unsupported_rejection": 0.99,
+        "out_of_domain_rejection": 0.99,
+        "false_route_rate": 0.009,
+    }
+    frontier = {
+        "selected_by_false_budget": {
+            "0": passing,
+            "6": failing_budget6,
+            "12": failing_budget6,
+        }
+    }
+
+    result = module._passing_frontier_rules(
+        frontier,
+        family_id="C",
+        false_budgets=[0, 6, 12],
+        p95_ms=200.0,
+        parity_mismatches=0,
+        authority_violations=0,
+        execution_errors=0,
+    )
+
+    assert len(result) == 1
+    assert result[0]["family"] == "C"
+    assert result[0]["selected_false_budgets"] == [0]
+    assert result[0]["rule"]["threshold"] == 0.91
+
+
+def test_frontier_gate_deduplicates_same_threshold_across_budgets() -> None:
+    module = _module()
+    point = {
+        "threshold": 0.91,
+        "supported_exact_route_accuracy": 0.86,
+        "near_domain_unsupported_rejection": 1.0,
+        "out_of_domain_rejection": 1.0,
+        "false_route_rate": 0.0,
+    }
+    frontier = {
+        "selected_by_false_budget": {
+            "0": point,
+            "6": point,
+            "12": point,
+        }
+    }
+
+    result = module._passing_frontier_rules(
+        frontier,
+        family_id="D",
+        false_budgets=[0, 6, 12],
+        p95_ms=200.0,
+        parity_mismatches=0,
+        authority_violations=0,
+        execution_errors=0,
+    )
+
+    assert len(result) == 1
+    assert result[0]["selected_false_budgets"] == [0, 6, 12]
