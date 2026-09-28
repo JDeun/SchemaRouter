@@ -10,6 +10,8 @@ if str(ROOT) not in sys.path:
 
 from benchmarks.operation_routing_v6b_catalog import (  # noqa: E402
     CONFIRM_ROUTE_SPECS as V6B_CONFIRM_ROUTE_SPECS,
+)
+from benchmarks.operation_routing_v6b_catalog import (  # noqa: E402
     DEV_ROUTE_SPECS as V6B_DEV_ROUTE_SPECS,
 )
 from benchmarks.operation_routing_v6c_catalog import (  # noqa: E402
