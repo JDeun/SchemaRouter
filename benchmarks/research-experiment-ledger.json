@@ -2271,6 +2271,116 @@
         "selection confidence versus capability membership",
         "compute stopping rule"
       ]
+    },
+    {
+      "id": "0.11-registry-compiled-capability-verifier",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 338,
+      "pull_request": 341,
+      "preregistered": true,
+      "status": "completed",
+      "decision": "reject",
+      "source_revision": "ef75100abc1bb03a80ef2d7cfbd9d463accfb623",
+      "workflow_run_id": 36393153612,
+      "artifact_id": 10957952613,
+      "artifact_sha256": "2a24d50c563ee872fdad8d498e30ab7a55e6c82e0650bf27ac4bfbadc4fc4269",
+      "dataset": {
+        "canonical_role": "tuning_eligible_development",
+        "canonical_cases": 1800,
+        "canonical_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+        "registration_holdout_role": "one_shot_unseen_tool_registration_generalization",
+        "registration_cases": 228,
+        "registration_supported_cases": 144,
+        "registration_near_domain_cases": 72,
+        "registration_ood_cases": 12,
+        "registration_tool_count": 4,
+        "registration_route_count": 12,
+        "registration_adapters": [
+          "native",
+          "openapi",
+          "mcp"
+        ],
+        "registration_endpoint_counts": [
+          1,
+          3,
+          3,
+          5
+        ],
+        "registration_reuse_for_tuning": false
+      },
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "model": "BAAI/bge-m3",
+        "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "verifier": "generic synthetic logistic pairwise capability support head",
+        "verifier_role": "veto-only",
+        "capability_ir": "provider-neutral ToolSpec/EndpointSpec compiler",
+        "typed_data_contract": [
+          "semantic_id",
+          "JSON-schema type/shape",
+          "source unit",
+          "explicit unit-normalization dimension/canonical unit/scale/offset",
+          "qualifiers"
+        ],
+        "arbitrary_registration": [
+          "native ToolSpec",
+          "OpenAPI",
+          "MCP"
+        ],
+        "route_specific_retraining": false,
+        "rank2_fallback": false,
+        "pseudo_route": false,
+        "forbidden_fresh_issues": [
+          270,
+          287,
+          326
+        ]
+      },
+      "invalid_pre_runs": [
+        {
+          "run_id": 36392886171,
+          "reason": "ruff/import-style contract failure before evaluation"
+        },
+        {
+          "run_id": 36393039721,
+          "reason": "pytest research-module import-path failure before evaluation"
+        }
+      ],
+      "result": {
+        "canonical": {
+          "raw_supported_top1_correct": 1019,
+          "raw_route_parity_mismatches": 0,
+          "supported_exact_route_accuracy": 0.050347222222222224,
+          "correct_raw_winner_retention": 0.05691854759568204,
+          "near_domain_unsupported_rejection": 1,
+          "out_of_domain_rejection": 1,
+          "false_routes": 0,
+          "false_route_rate": 0,
+          "p95_ms": 196.92618755,
+          "authority_violations": 0,
+          "execution_errors": 0
+        },
+        "registration_generalization": {
+          "raw_supported_top1_correct": 122,
+          "supported_exact_route_accuracy": 0.020833333333333332,
+          "correct_raw_winner_retention": 0.02459016393442623,
+          "near_domain_unsupported_rejection": 1,
+          "out_of_domain_rejection": 1,
+          "false_routes": 0,
+          "false_route_rate": 0,
+          "p95_ms": 192.84591255,
+          "authority_violations": 0,
+          "execution_errors": 0
+        }
+      },
+      "failure_reason": "The synthetic pairwise verifier learned an almost reject-all boundary: unsupported safety was perfect but supported winner retention collapsed on both canonical and unseen registered tools.",
+      "interpretation": [
+        "Provider-neutral capability compilation and arbitrary native/OpenAPI/MCP registration are technically viable and preserve route authority.",
+        "Typed field metadata should remain deterministic registry authority rather than model-inferred semantics.",
+        "Pairwise support classification is the wrong abstraction for this candidate because its safe boundary rejects nearly all valid natural requests.",
+        "Do not retune the probability threshold or reuse the consumed registration holdout for a successor."
+      ],
+      "next_hypothesis": "Compile the query once into an independent typed intent and deterministically unify it with registered Capability IR; use a new unseen registration-generalization holdout."
     }
   ],
   "current_research_conclusion": {
