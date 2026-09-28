@@ -25,7 +25,7 @@
       "title": "Adaptive/open decision boundaries",
       "issue": 384,
       "parent_issue": 388,
-      "status": "active",
+      "status": "terminal",
       "canonical_references": [
         {
           "title": "Deep Open Intent Classification with Adaptive Decision Boundary",
@@ -44,7 +44,16 @@
         "issue": 384,
         "branch": "research/0.13-schema-adb-baseline",
         "protocol": "V6A",
-        "status": "implementation-before-freeze"
+        "status": "terminal_dev_quality_fail",
+        "result": {
+          "raw_supported_exact": 0.916667,
+          "supported_exact": 0,
+          "near_domain_rejection": 1,
+          "ood_rejection": 1,
+          "false_route_rate": 0,
+          "raw_correct_winners_vetoed": 209,
+          "confirmation_scored": false
+        }
       },
       "known_duplicate_or_superseded": [
         {
@@ -56,14 +65,14 @@
           "status": "noncanonical_implementation_branch"
         }
       ],
-      "next_action": "Finish exact 18-view V6A implementation/protocol on canonical branch, freeze DEV+confirmation together, then score DEV once."
+      "next_action": "Do not repair the positive-only spherical ADB from consumed DEV evidence; retain it as a terminal control and keep its confirmation unopened."
     },
     {
       "id": "hard-negative-oos",
       "title": "Schema-derived hard-negative OOS generation",
       "issue": 389,
       "parent_issue": 388,
-      "status": "next",
+      "status": "active",
       "canonical_references": [
         {
           "title": "Generating Hard-Negative Out-of-Scope Data with ChatGPT for Intent Classification",
@@ -85,6 +94,18 @@
             "Haytham Assem"
           ],
           "url": "https://aclanthology.org/2024.lrec-main.763/"
+        },
+        {
+          "title": "Ellipsoid-Based Decision Boundaries for Open Intent Classification",
+          "venue": "AAAI 2026",
+          "authors": [
+            "Yuetian Zou",
+            "Hanlei Zhang",
+            "Hua Xu",
+            "Songze Li",
+            "Long Xiao"
+          ],
+          "url": "https://ojs.aaai.org/index.php/AAAI/article/view/40837"
         }
       ],
       "schemarouter_mapping": "Generate near-domain negatives from the complement of a registered tool's capability ontology/resource anchor, without benchmark route identities or per-route human labels.",
@@ -97,7 +118,13 @@
         358,
         363
       ],
-      "trigger": "Run after the positive-only ADB baseline is measured, under a separately preregistered experiment."
+      "trigger": "Active now: implement #395 exactly as preregistered, freeze V6B DEV+confirmation together, then score DEV once.",
+      "current_experiment": {
+        "issue": 395,
+        "branch": "research/0.13-hard-negative-ellipsoid",
+        "protocol": "V6B",
+        "status": "preregistered_before_implementation"
+      }
     },
     {
       "id": "energy-density-open-space",
