@@ -45,6 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Validate timeout-only activation
         run: |
           python - <<'PY'
@@ -65,7 +66,6 @@ jobs:
               raise SystemExit("activation reason must be technical_timeout_only")
           print("validated timeout-only retry activation")
           PY
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.12"
