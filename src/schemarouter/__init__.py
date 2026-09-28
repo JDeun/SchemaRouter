@@ -20,6 +20,12 @@ from .aggregation import (
 from .analyzers import ModelCallable, ModelQueryAnalyzer
 from .dashboard import render_dashboard, write_dashboard
 from .decision_policy import DecisionFallback, DecisionPolicy
+from .decision_plugins import (
+    DECISION_BACKEND_ENTRY_POINT_GROUP,
+    DecisionBackendPluginInfo,
+    discover_decision_backend_plugins,
+    load_decision_backend_plugin,
+)
 from .decisions import (
     CallableDecisionBackend,
     DecisionBackend,
@@ -155,6 +161,10 @@ __all__ = [
     "BeforeExecutionHook",
     "BindingDriftError",
     "ConfiguredSchemaRouter",
+    "DECISION_BACKEND_ENTRY_POINT_GROUP",
+    "DecisionBackendPluginInfo",
+    "discover_decision_backend_plugins",
+    "load_decision_backend_plugin",
     "CallableDecisionBackend",
     "DecisionBackend",
     "DecisionFallback",
