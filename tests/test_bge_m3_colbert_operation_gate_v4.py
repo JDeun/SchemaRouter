@@ -244,3 +244,22 @@ def test_frontier_gate_deduplicates_same_threshold_across_budgets() -> None:
 
     assert len(result) == 1
     assert result[0]["selected_false_budgets"] == [0, 6, 12]
+
+
+def test_promotable_latency_excludes_sparse_diagnostic_scoring() -> None:
+    module = _module()
+
+    latency = module._promotable_latency_ms(
+        encode_ms=120.0,
+        dense_ms=5.0,
+        colbert_ms=20.0,
+    )
+
+    assert latency == 145.0
+
+
+def test_sparse_diagnostic_policy_cannot_define_promotion_latency() -> None:
+    data = json.loads(MANIFEST.read_text(encoding="utf-8"))
+
+    assert data["sparse_policy"]["diagnostic_only"] is True
+    assert data["sparse_policy"]["may_define_promoted_rule"] is False
