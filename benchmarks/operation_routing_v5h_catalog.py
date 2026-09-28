@@ -370,7 +370,7 @@ def confirmation_registry() -> InMemoryRegistry:
         json_schema={"type": "number"},
         unit="g",
         unit_normalization=UnitNormalizationSpec(
-            dimension="masa",
+            dimension="mass",
             canonical_unit="kg",
             scale=0.001,
             offset=0.0,
