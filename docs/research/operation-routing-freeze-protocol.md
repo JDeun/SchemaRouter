@@ -119,4 +119,5 @@ For every terminal phase, preserve:
 - terminal decision and interpretation.
 
 Update #200, #197, the research ledger, design/experiment history, and #199 whenever the frozen
-candidate or evidence phase changes.
+candidate or evidence phase changes. Once fresh confirmation passes, update #198 and transfer
+ownership of the unchanged frozen candidate to calibration/blind evaluation.
