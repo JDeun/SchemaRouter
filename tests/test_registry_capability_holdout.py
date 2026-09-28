@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from benchmarks.registry_capability_holdout import build_registry, cases, manifest
 from schemarouter import InMemoryRegistry
-
 from scripts.benchmark_decision_routing import reference_registry
 
 
