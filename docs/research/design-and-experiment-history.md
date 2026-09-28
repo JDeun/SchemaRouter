@@ -2878,3 +2878,60 @@ failed-row-driven repair is permitted. The frozen confirmation surface remains u
 
 The successor must change the semantic decomposition itself rather than interpolate between these
 two outcomes with post-hoc thresholds.
+
+
+## 61. #377 / PR #379 — independent registered-leaf entailment improves recall but over-vetoes support
+
+#377 replaced the failed aggregate set-entailment sentence with one independent NLI pair per
+registered capability leaf under the BGE-anchored tool.
+
+The frozen authority rule stayed unchanged:
+- BGE-M3 raw top-1 remained the sole positive selector;
+- every registered leaf received one fixed generic hypothesis;
+- all hypotheses for a query were evaluated in one batch;
+- any entailment preserved the raw BGE winner;
+- zero entailments vetoed to `NO_ROUTE`;
+- NLI could not select, rerank, replace, or filter to another endpoint;
+- no confidence, probability, margin, language, route, or learned threshold was used.
+
+Freeze evidence:
+- workflow `36424007584`;
+- frozen behavior/corpus source `b545999528b17a2782c76e6b6e546703b7b11da5`;
+- artifact `10970381458`;
+- digest `sha256:48afeead8687eb7d28aa2fce30485a017a368b2b5119b1278a162f7badad45af`;
+- DEV: 552 cases, SHA `c68bf11e52f960a7c8600d9d36b7fe13ab0b7b6e215a87f5b2bcffb783a67310`;
+- confirmation: 552 cases, SHA `ac4be0d6febda04fea60ae351691dfeebb932c1ec1161f14cf7754c44f49eefd`;
+- confirmation remained unopened.
+
+DEV evaluation:
+- workflow `36424336147`;
+- source `a872c9602dcad959ea1bf10f16a052592754d4ae`;
+- artifact `10971456253`;
+- digest `sha256:153781b690336a863de5a4ad2f2a7cb0793a01718d5d6c053bcd99a3dd66a937`.
+
+Results:
+- supported exact **45.6140%**;
+- raw BGE exact **96.4912%**;
+- raw BGE tool accuracy **100%**;
+- near-domain rejection **71.0317%**;
+- OOD rejection **95.8333%**;
+- false-route **23.4568%**;
+- veto precision **66.8464%**;
+- veto recall **76.5432%**;
+- raw-correct winners vetoed **116 / 52.7273%**;
+- NLI batch p95 **79.5343 ms**;
+- end-to-end p95 **278.0917 ms**;
+- positive route switches / authority violations / execution errors **0 / 0 / 0**.
+
+The experiment shows that decomposing the finite capability set into independent leaf judgments is
+meaningfully better than one aggregate set-membership sentence, but independent binary argmax is
+still too brittle as a hard membership veto. Supported queries frequently receive zero entailment,
+causing more than half of raw-correct winners to be rejected.
+
+Decision: **terminal reject**. No failed-row text, language slices, confusion pairs, score
+distributions, hypothesis rewrites, thresholds, margins, or vote rules may be used to repair #377.
+Its confirmation corpus remains unopened.
+
+The already-preregistered #378 experiment is the next admissible step: compare the maximum
+entailment evidence among registered leaves with the maximum entailment evidence among
+counterfactual leaves while preserving BGE as the sole positive route selector.

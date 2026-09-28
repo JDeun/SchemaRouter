@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **67** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **68** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [machine-readable ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — exact provenance index.
@@ -277,6 +277,38 @@ corpus remains **unscored**.
 This establishes that finite capability-set membership should not be encoded as one long
 set-membership sentence for this NLI model. A successor must use a different contrastive
 representation rather than repairing the consumed hypothesis wording.
+
+
+## 0.12 independent per-capability entailment
+
+Experiment #377 decomposed the membership question into one independent NLI judgment for each
+registered capability leaf under the BGE-anchored tool. All judgments for one query were evaluated
+in one batch. Frozen BGE-M3 remained the sole positive route selector; NLI could only preserve that
+winner or veto to `NO_ROUTE`.
+
+DEV result:
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **45.61%** |
+| Raw supported exact | **96.49%** |
+| Raw supported tool accuracy | **100%** |
+| Near-domain unsupported rejection | **71.03%** |
+| OOD rejection | **95.83%** |
+| False-route | **23.46%** |
+| Veto precision | **66.85%** |
+| Veto recall | **76.54%** |
+| Raw-correct winners vetoed | **116 / 52.73%** |
+| NLI batch p95 | **79.53 ms** |
+| End-to-end p95 | **278.09 ms** |
+| Positive route switches / authority / execution errors | **0 / 0 / 0** |
+
+Per-capability decomposition was more informative than one aggregate set hypothesis, but binary
+argmax still over-vetoed supported requests: more than half of raw-correct winners were rejected.
+The exact #377 formulation is terminal and its frozen confirmation corpus remains **unscored**.
+
+The next preregistered experiment (#378) compares the strongest supported-leaf entailment with the
+strongest counterfactual-leaf entailment, without adding thresholds or positive reranking.
 
 ## Reproducibility
 

@@ -8,7 +8,7 @@ answers a different question: **what was actually tried?**
 
 Current machine-readable ledger:
 
-- independent experiment records: **67**;
+- independent experiment records: **68**;
 - legacy routing corpus lineage: **13** versioned corpora;
 - routine bugfix-only commits are not counted as independent experiments unless they changed an
   architecture invariant, evaluation protocol, or empirical claim;
@@ -173,6 +173,12 @@ The repository Git history remains the exhaustive engineering record.
 | # | Experiment | Decision | Hypothesis / purpose | Evidence |
 | ---: | --- | --- | --- | --- |
 | 1 | `0.12-set-conditioned-binary-entailment-v1` | **terminal_rejected_all_not_entailment** | Use one direct NLI sequence-pair judgment over the anchored tool's full registered capability set; preserve the frozen BGE-M3 winner on entailment and veto to NO_ROUTE on not-enta… | [issue #374](https://github.com/JDeun/SchemaRouter/issues/374) · [PR #375](https://github.com/JDeun/SchemaRouter/pull/375) · [`e61058d0aa`](https://github.com/JDeun/SchemaRouter/commit/e61058d0aa31819bf99b182f4bd5947dd0d11fab) |
+
+## 0.12-independent-capability-entailment
+
+| # | Experiment | Decision | Hypothesis / purpose | Evidence |
+| ---: | --- | --- | --- | --- |
+| 1 | `0.12-independent-per-capability-entailment-v1` | **terminal_rejected_independent_entailment_over_veto** | Judge every registered capability leaf independently with a pinned multilingual NLI model; preserve frozen BGE-M3 raw top-1 if any registered leaf is entailed, otherwise veto to N… | [issue #377](https://github.com/JDeun/SchemaRouter/issues/377) · [PR #379](https://github.com/JDeun/SchemaRouter/pull/379) · [`a872c9602d`](https://github.com/JDeun/SchemaRouter/commit/a872c9602dcad959ea1bf10f16a052592754d4ae) |
 
 ## Why the summary page shows fewer rows
 
