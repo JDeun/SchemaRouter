@@ -1803,3 +1803,32 @@ Provenance:
 The active external typed-decision paths are now #299 (Kev) and #301 (pinned Laya native noul).
 #303 remains a preregistered top-K provider-neutral contingency and is not active yet.
 
+## 44. Replaceable typed-decision candidate registry
+
+The fast-moving Jev/System One ecosystem is tracked separately from core product code in
+`benchmarks/system-one-candidate-registry.json`.
+
+The registry records, for each discovery candidate:
+- repository and license status;
+- wire protocol or callable integration path;
+- current benchmark status;
+- model-family caveats;
+- the frozen promotion gate and intake checklist.
+
+Current verified discovery entries include Laya, Kev, Decis, LiteVar System One, AnyJev,
+Bespoke Nimble, and System One Open.
+
+This separation is intentional:
+
+> model discovery is mutable research metadata; execution authority and provider contracts are stable product interfaces.
+
+Wire-compatible models use `SystemOneDecisionBackend`. Non-wire typed models first enter through
+`CallableDecisionBackend` / `--decision-callable`. A permanent model-specific core integration
+is not required merely to test a new model.
+
+Infrastructure supporting this policy is now merged:
+- #291 / PR #292 — generic System One backend;
+- #297 / PR #298 — generic System One benchmark CLI;
+- #304 / PR #305 — arbitrary bounded decision callable benchmark path, merged as
+  `c9678b95a6dc592a1c3b850a6aea8b1675ff94a4`.
+
