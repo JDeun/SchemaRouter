@@ -238,11 +238,15 @@ def _ood(prefix: str) -> list[dict[str,Any]]:
     return [{"id":f"{prefix}-ood-{language}-{index}","query":query,"expected":None,"category":"out_of_domain","language":language} for language in LANGUAGES for index,query in enumerate(OOD[language],start=1)]
 
 
-def build(role: str) -> tuple[list[dict[str,Any]],dict[str,Any]]:
-    if role=="development":
-        registry=development_registry(); specs=DEV_ROUTE_SPECS; prefix="v5d-dev"
-    elif role=="confirmation":
-        registry=confirmation_registry(); specs=CONFIRM_ROUTE_SPECS; prefix="v5d-confirm"
+def build(role: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if role == "development":
+        registry = development_registry()
+        specs = DEV_ROUTE_SPECS
+        prefix = "v5d-dev"
+    elif role == "confirmation":
+        registry = confirmation_registry()
+        specs = CONFIRM_ROUTE_SPECS
+        prefix = "v5d-confirm"
     else:
         raise ValueError("role must be development or confirmation")
 
@@ -277,9 +281,11 @@ def build(role: str) -> tuple[list[dict[str,Any]],dict[str,Any]]:
 
 
 def main() -> None:
-    parser=argparse.ArgumentParser(); parser.add_argument("--out-dir",type=Path,required=True); args=parser.parse_args()
-    args.out_dir.mkdir(parents=True,exist_ok=True)
-    freeze={}
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--out-dir", type=Path, required=True)
+    args = parser.parse_args()
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+    freeze = {}
     for role in ("development","confirmation"):
         rows,manifest=build(role)
         (args.out_dir/f"{role}.json").write_text(json.dumps(rows,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
