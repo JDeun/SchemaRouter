@@ -1,0 +1,45 @@
+name: Research V6A Corpus Freeze
+
+on:
+  push:
+    branches:
+      - "research/0.13-schema-adb-baseline"
+    paths:
+      - ".github/workflows/research-v6a-corpus-freeze.yml"
+      - "benchmarks/operation-routing-v6a-schema-adb-preregistration.json"
+      - "benchmarks/schema_adb_baseline.py"
+      - "benchmarks/operation_routing_v6a_catalog.py"
+      - "scripts/generate_operation_routing_v6a.py"
+      - "tests/test_schema_adb_baseline.py"
+      - "tests/test_operation_routing_v6a_protocol.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Validate preregistration and protocol
+        run: |
+          python -m json.tool benchmarks/operation-routing-v6a-schema-adb-preregistration.json >/dev/null
+          ruff check             benchmarks/schema_adb_baseline.py             benchmarks/operation_routing_v6a_catalog.py             scripts/generate_operation_routing_v6a.py             tests/test_schema_adb_baseline.py             tests/test_operation_routing_v6a_protocol.py
+          pytest -q             tests/test_schema_adb_baseline.py             tests/test_operation_routing_v6a_protocol.py
+      - name: Generate DEV and confirmation together before scoring
+        run: |
+          python scripts/generate_operation_routing_v6a.py             --out-dir artifacts/operation-routing-v6a
+          cat artifacts/operation-routing-v6a/freeze-manifest.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: operation-routing-v6a-freeze-${{ github.run_id }}
+          path: artifacts/operation-routing-v6a/
+          retention-days: 30
