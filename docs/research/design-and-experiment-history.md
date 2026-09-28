@@ -2018,21 +2018,6 @@ The canonical ownership boundary is now enforced in documentation and machine-re
 - #197 owns DEV qualification → exact freeze → NEW zero-overlap fresh confirmation;
 - #198 begins only after a validated `fresh-confirmed` manifest and owns calibration → one-shot blind-final.
 
-### Runtime-only parity infrastructure merged — #320
-
-PR #320 was squash-merged as `acaca1e14b2f387094100dde3e1186aa4520d01d`.
-
-`scripts/validate_routing_runtime_parity.py` now provides the mandatory gate for any
-quality-pass/runtime-fail optimization under #318. It rejects:
-- case-set drift;
-- selected-route drift;
-- execute/abstain threshold crossings;
-- execution errors;
-- authority violations.
-
-It also records probability-drift distributions and the frozen reference boundary margin. A runtime
-that crosses the frozen decision boundary is a different semantic candidate, not a runtime-only
-optimization.
 
 ### Runtime parity infrastructure merged — #320
 
@@ -2049,4 +2034,31 @@ analysis with a runtime variant and rejects:
 It records max/mean/p50/p95 probability drift and the frozen reference boundary margin.
 This is the mandatory gate for #318 runtime-only optimization. Any parity failure turns the runtime
 variant into a new semantic candidate that requires a separate preregistered experiment.
+
+### Kev CPU runtime terminated without quality evidence
+
+#299 / PR #300 attempted pinned Kev-0.8B native `choice+noul` on GitHub-hosted CPU/fp32.
+
+The run completed infrastructure setup but did not complete the 1,800-row diagnostic:
+- workflow: `36366508183`;
+- conclusion: `cancelled`;
+- artifact: `10951921452`;
+- artifact digest: `sha256:58d3c1b4aec1bb70eb2aa1747e3acd86278a16da45582930bb80dbca92f54ee0`;
+- `analysis.json`: absent.
+
+The server log shows correct-but-slow reference PyTorch fallbacks for causal convolution and gated-delta kernels. This exact CPU/fp32 runtime is therefore terminal as an impractical execution path, but it is **not** negative model-quality evidence.
+
+Consequences:
+- #317 six-hour timeout retry retired unexecuted;
+- #314/#315 frozen BGE+Kev composition closed because its required row-level source analysis does not exist;
+- #313 AnyJev CPU execution retired before inference;
+- future typed-decision work requires a preregistered runtime with a credible <=250 ms deployment path.
+
+The research frontier returns to lightweight BGE-native/open-set evidence where latency is an architectural constraint from the start.
+
+### Runtime parity infrastructure merged — #320
+
+PR #320 was merged as `acaca1e14b2f387094100dde3e1186aa4520d01d`.
+
+`scripts/validate_routing_runtime_parity.py` is the mandatory gate for any later quality-pass/runtime-fail optimization. It rejects case-set drift, route drift, execute/abstain threshold crossings, execution errors, and authority violations while recording probability drift and reference boundary margin.
 
