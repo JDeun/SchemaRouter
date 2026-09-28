@@ -2626,6 +2626,86 @@
         "typed unit-bearing registration",
         "unscored confirmation discipline"
       ]
+    },
+    {
+      "id": "0.12-external-multilingual-zeroshot-membership-v1",
+      "cycle": "0.12-external-zeroshot-membership",
+      "issue": 371,
+      "pull_request": 372,
+      "branch": "research/0.12-external-zeroshot-membership",
+      "preregistered": true,
+      "hypothesis": "A small externally pretrained multilingual zero-shot classifier can judge whether a request belongs to the finite capability set registered for the BGE-anchored tool, while remaining negative-only and never selecting another endpoint.",
+      "external_model": {
+        "name": "Horizon-Labs/multilingual-zeroshot-small",
+        "preregistered_revision": "v1.1",
+        "resolved_revision": "d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4",
+        "role": "multiclass finite-set membership veto only"
+      },
+      "freeze": {
+        "workflow_run_id": 36419226642,
+        "source_revision": "6c02c313a022740100377ead5890fd1f0d782978",
+        "artifact_id": 10968721554,
+        "artifact_sha256": "1820bafd0e5c745e7175e75cca32e6e27f20a7b3bafd53b7138a138d11429a62"
+      },
+      "data_protocol": {
+        "development": {
+          "cases": 552,
+          "supported_cases": 228,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "64a89e96a2beaf90e9b44febdef033a2ec9a17c60459c909a0718b759dd9baae"
+        },
+        "confirmation": {
+          "cases": 552,
+          "supported_cases": 228,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "9beebb5957f1bfd264a14349582c74ad9b15627c6530324f792d3e1d249ecbe9",
+          "scored": false
+        }
+      },
+      "result": {
+        "workflow_run_id": 36419512215,
+        "source_revision": "5e6dde0c3860ff46f0961c74233d7196e6c86f59",
+        "artifact_id": 10968782843,
+        "artifact_sha256": "fe53e28362d9d9d78573e68f41bcb1cce6eab0c26294f1b73a599d36fafbb6d5",
+        "development": {
+          "supported_exact_route_accuracy": 0.9342105263157895,
+          "raw_supported_exact_route_accuracy": 0.9385964912280702,
+          "raw_supported_tool_accuracy": 0.9912280701754386,
+          "near_domain_unsupported_rejection": 0.015873015873015872,
+          "out_of_domain_rejection": 0.027777777777777776,
+          "false_route_rate": 0.9814814814814815,
+          "false_routes": 318,
+          "outside_top1_count": 7,
+          "vetoes": 7,
+          "true_unsupported_vetoes": 6,
+          "veto_precision": 0.8571428571428571,
+          "veto_recall": 0.018518518518518517,
+          "raw_correct_winner_vetoed": 1,
+          "raw_correct_winner_veto_rate": 0.004672897196261682,
+          "positive_route_switches": 0,
+          "authority_violations": 0,
+          "execution_errors": 0,
+          "zero_shot_p95_ms": 93.1539945,
+          "p95_latency_ms": 274.52407695
+        }
+      },
+      "decision": "terminal_rejected_multiclass_outside_label_no_open_set_boundary",
+      "failure_reason": "The external classifier preserved supported routing but the generic OUTSIDE catch-all almost never won native multiclass normalization against concrete supported capability labels, yielding 1.85% veto recall and 98.15% false routing. Quality failed, so runtime-only optimization was not eligible.",
+      "interpretation": [
+        "A 141M external multilingual zero-shot classifier is computationally plausible as a bounded verifier.",
+        "Concrete supported labels dominate a generic OUTSIDE catch-all under this multiclass formulation.",
+        "Negative-only authority again preserved route safety: zero route switches and zero authority violations.",
+        "A successor requires different membership semantics rather than label/template/threshold repair on consumed DEV."
+      ],
+      "paper_relevance": [
+        "external pretrained zero-shot verifier",
+        "multiclass catch-all open-set failure",
+        "negative-only authority",
+        "runtime evidence",
+        "unscored confirmation discipline"
+      ]
     }
   ],
   "current_research_conclusion": {
@@ -2768,7 +2848,8 @@
     "successor_rule": "Any later cycle must introduce a materially new source of capability evidence and a new preregistered protocol; it must not repair from #270/#287/#326 fresh rows or extend terminal 0.11 families post hoc.",
     "bge_gte_consensus_status": "#336/#337 rejected: 81.34% exact / 43.58% near rejection / 81.94% OOD / 52.16% false-route.",
     "asymmetric_ontology_veto_status": "#358 preserved raw BGE positive selection exactly (96.05% exact, zero raw-correct winner vetoes) and achieved 99.22% veto precision, but same-leaf agreement recall was only 39.51%; exact rule rejected.",
-    "capability_set_membership_status": "#363 raised veto recall to 64.20% while preserving 86.40% supported exact, but near rejection remained 54.76%, false-route 35.80%, and 18 raw-correct winners were vetoed; further rule tuning over the same BGE/MiniLM projections is closed."
+    "capability_set_membership_status": "#363 raised veto recall to 64.20% while preserving 86.40% supported exact, but near rejection remained 54.76%, false-route 35.80%, and 18 raw-correct winners were vetoed; further rule tuning over the same BGE/MiniLM projections is closed.",
+    "external_zeroshot_membership_status": "#371 preserved supported routing (93.42%) but OUTSIDE won only 7/552 rows; near rejection 1.59%, false-route 98.15%, p95 274.52 ms. Exact multiclass formulation rejected."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
