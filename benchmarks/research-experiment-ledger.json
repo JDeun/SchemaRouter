@@ -1918,6 +1918,24 @@
         "threshold_count": 8,
         "workflow_dispatch_only": true
       }
+    },
+    {
+      "id": "0.11-bge-plus-kev-global-noul",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 314,
+      "preregistered": true,
+      "status": "staged_waiting_for_299_artifact",
+      "decision": "offline_compose_only_after_299_terminal",
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "bge_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "kev_evidence_source_issue": 299,
+        "kev_probability": "frozen row-level supported_probability from #299",
+        "new_kev_inference": false,
+        "threshold_count": 8,
+        "rank2_fallback": false,
+        "failed_fresh_sets_used": false
+      }
     }
   ],
   "current_research_conclusion": {
@@ -1963,7 +1981,8 @@
     "laya_winner_noul_status": "#301/#302 rejected: 0/8 pass; correct-supported median P(true)=0.6784 vs near unsupported=0.67245; combined p95=1098.75ms.",
     "top4_typed_routing_status": "#303 remains provider-neutral contingency only; same pinned Laya top-4 is mathematically dominated and not canonical evidence.",
     "external_verifier_status": "Qwen3 direct semantic verifier #289 rejected; pinned Laya noul veto #301 rejected; full-catalog Laya choice+noul #295 superseded before execution.",
-    "next_external_candidate": "#311/#313 stages AnyJev L0 with content_free prior and Qwen3-0.6B; manual-only until Kev terminal."
+    "next_external_candidate": "#311/#313 stages AnyJev L0 with content_free prior and Qwen3-0.6B; manual-only until Kev terminal.",
+    "kev_composition_contingency": "#314 preregisters BGE raw top-1 authority + the exact frozen #299 global Kev noul probability. It requires no new Kev inference and was defined before #299 results."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2032,7 +2051,7 @@
       313
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "finish Kev-0.8B #299; activate staged AnyJev L0 #311/#313 only if Kev is terminal without promotion",
+    "next_research_direction": "finish Kev-0.8B #299; evaluate preregistered BGE+Kev global noul #314 from the frozen #299 artifact; activate AnyJev #311/#313 only if no Kev composition promotes",
     "contingent_experiments": [
       303
     ],
@@ -2040,7 +2059,8 @@
       293
     ],
     "staged_experiments": [
-      311
+      311,
+      314
     ]
   },
   "design_lineage": [
