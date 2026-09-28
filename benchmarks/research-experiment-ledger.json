@@ -1586,6 +1586,28 @@
         "veto_only": true
       },
       "decision": "executing"
+    },
+    {
+      "id": "0.11-frozen-hgb-winner-verifier-candidate",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 287,
+      "pull_request": 288,
+      "preregistered": true,
+      "status": "executing",
+      "design": {
+        "selected_classifier": "HistGradientBoostingClassifier",
+        "acceptance_threshold": 0.5,
+        "sklearn_version": "1.7.2",
+        "fit_once_on_original_dev": true,
+        "serialized_model_sha_required": true,
+        "refit_during_confirmation": false,
+        "same_model_for_same_and_fresh_confirmation": true,
+        "fresh_seed": "operation-routing-quality-v4-learned-verifier-confirmation-2026-09-28-a",
+        "fresh_surface_version": "learned-verifier-confirmation-wrappers-v1",
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "verifier_authority": "veto-only"
+      },
+      "decision": "executing"
     }
   ],
   "current_research_conclusion": {
@@ -1593,19 +1615,17 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "fixed-prototype scalar and rank heuristics are closed after #281",
-      "preregister a learned or externally pretrained match/no_match/unknown capability verifier",
-      "retain BGE-M3 raw registered top-1 as sole route authority",
-      "verifier may veto or return unknown only; it may not reroute or create authority",
-      "use grouped/out-of-fold development validation before any freeze to reduce surface memorization risk",
-      "if a learned verifier passes development, freeze it before a new zero-overlap fresh-surface DEV confirmation distinct from #270",
-      "keep failed #270 fresh-surface, calibration, and blind evidence excluded from tuning"
+      "freeze the #285-selected HGB p_match>=0.50 verifier without changing features or threshold",
+      "fit exactly once on the original tuning DEV and serialize/checksum one model file",
+      "reuse the identical serialized model without refit for same-corpus and a new zero-overlap fresh-surface DEV distinct from #270",
+      "only an unchanged fresh-surface pass may unblock #198",
+      "if fresh-surface fails, stop increasing learned complexity on the same DEV and move to an externally pretrained semantic capability verifier"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "grouped-OOF learned winner verifier (#285 / PR #286)",
+    "active_experiment": "frozen HGB winner-verifier candidate (#287 / PR #288)",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1668,17 +1688,18 @@
       275,
       277,
       279,
-      281
+      281,
+      285
     ],
     "active_experiments": [
-      285
+      287
     ],
     "active_pull_requests": [
       235,
-      286
+      288
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "learned or externally pretrained match/no_match/unknown capability verifier with veto-only authority"
+    "next_research_direction": "terminal result of frozen HGB candidate #287; pass fresh surface to unblock #198, otherwise move to externally pretrained verifier"
   },
   "design_lineage": [
     {
@@ -2036,4 +2057,4 @@
       "note": "Generated only after freeze and permanently consumed after one evaluation."
     }
   ]
-}\n
+}
