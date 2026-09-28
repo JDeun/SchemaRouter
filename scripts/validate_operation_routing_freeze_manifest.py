@@ -20,6 +20,7 @@ EXPECTED_TARGET = {
     "combined_p95_ms_max": 250.0,
 }
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+_SHA256_DIGEST_RE = re.compile(r"^(?:sha256:)?[0-9a-f]{64}$")
 _SOURCE_REVISION_RE = re.compile(r"^[0-9a-f]{40,64}$")
 
 
@@ -59,6 +60,19 @@ def _source_revision(value: Any, path: str) -> str:
             f"{path} must be a pinned 40-64 character lowercase hex revision"
         )
     return text
+
+
+def _artifact_digest(value: Any, path: str) -> str:
+    text = _nonempty_string(value, path)
+    if _SHA256_DIGEST_RE.fullmatch(text) is None:
+        raise FreezeManifestError(
+            f"{path} must be a SHA-256 digest, optionally prefixed with 'sha256:'"
+        )
+    return text
+
+
+def _model_revision(value: Any, path: str) -> str:
+    return _nonempty_string(value, path)
 
 
 def _metric_float(metrics: Mapping[str, Any], key: str, path: str) -> float:
@@ -103,7 +117,7 @@ def _validate_evidence_phase(value: Any, path: str) -> None:
     _sha256(evidence.get("corpus_sha256"), f"{path}.corpus_sha256")
     _positive_int(evidence.get("workflow_run_id"), f"{path}.workflow_run_id")
     _positive_int(evidence.get("artifact_id"), f"{path}.artifact_id")
-    _sha256(evidence.get("artifact_sha256"), f"{path}.artifact_sha256")
+    _artifact_digest(evidence.get("artifact_sha256"), f"{path}.artifact_sha256")
     _validate_metrics(evidence.get("metrics"), f"{path}.metrics")
 
 
@@ -148,7 +162,7 @@ def validate_manifest(data: Mapping[str, Any], *, phase: str) -> None:
         model = _mapping(model_value, f"candidate.models[{index}]")
         _nonempty_string(model.get("role"), f"candidate.models[{index}].role")
         _nonempty_string(model.get("name"), f"candidate.models[{index}].name")
-        _source_revision(
+        _model_revision(
             model.get("revision"),
             f"candidate.models[{index}].revision",
         )
