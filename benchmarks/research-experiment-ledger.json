@@ -1563,8 +1563,8 @@
       "issue": 285,
       "pull_request": 286,
       "preregistered": true,
-      "status": "executing",
-      "workflow_run_id": 36360031386,
+      "status": "completed",
+      "workflow_run_id": 36360129634,
       "design": {
         "route_authority": "BGE-M3 raw registered top-1 only",
         "verifier_output": "match/no_match/unknown; only match executes",
@@ -1584,6 +1584,45 @@
         "acceptance_threshold_count": 12,
         "fixed_rule_count": 24,
         "veto_only": true
+      },
+      "decision": "promote_hgb_p0_500_to_separate_frozen_candidate",
+      "source_revision": "cfaafb84bb651a6d6d38c4ce741f05ac61f37e9e",
+      "artifact_id": 10945581502,
+      "artifact_sha256": "eb417bb3aafa4d2f86aee4e79476ea64f49a2a3608269835d4d3b82f971d8054",
+      "result": {
+        "passing_rule_count": 3,
+        "selected_rule": "hgb-p0.500",
+        "supported_exact_route_accuracy": 0.8680555555555556,
+        "near_domain_unsupported_rejection": 0.9947916666666666,
+        "out_of_domain_rejection": 1,
+        "false_routes": 3,
+        "false_route_rate": 0.004629629629629629,
+        "combined_p95_ms": 171.76,
+        "logistic_roc_auc": 0.98803,
+        "hgb_roc_auc": 0.98797
+      }
+    },
+    {
+      "id": "0.11-external-qwen3-semantic-capability-verifier",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 289,
+      "pull_request": 290,
+      "preregistered": true,
+      "status": "executing",
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "verifier_model": "Qwen/Qwen3-Reranker-0.6B",
+        "verifier_revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473",
+        "schemarouter_training": false,
+        "fixed_instruction_count": 1,
+        "fixed_threshold_count": 8,
+        "endpoint_contract_sources": [
+          "route id",
+          "tool description",
+          "endpoint description",
+          "operation aliases"
+        ],
+        "verifier_authority": "veto-only"
       },
       "decision": "executing"
     },
@@ -1635,67 +1674,6 @@
         }
       },
       "interpretation": "Grouped OOF geometry learning was useful in-distribution, but the fit-once frozen classifier still degraded under a new independent surface shift. Per preregistration, stop increasing learned complexity on the same DEV geometry."
-    },
-    {
-      "id": "0.11-frozen-hgb-winner-verifier",
-      "cycle": "0.11-operation-routing-quality-v4",
-      "issue": 287,
-      "pull_request": 288,
-      "preregistered": true,
-      "status": "completed",
-      "source_revision": "e5b10ee01ec23af6113c562b51e1db0c6d003d7a",
-      "workflow_run_id": 36362105765,
-      "artifact_id": 10946681188,
-      "artifact_sha256": "e7695598b07d5a0f9757f62c04f74f09b03c201de2bbb3f7699f6d8f18059938",
-      "model_sha256": "8cdb8b526705482d2a51dee79f8f17ce10e19199e823cab651a434918c8aa239",
-      "decision": "rejected_fresh_surface_generalization_failure",
-      "result": {
-        "same_corpus": {
-          "supported_exact_route_accuracy": 0.8767361111111112,
-          "near_domain_unsupported_rejection": 0.9982638888888888,
-          "out_of_domain_rejection": 1,
-          "false_routes": 1,
-          "false_route_rate": 0.0015432098765432098,
-          "p95_latency_ms": 221.3280521,
-          "pass": true
-        },
-        "fresh_surface": {
-          "corpus_sha256": "c08068e7c68d466b04c96433abd17a6b5da62eaa47969b536f8551ed9db201c6",
-          "normalized_exact_overlap_with_tuning_dev": 0,
-          "supported_exact_route_accuracy": 0.8263888888888888,
-          "near_domain_unsupported_rejection": 0.9322916666666666,
-          "out_of_domain_rejection": 1,
-          "false_routes": 39,
-          "false_route_rate": 0.06018518518518518,
-          "p95_latency_ms": 252.7670991,
-          "pass": false
-        }
-      },
-      "interpretation": "Grouped language-OOF success did not generalize to a new zero-overlap surface. Learned geometry on the same DEV is now closed; move to externally pretrained semantic capability verification."
-    },
-    {
-      "id": "0.11-external-qwen3-semantic-capability-verifier",
-      "cycle": "0.11-operation-routing-quality-v4",
-      "issue": 289,
-      "pull_request": 290,
-      "preregistered": true,
-      "status": "executing",
-      "design": {
-        "route_authority": "BGE-M3 raw registered top-1 only",
-        "verifier_model": "Qwen/Qwen3-Reranker-0.6B",
-        "verifier_revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473",
-        "schemarouter_training": false,
-        "fixed_instruction_count": 1,
-        "fixed_threshold_count": 8,
-        "endpoint_contract_sources": [
-          "route id",
-          "tool description",
-          "endpoint description",
-          "operation aliases"
-        ],
-        "verifier_authority": "veto-only"
-      },
-      "decision": "executing"
     }
   ],
   "current_research_conclusion": {
