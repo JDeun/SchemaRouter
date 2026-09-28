@@ -157,6 +157,8 @@ def _transform(
         item = dict(case)
         item["query"] = template.format(query=str(case["query"]))
         item["confirmation_surface_version"] = surface
+        if add_split_marker:
+            item["split"] = "fresh_confirmation"
         transformed.append(item)
     return transformed
 
