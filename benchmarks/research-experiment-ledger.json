@@ -2390,6 +2390,111 @@
         "deterministic capability filtering",
         "unscored confirmation discipline"
       ]
+    },
+    {
+      "id": "0.12-semantic-action-ontology-v1",
+      "cycle": "0.12-semantic-action-ontology",
+      "issue": 349,
+      "pull_request": 352,
+      "branch": "research/0.12-semantic-action-ontology",
+      "preregistered": true,
+      "hypothesis": "A frozen registry-independent multilingual semantic action ontology can classify request operation semantics before deterministic tool-local capability matching without learned thresholds.",
+      "data_protocol": {
+        "development": {
+          "cases": 504,
+          "corpus_sha256": "1a497bcd36192913840d7ecd4c6bed714c908468baed6f2b0b9f4367bf57ffc6"
+        },
+        "confirmation": {
+          "cases": 552,
+          "corpus_sha256": "548fe42da09e7c8dc89530c43d409db05618f57a39c277fca27aebe79b6802b9",
+          "scored": false
+        }
+      },
+      "result": {
+        "workflow_run_id": 36406845612,
+        "source_revision": "38ee7557565983746e33741897e6168bf4f35643",
+        "artifact_id": 10962178834,
+        "artifact_sha256": "de687d850e619cb1ce143648ef6fe21950f6a395a33bc6835a7564b24f9a03a1",
+        "development": {
+          "supported_exact_route_accuracy": 0.44907407407407407,
+          "raw_supported_exact_route_accuracy": 0.7731481481481481,
+          "raw_supported_tool_accuracy": 0.9444444444444444,
+          "near_domain_unsupported_rejection": 0.5648148148148148,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0.3263888888888889,
+          "false_routes": 94,
+          "p95_latency_ms": 197.54916935,
+          "authority_violations": 0,
+          "execution_errors": 0
+        }
+      },
+      "decision": "terminal_rejected_flat_semantic_argmax",
+      "failure_reason": "The flat semantic action argmax separated ordinary OOD but was too noisy to receive hard endpoint-filtering authority, removing many valid supported endpoints while still under-rejecting same-domain unsupported operations.",
+      "paper_relevance": [
+        "negative result",
+        "semantic action ontology",
+        "hard-filter authority failure",
+        "unscored confirmation discipline"
+      ]
+    },
+    {
+      "id": "0.12-hierarchical-capability-ontology-v1",
+      "cycle": "0.12-hierarchical-capability-ontology",
+      "issue": 354,
+      "pull_request": 357,
+      "branch": "research/0.12-hierarchical-capability-ontology",
+      "preregistered": true,
+      "hypothesis": "A hierarchical executable-capability ontology with root/leaf constraints and contrastive multilingual prototypes can improve open-set membership while preserving registered execution authority.",
+      "freeze": {
+        "workflow_run_id": 36408654108,
+        "source_revision": "9777e1c76df27bff38cb3060d672d4f8baf65334",
+        "artifact_id": 10963536169,
+        "artifact_sha256": "ac8bb723e8def4dca002c21662504ccbc169d02d2bdcc72905d621710f128bd2"
+      },
+      "data_protocol": {
+        "development": {
+          "cases": 564,
+          "supported_cases": 240,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "3731ade0c1cfc69fbf234c00e9090a35b8fca5340af98077e1a18f98782d2a4a"
+        },
+        "confirmation": {
+          "cases": 576,
+          "supported_cases": 252,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "1e965111a7835af002b397d0be6b4776ea2a9295f417991f5b7733f79f23a24e",
+          "scored": false
+        }
+      },
+      "result": {
+        "workflow_run_id": 36408861468,
+        "source_revision": "250845bba058a704ab50cdde43326cc1e5c26d62",
+        "artifact_id": 10964025921,
+        "artifact_sha256": "40eb58bc091380257409d93b662bbfbfa9b966e8c752b9a63df04b68237f7e2b",
+        "development": {
+          "supported_exact_route_accuracy": 0.30416666666666664,
+          "raw_supported_exact_route_accuracy": 0.8541666666666666,
+          "raw_supported_tool_accuracy": 1,
+          "near_domain_unsupported_rejection": 0.6865079365079365,
+          "out_of_domain_rejection": 0.8888888888888888,
+          "false_route_rate": 0.26851851851851855,
+          "false_routes": 87,
+          "p95_latency_ms": 164.32816325,
+          "authority_violations": 0,
+          "execution_errors": 0
+        }
+      },
+      "decision": "terminal_rejected_hard_ontology_filter",
+      "failure_reason": "The ontology remained useful as representation, but noisy root/leaf semantic projection was unsafe as endpoint-removal authority: raw BGE already met supported exact on DEV with 100% tool accuracy, while ontology filtering destroyed valid routing.",
+      "paper_relevance": [
+        "negative result",
+        "executable capability ontology",
+        "hierarchical semantic constraints",
+        "selection authority separation",
+        "raw tool anchor evidence"
+      ]
     }
   ],
   "current_research_conclusion": {
