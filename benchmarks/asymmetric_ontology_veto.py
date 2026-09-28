@@ -689,6 +689,35 @@ def compile_registry_contracts(registry: Any) -> dict[str, RouteContract]:
     return contracts
 
 
+def decide_veto(
+    *,
+    explicit: str | None,
+    bge_leaf: str,
+    aux_leaf: str,
+    supported_leaves: set[str],
+    tool_has_unknown: bool,
+) -> tuple[str | None, str | None]:
+    """Apply the exact preregistered asymmetric veto rule."""
+    if tool_has_unknown:
+        return None, None
+
+    if (
+        explicit is not None
+        and explicit not in supported_leaves
+        and (bge_leaf == explicit or aux_leaf == explicit)
+    ):
+        return explicit, "explicit_plus_semantic_agreement"
+
+    if (
+        explicit is None
+        and bge_leaf == aux_leaf
+        and bge_leaf not in supported_leaves
+    ):
+        return bge_leaf, "dual_semantic_agreement"
+
+    return None, None
+
+
 def _cosine(left: list[float], right: list[float]) -> float:
     if len(left) != len(right) or not left:
         raise ValueError("embedding vectors must align")
@@ -865,23 +894,13 @@ class AsymmetricOntologyVetoRouter:
             self.aux_prototype_vectors,
         )
 
-        veto_leaf: str | None = None
-        veto_rule: str | None = None
-        if not tool_has_unknown:
-            if (
-                explicit is not None
-                and explicit not in known_supported
-                and (bge_leaf == explicit or aux_leaf == explicit)
-            ):
-                veto_leaf = explicit
-                veto_rule = "explicit_plus_semantic_agreement"
-            elif (
-                explicit is None
-                and bge_leaf == aux_leaf
-                and bge_leaf not in known_supported
-            ):
-                veto_leaf = bge_leaf
-                veto_rule = "dual_semantic_agreement"
+        veto_leaf, veto_rule = decide_veto(
+            explicit=explicit,
+            bge_leaf=bge_leaf,
+            aux_leaf=aux_leaf,
+            supported_leaves=known_supported,
+            tool_has_unknown=tool_has_unknown,
+        )
 
         predicted = None if veto_leaf is not None else raw_top_route
         return {
