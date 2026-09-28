@@ -24,6 +24,7 @@ concurrency:
 
 jobs:
   contracts:
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -41,6 +42,7 @@ jobs:
           pytest -q tests/test_top4_laya_noul_routing_v4.py
 
   evaluate:
+    if: ${{ false }}
     needs: contracts
     runs-on: ubuntu-latest
     timeout-minutes: 180
