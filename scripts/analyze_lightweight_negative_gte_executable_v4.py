@@ -29,7 +29,6 @@ from benchmarks.bge_m3_frozen_candidate import (  # noqa: E402
     FrozenBgeM3DualViewBackend,
     _cosine,
 )
-from benchmark_decision_routing import reference_registry  # noqa: E402
 
 MANIFEST_PATH = (
     _PROJECT_ROOT
