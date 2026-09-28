@@ -72,12 +72,24 @@
     ],
     "development": {
       "role": "new 0.12-B screen",
-      "corpus_sha256": null
+      "corpus_sha256": "e43a1500459ee18e8cc76eecbccf1e84e1bc9581d00e46efd3378f55b047d729",
+      "case_count": 720,
+      "supported_cases": 216,
+      "near_domain_cases": 432,
+      "out_of_domain_cases": 72,
+      "route_count": 18,
+      "tool_count": 6
     },
     "confirmation": {
       "role": "frozen confirmation only",
       "generated_before_development_scoring": true,
-      "corpus_sha256": null
+      "corpus_sha256": "9c9989ec9950689c4cbbb6d812134998aaf39592da1539b0cedffe4e84cbd8e6",
+      "case_count": 768,
+      "supported_cases": 264,
+      "near_domain_cases": 432,
+      "out_of_domain_cases": 72,
+      "route_count": 22,
+      "tool_count": 6
     }
   },
   "gates": {
@@ -94,5 +106,13 @@
     "dev_pass": "freeze exact source and open already-generated confirmation",
     "confirmation_fail": "terminal_reject",
     "both_pass": "eligible_for_brand_new_zero_overlap natural-language fresh confirmation"
+  },
+  "corpus_freeze": {
+    "workflow_run_id": 36406676147,
+    "source_revision": "05a7205a035592f097b75f9ad02e62624750db91",
+    "artifact_id": 10962538014,
+    "artifact_sha256": "3f9308ab164d60423978fad073805cc4fb5a97d6142a21a80614c2413c476bc0",
+    "both_corpora_generated_together": true,
+    "scored_at_freeze": false
   }
 }
