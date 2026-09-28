@@ -672,10 +672,31 @@ def fit_generic_head(embedder: Embedder) -> tuple[GenericHead, dict[str, Any]]:
     )
 
 
-def _route_schema_text(contract: CapabilityContract) -> str:
-    return (
-        f"{contract.tool_key}.{contract.endpoint_name}\n"
-        f"{contract.object_text}\n{contract.operation_text}"
+def _raw_schema_text(tool: Any, endpoint: Any) -> str:
+    route_id = f"{tool.key}.{endpoint.name}"
+    field_labels = [
+        field.semantic_id or field.name
+        for field in endpoint.output_fields
+        if not field.identifier
+    ]
+    parts = [
+        route_id,
+        tool.description.strip(),
+        endpoint.description.strip(),
+    ]
+    if field_labels:
+        parts.append("Fields: " + ", ".join(dict.fromkeys(field_labels)))
+    return "\n".join(part for part in parts if part)
+
+
+def _raw_action_text(endpoint: Any) -> str:
+    operation_name = endpoint.name.replace("_", " ").replace("-", " ")
+    return "\n".join(
+        dict.fromkeys(
+            part
+            for part in [operation_name, *endpoint.operation_aliases]
+            if part
+        )
     )
 
 
@@ -694,21 +715,39 @@ class RegistryCapabilityVerifier:
         self.temporal_vectors = prototype_bundle["temporal_vectors"]
 
         contract_vectors = _compile_vectors(self.contracts, embedder)
-        route_ids = [contract.route_id for contract in self.contracts]
-        schema_texts = [_route_schema_text(contract) for contract in self.contracts]
-        schema_vectors = _to_vectors(embedder(schema_texts))
-        for route_id, schema_vector in zip(route_ids, schema_vectors, strict=True):
+        raw_specs: dict[str, tuple[str, str]] = {}
+        for tool in registry.tools():
+            for endpoint in tool.endpoints:
+                route_id = f"{tool.key}.{endpoint.name}"
+                raw_specs[route_id] = (
+                    _raw_schema_text(tool, endpoint),
+                    _raw_action_text(endpoint),
+                )
+        route_ids = sorted(raw_specs)
+        raw_texts = [
+            *(raw_specs[route_id][0] for route_id in route_ids),
+            *(raw_specs[route_id][1] for route_id in route_ids),
+        ]
+        raw_vectors = _to_vectors(embedder(raw_texts))
+        split = len(route_ids)
+        raw_schema_vectors = dict(
+            zip(route_ids, raw_vectors[:split], strict=True)
+        )
+        raw_action_vectors = dict(
+            zip(route_ids, raw_vectors[split:], strict=True)
+        )
+        for route_id in route_ids:
             current = contract_vectors[route_id]
             contract_vectors[route_id] = CompiledVectors(
                 contract=current.contract,
-                schema_vector=schema_vector,
-                action_vector=current.action_vector,
+                schema_vector=raw_schema_vectors[route_id],
+                action_vector=raw_action_vectors[route_id],
                 object_vector=current.object_vector,
                 contract_vector=current.contract_vector,
                 counterfactual_vectors=current.counterfactual_vectors,
             )
         self.compiled = contract_vectors
-        self.route_ids = tuple(sorted(route_ids))
+        self.route_ids = tuple(route_ids)
 
     def score(self, query: str) -> dict[str, Any]:
         query_vector = _to_vectors(self.embedder([query]))[0]
