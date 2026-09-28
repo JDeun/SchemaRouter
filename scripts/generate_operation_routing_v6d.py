@@ -27,13 +27,13 @@ from benchmarks.schema_hard_negative_ellipsoid import hard_negative_texts  # noq
 
 ALL_TOOL_LEAVES = tuple(ACTION_PHRASES)
 
-OOD_PREFIX = {
-    "en": "briefly, ",
-    "ko": "간단히 ",
-    "es": "brevemente, ",
-    "ja": "簡潔に",
-    "de": "kurz: ",
-    "mixed": "briefly ",
+QUERY_PREFIX = {
+    "en": "Please handle this request: ",
+    "ko": "다음 요청을 처리해줘: ",
+    "es": "Gestiona esta solicitud: ",
+    "ja": "次の依頼に対応して: ",
+    "de": "Bearbeite bitte diese Anfrage: ",
+    "mixed": "이 request 처리해줘: ",
 }
 
 EVAL_ACTIONS: dict[str, dict[str, str]] = {
@@ -103,7 +103,11 @@ def _object(spec: RouteCaseSpec, language: str) -> str:
 
 
 def _query(leaf: str, language: str, obj: str, variant: int) -> str:
-    return WRAPPERS[language][variant].format(obj=obj, action=EVAL_ACTIONS[leaf][language])
+    body = WRAPPERS[language][variant].format(
+        obj=obj,
+        action=EVAL_ACTIONS[leaf][language],
+    )
+    return f"{QUERY_PREFIX[language]}{body}"
 
 
 def _supported(specs: tuple[RouteCaseSpec, ...], prefix: str) -> list[dict[str, Any]]:
@@ -155,7 +159,7 @@ def _ood(prefix: str, bank: dict[str, tuple[str, ...]]) -> list[dict[str, Any]]:
     return [
         {
             "id": f"{prefix}-ood-{language}-{index}",
-            "query": f"{OOD_PREFIX[language]}{query}",
+            "query": f"{QUERY_PREFIX[language]}{query}",
             "expected": None,
             "category": "out_of_domain",
             "language": language,
@@ -234,7 +238,7 @@ def build(role: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         "adapters": sorted({contract.adapter or "native" for contract in contracts.values()}),
         "synthetic_positives_per_route": 18,
         "density_evidence": "unchanged #384 positives + unchanged #395 tool-complement negatives; component structure fixed by registry",
-        "evaluation_wording_bank": "V6D inherited EVAL_ACTIONS+WRAPPERS with new registry objects and OOD prefixes; exact-string disjoint from schema evidence and V6A-C queries",
+        "evaluation_wording_bank": "V6D inherited EVAL_ACTIONS+WRAPPERS with a new natural request prefix and new registry objects; exact-string disjoint from schema evidence and V6A-C queries",
         "corpus_sha256": hashlib.sha256(_canonical(rows)).hexdigest(),
     }
     return rows, manifest
