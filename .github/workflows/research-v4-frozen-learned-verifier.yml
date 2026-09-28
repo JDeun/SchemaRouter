@@ -1,0 +1,285 @@
+name: V4 Frozen Learned Verifier
+
+on:
+  push:
+    branches:
+      - "research/v4-frozen-learned-verifier"
+    paths:
+      - ".github/workflows/research-v4-frozen-learned-verifier.yml"
+      - "benchmarks/operation-routing-v4-frozen-learned-verifier.json"
+      - "scripts/analyze_oof_learned_verifier_v4.py"
+      - "scripts/freeze_learned_verifier_v4.py"
+      - "scripts/evaluate_frozen_learned_verifier_v4.py"
+      - "scripts/generate_decision_routing_quality_v4_learned_confirmation.py"
+      - "scripts/generate_decision_routing_quality_v4.py"
+      - "scripts/audit_operation_routing_corpus.py"
+      - "scripts/benchmark_decision_routing.py"
+      - "benchmarks/bge_m3_frozen_candidate.py"
+      - "tests/test_oof_learned_verifier_v4.py"
+      - "tests/test_frozen_learned_verifier_v4.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SCHEMAROUTER_SOURCE_REVISION: ${{ github.sha }}
+  V4_TUNING_SEED: "operation-routing-quality-v4-development-2026-09-27"
+  V4_TUNING_SHA256: "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+  V4_FRESH_SEED: "operation-routing-quality-v4-learned-verifier-confirmation-2026-09-28-a"
+
+concurrency:
+  group: v4-frozen-learned-verifier-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "scikit-learn==1.7.2"
+      - run: pip install -e ".[dev]"
+      - name: Validate frozen learned-verifier contracts
+        run: |
+          python -m json.tool benchmarks/operation-routing-v4-frozen-learned-verifier.json >/dev/null
+          ruff check \
+            scripts/freeze_learned_verifier_v4.py \
+            scripts/evaluate_frozen_learned_verifier_v4.py \
+            scripts/generate_decision_routing_quality_v4_learned_confirmation.py \
+            tests/test_frozen_learned_verifier_v4.py
+          pytest -q \
+            tests/test_oof_learned_verifier_v4.py \
+            tests/test_frozen_learned_verifier_v4.py
+
+  candidate-confirmation:
+    needs: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers>=4.44,<5" "sentence-transformers>=3,<6" einops
+      - run: pip install "scikit-learn==1.7.2"
+      - run: pip install -e ".[dev]"
+
+      - name: Generate immutable tuning DEV
+        run: |
+          OUT="artifacts/v4-frozen-learned-verifier"
+          mkdir -p "${OUT}/same" "${OUT}/fresh" "${OUT}/model"
+          python scripts/generate_decision_routing_quality_v4.py \
+            --seed "${V4_TUNING_SEED}" \
+            --source-revision "${SCHEMAROUTER_SOURCE_REVISION}" \
+            --out "${OUT}/same/corpus.json" \
+            --manifest "${OUT}/same/corpus-manifest.json"
+
+      - name: Verify tuning corpus identity
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path(
+              "artifacts/v4-frozen-learned-verifier/"
+              "same/corpus-manifest.json"
+          )
+          manifest = json.loads(path.read_text(encoding="utf-8"))
+          actual = manifest.get("corpus_sha256")
+          expected = os.environ["V4_TUNING_SHA256"]
+          if actual != expected:
+              raise SystemExit(
+                  f"corpus SHA mismatch: expected {expected}, got {actual}"
+              )
+          if manifest.get("case_count") != 1800:
+              raise SystemExit(
+                  f"unexpected case count: {manifest.get('case_count')}"
+              )
+          print(f"verified tuning corpus sha256={actual}")
+          PY
+
+      - name: Audit tuning DEV
+        run: |
+          OUT="artifacts/v4-frozen-learned-verifier/same"
+          python scripts/audit_operation_routing_corpus.py \
+            --corpus "${OUT}/corpus.json" \
+            --out "${OUT}/corpus-audit.json" \
+            --near-duplicate-threshold 0.80 \
+            --max-duplicate-examples 50
+
+      - name: Fit frozen verifier exactly once
+        run: |
+          ROOT="artifacts/v4-frozen-learned-verifier"
+          python scripts/freeze_learned_verifier_v4.py \
+            --corpus "${ROOT}/same/corpus.json" \
+            --model "${ROOT}/model/verifier.joblib" \
+            --manifest "${ROOT}/model/model-manifest.json" \
+            --source-revision "${SCHEMAROUTER_SOURCE_REVISION"
+
+      - name: Confirm frozen verifier on tuning DEV without refit
+        run: |
+          ROOT="artifacts/v4-frozen-learned-verifier"
+          python scripts/evaluate_frozen_learned_verifier_v4.py \
+            --corpus "${ROOT}/same/corpus.json" \
+            --model "${ROOT}/model/verifier.joblib" \
+            --model-manifest "${ROOT}/model/model-manifest.json" \
+            --dataset-role "same_corpus_executable_confirmation" \
+            --out "${ROOT}/same/report.json"
+
+      - name: Generate new preregistered fresh-surface DEV
+        run: |
+          ROOT="artifacts/v4-frozen-learned-verifier"
+          python scripts/generate_decision_routing_quality_v4_learned_confirmation.py \
+            --seed "${V4_FRESH_SEED}" \
+            --reference-seed "${V4_TUNING_SEED}" \
+            --source-revision "${SCHEMAROUTER_SOURCE_REVISION}" \
+            --out "${ROOT}/fresh/corpus.json" \
+            --manifest "${ROOT}/fresh/corpus-manifest.json"
+
+      - name: Verify fresh-surface contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path(
+              "artifacts/v4-frozen-learned-verifier/"
+              "fresh/corpus-manifest.json"
+          )
+          manifest = json.loads(path.read_text(encoding="utf-8"))
+          if manifest.get("role") != "fresh_surface_development_confirmation":
+              raise SystemExit(f"unexpected role: {manifest.get('role')}")
+          if manifest.get("case_count") != 1800:
+              raise SystemExit(
+                  f"unexpected case count: {manifest.get('case_count')}"
+              )
+          if manifest.get("normalized_exact_overlap_with_reference_dev") != 0:
+              raise SystemExit("fresh-surface corpus overlaps tuning DEV")
+          if manifest.get("surface_version") != (
+              "learned-verifier-confirmation-wrappers-v1"
+          ):
+              raise SystemExit(
+                  f"unexpected surface: {manifest.get('surface_version')}"
+              )
+          print(
+              "verified fresh corpus",
+              manifest.get("corpus_sha256"),
+              manifest.get("surface_version"),
+          )
+          PY
+
+      - name: Audit fresh-surface DEV
+        run: |
+          OUT="artifacts/v4-frozen-learned-verifier/fresh"
+          python scripts/audit_operation_routing_corpus.py \
+            --corpus "${OUT}/corpus.json" \
+            --out "${OUT}/corpus-audit.json" \
+            --near-duplicate-threshold 0.80 \
+            --max-duplicate-examples 50
+
+      - name: Confirm identical frozen verifier on fresh-surface DEV
+        run: |
+          ROOT="artifacts/v4-frozen-learned-verifier"
+          python scripts/evaluate_frozen_learned_verifier_v4.py \
+            --corpus "${ROOT}/fresh/corpus.json" \
+            --model "${ROOT}/model/verifier.joblib" \
+            --model-manifest "${ROOT}/model/model-manifest.json" \
+            --dataset-role "fresh_surface_development_confirmation" \
+            --out "${ROOT}/fresh/report.json"
+
+      - name: Summarize immutable candidate gates
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("artifacts/v4-frozen-learned-verifier")
+          same = json.loads(
+              (root / "same/report.json").read_text(encoding="utf-8")
+          )
+          fresh = json.loads(
+              (root / "fresh/report.json").read_text(encoding="utf-8")
+          )
+          manifest = json.loads(
+              (root / "model/model-manifest.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          if same["model_sha256"] != fresh["model_sha256"]:
+              raise SystemExit("confirmation stages used different model SHA")
+          if same["model_sha256"] != manifest["model_sha256"]:
+              raise SystemExit("report/model manifest SHA mismatch")
+          gates = {
+              "candidate": "frozen-hgb-winner-verifier-v1",
+              "model_sha256": manifest["model_sha256"],
+              "same_corpus_pass": bool(
+                  same["metrics"]["quality_gate_pass"]
+              ),
+              "fresh_surface_pass": bool(
+                  fresh["metrics"]["quality_gate_pass"]
+              ),
+              "eligible_to_unblock_198": bool(
+                  same["metrics"]["quality_gate_pass"]
+                  and fresh["metrics"]["quality_gate_pass"]
+              ),
+              "same_metrics": {
+                  "exact": same["metrics"][
+                      "supported_exact_route_accuracy"
+                  ],
+                  "near": same["metrics"][
+                      "near_domain_unsupported_rejection"
+                  ],
+                  "ood": same["metrics"]["out_of_domain_rejection"],
+                  "false_route": same["metrics"]["false_route_rate"],
+                  "p95_ms": same["metrics"][
+                      "combined_latency_ms"
+                  ]["p95"],
+              },
+              "fresh_metrics": {
+                  "exact": fresh["metrics"][
+                      "supported_exact_route_accuracy"
+                  ],
+                  "near": fresh["metrics"][
+                      "near_domain_unsupported_rejection"
+                  ],
+                  "ood": fresh["metrics"]["out_of_domain_rejection"],
+                  "false_route": fresh["metrics"]["false_route_rate"],
+                  "p95_ms": fresh["metrics"][
+                      "combined_latency_ms"
+                  ]["p95"],
+              },
+          }
+          (root / "candidate-gates.json").write_text(
+              json.dumps(gates, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(gates, sort_keys=True))
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: v4-frozen-learned-verifier-${{ github.run_id }}
+          path: |
+            artifacts/v4-frozen-learned-verifier/model/verifier.joblib
+            artifacts/v4-frozen-learned-verifier/model/model-manifest.json
+            artifacts/v4-frozen-learned-verifier/same/report.json
+            artifacts/v4-frozen-learned-verifier/same/corpus-manifest.json
+            artifacts/v4-frozen-learned-verifier/same/corpus-audit.json
+            artifacts/v4-frozen-learned-verifier/fresh/report.json
+            artifacts/v4-frozen-learned-verifier/fresh/corpus-manifest.json
+            artifacts/v4-frozen-learned-verifier/fresh/corpus-audit.json
+            artifacts/v4-frozen-learned-verifier/candidate-gates.json
+            benchmarks/operation-routing-v4-frozen-learned-verifier.json
+          if-no-files-found: error
+          retention-days: 30
