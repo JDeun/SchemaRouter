@@ -180,8 +180,8 @@ def development_registry() -> InMemoryRegistry:
     )
 
     modulus_observatory = FieldSpec(
-        name="modulus_observatory",
-        semantic_id="material.modulus_observatory",
+        name="youngs_modulus",
+        semantic_id="material.youngs_modulus",
         description="Young's modulus measurement",
         json_schema={"type": "number"},
         unit="GPa",
@@ -379,13 +379,13 @@ def confirmation_registry() -> InMemoryRegistry:
     )
 
     resistivity_observatory = FieldSpec(
-        name="resistivity_observatory",
-        semantic_id="material.resistivity_observatory",
+        name="electrical_resistivity",
+        semantic_id="material.electrical_resistivity",
         description="Electrical resistivity measurement",
         json_schema={"type": "number"},
         unit="Ω·m",
         unit_normalization=UnitNormalizationSpec(
-            dimension="resistivity_observatory",
+            dimension="electrical_resistivity",
             canonical_unit="Ω·m",
             scale=1.0,
             offset=0.0,
