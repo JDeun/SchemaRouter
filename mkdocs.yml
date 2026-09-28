@@ -136,6 +136,7 @@ nav:
       - LangGraph: integrations/langgraph.md
       - LlamaIndex: integrations/llamaindex.md
       - System One compatible: integrations/system-one.md
+      - Decision backend plugins: integrations/decision-backend-plugins.md
       - Jev / TypeSafe: integrations/jev.md
       - Laya decisions: integrations/laya.md
       - Ollama decisions: integrations/ollama.md
