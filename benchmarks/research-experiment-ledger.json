@@ -1827,7 +1827,12 @@
       "issue": 301,
       "pull_request": 302,
       "preregistered": true,
-      "status": "executing",
+      "status": "completed",
+      "decision": "rejected_pinned_laya_noul_veto",
+      "workflow_run_id": 36367249147,
+      "source_revision": "46af3c3d0156b7b7bfd40686aa5639571f91a936",
+      "artifact_id": 10948736462,
+      "artifact_sha256": "5f7876d2c8e9c4a33eed62c05ba4df2889ad922322daeb5424d5f11bb18ec738",
       "design": {
         "route_authority": "BGE-M3 raw registered top-1 only",
         "bge_revision": "5617a9f61b028005a4858fdac845db406aefb181",
@@ -1839,9 +1844,40 @@
         "threshold_count": 8,
         "failed_fresh_sets_used": false
       },
-      "decision": "executing",
-      "workflow_run_id": 36367249147,
-      "source_revision": "46af3c3d0156b7b7bfd40686aa5639571f91a936"
+      "result": {
+        "raw_supported_top1_accuracy": 0.8845486111111112,
+        "passing_rule_count": 0,
+        "frontier": {
+          "p050": {
+            "supported_exact_route_accuracy": 0.8324652777777778,
+            "near_domain_unsupported_rejection": 0.0798611111111111,
+            "out_of_domain_rejection": 0.08333333333333333,
+            "false_route_rate": 0.9197530864197531
+          },
+          "p090": {
+            "supported_exact_route_accuracy": 0.052083333333333336,
+            "near_domain_unsupported_rejection": 0.9548611111111112,
+            "out_of_domain_rejection": 0.9166666666666666,
+            "false_route_rate": 0.04938271604938271
+          },
+          "p095": {
+            "supported_exact_route_accuracy": 0.015625,
+            "near_domain_unsupported_rejection": 0.9947916666666666,
+            "out_of_domain_rejection": 1,
+            "false_route_rate": 0.004629629629629629
+          }
+        },
+        "probability_geometry_mean": {
+          "supported_correct_winner": 0.6841934249263983,
+          "supported_wrong_winner": 0.6214248120300752,
+          "near_domain_unsupported": 0.6737925347222222,
+          "out_of_domain": 0.7315763888888889
+        },
+        "combined_single_request_p95_ms": 1098.75412895,
+        "execution_errors": 0,
+        "authority_violations": 0
+      },
+      "interpretation": "Pinned Laya base English/multilingual noul does not encode endpoint capability for this workload: near-domain and OOD probabilities overlap or exceed supported traffic. The same-checkpoint top-4 max-P(true) variant is structurally dominated and must not execute."
     },
     {
       "id": "0.11-laya-choice-noul-full-catalog",
@@ -1916,7 +1952,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "parallel typed capability boundaries: pinned Kev-0.8B #299 and pinned Laya noul veto #301",
+    "active_experiment": "pinned Kev-0.8B choice+noul #299",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1937,7 +1973,9 @@
     "contingent_architecture": "#303 preregisters BGE top-4 recall + provider-neutral per-candidate noul routing, but must not execute unless winner-only capability veto cannot promote.",
     "qwen3_external_verifier_status": "#289/#290 rejected: 0/8 rules pass; safe p=0.99 gives 62.76% exact despite 99.13% near rejection / 0.77% false-route; combined CPU p95 2059ms.",
     "laya_typed_checkpoint_note": "Official Laya typed-decisions checkpoint is fine-tuned on four specific typed-decision workflows; its published strong noul result is not a zero-shot SchemaRouter result. Any use requires a separate pinned frozen-harness experiment.",
-    "system_one_extension_status": "#291/#292 generic SystemOneDecisionBackend, #297/#298 generic System One benchmark CLI, and #304/#305 callable benchmark path are merged; #306/#308 adds reusable third-party entry-point plugins and is under CI."
+    "system_one_extension_status": "#291/#292 generic SystemOneDecisionBackend, #297/#298 generic System One benchmark CLI, and #304/#305 callable benchmark path are merged; #306/#308 adds reusable third-party entry-point plugins and is under CI.",
+    "laya_noul_status": "#301/#302 rejected: P(true) does not separate correct supported from near/OOD; 0/8 rules pass; combined p95 1098.75ms.",
+    "topk_same_laya_status": "#310 closed without execution: at p>=0.95 the same Laya signal has a hard best-case exact bound of 151/1152=13.11%, so compute would be wasted."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -1996,18 +2034,15 @@
       304
     ],
     "active_experiments": [
-      299,
-      301
+      299
     ],
     "active_pull_requests": [
       235,
       300,
-      302,
-      308,
-      310
+      308
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "finish pinned Laya noul #301 and Kev-0.8B choice+noul #299; activate preregistered top-K #303 only if winner-only typed capability veto cannot promote",
+    "next_research_direction": "finish pinned Kev-0.8B #299; keep #303 provider-neutral top-K architecture dormant for a materially different provider/checkpoint",
     "contingent_experiments": [
       303
     ],
