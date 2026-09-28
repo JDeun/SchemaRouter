@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-09-28",
+  "updated_at": "2026-09-29",
   "purpose": "Cross-session prior-art and experiment navigation for SchemaRouter open-set capability routing research.",
   "roadmap_issue": 388,
   "session_bootstrap": [
@@ -72,7 +72,7 @@
       "title": "Schema-derived hard-negative OOS generation",
       "issue": 389,
       "parent_issue": 388,
-      "status": "active",
+      "status": "terminal",
       "canonical_references": [
         {
           "title": "Generating Hard-Negative Out-of-Scope Data with ChatGPT for Intent Classification",
@@ -118,12 +118,22 @@
         358,
         363
       ],
-      "trigger": "Active now: implement #395 exactly as preregistered, freeze V6B DEV+confirmation together, then score DEV once.",
+      "trigger": "Terminal via #395/V6B. Reuse only the frozen schema-derived complement evidence in materially different methods; do not retune the ellipsoid from consumed DEV.",
       "current_experiment": {
         "issue": 395,
         "branch": "research/0.13-hard-negative-ellipsoid",
         "protocol": "V6B",
-        "status": "preregistered_before_implementation"
+        "status": "terminal_dev_quality_fail",
+        "result": {
+          "raw_supported_exact": 0.973684,
+          "raw_supported_tool_accuracy": 0.97807,
+          "supported_exact": 0,
+          "near_domain_rejection": 1,
+          "ood_rejection": 1,
+          "false_route_rate": 0,
+          "raw_correct_winner_veto_rate": 1,
+          "confirmation_scored": false
+        }
       }
     },
     {
@@ -131,16 +141,75 @@
       "title": "Energy, density, and open-space membership scoring",
       "issue": 390,
       "parent_issue": 388,
-      "status": "backlog",
-      "canonical_references": [],
+      "status": "active",
+      "canonical_references": [
+        {
+          "title": "GEM: Gaussian Embedding Modeling for Out-of-Distribution Detection in GUI Agents",
+          "venue": "AAAI 2026",
+          "url": "https://ojs.aaai.org/index.php/AAAI/article/view/40692"
+        },
+        {
+          "title": "Hierarchical Visual Categories Modeling: A Joint Representation Learning and Density Estimation Framework for OOD Detection",
+          "venue": "ICCV 2023",
+          "url": "https://openaccess.thecvf.com/content/ICCV2023/html/Li_Hierarchical_Visual_Categories_Modeling_A_Joint_Representation_Learning_and_Density_ICCV_2023_paper.html"
+        },
+        {
+          "title": "Out-of-Distribution Detection with Deep Nearest Neighbors",
+          "venue": "ICML 2022",
+          "url": "https://proceedings.mlr.press/v162/sun22d.html"
+        },
+        {
+          "title": "Three-way open intent classification with nearest centroid-based representation",
+          "venue": "Information Sciences 2024",
+          "url": "https://doi.org/10.1016/j.ins.2024.121251"
+        }
+      ],
       "schemarouter_mapping": "Replace explicit OUTSIDE semantic classes with a scalar or density-like score for membership in registered capability space.",
       "prior_related_terminal_experiments": [
         371,
         374,
         377,
-        378
+        378,
+        384,
+        395,
+        397,
+        399
       ],
-      "trigger": "Compare after V6A establishes the boundary baseline; exact score family must be preregistered before seeing its DEV."
+      "trigger": "Run #401/V6E exactly as frozen. Do not use V6D failed rows to tune k, banks, thresholds, neighbor weighting, or decision order.",
+      "current_experiment": {
+        "issue": 401,
+        "branch": "research/0.13-knn-membership",
+        "protocol": "V6E",
+        "status": "frozen_pre_dev_scoring",
+        "frozen_source": "f2bf26d8537ecde3f4f824bd30a078c6cbf9f736",
+        "freeze_workflow_run_id": 36492993166,
+        "freeze_artifact_id": 11002171476,
+        "freeze_artifact_sha256": "529d679327a36ad903c65aa255910d3d226e00f9d6895de72e29873f23001ac3",
+        "dev_corpus_sha256": "8e23375fa3858514415f9a62539a947dc4a488eff184f6c4e0a569e1df488e66",
+        "confirmation_corpus_sha256": "bc09041a4ae10b9a1995748b86edd08cfd5f65914a809637c28c9e5b97be5001",
+        "confirmation_scored": false
+      },
+      "terminal_controls": [
+        {
+          "issue": 397,
+          "protocol": "V6C",
+          "supported_exact": 0.938596,
+          "near_domain_rejection": 0.392857,
+          "ood_rejection": 0.569444,
+          "false_route_rate": 0.567901,
+          "confirmation_scored": false
+        },
+        {
+          "issue": 399,
+          "protocol": "V6D",
+          "supported_exact": 0.899123,
+          "near_domain_rejection": 0.396825,
+          "ood_rejection": 0.055556,
+          "false_route_rate": 0.679012,
+          "p95_ms": 250.48768,
+          "confirmation_scored": false
+        }
+      ]
     },
     {
       "id": "selective-conformal",
@@ -232,6 +301,22 @@
     {
       "issue": 378,
       "result": "pairwise supported-vs-counterfactual NLI: terminal quality/latency failure"
+    },
+    {
+      "issue": 384,
+      "result": "V6A positive-only spherical ADB: 0% supported exact after every DEV query fell outside; confirmation unopened"
+    },
+    {
+      "issue": 395,
+      "result": "V6B hard-negative ellipsoid: 0% supported exact with 100% near/OOD rejection; confirmation unopened"
+    },
+    {
+      "issue": 397,
+      "result": "V6C tied Gaussian density ratio: supported preserved but near/OOD rejection 39.29%/56.94%; confirmation unopened"
+    },
+    {
+      "issue": 399,
+      "result": "V6D component Gaussian mixture: supported 89.91%, near/OOD rejection 39.68%/5.56%, false-route 67.90%; confirmation unopened"
     }
   ]
 }
