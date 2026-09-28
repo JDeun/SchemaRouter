@@ -2003,3 +2003,18 @@ The workflow-definition commits themselves do not start model evaluation because
 only the activation-marker paths. This keeps staging separate from evidence consumption while allowing
 session-resume automation to proceed without manual Actions UI access.
 
+### Freeze infrastructure merged — #316
+
+PR #316 was squash-merged as `fad004cdfce8e40c2119d3758ab47332d52e6253`.
+
+Main now contains:
+- `benchmarks/operation-routing-production-targets.json` as the machine-readable 85/97/100/1 + 250 ms target;
+- `benchmarks/operation-routing-freeze-manifest.template.json`;
+- `scripts/validate_operation_routing_freeze_manifest.py`;
+- validator tests covering target drift, authority drift, provenance, metric ranges, provider revision IDs, and GitHub artifact digests;
+- `docs/research/operation-routing-freeze-protocol.md`.
+
+The canonical ownership boundary is now enforced in documentation and machine-readable governance:
+- #197 owns DEV qualification → exact freeze → NEW zero-overlap fresh confirmation;
+- #198 begins only after a validated `fresh-confirmed` manifest and owns calibration → one-shot blind-final.
+
