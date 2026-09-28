@@ -2922,7 +2922,7 @@
     "asymmetric_ontology_veto_status": "#358 preserved raw BGE positive selection exactly (96.05% exact, zero raw-correct winner vetoes) and achieved 99.22% veto precision, but same-leaf agreement recall was only 39.51%; exact rule rejected.",
     "capability_set_membership_status": "#363 raised veto recall to 64.20% while preserving 86.40% supported exact, but near rejection remained 54.76%, false-route 35.80%, and 18 raw-correct winners were vetoed; further rule tuning over the same BGE/MiniLM projections is closed.",
     "external_zeroshot_membership_status": "#371 preserved supported routing (93.42%) but OUTSIDE won only 7/552 rows; near rejection 1.59%, false-route 98.15%, p95 274.52 ms. Exact multiclass formulation rejected.",
-    "set_conditioned_entailment_status": "#374 produced 0/552 entailment decisions: unsupported rejection was perfect but supported exact collapsed to 0%; exact formulation rejected."
+    "set_conditioned_entailment_status": "#374 returned not_entailment on all 552 DEV cases, preserving zero false routes but collapsing supported exact to 0%; exact formulation rejected."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
