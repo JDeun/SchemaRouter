@@ -2207,6 +2207,70 @@
         "open-set boundary vs supported recall",
         "cheap single-embedding veto architecture"
       ]
+    },
+    {
+      "id": "0.11-bge-gte-threshold-free-consensus",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 336,
+      "pull_request": 337,
+      "preregistered": true,
+      "status": "completed",
+      "decision": "reject",
+      "source_revision": "d25f427569fc4419a72963c6f31994fa170805f6",
+      "workflow_run_id": 36390328100,
+      "artifact_id": 10956013271,
+      "artifact_sha256": "56fad4070ef97782f398a259192bc5ad0e4ec3ac7d6c0fd4d531f17bfc89ccf9",
+      "dataset": {
+        "role": "tuning_eligible_development",
+        "cases": 1800,
+        "supported_cases": 1152,
+        "near_domain_unsupported_cases": 576,
+        "out_of_domain_cases": 72,
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+      },
+      "design": {
+        "bge_authority": "exact #259 raw registered top-1 artifact",
+        "bge_model": "BAAI/bge-m3",
+        "bge_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "gte_model": "Alibaba-NLP/gte-multilingual-base",
+        "gte_revision": "087a024525fd6e2fe749cb4679d218d8bcc95bdd",
+        "gte_schema_weight": 0.25,
+        "gte_action_weight": 0.75,
+        "rule": "execute iff GTE raw top-1 equals BGE raw top-1",
+        "threshold_free": true,
+        "gte_veto_only": true,
+        "rank2_fallback": false,
+        "pseudo_route": false,
+        "failed_fresh_sets_used": false
+      },
+      "result": {
+        "bge_raw_supported_top1_accuracy": 0.8845486111111112,
+        "gte_raw_supported_top1_accuracy": 0.8914930555555556,
+        "bge_gte_route_agreement_rate": 0.7272222222222222,
+        "supported_exact_route_accuracy": 0.8133680555555556,
+        "near_domain_unsupported_rejection": 0.4357638888888889,
+        "out_of_domain_rejection": 0.8194444444444444,
+        "false_routes": 338,
+        "false_route_rate": 0.5216049382716049,
+        "wrong_supported_accepted": 34,
+        "authority_violations": 0,
+        "execution_errors": 0,
+        "gte_query_plus_scoring_p95_ms": 83.3360133,
+        "bge_reference_direct_p95_ms": 132.1552862,
+        "combined_executable_p95_ms": null
+      },
+      "failure_reason": "Cross-backbone top-1 agreement behaves as route-selection confidence rather than unsupported-capability evidence: two strong rankers frequently agree on the same plausible registered route for unsupported requests.",
+      "interpretation": [
+        "Threshold-free ranker consensus does not provide an open-set capability boundary.",
+        "Quality fails decisively, so no combined executable latency run is justified.",
+        "Do not add score/margin/route thresholds to this exact consensus rule after result inspection."
+      ],
+      "paper_relevance": [
+        "negative result",
+        "cross-backbone consensus",
+        "selection confidence versus capability membership",
+        "compute stopping rule"
+      ]
     }
   ],
   "current_research_conclusion": {
@@ -2223,7 +2287,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "none; #332/#333 terminally rejected",
+    "active_experiment": null,
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -2315,7 +2379,39 @@
     },
     "colbert_operation_contract_status": "#328/#329 rejected: 0 candidate-worthy rules; <=1% false-route frontier preserves only ~38.6-38.7% exact; executable p95 ~398.61 ms.",
     "colbert_status": "#328 rejected: safe ColBERT score frontiers retain only ~38.6-38.7% exact at <=1% false routes; executable p95 ~398.6 ms. Sparse diagnostic also non-viable.",
-    "alias_envelope_status": "#332/#333 rejected: 0 candidate-worthy rules; p95 198.07 ms; safe C/D rules collapse exact to ~24% and still yield 1.39% false-route."
+    "alias_envelope_status": "#332/#333 rejected: 0 candidate-worthy rules; p95 198.07 ms; safe C/D rules collapse exact to ~24% and still yield 1.39% false-route.",
+    "cycle_status": "terminal_no_promoted_candidate",
+    "cycle_decision": "close_0.11_without_calibration_or_blind",
+    "production_target_validated": false,
+    "calibration_blind_status": "not_run_entry_requirements_not_met",
+    "best_conservative_reference": {
+      "issue": 259,
+      "description": "robust BGE-M3 strict base; retained as a conservative reference profile, not a production-target pass",
+      "exact": 0.837674,
+      "near_rejection": 0.989583,
+      "false_route": 0.009259,
+      "planner_p95_ms": 134.9514
+    },
+    "strongest_dev_candidate": {
+      "issue": 324,
+      "exact": 0.8506944444444444,
+      "near_rejection": 0.9930555555555556,
+      "ood_rejection": 1,
+      "false_route": 0.006172839506172839,
+      "p95_ms": 176.9436,
+      "status": "terminal_after_fresh_failure"
+    },
+    "strongest_dev_candidate_fresh_result": {
+      "issue": 326,
+      "exact": 0.8480902777777778,
+      "near_rejection": 0.9045138888888888,
+      "ood_rejection": 1,
+      "false_route": 0.08487654320987655,
+      "p95_ms": 278.3747833
+    },
+    "final_finding": "The remaining bottleneck is surface-invariant capability membership/open-set rejection, not registered-route ranking capacity. Repeated tuning on the current DEV is no longer justified.",
+    "successor_rule": "Any later cycle must introduce a materially new source of capability evidence and a new preregistered protocol; it must not repair from #270/#287/#326 fresh rows or extend terminal 0.11 families post hoc.",
+    "bge_gte_consensus_status": "#336/#337 rejected: 81.34% exact / 43.58% near rejection / 81.94% OOD / 52.16% false-route."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2413,7 +2509,11 @@
     "dormant_contingencies": [
       318
     ],
-    "runtime_only_contingency": 318
+    "runtime_only_contingency": 318,
+    "current_cycle": "0.11-operation-routing-quality-v4",
+    "current_cycle_status": "closed_without_promoted_candidate",
+    "final_evaluation_issue": 198,
+    "final_evaluation_status": "not_run_entry_requirements_not_met"
   },
   "design_lineage": [
     {
