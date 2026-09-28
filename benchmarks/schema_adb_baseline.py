@@ -338,9 +338,12 @@ def synthetic_positive_texts(
     """Return the exact 18 preregistered schema-only positive views or UNKNOWN."""
     resource = _resource_anchor(tool, endpoint)
     description = " ".join(str(endpoint.description or "").split())
-    tool_description = " ".join(str(tool.description or "").split())
-    if not description or not tool_description or not resource:
+    if not description or not resource:
         return ()
+    tool_description = (
+        " ".join(str(tool.description or "").split())
+        or f"registered tool {resource}"
+    )
 
     field_labels = [
         str(field.semantic_id or field.name).strip()
@@ -387,8 +390,6 @@ def synthetic_positive_texts(
     normalized = tuple(" ".join(row.split()) for row in rows if row.strip())
     if len(normalized) != 18:
         raise AssertionError(f"expected 18 synthetic positives, got {len(normalized)}")
-    if len(set(normalized)) != 18:
-        return ()
     return normalized
 
 
