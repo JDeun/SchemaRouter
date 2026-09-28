@@ -2652,3 +2652,56 @@ The resulting design rule for the next candidate is sharper:
 
 > keep ontology as structured capability metadata and negative evidence, but do not let noisy
 > semantic ontology projection select, rerank, or remove supported endpoints.
+
+
+## 57. #358 / PR #360 — asymmetric ontology veto preserves supported winners but lacks recall
+
+After #347, #349 and #354, the ontology was removed from positive route-selection authority.
+
+#358 preregistered a stricter authority separation:
+- frozen BGE-M3 raw top-1 is the sole positive route selector;
+- the anchored tool's registered capability leaves define the finite authority set;
+- the explicit parser, BGE ontology projection and an independent pinned multilingual MiniLM
+  projection may only provide negative evidence;
+- ontology can return `NO_ROUTE`, but can never switch, rerank or select another endpoint;
+- the veto requires exact unsupported-leaf agreement under a fixed rule;
+- no similarity, margin, confidence, route-local or learned threshold is used.
+
+Frozen corpus evidence:
+- freeze run `36411756496`;
+- freeze source `e29b6e0006dd64bab31c613b97ea68de8c2931f6`;
+- freeze artifact `10965015475`;
+- digest `sha256:1d93e8441224051ce63aacc050eb6cd99979f613945e5a21419abc5aa65b0a39`;
+- DEV: 552 cases, SHA256
+  `e2f3ab0f93584d896f401c94200200d7a39c8f00a4983addd4ebc8889757ee07`;
+- confirmation: 552 cases, SHA256
+  `bbe4984681472ad5ffe1ed881fd2b92937668fed453a45d6afbba587ffa376e8`.
+
+DEV workflow `36412029437` at source
+`759359882c3deb1be310fc540bbb1780b1543885` produced artifact `10964703106`,
+digest `sha256:6b25f94698650175475a4c7339526298e7582b1be43366a8c695cfeecdcf9aaa`.
+
+Result:
+- supported exact **96.0526%**;
+- raw supported exact **96.0526%**;
+- raw tool accuracy **99.5614%**;
+- raw-correct winner veto rate **0%**;
+- near-domain rejection **26.5873%**;
+- OOD rejection **84.7222%**;
+- false-route **60.4938%**;
+- veto precision **99.2248%**;
+- veto recall **39.5062%**;
+- positive route switches **0**;
+- p95 **236.0203 ms**;
+- authority/execution errors **0/0**.
+
+Interpretation:
+
+The authority design worked: ontology evidence can be made safe as a negative-only signal, and this
+exact rule vetoed no raw-correct supported winner. The failure is recall, not precision. Requiring
+independent evidence to agree on the exact same unsupported leaf is too strict for open-set
+membership.
+
+Decision: **terminal reject** of the exact agreement rule. No failed row is used to add phrases,
+rewrite prototypes, tune thresholds or create route-specific exceptions. The already-generated
+confirmation corpus remains unopened.
