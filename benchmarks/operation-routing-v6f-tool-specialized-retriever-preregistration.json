@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "cycle": "0.13-tool-specialized-positive-retrieval",
+  "experiment": "tool-specialized-pretrained-route-retriever-v1",
+  "issue": 406,
+  "parent_issue": 382,
+  "prior_art_issue": 392,
+  "predecessor_issue": 401,
+  "status": "preregistered_before_v6f_corpus_freeze_or_model_scoring",
+  "research_basis": [
+    "Findings ACL 2025: Retrieval Models Aren't Tool-Savvy: Benchmarking Tool Retrieval for Large Language Models (ToolRet)",
+    "ICLR 2026: Tools are Under-documented: Simple Document Expansion Boosts Tool Retrieval (Tool-REX)"
+  ],
+  "positive_selector": {
+    "model": "Lux1997/Tool-Embed-0.6B",
+    "revision": "103d16d3593dec6c6f2217be620febb846932f6a",
+    "base_family": "Qwen3 embedding",
+    "pooling": "last_token",
+    "normalized_embeddings": true,
+    "query_instruction": "Given a web search query, retrieve relevant passages that answer the query",
+    "query_format": "Instruct: <instruction>\\nQuery:<raw user query>",
+    "tool_instruction": null,
+    "authority": "sole positive route selector in V6F",
+    "bge_fusion": false,
+    "reranker": false,
+    "abstention": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "profile": {
+    "source": "trusted registered schema metadata only",
+    "deterministic": true,
+    "fields": [
+      "tool",
+      "tool_description",
+      "endpoint",
+      "function_description",
+      "when_to_use",
+      "operation_aliases",
+      "method",
+      "read_only",
+      "destructive",
+      "input_semantics",
+      "output_semantics",
+      "tags"
+    ],
+    "limitations_field": false,
+    "model_generated_expansion": false,
+    "benchmark_queries_used": false,
+    "unsupported_examples_used": false,
+    "failed_rows_used": false
+  },
+  "runtime": {
+    "device": "cpu",
+    "torch_dtype": "float32",
+    "max_length": 512,
+    "input_length_policy": "fail if any V6F query/profile exceeds 512 tokens; do not silently change truncation after scoring"
+  },
+  "comparison_baseline": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "role": "same-surface diagnostic baseline only; cannot affect Tool-Embed route"
+  },
+  "data_protocol": {
+    "protocol": "V6F",
+    "supported_only": true,
+    "development": {
+      "case_count": 228,
+      "supported": 228,
+      "near_domain_unsupported": 0,
+      "ood": 0,
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "case_count": 228,
+      "supported": 228,
+      "near_domain_unsupported": 0,
+      "ood": 0,
+      "generated_before_dev_scoring": true,
+      "corpus_sha256": null
+    },
+    "route_count": 19,
+    "tool_count": 7,
+    "endpoint_counts": [
+      2,
+      2,
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "disjoint_from": [
+      "V6A/#384",
+      "V6B/#395",
+      "V6C/#397",
+      "V6D/#399",
+      "V6E/#401",
+      "each other"
+    ],
+    "no_open_set_rows_consumed": true
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "must_match_or_exceed_same_surface_bge": true,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "dev_exact_below_085": "terminal reject exact V6F Tool-Embed/profile representation",
+    "dev_below_bge": "terminal reject as replacement positive selector",
+    "quality_pass_latency_fail": "runtime-only optimization under separate preregistration with exact row-level parity",
+    "dev_pass": "freeze exact source/model/profile/runtime and score already-generated V6F confirmation once",
+    "confirmation_fail": "terminal reject",
+    "both_pass": "eligible as positive selector only for separately preregistered V6G open-set membership",
+    "forbidden_repairs": [
+      "query instruction wording",
+      "profile field set",
+      "profile wording",
+      "model checkpoint",
+      "BGE fusion",
+      "reranker",
+      "score threshold",
+      "margin threshold",
+      "language-specific rule",
+      "route-specific rule"
+    ]
+  }
+}
