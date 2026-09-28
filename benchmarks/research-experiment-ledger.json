@@ -2048,7 +2048,7 @@
       "preregistered": true,
       "status": "executing",
       "decision": "executing",
-      "workflow_run_id": 36384796110,
+      "workflow_run_id": 36384892825,
       "design": {
         "model": "BAAI/bge-m3",
         "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
@@ -2069,7 +2069,17 @@
           287,
           326
         ]
-      }
+      },
+      "invalid_pre_runs": [
+        {
+          "run_id": 36384727564,
+          "reason": "contract lint failure before evaluation"
+        },
+        {
+          "run_id": 36384796110,
+          "reason": "contract import-path failure before evaluation"
+        }
+      ]
     }
   ],
   "current_research_conclusion": {
@@ -2240,7 +2250,7 @@
       329
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "execute #328 BGE-M3 ColBERT operation-contract diagnostic on canonical DEV; do not use #270/#287/#326 fresh evidence",
+    "next_research_direction": "await first model-quality run 36384892825 for #328; earlier runs 36384727564/36384796110 are invalid technical pre-runs",
     "contingent_experiments": [
       303
     ],
