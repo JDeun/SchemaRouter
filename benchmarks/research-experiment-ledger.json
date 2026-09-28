@@ -1860,8 +1860,8 @@
       "cycle": "0.11-operation-routing-quality-v4",
       "issue": 303,
       "preregistered": true,
-      "status": "executing",
-      "decision": "activated_after_301_failure",
+      "status": "implemented_not_executed",
+      "decision": "same_laya_variant_dominated; provider_neutral_contingency_only",
       "design": {
         "recall_model": "BAAI/bge-m3",
         "recall_revision": "5617a9f61b028005a4858fdac845db406aefb181",
@@ -1875,7 +1875,9 @@
         "calibration_or_blind_used": false
       },
       "pull_request": 310,
-      "workflow_run_id": 36368836092
+      "workflow_run_id": null,
+      "noncanonical_run_id": 36368836092,
+      "noncanonical_run_policy": "ignore any artifact/result; accidentally triggered after dominance bound"
     },
     {
       "id": "0.11-generic-decision-callable-benchmark",
@@ -1912,7 +1914,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "pinned Kev-0.8B choice+noul #299",
+    "active_experiment": "pinned Kev-0.8B choice+noul #299 is the only active model-quality experiment",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1937,7 +1939,7 @@
     "laya_noul_status": "#301/#302 rejected: P(true) does not separate correct supported from near/OOD; 0/8 rules pass; combined p95 1098.75ms.",
     "topk_same_laya_status": "#310 closed without execution: at p>=0.95 the same Laya signal has a hard best-case exact bound of 151/1152=13.11%, so compute would be wasted.",
     "laya_winner_noul_status": "#301/#302 rejected: 0/8 pass; correct-supported median P(true)=0.6784 vs near unsupported=0.67245; combined p95=1098.75ms.",
-    "top4_typed_routing_status": "#303 activated after #301 terminal failure; BGE-M3 supplies top-4 finite recall only and typed noul selects within that set.",
+    "top4_typed_routing_status": "#303 remains provider-neutral contingency only; same pinned Laya top-4 is mathematically dominated and not canonical evidence.",
     "external_verifier_status": "Qwen3 direct semantic verifier #289 rejected; pinned Laya noul veto #301 rejected; full-catalog Laya choice+noul #295 superseded before execution."
   },
   "paper_reconstruction_checklist": [
@@ -2002,11 +2004,14 @@
     ],
     "active_pull_requests": [
       235,
-      300
+      300,
+      308
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "finish pinned Kev-0.8B choice+noul #299; if it fails, advance to the next preregistered System One/open typed-decision candidate rather than retuning Qwen/Laya",
-    "contingent_experiments": [],
+    "next_research_direction": "finish pinned Kev-0.8B #299; use #303 only with a materially different provider/checkpoint if evidence justifies it",
+    "contingent_experiments": [
+      303
+    ],
     "active_tracking_issues": [
       293
     ]
