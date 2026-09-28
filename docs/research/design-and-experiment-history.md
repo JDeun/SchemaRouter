@@ -2211,3 +2211,52 @@ Together with #270 and #287, this is the third independent demonstration that a 
 strong on the canonical DEV while its open-set acceptance boundary degrades under request-surface
 shift. The next architecture must be motivated from tuning-eligible DEV and registry-level operational
 invariants rather than another refinement of DEV-fitted score geometry.
+
+## 48. #328 / PR #329 — BGE-M3 multi-representation operation gate
+
+After the valid #326 fresh failure, the next cycle deliberately stops refining DEV-fitted dense
+acceptance geometry.
+
+The repository history already contains negative evidence for:
+- route-local scalar operation-fit thresholds;
+- action-only MiniLM gating;
+- winner-only BGE cross-encoder rejection;
+- cross-encoder rescue;
+- signed/negative dense prototypes;
+- learned DEV-geometry verifiers;
+- externally pretrained Qwen/Laya typed gates.
+
+The new hypothesis changes representation rather than adding another threshold repair.
+
+BGE-M3 natively exposes three retrieval representations:
+- dense CLS embedding;
+- sparse lexical weights;
+- ColBERT-style token-level multi-vector interaction.
+
+SchemaRouter's 0.11 BGE-M3 work before #328 used only the dense representation.
+
+#328 therefore preregisters:
+- the same pinned BGE-M3 model/revision;
+- dense schema/action fusion as the sole route authority;
+- token-level ColBERT evidence against only the trusted endpoint action name +
+  `operation_aliases`;
+- sparse lexical evidence as diagnostic-only;
+- no route-local acceptance threshold;
+- no margin-threshold search;
+- no second threshold dimension;
+- exact row-level raw-winner parity against the frozen #259 artifact.
+
+The four permitted ColBERT rule families are:
+1. global route agreement only;
+2. same-tool endpoint agreement only;
+3. global agreement + one global winner-score threshold;
+4. same-tool agreement + one global winner-score threshold.
+
+Threshold families report only false-route budgets 0/6/12 on canonical tuning DEV.
+
+Fresh #270/#287/#326 surfaces remain excluded from design and model selection.
+
+Initial workflow runs `36384727564` and `36384796110` failed contract checks before model
+evaluation and are invalid for quality conclusions. The first model-quality execution is
+`36384892825`.
+
