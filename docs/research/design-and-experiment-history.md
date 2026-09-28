@@ -2143,3 +2143,38 @@ Before fresh execution, a new confirmation surface was preregistered:
 
 Active fresh workflow: `36382202178`.
 
+### Lightweight candidate fresh confirmation — valid run 36382647406
+
+The executable lightweight candidate from #324/#325 is frozen under #326/#327.
+
+Frozen DEV:
+- exact 85.0694%;
+- near-domain rejection 99.3056%;
+- OOD 100%;
+- false-route 0.6173%;
+- authority/errors 0/0;
+- row parity 0;
+- p95 176.9436 ms.
+
+Fresh seed/surface were preregistered before scoring:
+- seed `operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a`;
+- surface `lightweight-bge-gte-operational-envelope-v1`.
+
+Two early runs were invalid infrastructure evidence only:
+- `36382202178`: historical #270/#287 payload regeneration added current-only split metadata and failed contracts;
+- `36382467222`: a split-marker test caught an implementation omission and failed contracts.
+
+Neither run generated a fresh corpus artifact or model score.
+
+Current valid run:
+- workflow `36382647406`;
+- head `b19d7b0255ee9717464b6fa65ce1ebdeaf58a1bd`;
+- contracts PASS;
+- historical #270/#287 corpus SHA reproduction PASS;
+- frozen semantic diff check PASS;
+- frozen DEV manifest PASS;
+- new fresh generator/gate tests PASS;
+- evaluate job queued.
+
+No semantic parameter of the frozen candidate changed during the technical fixes.
+
