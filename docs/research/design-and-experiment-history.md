@@ -2034,3 +2034,19 @@ It also records probability-drift distributions and the frozen reference boundar
 that crosses the frozen decision boundary is a different semantic candidate, not a runtime-only
 optimization.
 
+### Runtime parity infrastructure merged — #320
+
+PR #320 was merged as `acaca1e14b2f387094100dde3e1186aa4520d01d`.
+
+Main now contains `scripts/validate_routing_runtime_parity.py`, which compares a frozen reference
+analysis with a runtime variant and rejects:
+- case-set drift;
+- selected-route drift;
+- any execute/abstain threshold crossing;
+- execution errors;
+- authority violations.
+
+It records max/mean/p50/p95 probability drift and the frozen reference boundary margin.
+This is the mandatory gate for #318 runtime-only optimization. Any parity failure turns the runtime
+variant into a new semantic candidate that requires a separate preregistered experiment.
+
