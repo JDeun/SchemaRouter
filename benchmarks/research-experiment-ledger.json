@@ -1776,6 +1776,25 @@
         "candidate_scope": "all 16 registered endpoints",
         "authority": "finite registered IDs only; no rank-2 fallback"
       }
+    },
+    {
+      "id": "0.11-pinned-laya-noul-veto",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 301,
+      "pull_request": 302,
+      "preregistered": true,
+      "status": "executing",
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "laya_package": "0.3.11",
+        "laya_hub_repo": "convaiinnovations/laya",
+        "laya_hub_revision": "458d7563c5cab85ff9f7f6e06cf2dd166fb697e2",
+        "primitive": "noul",
+        "verifier_authority": "veto-only",
+        "fixed_rule_count": 8,
+        "checkpoint_snapshot_pinned": true
+      },
+      "decision": "executing"
     }
   ],
   "current_research_conclusion": {
@@ -1794,7 +1813,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "parallel external verifier/System One comparison: Qwen3 #289, Laya #293, Kev-0.8B #299",
+    "active_experiment": "parallel external capability boundaries: Qwen3 #289, Kev-0.8B #299, pinned Laya noul #301",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1810,7 +1829,7 @@
     "explicit_negative_prototype_status": "#275 showed useful near-domain signal, while #277/#279/#281 demonstrated that fixed scalar and relative-rank prototype heuristics cannot meet the 85/97/1/100 target. This heuristic family is closed.",
     "learned_verifier_status": "#285 grouped OOF passed, but #287 frozen fit-once HGB failed zero-overlap fresh-surface DEV at 82.64% exact / 93.23% near rejection / 6.02% false-route / 252.77 ms p95. Same model SHA was reused without refit.",
     "system_one_provider_status": "#291/#292 merged a generic Jev-compatible SystemOneDecisionBackend; future compatible models can swap base_url/model/provider_name without a new planner class.",
-    "model_swap_infrastructure": "#291/#292 merged generic SystemOneDecisionBackend; #297/#298 generalizes the shared benchmark CLI so compatible models can be swapped by configuration.",
+    "model_swap_infrastructure": "#291/#292 and #297/#298 merged: System One-compatible providers and shared benchmark are both model-neutral by configuration.",
     "direct_laya_status": "#293/#294 direct full-catalog Laya rejected: raw exact 60.07%, 0/8 rules pass, p95 1041ms; PR closed unmerged."
   },
   "paper_reconstruction_checklist": [
@@ -1863,20 +1882,24 @@
       279,
       281,
       285,
-      287
+      287,
+      291,
+      293,
+      297
     ],
     "active_experiments": [
       289,
-      299
+      299,
+      301
     ],
     "active_pull_requests": [
       235,
       290,
       300,
-      298
+      302
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "terminal results of Qwen3 #289 and pinned Kev-0.8B #299; optionally preregister BGE-winner + Laya noul veto after these direct results"
+    "next_research_direction": "terminal results of Qwen3 #289, Kev-0.8B #299, and pinned Laya noul #301"
   },
   "design_lineage": [
     {
