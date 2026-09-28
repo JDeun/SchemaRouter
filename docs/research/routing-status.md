@@ -62,27 +62,36 @@ The #259 BGE-M3 reference profile remains useful for safety-oriented comparison:
 
 It is not a production-target pass because supported exact routing remains below 85%.
 
-## Current successor prototype
+## First registry-compiled capability prototype
 
-The next research direction is a **registry-compiled capability verifier**.
+Experiment #338 tested a provider-neutral registry-compiled capability verifier after the closed
+architecture-search cycle.
 
-Instead of asking only whether a request is similar to an endpoint, the prototype compiles generic
-operation and data contracts from ordinary `ToolSpec` / `EndpointSpec` metadata and checks whether
-the raw winning route actually supports the requested operation.
+The infrastructure objective succeeded: the same compiler accepted native `ToolSpec`, OpenAPI and
+MCP registrations, preserved typed field/unit metadata, kept raw BGE route authority unchanged and
+introduced no authority or execution errors.
 
-Its design constraints are stricter than the earlier benchmark-specific experiments:
+The learned synthetic veto, however, was far too conservative:
 
-- the same compiler must accept native tools, OpenAPI imports and MCP imports;
-- endpoint names may be opaque and `operation_aliases` may be empty;
-- no route IDs, fixed endpoint counts or benchmark-domain keyword tables may become learned features;
-- datatype, source unit, canonical unit normalization, semantic IDs and qualifiers remain registered
-  deterministic metadata;
-- a verifier is veto-only and cannot invent or switch routes;
-- newly registered tools must not require route-specific retraining.
+| Surface | Exact | Near reject | OOD | False-route | Correct raw-winner retention | p95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Canonical DEV (1,800) | **5.03%** | **100%** | **100%** | **0%** | **5.69%** | **196.93 ms** |
+| Registration holdout (228) | **2.08%** | **100%** | **100%** | **0%** | **2.46%** | **192.85 ms** |
 
-This successor remains a **research prototype until canonical DEV and a separate registration-
-generalization holdout pass, followed by a new zero-overlap fresh confirmation**. It is not the
-default routing path in the 0.10.0 library release.
+The registration holdout contained previously unseen native/OpenAPI/MCP tool identities, opaque
+endpoint names, empty operation aliases and variable endpoint counts.
+
+This candidate is therefore **terminally rejected** under its preregistered stopping rule. It may not
+be repaired using canonical/holdout labels.
+
+The useful result is architectural rather than a promoted quality method: provider-neutral typed
+capability/data-contract compilation remains aligned with SchemaRouter's product model, while this
+particular synthetic learned veto does not.
+
+Run: `36393153612`  
+Source: `ef75100abc1bb03a80ef2d7cfbd9d463accfb623`  
+Artifact: `10957952613`  
+Digest: `sha256:2a24d50c563ee872fdad8d498e30ab7a55e6c82e0650bf27ac4bfbadc4fc4269`
 
 ## Reproducibility
 
