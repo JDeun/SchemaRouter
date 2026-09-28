@@ -1,0 +1,146 @@
+name: Research V5E Capability-Set Membership DEV
+
+on:
+  push:
+    branches:
+      - "research/0.12-capability-set-membership-veto"
+    paths:
+      - ".github/workflows/research-v5e-membership-veto-dev.yml"
+      - "scripts/evaluate_capability_set_membership_v5e.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FROZEN_SOURCE: "a1a9eb20622dd8a47082ca8fa5cd02c52d27e653"
+  DEV_SHA256: "1d3d18975b33156d97f3b4fd518158cba418c449fae01e864977f8bdf77b5e62"
+  CONFIRM_SHA256: "ba92c3c25da3601bd50f580dcfaf7b512ec2e26971e10ec9e501bb59cbf35d37"
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+
+      - name: Verify frozen behavior and corpus source
+        run: |
+          git diff --exit-code "${FROZEN_SOURCE}" -- \
+            benchmarks/operation-routing-v5e-membership-veto-preregistration.json \
+            benchmarks/capability_set_membership_veto.py \
+            benchmarks/operation_routing_v5e_catalog.py \
+            scripts/generate_operation_routing_v5e.py \
+            tests/test_capability_set_membership_veto.py \
+            tests/test_operation_routing_v5e_protocol.py
+
+      - name: Validate evaluator and protocol tests
+        run: |
+          ruff check scripts/evaluate_capability_set_membership_v5e.py
+          pytest -q \
+            tests/test_capability_set_membership_veto.py \
+            tests/test_operation_routing_v5e_protocol.py
+
+  evaluate-development:
+    needs: protocol
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers>=4.44,<5" "sentence-transformers>=3,<6" einops
+      - run: pip install -e ".[dev]"
+
+      - name: Recreate both frozen corpora
+        run: |
+          python scripts/generate_operation_routing_v5e.py \
+            --out-dir artifacts/operation-routing-v5e
+
+      - name: Verify both frozen identities before scoring
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/operation-routing-v5e")
+          freeze = json.loads((root / "freeze-manifest.json").read_text())
+          if freeze["development"]["corpus_sha256"] != os.environ["DEV_SHA256"]:
+              raise SystemExit("DEV corpus identity drifted")
+          if freeze["confirmation"]["corpus_sha256"] != os.environ["CONFIRM_SHA256"]:
+              raise SystemExit("confirmation corpus identity drifted")
+          if freeze["development"]["case_count"] != 552:
+              raise SystemExit("unexpected DEV case count")
+          if freeze["confirmation"]["case_count"] != 552:
+              raise SystemExit("unexpected confirmation case count")
+          print("both frozen corpus identities verified; confirmation remains unscored")
+          PY
+
+      - name: Score development only
+        run: |
+          python scripts/evaluate_capability_set_membership_v5e.py \
+            --development artifacts/operation-routing-v5e/development.json \
+            --out artifacts/operation-routing-v5e/dev-analysis.json
+
+      - name: Validate governance and authority invariants
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(
+              Path("artifacts/operation-routing-v5e/dev-analysis.json").read_text()
+          )
+          policy = data["policy"]
+          if policy["confirmation_scored"]:
+              raise SystemExit("confirmation was scored before DEV pass")
+          if policy["prior_failed_rows_used_for_tuning"]:
+              raise SystemExit("prior failed evidence leaked into candidate")
+          if not policy["raw_bge_is_sole_positive_selector"]:
+              raise SystemExit("raw BGE route authority changed")
+          if policy["ontology_positive_rerank"] or policy["endpoint_filter"]:
+              raise SystemExit("ontology gained forbidden positive selection authority")
+          if policy["same_leaf_agreement_required"]:
+              raise SystemExit("old exact-leaf agreement rule leaked into V5E")
+          if policy["confidence_or_similarity_threshold"] or policy["learned_veto"]:
+              raise SystemExit("forbidden threshold or learned veto detected")
+          if policy["cross_tool_fallback"] or policy["pseudo_route"]:
+              raise SystemExit("forbidden route authority detected")
+
+          metrics = data["metrics"]
+          if metrics["positive_route_switches"] != 0:
+              raise SystemExit("veto switched to another positive route")
+          if metrics["authority_violations"] != 0:
+              raise SystemExit("authority violation")
+          if metrics["execution_errors"] != 0:
+              raise SystemExit("execution errors")
+
+          print("development_pass=", data["surface_pass"])
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: operation-routing-v5e-dev-${{ github.run_id }}
+          path: |
+            artifacts/operation-routing-v5e/dev-analysis.json
+            artifacts/operation-routing-v5e/development-manifest.json
+            artifacts/operation-routing-v5e/confirmation-manifest.json
+            benchmarks/operation-routing-v5e-membership-veto-preregistration.json
+          if-no-files-found: warn
+          retention-days: 30
