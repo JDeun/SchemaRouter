@@ -2821,3 +2821,65 @@ route-local repair may use this DEV. The frozen confirmation surface remains uno
 
 The next materially distinct hypothesis is to condition the actual anchored tool capability set
 directly in a binary entailment/not-entailment question.
+
+
+## 60. #374 / PR #375 — set-conditioned binary entailment collapses to all-negative
+
+#374 tested the direct successor to #371's failed generic OUTSIDE-label competition. Frozen BGE-M3
+remained the sole positive route selector. For the BGE-anchored tool, the complete registered
+capability set was rendered into one deterministic English hypothesis and paired with the raw user
+query as one binary NLI example.
+
+The external model was fixed to:
+- `Horizon-Labs/multilingual-zeroshot-small`;
+- immutable revision `d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4`;
+- labels `not_entailment` / `entailment`;
+- no SchemaRouter fine-tuning, thresholds, margins, calibration, language rules or route-local logic.
+
+The NLI layer could only preserve the raw BGE winner or veto to `NO_ROUTE`; it could not select,
+rerank, filter to, or fall through to another endpoint.
+
+Pre-scoring freeze:
+- workflow `36421851941`;
+- frozen behavior/corpus source `c456214daba7d98d6822f99bd74aa50fb887a8f4`;
+- artifact `10969746736`;
+- digest `sha256:d52241d155c043ae4398a471a25b9ce35700229d46377da5f86a41e02b851d8d`;
+- DEV: **552** cases, SHA
+  `f24d874afb5c248ff0ece71da27f89fd4d442e745e6e610269a9300c1851c034`;
+- confirmation: **552** cases, SHA
+  `214d59f25e755c73d15d9d6814363604ff88d5f7f6e66a93e1c0f133b0633332`;
+- typed numeric/unit-normalized fields were retained on both surfaces;
+- confirmation remained unopened.
+
+DEV evaluation:
+- workflow `36422168708`;
+- evaluated source `e61058d0aa31819bf99b182f4bd5947dd0d11fab`;
+- artifact `10970342078`;
+- digest `sha256:4584f55a67b6744ba8ba3454290a2acb5e7cee1ce58695a0362618ab07f7faf8`.
+
+Results:
+- supported exact **0.0000%**;
+- raw BGE exact **92.5439%**;
+- raw BGE tool accuracy **99.5614%**;
+- near-domain rejection **100%**;
+- OOD rejection **100%**;
+- false-route **0%**;
+- NLI decisions: **0 entailment / 552 not-entailment**;
+- all **211** raw-correct supported winners were vetoed;
+- NLI p95 **56.1598 ms**;
+- end-to-end p95 **254.5495 ms**;
+- positive route switches / authority violations / execution errors **0 / 0 / 0**.
+
+This is the mirror failure of #371. A generic OUTSIDE label almost never vetoed, whereas one
+aggregate disjunctive set-membership hypothesis vetoed every request. The NLI model therefore did
+not interpret the sentence "one of these registered operations" as a useful closed-world capability
+membership statement.
+
+Decision: **terminal reject**. No hypothesis wording, threshold, label-description, language or
+route-local repair may use this DEV. Runtime-only optimization is ineligible because quality failed.
+The frozen confirmation surface remains unopened.
+
+The next materially distinct formulation is to use the model's native independent per-label NLI
+semantics: score each actually registered capability as its own premise/hypothesis pair in one
+batch, preserve the raw BGE winner if any registered capability is entailed, and veto only if every
+registered capability is independently not-entailment.
