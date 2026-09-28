@@ -2705,3 +2705,69 @@ membership.
 Decision: **terminal reject** of the exact agreement rule. No failed row is used to add phrases,
 rewrite prototypes, tune thresholds or create route-specific exceptions. The already-generated
 confirmation corpus remains unopened.
+
+
+## 58. #363 / PR #364 — capability-set membership consensus improves recall but loses safety
+
+#363 was a direct successor to the negative-only authority result from #358.
+
+The design preserved all positive-route authority:
+- frozen BGE-M3 raw top-1 remained the only executable route selector;
+- ontology evidence could only preserve that winner or veto to `NO_ROUTE`;
+- no endpoint filtering, reranking, rank-2 fallback, pseudo-route, score threshold or learned veto was allowed.
+
+The only behavioral change was the unsupported-membership rule. Instead of requiring independent
+signals to name the same unsupported leaf, each signal was mapped to membership relative to the
+anchored tool's finite registered capability set:
+
+```text
+leaf in registered set     -> SUPPORTED
+leaf outside registered set -> OUTSIDE_SET
+no explicit leaf            -> UNKNOWN
+```
+
+Frozen evidence:
+- freeze workflow `36415762115`;
+- behavior/corpus source `a1a9eb20622dd8a47082ca8fa5cd02c52d27e653`;
+- freeze artifact `10966724823`;
+- freeze digest
+  `sha256:d957f82e29bdec0723fb0dda0622098563354a8ecdb45e8108b4633bc3bc6915`;
+- DEV: **552** cases, SHA
+  `1d3d18975b33156d97f3b4fd518158cba418c449fae01e864977f8bdf77b5e62`;
+- confirmation: **552** cases, SHA
+  `ba92c3c25da3601bd50f580dcfaf7b512ec2e26971e10ec9e501bb59cbf35d37`;
+- confirmation remained unopened.
+
+DEV evaluation:
+- workflow `36415951667`;
+- evaluated source `f198f896c44860c27ce14b4c88200096ef0b754f`;
+- artifact `10967871097`;
+- digest
+  `sha256:799006f7d69b94a29bfa0cfc62384ca2a8640cba668ac69e04ab2702a08f3f93`.
+
+Results:
+- supported exact **86.4035%**;
+- raw supported exact **94.2982%**;
+- raw tool accuracy **99.5614%**;
+- near-domain rejection **54.7619%**;
+- OOD rejection **97.2222%**;
+- false-route **35.8025%**;
+- veto precision **91.2281%**;
+- veto recall **64.1975%**;
+- raw-correct winner veto rate **8.3721%** (**18** winners vetoed);
+- positive route switches **0**;
+- p95 **249.7303 ms**;
+- authority / execution errors **0 / 0**.
+
+Compared with #358, finite-set membership substantially improved veto recall, but the relaxed rule
+also began rejecting valid supported winners. The central tradeoff therefore moved from
+high-precision/low-recall to materially higher recall with insufficient precision.
+
+Decision: **terminal reject**. No row-driven phrase, language, route, confusion-pair, prototype,
+threshold or score-distribution repair is allowed. The frozen confirmation surface remains
+unscored.
+
+The architectural conclusion is now:
+
+> keep semantic/ontology evidence negative-only, but a capability-absence claim needs a stronger,
+> more surface-invariant membership signal than flat leaf argmax votes.
