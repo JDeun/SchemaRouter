@@ -1,0 +1,180 @@
+name: Research V6D Component Mixture DEV
+
+on:
+  push:
+    branches:
+      - "research/0.13-component-mixture-density"
+    paths:
+      - ".github/workflows/research-v6d-component-mixture-dev.yml"
+      - "scripts/evaluate_schema_component_mixture_v6d.py"
+  pull_request:
+    paths:
+      - ".github/workflows/research-v6d-component-mixture-dev.yml"
+      - "scripts/evaluate_schema_component_mixture_v6d.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FROZEN_SOURCE: "89dfe79c7bba06432633a1a4a23663bf79f2b845"
+  DEV_SHA256: "ad05270951107ad3e9330eff0cbeb79c0d5f664740781f6361409c23ab908bc5"
+  CONFIRM_SHA256: "2c4cf8bb319685254511f15dcf86f5d7a480255b1047f550a70f6095e7047c03"
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+
+      - name: Verify frozen V6D behavior and corpus source
+        run: |
+          git diff --exit-code "${FROZEN_SOURCE}" -- \
+            benchmarks/operation-routing-v6d-component-mixture-preregistration.json \
+            benchmarks/operation_routing_v6d_catalog.py \
+            benchmarks/schema_component_mixture_density.py \
+            benchmarks/schema_adb_baseline.py \
+            benchmarks/schema_hard_negative_ellipsoid.py \
+            scripts/generate_operation_routing_v6d.py \
+            tests/test_schema_component_mixture_density.py \
+            tests/test_operation_routing_v6d_protocol.py
+
+      - name: Validate evaluator and frozen protocol
+        run: |
+          ruff check scripts/evaluate_schema_component_mixture_v6d.py
+          PYTHONPATH=. pytest -q \
+            tests/test_schema_component_mixture_density.py \
+            tests/test_operation_routing_v6d_protocol.py
+
+  evaluate-development:
+    needs: protocol
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers>=4.44,<5" "sentence-transformers>=3,<6" einops
+      - run: pip install -e ".[dev]"
+
+      - name: Recreate both frozen V6D corpora
+        run: |
+          python scripts/generate_operation_routing_v6d.py \
+            --out-dir artifacts/operation-routing-v6d
+
+      - name: Verify both frozen identities before scoring
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/operation-routing-v6d")
+          freeze = json.loads(
+              (root / "freeze-manifest.json").read_text(encoding="utf-8")
+          )
+          if freeze["development"]["corpus_sha256"] != os.environ["DEV_SHA256"]:
+              raise SystemExit("DEV corpus identity drifted")
+          if freeze["confirmation"]["corpus_sha256"] != os.environ["CONFIRM_SHA256"]:
+              raise SystemExit("confirmation corpus identity drifted")
+          for role in ("development", "confirmation"):
+              manifest = freeze[role]
+              if manifest["case_count"] != 552:
+                  raise SystemExit(f"unexpected {role} case count")
+              if manifest["supported_cases"] != 228:
+                  raise SystemExit(f"unexpected {role} supported count")
+              if manifest["near_domain_cases"] != 252:
+                  raise SystemExit(f"unexpected {role} near-domain count")
+              if manifest["out_of_domain_cases"] != 72:
+                  raise SystemExit(f"unexpected {role} OOD count")
+          print("frozen V6D identities verified; confirmation remains unscored")
+          PY
+
+      - name: Score development only
+        run: |
+          python scripts/evaluate_schema_component_mixture_v6d.py \
+            --development artifacts/operation-routing-v6d/development.json \
+            --out artifacts/operation-routing-v6d/dev-analysis.json
+
+      - name: Validate authority and governance invariants
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(
+              Path("artifacts/operation-routing-v6d/dev-analysis.json")
+              .read_text(encoding="utf-8")
+          )
+          policy = data["policy"]
+          if policy["confirmation_scored"]:
+              raise SystemExit("confirmation scored before DEV pass")
+          if policy["prior_failed_rows_used_for_tuning"]:
+              raise SystemExit("prior failed evidence leaked")
+          if not policy["raw_bge_is_sole_positive_selector"]:
+              raise SystemExit("positive route authority changed")
+          if not policy["mixture_ratio_veto_only"]:
+              raise SystemExit("mixture ratio gained positive authority")
+          if not policy["schema_derived_positive_bank"]:
+              raise SystemExit("positive evidence provenance missing")
+          if not policy["schema_derived_complement_negatives"]:
+              raise SystemExit("negative evidence provenance missing")
+          if policy["benchmark_rows_used_for_density_fit"]:
+              raise SystemExit("benchmark rows used for density fit")
+          if policy["positive_rerank"] or policy["endpoint_switch"]:
+              raise SystemExit("forbidden positive route mutation")
+          if policy["rank2_fallback"] or policy["pseudo_route"]:
+              raise SystemExit("forbidden fallback authority")
+          if policy["decision_threshold"] != 0.0:
+              raise SystemExit("decision threshold drifted")
+          if policy["variance_floor"] != 1e-6:
+              raise SystemExit("variance floor drifted")
+          if not policy["uniform_component_priors"]:
+              raise SystemExit("component priors drifted")
+          if not policy["equal_class_priors"]:
+              raise SystemExit("class priors drifted")
+          if policy["component_pruning"] or policy["bic_model_order_selection"]:
+              raise SystemExit("component structure drifted")
+          if policy["max_component_shortcut"]:
+              raise SystemExit("mandatory log-sum-exp mixture bypassed")
+          if policy["dev_selected_threshold"] or policy["dev_selected_hyperparameters"]:
+              raise SystemExit("DEV-selected tuning detected")
+          metrics = data["metrics"]
+          if metrics["positive_route_switches"] != 0:
+              raise SystemExit("positive route switch detected")
+          if metrics["authority_violations"] != 0:
+              raise SystemExit("authority violation")
+          if metrics["execution_errors"] != 0:
+              raise SystemExit("execution errors")
+          print("quality_pass=", data["quality_pass"])
+          print("runtime_gate=", data["runtime_gate"])
+          print("surface_pass=", data["surface_pass"])
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: operation-routing-v6d-dev-${{ github.run_id }}
+          path: |
+            artifacts/operation-routing-v6d/dev-analysis.json
+            artifacts/operation-routing-v6d/development-manifest.json
+            artifacts/operation-routing-v6d/confirmation-manifest.json
+            artifacts/operation-routing-v6d/freeze-manifest.json
+            benchmarks/operation-routing-v6d-component-mixture-preregistration.json
+          if-no-files-found: warn
+          retention-days: 30
