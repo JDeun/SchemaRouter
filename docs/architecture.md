@@ -8,18 +8,22 @@ The core is designed around one principle:
 
 > model output and remote schemas may describe capabilities, but only trusted local code grants execution authority.
 
-## Capability-index mental model
+## Capability retrieval in a RAG/agent stack
 
-Architecturally, SchemaRouter is close to a RAG retrieval layer for executable data sources:
-structured adapters parse APIs/tools into endpoint/field contracts, the registry/index organizes the
-resulting capability surface, and routing retrieves a bounded executable subset for the surrounding
-agent or RAG application.
+RAG stands for **Retrieval-Augmented Generation**: generation is conditioned on information
+retrieved from external sources. SchemaRouter does not implement that complete architecture or the
+generation step.
+
+Architecturally, it can occupy a structured retrieval/execution boundary inside a RAG or agent
+system: adapters parse APIs/tools into endpoint/field contracts, the registry/index organizes the
+capability surface, and routing selects a bounded executable subset that can return the requested
+external data.
 
 The registry can be viewed as a logical capability graph. A graph database is not required, and
 embeddings are not authority. Datatype, unit, qualifier, policy and side-effect semantics come from
 trusted registered contracts.
 
-See [Capability catalog: RAG for executable data sources](concepts/capability-catalog.md).
+See [Structured retrieval and execution for RAG and agents](concepts/capability-catalog.md).
 
 ## Core flow
 
