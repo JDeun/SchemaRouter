@@ -1794,7 +1794,46 @@
         "fixed_rule_count": 8,
         "checkpoint_snapshot_pinned": true
       },
-      "decision": "executing"
+      "decision": "executing_after_contract_fix",
+      "workflow_run_id": 36367249147
+    },
+    {
+      "id": "0.11-laya-choice-noul-full-catalog",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 295,
+      "pull_request": 296,
+      "preregistered": true,
+      "status": "closed_without_execution",
+      "decision": "superseded_by_direct_choice_ceiling",
+      "result": {
+        "quality_evidence_consumed": false,
+        "reason": "direct Laya full-catalog raw supported top-1 was 60.0694%; adding veto-only noul cannot raise exact-route above that ceiling"
+      },
+      "interpretation": "Do not execute a structurally dominated full-catalog choice+noul variant. Preserve noul as a separate capability boundary over stronger route authority."
+    },
+    {
+      "id": "0.11-topk-system-one-capability-routing",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 303,
+      "preregistered": true,
+      "status": "contingent_not_executing",
+      "decision": "activate_only_if_winner_only_external_capability_veto_cannot_promote",
+      "design": {
+        "recall_model": "BAAI/bge-m3",
+        "recall_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "recall_width": 4,
+        "bge_role": "candidate recall only",
+        "system_one_role": "final finite candidate selector via one noul per candidate",
+        "route_selection": "argmax P(true) among recalled registered candidates",
+        "fixed_threshold_count": 8,
+        "provider_neutral": true,
+        "initial_provider_if_activated": "pinned Laya",
+        "compatible_future_providers": [
+          "Jev",
+          "Kev",
+          "future System One-compatible models"
+        ]
+      }
     }
   ],
   "current_research_conclusion": {
@@ -1830,7 +1869,8 @@
     "learned_verifier_status": "#285 grouped OOF passed, but #287 frozen fit-once HGB failed zero-overlap fresh-surface DEV at 82.64% exact / 93.23% near rejection / 6.02% false-route / 252.77 ms p95. Same model SHA was reused without refit.",
     "system_one_provider_status": "#291/#292 merged a generic Jev-compatible SystemOneDecisionBackend; future compatible models can swap base_url/model/provider_name without a new planner class.",
     "model_swap_infrastructure": "#291/#292 and #297/#298 merged: System One-compatible providers and shared benchmark are both model-neutral by configuration.",
-    "direct_laya_status": "#293/#294 direct full-catalog Laya rejected: raw exact 60.07%, 0/8 rules pass, p95 1041ms; PR closed unmerged."
+    "direct_laya_status": "#293/#294 direct full-catalog Laya rejected: raw exact 60.07%, 0/8 rules pass, p95 1041ms; PR closed unmerged.",
+    "contingent_architecture": "#303 preregisters BGE top-4 recall + provider-neutral per-candidate noul routing, but must not execute unless winner-only capability veto cannot promote."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -1899,7 +1939,10 @@
       302
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "terminal results of Qwen3 #289, Kev-0.8B #299, and pinned Laya noul #301"
+    "next_research_direction": "finish Qwen3 #289, Kev-0.8B #299, and pinned Laya noul #301; activate #303 only if simpler winner-only capability boundaries do not promote",
+    "contingent_experiments": [
+      303
+    ]
   },
   "design_lineage": [
     {
