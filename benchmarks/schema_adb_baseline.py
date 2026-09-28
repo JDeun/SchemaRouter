@@ -335,37 +335,61 @@ def synthetic_positive_texts(
     endpoint: Any,
     leaf: str,
 ) -> tuple[str, ...]:
+    """Return the exact 18 preregistered schema-only positive views or UNKNOWN."""
     resource = _resource_anchor(tool, endpoint)
-    description = endpoint.description.strip() or f"{leaf} {resource}"
-    tool_description = tool.description.strip()
+    description = " ".join(str(endpoint.description or "").split())
+    tool_description = " ".join(str(tool.description or "").split())
+    if not description or not tool_description or not resource:
+        return ()
+
     field_labels = [
-        str(field.semantic_id or field.name)
+        str(field.semantic_id or field.name).strip()
         for field in endpoint.output_fields
-        if not field.identifier
+        if not field.identifier and str(field.semantic_id or field.name).strip()
     ]
-    field_text = ", ".join(dict.fromkeys(field_labels)) or "none"
+    field_labels = list(dict.fromkeys(field_labels))
+    field_or_resource = ", ".join(field_labels) if field_labels else resource
 
     rows = [
         description,
-        " | ".join(part for part in [tool_description, description] if part),
-        f"{description} | output fields: {field_text}",
+        f"{tool_description}. {description}.",
+        f"{description}. Returned data or resource: {field_or_resource}.",
     ]
+
     for language in LANGUAGES:
         phrase = ACTION_PHRASES[leaf][language]
         rows.append(f"{phrase}: {resource}")
         rows.append(f"{resource}: {phrase}")
 
-    method = str(endpoint.method).upper() if endpoint.method else "unspecified"
+    method = str(endpoint.method).upper() if endpoint.method else "UNSPECIFIED"
+    if endpoint.read_only is True:
+        access = "read-only"
+    elif endpoint.read_only is False:
+        access = "state-changing"
+    else:
+        access = "access mode unspecified"
+
+    if endpoint.destructive is True:
+        safety = "destructive"
+    elif endpoint.destructive is False:
+        safety = "non-destructive"
+    else:
+        safety = "destructive status unspecified"
+
     rows.extend(
         [
-            f"registered {leaf} capability for {resource}",
-            f"{description} | method={method}; read_only={endpoint.read_only}; destructive={endpoint.destructive}",
-            f"schema fields={field_text}; operation={leaf}; resource={resource}",
+            f"Registered {method} operation for {resource}.",
+            f"Registered {access} operation for {resource}.",
+            f"Registered {safety} operation for {resource}.",
         ]
     )
-    if len(rows) != 18:
-        raise AssertionError(f"expected 18 synthetic positives, got {len(rows)}")
-    return tuple(rows)
+
+    normalized = tuple(" ".join(row.split()) for row in rows if row.strip())
+    if len(normalized) != 18:
+        raise AssertionError(f"expected 18 synthetic positives, got {len(normalized)}")
+    if len(set(normalized)) != 18:
+        return ()
+    return normalized
 
 
 def compile_registry_contracts(registry: Any) -> dict[str, RouteContract]:
