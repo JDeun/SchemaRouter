@@ -9,6 +9,10 @@ The machine-readable discovery/benchmark intake state lives in
 `benchmarks/system-one-candidate-registry.json`. Keep model discovery there instead of hard-coding
 candidate names into planner logic.
 
+The promotion target itself is centralized separately in
+`benchmarks/operation-routing-production-targets.json`. The registry mirrors that target for
+discovery UX, and tests reject drift between the two files.
+
 ## Intake rule
 
 Choose the narrowest stable boundary that fits a new model/runtime:
@@ -99,12 +103,12 @@ Repository: `stiermid/laya-serve`.
 Multiple unrelated projects use the OpenJev name. Treat each repository/runtime as a distinct
 provider and pin it explicitly.
 
-Examples observed in current discovery include:
-- `lookski/openjev`: local causal-LM masked-logit System One-style engine;
-- `razorback16/openjev`: Jev-compatible server exposing several decision-model backends.
+The currently tracked discovery entry is `SiliconLabAI/OpenJev`.
 
-Use `SystemOneDecisionBackend` only when the selected runtime actually preserves the compatible
-wire contract. Otherwise use a decision plugin/callable.
+Its source repository is MIT at the observed discovery revision, but backend/model licensing must
+still be checked independently for the exact selected runtime. Use `SystemOneDecisionBackend` only
+when a selected backend actually preserves the compatible wire contract. Otherwise use a decision
+plugin/callable.
 
 ### AnyJev
 
@@ -116,7 +120,8 @@ Repository: `nokia-applied-research/AnyJev`.
   unless/until a stable System One-compatible server contract is pinned;
 - current SchemaRouter state: #311 / PR #313 stages a zero-label L0 content-free `noul` veto
   behind the immutable BGE winner;
-- the research workflow is manual-dispatch only until the active Kev experiment is terminal.
+- the research workflow remains dormant until explicitly activated by the guarded marker/manual
+  path, and the marker is forbidden until all preregistered Kev-based candidates are non-promotable.
 
 ### Bespoke Nimble
 
@@ -124,6 +129,8 @@ Repository: `bespokelabsai/nimble`.
 
 - typed candidate-scoring model/runtime rather than a Jev-wire-compatible server;
 - model/checkpoint calibration is release-specific and must be pinned with the selected runtime;
+- the current Bespoke-Nimble-9B model card reports Apache-2.0, while the observed GitHub code
+  repository has no root LICENSE; verify code and model licensing separately for the selected release;
 - SchemaRouter path: plugin or research callable;
 - larger memory/GPU requirements make it a separate runtime experiment rather than a drop-in CPU
   comparison;
@@ -149,7 +156,7 @@ receiving a permanent SchemaRouter core class by default.
 
 Compatibility and model promotion are deliberately separate:
 
-1. pin repository/runtime/model revisions;
+1. pin repository/runtime/model revisions; observed registry revisions are discovery provenance only;
 2. connect through System One, plugin, or callable without changing planning authority;
 3. run the frozen benchmark protocol;
 4. record exact-route, unsupported rejection, false-route rate, latency, errors, and authority

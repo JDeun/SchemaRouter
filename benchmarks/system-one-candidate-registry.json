@@ -62,10 +62,11 @@
       "repository": "Mapika/decider",
       "integration_path": "system_one_wire",
       "lifecycle": "contingent_discovery",
-      "license_status": "Apache-2.0",
+      "license_status": "Apache-2.0 at observed upstream source revision",
       "schemarouter_status": "No SchemaRouter quality evidence yet. decider-0.8B is a resource-compatible fallback candidate if the active Kev-0.8B screen does not promote; pin exact model revision before execution.",
       "upstream_source_revision_seen": "23579f7a7e8f10e1045be492af3c1c05a005d67c",
-      "upstream_package_version_seen": "1.6.0"
+      "upstream_package_version_seen": "1.6.0",
+      "upstream_default_branch_seen": "main"
     },
     {
       "id": "decis",
@@ -73,8 +74,10 @@
       "repository": "chaitin/Decis",
       "integration_path": "system_one_wire",
       "lifecycle": "discovery",
-      "license_status": "verify exact release before promotion",
-      "schemarouter_status": "No SchemaRouter quality evidence yet."
+      "license_status": "Apache-2.0 at observed upstream source revision",
+      "schemarouter_status": "No SchemaRouter quality evidence yet.",
+      "upstream_default_branch_seen": "master",
+      "upstream_source_revision_seen": "e3ee7090082adc0248243e6114aa7cb7dfab9b2c"
     },
     {
       "id": "litevar-system-one",
@@ -82,8 +85,10 @@
       "repository": "LiteVar/system-one",
       "integration_path": "system_one_wire",
       "lifecycle": "discovery",
-      "license_status": "verify exact release before promotion",
-      "schemarouter_status": "No SchemaRouter quality evidence yet."
+      "license_status": "MIT at observed upstream source revision",
+      "schemarouter_status": "No SchemaRouter quality evidence yet.",
+      "upstream_default_branch_seen": "main",
+      "upstream_source_revision_seen": "84aec271b641cabb9e3db8e004a2b11e0562ee96"
     },
     {
       "id": "laya-serve",
@@ -102,7 +107,7 @@
       "fallback_integration_path": "research_callable",
       "lifecycle": "staged_research",
       "license_status": "Apache-2.0 reported by upstream",
-      "schemarouter_status": "AnyJev L0 content-free noul #311 / PR #313 is preregistered and staged; workflow is manual-dispatch only until Kev #299 is terminal and non-promotable. No SchemaRouter quality evidence yet.",
+      "schemarouter_status": "AnyJev L0 content-free noul #311 / PR #313 is preregistered and staged; activation is guarded by marker/manual dispatch and is allowed only after no Kev-based candidate promotes. No SchemaRouter quality evidence yet.",
       "source_revision": "45add301a7aa60ed3420c83d15c061e84e5bce61",
       "active_issue": 311,
       "active_pull_request": 313
@@ -114,8 +119,10 @@
       "integration_path": "reusable_plugin",
       "fallback_integration_path": "research_callable",
       "lifecycle": "discovery",
-      "license_status": "verify model/code license for selected release before promotion",
-      "schemarouter_status": "No SchemaRouter quality evidence yet; fast-moving checkpoint/calibration, so pin exact revision before any comparison."
+      "license_status": "Current Bespoke-Nimble-9B model card reports Apache-2.0; GitHub code repository has no root LICENSE at observed revision, so verify code and selected model release independently before promotion",
+      "schemarouter_status": "No SchemaRouter quality evidence yet; fast-moving checkpoint/calibration, so pin exact revision before any comparison.",
+      "upstream_default_branch_seen": "main",
+      "upstream_source_revision_seen": "62076b4f2d365b5879dafcf7f6dd072a1fe76df7"
     },
     {
       "id": "system-one-open",
@@ -125,7 +132,9 @@
       "fallback_integration_path": "research_callable",
       "lifecycle": "discovery",
       "license_status": "MIT reported by upstream",
-      "schemarouter_status": "Different serving contract; no SchemaRouter quality evidence yet."
+      "schemarouter_status": "Different serving contract; no SchemaRouter quality evidence yet.",
+      "upstream_default_branch_seen": "main",
+      "upstream_source_revision_seen": "77f1f7cccf8aa752e0ed7edcc8d2094bac707bdc"
     },
     {
       "id": "openjev-siliconlab",
@@ -134,8 +143,11 @@
       "integration_path": "reusable_plugin",
       "fallback_integration_path": "research_callable",
       "lifecycle": "discovery",
-      "license_status": "verify backend/model license independently",
-      "schemarouter_status": "Multiple backend modes; pin one backend/model before benchmark."
+      "license_status": "MIT at observed upstream source revision; verify selected backend/model license independently",
+      "schemarouter_status": "Multiple backend modes; pin one backend/model before benchmark.",
+      "upstream_default_branch_seen": "main",
+      "upstream_source_revision_seen": "a08e969c37b2e4a37f95b3426f983bd94303590c"
     }
-  ]
+  ],
+  "discovery_revision_note": "upstream_*_seen fields are discovery provenance only, not promotion pins; every executed candidate must freeze an exact revision in its own preregistration."
 }
