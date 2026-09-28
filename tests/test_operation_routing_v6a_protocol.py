@@ -7,7 +7,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.generate_operation_routing_v6a import build  # noqa: E402
+from benchmarks.schema_adb_baseline import ACTION_PHRASES  # noqa: E402
+from scripts.generate_operation_routing_v6a import SURFACES, build  # noqa: E402
 
 
 def test_v6a_corpora_are_deterministic() -> None:
@@ -69,3 +70,18 @@ def test_v6a_does_not_reuse_recent_012_route_identities() -> None:
         rows, _ = build(role)
         routes = {row["expected"] for row in rows if row["expected"] is not None}
         assert routes.isdisjoint(forbidden)
+
+
+def test_v6a_evaluation_wording_is_disjoint_from_synthetic_action_phrases() -> None:
+    evaluation_templates = {
+        template
+        for by_language in SURFACES.values()
+        for templates in by_language.values()
+        for template in templates
+    }
+    synthetic_phrases = {
+        phrase
+        for by_language in ACTION_PHRASES.values()
+        for phrase in by_language.values()
+    }
+    assert evaluation_templates.isdisjoint(synthetic_phrases)
