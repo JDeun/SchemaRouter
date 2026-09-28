@@ -73,8 +73,12 @@
       "license": "Apache-2.0",
       "protocol": "typed choice/yes-no/score over arbitrary open LLMs; runtime-specific API",
       "integration_path": "CallableDecisionBackend / --decision-callable",
-      "status": "discovery_verified_not_benchmarked",
-      "notes": "Levels L0/L1/L2 have different label/calibration requirements. Any level using SchemaRouter labels would be a distinct supervised experiment."
+      "status": "staged_dormant",
+      "notes": "First SchemaRouter candidate is zero-label L0 over Qwen3-0.6B with content_free prior. Do not execute until Kev #299 is terminal without promotion. L1/L2 remain separate supervised experiments.",
+      "evidence": [
+        "#311 preregistered AnyJev L0 content-free noul veto",
+        "#313 manual-only staged implementation"
+      ]
     },
     {
       "id": "bespoke-nimble",
