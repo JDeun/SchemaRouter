@@ -3,7 +3,7 @@
   "title": "SchemaRouter Design and Research Evidence Ledger",
   "purpose": "Machine-readable provenance index for reproducibility, follow-up papers, ablation reporting, and research-integrity review.",
   "scope": "Complete material design and experiment lineage from the initial repository implementation through the active 0.11 routing-quality cycle. Routine bugfix-only commits are referenced by Git history but are not treated as independent design experiments unless they changed an architectural invariant, evaluation protocol, or empirical claim.",
-  "updated_at": "2026-09-27",
+  "updated_at": "2026-09-28",
   "governance": {
     "calibration_and_blind_are_never_tuning_data": true,
     "failed_candidates_are_retained": true,
@@ -680,18 +680,32 @@
       "work_item": 214,
       "branch": "research/v4-bounded-rerank-width",
       "preregistered": true,
-      "status": "executing",
+      "status": "completed",
       "compared_recall_widths": [
         2,
         3
       ],
       "reference_recall_width": 4,
       "selection_rule": "Choose the smallest width whose winner-only false-budget-12 frontier reaches >=70% supported exact-route, <=2% canonical false-route, >=96% near-domain rejection lower bound, and zero invalid plans/errors. If neither 2 nor 3 passes, retain 4.",
-      "decision": "pending",
+      "decision": "selected_width_2_by_preregistered_smallest_passing_width_rule",
       "paper_relevance": [
         "quality-latency tradeoff",
         "bounded candidate width ablation"
-      ]
+      ],
+      "result": {
+        "selected_width": 2,
+        "supported_exact_route_accuracy_at_false_budget_12": 0.73177,
+        "canonical_false_routes": 12,
+        "canonical_false_route_rate": 0.018518518518518517,
+        "near_domain_rejection_lower_bound": 0.979167,
+        "mean_latency_ms": 425,
+        "p95_latency_ms": 949,
+        "workflow_run_id": 36313078885,
+        "artifact_id": 10930665000,
+        "artifact_sha256": "c6a2e794d4cee5d0d6862e317b17b153d688c6606d42aea7122f988833dce629",
+        "source_revision": "9f4dbff423cdcb9151d00d1b15586f9b3d766235",
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+      }
     },
     {
       "id": "0.11-joint-score-margin-boundary",
@@ -780,6 +794,1320 @@
       "source_files": [
         "benchmarks/operation-routing-v4-width2-winner-gate-result.json"
       ]
+    },
+    {
+      "id": "0.11-cheap-action-only-evidence-diagnostic",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "hypothesis": "A cheap multilingual embedding over endpoint action names and trusted operation aliases can provide independent routing evidence at materially lower latency than BGE.",
+      "branch": "research/v4-action-only-evidence-diagnostic",
+      "pull_request": 230,
+      "work_item": 226,
+      "preregistered": true,
+      "status": "completed",
+      "behavior_change": false,
+      "source_revision": "521dcc65e0269d68c76a372606f8d22b2ac57aa1",
+      "dataset": {
+        "role": "tuning_eligible_development",
+        "cases": 1800,
+        "supported_cases": 1152,
+        "near_domain_unsupported_cases": 576,
+        "out_of_domain_cases": 72,
+        "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+      },
+      "result": {
+        "supported_raw_top_exact_route_accuracy": 0.7300347222222222,
+        "per_language_raw_top_exact": {
+          "en": 0.8645833333333334,
+          "es": 0.8072916666666666,
+          "mixed": 0.765625,
+          "ja": 0.7395833333333334,
+          "de": 0.640625,
+          "ko": 0.5625
+        },
+        "query_embedding_cosine_mean_latency_ms": 13.83590290111111,
+        "query_embedding_cosine_p50_latency_ms": 13.604296999999999,
+        "query_embedding_cosine_p95_latency_ms": 15.5148606,
+        "static_16_option_embedding_ms": 68.724064,
+        "global_fast_accept_98_precision": {
+          "score_threshold": 0.5,
+          "margin_threshold": 0.1,
+          "accepted": 155,
+          "true_accepts": 152,
+          "false_accepts": 3,
+          "precision": 0.9806451612903225,
+          "overall_coverage": 0.08611111111111111
+        },
+        "global_fast_accept_zero_observed_false": {
+          "score_threshold": 0.55,
+          "margin_threshold": 0.15,
+          "accepted": 67,
+          "true_accepts": 67,
+          "false_accepts": 0,
+          "precision": 1,
+          "overall_coverage": 0.03722222222222222
+        },
+        "workflow_run_id": 36319105106,
+        "artifact_id": 10932010750,
+        "artifact_sha256": "ae12b6a9abb3f6d7bc2d53792ce75b12bcb853971c8f6367f97a8f949c499011"
+      },
+      "decision": "retain_as_cheap_bounded_selector_or_auxiliary_evidence_not_global_direct_fast_path",
+      "interpretation": [
+        "The action-only signal is materially cheaper than BGE and carries independent operation information.",
+        "A global high-precision direct fast path has insufficient coverage to eliminate the BGE p95 bottleneck.",
+        "The next diagnostic should use action evidence to select inside the already-authorized width-2 candidate set, then score only one pair with BGE."
+      ],
+      "paper_relevance": [
+        "cheap semantic evidence",
+        "quality-latency tradeoff",
+        "multilingual route-selection asymmetry",
+        "bounded auxiliary evidence"
+      ]
+    },
+    {
+      "id": "0.11-action-guided-single-pair-bge-diagnostic",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 231,
+      "pull_request": 232,
+      "branch": "research/v4-action-guided-single-bge-diagnostic",
+      "preregistered": true,
+      "hypothesis": "Use cheap action-only evidence to choose one already-authorized width-2 candidate, then score only one BGE pair to remove CPU tail latency.",
+      "result": {
+        "cases": 1800,
+        "supported_raw_top_exact_route_accuracy": 0.7447916666666666,
+        "canonical_false_budget": 12,
+        "canonical_supported_exact_route_accuracy": 0.6536458333333334,
+        "canonical_false_route_rate": 0.018518518518518517,
+        "near_domain_rejection_lower_bound": 0.9791666666666666,
+        "mean_latency_ms": 445.963,
+        "p95_latency_ms": 476.415,
+        "paired_baseline_mean_latency_ms": 531.792,
+        "paired_baseline_p95_latency_ms": 698.996,
+        "invalid_plans": 0,
+        "execution_errors": 0,
+        "workflow_run_id": 36319879567,
+        "artifact_id": 10932093354,
+        "artifact_sha256": "47f1a8dcab2f1956a939df995c0f19137e96d92b8a4451753abdf039598934aa"
+      },
+      "decision": "rejected_on_supported_recall",
+      "failure_reason": "Single-pair BGE materially improved mean/p95 latency, but the canonical <=2% false-route frontier retained only 65.36% supported exact-route accuracy.",
+      "paper_relevance": [
+        "single-pair cross-encoder latency ablation",
+        "selector-vs-boundary decomposition",
+        "negative result"
+      ]
+    },
+    {
+      "id": "0.11-bounded-action-embedding-diagnostic",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 233,
+      "pull_request": 236,
+      "preregistered": true,
+      "hypothesis": "Replace BGE inside width-2 authorized recall with cached action-only MiniLM embedding evidence.",
+      "integrity_events": [
+        {
+          "type": "invalidated_before_result_inspection",
+          "workflow_run_id": 36320476279,
+          "reason": "Projected frontier metrics could use valid_scored rather than full fixed-population denominators.",
+          "metrics_inspected": false
+        }
+      ],
+      "result": {
+        "valid_workflow_run_id": 36320820730,
+        "artifact_id": 10932034054,
+        "artifact_sha256": "cb96cf76692182c286fd18ff665a5b30c6e77574befe0b5f7d4d883dd453a2f6",
+        "raw_supported_top_exact_route_accuracy": 0.7335069444444444,
+        "canonical_supported_exact_route_accuracy": 0.4791666666666667,
+        "canonical_near_domain_unsupported_rejection": 0.9791666666666666,
+        "canonical_false_route_rate": 0.018518518518518517,
+        "mean_latency_ms": 44.288,
+        "p95_latency_ms": 47.975,
+        "invalid_plans": 0,
+        "execution_errors": 0
+      },
+      "decision": "rejected_on_open_set_supported_recall",
+      "interpretation": "Cheap embedding removed latency as the primary bottleneck, but using its winner score/margin as the open-set boundary collapsed supported recall."
+    },
+    {
+      "id": "0.11-minilm-dual-view-diagnostic",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 240,
+      "pull_request": 241,
+      "preregistered": true,
+      "hypothesis": "Use one MiniLM query embedding against cached schema/domain and action-only route views to separate ranking evidence from open-set confidence.",
+      "result": {
+        "cases": 1800,
+        "best_raw_strategy": "schema_0.25_action_0.75",
+        "best_raw_supported_exact_route_accuracy": 0.75,
+        "best_canonical_strategy": "schema_0.50_action_0.50",
+        "best_canonical_supported_exact_route_accuracy": 0.5477430555555556,
+        "canonical_near_domain_unsupported_rejection": 0.9791666666666666,
+        "canonical_false_route_rate": 0.018518518518518517,
+        "mean_latency_ms": 14.020342673888889,
+        "p95_latency_ms": 15.30566955,
+        "workflow_run_id": 36321806711,
+        "artifact_id": 10931809146,
+        "artifact_sha256": "5d2b9813dcbf6fc7361432c13f2009af8950f16425bcc24b5292d1b196b7cc22"
+      },
+      "decision": "rejected_backbone_capacity_insufficient",
+      "interpretation": "The architecture is extremely cheap, but MiniLM route representation capacity tops out near 75% raw exact and cannot support the production target."
+    },
+    {
+      "id": "0.11-multilingual-embedding-backbone-screen",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 242,
+      "pull_request": 243,
+      "preregistered": true,
+      "hypothesis": "Keep the dual-view routing architecture fixed and change only multilingual embedding backbone capacity.",
+      "workflow_run_id": 36322838889,
+      "models": {
+        "e5_base": {
+          "raw_best_supported_exact_route_accuracy": 0.8446,
+          "best_canonical_supported_exact_route_accuracy": 0.6241,
+          "mean_latency_ms": 50.19,
+          "p95_latency_ms": 56.2,
+          "artifact_id": 10933235582,
+          "artifact_sha256": "423c85a9ea29186e1c000df993e39fe96c0429a9051aae44908bfaed31f201c9"
+        },
+        "gte_multilingual_base": {
+          "raw_best_supported_exact_route_accuracy": 0.8914930555555556,
+          "best_canonical_supported_exact_route_accuracy": 0.6311,
+          "mean_latency_ms": 69.37,
+          "p95_latency_ms": 76.58,
+          "artifact_id": 10933800059,
+          "artifact_sha256": "144e786a8ed24ea7479d6a57d57aec4df9f6c57b394f19e6fd477d5e1882b307"
+        },
+        "bge_m3": {
+          "raw_best_supported_exact_route_accuracy": 0.8845,
+          "canonical_budget12_supported_exact_route_accuracy": 0.8385,
+          "canonical_budget12_near_domain_rejection": 0.9792,
+          "canonical_budget12_false_route_rate": 0.018519,
+          "strict_budget6_supported_exact_route_accuracy": 0.8333,
+          "strict_budget6_near_domain_rejection": 0.9896,
+          "strict_budget6_false_route_rate": 0.009259,
+          "mean_latency_ms": 153.61,
+          "p95_latency_ms": 167.99,
+          "artifact_id": 10933440456,
+          "artifact_sha256": "5801994cb05fca6ed6c377f7df280cfce7f97be88a5fe7b615a92bc556f6fd39"
+        }
+      },
+      "decision": "bge_m3_selected_for_strict_open_set_optimization",
+      "interpretation": "GTE and BGE-M3 both exceeded the 85% raw ranking target; BGE-M3 uniquely retained >83% exact under a <=1% false-route boundary at sub-200ms p95."
+    },
+    {
+      "id": "0.11-gte-winner-bge-rejector",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 244,
+      "pull_request": 249,
+      "preregistered": true,
+      "hypothesis": "Let high-capacity GTE choose one winner and use one BGE cross-encoder pair only as the unsupported-operation rejector.",
+      "result": {
+        "workflow_run_id": 36324105709,
+        "raw_gte_supported_exact_route_accuracy": 0.8914930555555556,
+        "best_variant": "capability",
+        "best_canonical_supported_exact_route_accuracy": 0.7612847222222222,
+        "canonical_near_domain_unsupported_rejection": 0.9791666666666666,
+        "canonical_false_route_rate": 0.018518518518518517,
+        "best_end_to_end_mean_latency_ms": 293.88988283055556,
+        "best_end_to_end_p95_latency_ms": 328.10912864999995,
+        "screening_gate_pass_count": 0
+      },
+      "decision": "rejected_on_supported_recall",
+      "interpretation": "Winner-only cross-encoder validation preserved acceptable latency but its relevance threshold rejected too many correct GTE winners."
+    },
+    {
+      "id": "0.11-bge-m3-budget6-executable-confirmation",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 245,
+      "pull_request": 247,
+      "preregistered": true,
+      "candidate": "bge-m3-dual-view-50-50-budget6-v1",
+      "result": {
+        "workflow_run_id": 36323685913,
+        "artifact_id": 10933122169,
+        "artifact_sha256": "a63e6954d8cf44db21bc89b336ca8f67bacc77af933fe870c33bc9298bf6a1a1",
+        "planner_direct_parity_mismatches": 0,
+        "supported_exact_route_accuracy": 0.8324652777777778,
+        "near_domain_unsupported_rejection": 0.9895833333333334,
+        "out_of_domain_rejection": 1,
+        "false_routes": 6,
+        "false_route_rate": 0.009259259259259259,
+        "invalid_plans": 0,
+        "execution_errors": 0,
+        "rank2_fallthroughs": 0,
+        "planner_mean_latency_ms": 188.72634740055554,
+        "planner_p95_latency_ms": 205.99659345,
+        "frozen_projection_counts_match": false
+      },
+      "decision": "not_promoted_literal_freeze_missed_by_one_case",
+      "failure_reason": "One supported papers.citations case scored ~1.35e-7 below its frozen threshold; all planner/direct parity and safety gates passed, but the literal 960-correct frozen projection reproduced as 959. Candidate was not retuned and remained below the 85% final exact target.",
+      "paper_relevance": [
+        "floating-point boundary reproducibility",
+        "executable planner parity",
+        "strict <=1% false-route evidence"
+      ]
+    },
+    {
+      "id": "0.11-bge-m3-fine-fusion-strict",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 246,
+      "pull_request": 248,
+      "preregistered": true,
+      "status": "completed",
+      "design": {
+        "model": "BAAI/bge-m3@5617a9f61b028005a4858fdac845db406aefb181",
+        "schema_weights": [
+          0.3,
+          0.35,
+          0.4,
+          0.45,
+          0.5,
+          0.55,
+          0.6
+        ],
+        "primary_false_budget": 6,
+        "target_supported_exact": 0.85,
+        "target_near_domain_rejection": 0.97,
+        "target_false_route_rate_max": 0.01,
+        "p95_latency_ms_max": 250,
+        "interpolation_forbidden": true
+      },
+      "decision": "no_fusion_weight_reached_85_percent_strict_target",
+      "result": {
+        "workflow_run_id": 36324755106,
+        "source_revision": "9d6f5bdc18c933a35d4f8f9983c12c850ab9b0fb",
+        "artifact_id": 10934145256,
+        "artifact_sha256": "60dfbb1d32f1f27873bd8fad4aa4888af80856365196e3ab6fb5be6b1e7f0af7",
+        "best_strict_strategy": "schema_0.55_action_0.45",
+        "strict_false_budget": 6,
+        "strict_supported_correct": 965,
+        "strict_supported_exact_route_accuracy": 0.8376736111111112,
+        "strict_near_domain_unsupported_rejection": 0.9895833333333334,
+        "strict_false_routes": 6,
+        "strict_false_route_rate": 0.009259259259259259,
+        "strict_wrong_supported": 62,
+        "best_secondary_supported_correct": 970,
+        "best_secondary_supported_exact_route_accuracy": 0.8420138888888888,
+        "secondary_near_domain_unsupported_rejection": 0.9791666666666666,
+        "secondary_false_routes": 12,
+        "mean_latency_ms": 180.3421122183333,
+        "p95_latency_ms": 195.9703148,
+        "strict_gate_pass_count": 0
+      },
+      "failure_reason": "Best preregistered strict point was 83.77% exact at 98.96% near-domain rejection and 0.93% false-route. No interpolation or out-of-grid retuning was permitted.",
+      "paper_relevance": [
+        "fine-grained representation fusion ablation",
+        "strict <=1% open-set frontier",
+        "pre-registered negative result"
+      ]
+    },
+    {
+      "id": "0.11-conditional-zero-false-rejected-winner-rescue",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 255,
+      "preregistered": true,
+      "status": "completed",
+      "execution_condition": "Execute only if #246 has no strict 85/97/1 pass.",
+      "base_selection_rule": "Highest supported exact among preregistered #246 weights at budget 6 subject to rejection/false-route/error/latency gates; tie by lower p95 then lower schema weight.",
+      "validator": {
+        "model": "BAAI/bge-reranker-v2-m3",
+        "revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+        "max_length": 256,
+        "scope": "base-rejected raw rank-1 winner only",
+        "primary_additional_false_budget": 0
+      },
+      "decision": "rejected_zero_false_rescue_recovers_only_5_of_required_15",
+      "execution_condition_result": {
+        "satisfied": true,
+        "selected_base": "BGE-M3 schema/action 0.55/0.45, false-budget 6",
+        "selected_base_supported_correct": 965,
+        "selected_base_supported_exact_route_accuracy": 0.8376736111111112,
+        "selected_base_near_domain_rejection": 0.9895833333333334,
+        "selected_base_false_route_rate": 0.009259259259259259,
+        "correct_rescues_needed_for_85_percent": 15
+      },
+      "pull_request": 258,
+      "branch": "research/v4-bge-m3-zero-false-rescue",
+      "workflow_run_id": 36325681661,
+      "artifact_id": 10934276251,
+      "artifact_sha256": "a51ae289ed3dd4dd2e9bdb06bbf70e26f32f1df030a119feeb9883cd131b8e25",
+      "result": {
+        "base_supported_correct": 965,
+        "base_supported_exact_route_accuracy": 0.8376736111111112,
+        "base_false_routes": 6,
+        "base_false_route_rate": 0.009259259259259259,
+        "primary_additional_false_routes": 0,
+        "rescued_supported_correct": 5,
+        "composed_supported_correct": 970,
+        "composed_supported_exact_route_accuracy": 0.8420138888888888,
+        "near_domain_unsupported_rejection": 0.9895833333333334,
+        "composed_mean_latency_ms": 301.0462508005556,
+        "composed_p95_latency_ms": 473.74695019999996
+      }
+    },
+    {
+      "id": "0.11-route-local-stable-bge-m3-fusion",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 256,
+      "pull_request": 257,
+      "branch": "research/v4-route-local-stable-fusion",
+      "preregistered": true,
+      "status": "completed",
+      "hypothesis": "Route-local fusion weights selected from the already-preregistered #246 grid may recover the remaining exact-route gap while midpoint/canonicalized thresholds remove observed-score boundary fragility.",
+      "design": {
+        "model": "BAAI/bge-m3@5617a9f61b028005a4858fdac845db406aefb181",
+        "route_local_weights_frozen": true,
+        "raw_ceiling_supported_correct": 1046,
+        "score_threshold_candidates": "midpoints between adjacent unique winner scores",
+        "threshold_rounding": "ceil to 6 decimals",
+        "primary_false_budget": 6,
+        "stability_epsilons": [
+          0.000001,
+          0.00001
+        ],
+        "primary_gate": {
+          "supported_exact_route_accuracy_min": 0.85,
+          "near_domain_unsupported_rejection_min": 0.97,
+          "false_route_rate_max": 0.01,
+          "p95_latency_ms_max": 250,
+          "stability_1e_6_required": true
+        }
+      },
+      "workflow_run_id": 36325721448,
+      "decision": "rejected_strict_boundary_below_85_percent_despite_90_54_raw_ceiling",
+      "artifact_id": 10933809684,
+      "artifact_sha256": "ca4df26ba5307b8e5aad22e2443f9e69713428b0898303939d8fd1cba3d443c0",
+      "result": {
+        "raw_supported_exact_route_accuracy": 0.9053819444444444,
+        "strict_supported_correct": 963,
+        "strict_supported_exact_route_accuracy": 0.8359375,
+        "strict_near_domain_unsupported_rejection": 0.9895833333333334,
+        "strict_false_routes": 6,
+        "strict_false_route_rate": 0.009259259259259259,
+        "stability_1e_6_unchanged": true,
+        "stability_1e_5_unchanged": true,
+        "secondary_supported_exact_route_accuracy": 0.8446180555555556,
+        "mean_latency_ms": 180.496637355,
+        "p95_latency_ms": 197.15664354999998
+      }
+    },
+    {
+      "id": "0.11-numerically-robust-threshold-freeze-policy",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 253,
+      "status": "governance_open",
+      "motivation": "Frozen #245 differed by one supported case because an observed score threshold had ~1.35e-7 numerical margin.",
+      "policy_direction": {
+        "raw_observed_sample_threshold_forbidden": true,
+        "deterministic_canonicalization_required": true,
+        "diagnostic_candidate_policy": "midpoint boundaries plus explicit decimal canonicalization and adversarial epsilon checks",
+        "calibration_or_blind_retuning_forbidden": true
+      },
+      "decision": "required_for_future_frozen_candidates"
+    },
+    {
+      "id": "0.11-bge-m3-robust-budget6-executable-confirmation",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 259,
+      "pr": 260,
+      "status": "completed",
+      "data_role": "tuning_eligible_development_executable_confirmation",
+      "tuning_eligible": false,
+      "model": {
+        "name": "BAAI/bge-m3",
+        "revision": "5617a9f61b028005a4858fdac845db406aefb181"
+      },
+      "architecture": {
+        "schema_weight": 0.55,
+        "action_weight": 0.45,
+        "winner_semantics": "global_registered_route_top1_then_route_local_gate",
+        "false_budget_source": 6,
+        "boundary_epsilon": 0.000001,
+        "rank2_fallthrough": false
+      },
+      "workflow_run_id": 36325967632,
+      "source_revision": "9e9b1049eac779adbc5781bfc45a447966ae32e8",
+      "artifact_id": 10934635124,
+      "artifact_sha256": "aabe4321e039dbb2e0b0805553e4dfd7d6c4bcf63893e23da028ceb668608462",
+      "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+      "result": {
+        "supported_exact_route_accuracy": 0.8376736111111112,
+        "near_domain_unsupported_rejection": 0.9895833333333334,
+        "out_of_domain_rejection": 1,
+        "false_routes": 6,
+        "false_route_rate": 0.009259259259259259,
+        "invalid_plans": 0,
+        "execution_errors": 0,
+        "rank2_fallthroughs": 0,
+        "planner_direct_parity_mismatches": 0,
+        "planner_mean_latency_ms": 118.25508209722221,
+        "planner_p95_latency_ms": 134.95138205,
+        "all_confirmation_gates_pass": true
+      },
+      "decision": "confirmed_as_numerically_robust_strict_base_for_conditional_rescue"
+    },
+    {
+      "id": "0.11-cross-model-zero-false-abstention-rescue",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 262,
+      "pull_request": 263,
+      "preregistered": true,
+      "status": "completed",
+      "data_role": "tuning_eligible_development",
+      "tuning_eligible": true,
+      "base_candidate": "0.11-bge-m3-robust-budget6-executable-confirmation",
+      "workflow_run_id": 36326745694,
+      "variants": {
+        "gte_agreement": {
+          "supported_correct": 977,
+          "supported_exact_route_accuracy": 0.8480902777777778,
+          "near_domain_unsupported_rejection": 0.9895833333333334,
+          "false_routes": 6,
+          "false_route_rate": 0.009259259259259259,
+          "rescued_supported_correct": 12,
+          "additional_false_routes": 0,
+          "artifact_id": 10934337695,
+          "artifact_sha256": "7881a3594ecdab6a242a946a60cfde14d64e3c452ec9d0956c9cfa75a1e0c748"
+        },
+        "gte_agreement_bge": {
+          "supported_correct": 982,
+          "supported_exact_route_accuracy": 0.8524305555555556,
+          "near_domain_unsupported_rejection": 0.9895833333333334,
+          "out_of_domain_rejection": 1,
+          "false_routes": 6,
+          "false_route_rate": 0.009259259259259259,
+          "rescued_supported_correct": 17,
+          "rescued_wrong_supported": 0,
+          "additional_false_routes": 0,
+          "gte_mean_latency_ms": 60.68,
+          "gte_p95_latency_ms": 67.59,
+          "reranker_mean_latency_ms": 218.14,
+          "reranker_p95_latency_ms": 249.17,
+          "artifact_id": 10934392445,
+          "artifact_sha256": "b01d3aa55506aef45dc8402f8bbebb3c3c41056b6d6196775060333893859fbc"
+        }
+      },
+      "decision": "gte_agreement_bge_selected_for_frozen_confirmation",
+      "interpretation": "Cross-model same-winner rescue crossed the DEV 85/97/1 target with zero additional false routes, requiring a separate frozen executable candidate and fresh-surface confirmation."
+    },
+    {
+      "id": "0.11-zero-false-cross-model-frozen-candidate",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 265,
+      "pull_request": 270,
+      "preregistered": true,
+      "status": "completed_rejected_on_fresh_surface",
+      "same_corpus_confirmation": {
+        "workflow_run_id": 36330598219,
+        "artifact_id": 10935113994,
+        "artifact_sha256": "6dcc9b555ad4a5d2384407edc4f018bedee3625d27f92c331758e38a3a022359",
+        "supported_exact_route_accuracy": 0.8524305555555556,
+        "near_domain_unsupported_rejection": 0.9895833333333334,
+        "false_route_rate": 0.009259259259259259,
+        "planner_direct_parity_mismatches": 0,
+        "gte_invocation_rate": 0.2817,
+        "reranker_invocation_rate": 0.0428,
+        "planner_p95_latency_ms": 239.32
+      },
+      "fresh_surface_confirmation": {
+        "corpus_sha256": "7255e4875f92eff4f31cc02d46292ba2b59d9a950d8e18fc48c825cf4886ef1b",
+        "normalized_exact_overlap_with_tuning_dev": 0,
+        "artifact_id": 10936650485,
+        "artifact_sha256": "7a3a81d0d6e1562af963003797f8d3e90af8e642dd189b73e3432c33d983ea3c",
+        "supported_exact_route_accuracy": 0.8671875,
+        "near_domain_unsupported_rejection": 0.7777777777777778,
+        "false_routes": 128,
+        "false_route_rate": 0.19753086419753085,
+        "base_false_routes": 122,
+        "rescue_added_false_routes": 6,
+        "planner_direct_parity_mismatches": 0,
+        "invalid_plans": 0,
+        "execution_errors": 0
+      },
+      "decision": "rejected_surface_fragile_positive_open_set_boundary",
+      "interpretation": "Ranking generalized above 85%, while route-local positive acceptance thresholds collapsed under zero-overlap fresh wording. The fresh corpus is confirmation-only and forbidden for tuning."
+    },
+    {
+      "id": "0.11-robust-base-winner-crossencoder-rescue",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 266,
+      "status": "completed",
+      "preregistered": true,
+      "workflow_run_id": 36328632133,
+      "artifact_id": 10935242130,
+      "artifact_sha256": "25306500e97f539d92ecff65de0730caadff2be5f9d7b767c2f1e6556e0f5a42",
+      "result": {
+        "base_supported_exact_route_accuracy": 0.8376736111111112,
+        "base_false_route_rate": 0.009259259259259259,
+        "base_abstentions": 767,
+        "correct_winner_headroom": 54,
+        "zero_false_rescued_correct": 5,
+        "zero_false_additional_false_routes": 0,
+        "composed_supported_exact_route_accuracy": 0.8420138888888888,
+        "near_domain_unsupported_rejection": 0.9895833333333334,
+        "composed_mean_latency_ms": 300.6249238244444,
+        "composed_p95_latency_ms": 472.69132299999995
+      },
+      "decision": "rejected_safe_but_insufficient_rescue"
+    },
+    {
+      "id": "0.11-native-bge-m3-abstention-geometry-rescue",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 271,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36331192213,
+      "artifact_id": 10934894650,
+      "artifact_sha256": "18c97712830d8b527e125a64a72c11ede1050859eb09f17a40e6b4f98f3a0849",
+      "result": {
+        "base_supported_exact_route_accuracy": 0.8376736111111112,
+        "correct_winner_headroom": 54,
+        "zero_false_rescued_correct": 4,
+        "zero_false_additional_false_routes": 0,
+        "composed_supported_correct": 969,
+        "composed_supported_exact_route_accuracy": 0.8411458333333334,
+        "near_domain_unsupported_rejection": 0.9895833333333334,
+        "false_route_rate": 0.009259259259259259
+      },
+      "decision": "rejected_native_geometry_insufficient"
+    },
+    {
+      "id": "0.11-typed-contradiction-only-nli-veto",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 273,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36351728687,
+      "artifact_id": 10942666789,
+      "artifact_sha256": "3bca18563c965fadcd6987cc3b496ced0dcfd132e1d8b65a2a1dad9ba3eec39d",
+      "result": {
+        "raw_supported_top1_accuracy": 0.884549,
+        "ranker_mean_latency_ms": 151.15,
+        "ranker_p95_latency_ms": 177.15,
+        "nli_single_pair_mean_latency_ms": 14.13,
+        "nli_single_pair_p95_latency_ms": 15.29,
+        "candidate_worthy_thresholds": 0
+      },
+      "decision": "rejected_generic_nli_neutral_on_supported_and_unsupported",
+      "interpretation": "Generic contradiction probability does not encode absence of registered capability; both supported and unsupported pairs are predominantly neutral."
+    },
+    {
+      "id": "0.11-explicit-negative-capability-prototype-veto",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 275,
+      "pull_request": 276,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36352558325,
+      "artifact_id": 10942243493,
+      "artifact_sha256": "a831a35098b546c8003435ea04927fb8767aab1435320823ba4763e0b6608ae1",
+      "result": {
+        "fixed_rule_count": 588,
+        "raw_supported_top1_accuracy": 0.8845486111111112,
+        "mean_latency_ms": 123.14033356666667,
+        "p95_latency_ms": 139.7878024,
+        "candidate_worthy_rule_count": 0,
+        "supported_correct_negative_advantage_median": -0.09353674949857316,
+        "near_domain_negative_advantage_median": 0.17079734944168046
+      },
+      "decision": "rejected_combined_winner_domain_ood_veto",
+      "interpretation": "Explicit negative prototypes show meaningful near-domain separation, but the winner-domain absolute OOD threshold overlaps the supported low tail and collapses supported recall."
+    },
+    {
+      "id": "0.11-global-signed-capability-prototype-bank",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 277,
+      "pull_request": 278,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36356550905,
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "positive_capability_prototypes": 16,
+        "negative_capability_prototypes": 32,
+        "open_set_evidence": [
+          "global capability envelope",
+          "negative-over-positive signed advantage",
+          "optional positive/raw consistency veto"
+        ],
+        "fixed_rule_count": 504
+      },
+      "decision": "rejected_global_signed_prototype_evidence_too_coarse",
+      "artifact_id": 10944407595,
+      "artifact_sha256": "00eb49f680d7b1bdfa8c341c2f091c641e4912ca94c9f0bc81815db3e70b3643",
+      "result": {
+        "raw_supported_top1_accuracy": 0.8845486111111112,
+        "mean_latency_ms": 157.09005567944445,
+        "p95_latency_ms": 180.99912650000002,
+        "fixed_rule_count": 504,
+        "candidate_worthy_rule_count": 0,
+        "best_strict_rule": {
+          "rule_id": "e0.450-n0.350-a+0.050-noagree",
+          "supported_exact_route_accuracy": 0.8185763888888888,
+          "near_domain_unsupported_rejection": 0.9895833333333334,
+          "out_of_domain_rejection": 1,
+          "false_routes": 6,
+          "false_route_rate": 0.009259259259259259,
+          "vetoed_supported_correct_winners": 76
+        }
+      },
+      "interpretation": "The global signed capability bank can impose <=1% false-route and 100% OOD safety, but the best strict rule vetoes 76 otherwise-correct supported raw winners and falls to 81.86% exact. Preserve the route-conditioned negative-capability finding from #275 and separate OOD into an explicit background/open-world channel."
+    },
+    {
+      "id": "0.11-dual-signed-negative-openworld",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 279,
+      "pull_request": 280,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36358352642,
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "near_domain_channel": "route-conditioned explicit negative capability signed advantage",
+        "ood_channel": "broad background prototype minus registered-domain anchor signed advantage",
+        "background_prototype_count": 16,
+        "fixed_rule_count": 1764,
+        "positive_route_local_thresholds": false,
+        "veto_only": true
+      },
+      "decision": "rejected_scalar_signed_evidence_overlap",
+      "artifact_id": 10944663761,
+      "artifact_sha256": "f04242ac79d22b35f29486b9f3b94b3ce1603400bfc87382ec73a412905cea83",
+      "result": {
+        "raw_supported_top1_accuracy": 0.8845486111111112,
+        "mean_latency_ms": 183.79347730444442,
+        "p95_latency_ms": 200.0708493,
+        "fixed_rule_count": 1764,
+        "candidate_worthy_rule_count": 0,
+        "best_exact_ge_85": {
+          "supported_exact_route_accuracy": 0.8585069444444444,
+          "near_domain_unsupported_rejection": 0.8680555555555556,
+          "out_of_domain_rejection": 0.6944444444444444,
+          "false_routes": 98,
+          "false_route_rate": 0.15123456790123457
+        },
+        "best_near_97_ood_100": {
+          "supported_exact_route_accuracy": 0.6536458333333334,
+          "near_domain_unsupported_rejection": 0.9739583333333334,
+          "out_of_domain_rejection": 1,
+          "false_routes": 15,
+          "false_route_rate": 0.023148148148148147
+        },
+        "best_ood_100_false_le_1pct": {
+          "supported_exact_route_accuracy": 0.3602430555555556,
+          "near_domain_unsupported_rejection": 0.9947916666666666,
+          "out_of_domain_rejection": 1,
+          "false_routes": 3,
+          "false_route_rate": 0.004629629629629629
+        }
+      },
+      "interpretation": "Separate near-domain and OOD scalar signed thresholds still cannot satisfy 85/97/1/100. Supported and OOD evidence distributions overlap around zero; stop scalar-threshold refinement and test relative prototype ranks."
+    },
+    {
+      "id": "0.11-rank-based-capability-set-openworld",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 281,
+      "pull_request": 283,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36359121048,
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "scalar_score_thresholds": false,
+        "near_domain_evidence": "relative rank of registered positive endpoint prototypes vs route-conditioned negative capability prototypes",
+        "ood_evidence": "relative rank of eight known-domain anchors vs sixteen broad background prototypes",
+        "near_modes": 5,
+        "ood_modes": 4,
+        "fixed_rule_count": 20,
+        "veto_only": true
+      },
+      "decision": "rejected_fixed_prototype_heuristics_terminated",
+      "source_revision": "944df2e0f2dc8617e7b97e6a38d4e2f5684f5324",
+      "artifact_id": 10945431360,
+      "artifact_sha256": "9d7fcfb8bff361137216c3bdc6182c5bb5cef50f2eee4d2f65e32711fff95b13",
+      "result": {
+        "raw_supported_top1_accuracy": 0.8845486111111112,
+        "mean_latency_ms": 185.41329462166667,
+        "p95_latency_ms": 200.65747900000002,
+        "fixed_rule_count": 20,
+        "candidate_worthy_rule_count": 0,
+        "rules_false_route_le_1pct": 0,
+        "rules_supported_exact_ge_85": 0,
+        "best_supported_exact": {
+          "rule_id": "negative_top2_all__background_top2_all",
+          "supported_exact_route_accuracy": 0.7881944444444444,
+          "near_domain_unsupported_rejection": 0.8194444444444444,
+          "out_of_domain_rejection": 0.8333333333333334,
+          "false_routes": 116,
+          "false_route_rate": 0.17901234567901234
+        },
+        "closest_high_rejection": {
+          "rule_id": "negative_top1__background_top3_majority",
+          "supported_exact_route_accuracy": 0.5034722222222222,
+          "near_domain_unsupported_rejection": 0.9826388888888888,
+          "out_of_domain_rejection": 1,
+          "false_routes": 10,
+          "false_route_rate": 0.015432098765432098
+        },
+        "rank_geometry": {
+          "correct_supported_local_top1_negative_rate": 0.21197252208047104,
+          "near_domain_local_top1_negative_rate": 0.96875,
+          "correct_supported_membership_top1_background_rate": 0.04317958783120707,
+          "ood_membership_top1_background_rate": 0.8194444444444444
+        }
+      },
+      "interpretation": "Relative prototype ordering carries signal but cannot jointly preserve supported recall and the 85/97/1/100 open-set safety target. The preregistered stopping rule is activated: no finer fixed-prototype thresholds, top-k grids, route-specific exceptions, or post-result hand rules."
+    },
+    {
+      "id": "0.11-grouped-oof-learned-winner-verifier",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 285,
+      "pull_request": 286,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36360129634,
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "verifier_output": "match/no_match/unknown; only match executes",
+        "feature_schema": "19 runtime-observable geometry features + one-hot raw winner route ID",
+        "forbidden_features": [
+          "query text",
+          "expected route",
+          "category",
+          "language",
+          "unsupported family"
+        ],
+        "oof_group": "leave-one-language-out over de/en/es/ja/ko/mixed",
+        "classifiers": [
+          "fixed logistic regression",
+          "fixed shallow HistGradientBoosting"
+        ],
+        "acceptance_threshold_count": 12,
+        "fixed_rule_count": 24,
+        "veto_only": true
+      },
+      "decision": "promote_hgb_p0_500_to_separate_frozen_candidate",
+      "source_revision": "cfaafb84bb651a6d6d38c4ce741f05ac61f37e9e",
+      "artifact_id": 10945581502,
+      "artifact_sha256": "eb417bb3aafa4d2f86aee4e79476ea64f49a2a3608269835d4d3b82f971d8054",
+      "result": {
+        "passing_rule_count": 3,
+        "selected_rule": "hgb-p0.500",
+        "supported_exact_route_accuracy": 0.8680555555555556,
+        "near_domain_unsupported_rejection": 0.9947916666666666,
+        "out_of_domain_rejection": 1,
+        "false_routes": 3,
+        "false_route_rate": 0.004629629629629629,
+        "combined_p95_ms": 171.76,
+        "logistic_roc_auc": 0.98803,
+        "hgb_roc_auc": 0.98797
+      }
+    },
+    {
+      "id": "0.11-external-qwen3-semantic-capability-verifier",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 289,
+      "pull_request": 290,
+      "preregistered": true,
+      "status": "completed",
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "verifier_model": "Qwen/Qwen3-Reranker-0.6B",
+        "verifier_revision": "e61197ed45024b0ed8a2d74b80b4d909f1255473",
+        "schemarouter_training": false,
+        "fixed_instruction_count": 1,
+        "fixed_threshold_count": 8,
+        "endpoint_contract_sources": [
+          "route id",
+          "tool description",
+          "endpoint description",
+          "operation aliases"
+        ],
+        "verifier_authority": "veto-only"
+      },
+      "decision": "reject",
+      "workflow_run_id": 36363863046,
+      "source_revision": "68e812ab5c72bd42664e21f8c9f62a760465cb03",
+      "artifact_id": 10947604859,
+      "artifact_sha256": "4e89707dce04d37aece8e803e00751ea86fdd12e5fd9282531ccecc830a9c96c",
+      "result": {
+        "raw_supported_top1_accuracy": 0.8845486111111112,
+        "passing_rule_count": 0,
+        "best_false_route_compliant_rule": {
+          "threshold": 0.99,
+          "supported_exact_route_accuracy": 0.6276041666666666,
+          "near_domain_unsupported_rejection": 0.9913194444444444,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0.007716049382716049
+        },
+        "combined_p95_ms": 2059.42,
+        "authority_violations": 0,
+        "execution_errors": 0
+      },
+      "interpretation": "External pretrained reranker capability probability has strong semantic signal but no global boundary preserves >=85% supported exact while meeting 97/100/1 rejection safety. Direct generic reranker yes/no gating is rejected."
+    },
+    {
+      "id": "0.11-frozen-hgb-winner-verifier-candidate",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 287,
+      "pull_request": 288,
+      "preregistered": true,
+      "status": "completed",
+      "design": {
+        "selected_classifier": "HistGradientBoostingClassifier",
+        "acceptance_threshold": 0.5,
+        "sklearn_version": "1.7.2",
+        "fit_once_on_original_dev": true,
+        "serialized_model_sha_required": true,
+        "refit_during_confirmation": false,
+        "same_model_for_same_and_fresh_confirmation": true,
+        "fresh_seed": "operation-routing-quality-v4-learned-verifier-confirmation-2026-09-28-a",
+        "fresh_surface_version": "learned-verifier-confirmation-wrappers-v1",
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "verifier_authority": "veto-only"
+      },
+      "decision": "rejected_fresh_surface_generalization_failure",
+      "workflow_run_id": 36362105765,
+      "source_revision": "e5b10ee01ec23af6113c562b51e1db0c6d003d7a",
+      "artifact_id": 10946681188,
+      "artifact_sha256": "e7695598b07d5a0f9757f62c04f74f09b03c201de2bbb3f7699f6d8f18059938",
+      "model_sha256": "8cdb8b526705482d2a51dee79f8f17ce10e19199e823cab651a434918c8aa239",
+      "result": {
+        "same_corpus": {
+          "supported_exact_route_accuracy": 0.8767361111111112,
+          "near_domain_unsupported_rejection": 0.9982638888888888,
+          "out_of_domain_rejection": 1,
+          "false_routes": 1,
+          "false_route_rate": 0.0015432098765432098,
+          "p95_ms": 221.3280521,
+          "quality_gate_pass": true
+        },
+        "fresh_surface": {
+          "corpus_sha256": "c08068e7c68d466b04c96433abd17a6b5da62eaa47969b536f8551ed9db201c6",
+          "supported_exact_route_accuracy": 0.8263888888888888,
+          "near_domain_unsupported_rejection": 0.9322916666666666,
+          "out_of_domain_rejection": 1,
+          "false_routes": 39,
+          "false_route_rate": 0.06018518518518518,
+          "p95_ms": 252.7670991,
+          "quality_gate_pass": false
+        }
+      },
+      "interpretation": "Grouped OOF geometry learning was useful in-distribution, but the fit-once frozen classifier still degraded under a new independent surface shift. Per preregistration, stop increasing learned complexity on the same DEV geometry."
+    },
+    {
+      "id": "0.11-system-one-provider-contract",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 291,
+      "pull_request": 292,
+      "preregistered": false,
+      "status": "merged_infrastructure",
+      "source_revision": "7f4118ea059ab448ca132a3ef83b7a43135318c8",
+      "decision": "accepted_reusable_infrastructure",
+      "design": {
+        "generic_backend": "SystemOneDecisionBackend",
+        "backward_compatible_jev_specialization": true,
+        "neutral_install_extra": "schemarouter[systemone]",
+        "swappable_fields": [
+          "base_url",
+          "model",
+          "provider_name"
+        ],
+        "finite_option_revalidation": true,
+        "option_metadata_forwarded": false
+      },
+      "interpretation": "System One provider compatibility is now a stable protocol-level boundary. Future wire-compatible models should be configuration changes rather than new planner classes; quality promotion remains benchmark-gated."
+    },
+    {
+      "id": "0.11-pluggable-system-one-routing",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 293,
+      "pull_request": 294,
+      "preregistered": true,
+      "status": "active_parent_with_terminal_direct_laya_child",
+      "design": {
+        "infrastructure_issue": 291,
+        "infrastructure_pull_request": 292,
+        "infrastructure_merged": true,
+        "direct_laya": {
+          "package_version": "0.3.11",
+          "model_mode": "auto",
+          "device": "cpu",
+          "preload": true,
+          "max_loaded": 2,
+          "candidate_scope": "full_registered_route_set",
+          "threshold_count": 8,
+          "workflow_run_id": 36365434284
+        },
+        "future_provider_contract": "SystemOneDecisionBackend(base_url, model, provider_name)",
+        "initial_followups": [
+          "Kev via TypeSafe-compatible /v1/systemone",
+          "choice+noul capability gate"
+        ],
+        "authority": "finite registered IDs only; provider cannot create execution authority"
+      },
+      "decision": "direct_laya_rejected_parent_remains_open_for_system_one_comparison",
+      "workflow_run_id": 36365434284,
+      "source_revision": "48e329ee949d0d7a42d93a7c06c7ecbc62edfedc",
+      "artifact_id": 10947876029,
+      "artifact_sha256": "f361f12844cf1da0374ba345051f9c35a0f50c2735c5e7fc9f2b6dbe62d39add",
+      "result": {
+        "direct_laya": {
+          "raw_supported_choice_accuracy": 0.6006944444444444,
+          "passing_rules": 0,
+          "most_conservative_rule": {
+            "threshold": 0.995,
+            "supported_exact_route_accuracy": 0.2404513888888889,
+            "near_domain_unsupported_rejection": 0.7760416666666666,
+            "out_of_domain_rejection": 0.9722222222222222,
+            "false_routes": 131,
+            "false_route_rate": 0.2021604938271605
+          },
+          "mean_latency_ms": 657.7295553838889,
+          "p95_latency_ms": 1041.4286671,
+          "errors": 0,
+          "authority_violations": 0
+        }
+      },
+      "interpretation": "Direct 16-way Laya choice has insufficient multilingual ranking capacity and confidence cannot provide the required open-set boundary. Do not replace BGE route authority with this direct Laya configuration; Laya noul may only be evaluated separately as a veto."
+    },
+    {
+      "id": "0.11-kev-08b-choice-noul-screen",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 299,
+      "pull_request": 300,
+      "preregistered": true,
+      "status": "completed_invalid_runtime",
+      "decision": "no_quality_result_runtime_nonviable",
+      "workflow_run_id": 36366508183,
+      "design": {
+        "kev_source_revision": "d32a973cc2375f1c76e898cbf6e759c4499042de",
+        "model": "jaredpalmer/kev-0.8b",
+        "model_revision": "9a45d25eb2ab761841196625383fa1dff0e56c1e",
+        "base_model": "Qwen/Qwen3.5-0.8B-Base",
+        "base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+        "typesafe_sdk": "0.7.2",
+        "question_types": [
+          "choice",
+          "noul"
+        ],
+        "fixed_rule_count": 16,
+        "schemarouter_training": false,
+        "candidate_scope": "all 16 registered endpoints",
+        "authority": "finite registered IDs only; no rank-2 fallback"
+      },
+      "artifact_id": 10951921452,
+      "artifact_sha256": "58d3c1b4aec1bb70eb2aa1747e3acd86278a16da45582930bb80dbca92f54ee0",
+      "result": {
+        "analysis_json_present": false,
+        "workflow_conclusion": "cancelled",
+        "runtime": "cpu_fp32_serial",
+        "quality_metrics_available": false
+      }
+    },
+    {
+      "id": "0.11-pinned-laya-noul-veto",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 301,
+      "pull_request": 302,
+      "preregistered": true,
+      "status": "completed",
+      "decision": "reject",
+      "workflow_run_id": 36367249147,
+      "source_revision": "46af3c3d0156b7b7bfd40686aa5639571f91a936",
+      "artifact_id": 10948736462,
+      "artifact_sha256": "5f7876d2c8e9c4a33eed62c05ba4df2889ad922322daeb5424d5f11bb18ec738",
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "bge_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "laya_package": "0.3.11",
+        "laya_hub_repo": "convaiinnovations/laya",
+        "laya_hub_revision": "458d7563c5cab85ff9f7f6e06cf2dd166fb697e2",
+        "primitive": "noul",
+        "veto_only": true,
+        "threshold_count": 8,
+        "failed_fresh_sets_used": false
+      },
+      "result": {
+        "raw_supported_top1_accuracy": 0.8845486111111112,
+        "passing_rule_count": 0,
+        "threshold_0_50": {
+          "supported_exact_route_accuracy": 0.8324652777777778,
+          "near_domain_unsupported_rejection": 0.0798611111111111,
+          "out_of_domain_rejection": 0.08333333333333333,
+          "false_route_rate": 0.9197530864197531
+        },
+        "threshold_0_95": {
+          "supported_exact_route_accuracy": 0.015625,
+          "near_domain_unsupported_rejection": 0.9947916666666666,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0.004629629629629629
+        },
+        "combined_p95_ms": 1098.75412895,
+        "authority_violations": 0,
+        "execution_errors": 0
+      },
+      "interpretation": "Pinned Laya native noul over the immutable BGE winner does not separate exact capability from near-domain/OOD requests; correct-supported and near-unsupported medians overlap almost completely."
+    },
+    {
+      "id": "0.11-laya-choice-noul-full-catalog",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 295,
+      "pull_request": 296,
+      "preregistered": true,
+      "status": "closed_without_execution",
+      "decision": "superseded_by_301",
+      "result": {
+        "quality_evidence_consumed": false,
+        "reason": "direct Laya full-catalog raw supported top-1 was 60.0694%; adding veto-only noul cannot raise exact-route above that ceiling"
+      },
+      "interpretation": "Direct Laya full-catalog raw supported top-1 was 60.07%, so adding a veto-only noul gate cannot reach the >=85% exact target while preserving Laya choice as route authority.",
+      "reason": "direct Laya full-catalog raw choice ceiling 60.0694% is below the 85% exact gate, so a veto-only noul cannot make this architecture pass"
+    },
+    {
+      "id": "0.11-top4-typed-capability-routing",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 303,
+      "preregistered": true,
+      "status": "implemented_not_executed",
+      "decision": "same_laya_variant_dominated; provider_neutral_contingency_only",
+      "design": {
+        "recall_model": "BAAI/bge-m3",
+        "recall_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "recall_width": 4,
+        "bge_role": "finite recall only; not final authority",
+        "first_provider": "pinned Laya native noul",
+        "final_selection": "max P(true) within recalled registered top4",
+        "tie_break": "lexicographically smaller route ID",
+        "fixed_rule_count": 8,
+        "failed_fresh_used": false,
+        "calibration_or_blind_used": false
+      },
+      "pull_request": 310,
+      "workflow_run_id": null,
+      "noncanonical_run_id": 36368836092,
+      "noncanonical_run_policy": "ignore any artifact/result; accidentally triggered after dominance bound"
+    },
+    {
+      "id": "0.11-generic-decision-callable-benchmark",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 304,
+      "pull_request": 305,
+      "preregistered": false,
+      "status": "merged_infrastructure",
+      "source_revision": "c9678b95a6dc592a1c3b850a6aea8b1675ff94a4",
+      "decision": "accepted_reusable_infrastructure",
+      "design": {
+        "cli_option": "--decision-callable module:function",
+        "backend": "CallableDecisionBackend",
+        "explicit_opt_in_import": true,
+        "finite_option_revalidation": true,
+        "intended_path": "non-System-One-wire typed decision models"
+      },
+      "interpretation": "Future non-wire decision models can enter the shared benchmark through a thin trusted wrapper instead of a new core integration."
+    },
+    {
+      "id": "0.11-anyjev-l0-content-free-noul-veto",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 311,
+      "pull_request": 313,
+      "preregistered": true,
+      "status": "staged_architecture_no_runtime",
+      "decision": "await_realistic_runtime_before_execution",
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "anyjev_source_revision": "45add301a7aa60ed3420c83d15c061e84e5bce61",
+        "base_model": "Qwen/Qwen3-0.6B",
+        "base_model_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+        "level": "L0",
+        "prior": "content_free",
+        "prior_strength": 1,
+        "schemarouter_labels_used": false,
+        "question_count": 1,
+        "threshold_count": 8,
+        "workflow_dispatch_only": true,
+        "activation": "guarded marker push or manual dispatch; marker allowed only for kev_family_non_promotable after issue 299"
+      }
+    },
+    {
+      "id": "0.11-bge-plus-kev-global-noul",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 314,
+      "preregistered": true,
+      "status": "closed_without_execution",
+      "decision": "source_kev_analysis_missing",
+      "design": {
+        "route_authority": "BGE-M3 raw registered top-1 only",
+        "bge_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "kev_evidence_source_issue": 299,
+        "kev_probability": "frozen row-level supported_probability from #299",
+        "new_kev_inference": false,
+        "threshold_count": 8,
+        "rank2_fallback": false,
+        "failed_fresh_sets_used": false,
+        "activation": "guarded marker push or manual dispatch; marker pins #299 workflow run and exact artifact id"
+      }
+    },
+    {
+      "issue": 322,
+      "id": "0.11-lightweight-negative-gte-offline-compose",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 323,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36379888054,
+      "artifact_id": 10951119927,
+      "artifact_sha256": "1e86c0ebd881ff98f73d30d65ea618ff4525ead164f7f8a0b04c4ccf98190303",
+      "decision": "pass_promote_executable",
+      "result": {
+        "supported_exact_route_accuracy": 0.8506944444444444,
+        "near_domain_unsupported_rejection": 0.9930555555555556,
+        "out_of_domain_rejection": 1,
+        "false_route_rate": 0.006172839506172839,
+        "false_routes": 4,
+        "authority_violations": 0,
+        "execution_errors": 0
+      }
+    },
+    {
+      "issue": 324,
+      "id": "0.11-lightweight-negative-gte-executable",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 325,
+      "preregistered": true,
+      "status": "completed",
+      "decision": "pass_dev_promote_fresh",
+      "design": {
+        "route_authority": "BGE-M3 #259 robust raw winner",
+        "negative_veto": "winner-domain score>=0.55 and advantage>=0.05 on original base accepts",
+        "gte_rescue": "conditional on original base abstentions; same BGE winner only; exact budget-4 profile",
+        "offline_reference_issue": 322,
+        "runtime_target_p95_ms": 250
+      },
+      "workflow_run_id": 36380771103,
+      "artifact_id": 10952711288,
+      "artifact_sha256": "4ad9d0cc76500dd8705e0db0f677a21e44dbebb74cc3a9ca097723eb453abdc3",
+      "result": {
+        "supported_exact_route_accuracy": 0.8506944444444444,
+        "near_domain_unsupported_rejection": 0.9930555555555556,
+        "out_of_domain_rejection": 1,
+        "false_route_rate": 0.006172839506172839,
+        "false_routes": 4,
+        "total_p95_ms": 176.9436,
+        "authority_violations": 0,
+        "execution_errors": 0
+      }
+    },
+    {
+      "id": "0.11-lightweight-bge-gte-frozen-fresh-confirmation",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 326,
+      "pull_request": 327,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36382647406,
+      "source_revision": "b19d7b0255ee9717464b6fa65ce1ebdeaf58a1bd",
+      "frozen_semantic_source_revision": "caca039aff1c7b2960d167196f883e3bcbc5d431",
+      "invalid_technical_runs": [
+        {
+          "workflow_run_id": 36382202178,
+          "reason": "historical surface regeneration added split metadata before contracts; no corpus/evaluation produced"
+        },
+        {
+          "workflow_run_id": 36382467222,
+          "reason": "split-marker contract implementation omission; no corpus/evaluation produced"
+        }
+      ],
+      "decision": "reject_after_fresh_failure",
+      "artifact_id": 10953393563,
+      "artifact_sha256": "e65911416065f87500de670274c093b7711094ca4ad137abccbfa48e38148cbb",
+      "fresh_corpus": {
+        "seed": "operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a",
+        "surface": "lightweight-bge-gte-operational-envelope-v1",
+        "sha256": "7d960bb43924569eede34748acc95f5bcd2cc04f2b9f8e396ec59c495dd3e1ec",
+        "normalized_exact_overlap_dev": 0,
+        "normalized_exact_overlap_270": 0,
+        "normalized_exact_overlap_287": 0,
+        "tuning_eligible": false
+      },
+      "result": {
+        "supported_exact_route_accuracy": 0.8480902777777778,
+        "near_domain_unsupported_rejection": 0.9045138888888888,
+        "out_of_domain_rejection": 1,
+        "false_route_rate": 0.08487654320987655,
+        "false_routes": 55,
+        "total_p95_ms": 278.3747833,
+        "authority_violations": 0,
+        "execution_errors": 0
+      }
+    },
+    {
+      "id": "0.11-bge-m3-colbert-operation-contract",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 328,
+      "pull_request": 329,
+      "preregistered": true,
+      "status": "completed",
+      "decision": "reject",
+      "workflow_run_id": 36385740263,
+      "design": {
+        "model": "BAAI/bge-m3",
+        "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
+        "flagembedding_version": "1.4.2",
+        "route_authority": "dense BGE-M3 raw registered top-1",
+        "colbert_role": "veto-only operation-contract evidence",
+        "sparse_role": "diagnostic-only",
+        "rule_families": [
+          "A",
+          "B",
+          "C",
+          "D"
+        ],
+        "route_local_thresholds": false,
+        "margin_threshold_search": false,
+        "forbidden_fresh_issues": [
+          270,
+          287,
+          326
+        ]
+      },
+      "invalid_pre_runs": [
+        {
+          "run_id": 36384727564,
+          "reason": "contract lint failure before evaluation"
+        },
+        {
+          "run_id": 36384796110,
+          "reason": "contract import-path failure before evaluation"
+        },
+        {
+          "run_id": 36384892825,
+          "reason": "cancelled by pre-result audit-fix merge before analysis.json; no quality result"
+        }
+      ],
+      "source_revision": "4c72f2dd1939edb6ecf8415d620dbb5d58683fa0",
+      "artifact_id": 10955036349,
+      "artifact_sha256": "6e6bfbd2cb352aba03e2d98683ae6967a64115f90a04cf49f74e7cd1ab76dde7",
+      "result": {
+        "dense_raw_supported_top1_accuracy": 0.8845486111111112,
+        "dense_route_parity_mismatches": 0,
+        "authority_violations": 0,
+        "execution_errors": 0,
+        "family_A_exact": 0.8255208333333334,
+        "family_A_false_route_rate": 0.6450617283950617,
+        "family_B_exact": 0.8376736111111112,
+        "family_B_false_route_rate": 0.9120370370370371,
+        "family_C_budget6_exact": 0.3862847222222222,
+        "family_C_budget6_near_rejection": 0.9895833333333334,
+        "family_C_budget6_ood_rejection": 1,
+        "family_C_budget6_false_route_rate": 0.009259259259259259,
+        "family_D_budget6_exact": 0.3871527777777778,
+        "family_D_budget6_near_rejection": 0.9895833333333334,
+        "family_D_budget6_ood_rejection": 1,
+        "family_D_budget6_false_route_rate": 0.009259259259259259,
+        "promotable_p95_ms": 398.6149248,
+        "diagnostic_total_p95_ms": 398.68482555
+      },
+      "interpretation": "token-level ColBERT/sparse operation evidence has signal but safe global boundaries collapse supported recall; representation also misses <=250 ms CPU runtime"
     }
   ],
   "current_research_conclusion": {
@@ -787,24 +2115,107 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "retain bounded accepted operation selector",
-      "retain registered-schema execution authority",
-      "use route/boundary-local thresholds where justified by fresh development only",
-      "introduce explicit negative-capability and unknown evidence",
-      "project incompatible evidence kinds independently",
-      "rerank only within authorized candidate sets"
+      "keep #198 blocked; no calibration or blind-final without a new fresh-confirmed frozen candidate",
+      "do not reuse #270/#287/#326 fresh rows for tuning or candidate design",
+      "do not extend the rejected BGE-M3 ColBERT/sparse operation-contract family with post-hoc second thresholds, route-local exceptions, or margin search",
+      "next behavior-changing experiment must be separately preregistered from canonical tuning DEV plus registry-defined operational semantics and must be deployment-realistic at <=250 ms"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "bounded rerank recall-width tuning (#214 / PR #216)",
+    "active_experiment": "none; #328/#329 terminally rejected",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
-    "negative_model_status": "A second negative/NLI model is not currently required to clear the accuracy/rejection/false-route DEV gates; latency is the immediate unresolved gate.",
-    "latency_bottleneck": "Width-4 all-candidate BGE measured ~1014 ms mean / ~1916 ms p95 on the GitHub CPU diagnostic runner.",
-    "joint_margin_result": "Adding route-local top margin to score thresholds yields only ~0.35 percentage points at the 12-false-route budget and is not selected for the immediate candidate."
+    "negative_model_status": "A cross-encoder applied to every winner or every base rejection has not reached the 85% exact target. #255 recovered only 5 correct cases at zero additional false routes. #262 therefore tests cross-model agreement before optional cross-encoder rescue.",
+    "latency_bottleneck": "The original unconditional width-2 BGE tail-latency bottleneck has been removed by the confirmed BGE-M3 embedding base: #259 executes at ~118/135 ms mean/p95 with <=1% false-route. The remaining blocker is recovering at least 15 supported abstentions without adding false routes.",
+    "joint_margin_result": "Adding route-local top margin to score thresholds yields only ~0.35 percentage points at the 12-false-route budget and is not selected for the immediate candidate.",
+    "action_only_evidence_status": "Cheap MiniLM action-only evidence remains useful diagnostic evidence but is no longer the leading architecture; BGE-M3 dual-view embedding is the confirmed robust base.",
+    "robust_base_status": "#259/#260 confirmed BGE-M3 0.55/0.45 budget-6 with preregistered 1e-6 comparison epsilon: 83.77% exact, 98.96% near-domain rejection, 0.93% false-route, 118/135 ms mean/p95, zero parity/authority/runtime failures.",
+    "route_local_stable_fusion_status": "#256 raised raw exact to 90.54% but strict accepted exact remained 83.59%; rejected.",
+    "zero_false_crossencoder_rescue_status": "#255 rescued only 5 correct supported cases at zero added false routes, reaching 84.20%; rejected.",
+    "fresh_surface_result": "#265/#270 passed same-corpus 85/97/1 but failed zero-overlap fresh-surface open-set safety: 86.72% exact, 77.78% near rejection, 19.75% false-route. Ranking generalized; positive acceptance thresholds did not.",
+    "generic_nli_status": "#273 rejected contradiction-only NLI because both supported and unsupported operation pairs were predominantly neutral.",
+    "explicit_negative_prototype_status": "#275 showed useful near-domain signal, while #277/#279/#281 demonstrated that fixed scalar and relative-rank prototype heuristics cannot meet the 85/97/1/100 target. This heuristic family is closed.",
+    "learned_verifier_status": "#285 grouped OOF passed, but #287 frozen fit-once HGB failed zero-overlap fresh-surface DEV at 82.64% exact / 93.23% near rejection / 6.02% false-route / 252.77 ms p95. Same model SHA was reused without refit.",
+    "system_one_provider_status": "#291/#292 merged a generic Jev-compatible SystemOneDecisionBackend; future compatible models can swap base_url/model/provider_name without a new planner class.",
+    "model_swap_infrastructure": "#291/#292, #297/#298, #304/#305, and #306/#308 are merged: System One wire-compatible, one-off bounded callables, and reusable non-wire plugins can all be swapped without model-specific planner changes.",
+    "direct_laya_status": "#293/#294 direct full-catalog Laya rejected: raw exact 60.07%, 0/8 rules pass, p95 1041ms; PR closed unmerged.",
+    "contingent_architecture": "#303 preregisters BGE top-4 recall + provider-neutral per-candidate noul routing, but must not execute unless winner-only capability veto cannot promote.",
+    "qwen3_external_verifier_status": "#289/#290 rejected: 0/8 rules pass; safe p=0.99 gives 62.76% exact despite 99.13% near rejection / 0.77% false-route; combined CPU p95 2059ms.",
+    "laya_typed_checkpoint_note": "Official Laya typed-decisions checkpoint is fine-tuned on four specific typed-decision workflows; its published strong noul result is not a zero-shot SchemaRouter result. Any use requires a separate pinned frozen-harness experiment.",
+    "system_one_extension_status": "#291/#292 generic SystemOneDecisionBackend, #297/#298 generic System One benchmark CLI, #304/#305 callable benchmark path, and #306/#308 reusable third-party decision-backend entry-point plugins are merged.",
+    "laya_noul_status": "#301/#302 rejected: P(true) does not separate correct supported from near/OOD; 0/8 rules pass; combined p95 1098.75ms.",
+    "topk_same_laya_status": "#310 closed without execution: at p>=0.95 the same Laya signal has a hard best-case exact bound of 151/1152=13.11%, so compute would be wasted.",
+    "laya_winner_noul_status": "#301/#302 rejected: 0/8 pass; correct-supported median P(true)=0.6784 vs near unsupported=0.67245; combined p95=1098.75ms.",
+    "top4_typed_routing_status": "#303 remains provider-neutral contingency only; same pinned Laya top-4 is mathematically dominated and not canonical evidence.",
+    "external_verifier_status": "Qwen3 direct semantic verifier #289 rejected; pinned Laya noul veto #301 rejected; full-catalog Laya choice+noul #295 superseded before execution.",
+    "next_external_candidate": "#311/#313 stages AnyJev L0 with content_free prior and Qwen3-0.6B; manual-only until Kev terminal.",
+    "kev_composition_contingency": "#314/#315 is fully staged before #299 result inspection: it reuses exact #299 global Kev noul probabilities and measured latency while BGE raw top-1 remains sole route authority; no new Kev inference.",
+    "freeze_infrastructure": "#316 merged as fad004cdfce8e40c2119d3758ab47332d52e6253: canonical production target JSON, freeze manifest template, validator, and #197→fresh→#198 ownership protocol are now on main.",
+    "kev_family_promotion_policy": {
+      "preregistered_before_299_terminal": true,
+      "evaluate_299_then_314_if_complete_noul_exists": true,
+      "preferred_if_both_pass": "#314 BGE raw route authority + Kev global noul veto",
+      "fallback_if_314_fails_but_299_passes": "#299 Kev native choice+noul",
+      "rationale": "preserve established BGE route authority and keep external model veto-only when both satisfy all gates",
+      "no_posthoc_slice_prompt_or_failed_fresh_selection": true
+    },
+    "kev_timeout_rescue": {
+      "active_run_id": 36366508183,
+      "rescue_branch": "research/v4-kev-08b-system-one-timeout-rescue",
+      "rescue_commit": "6934e97c5cd6f837aea405e3545995d5cb481374",
+      "original_research_source_revision": "250513c70d08e926251ce28683b404fe97581527",
+      "changed_semantics": false,
+      "allowed_change": "GitHub Actions evaluate timeout 180 -> 360 minutes only",
+      "dispatch_rule": "manual only if active run terminates by timeout without a valid terminal analysis artifact"
+    },
+    "activation_protocol": "Staged #314/#315 and #311/#313 remain dormant until explicit guarded activation. #314 can be triggered by committing its activation JSON with the exact #299 artifact ID/source run; #311 can be triggered only after Kev-family non-promotion using an activation marker declaring after_issue=299 and reason=kev_family_non_promotable.",
+    "runtime_optimization": "#318 is dormant and activates only after a Kev-based quality pass with latency failure; parity must preserve every frozen route/accept decision before optimized timing counts.",
+    "runtime_parity_infrastructure": "#320 acaca1e... adds runtime parity validation; #321 31bda6e... ensures failed parity writes mismatch/drift evidence before exiting non-zero.",
+    "runtime_realism": "Do not repeat multi-hour CPU/fp32 typed-decision screens. #299 may contribute a terminal semantic signal if it completes, but timeout means stop that runtime. Future Kev/AnyJev evaluation requires a plausibly deployable runtime path to <=250 ms.",
+    "kev_status": "Kev-0.8B CPU/fp32 #299 ended cancelled without analysis.json after ~3h; no quality conclusion, exact runtime path retired.",
+    "anyjev_status": "AnyJev CPU execution PR #313 retired unexecuted; architecture remains only as a runtime-gated option if a credible <=250 ms path exists.",
+    "current_frontier": "#322 offline composition passed 85.0694% exact / 99.3056% near rejection / 100% OOD / 0.6173% false-route. #324 is measuring exact row parity and direct p95.",
+    "expensive_typed_decision_status": "CPU Laya/Qwen/Kev/AnyJev product-path experiments are terminal; current work is BGE-native/lightweight and <=250 ms by design.",
+    "runtime_only_policy": "#318 is model-neutral and dormant: activate only after a frozen candidate passes quality + semantic parity but misses p95<=250ms; #320/#321 parity tooling is mandatory.",
+    "active_candidate": null,
+    "active_workflow_run_id": null,
+    "fresh_contract_status": "#326 terminal valid fresh failure; corpus consumed confirmation-only. #198 remains blocked.",
+    "latest_fresh_result": "#326 valid zero-overlap fresh confirmation failed: exact 84.8090%, near rejection 90.4514%, OOD 100%, false-route 8.4877%, p95 278.3748 ms; candidate terminated, fresh surface consumed and non-tuning.",
+    "generalization_status": "Three independent candidate families have now shown DEV-to-fresh open-set degradation (#270, #287, #326). Next architecture must reduce dependence on DEV-fitted acceptance geometry.",
+    "last_frozen_candidate": {
+      "issue": 326,
+      "pull_request": 327,
+      "semantic_source_revision": "caca039aff1c7b2960d167196f883e3bcbc5d431",
+      "dev_workflow_run_id": 36380771103,
+      "dev_artifact_id": 10952711288,
+      "dev_artifact_digest": "sha256:4ad9d0cc76500dd8705e0db0f677a21e44dbebb74cc3a9ca097723eb453abdc3",
+      "dev_metrics": {
+        "exact": 0.8506944444444444,
+        "near_rejection": 0.9930555555555556,
+        "ood_rejection": 1,
+        "false_route": 0.006172839506172839,
+        "p95_ms": 176.9435595
+      },
+      "fresh_workflow_run_id": 36382647406,
+      "fresh_seed": "operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a",
+      "fresh_surface": "lightweight-bge-gte-operational-envelope-v1",
+      "freeze_status": "frozen-dev",
+      "status": "rejected_after_valid_fresh_failure",
+      "terminal_issue": 326,
+      "terminal_pull_request": 327,
+      "fresh_metrics": {
+        "exact": 0.8480902777777778,
+        "near_rejection": 0.9045138888888888,
+        "ood_rejection": 1,
+        "false_route": 0.08487654320987655,
+        "p95_ms": 278.3747833
+      }
+    },
+    "colbert_operation_contract_status": "#328/#329 rejected: 0 candidate-worthy rules; <=1% false-route frontier preserves only ~38.6-38.7% exact; executable p95 ~398.61 ms.",
+    "colbert_status": "#328 rejected: safe ColBERT score frontiers retain only ~38.6-38.7% exact at <=1% false routes; executable p95 ~398.6 ms. Sparse diagnostic also non-viable."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -831,16 +2242,78 @@
       196,
       204,
       207,
-      209
+      209,
+      214,
+      226,
+      227,
+      231,
+      233,
+      238,
+      240,
+      242,
+      244,
+      245,
+      246,
+      255,
+      256,
+      259,
+      262,
+      265,
+      266,
+      271,
+      273,
+      275,
+      277,
+      279,
+      281,
+      285,
+      287,
+      289,
+      291,
+      297,
+      301,
+      304,
+      306,
+      316,
+      320,
+      321,
+      324,
+      325,
+      326,
+      327,
+      328
     ],
-    "active_experiments": [
-      214
-    ],
+    "active_experiments": [],
     "active_pull_requests": [
-      195,
-      216
+      235
     ],
-    "next_blocked_confirmation": 198
+    "next_blocked_confirmation": 198,
+    "next_research_direction": "preregister registry-self-calibrated BGE alias-envelope gate; reuse one BGE query embedding, derive acceptance envelope only from trusted endpoint name/operation_aliases, no DEV-fitted score threshold",
+    "contingent_experiments": [
+      303
+    ],
+    "active_tracking_issues": [
+      293
+    ],
+    "staged_experiments": [],
+    "infrastructure_in_progress": [],
+    "contingent_pull_requests": [],
+    "technical_contingencies": {
+      "kev_299_timeout_retry": {
+        "pull_request": 317,
+        "branch": "research/v4-kev-08b-system-one-timeout-retry",
+        "activate_only_if_run": 36366508183,
+        "required_conclusion": "technical_timeout_before_valid_artifact",
+        "semantic_changes": false,
+        "only_runtime_change": "evaluate timeout-minutes 180 -> 360",
+        "status": "retired_unexecuted",
+        "reason": "CPU/fp32 runtime path is not product-relevant for <=250 ms target; no timeout retry"
+      }
+    },
+    "dormant_contingencies": [
+      318
+    ],
+    "runtime_only_contingency": 318
   },
   "design_lineage": [
     {
@@ -1020,10 +2493,23 @@
         "hierarchical tool→operation representation rejected",
         "accepted operation-fit selector retained after large wrong-endpoint reduction",
         "stage diagnostics show one global candidate-fit similarity threshold is insufficient",
-        "next candidate combines selector, boundary-local calibration and explicit negative/unknown capability evidence"
+        "next candidate combines selector, boundary-local calibration and explicit negative/unknown capability evidence",
+        "BGE-M3 0.55/0.45 raw dual-view ranking establishes ~88.45% supported top-1 headroom while the confirmed robust strict base reaches 83.77% exact / 98.96% near rejection / 0.93% false-route",
+        "cross-model same-winner rescue reached 85.24% on tuning DEV but failed preregistered zero-overlap fresh-surface open-set safety, isolating positive acceptance boundaries as surface-fragile",
+        "generic contradiction-only multilingual NLI was rejected because missing capability is predominantly neutral rather than textual contradiction",
+        "explicit negative-capability prototypes carry useful near-domain signal, but scalar signed and threshold-free relative-rank prototype families cannot jointly preserve supported recall and open-set safety",
+        "rank-based fixed-prototype experiment #281 completed 20 preregistered rules with zero <=1% false-route rules and zero >=85% exact rules; fixed-prototype heuristic refinement is terminated",
+        "next architecture is a learned or externally pretrained match/no_match/unknown capability verifier with strict veto-only authority",
+        "grouped leave-one-language-out HGB winner verification passed 85/97/1/100 on tuning DEV without query-text features",
+        "the exact fit-once HGB model then failed new zero-overlap fresh-surface confirmation at 82.64% exact / 93.23% near rejection / 6.02% false-route, so learned geometry on the same DEV is closed",
+        "next architecture must use an externally pretrained semantic capability verifier whose semantic boundary is independent of this benchmark",
+        "grouped-OOF HGB verifier passed 85/97/1/100 but its fit-once frozen model failed new zero-overlap fresh confirmation at 82.64% exact / 93.23% near rejection / 6.02% false-route",
+        "learned classifiers over the same BGE/prototype geometry are now closed; next architecture uses externally pretrained semantic capability verification without SchemaRouter fine-tuning",
+        "Qwen3-Reranker-0.6B direct yes/no capability verification is the active externally pretrained experiment with one fixed instruction and trusted endpoint contracts"
       ],
-      "status": "active",
-      "work_item": 197
+      "status": "active_external_pretrained_capability_verifier",
+      "work_item": 197,
+      "current_next_action": "Evaluate #289 without using failed fresh confirmations, calibration, or blind evidence."
     }
   ],
   "early_experiment_lineage": [
