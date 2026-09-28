@@ -14,6 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from benchmarks.independent_capability_entailment import (  # noqa: E402
+    compile_registry_contracts,
+)
 from benchmarks.operation_routing_v5h_catalog import (  # noqa: E402
     CONFIRM_ROUTE_SPECS,
     DEV_ROUTE_SPECS,
@@ -21,9 +24,6 @@ from benchmarks.operation_routing_v5h_catalog import (  # noqa: E402
     RouteCaseSpec,
     confirmation_registry,
     development_registry,
-)
-from benchmarks.set_conditioned_entailment import (  # noqa: E402
-    compile_registry_contracts,
 )
 
 SURFACES: dict[str, dict[str, tuple[str, str]]] = {
