@@ -1,5 +1,15 @@
 # Routing research status
 
+This page is the **current-state summary**, not the complete experiment log.
+
+For the full research record:
+
+- [Complete experiment index](experiment-index.md) — all **60** machine-readable experiment records;
+- [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
+- [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
+- [machine-readable ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — exact provenance index.
+
+
 SchemaRouter publishes routing research evidence separately from the stable library contract.
 
 This page is intentionally conservative: development-set success is not presented as production
