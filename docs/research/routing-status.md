@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **64** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **65** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [machine-readable ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — exact provenance index.
@@ -178,6 +178,36 @@ supported routing when it is not allowed to choose another endpoint, but requiri
 agreement across independent signals is far too conservative to provide enough unsupported recall.
 
 The exact #358 rule is terminal. Its frozen confirmation corpus remains **unscored**.
+
+
+## 0.12 capability-set membership consensus
+
+Experiment #363 relaxed #358's exact same-leaf agreement into finite anchored-tool capability-set
+membership. The raw BGE-M3 winner remained the sole positive selector; semantic evidence could only
+preserve that route or veto to `NO_ROUTE`.
+
+DEV result:
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **86.40%** |
+| Raw supported exact | **94.30%** |
+| Raw supported tool accuracy | **99.56%** |
+| Near-domain unsupported rejection | **54.76%** |
+| OOD rejection | **97.22%** |
+| False-route | **35.80%** |
+| Veto precision | **91.23%** |
+| Veto recall | **64.20%** |
+| Raw-correct winners vetoed | **18 / 8.37%** |
+| p95 | **249.73 ms** |
+| Authority / route-switch / execution errors | **0 / 0 / 0** |
+
+Relative to #358, set-membership consensus materially increased veto recall, but it also lost the
+zero-harm supported-winner property and remained far from the 97% near-rejection / <=1% false-route
+target. The exact rule is terminal; its frozen confirmation corpus remains **unscored**.
+
+This closes the current BGE+MiniLM ontology-vote family. A successor must introduce a materially
+different semantic membership evidence source rather than another rule over the same projections.
 
 ## Reproducibility
 
