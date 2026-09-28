@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "cycle": "0.12-set-conditioned-entailment",
+  "experiment": "set-conditioned-binary-entailment-v1",
+  "issue": 374,
+  "parent_issue": 340,
+  "status": "preregistered_before_corpus_generation_or_scoring",
+  "bge": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "authority": "sole positive route selector"
+  },
+  "external_nli": {
+    "model": "Horizon-Labs/multilingual-zeroshot-small",
+    "revision": "d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4",
+    "labels": [
+      "not_entailment",
+      "entailment"
+    ],
+    "premise": "raw user query",
+    "hypothesis_template": "The requested operation is one of the following registered operations: <ordered registered capability labels>.",
+    "threshold": null,
+    "margin_threshold": null,
+    "learned_on_schemarouter": false,
+    "one_pair_forward_pass": true
+  },
+  "authority": {
+    "positive_route_selector": "raw BGE-M3 global top-1 only",
+    "nli_role": "preserve or veto only",
+    "endpoint_selection_from_nli": false,
+    "positive_rerank": false,
+    "endpoint_filter": false,
+    "cross_tool_fallback": false,
+    "pseudo_route": false,
+    "unknown_endpoint_semantics_disables_veto": true
+  },
+  "capability_labels": {
+    "source": "exact fixed English descriptions from experiment #371",
+    "ordering": [
+      "search",
+      "retrieve",
+      "list",
+      "create",
+      "update",
+      "delete",
+      "cancel",
+      "refund",
+      "send",
+      "share",
+      "export",
+      "translate",
+      "summarize",
+      "compare",
+      "merge",
+      "restart",
+      "execute",
+      "forecast"
+    ]
+  },
+  "typed_contract": {
+    "preserves": [
+      "semantic_id",
+      "json datatype/shape",
+      "source unit",
+      "canonical unit",
+      "dimension",
+      "scale",
+      "offset",
+      "qualifiers",
+      "identifier role"
+    ]
+  },
+  "data_protocol": {
+    "forbidden": [
+      "0.11 reference/consumed fresh evidence",
+      "#338",
+      "#347",
+      "#349",
+      "#354",
+      "#358",
+      "#363",
+      "#371",
+      "#198 calibration",
+      "#198 blind"
+    ],
+    "development": {
+      "role": "new 0.12-G screen",
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "role": "frozen confirmation only",
+      "generated_before_development_scoring": true,
+      "corpus_sha256": null
+    }
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "positive_route_switches_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "dev_quality_fail": "terminal reject without hypothesis/label/threshold/language repair from DEV rows",
+    "quality_pass_latency_fail": "runtime-only ONNX optimization allowed only under separate preregistration and exact row-level decision parity",
+    "dev_pass": "freeze exact source and score the already-generated confirmation once",
+    "confirmation_fail": "terminal reject",
+    "both_pass": "eligible for brand-new zero-overlap natural-language fresh confirmation"
+  }
+}
