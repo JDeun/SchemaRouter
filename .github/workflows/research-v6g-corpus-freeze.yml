@@ -16,7 +16,6 @@ on:
       - ".github/workflows/research-v6g-corpus-freeze.yml"
       - "benchmarks/operation-routing-v6g-gte-positive-retriever-preregistration.json"
       - "benchmarks/operation_routing_v6g_catalog.py"
-      - "benchmarks/operation_routing_v6g_catalog.py"
       - "scripts/generate_operation_routing_v6g.py"
       - "tests/test_operation_routing_v6g_catalog.py"
       - "tests/test_operation_routing_v6g_protocol.py"
