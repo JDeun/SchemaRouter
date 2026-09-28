@@ -2178,3 +2178,36 @@ Current valid run:
 
 No semantic parameter of the frozen candidate changed during the technical fixes.
 
+## 47. #326 / PR #327 — lightweight BGE+GTE fresh confirmation failed
+
+The executable lightweight candidate from #324/#325 passed canonical DEV at:
+- exact **85.0694%**;
+- near rejection **99.3056%**;
+- OOD **100%**;
+- false-route **0.6173%**;
+- p95 **176.9436 ms**.
+
+It was frozen without semantic retuning and evaluated once on a new confirmation surface:
+- seed `operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a`;
+- surface `lightweight-bge-gte-operational-envelope-v1`;
+- corpus SHA256 `7d960bb43924569eede34748acc95f5bcd2cc04f2b9f8e396ec59c495dd3e1ec`;
+- normalized exact overlap = **0** against canonical DEV and regenerated #270/#287 surfaces.
+
+Terminal fresh result:
+- exact **977/1152 = 84.8090%**;
+- near-domain rejection **521/576 = 90.4514%**;
+- OOD **72/72 = 100%**;
+- false-route **55/648 = 8.4877%**;
+- authority/errors **0/0**;
+- end-to-end p95 **278.3748 ms**.
+
+This is valid negative evidence, not a technical failure.
+
+The exact candidate is terminated. The fresh corpus is permanently confirmation-only and may not be
+used for threshold, route/language/family repair, prototype changes, rescue-rule changes, model
+selection, calibration, or any other tuning.
+
+Together with #270 and #287, this is the third independent demonstration that a candidate can look
+strong on the canonical DEV while its open-set acceptance boundary degrades under request-surface
+shift. The next architecture must be motivated from tuning-eligible DEV and registry-level operational
+invariants rather than another refinement of DEV-fitted score geometry.
