@@ -2260,3 +2260,35 @@ Initial workflow runs `36384727564` and `36384796110` failed contract checks bef
 evaluation and are invalid for quality conclusions. The first model-quality execution is
 `36384892825`.
 
+
+
+## 49. #328 / PR #329 — BGE-M3 ColBERT operation-contract gate rejected
+
+Canonical workflow `36385740263` completed successfully at source
+`4c72f2dd1939edb6ecf8415d620dbb5d58683fa0`.
+
+Artifact:
+- id `10955036349`;
+- digest `sha256:6e6bfbd2cb352aba03e2d98683ae6967a64115f90a04cf49f74e7cd1ab76dde7`;
+- canonical DEV SHA remained `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`;
+- dense raw-winner parity mismatches: **0**;
+- authority violations / execution errors: **0 / 0**.
+
+Dense BGE-M3 raw supported top-1 remained **88.4549%**, confirming that route-ranking capacity was unchanged.
+The preregistered ColBERT operation-contract families did not produce a promotable open-set boundary:
+
+- global agreement only: **82.5521% exact / 32.8125% near rejection / 64.5062% false-route**;
+- same-tool agreement only: **83.7674% exact / 7.4653% near rejection / 91.2037% false-route**;
+- global agreement + one global score threshold at the <=1% false-route budget: **38.6285% exact / 98.9583% near rejection / 100% OOD / 0.9259% false-route**;
+- same-tool agreement + one global score threshold at the same budget: **38.7153% exact / 98.9583% near rejection / 100% OOD / 0.9259% false-route**.
+
+No preregistered rule passed the standing **85 / 97 / 100 / 1** quality gate.
+
+The measured full-path p95 was **398.6848 ms**. PR #331 was opened before result inspection because sparse scoring is diagnostic-only. Recomputing the executable latency from the already persisted per-row components
+(`encode + dense scoring + ColBERT scoring`) gives **398.6149 ms p95**, so excluding sparse diagnostics does not change the terminal decision and no rerun is required.
+
+A post-hoc sparse-only diagnostic was also checked strictly as non-promotion evidence. At the <=1% false-route budget it preserved only **12.6736%** supported exact-route accuracy. This is retained solely to prevent repeating the same BGE-M3 sparse representation as another promotion attempt.
+
+Decision: **reject and close the BGE-M3 native ColBERT/sparse operation-contract representation for this cycle**. Do not add a post-hoc second threshold, route-local exception, margin search, rank-2 fallback, or pseudo-route to repair it.
+
+#198 remains blocked. The next behavior-changing architecture, if any, must be separately preregistered using only tuning-eligible DEV plus registry-defined operational semantics; failed fresh-confirmation surfaces #270/#287/#326 remain permanently non-tuning.
