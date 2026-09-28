@@ -1,24 +1,13 @@
 name: V4 Kev 0.8B System One
 
 on:
-  push:
-    branches:
-      - "research/v4-kev-08b-system-one"
-    paths:
-      - ".github/workflows/research-v4-kev-08b-system-one.yml"
-      - "benchmarks/operation-routing-v4-kev-08b-system-one.json"
-      - "scripts/analyze_kev_system_one_v4.py"
-      - "scripts/generate_decision_routing_quality_v4.py"
-      - "scripts/audit_operation_routing_corpus.py"
-      - "scripts/benchmark_decision_routing.py"
-      - "tests/test_kev_system_one_v4.py"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 env:
-  SCHEMAROUTER_SOURCE_REVISION: ${{ github.sha }}
+  SCHEMAROUTER_SOURCE_REVISION: "250513c70d08e926251ce28683b404fe97581527"
   V4_DEV_SEED: "operation-routing-quality-v4-development-2026-09-27"
   V4_DEV_SHA256: "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
   KEV_SOURCE_REVISION: "d32a973cc2375f1c76e898cbf6e759c4499042de"
@@ -26,7 +15,7 @@ env:
   KEV_DTYPE: "fp32"
 
 concurrency:
-  group: v4-kev-08b-system-one-${{ github.ref }}
+  group: v4-kev-08b-system-one-timeout-rescue-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -35,6 +24,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: "250513c70d08e926251ce28683b404fe97581527"
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.12"
@@ -50,9 +41,11 @@ jobs:
   evaluate:
     needs: contracts
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: "250513c70d08e926251ce28683b404fe97581527"
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.12"
