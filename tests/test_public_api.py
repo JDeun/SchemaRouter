@@ -148,6 +148,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "write_dashboard",
     }
 
+    assert len(schemarouter.__all__) == len(set(schemarouter.__all__))
     assert set(schemarouter.__all__) == expected
     for name in expected:
         assert hasattr(schemarouter, name)
