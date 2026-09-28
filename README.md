@@ -21,9 +21,10 @@
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-SchemaRouter sits between an agent and its tools. It turns a natural-language request plus a
-registered capability catalog into a small, typed execution plan, then validates that plan again at
-runtime before anything executes.
+SchemaRouter sits between an agent/RAG application and its data-capable tools. It parses registered
+OpenAPI, MCP, OPTIMADE, Python, or plugin capabilities into a typed catalog, retrieves the smallest
+declared executable data surface that can satisfy a request, and validates the resulting plan again
+at runtime before anything executes.
 
 ```text
 Query
@@ -39,6 +40,23 @@ Query
 It is **not** another general agent framework. LangChain, LangGraph, LlamaIndex, or your own
 orchestrator can stay above it; OpenAPI, MCP, OPTIMADE, Python callables, and adapter plugins stay
 below it.
+
+### Mental model: RAG for executable capabilities
+
+A conventional RAG stack parses documents into chunks + metadata, indexes them, and retrieves the
+smallest relevant context. SchemaRouter applies the same separation to APIs and tools:
+
+```text
+documents -> parser -> chunks/metadata -> index -> retriever -> RAG
+APIs/tools -> adapter -> endpoint/field contracts -> registry/index -> SchemaRouter -> RAG/agent
+```
+
+The retrieved unit is executable: endpoint operation, inputs, output fields, datatype/unit contracts,
+policy/evidence and availability. The registry is a logical capability graph; it does not require a
+graph database. Registered schema remains authority even when embeddings or optional decision
+backends help search it.
+
+[Capability catalog and RAG analogy](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
 
 ### Field-first, route-second
 
@@ -68,7 +86,7 @@ SchemaRouter's bounded selection step. Jev-compatible models can be swapped by c
 execution authority.
 ```
 
-> **Current stable release: 0.9.0** · `pip install schemarouter` · pre-1.0
+> **Current stable release: 0.10.0** · `pip install schemarouter` · pre-1.0
 
 ## Why SchemaRouter
 
@@ -197,6 +215,26 @@ Version `0.7.0` strengthens the same narrow execution boundary rather than addin
 Workflow/DAG semantics, memory, prompt systems, and autonomous tool loops remain out of scope.
 
 See the [0.7.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.7.0/) for details.
+
+## What 0.10 consolidates
+
+Version `0.10.0` is a consolidation release rather than a claim that open-set routing is solved.
+
+- clarifies SchemaRouter as a typed capability retrieval/execution layer for agent and RAG systems;
+- keeps **field-first, route-second** planning as the stable product architecture;
+- treats JSON datatype/shape, semantic IDs, optional units, explicit unit normalization, and exact
+  scientific qualifiers as part of the registered data contract;
+- keeps OpenAPI/MCP/OPTIMADE/Python registration provider-neutral rather than benchmark-specific;
+- keeps learned decision backends bounded and optional;
+- publishes the current routing benchmark outcome honestly: the strongest DEV candidate passed the
+  standing target, but its frozen zero-overlap fresh confirmation failed, so no production-target
+  candidate was promoted.
+
+The successor registry-compiled capability verifier remains a research prototype and is **not** the
+0.10.0 default.
+
+[0.10.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.10.0/) ·
+[Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
 
 ## What 0.9 adds
 
