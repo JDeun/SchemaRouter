@@ -5,6 +5,10 @@ promoted merely because SchemaRouter can connect to it.
 
 Last reviewed: **2026-09-28**.
 
+The machine-readable discovery/benchmark intake state lives in
+`benchmarks/system-one-candidate-registry.json`. Keep model discovery there instead of hard-coding
+candidate names into planner logic.
+
 ## Intake rule
 
 Choose the narrowest stable boundary that fits a new model/runtime:
