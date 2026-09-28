@@ -4,7 +4,7 @@
   "experiment": "semantic-action-ontology-v1",
   "issue": 349,
   "parent_issue": 340,
-  "status": "preregistered_before_corpus_generation_or_scoring",
+  "status": "corpora_frozen_before_scoring",
   "model": {
     "name": "BAAI/bge-m3",
     "revision": "5617a9f61b028005a4858fdac845db406aefb181",
@@ -72,12 +72,24 @@
     ],
     "development": {
       "role": "new 0.12-B screen",
-      "corpus_sha256": null
+      "corpus_sha256": "1a497bcd36192913840d7ecd4c6bed714c908468baed6f2b0b9f4367bf57ffc6",
+      "case_count": 504,
+      "supported_cases": 216,
+      "near_domain_cases": 216,
+      "out_of_domain_cases": 72,
+      "route_count": 18,
+      "tool_count": 6
     },
     "confirmation": {
       "role": "frozen confirmation only",
       "generated_before_development_scoring": true,
-      "corpus_sha256": null
+      "corpus_sha256": "548fe42da09e7c8dc89530c43d409db05618f57a39c277fca27aebe79b6802b9",
+      "case_count": 552,
+      "supported_cases": 264,
+      "near_domain_cases": 216,
+      "out_of_domain_cases": 72,
+      "route_count": 22,
+      "tool_count": 6
     }
   },
   "gates": {
@@ -94,5 +106,13 @@
     "dev_pass": "freeze exact source and open already-generated confirmation",
     "confirmation_fail": "terminal_reject",
     "both_pass": "eligible_for_brand_new_zero_overlap natural-language fresh confirmation"
+  },
+  "corpus_freeze": {
+    "workflow_run_id": 36406607863,
+    "source_revision": "4e1e2e6dec19c0556020f0d21f6523fa4a8410ae",
+    "artifact_id": 10962058546,
+    "artifact_sha256": "87427cc997e4387132914132268702e1ea5fa3b25aca5d044d412262a5f5c90b",
+    "both_corpora_generated_together": true,
+    "scored_at_freeze": false
   }
 }
