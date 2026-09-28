@@ -2446,3 +2446,53 @@ It is **not** relabeled as a production-target pass because it misses the 85% ex
 Any successor cycle must introduce a materially new source of capability evidence and a new
 preregistered protocol. It may not tune on #270/#287/#326, revive terminal 0.11 families with
 post-hoc thresholds, or convert compatibility evidence into quality evidence.
+
+
+## 53. #338 / PR #341 — arbitrary-tool registry-compiled verifier rejected
+
+After the 0.11 architecture-search cycle closed, #338 tested a product-level generalization
+constraint that earlier benchmark-specific work did not fully exercise:
+
+> can the same capability compiler and verifier work when a user registers previously unseen native
+> ToolSpec, OpenAPI, or MCP tools, without route-specific retraining?
+
+The experiment was preregistered before execution.
+
+Design constraints:
+- native ToolSpec, OpenAPI, and MCP had to compile into the same provider-neutral capability IR;
+- endpoint names could be opaque and `operation_aliases` could be empty;
+- route IDs, fixed endpoint counts, and benchmark-domain keyword tables were forbidden as learned
+  features;
+- JSON datatype/shape, semantic IDs, source units, explicit unit normalization, and qualifiers were
+  preserved as registered deterministic metadata;
+- BGE-M3 raw top-1 remained the sole route authority;
+- the learned component was veto-only, with no rank-2 fallback or pseudo-route;
+- newly registered routes could not require route-specific retraining.
+
+Canonical execution:
+- workflow `36393153612`;
+- source `ef75100abc1bb03a80ef2d7cfbd9d463accfb623`;
+- artifact `10957952613`;
+- digest `sha256:2a24d50c563ee872fdad8d498e30ab7a55e6c82e0650bf27ac4bfbadc4fc4269`.
+
+Results:
+
+| Surface | Exact | Near reject | OOD | False-route | Correct raw-winner retention | p95 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Canonical DEV (1,800) | 5.0347% | 100% | 100% | 0% | 5.6919% | 196.93 ms |
+| Registration holdout (228) | 2.0833% | 100% | 100% | 0% | 2.4590% | 192.85 ms |
+
+Authority violations and execution errors were zero, and canonical raw BGE parity had zero
+mismatches.
+
+Interpretation:
+
+The **provider-neutral typed capability/data-contract compiler worked as infrastructure**, including
+arbitrary native/OpenAPI/MCP registration and preservation of datatype/unit/qualifier metadata.
+The generic synthetic learned veto did not. It achieved perfect rejection by rejecting nearly every
+valid supported request.
+
+Decision: **terminal reject without label-driven repair**, exactly as preregistered.
+
+PR #341 was closed without merge. The infrastructure lesson is retained; the learned-veto quality
+claim is not promoted into the library default.
