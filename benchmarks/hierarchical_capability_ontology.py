@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Hierarchical executable-capability ontology for experiment #354.
 
 Research-only.  A frozen BGE-M3 embedding projects the request onto a registry-independent
