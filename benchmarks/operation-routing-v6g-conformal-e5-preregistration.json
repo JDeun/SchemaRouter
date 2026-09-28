@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "cycle": "0.13-conformal-e5-membership",
+  "experiment": "conformal-multilingual-e5-catalog-membership-v1",
+  "issue": 412,
+  "parent_issue": 382,
+  "prior_art_issues": [391, 392],
+  "predecessors": [401, 406],
+  "status": "preregistered_before_v6g_corpus_freeze_or_model_scoring",
+  "research_basis": [
+    "2026-09-16 arXiv:2609.18672 Selection Is Retrieval, Abstention Is Not: On-Device Tool Routing over 70 Korean-English Actions",
+    "PMLR 2024: Conformal Predictive Systems Under Covariate Shift",
+    "ICML 2024: Fine-grained robust conformal inference under distribution shift"
+  ],
+  "positive_selector": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "authority": "sole positive route selector",
+    "positive_rerank": false,
+    "endpoint_switch": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "membership_encoder": {
+    "model": "intfloat/multilingual-e5-base",
+    "revision": "d13f1b27baf31030b7fd040960d60d909913633f",
+    "embedding_width": 768,
+    "query_prefix": "query: ",
+    "passage_prefix": "passage: ",
+    "normalized_embeddings": true,
+    "fine_tuned_on_schemarouter": false
+  },
+  "e0_document": {
+    "fields": [
+      "normalized endpoint name",
+      "endpoint description",
+      "input parameter names",
+      "non-identifier output semantic_id or field names"
+    ],
+    "aliases": false,
+    "synthetic_positive_templates": false,
+    "unsupported_examples": false,
+    "limitations": false,
+    "units_or_qualifiers": false,
+    "benchmark_query_text": false,
+    "model_generated_text": false
+  },
+  "membership_score": {
+    "definition": "max cosine(query_e5, every registered endpoint E0 document)",
+    "route_authority": false,
+    "tool_anchor_conditioning": false,
+    "top_k_aggregation": false,
+    "density_model": false,
+    "score_fusion": false
+  },
+  "conformal_gate": {
+    "null": "unsupported request",
+    "calibration_rows_used": "unsupported only",
+    "alpha": 0.01,
+    "p_value": "(1 + count(calibration_unsupported_score >= observed_score)) / (n_calibration_unsupported + 1)",
+    "decision": "p_unsupported <= 0.01 preserves raw BGE top1; otherwise NO_ROUTE",
+    "tie_rule": "greater-than-or-equal calibration count; conservative",
+    "threshold_grid": false,
+    "alpha_sweep": false,
+    "platt": false,
+    "isotonic": false,
+    "dev_selected_threshold": false,
+    "calibration_supported_changes_rule": false
+  },
+  "data_protocol": {
+    "protocol": "V6G",
+    "surfaces_generated_together": ["calibration", "development", "confirmation"],
+    "per_surface": {
+      "case_count": 552,
+      "supported": 228,
+      "near_domain_unsupported": 252,
+      "ood": 72
+    },
+    "calibration_unsupported_count": 324,
+    "route_count": 19,
+    "tool_count": 7,
+    "endpoint_counts": [2, 2, 3, 3, 3, 3, 3],
+    "languages": ["en", "ko", "es", "ja", "de", "mixed"],
+    "disjoint_from": [
+      "all 0.11 corpora",
+      "all 0.12 corpora",
+      "V6A/#384",
+      "V6B/#395",
+      "V6C/#397",
+      "V6D/#399",
+      "V6E/#401",
+      "V6F/#406",
+      "each other"
+    ]
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1.0,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "positive_route_switches_max": 0,
+    "execution_errors_max": 0,
+    "combined_p95_ms_max": 250
+  },
+  "stopping_rule": {
+    "dev_quality_fail": "terminal reject exact V6G e5+unsupported-null conformal formulation",
+    "forbidden_repairs": [
+      "alpha",
+      "query or passage prefix",
+      "E0 document fields or wording",
+      "membership model checkpoint",
+      "membership score definition",
+      "tie rule",
+      "route or language thresholds",
+      "BGE/e5 score fusion"
+    ],
+    "quality_pass_latency_fail": "runtime-only optimization under separate preregistration with exact row-level parity",
+    "dev_pass": "score already-generated confirmation once without recalibration",
+    "confirmation_fail": "terminal reject",
+    "both_pass": "eligible for brand-new zero-overlap natural-language fresh confirmation"
+  },
+  "formal_caveat": "unsupported-null conformal error control assumes exchangeability between calibration unsupported examples and future unsupported examples"
+}
