@@ -1,0 +1,75 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "experiment": "kev-0.8b-choice-noul-v1",
+  "work_item": 299,
+  "status": "preregistered_before_execution",
+  "external_runtime": {
+    "repository": "jaredpalmer/kev",
+    "source_revision": "d32a973cc2375f1c76e898cbf6e759c4499042de",
+    "model": "jaredpalmer/kev-0.8b",
+    "model_revision": "9a45d25eb2ab761841196625383fa1dff0e56c1e",
+    "base_model": "Qwen/Qwen3.5-0.8B-Base",
+    "base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+    "typesafe_sdk": "0.7.2",
+    "python": "3.12",
+    "device": "cpu",
+    "fine_tuned_on_schemarouter": false
+  },
+  "authority": {
+    "candidate_scope": "all 16 registered endpoints",
+    "provider_can_create_route": false,
+    "rank2_fallback": false,
+    "pseudo_route": false
+  },
+  "typed_questions": {
+    "route": "choice",
+    "supported": "noul",
+    "prompt_variants": 1
+  },
+  "rule_families": {
+    "choice_confidence_only": [
+      0.5,
+      0.7,
+      0.8,
+      0.9,
+      0.95,
+      0.98,
+      0.99,
+      0.995
+    ],
+    "noul_capability_only": [
+      0.5,
+      0.7,
+      0.8,
+      0.9,
+      0.95,
+      0.98,
+      0.99,
+      0.995
+    ]
+  },
+  "fixed_rule_count": 16,
+  "data": {
+    "role": "tuning_eligible_development",
+    "case_count": 1800,
+    "supported_cases": 1152,
+    "near_domain_cases": 576,
+    "out_of_domain_cases": 72,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "expected_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "failed_270_fresh_surface_forbidden": true,
+    "failed_287_fresh_surface_forbidden": true,
+    "calibration_or_blind_forbidden": true
+  },
+  "quality_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0
+  },
+  "runtime_target": {
+    "single_request_p95_ms_max": 250.0
+  }
+}
