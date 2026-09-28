@@ -1988,3 +1988,18 @@ No semantic change is allowed after freeze. A quality-pass/latency-fail candidat
 preregistered runtime-only optimization with unchanged semantics, and that optimized runtime must
 itself pass fresh confirmation before #198.
 
+### Guarded staged-experiment activation
+
+The staged fallback workflows no longer depend on a human UI click.
+
+- #314 / PR #315 remains dormant until a terminal #299 artifact exists. It can be activated by
+  committing `benchmarks/operation-routing-v4-bge-kev-noul-compose.activation.json` with
+  `activate=true`, source workflow run `36366508183`, and the exact artifact ID. The workflow
+  revalidates source-run and artifact identity before reading rows.
+- #311 / PR #313 remains dormant until the Kev family is non-promotable. Its activation marker must
+  declare `activate=true`, `after_issue=299`, and `reason="kev_family_non_promotable"`.
+
+The workflow-definition commits themselves do not start model evaluation because push filters match
+only the activation-marker paths. This keeps staging separate from evidence consumption while allowing
+session-resume automation to proceed without manual Actions UI access.
+
