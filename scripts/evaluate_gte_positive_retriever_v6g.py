@@ -238,8 +238,20 @@ def evaluate(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "route_disagreements": disagreements,
         "gte_correct_bge_wrong": gte_better,
         "bge_correct_gte_wrong": bge_better,
-        "gte_top_score": _dist([float(r["top_score"]) for r in gte_rows if r["top_score"] is not None]),
-        "gte_top2_margin": _dist([float(r["top2_margin"]) for r in gte_rows if r["top2_margin"] is not None]),
+        "gte_top_score": _dist(
+            [
+                float(r["top_score"])
+                for r in gte_rows
+                if r["top_score"] is not None
+            ]
+        ),
+        "gte_top2_margin": _dist(
+            [
+                float(r["top2_margin"])
+                for r in gte_rows
+                if r["top2_margin"] is not None
+            ]
+        ),
         "gte_query_latency_ms": _dist(latencies),
         "gte_model_load_ms": gte_load_ms,
         "gte_static_route_encode_ms": gte_static_ms,
@@ -249,8 +261,13 @@ def evaluate(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
     p95 = metrics["gte_query_latency_ms"]["p95"]
     gates = {
-        "gte_exact_at_least_085": metrics["gte_supported_exact_route_accuracy"] >= 0.85,
-        "gte_matches_or_exceeds_bge": metrics["gte_supported_exact_route_accuracy"] >= metrics["bge_supported_exact_route_accuracy"],
+        "gte_exact_at_least_085": (
+            metrics["gte_supported_exact_route_accuracy"] >= 0.85
+        ),
+        "gte_matches_or_exceeds_bge": (
+            metrics["gte_supported_exact_route_accuracy"]
+            >= metrics["bge_supported_exact_route_accuracy"]
+        ),
         "execution_errors": errors == 0,
     }
     runtime = p95 is not None and float(p95) <= 250.0
