@@ -1983,6 +1983,28 @@
         "offline_reference_issue": 322,
         "runtime_target_p95_ms": 250
       }
+    },
+    {
+      "id": "0.11-lightweight-bge-gte-frozen-fresh-confirmation",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "issue": 326,
+      "pull_request": 327,
+      "preregistered": true,
+      "status": "executing_fresh_confirmation",
+      "workflow_run_id": 36382647406,
+      "source_revision": "b19d7b0255ee9717464b6fa65ce1ebdeaf58a1bd",
+      "frozen_semantic_source_revision": "caca039aff1c7b2960d167196f883e3bcbc5d431",
+      "invalid_technical_runs": [
+        {
+          "workflow_run_id": 36382202178,
+          "reason": "historical surface regeneration added split metadata before contracts; no corpus/evaluation produced"
+        },
+        {
+          "workflow_run_id": 36382467222,
+          "reason": "split-marker contract implementation omission; no corpus/evaluation produced"
+        }
+      ],
+      "decision": "executing"
     }
   ],
   "current_research_conclusion": {
@@ -1999,7 +2021,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "lightweight BGE negative-veto + conditional GTE rescue #324",
+    "active_experiment": "frozen lightweight BGE+negative-veto+conditional-GTE fresh confirmation #326/#327",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -2073,7 +2095,9 @@
       "fresh_seed": "operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a",
       "fresh_surface": "lightweight-bge-gte-operational-envelope-v1",
       "freeze_status": "frozen-dev"
-    }
+    },
+    "active_workflow_run_id": 36382647406,
+    "fresh_contract_status": "contracts PASS at head b19d7b0255ee9717464b6fa65ce1ebdeaf58a1bd; evaluate queued"
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2146,7 +2170,7 @@
       327
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "finish frozen lightweight BGE+GTE fresh confirmation; pass => fresh-confirmed manifest and unblock #198; fail => terminate without retuning",
+    "next_research_direction": "finish valid fresh confirmation workflow 36382647406 for frozen lightweight BGE+negative-veto+conditional-GTE candidate; pass => fresh-confirm manifest then #198, fail => terminate without retuning",
     "contingent_experiments": [
       303
     ],
