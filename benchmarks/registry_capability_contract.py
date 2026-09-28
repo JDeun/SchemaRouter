@@ -196,6 +196,8 @@ class DataFieldContract:
     source_unit: str | None
     canonical_unit: str | None
     dimension: str | None
+    unit_scale: float | None
+    unit_offset: float | None
     qualifiers: tuple[tuple[str, str], ...]
 
 
@@ -368,6 +370,16 @@ def _schema_type_label(schema: Any) -> str:
     return base
 
 
+def _schema_unit(schema: Any) -> str | None:
+    if not isinstance(schema, dict):
+        return None
+    for key in ("x-ucum-unit", "x-unit", "unit"):
+        value = schema.get(key)
+        if isinstance(value, str) and value.strip() and value.strip() != "inapplicable":
+            return value.strip()
+    return None
+
+
 def _parameter_contract(parameter: Any) -> DataFieldContract:
     return DataFieldContract(
         name=str(parameter.name),
@@ -376,9 +388,11 @@ def _parameter_contract(parameter: Any) -> DataFieldContract:
         data_type=_schema_type_label(parameter.json_schema),
         required=bool(parameter.required),
         identifier=False,
-        source_unit=None,
-        canonical_unit=None,
+        source_unit=_schema_unit(parameter.json_schema),
+        canonical_unit=_schema_unit(parameter.json_schema),
         dimension=None,
+        unit_scale=None,
+        unit_offset=None,
         qualifiers=(),
     )
 
@@ -412,6 +426,8 @@ def _output_contract(field: Any) -> DataFieldContract:
         source_unit=(str(field.unit) if getattr(field, "unit", None) else None),
         canonical_unit=canonical_unit,
         dimension=dimension,
+        unit_scale=(float(normalization.scale) if normalization is not None else None),
+        unit_offset=(float(normalization.offset) if normalization is not None else None),
         qualifiers=qualifiers,
     )
 
@@ -431,6 +447,10 @@ def _data_field_text(field: DataFieldContract) -> str:
         parts.append(f"canonical unit {field.canonical_unit}")
     if field.dimension is not None:
         parts.append(f"dimension {field.dimension}")
+    if field.unit_scale is not None:
+        parts.append(f"unit scale {field.unit_scale:g}")
+    if field.unit_offset is not None:
+        parts.append(f"unit offset {field.unit_offset:g}")
     if field.qualifiers:
         parts.append(
             "qualifiers "
