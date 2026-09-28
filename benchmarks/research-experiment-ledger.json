@@ -2046,8 +2046,8 @@
       "issue": 328,
       "pull_request": 329,
       "preregistered": true,
-      "status": "executing",
-      "decision": "executing",
+      "status": "completed",
+      "decision": "reject",
       "workflow_run_id": 36385740263,
       "design": {
         "model": "BAAI/bge-m3",
@@ -2084,7 +2084,79 @@
           "reason": "cancelled by pre-result audit-fix merge before analysis.json; no quality result"
         }
       ],
-      "source_revision": "4c72f2dd1939edb6ecf8415d620dbb5d58683fa0"
+      "source_revision": "4c72f2dd1939edb6ecf8415d620dbb5d58683fa0",
+      "artifact_id": 10955036349,
+      "artifact_sha256": "6e6bfbd2cb352aba03e2d98683ae6967a64115f90a04cf49f74e7cd1ab76dde7",
+      "result": {
+        "dense_raw_supported_top1_accuracy": 0.8845486111111112,
+        "dense_route_parity_mismatches": 0,
+        "authority_violations": 0,
+        "execution_errors": 0,
+        "candidate_worthy_rule_count": 0,
+        "family_A_global_agreement": {
+          "supported_exact_route_accuracy": 0.8255208333333334,
+          "near_domain_unsupported_rejection": 0.328125,
+          "out_of_domain_rejection": 0.5694444444444444,
+          "false_route_rate": 0.6450617283950617,
+          "false_routes": 418
+        },
+        "family_B_same_tool_agreement": {
+          "supported_exact_route_accuracy": 0.8376736111111112,
+          "near_domain_unsupported_rejection": 0.07465277777777778,
+          "out_of_domain_rejection": 0.19444444444444445,
+          "false_route_rate": 0.9120370370370371,
+          "false_routes": 591
+        },
+        "family_C_false_budget_6": {
+          "threshold": 0.5735520720481873,
+          "supported_exact_route_accuracy": 0.3862847222222222,
+          "near_domain_unsupported_rejection": 0.9895833333333334,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0.009259259259259259,
+          "false_routes": 6
+        },
+        "family_D_false_budget_6": {
+          "threshold": 0.5735520720481873,
+          "supported_exact_route_accuracy": 0.3871527777777778,
+          "near_domain_unsupported_rejection": 0.9895833333333334,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0.009259259259259259,
+          "false_routes": 6
+        },
+        "family_C_false_budget_12": {
+          "threshold": 0.5684490203857422,
+          "supported_exact_route_accuracy": 0.4140625,
+          "near_domain_unsupported_rejection": 0.9791666666666666,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0.018518518518518517,
+          "false_routes": 12
+        },
+        "family_D_false_budget_12": {
+          "threshold": 0.5684490203857422,
+          "supported_exact_route_accuracy": 0.4149305555555556,
+          "near_domain_unsupported_rejection": 0.9791666666666666,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0.018518518518518517,
+          "false_routes": 12
+        },
+        "measured_total_p95_ms": 398.68482555,
+        "recomputed_promotable_p95_ms_excluding_sparse_scoring": 398.6149248,
+        "posthoc_sparse_diagnostic": {
+          "label": "diagnostic_only_not_promotion_evidence",
+          "global_agreement_exact": 0.3532986111111111,
+          "same_tool_agreement_exact": 0.5590277777777778,
+          "false_budget_6_best_exact": 0.1267361111111111,
+          "false_budget_6_near_rejection": 0.9895833333333334,
+          "false_budget_6_false_route_rate": 0.009259259259259259
+        }
+      },
+      "interpretation": [
+        "No preregistered ColBERT family passed the 85/97/100/1 plus <=250 ms candidate-worthiness gate.",
+        "At the <=1% false-route budget, supported exact-route collapses to about 38.6-38.7%, so the representation does not provide a usable open-set boundary.",
+        "Excluding diagnostic-only sparse scoring changes p95 negligibly: recomputed executable p95 is ~398.61 ms, still above the 250 ms target.",
+        "Post-hoc sparse diagnostics are also far below the supported-recall target and are retained only to avoid repeating the same representation family as a promotion attempt.",
+        "BGE-M3 native dense+ColBERT/sparse operation-contract gating is terminal for this cycle."
+      ]
     }
   ],
   "current_research_conclusion": {
@@ -2092,17 +2164,16 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "test a new BGE-M3 token-level operation representation rather than another dense threshold repair",
-      "keep dense raw BGE winner as sole route authority",
-      "use ColBERT only as global/same-tool operation-contract veto evidence",
-      "keep sparse lexical evidence diagnostic-only",
-      "freeze only if one preregistered global family passes 85/97/100/1 and p95<=250ms with zero dense-route parity mismatch"
+      "keep #198 blocked; no calibration or blind-final without a new fresh-confirmed frozen candidate",
+      "do not reuse #270/#287/#326 fresh rows for tuning or candidate design",
+      "do not extend the rejected BGE-M3 ColBERT/sparse operation-contract family with post-hoc second thresholds, route-local exceptions, or margin search",
+      "next behavior-changing experiment must be separately preregistered from canonical tuning DEV plus registry-defined operational semantics and must be deployment-realistic at <=250 ms"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "#328 / PR #329 BGE-M3 ColBERT operation-contract diagnostic",
+    "active_experiment": "none; #328/#329 terminally rejected",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -2158,18 +2229,8 @@
     "current_frontier": "#322 offline composition passed 85.0694% exact / 99.3056% near rejection / 100% OOD / 0.6173% false-route. #324 is measuring exact row parity and direct p95.",
     "expensive_typed_decision_status": "CPU Laya/Qwen/Kev/AnyJev product-path experiments are terminal; current work is BGE-native/lightweight and <=250 ms by design.",
     "runtime_only_policy": "#318 is model-neutral and dormant: activate only after a frozen candidate passes quality + semantic parity but misses p95<=250ms; #320/#321 parity tooling is mandatory.",
-    "active_candidate": {
-      "issue": 328,
-      "pull_request": 329,
-      "status": "diagnostic_executing",
-      "workflow_run_id": 36385740263,
-      "source_revision": "4c72f2dd1939edb6ecf8415d620dbb5d58683fa0",
-      "model": "BAAI/bge-m3",
-      "model_revision": "5617a9f61b028005a4858fdac845db406aefb181",
-      "representation": "native ColBERT operation-contract veto; sparse diagnostic-only",
-      "data_role": "canonical tuning-eligible DEV only"
-    },
-    "active_workflow_run_id": 36385740263,
+    "active_candidate": null,
+    "active_workflow_run_id": null,
     "fresh_contract_status": "#326 terminal valid fresh failure; corpus consumed confirmation-only. #198 remains blocked.",
     "latest_fresh_result": "#326 valid zero-overlap fresh confirmation failed: exact 84.8090%, near rejection 90.4514%, OOD 100%, false-route 8.4877%, p95 278.3748 ms; candidate terminated, fresh surface consumed and non-tuning.",
     "generalization_status": "Three independent candidate families have now shown DEV-to-fresh open-set degradation (#270, #287, #326). Next architecture must reduce dependence on DEV-fitted acceptance geometry.",
@@ -2201,7 +2262,8 @@
         "false_route": 0.08487654320987655,
         "p95_ms": 278.3747833
       }
-    }
+    },
+    "colbert_operation_contract_status": "#328/#329 rejected: 0 candidate-worthy rules; <=1% false-route frontier preserves only ~38.6-38.7% exact; executable p95 ~398.61 ms."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
