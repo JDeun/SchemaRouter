@@ -62,6 +62,15 @@ def _distribution(values: list[float]) -> dict[str, float | int | None]:
     }
 
 
+def _promotable_latency_ms(
+    encode_ms: float,
+    dense_ms: float,
+    colbert_ms: float,
+) -> float:
+    """Latency of the executable ColBERT gate, excluding sparse diagnostics."""
+    return encode_ms + dense_ms + colbert_ms
+
+
 def _safe_rate(numerator: int, denominator: int) -> float:
     return numerator / denominator if denominator else 0.0
 
@@ -547,7 +556,11 @@ def evaluate(
             error = f"{type(exc).__name__}: {exc}"
 
         diagnostic_total_ms = (time.perf_counter_ns() - row_started) / 1_000_000
-        promotable_ms = encode_ms + dense_ms + colbert_ms
+        promotable_ms = _promotable_latency_ms(
+            encode_ms,
+            dense_ms,
+            colbert_ms,
+        )
         encode_latencies.append(encode_ms)
         dense_latencies.append(dense_ms)
         colbert_latencies.append(colbert_ms)
