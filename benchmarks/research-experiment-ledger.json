@@ -1776,8 +1776,8 @@
       "issue": 299,
       "pull_request": 300,
       "preregistered": true,
-      "status": "executing",
-      "decision": "executing",
+      "status": "completed_invalid_runtime",
+      "decision": "no_quality_result_runtime_nonviable",
       "workflow_run_id": 36366508183,
       "design": {
         "kev_source_revision": "d32a973cc2375f1c76e898cbf6e759c4499042de",
@@ -1794,6 +1794,14 @@
         "schemarouter_training": false,
         "candidate_scope": "all 16 registered endpoints",
         "authority": "finite registered IDs only; no rank-2 fallback"
+      },
+      "artifact_id": 10951921452,
+      "artifact_sha256": "58d3c1b4aec1bb70eb2aa1747e3acd86278a16da45582930bb80dbca92f54ee0",
+      "result": {
+        "analysis_json_present": false,
+        "workflow_conclusion": "cancelled",
+        "runtime": "cpu_fp32_serial",
+        "quality_metrics_available": false
       }
     },
     {
@@ -1903,8 +1911,8 @@
       "issue": 311,
       "pull_request": 313,
       "preregistered": true,
-      "status": "staged_dormant",
-      "decision": "await_kev_299_terminal_before_manual_execution",
+      "status": "staged_architecture_no_runtime",
+      "decision": "await_realistic_runtime_before_execution",
       "design": {
         "route_authority": "BGE-M3 raw registered top-1 only",
         "anyjev_source_revision": "45add301a7aa60ed3420c83d15c061e84e5bce61",
@@ -1925,8 +1933,8 @@
       "cycle": "0.11-operation-routing-quality-v4",
       "issue": 314,
       "preregistered": true,
-      "status": "staged_waiting_for_299_artifact",
-      "decision": "offline_compose_only_after_299_terminal",
+      "status": "closed_without_execution",
+      "decision": "source_kev_analysis_missing",
       "design": {
         "route_authority": "BGE-M3 raw registered top-1 only",
         "bge_revision": "5617a9f61b028005a4858fdac845db406aefb181",
@@ -1945,18 +1953,16 @@
     "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
     "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
     "next_candidate_direction": [
-      "finish pinned Kev-0.8B native choice+noul #299 without semantic changes",
-      "reuse the exact frozen #299 supported_probability in preregistered BGE-authority composition #314/#315 with no new Kev inference",
-      "if no Kev-based rule promotes, activate staged AnyJev L0 content-free noul #311/#313",
-      "keep BGE-M3 raw registered top-1 as the authority for veto-only compositions",
-      "freeze any passing semantics before a new zero-overlap fresh confirmation",
-      "keep failed #270/#287 fresh surfaces and calibration/blind evidence excluded from tuning"
+      "retain BGE-M3 as the practical route-ranking backbone",
+      "prefer gates that reuse the existing query embedding or negligible CPU logic",
+      "do not add another local autoregressive/typed-decision model unless a realistic serving runtime is preregistered",
+      "preserve <=250 ms as a first-class architecture constraint rather than a post-hoc optimization goal"
     ],
     "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "pinned Kev-0.8B choice+noul #299 is the only active model-quality experiment",
+    "active_experiment": "none",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -2006,7 +2012,9 @@
     "activation_protocol": "Staged #314/#315 and #311/#313 remain dormant until explicit guarded activation. #314 can be triggered by committing its activation JSON with the exact #299 artifact ID/source run; #311 can be triggered only after Kev-family non-promotion using an activation marker declaring after_issue=299 and reason=kev_family_non_promotable.",
     "runtime_optimization": "#318 is dormant and activates only after a Kev-based quality pass with latency failure; parity must preserve every frozen route/accept decision before optimized timing counts.",
     "runtime_parity_infrastructure": "#320 acaca1e... adds runtime parity validation; #321 31bda6e... ensures failed parity writes mismatch/drift evidence before exiting non-zero.",
-    "runtime_realism": "Do not repeat multi-hour CPU/fp32 typed-decision screens. #299 may contribute a terminal semantic signal if it completes, but timeout means stop that runtime. Future Kev/AnyJev evaluation requires a plausibly deployable runtime path to <=250 ms."
+    "runtime_realism": "Do not repeat multi-hour CPU/fp32 typed-decision screens. #299 may contribute a terminal semantic signal if it completes, but timeout means stop that runtime. Future Kev/AnyJev evaluation requires a plausibly deployable runtime path to <=250 ms.",
+    "kev_status": "Kev-0.8B CPU/fp32 #299 ended cancelled without analysis.json after ~3h; no quality conclusion, exact runtime path retired.",
+    "anyjev_status": "AnyJev CPU execution PR #313 retired unexecuted; architecture remains only as a runtime-gated option if a credible <=250 ms path exists."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2069,27 +2077,19 @@
       320,
       321
     ],
-    "active_experiments": [
-      299
-    ],
+    "active_experiments": [],
     "active_pull_requests": [
-      235,
-      300,
-      313,
-      315
+      235
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "finish Kev-0.8B #299; if complete row-level noul exists, evaluate preregistered BGE+Kev offline composition #314/#315; activate AnyJev #311/#313 only if no Kev-based candidate promotes",
+    "next_research_direction": "design a lightweight BGE-native open-set boundary that preserves <=250 ms; do not launch another multi-hour CPU typed-decision model screen",
     "contingent_experiments": [
       303
     ],
     "active_tracking_issues": [
       293
     ],
-    "staged_experiments": [
-      311,
-      314
-    ],
+    "staged_experiments": [],
     "infrastructure_in_progress": [],
     "contingent_pull_requests": [],
     "technical_contingencies": {
