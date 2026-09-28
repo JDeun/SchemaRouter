@@ -1,0 +1,207 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "candidate": "lightweight-bge-negative-gte-executable-v1",
+  "work_item": 324,
+  "status": "preregistered_before_execution",
+  "reference_offline": {
+    "issue": 322,
+    "workflow_run_id": 36379888054,
+    "artifact_id": 10951119927,
+    "artifact_sha256": "1e86c0ebd881ff98f73d30d65ea618ff4525ead164f7f8a0b04c4ccf98190303"
+  },
+  "canonical_dev": {
+    "case_count": 1800,
+    "seed": "operation-routing-quality-v4-development-2026-09-27",
+    "corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216"
+  },
+  "bge": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "threshold_profile": "#259 budget-6 robust",
+    "boundary_epsilon": 0.000001
+  },
+  "negative_veto": {
+    "prototypes": {
+      "weather": [
+        "satellite cloud imagery",
+        "aviation METAR and TAF reports",
+        "live lightning strike maps",
+        "pollen and allergy outlooks"
+      ],
+      "materials": [
+        "XRD pattern simulation",
+        "defect formation energy calculation",
+        "laboratory synthesis recipe design",
+        "molecular dynamics simulation"
+      ],
+      "papers": [
+        "full paper translation",
+        "citation network visualization",
+        "plagiarism detection",
+        "emailing corresponding authors"
+      ],
+      "finance": [
+        "securities trading and selling shares",
+        "portfolio rebalancing",
+        "live options chains",
+        "capital gains tax reporting"
+      ],
+      "calendar": [
+        "declining calendar invitations",
+        "setting event reminders",
+        "sharing calendars",
+        "booking rooms or resources"
+      ],
+      "support": [
+        "reopening support tickets",
+        "changing ticket priority",
+        "deleting support tickets",
+        "escalating tickets to another support tier"
+      ],
+      "inventory": [
+        "printing inventory barcode labels",
+        "changing retail prices",
+        "creating catalog items",
+        "exporting inventory to CSV"
+      ],
+      "users": [
+        "assigning user roles or permissions",
+        "suspending user accounts",
+        "verifying email addresses",
+        "listing active login sessions"
+      ]
+    },
+    "max_negative_score_min": 0.55,
+    "negative_advantage_min": 0.05,
+    "apply_only_to_original_base_accepts": true,
+    "vetoed_rows_rescue_eligible": false
+  },
+  "gte": {
+    "model": "Alibaba-NLP/gte-multilingual-base",
+    "revision": "087a024525fd6e2fe749cb4679d218d8bcc95bdd",
+    "schema_weight": 0.25,
+    "action_weight": 0.75,
+    "invoke_only_for_original_base_abstentions": true,
+    "same_bge_raw_winner_required": true,
+    "rules": {
+      "calendar.create": {
+        "min_gte_score": 0.5049319921240791,
+        "min_gte_margin": 0.02,
+        "max_base_score_deficit": 0.05,
+        "max_base_margin_deficit": 0
+      },
+      "calendar.list": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "finance.history": {
+        "min_gte_score": 1.000001,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "finance.quote": {
+        "min_gte_score": 0.5976878433819592,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.05,
+        "max_base_margin_deficit": 0
+      },
+      "inventory.search": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "inventory.update": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "materials.search": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "materials.structure": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "papers.citations": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "papers.search": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.02,
+        "max_base_margin_deficit": 0
+      },
+      "support.create_ticket": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0.1,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "support.search": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.001,
+        "max_base_margin_deficit": 0
+      },
+      "users.lookup": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0.05,
+        "max_base_score_deficit": 0.02,
+        "max_base_margin_deficit": 0
+      },
+      "users.update": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.02,
+        "max_base_margin_deficit": 0
+      },
+      "weather.current": {
+        "min_gte_score": -1,
+        "min_gte_margin": 0.1,
+        "max_base_score_deficit": 1,
+        "max_base_margin_deficit": 0
+      },
+      "weather.forecast": {
+        "min_gte_score": 0.5627313382685655,
+        "min_gte_margin": 0,
+        "max_base_score_deficit": 0.05,
+        "max_base_margin_deficit": 0
+      }
+    }
+  },
+  "expected_parity": {
+    "supported_correct": 980,
+    "near_domain_rejected": 572,
+    "out_of_domain_rejected": 72,
+    "false_routes": 4,
+    "negative_veto_correct_supported": 1,
+    "negative_veto_unsupported": 6,
+    "rescued_correct_supported": 16,
+    "rescued_wrong_supported": 0,
+    "rescued_unsupported": 4
+  },
+  "gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  }
+}
