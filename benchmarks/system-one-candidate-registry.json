@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "updated_at": "2026-09-28",
-  "purpose": "Discovery registry for replaceable typed decision models. Presence is not promotion evidence.",
+  "purpose": "Discovery and benchmark intake registry for replaceable typed-decision/System One providers. Presence is not a recommendation or quality claim.",
   "promotion_gate": {
     "supported_exact_route_accuracy_min": 0.85,
     "near_domain_unsupported_rejection_min": 0.97,
@@ -9,104 +9,133 @@
     "false_route_rate_max": 0.01,
     "authority_violations_max": 0,
     "execution_errors_max": 0,
-    "combined_p95_ms_target_max": 250
+    "target_p95_ms_max": 250
   },
-  "integration_policy": {
-    "system_one_wire_compatible": "Use SystemOneDecisionBackend and generic System One benchmark CLI. No model-specific core class.",
-    "non_wire_typed_decision": "Use CallableDecisionBackend / --decision-callable first. Permanent integration only after API stability and benchmark evidence.",
-    "authority": "All providers are bounded by locally registered finite IDs. Compatibility never creates execution authority."
+  "integration_paths": {
+    "system_one_wire": "SystemOneDecisionBackend(base_url, model, provider_name)",
+    "direct_laya": "LayaDecisionBackend",
+    "research_callable": "CallableDecisionBackend / --decision-callable module:function",
+    "reusable_plugin": "schemarouter.decision_backends entry point"
   },
+  "intake_checklist": [
+    "pin repository/runtime/model revisions",
+    "verify license before distribution or default promotion",
+    "preserve finite local option authority",
+    "record model/runtime identity and latency",
+    "run frozen v4 development protocol",
+    "freeze semantics before a new zero-overlap confirmation",
+    "never tune on failed confirmation corpora"
+  ],
   "candidates": [
     {
+      "id": "jev-hosted",
+      "project": "TypeSafe Jev",
+      "repository": null,
+      "integration_path": "system_one_wire",
+      "lifecycle": "credentialed_optional_comparison",
+      "license_status": "hosted_provider_terms_apply",
+      "schemarouter_status": "JevDecisionBackend available; not a CI dependency"
+    },
+    {
       "id": "laya",
-      "repository": "NandhaKishorM/laya",
-      "upstream_model_family": "convaiinnovations/laya",
-      "license": "Apache-2.0",
-      "protocol": "direct Python Router; native choice/score/noul",
-      "integration_path": "LayaDecisionBackend for product; callable/research harness for native noul variants",
-      "status": "rejected_current_base_routes",
-      "evidence": [
-        "#293 direct full-catalog choice rejected",
-        "#301 pinned BGE-winner noul veto rejected"
-      ],
-      "notes": "Current pinned English/multilingual checkpoints are rejected for SchemaRouter v4 direct choice and winner-only noul. typed-decisions is a separate fine-tuned checkpoint and requires an independent pinned experiment before any claim."
+      "project": "Laya",
+      "repository": "he-jev/laya",
+      "integration_path": "direct_laya",
+      "lifecycle": "integrated_research",
+      "license_status": "Apache-2.0 reported by upstream",
+      "schemarouter_status": "Direct full-catalog choice #293 rejected; pinned winner-only noul #301 rejected. Different checkpoint/provider protocol requires new evidence."
     },
     {
       "id": "kev",
+      "project": "Kev",
       "repository": "jaredpalmer/kev",
-      "license": "Apache-2.0",
-      "protocol": "TypeSafe/Jev-compatible POST /v1/systemone; native choice/noul/score",
-      "integration_path": "SystemOneDecisionBackend",
-      "model_sizes": [
-        "0.8B",
-        "4B",
-        "9B",
-        "27B"
-      ],
-      "status": "active_research",
-      "evidence": [
-        "#299 pinned Kev-0.8B choice+noul active"
-      ],
-      "notes": "Larger sizes require separate preregistered runs; do not extrapolate from 0.8B."
+      "integration_path": "system_one_wire",
+      "lifecycle": "active_research",
+      "license_status": "Apache-2.0",
+      "schemarouter_status": "Pinned Kev-0.8B choice+noul #299 / PR #300 executing on the frozen 1,800-row v4 DEV; larger checkpoints require separate preregistration.",
+      "active_issue": 299,
+      "active_pull_request": 300
+    },
+    {
+      "id": "mapika-decider",
+      "project": "Mapika decider",
+      "repository": "Mapika/decider",
+      "integration_path": "system_one_wire",
+      "lifecycle": "contingent_discovery",
+      "license_status": "Apache-2.0",
+      "schemarouter_status": "No SchemaRouter quality evidence yet. decider-0.8B is a resource-compatible fallback candidate if the active Kev-0.8B screen does not promote; pin exact model revision before execution.",
+      "upstream_source_revision_seen": "23579f7a7e8f10e1045be492af3c1c05a005d67c",
+      "upstream_package_version_seen": "1.6.0"
     },
     {
       "id": "decis",
+      "project": "Decis",
       "repository": "chaitin/Decis",
-      "license": "Apache-2.0",
-      "protocol": "TypeSafe System One v1 /v1/systemone",
-      "integration_path": "SystemOneDecisionBackend",
-      "status": "discovery_verified_not_benchmarked",
-      "notes": "Serving/runtime layer with interchangeable engines including Laya and Kev; benchmark the underlying engine and runtime identity separately."
+      "integration_path": "system_one_wire",
+      "lifecycle": "discovery",
+      "license_status": "verify exact release before promotion",
+      "schemarouter_status": "No SchemaRouter quality evidence yet."
     },
     {
       "id": "litevar-system-one",
+      "project": "LiteVar System One",
       "repository": "LiteVar/system-one",
-      "license": "MIT for runtime source; upstream model/runtime assets retain upstream licenses",
-      "protocol": "Jev-shaped POST /v1/systemone; choice/score/noul",
-      "integration_path": "SystemOneDecisionBackend",
-      "status": "discovery_verified_not_benchmarked",
-      "notes": "Local-first Rust runtime; current first backend is Laya Multilingual. Treat runtime and model evidence separately."
+      "integration_path": "system_one_wire",
+      "lifecycle": "discovery",
+      "license_status": "verify exact release before promotion",
+      "schemarouter_status": "No SchemaRouter quality evidence yet."
+    },
+    {
+      "id": "laya-serve",
+      "project": "laya-serve",
+      "repository": "stiermid/laya-serve",
+      "integration_path": "system_one_wire",
+      "lifecycle": "archived_discovery",
+      "license_status": "verify exact release before use",
+      "schemarouter_status": "Repository currently archived; prefer maintained runtime when possible."
     },
     {
       "id": "anyjev",
+      "project": "AnyJev",
       "repository": "nokia-applied-research/AnyJev",
-      "license": "Apache-2.0",
-      "protocol": "typed choice/yes-no/score over arbitrary open LLMs; runtime-specific API",
-      "integration_path": "CallableDecisionBackend / --decision-callable",
-      "status": "staged_dormant",
-      "notes": "First SchemaRouter candidate is zero-label L0 over Qwen3-0.6B with content_free prior. Do not execute until Kev #299 is terminal without promotion. L1/L2 remain separate supervised experiments.",
-      "evidence": [
-        "#311 preregistered AnyJev L0 content-free noul veto",
-        "#313 manual-only staged implementation"
-      ]
+      "integration_path": "reusable_plugin",
+      "fallback_integration_path": "research_callable",
+      "lifecycle": "staged_research",
+      "license_status": "Apache-2.0 reported by upstream",
+      "schemarouter_status": "AnyJev L0 content-free noul #311 / PR #313 is preregistered and staged; workflow is manual-dispatch only until Kev #299 is terminal and non-promotable. No SchemaRouter quality evidence yet.",
+      "source_revision": "45add301a7aa60ed3420c83d15c061e84e5bce61",
+      "active_issue": 311,
+      "active_pull_request": 313
     },
     {
       "id": "bespoke-nimble",
+      "project": "Bespoke Nimble",
       "repository": "bespokelabsai/nimble",
-      "license": "verify model/code license before execution",
-      "protocol": "typed enum/boolean scoring; no assumed TypeSafe wire compatibility",
-      "integration_path": "CallableDecisionBackend / --decision-callable",
-      "status": "discovery_verified_not_benchmarked",
-      "notes": "Bespoke-Nimble-9B is Qwen3.5-9B-based. Pin model revision and probability temperature semantics before any threshold experiment."
+      "integration_path": "reusable_plugin",
+      "fallback_integration_path": "research_callable",
+      "lifecycle": "discovery",
+      "license_status": "verify model/code license for selected release before promotion",
+      "schemarouter_status": "No SchemaRouter quality evidence yet; fast-moving checkpoint/calibration, so pin exact revision before any comparison."
     },
     {
       "id": "system-one-open",
+      "project": "System One Open",
       "repository": "mithalouni/system-one-open",
-      "license": "MIT for repository code; verify base-model weight terms for selected checkpoint",
-      "protocol": "Jev-style choice/score/noul through project-specific decide API",
-      "integration_path": "CallableDecisionBackend / --decision-callable unless exact System One wire compatibility is independently verified",
-      "status": "discovery_verified_not_benchmarked",
-      "notes": "Gemma-family replica; use external claims only for discovery, never SchemaRouter promotion."
+      "integration_path": "reusable_plugin",
+      "fallback_integration_path": "research_callable",
+      "lifecycle": "discovery",
+      "license_status": "MIT reported by upstream",
+      "schemarouter_status": "Different serving contract; no SchemaRouter quality evidence yet."
+    },
+    {
+      "id": "openjev-siliconlab",
+      "project": "OpenJev",
+      "repository": "SiliconLabAI/OpenJev",
+      "integration_path": "reusable_plugin",
+      "fallback_integration_path": "research_callable",
+      "lifecycle": "discovery",
+      "license_status": "verify backend/model license independently",
+      "schemarouter_status": "Multiple backend modes; pin one backend/model before benchmark."
     }
-  ],
-  "intake_checklist": [
-    "pin repository/source revision",
-    "pin model/checkpoint revision",
-    "verify code and weight licenses separately",
-    "identify wire-compatible vs callable integration path",
-    "freeze question/capability representation before inference",
-    "run tuning-eligible DEV only",
-    "freeze any passing semantics before a new zero-overlap confirmation",
-    "never use failed fresh confirmation rows for tuning"
   ]
 }
