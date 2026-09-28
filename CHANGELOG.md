@@ -9,6 +9,7 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- added a machine-validated operation-routing freeze protocol that records immutable source/model/runtime/representation/rule provenance, DEV and independent fresh-confirmation artifact evidence, standing 85/97/100/1 quality gates, authority invariants, and the #197 → #198 handoff before calibration/blind evaluation.
 - added explicit third-party bounded decision-backend entry points through the `schemarouter.decision_backends` package metadata group; discovery is metadata-only, loading is explicit by exact name, duplicate names fail before import, returned options remain locally bounded, and shared benchmark reports record only non-secret plugin metadata/config keys.
 - generalized Jev-compatible decision providers behind `SystemOneDecisionBackend`, preserving `JevDecisionBackend` while allowing compatible hosted/self-hosted runtimes to swap `base_url`, model, and provider label without changing planner semantics.
 - generalized the decision-routing benchmark for arbitrary System One-compatible providers and bounded Python decision callables so new typed-decision models can be evaluated without adding model-specific planner code.
