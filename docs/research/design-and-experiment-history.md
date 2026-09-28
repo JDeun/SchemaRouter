@@ -2446,3 +2446,84 @@ It is **not** relabeled as a production-target pass because it misses the 85% ex
 Any successor cycle must introduce a materially new source of capability evidence and a new
 preregistered protocol. It may not tune on #270/#287/#326, revive terminal 0.11 families with
 post-hoc thresholds, or convert compatibility evidence into quality evidence.
+
+
+## 53. #338 / PR #341 — registry-compiled capability verifier rejected
+
+After the 0.11 score-geometry families were closed, #338 tested a materially different product-aligned
+hypothesis: compile ordinary registered tools into a provider-neutral typed Capability IR, then use a
+generic synthetic capability verifier only as a veto over the frozen BGE-M3 raw winner.
+
+The experiment added an explicit deployment-generalization requirement. A candidate could not pass
+solely on the fixed canonical registry. The same compiler had to accept:
+- native `ToolSpec`;
+- OpenAPI imports;
+- MCP imports;
+- variable endpoint counts;
+- empty operation aliases;
+- opaque endpoint names.
+
+The Capability IR also preserved the data-contract work already present in SchemaRouter rather than
+flattening everything to descriptions. Registered field evidence included:
+- `semantic_id`;
+- JSON-schema type/shape;
+- source unit;
+- explicit `UnitNormalizationSpec` dimension, canonical unit, scale and offset;
+- qualifiers;
+- identifier/required status where declared.
+
+Plain source units were not promoted to canonical units implicitly. Unknown metadata remained unknown;
+the verifier was not allowed to invent schema authority.
+
+The learned component was route-identity-free. It used only generic multilingual synthetic operation
+semantics and counterfactuals, and a single fitted head was shared by the canonical registry and a new
+unseen registration holdout. New registered routes therefore required compilation/indexing, not
+route-specific retraining.
+
+Two pre-result runs were technically invalid:
+- `36392886171`: ruff/import-style failure before evaluation;
+- `36393039721`: pytest research-module import-path failure before evaluation.
+
+The first valid quality run was `36393153612` at source
+`ef75100abc1bb03a80ef2d7cfbd9d463accfb623`.
+
+Artifact:
+- id `10957952613`;
+- digest `sha256:2a24d50c563ee872fdad8d498e30ab7a55e6c82e0650bf27ac4bfbadc4fc4269`;
+- canonical DEV SHA `fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216`;
+- raw BGE winner parity mismatches **0**;
+- authority violations / execution errors **0 / 0**.
+
+Canonical DEV result:
+- supported exact **5.0347%**;
+- correct raw-winner retention **58 / 1019 = 5.6919%**;
+- near-domain rejection **100%**;
+- OOD rejection **100%**;
+- false-route **0 / 648 = 0%**;
+- p95 **196.9262 ms**.
+
+The separately preregistered registration-generalization holdout contained 228 cases over four unseen
+tools and 12 unseen routes: native, OpenAPI and MCP, with endpoint counts 1/3/3/5. Its result was:
+- supported exact **2.0833%**;
+- correct raw-winner retention **3 / 122 = 2.4590%**;
+- near-domain rejection **100%**;
+- OOD rejection **100%**;
+- false-route **0%**;
+- p95 **192.8459 ms**.
+
+Decision: **terminal reject**.
+
+The result cleanly separates infrastructure from verifier quality. Arbitrary tool compilation, typed
+field/unit metadata preservation, raw route authority and runtime all worked. The generic pairwise
+support head instead learned an almost reject-all boundary. This is the inverse of the earlier
+false-route-heavy ranker families: safety is maximal only because valid supported requests are almost
+entirely suppressed.
+
+Per preregistration, the probability threshold is not repaired after inspection and the consumed
+registration holdout is not reused for successor tuning.
+
+The next materially different hypothesis is query-side typed intent compilation followed by
+deterministic Capability-IR unification. That changes the abstraction from “does this query match this
+endpoint?” pairwise classification to “what operation/data contract did the user request?” followed by
+registry-authoritative symbolic compatibility. Any promotion test for that successor requires a new
+unseen registration-generalization holdout.
