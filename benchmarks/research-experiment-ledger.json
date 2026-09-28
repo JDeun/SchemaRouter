@@ -1946,6 +1946,43 @@
         "failed_fresh_sets_used": false,
         "activation": "guarded marker push or manual dispatch; marker pins #299 workflow run and exact artifact id"
       }
+    },
+    {
+      "issue": 322,
+      "id": "0.11-lightweight-negative-gte-offline-compose",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 323,
+      "preregistered": true,
+      "status": "completed",
+      "workflow_run_id": 36379888054,
+      "artifact_id": 10951119927,
+      "artifact_sha256": "1e86c0ebd881ff98f73d30d65ea618ff4525ead164f7f8a0b04c4ccf98190303",
+      "decision": "pass_promote_executable",
+      "result": {
+        "supported_exact_route_accuracy": 0.8506944444444444,
+        "near_domain_unsupported_rejection": 0.9930555555555556,
+        "out_of_domain_rejection": 1,
+        "false_route_rate": 0.006172839506172839,
+        "false_routes": 4,
+        "authority_violations": 0,
+        "execution_errors": 0
+      }
+    },
+    {
+      "issue": 324,
+      "id": "0.11-lightweight-negative-gte-executable",
+      "cycle": "0.11-operation-routing-quality-v4",
+      "pull_request": 325,
+      "preregistered": true,
+      "status": "executing",
+      "decision": "executing",
+      "design": {
+        "route_authority": "BGE-M3 #259 robust raw winner",
+        "negative_veto": "winner-domain score>=0.55 and advantage>=0.05 on original base accepts",
+        "gte_rescue": "conditional on original base abstentions; same BGE winner only; exact budget-4 profile",
+        "offline_reference_issue": 322,
+        "runtime_target_p95_ms": 250
+      }
     }
   ],
   "current_research_conclusion": {
@@ -1962,7 +1999,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "none",
+    "active_experiment": "lightweight BGE negative-veto + conditional GTE rescue #324",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -2014,7 +2051,9 @@
     "runtime_parity_infrastructure": "#320 acaca1e... adds runtime parity validation; #321 31bda6e... ensures failed parity writes mismatch/drift evidence before exiting non-zero.",
     "runtime_realism": "Do not repeat multi-hour CPU/fp32 typed-decision screens. #299 may contribute a terminal semantic signal if it completes, but timeout means stop that runtime. Future Kev/AnyJev evaluation requires a plausibly deployable runtime path to <=250 ms.",
     "kev_status": "Kev-0.8B CPU/fp32 #299 ended cancelled without analysis.json after ~3h; no quality conclusion, exact runtime path retired.",
-    "anyjev_status": "AnyJev CPU execution PR #313 retired unexecuted; architecture remains only as a runtime-gated option if a credible <=250 ms path exists."
+    "anyjev_status": "AnyJev CPU execution PR #313 retired unexecuted; architecture remains only as a runtime-gated option if a credible <=250 ms path exists.",
+    "current_frontier": "#322 offline composition passed 85.0694% exact / 99.3056% near rejection / 100% OOD / 0.6173% false-route. #324 is measuring exact row parity and direct p95.",
+    "expensive_typed_decision_status": "CPU Laya/Qwen/Kev/AnyJev product-path experiments are terminal; current work is BGE-native/lightweight and <=250 ms by design."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -2077,12 +2116,15 @@
       320,
       321
     ],
-    "active_experiments": [],
+    "active_experiments": [
+      324
+    ],
     "active_pull_requests": [
-      235
+      235,
+      325
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "design a lightweight BGE-native open-set boundary that preserves <=250 ms; do not launch another multi-hour CPU typed-decision model screen",
+    "next_research_direction": "finish #324 executable parity/runtime confirmation; if pass, freeze exact candidate and run a new zero-overlap fresh confirmation",
     "contingent_experiments": [
       303
     ],
@@ -2104,10 +2146,8 @@
         "reason": "CPU/fp32 runtime path is not product-relevant for <=250 ms target; no timeout retry"
       }
     },
-    "dormant_contingencies": [
-      318
-    ],
-    "runtime_only_contingency": 318
+    "dormant_contingencies": [],
+    "runtime_only_contingency": null
   },
   "design_lineage": [
     {
