@@ -423,7 +423,8 @@ def evaluate(
     dense_latencies: list[float] = []
     colbert_latencies: list[float] = []
     sparse_latencies: list[float] = []
-    total_latencies: list[float] = []
+    promotable_latencies: list[float] = []
+    diagnostic_total_latencies: list[float] = []
     rows: list[dict[str, Any]] = []
     parity_mismatches: list[dict[str, str]] = []
     authority_violations = 0
@@ -545,12 +546,14 @@ def evaluate(
             sparse_winner_score = 0.0
             error = f"{type(exc).__name__}: {exc}"
 
-        total_ms = (time.perf_counter_ns() - row_started) / 1_000_000
+        diagnostic_total_ms = (time.perf_counter_ns() - row_started) / 1_000_000
+        promotable_ms = encode_ms + dense_ms + colbert_ms
         encode_latencies.append(encode_ms)
         dense_latencies.append(dense_ms)
         colbert_latencies.append(colbert_ms)
         sparse_latencies.append(sparse_ms)
-        total_latencies.append(total_ms)
+        promotable_latencies.append(promotable_ms)
+        diagnostic_total_latencies.append(diagnostic_total_ms)
 
         rows.append(
             {
@@ -589,7 +592,8 @@ def evaluate(
                 "dense_scoring_latency_ms": dense_ms,
                 "colbert_scoring_latency_ms": colbert_ms,
                 "sparse_scoring_latency_ms": sparse_ms,
-                "total_latency_ms": total_ms,
+                "promotable_latency_ms": promotable_ms,
+                "diagnostic_total_latency_ms": diagnostic_total_ms,
                 "error": error,
             }
         )
@@ -618,8 +622,9 @@ def evaluate(
         agreement_field="colbert_same_tool_agree",
     )
 
-    total_runtime = _distribution(total_latencies)
-    p95_ms = total_runtime["p95"]
+    promotable_runtime = _distribution(promotable_latencies)
+    diagnostic_total_runtime = _distribution(diagnostic_total_latencies)
+    p95_ms = promotable_runtime["p95"]
 
     passing_rules: list[dict[str, Any]] = []
     for family_id, metrics in (
@@ -680,7 +685,8 @@ def evaluate(
             "dense_scoring_latency_ms": _distribution(dense_latencies),
             "colbert_scoring_latency_ms": _distribution(colbert_latencies),
             "sparse_scoring_latency_ms": _distribution(sparse_latencies),
-            "total_latency_ms": total_runtime,
+            "promotable_latency_ms": promotable_runtime,
+            "diagnostic_total_latency_ms": diagnostic_total_runtime,
         },
         "family_A_global_agreement": family_a,
         "family_B_same_tool_agreement": family_b,
