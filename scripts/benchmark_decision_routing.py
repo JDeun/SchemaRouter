@@ -28,8 +28,6 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 from schemarouter import (  # noqa: E402
     CallableDecisionBackend,
-    discover_decision_backend_plugins,
-    load_decision_backend_plugin,
     DecisionPolicy,
     EmbeddingDecisionBackend,
     EndpointSpec,
@@ -39,6 +37,8 @@ from schemarouter import (  # noqa: E402
     PlanRequest,
     SchemaPlanner,
     ToolSpec,
+    discover_decision_backend_plugins,
+    load_decision_backend_plugin,
 )
 from schemarouter.analyzers import ModelQueryAnalyzer  # noqa: E402
 from schemarouter.integrations import (  # noqa: E402
