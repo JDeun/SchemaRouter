@@ -9,6 +9,14 @@ on:
       - "benchmarks/operation-routing-v4-bge-alias-envelope.json"
       - "scripts/analyze_bge_alias_envelope_v4.py"
       - "tests/test_bge_alias_envelope_v4.py"
+  pull_request:
+    branches:
+      - "research/v4-bge-m3-robust-candidate"
+    paths:
+      - ".github/workflows/research-v4-bge-alias-envelope.yml"
+      - "benchmarks/operation-routing-v4-bge-alias-envelope.json"
+      - "scripts/analyze_bge_alias_envelope_v4.py"
+      - "tests/test_bge_alias_envelope_v4.py"
   workflow_dispatch:
 
 permissions:
