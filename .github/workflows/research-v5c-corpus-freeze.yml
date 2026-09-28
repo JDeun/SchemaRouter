@@ -1,0 +1,45 @@
+name: Research V5C Corpus Freeze
+
+on:
+  push:
+    branches:
+      - "research/0.12-hierarchical-capability-ontology"
+    paths:
+      - ".github/workflows/research-v5c-corpus-freeze.yml"
+      - "benchmarks/operation-routing-v5c-hierarchical-ontology-preregistration.json"
+      - "benchmarks/hierarchical_capability_ontology.py"
+      - "benchmarks/operation_routing_v5c_catalog.py"
+      - "scripts/generate_operation_routing_v5c.py"
+      - "tests/test_hierarchical_capability_ontology.py"
+      - "tests/test_operation_routing_v5c_protocol.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Validate preregistration and protocol
+        run: |
+          python -m json.tool benchmarks/operation-routing-v5c-hierarchical-ontology-preregistration.json >/dev/null
+          ruff check             benchmarks/hierarchical_capability_ontology.py             benchmarks/operation_routing_v5c_catalog.py             scripts/generate_operation_routing_v5c.py             tests/test_hierarchical_capability_ontology.py             tests/test_operation_routing_v5c_protocol.py
+          pytest -q             tests/test_hierarchical_capability_ontology.py             tests/test_operation_routing_v5c_protocol.py
+      - name: Generate both corpora before any scoring
+        run: |
+          python scripts/generate_operation_routing_v5c.py             --out-dir artifacts/operation-routing-v5c
+          cat artifacts/operation-routing-v5c/freeze-manifest.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: operation-routing-v5c-freeze-${{ github.run_id }}
+          path: artifacts/operation-routing-v5c/
+          retention-days: 30
