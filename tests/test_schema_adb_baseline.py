@@ -7,8 +7,6 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from schemarouter import EndpointSpec, InMemoryRegistry, ToolSpec
-
 from benchmarks.operation_routing_v6a_catalog import (  # noqa: E402
     confirmation_registry,
     development_registry,
@@ -18,6 +16,7 @@ from benchmarks.schema_adb_baseline import (  # noqa: E402
     compile_registry_contracts,
     learn_adb_radius,
 )
+from schemarouter import EndpointSpec, InMemoryRegistry, ToolSpec  # noqa: E402
 
 
 def test_adb_radius_is_deterministic_and_tracks_positive_geometry() -> None:
