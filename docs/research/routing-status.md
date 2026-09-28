@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **65** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **66** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [machine-readable ledger](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json) — exact provenance index.
@@ -209,6 +209,42 @@ tuning over the same BGE/MiniLM ontology-projection evidence family on consumed 
 The exact #363 rule is terminal. Its separately frozen 552-case confirmation corpus remains
 **unscored**. A successor must introduce a materially different semantic membership signal rather
 than another threshold or agreement variant over the same projections.
+
+
+## 0.12 external multilingual zero-shot membership
+
+Experiment #371 replaced the BGE/MiniLM ontology-vote family with an independently pretrained
+multilingual zero-shot classifier while keeping frozen BGE-M3 as the sole positive route selector.
+For the BGE-anchored tool, registered operation leaves plus one generic
+`outside registered capabilities` label were presented as a finite multiclass label set. The
+external classifier could only preserve the raw winner or veto to `NO_ROUTE`.
+
+The model was resolved before scoring to immutable revision
+`d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4`.
+
+DEV result:
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **93.42%** |
+| Raw supported exact | **93.86%** |
+| Raw supported tool accuracy | **99.12%** |
+| Near-domain unsupported rejection | **1.59%** |
+| OOD rejection | **2.78%** |
+| False-route | **98.15%** |
+| Veto precision | **85.71%** |
+| Veto recall | **1.85%** |
+| Raw-correct winners vetoed | **1 / 0.47%** |
+| External classifier p95 | **93.15 ms** |
+| End-to-end p95 | **274.52 ms** |
+| Positive route switches / authority / execution errors | **0 / 0 / 0** |
+
+The architecture remained authority-safe, but the generic OUTSIDE catch-all almost never won
+multiclass normalization against concrete supported capability labels. The exact formulation is
+terminal and its separately frozen confirmation corpus remains **unscored**.
+
+The next candidate must condition the actual registered capability set directly in the membership
+question instead of asking one generic OUTSIDE label to compete with concrete positive labels.
 
 ## Reproducibility
 
