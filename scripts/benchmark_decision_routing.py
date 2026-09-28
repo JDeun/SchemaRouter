@@ -436,6 +436,29 @@ def _installed_version(package: str) -> str | None:
         return None
 
 
+def _decision_plugin_runtime_metadata(
+    *,
+    plugin_name: str | None,
+    config_env: str,
+    config: dict[str, Any],
+    plugin_info: Any | None,
+) -> dict[str, Any]:
+    """Return reproducibility metadata without persisting plugin config values."""
+
+    if plugin_name is None:
+        return {"enabled": False}
+    return {
+        "enabled": True,
+        "name": plugin_name.strip(),
+        "config_env": config_env,
+        "config_keys": sorted(config),
+        "distribution": (
+            plugin_info.distribution if plugin_info is not None else None
+        ),
+        "version": plugin_info.version if plugin_info is not None else None,
+    }
+
+
 def _corpus_sha256(path: str | os.PathLike[str] | None) -> str:
     if path is not None:
         payload = Path(path).read_bytes()
@@ -1742,25 +1765,11 @@ async def main() -> None:
             "hardware_label": args.hardware_label,
         },
         "local_runtime": {
-            "decision_plugin": (
-                {
-                    "enabled": True,
-                    "name": args.decision_plugin.strip(),
-                    "config_env": args.decision_plugin_config_env,
-                    "config_keys": sorted(decision_plugin_config),
-                    "distribution": (
-                        decision_plugin_info.distribution
-                        if decision_plugin_info is not None
-                        else None
-                    ),
-                    "version": (
-                        decision_plugin_info.version
-                        if decision_plugin_info is not None
-                        else None
-                    ),
-                }
-                if args.decision_plugin
-                else {"enabled": False}
+            "decision_plugin": _decision_plugin_runtime_metadata(
+                plugin_name=args.decision_plugin,
+                config_env=args.decision_plugin_config_env,
+                config=decision_plugin_config,
+                plugin_info=decision_plugin_info,
             ),
             "decision_callable": (
                 {
