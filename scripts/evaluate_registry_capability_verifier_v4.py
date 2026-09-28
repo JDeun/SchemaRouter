@@ -28,7 +28,10 @@ from benchmarks.registry_capability_holdout import (  # noqa: E402
 )
 from benchmarks.registry_capability_holdout import cases as registration_cases  # noqa: E402
 from benchmarks.registry_capability_holdout import manifest as registration_manifest  # noqa: E402
-from benchmarks.registry_capability_verifier import RegistryCapabilityVerifier  # noqa: E402
+from benchmarks.registry_capability_verifier import (  # noqa: E402
+    RegistryCapabilityVerifier,
+    fit_generic_head,
+)
 
 
 def _quantile(values: list[float], q: float) -> float | None:
@@ -249,9 +252,17 @@ def evaluate(canonical_cases: list[dict[str, Any]]) -> dict[str, Any]:
     model = _load_model()
     embed = _embedder(model)
 
+    generic_fit_started = time.perf_counter_ns()
+    generic_state = fit_generic_head(embed)
+    generic_fit_ms = (time.perf_counter_ns() - generic_fit_started) / 1_000_000
+
     canonical_registry = reference_registry()
     canonical_static_started = time.perf_counter_ns()
-    canonical_verifier = RegistryCapabilityVerifier(canonical_registry, embed)
+    canonical_verifier = RegistryCapabilityVerifier(
+        canonical_registry,
+        embed,
+        generic_state=generic_state,
+    )
     canonical_static_ms = (
         time.perf_counter_ns() - canonical_static_started
     ) / 1_000_000
@@ -271,7 +282,11 @@ def evaluate(canonical_cases: list[dict[str, Any]]) -> dict[str, Any]:
 
     registration_registry = build_registration_registry()
     registration_static_started = time.perf_counter_ns()
-    registration_verifier = RegistryCapabilityVerifier(registration_registry, embed)
+    registration_verifier = RegistryCapabilityVerifier(
+        registration_registry,
+        embed,
+        generic_state=generic_state,
+    )
     registration_static_ms = (
         time.perf_counter_ns() - registration_static_started
     ) / 1_000_000
@@ -304,6 +319,7 @@ def evaluate(canonical_cases: list[dict[str, Any]]) -> dict[str, Any]:
             "action_score_floor": canonical_verifier.head.action_score_floor,
             "action_margin_floor": canonical_verifier.head.action_margin_floor,
         },
+        "generic_head_fit_ms": generic_fit_ms,
         "canonical_static_init_ms": canonical_static_ms,
         "registration_static_init_ms": registration_static_ms,
         "registration_manifest": registration_manifest(),
