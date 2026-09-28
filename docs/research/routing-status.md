@@ -355,3 +355,134 @@ The complete design/experiment narrative is stored at
 
 The terminal report is available at
 [Operation routing v4 terminal report](operation-routing-v4-terminal-report.md).
+
+
+## 0.13 schema-derived open-set membership sequence
+
+The 0.13 cycle isolates **positive route retrieval** from **open-set capability membership**.
+Frozen BGE-M3 remains the sole source of positive endpoint authority. Every 0.13 verifier is
+veto-only: it may preserve the raw registered top-1 route or return `NO_ROUTE`, but may never
+rerank to another endpoint, use rank-2 fallback, or invent a pseudo-route.
+
+Standing production-oriented gates for this sequence are:
+
+| Metric | Gate |
+| --- | ---: |
+| Supported exact route accuracy | >= **85%** |
+| Near-domain unsupported rejection | >= **97%** |
+| OOD rejection | **100%** |
+| False-route rate | <= **1%** |
+| Query p95 | <= **250 ms** |
+| Authority violations / route switches / execution errors | **0 / 0 / 0** |
+
+### V6A — schema-derived spherical ADB (#384)
+
+Positive-only schema-derived spherical regions catastrophically failed to transfer from synthetic
+schema surfaces to natural user requests. Raw BGE supported exact remained **91.67%**, but the gate
+rejected every supported DEV request and all **209** raw-correct winners. Near-domain and OOD
+rejection were both 100% only because every query lay outside every learned region.
+
+**Decision:** terminal. Confirmation remains unopened.
+
+### V6B — hard-negative ellipsoid (#395)
+
+V6B added same-resource unsupported-operation negatives from the registered capability complement
+and a low-rank anisotropic ellipsoid. The synthetic evidence separated as intended, but the
+synthetic-to-natural surface shift remained: every DEV query still fell outside the boundaries.
+
+| Metric | Result |
+| --- | ---: |
+| Raw supported exact | **97.37%** |
+| Raw supported tool accuracy | **97.81%** |
+| Gated supported exact | **0%** |
+| Near-domain / OOD rejection | **100% / 100%** |
+| Raw-correct winners vetoed | **222 / 100%** |
+| p95 | **139.91 ms** |
+
+**Decision:** terminal. The complement-negative evidence remains reusable; the ellipsoid
+formulation does not. Confirmation remains unopened.
+
+### V6C — tied-Gaussian density ratio (#397)
+
+Replacing absolute inclusion with a relative positive-vs-complement density score eliminated
+catastrophic supported vetoes.
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **93.86%** |
+| Raw supported tool accuracy | **100%** |
+| Near-domain rejection | **39.29%** |
+| OOD rejection | **56.94%** |
+| False-route | **56.79%** |
+| Raw-correct winner veto | **0%** |
+| p95 | **152.15 ms** |
+
+The result established that relative evidence is safer for supported traffic, but one Gaussian per
+class collapses multimodal operation structure.
+
+**Decision:** terminal. Confirmation remains unopened.
+
+### V6D — component Gaussian-mixture density ratio (#399)
+
+V6D preserved endpoint-level positive components and complement resource×operation components with
+one tied diagonal covariance and a fixed zero log-likelihood-ratio boundary.
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **89.91%** |
+| Raw supported tool accuracy | **95.61%** |
+| Near-domain rejection | **39.68%** |
+| OOD rejection | **5.56%** |
+| False-route | **67.90%** |
+| Veto precision / recall | **96.30% / 32.10%** |
+| Raw-correct winner veto | **0%** |
+| p95 | **250.49 ms** |
+
+Component structure preserved supported winners but did not fix the core synthetic-to-natural
+membership problem. Natural unsupported/OOD queries were often still more likely under the
+registered mixture than under the synthetic complement mixture.
+
+**Decision:** terminal; PR #400 closed without merge. Confirmation remains unopened.
+
+### V6E — non-parametric kNN membership (#401)
+
+V6E removed Gaussian assumptions entirely. For the BGE-anchored tool it compared fixed k=3 cosine
+neighborhood distances to three immutable evidence banks: schema positives, same-resource
+complement negatives, and the pre-existing #279 16-anchor generic background bank.
+
+| Metric | Result |
+| --- | ---: |
+| Supported exact | **83.33%** |
+| Raw supported exact | **84.21%** |
+| Raw supported tool accuracy | **94.30%** |
+| Near-domain rejection | **60.71%** |
+| OOD rejection | **54.17%** |
+| False-route | **40.74%** |
+| Veto precision / recall | **95.05% / 59.26%** |
+| Raw-correct winner veto | **1.04%** |
+| Background / complement vetoes | **6 / 196** |
+| p95 | **176.50 ms** |
+
+This is the strongest unsupported recall of the V6C–V6E density/local-geometry sequence while
+remaining inside the latency target, but it still misses every open-set quality gate and slightly
+damages supported routing. The complement bank supplies most useful veto signal; the generic
+background bank is too sparse to cover natural OOD. Positive and complement neighborhoods still
+overlap substantially in natural-language embedding space.
+
+**Decision:** terminal; PR #402 closed without merge. Confirmation remains unopened.
+
+### Current 0.13 conclusion
+
+V6A–V6E rule out a progressively broader family of straightforward schema-synthetic geometry:
+
+- absolute spherical and ellipsoidal boundaries fail by synthetic-to-natural radius shift;
+- tied single- and multi-component Gaussian density ratios preserve supported traffic but
+  under-reject unsupported traffic;
+- threshold-free local kNN improves recall but still cannot separate the overlapping natural
+  positive/complement manifolds;
+- generic background anchors are insufficient as a natural OOD support model.
+
+Therefore the next experiment must introduce a **materially different semantic representation or
+membership signal**. It must not be a post-hoc sweep over V6E k, distance thresholds, margins,
+neighbor weights, background anchors, or schema/complement wording. All V6A–V6E confirmation
+surfaces remain unopened.
