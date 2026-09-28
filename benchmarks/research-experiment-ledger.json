@@ -1608,7 +1608,7 @@
       "issue": 289,
       "pull_request": 290,
       "preregistered": true,
-      "status": "executing",
+      "status": "completed",
       "design": {
         "route_authority": "BGE-M3 raw registered top-1 only",
         "verifier_model": "Qwen/Qwen3-Reranker-0.6B",
@@ -1624,7 +1624,51 @@
         ],
         "verifier_authority": "veto-only"
       },
-      "decision": "executing"
+      "decision": "rejected_direct_qwen3_capability_verifier",
+      "workflow_run_id": 36363863046,
+      "source_revision": "68e812ab5c72bd42664e21f8c9f62a760465cb03",
+      "artifact_id": 10947604859,
+      "artifact_sha256": "4e89707dce04d37aece8e803e00751ea86fdd12e5fd9282531ccecc830a9c96c",
+      "result": {
+        "raw_supported_top1_accuracy": 0.8845486111111112,
+        "passing_rule_count": 0,
+        "frontier": {
+          "p050": {
+            "supported_exact_route_accuracy": 0.8289930555555556,
+            "near_domain_unsupported_rejection": 0.7795138888888888,
+            "out_of_domain_rejection": 0.9722222222222222,
+            "false_route_rate": 0.19907407407407407
+          },
+          "p098": {
+            "supported_exact_route_accuracy": 0.6875,
+            "near_domain_unsupported_rejection": 0.9739583333333334,
+            "out_of_domain_rejection": 1,
+            "false_route_rate": 0.023148148148148147
+          },
+          "p099": {
+            "supported_exact_route_accuracy": 0.6276041666666666,
+            "near_domain_unsupported_rejection": 0.9913194444444444,
+            "out_of_domain_rejection": 1,
+            "false_route_rate": 0.007716049382716049
+          },
+          "p0995": {
+            "supported_exact_route_accuracy": 0.5277777777777778,
+            "near_domain_unsupported_rejection": 1,
+            "out_of_domain_rejection": 1,
+            "false_route_rate": 0
+          }
+        },
+        "probability_geometry_mean": {
+          "supported_correct_winner": 0.9266493506942384,
+          "supported_wrong_winner": 0.6271075994367479,
+          "near_domain_unsupported": 0.23253959416191744,
+          "out_of_domain": 0.041680927582724
+        },
+        "combined_single_request_p95_ms": 2059.41623895,
+        "execution_errors": 0,
+        "authority_violations": 0
+      },
+      "interpretation": "External pretrained reranker capability probability has strong semantic signal but no global boundary preserves >=85% supported exact while meeting 97/100/1 rejection safety. Direct generic reranker yes/no gating is rejected."
     },
     {
       "id": "0.11-frozen-hgb-winner-verifier-candidate",
@@ -1852,7 +1896,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": "parallel external capability boundaries: Qwen3 #289, Kev-0.8B #299, pinned Laya noul #301",
+    "active_experiment": "parallel typed capability boundaries: Kev-0.8B #299 and pinned Laya noul #301",
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -1870,7 +1914,8 @@
     "system_one_provider_status": "#291/#292 merged a generic Jev-compatible SystemOneDecisionBackend; future compatible models can swap base_url/model/provider_name without a new planner class.",
     "model_swap_infrastructure": "#291/#292 and #297/#298 merged: System One-compatible providers and shared benchmark are both model-neutral by configuration.",
     "direct_laya_status": "#293/#294 direct full-catalog Laya rejected: raw exact 60.07%, 0/8 rules pass, p95 1041ms; PR closed unmerged.",
-    "contingent_architecture": "#303 preregisters BGE top-4 recall + provider-neutral per-candidate noul routing, but must not execute unless winner-only capability veto cannot promote."
+    "contingent_architecture": "#303 preregisters BGE top-4 recall + provider-neutral per-candidate noul routing, but must not execute unless winner-only capability veto cannot promote.",
+    "qwen3_external_verifier_status": "#289/#290 rejected: 0/8 rules pass; safe p=0.99 gives 62.76% exact despite 99.13% near rejection / 0.77% false-route; combined CPU p95 2059ms."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -1925,21 +1970,20 @@
       287,
       291,
       293,
-      297
+      297,
+      289
     ],
     "active_experiments": [
-      289,
       299,
       301
     ],
     "active_pull_requests": [
       235,
-      290,
       300,
       302
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "finish Qwen3 #289, Kev-0.8B #299, and pinned Laya noul #301; activate #303 only if simpler winner-only capability boundaries do not promote",
+    "next_research_direction": "finish pinned Kev-0.8B #299 and pinned Laya noul #301; activate #303 only if winner-only typed capability veto cannot promote",
     "contingent_experiments": [
       303
     ]
