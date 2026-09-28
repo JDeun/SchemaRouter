@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 """Evaluate frozen #409 GTE positive selector on supported DEV only."""
 
 from __future__ import annotations
