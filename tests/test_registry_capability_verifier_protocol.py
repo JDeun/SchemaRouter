@@ -62,3 +62,24 @@ def test_stopping_rule_requires_both_surfaces_before_fresh() -> None:
     )
     assert "brand-new zero-overlap fresh confirmation" in stopping["if_both_pass"]
     assert stopping["issue_198"] == "remains_blocked_until_new_fresh_confirmation_passes"
+
+
+
+def test_manifest_freezes_typed_data_contract_ir() -> None:
+    data = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    contract = data["data_contract_ir"]
+
+    assert contract["preserve_semantic_id"] is True
+    assert contract["preserve_json_schema_type_shape"] is True
+    assert contract["preserve_source_unit"] is True
+    assert contract["preserve_unit_normalization"] == [
+        "dimension",
+        "canonical_unit",
+        "scale",
+        "offset",
+    ]
+    assert contract["preserve_qualifiers"] is True
+    assert contract["openapi_and_mcp_same_ir"] is True
+    assert contract["enforcement_role"] == (
+        "deterministic_registered_metadata_not_model_authority"
+    )
