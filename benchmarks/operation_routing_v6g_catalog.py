@@ -386,7 +386,7 @@ def confirmation_registry() -> InMemoryRegistry:
         unit="mS/cm",
         unit_normalization=UnitNormalizationSpec(
             dimension="electrical_conductivity",
-            canonical_unit="mS/cm",
+            canonical_unit="S/m",
             scale=0.1,
             offset=0.0,
         ),
