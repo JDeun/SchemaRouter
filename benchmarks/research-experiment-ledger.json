@@ -1970,12 +1970,12 @@
     "explicit_negative_prototype_status": "#275 showed useful near-domain signal, while #277/#279/#281 demonstrated that fixed scalar and relative-rank prototype heuristics cannot meet the 85/97/1/100 target. This heuristic family is closed.",
     "learned_verifier_status": "#285 grouped OOF passed, but #287 frozen fit-once HGB failed zero-overlap fresh-surface DEV at 82.64% exact / 93.23% near rejection / 6.02% false-route / 252.77 ms p95. Same model SHA was reused without refit.",
     "system_one_provider_status": "#291/#292 merged a generic Jev-compatible SystemOneDecisionBackend; future compatible models can swap base_url/model/provider_name without a new planner class.",
-    "model_swap_infrastructure": "#291/#292, #297/#298, and #304/#305 merged: System One wire-compatible and arbitrary bounded callable models can both be swapped and benchmarked without model-specific planner changes.",
+    "model_swap_infrastructure": "#291/#292, #297/#298, #304/#305, and #306/#308 are merged: System One wire-compatible, one-off bounded callables, and reusable non-wire plugins can all be swapped without model-specific planner changes.",
     "direct_laya_status": "#293/#294 direct full-catalog Laya rejected: raw exact 60.07%, 0/8 rules pass, p95 1041ms; PR closed unmerged.",
     "contingent_architecture": "#303 preregisters BGE top-4 recall + provider-neutral per-candidate noul routing, but must not execute unless winner-only capability veto cannot promote.",
     "qwen3_external_verifier_status": "#289/#290 rejected: 0/8 rules pass; safe p=0.99 gives 62.76% exact despite 99.13% near rejection / 0.77% false-route; combined CPU p95 2059ms.",
     "laya_typed_checkpoint_note": "Official Laya typed-decisions checkpoint is fine-tuned on four specific typed-decision workflows; its published strong noul result is not a zero-shot SchemaRouter result. Any use requires a separate pinned frozen-harness experiment.",
-    "system_one_extension_status": "#291/#292 generic SystemOneDecisionBackend, #297/#298 generic System One benchmark CLI, and #304/#305 callable benchmark path are merged; #306/#308 adds reusable third-party entry-point plugins and is under CI.",
+    "system_one_extension_status": "#291/#292 generic SystemOneDecisionBackend, #297/#298 generic System One benchmark CLI, #304/#305 callable benchmark path, and #306/#308 reusable third-party decision-backend entry-point plugins are merged.",
     "laya_noul_status": "#301/#302 rejected: P(true) does not separate correct supported from near/OOD; 0/8 rules pass; combined p95 1098.75ms.",
     "topk_same_laya_status": "#310 closed without execution: at p>=0.95 the same Laya signal has a hard best-case exact bound of 151/1152=13.11%, so compute would be wasted.",
     "laya_winner_noul_status": "#301/#302 rejected: 0/8 pass; correct-supported median P(true)=0.6784 vs near unsupported=0.67245; combined p95=1098.75ms.",
@@ -2039,7 +2039,8 @@
       291,
       297,
       301,
-      304
+      304,
+      306
     ],
     "active_experiments": [
       299
@@ -2047,7 +2048,6 @@
     "active_pull_requests": [
       235,
       300,
-      308,
       313,
       315
     ],
