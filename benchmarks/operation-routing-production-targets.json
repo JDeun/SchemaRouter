@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "target_id": "operation-routing-production-v1",
+  "cycle": "0.11-operation-routing-quality-v4",
+  "metrics": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "combined_p95_ms_max": 250
+  },
+  "interpretation": {
+    "development_pass_is_production_claim": false,
+    "independent_fresh_confirmation_required": true,
+    "calibration_and_blind_required": true,
+    "semantic_retuning_after_freeze_allowed": false
+  }
+}
