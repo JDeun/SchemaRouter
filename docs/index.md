@@ -58,12 +58,16 @@ LangChain / LangGraph / LlamaIndex / your orchestrator
           OpenAPI / MCP / OPTIMADE / Python
 ```
 
-A useful mental model is **RAG for executable capabilities**. Document RAG turns source material
-into chunks + metadata before retrieval; SchemaRouter turns APIs/tools into endpoint + field
-contracts before bounded routing. Its registry is a logical capability graph/index, while the
-registered schema remains execution authority.
+**RAG means Retrieval-Augmented Generation:** generation is augmented with information retrieved
+from external sources. SchemaRouter does not replace that full pipeline or perform the final
+generation step. It provides a structured retrieval/execution boundary for RAG and agent systems
+when the external source is an API, MCP server, OPTIMADE service, or typed callable rather than a
+document corpus.
 
-[Read the capability-catalog model →](concepts/capability-catalog.md)
+Its registry is a logical capability graph/index, while the registered schema remains execution
+authority.
+
+[Read the RAG positioning and capability model →](concepts/capability-catalog.md)
 
 SchemaRouter is deliberately narrower than an agent framework. The orchestrator owns conversation,
 graphs, model invocation strategy, memory, checkpoints, and agent loops. SchemaRouter owns the
@@ -164,63 +168,18 @@ flow and never becomes executable automatically.
   permanent blacklists;
 - provider/access fallback never broadens the logical field need compiled from the query.
 
-## 0.6 focus
+## Current release
 
-Version 0.6 keeps the same execution-boundary scope while adding bounded local/model-assisted
-decisions, operational inspection, and a broader fail-closed OpenAPI subset. It adds Laya as an
-optional local decision backend, provider-neutral hosted-model reuse, live/SQLite inspection and a
-static dashboard, composed-response field discovery, bounded static `$id`/`$anchor` resolution,
-typed JSON root bodies, nullable normalization, and spec-faithful default parameter serialization.
+Version `0.10.0` consolidates the current product boundary: field-first, route-second planning;
+typed endpoint/field contracts; optional datatype and unit metadata; explicit unit normalization;
+exact qualifiers; bounded health/policy/fallback; and optional non-authoritative decision backends.
 
-[Read the 0.6.0 release notes →](releases/0.6.0.md)
-
-## 0.7 focus
-
-Version `0.7.0` keeps SchemaRouter focused on the execution boundary while adding
-provider/access fallback, recoverable health state, trusted parameter aliases, and stricter
-field-first contracts. Scientific result fields can now carry explicit datatypes, optional unit
-metadata and canonical normalization, plus exact trusted qualifiers such as temperature, phase,
-orientation, or method.
-
-Those qualifiers can participate in deterministic routing only when the condition is visibly present
-in the query. They also gate cross-provider fallback exactly. SchemaRouter does not infer scientific
-equivalence, convert qualifier values, or synthesize measurement context.
-
-[Field-first execution and scientific contracts →](concepts/field-first-execution.md)
-
-[Read the 0.7.0 release notes →](releases/0.7.0.md)
-
-## 0.10 focus
-
-Version `0.10.0` consolidates the product model and research boundary. It keeps field-first,
-route-second planning as the stable path; treats declared JSON datatype/shape, semantic IDs, optional
-units, explicit affine unit normalization, and exact qualifiers as part of the capability contract;
-and keeps learned decision providers bounded and optional.
-
-The current open-set research target is not presented as solved. The strongest executable canonical
-DEV candidate passed the standing target, but the exact frozen zero-overlap fresh confirmation
-failed materially on near-domain rejection, false-route rate, supported exact routing, and p95.
-No production-target candidate was promoted from that cycle.
+The open-set natural-language routing target is not presented as solved. The strongest frozen DEV
+candidate passed the standing target, but the exact zero-overlap fresh confirmation failed, so no
+experimental learned router was promoted as an unconditional production default.
 
 [Read the 0.10.0 release notes →](releases/0.10.0.md) ·
 [Read the routing research status →](research/routing-status.md)
-
-## 0.9 focus
-
-Version `0.9.0` adds a provider-neutral bounded pairwise decision backend for application-owned
-cross-encoders and rerankers. Pairwise scorers may rank or suppress only already-authorized options;
-they cannot invent tools, routes, credentials, or execution authority.
-
-The fresh 600-case v11 one-shot showed the trade-off clearly. The selected BGE pairwise candidate
-reached **51.667% overall accuracy**, **25.781% supported-route accuracy**, **97.396% near-domain
-unsupported-operation rejection**, and **100% OOD rejection**. A post-consumption MiniLM baseline
-diagnostic on the same corpus reached **54.833% overall**, **40.625% supported-route accuracy**, and
-**77.604% near-domain rejection**. The pairwise path remains optional rather than becoming the
-default.
-
-[Decision routing benchmark →](guides/decision-benchmark.md)
-
-[Read the 0.9.0 release notes →](releases/0.9.0.md)
 
 ## Go deeper
 
