@@ -8,13 +8,13 @@ from schemarouter import (
     DecisionOption,
     DecisionRequest,
     DecisionResult,
-    PlanningError,
     DecisionSelection,
+    PlanningError,
     choose_sync,
+    decision_plugins,
     discover_decision_backend_plugins,
     load_decision_backend_plugin,
 )
-from schemarouter import decision_plugins
 
 
 class DemoBackend:
