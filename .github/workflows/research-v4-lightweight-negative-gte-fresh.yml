@@ -1,0 +1,128 @@
+name: V4 Lightweight BGE GTE Fresh Confirmation
+
+on:
+  push:
+    branches:
+      - "research/v4-lightweight-negative-gte-freeze"
+    paths:
+      - ".github/workflows/research-v4-lightweight-negative-gte-fresh.yml"
+      - "scripts/generate_decision_routing_quality_v4_lightweight_confirmation.py"
+      - "scripts/evaluate_lightweight_negative_gte_fresh_v4.py"
+      - "tests/test_lightweight_negative_gte_fresh_v4.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v4-lightweight-negative-gte-fresh-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FROZEN_SEMANTIC_SOURCE_REVISION: "caca039aff1c7b2960d167196f883e3bcbc5d431"
+  FRESH_SEED: "operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a"
+  FRESH_SURFACE: "lightweight-bge-gte-operational-envelope-v1"
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "sentence-transformers==5.7.0" "einops==0.8.2"
+      - run: pip install -e ".[dev]"
+      - name: Verify frozen semantic files are unchanged
+        run: |
+          git diff --exit-code "${FROZEN_SEMANTIC_SOURCE_REVISION}" -- \
+            scripts/analyze_lightweight_negative_gte_executable_v4.py \
+            benchmarks/operation-routing-v4-lightweight-negative-gte-executable.json
+      - name: Validate frozen DEV manifest
+        run: |
+          python scripts/validate_operation_routing_freeze_manifest.py \
+            benchmarks/operation-routing-v4-lightweight-negative-gte-freeze.json \
+            --phase dev
+      - name: Validate fresh generator and gate contracts
+        run: |
+          ruff check \
+            scripts/generate_decision_routing_quality_v4_lightweight_confirmation.py \
+            scripts/evaluate_lightweight_negative_gte_fresh_v4.py \
+            tests/test_lightweight_negative_gte_fresh_v4.py
+          pytest -q tests/test_lightweight_negative_gte_fresh_v4.py
+
+  evaluate:
+    needs: contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "sentence-transformers==5.7.0" "einops==0.8.2"
+      - run: pip install -e ".[dev]"
+      - name: Verify frozen semantic files are unchanged
+        run: |
+          git diff --exit-code "${FROZEN_SEMANTIC_SOURCE_REVISION}" -- \
+            scripts/analyze_lightweight_negative_gte_executable_v4.py \
+            benchmarks/operation-routing-v4-lightweight-negative-gte-executable.json
+      - name: Generate independent fresh confirmation corpus
+        run: |
+          OUT="artifacts/v4-lightweight-negative-gte-fresh"
+          mkdir -p "${OUT}"
+          python scripts/generate_decision_routing_quality_v4_lightweight_confirmation.py \
+            --source-revision "${GITHUB_SHA}" \
+            --out "${OUT}/corpus.json" \
+            --manifest "${OUT}/corpus-manifest.json"
+      - name: Audit fresh confirmation corpus
+        run: |
+          python scripts/audit_operation_routing_corpus.py \
+            --corpus artifacts/v4-lightweight-negative-gte-fresh/corpus.json \
+            --out artifacts/v4-lightweight-negative-gte-fresh/corpus-audit.json \
+            --near-duplicate-threshold 0.80 \
+            --max-duplicate-examples 50
+      - name: Run frozen candidate on fresh surface
+        run: |
+          python scripts/evaluate_lightweight_negative_gte_fresh_v4.py \
+            --corpus artifacts/v4-lightweight-negative-gte-fresh/corpus.json \
+            --out artifacts/v4-lightweight-negative-gte-fresh/report.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: v4-lightweight-negative-gte-fresh-${{ github.run_id }}
+          path: |
+            artifacts/v4-lightweight-negative-gte-fresh/corpus.json
+            artifacts/v4-lightweight-negative-gte-fresh/corpus-manifest.json
+            artifacts/v4-lightweight-negative-gte-fresh/corpus-audit.json
+            artifacts/v4-lightweight-negative-gte-fresh/report.json
+            benchmarks/operation-routing-v4-lightweight-negative-gte-freeze.json
+            benchmarks/operation-routing-v4-lightweight-negative-gte-executable.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Enforce fresh confirmation gate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(
+              Path("artifacts/v4-lightweight-negative-gte-fresh/report.json")
+              .read_text(encoding="utf-8")
+          )
+          summary = report["summary"]
+          print(json.dumps(summary, sort_keys=True))
+          if not summary.get("fresh_confirmation_gate_pass"):
+              raise SystemExit("fresh confirmation gate failed")
+          PY
