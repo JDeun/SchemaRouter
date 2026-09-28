@@ -2706,6 +2706,86 @@
         "runtime evidence",
         "unscored confirmation discipline"
       ]
+    },
+    {
+      "id": "0.12-set-conditioned-binary-entailment-v1",
+      "cycle": "0.12-set-conditioned-entailment",
+      "issue": 374,
+      "pull_request": 375,
+      "branch": "research/0.12-set-conditioned-entailment",
+      "preregistered": true,
+      "hypothesis": "Condition one binary NLI judgment on the anchored tool's complete registered capability set while preserving frozen BGE-M3 as the sole positive route selector.",
+      "external_model": {
+        "name": "Horizon-Labs/multilingual-zeroshot-small",
+        "revision": "d8c48cf2e7c7640ad5bbb379bdb2f72f5ebde7c4",
+        "role": "set-conditioned binary entailment veto only"
+      },
+      "freeze": {
+        "workflow_run_id": 36421851941,
+        "source_revision": "c456214daba7d98d6822f99bd74aa50fb887a8f4",
+        "artifact_id": 10969746736,
+        "artifact_sha256": "d52241d155c043ae4398a471a25b9ce35700229d46377da5f86a41e02b851d8d"
+      },
+      "data_protocol": {
+        "development": {
+          "cases": 552,
+          "supported_cases": 228,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "f24d874afb5c248ff0ece71da27f89fd4d442e745e6e610269a9300c1851c034"
+        },
+        "confirmation": {
+          "cases": 552,
+          "supported_cases": 228,
+          "near_domain_cases": 252,
+          "out_of_domain_cases": 72,
+          "corpus_sha256": "214d59f25e755c73d15d9d6814363604ff88d5f7f6e66a93e1c0f133b0633332",
+          "scored": false
+        }
+      },
+      "result": {
+        "workflow_run_id": 36422168708,
+        "source_revision": "e61058d0aa31819bf99b182f4bd5947dd0d11fab",
+        "artifact_id": 10970342078,
+        "artifact_sha256": "4584f55a67b6744ba8ba3454290a2acb5e7cee1ce58695a0362618ab07f7faf8",
+        "development": {
+          "supported_exact_route_accuracy": 0,
+          "raw_supported_exact_route_accuracy": 0.9254385964912281,
+          "raw_supported_tool_accuracy": 0.9956140350877193,
+          "near_domain_unsupported_rejection": 1,
+          "out_of_domain_rejection": 1,
+          "false_route_rate": 0,
+          "false_routes": 0,
+          "vetoes": 552,
+          "true_unsupported_vetoes": 324,
+          "veto_precision": 0.5869565217391305,
+          "veto_recall": 1,
+          "entailment_count": 0,
+          "not_entailment_count": 552,
+          "raw_correct_winner_vetoed": 211,
+          "raw_correct_winner_veto_rate": 1,
+          "positive_route_switches": 0,
+          "nli_p95_ms": 56.159754649999996,
+          "p95_latency_ms": 254.5495434,
+          "authority_violations": 0,
+          "execution_errors": 0
+        }
+      },
+      "decision": "terminal_rejected_set_conditioned_nli_all_negative",
+      "failure_reason": "The aggregate set-membership hypothesis was classified not_entailment for all 552 DEV requests. This produced perfect unsupported rejection but vetoed every supported route, showing that disjunctive capability-set membership is not expressed as ordinary NLI entailment by this formulation.",
+      "interpretation": [
+        "Negative-only route authority remained intact with zero route switches and authority violations.",
+        "A single aggregate set-membership hypothesis collapsed to all-negative decisions.",
+        "The failure is semantic formulation rather than lack of open-set rejection.",
+        "The separately frozen confirmation corpus remains unopened."
+      ],
+      "paper_relevance": [
+        "set-conditioned NLI",
+        "all-negative semantic collapse",
+        "negative-only authority",
+        "typed unit-bearing registration",
+        "unscored confirmation discipline"
+      ]
     }
   ],
   "current_research_conclusion": {
@@ -2849,7 +2929,8 @@
     "bge_gte_consensus_status": "#336/#337 rejected: 81.34% exact / 43.58% near rejection / 81.94% OOD / 52.16% false-route.",
     "asymmetric_ontology_veto_status": "#358 preserved raw BGE positive selection exactly (96.05% exact, zero raw-correct winner vetoes) and achieved 99.22% veto precision, but same-leaf agreement recall was only 39.51%; exact rule rejected.",
     "capability_set_membership_status": "#363 raised veto recall to 64.20% while preserving 86.40% supported exact, but near rejection remained 54.76%, false-route 35.80%, and 18 raw-correct winners were vetoed; further rule tuning over the same BGE/MiniLM projections is closed.",
-    "external_zeroshot_membership_status": "#371 preserved supported routing (93.42%) but OUTSIDE won only 7/552 rows; near rejection 1.59%, false-route 98.15%, p95 274.52 ms. Exact multiclass formulation rejected."
+    "external_zeroshot_membership_status": "#371 preserved supported routing (93.42%) but OUTSIDE won only 7/552 rows; near rejection 1.59%, false-route 98.15%, p95 274.52 ms. Exact multiclass formulation rejected.",
+    "set_conditioned_entailment_status": "#374 returned not_entailment on all 552 DEV rows: 100% near/OOD rejection and 0% false-route, but 0% supported exact with every raw-correct winner vetoed. Aggregate set hypothesis rejected."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
