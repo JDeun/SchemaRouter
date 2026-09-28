@@ -1,0 +1,142 @@
+name: Research V5B Semantic Ontology DEV
+
+on:
+  push:
+    branches:
+      - "research/0.12-semantic-action-ontology"
+    paths:
+      - ".github/workflows/research-v5b-semantic-ontology-dev.yml"
+      - "benchmarks/operation-routing-v5b-semantic-ontology-preregistration.json"
+      - "benchmarks/semantic_action_ontology.py"
+      - "benchmarks/operation_routing_v5b_catalog.py"
+      - "scripts/generate_operation_routing_v5b.py"
+      - "scripts/evaluate_semantic_action_ontology_v5b.py"
+      - "tests/test_semantic_action_ontology.py"
+      - "tests/test_operation_routing_v5b_protocol.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FREEZE_SOURCE: "4e1e2e6dec19c0556020f0d21f6523fa4a8410ae"
+  DEV_SHA256: "1a497bcd36192913840d7ecd4c6bed714c908468baed6f2b0b9f4367bf57ffc6"
+  CONFIRM_SHA256: "548fe42da09e7c8dc89530c43d409db05618f57a39c277fca27aebe79b6802b9"
+
+concurrency:
+  group: research-v5b-semantic-ontology-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Verify exact frozen algorithm and corpus source
+        run: |
+          git diff --exit-code "${FREEZE_SOURCE}" --             benchmarks/semantic_action_ontology.py             benchmarks/operation_routing_v5b_catalog.py             scripts/generate_operation_routing_v5b.py             scripts/evaluate_semantic_action_ontology_v5b.py
+      - name: Validate preregistration and protocol
+        run: |
+          python -m json.tool benchmarks/operation-routing-v5b-semantic-ontology-preregistration.json >/dev/null
+          ruff check             benchmarks/semantic_action_ontology.py             benchmarks/operation_routing_v5b_catalog.py             scripts/generate_operation_routing_v5b.py             scripts/evaluate_semantic_action_ontology_v5b.py             tests/test_semantic_action_ontology.py             tests/test_operation_routing_v5b_protocol.py
+          pytest -q             tests/test_semantic_action_ontology.py             tests/test_operation_routing_v5b_protocol.py
+
+  evaluate-development:
+    needs: protocol
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers>=4.44,<5" "sentence-transformers>=3,<6" einops
+      - run: pip install -e ".[dev]"
+
+      - name: Recreate both frozen corpora
+        run: |
+          python scripts/generate_operation_routing_v5b.py             --out-dir artifacts/operation-routing-v5b
+
+      - name: Verify both frozen identities before scoring
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/operation-routing-v5b")
+          dev = json.loads((root / "development-manifest.json").read_text())
+          confirm = json.loads((root / "confirmation-manifest.json").read_text())
+          if dev["corpus_sha256"] != os.environ["DEV_SHA256"]:
+              raise SystemExit("development corpus SHA mismatch")
+          if confirm["corpus_sha256"] != os.environ["CONFIRM_SHA256"]:
+              raise SystemExit("confirmation corpus SHA mismatch")
+          if dev["case_count"] != 504 or confirm["case_count"] != 552:
+              raise SystemExit("frozen corpus case-count mismatch")
+          print("both 0.12-B corpus identities verified; confirmation remains unscored")
+          PY
+
+      - name: Score development only
+        run: |
+          python scripts/evaluate_semantic_action_ontology_v5b.py             --surface development             --corpus artifacts/operation-routing-v5b/development.json             --out artifacts/operation-routing-v5b/development-analysis.json
+
+      - name: Validate governance and authority invariants
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(
+              Path("artifacts/operation-routing-v5b/development-analysis.json")
+              .read_text(encoding="utf-8")
+          )
+          policy = data["policy"]
+          forbidden = (
+              "old_0_11_dev_used",
+              "fresh_270_used",
+              "fresh_287_used",
+              "fresh_326_used",
+              "issue_338_holdout_used",
+              "issue_347_dev_used",
+              "issue_347_confirmation_used",
+              "calibration_or_blind_used",
+              "learned_veto",
+              "route_specific_thresholds",
+              "prototype_score_threshold",
+              "prototype_margin_threshold",
+              "pseudo_route",
+              "cross_tool_fallback",
+          )
+          if any(policy[key] for key in forbidden):
+              raise SystemExit("research-governance invariant failed")
+          metrics = data["metrics"]
+          if metrics["authority_violations"] != 0:
+              raise SystemExit("authority violation")
+          if metrics["execution_errors"] != 0:
+              raise SystemExit("execution error")
+          print("development_pass=", data["surface_pass"])
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: operation-routing-v5b-dev-${{ github.run_id }}
+          path: |
+            artifacts/operation-routing-v5b/development-analysis.json
+            artifacts/operation-routing-v5b/development-manifest.json
+            artifacts/operation-routing-v5b/confirmation-manifest.json
+            benchmarks/operation-routing-v5b-semantic-ontology-preregistration.json
+          if-no-files-found: warn
+          retention-days: 30
