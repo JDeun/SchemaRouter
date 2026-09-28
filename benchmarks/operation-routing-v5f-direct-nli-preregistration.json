@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "cycle": "0.12-direct-set-nli-veto",
+  "experiment": "direct-binary-capability-set-nli-v1",
+  "issue": 368,
+  "parent_issue": 340,
+  "status": "preregistered_before_corpus_generation_or_scoring",
+  "route_ranker": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "role": "sole positive route selector"
+  },
+  "nli_membership": {
+    "model": "MoritzLaurer/multilingual-MiniLMv2-L6-mnli-xnli",
+    "revision": "0a71e92a985b6e1ad1828cf67ce9c459639c1dca",
+    "role": "binary capability-set membership veto only",
+    "hypotheses": [
+      "The user asks for an operation that is supported by the registered operations.",
+      "The user asks for an operation that is outside the registered operations."
+    ],
+    "decision": "larger entailment logit wins; exact tie preserves raw route",
+    "thresholds": false,
+    "contradiction_threshold": false,
+    "calibration": false
+  },
+  "explicit_parser": {
+    "source": "#347/#358 fixed generic multilingual parser reused without wording changes",
+    "supported": "preserve raw route",
+    "outside_set": "veto to NO_ROUTE",
+    "unknown": "invoke binary NLI"
+  },
+  "registered_context": {
+    "format": "User request: <query>\\nRegistered operations:\\n- <leaf>: <fixed generic English description>...",
+    "sorted_leaves": true,
+    "unknown_endpoint_policy": "if any anchored-tool endpoint has unknown operation semantics, explicit UNKNOWN preserves raw route and NLI veto is disabled"
+  },
+  "authority": {
+    "positive_selector": "raw BGE-M3 top-1 only",
+    "nli_positive_route_selection": false,
+    "endpoint_filter": false,
+    "rank2_fallback": false,
+    "cross_tool_fallback": false,
+    "pseudo_route": false
+  },
+  "data_protocol": {
+    "forbidden": [
+      "0.11-dev",
+      "#270",
+      "#287",
+      "#326",
+      "#338",
+      "#347-dev",
+      "#347-confirmation",
+      "#349-dev",
+      "#349-confirmation",
+      "#354-dev",
+      "#354-confirmation",
+      "#358-dev",
+      "#358-confirmation",
+      "#363-dev",
+      "#363-confirmation",
+      "#198-calibration",
+      "#198-blind"
+    ],
+    "failed_row_or_slice_inspection_forbidden": true,
+    "development": {
+      "role": "new 0.12-F screen",
+      "corpus_sha256": null
+    },
+    "confirmation": {
+      "role": "frozen confirmation only",
+      "generated_before_development_scoring": true,
+      "corpus_sha256": null
+    },
+    "requirements": [
+      "native",
+      "openapi",
+      "mcp",
+      "variable-endpoint-counts",
+      "opaque-endpoint-names",
+      "empty-aliases",
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed",
+      "supported",
+      "same-domain-unsupported",
+      "ood",
+      "sibling-operation-contrasts",
+      "temporal-current-history-forecast",
+      "typed-datatype-and-optional-unit",
+      "parser-explicit-and-parser-unknown-forms"
+    ]
+  },
+  "gates": {
+    "supported_exact_min": 0.85,
+    "near_rejection_min": 0.97,
+    "ood_rejection": 1,
+    "false_route_max": 0.01,
+    "authority_violations_max": 0,
+    "positive_route_switches_max": 0,
+    "execution_errors_max": 0,
+    "p95_ms_max": 250
+  },
+  "diagnostics": [
+    "raw_bge_exact",
+    "raw_bge_tool_accuracy",
+    "explicit_parser_coverage",
+    "nli_invocation_rate",
+    "nli_membership_confusion",
+    "raw_correct_winner_veto_rate",
+    "veto_precision",
+    "veto_recall",
+    "latency_distribution"
+  ],
+  "stopping_rule": {
+    "dev_fail": "terminal_reject_without_prompt_label_threshold_or_wording_repair",
+    "dev_pass": "freeze exact source and score already-generated confirmation",
+    "confirmation_fail": "terminal_reject",
+    "both_pass": "eligible_for brand-new zero-overlap natural-language fresh confirmation"
+  }
+}
