@@ -174,7 +174,7 @@ def _write_markdown(path: Path, package: dict[str, Any]) -> None:
     lines = [
         "# SchemaRouter research evidence table",
         "",
-        f"Ledger updated: \`{package.get('ledger_updated_at')}\`  ",
+        f"Ledger updated: `{package.get('ledger_updated_at')}`  ",
         f"Experiments: **{package['experiment_count']}**",
         "",
         "| ID | Status | Decision | Data role | Exact | Near reject | OOD reject | False-route | p95 ms | Run |",
