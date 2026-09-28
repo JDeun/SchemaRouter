@@ -102,7 +102,7 @@
       "fallback_integration_path": "research_callable",
       "lifecycle": "staged_research",
       "license_status": "Apache-2.0 reported by upstream",
-      "schemarouter_status": "AnyJev L0 content-free noul #311 / PR #313 is preregistered and staged; workflow is manual-dispatch only until Kev #299 is terminal and non-promotable. No SchemaRouter quality evidence yet.",
+      "schemarouter_status": "AnyJev L0 content-free noul #311 / PR #313 is preregistered and staged; activation is guarded by marker/manual dispatch and is allowed only after no Kev-based candidate promotes. No SchemaRouter quality evidence yet.",
       "source_revision": "45add301a7aa60ed3420c83d15c061e84e5bce61",
       "active_issue": 311,
       "active_pull_request": 313
