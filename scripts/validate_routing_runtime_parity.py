@@ -180,15 +180,6 @@ def validate_runtime_parity(
         "decision_mismatches": decision_mismatches[:100],
     }
 
-    if route_mismatches:
-        raise RuntimeParityError(
-            f"runtime variant changed selected route for {len(route_mismatches)} cases"
-        )
-    if decision_mismatches:
-        raise RuntimeParityError(
-            "runtime variant crossed the frozen decision boundary for "
-            f"{len(decision_mismatches)} cases"
-        )
     return result
 
 
@@ -217,6 +208,13 @@ def main() -> None:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(text, encoding="utf-8")
     print(text, end="")
+
+    if not result["valid"]:
+        raise SystemExit(
+            "runtime parity failed: "
+            f"route_mismatches={result['route_mismatch_count']}, "
+            f"decision_mismatches={result['decision_mismatch_count']}"
+        )
 
 
 if __name__ == "__main__":

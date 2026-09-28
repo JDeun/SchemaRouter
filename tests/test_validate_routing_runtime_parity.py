@@ -66,36 +66,44 @@ def test_runtime_parity_accepts_probability_drift_without_decision_drift() -> No
     assert result["probability_drift"]["max_abs"] == pytest.approx(0.10)
 
 
-def test_runtime_parity_rejects_threshold_crossing() -> None:
+def test_runtime_parity_reports_threshold_crossing() -> None:
     module = _module()
     reference = _analysis()
     candidate = deepcopy(reference)
     candidate["rows"][0]["supported_probability"] = 0.94
 
-    with pytest.raises(module.RuntimeParityError, match="decision boundary"):
-        module.validate_runtime_parity(
-            reference,
-            candidate,
-            route_field="predicted",
-            score_field="supported_probability",
-            threshold=0.95,
-        )
+    result = module.validate_runtime_parity(
+        reference,
+        candidate,
+        route_field="predicted",
+        score_field="supported_probability",
+        threshold=0.95,
+    )
+
+    assert result["valid"] is False
+    assert result["route_mismatch_count"] == 0
+    assert result["decision_mismatch_count"] == 1
+    assert result["decision_mismatches"][0]["case_id"] == "a"
 
 
-def test_runtime_parity_rejects_route_change() -> None:
+def test_runtime_parity_reports_route_change() -> None:
     module = _module()
     reference = _analysis()
     candidate = deepcopy(reference)
     candidate["rows"][0]["predicted"] = "weather.forecast"
 
-    with pytest.raises(module.RuntimeParityError, match="selected route"):
-        module.validate_runtime_parity(
-            reference,
-            candidate,
-            route_field="predicted",
-            score_field="supported_probability",
-            threshold=0.95,
-        )
+    result = module.validate_runtime_parity(
+        reference,
+        candidate,
+        route_field="predicted",
+        score_field="supported_probability",
+        threshold=0.95,
+    )
+
+    assert result["valid"] is False
+    assert result["route_mismatch_count"] == 1
+    assert result["decision_mismatch_count"] == 0
+    assert result["route_mismatches"][0]["case_id"] == "a"
 
 
 def test_runtime_parity_rejects_case_set_change() -> None:
