@@ -4,7 +4,7 @@
   "experiment": "factorized-resource-conditioned-action-v1",
   "issue": 355,
   "parent_issue": 340,
-  "status": "preregistered_before_corpus_generation_or_scoring",
+  "status": "corpora_frozen_before_scoring",
   "model": {
     "name": "BAAI/bge-m3",
     "revision": "5617a9f61b028005a4858fdac845db406aefb181",
@@ -89,12 +89,24 @@
   "data_protocol": {
     "development": {
       "role": "new 0.12-C screen",
-      "corpus_sha256": null
+      "corpus_sha256": "78b16324173f60ac2ec6b6c1adb2a8a957fef6c29e16c9607b1b39d0e2181df2",
+      "case_count": 504,
+      "supported_cases": 216,
+      "near_domain_cases": 216,
+      "out_of_domain_cases": 72,
+      "route_count": 18,
+      "tool_count": 6
     },
     "confirmation": {
       "role": "frozen confirmation only",
       "generated_before_development_scoring": true,
-      "corpus_sha256": null
+      "corpus_sha256": "3d514cae9fb20992481d9f67330b80f255930578546ddcf0a7e8fb31ab192951",
+      "case_count": 552,
+      "supported_cases": 264,
+      "near_domain_cases": 216,
+      "out_of_domain_cases": 72,
+      "route_count": 22,
+      "tool_count": 6
     }
   },
   "gates": {
@@ -111,5 +123,13 @@
     "dev_pass": "freeze exact source and open already-generated confirmation",
     "confirmation_fail": "terminal_reject_without repair",
     "both_pass": "eligible for brand-new zero-overlap natural-language fresh confirmation"
+  },
+  "corpus_freeze": {
+    "workflow_run_id": 36408429679,
+    "source_revision": "780c7d25aa11a41ca441f260691d398ff313aaf0",
+    "artifact_id": 10963530929,
+    "artifact_sha256": "d97088d7ce343ed30141ec6a6a5d804a9f906390e69b35cc6d3dfdf23de8de36",
+    "both_corpora_generated_together": true,
+    "scored_at_freeze": false
   }
 }
