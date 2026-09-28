@@ -27,6 +27,9 @@ Start from:
 
 `benchmarks/operation-routing-freeze-manifest.template.json`
 
+Copy the template to a candidate-specific JSON file. Use status `frozen-dev` after the DEV candidate
+is frozen and `fresh-confirmed` only after the independent fresh confirmation passes.
+
 Record the exact:
 
 - SchemaRouter source revision;
@@ -41,6 +44,18 @@ Record the exact:
 - development metrics;
 - independent fresh-confirmation corpus/workflow/artifact provenance;
 - fresh-confirmation metrics.
+
+Validate a DEV freeze before confirmation:
+
+```bash
+python scripts/validate_operation_routing_freeze_manifest.py \
+  benchmarks/<candidate-freeze>.json \
+  --phase dev
+```
+
+After the independent fresh confirmation is recorded, change the status to `fresh-confirmed` and
+validate again with `--phase fresh`. The validator fails on missing provenance, target drift,
+authority drift, invalid digests, or evidence that misses the standing gate.
 
 The manifest also records the authority invariants:
 
