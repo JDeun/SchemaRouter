@@ -1,0 +1,53 @@
+name: Research V5 Corpus Freeze
+
+on:
+  push:
+    branches:
+      - "research/0.12-query-first-typed-frame"
+    paths:
+      - ".github/workflows/research-v5-corpus-freeze.yml"
+      - "benchmarks/operation-routing-v5-typed-frame-preregistration.json"
+      - "benchmarks/query_first_typed_frame.py"
+      - "benchmarks/operation_routing_v5_catalog.py"
+      - "scripts/generate_operation_routing_v5.py"
+      - "tests/test_query_first_typed_frame.py"
+      - "tests/test_operation_routing_v5_protocol.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Validate preregistration and implementation
+        run: |
+          python -m json.tool benchmarks/operation-routing-v5-typed-frame-preregistration.json >/dev/null
+          ruff check \
+            benchmarks/query_first_typed_frame.py \
+            benchmarks/operation_routing_v5_catalog.py \
+            scripts/generate_operation_routing_v5.py \
+            tests/test_query_first_typed_frame.py \
+            tests/test_operation_routing_v5_protocol.py
+          pytest -q \
+            tests/test_query_first_typed_frame.py \
+            tests/test_operation_routing_v5_protocol.py
+      - name: Generate both frozen corpora before any scoring
+        run: |
+          python scripts/generate_operation_routing_v5.py \
+            --out-dir artifacts/operation-routing-v5
+          cat artifacts/operation-routing-v5/freeze-manifest.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: operation-routing-v5-freeze-${{ github.run_id }}
+          path: artifacts/operation-routing-v5/
+          retention-days: 30
