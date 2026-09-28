@@ -1,0 +1,85 @@
+{
+  "cycle": "0.11-operation-routing-quality-v4",
+  "candidate": "frozen-hgb-winner-verifier-v1",
+  "work_item": 287,
+  "source_experiment": 285,
+  "status": "preregistered_before_fit",
+  "route_authority": {
+    "model": "BAAI/bge-m3",
+    "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+    "schema_weight": 0.55,
+    "action_weight": 0.45,
+    "selection": "global registered raw top-1",
+    "verifier_can_select_route": false,
+    "rank2_fallback": false,
+    "pseudo_route": false,
+    "verifier_outputs": ["match", "no_match", "unknown"],
+    "execution_requires": "match"
+  },
+  "selected_rule": {
+    "classifier": "HistGradientBoostingClassifier",
+    "acceptance_threshold": 0.5,
+    "learning_rate": 0.05,
+    "max_iter": 150,
+    "max_leaf_nodes": 7,
+    "min_samples_leaf": 20,
+    "l2_regularization": 5.0,
+    "random_state": 20260928,
+    "python": "3.12",
+    "scikit_learn": "1.7.2"
+  },
+  "feature_schema": {
+    "continuous": [
+      "raw_top_score",
+      "raw_top_margin",
+      "raw_top_schema_score",
+      "raw_top_action_score",
+      "schema_action_abs_delta",
+      "raw_positive_score",
+      "best_local_positive_score",
+      "best_local_negative_score",
+      "negative_minus_raw_positive",
+      "negative_minus_best_positive",
+      "negative_outrank_count",
+      "winner_domain_anchor_score",
+      "best_known_domain_score",
+      "best_background_score",
+      "background_minus_best_known",
+      "background_minus_winner_domain",
+      "schema_top_agrees_raw",
+      "action_top_agrees_raw",
+      "schema_action_top_agree"
+    ],
+    "categorical": ["raw_top_route"],
+    "query_text": false,
+    "language": false,
+    "benchmark_labels": false
+  },
+  "fit_once": {
+    "required": true,
+    "fit_corpus_seed": "operation-routing-quality-v4-development-2026-09-27",
+    "fit_corpus_sha256": "fc085c58ed7c667d71024e60cf9e213e66da8f7b43f6e79551ed810a9e328216",
+    "serialized_format": "joblib",
+    "model_sha256_required": true,
+    "same_serialized_file_for_all_confirmation_stages": true,
+    "refit_after_fit_stage": false
+  },
+  "fresh_surface": {
+    "seed": "operation-routing-quality-v4-learned-verifier-confirmation-2026-09-28-a",
+    "surface_version": "learned-verifier-confirmation-wrappers-v1",
+    "case_count": 1800,
+    "normalized_exact_overlap_with_tuning_dev": 0,
+    "distinct_from_failed_270_by_seed_and_surface_version": true,
+    "tuning_eligible": false
+  },
+  "confirmation_gate": {
+    "supported_exact_route_accuracy_min": 0.85,
+    "near_domain_unsupported_rejection_min": 0.97,
+    "out_of_domain_rejection": 1.0,
+    "false_route_rate_max": 0.01,
+    "authority_violations_max": 0,
+    "execution_errors_max": 0,
+    "combined_p95_latency_ms_max": 250.0
+  },
+  "decision_policy": "Both same-corpus implementation confirmation and the new zero-overlap fresh-surface DEV must pass unchanged. A fresh-surface pass unblocks #198. A fresh-surface failure terminates learned geometry on this DEV and moves research to an externally pretrained semantic capability verifier."
+}
