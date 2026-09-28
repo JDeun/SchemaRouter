@@ -137,3 +137,25 @@ def test_core_source_contains_no_v6a_evaluation_route_identities() -> None:
         "catalogue_ops.q17",
     ):
         assert forbidden not in source
+
+
+def test_unknown_boundary_semantics_fail_open() -> None:
+    registry = InMemoryRegistry()
+    registry.register(
+        ToolSpec(
+            name="opaque",
+            description="Opaque registered service",
+            endpoints=[
+                EndpointSpec(
+                    name="x17",
+                    description="Perform the registered opaque capability",
+                )
+            ],
+        )
+    )
+    router = SchemaAdbRouter(registry, _keyword_embedder)
+    result = router.route("cross")
+    assert result["raw_top_route"] == "opaque.x17"
+    assert result["predicted"] == "opaque.x17"
+    assert result["tool_has_unknown_leaf"] is True
+    assert result["boundary_rows"] == []
