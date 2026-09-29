@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **69** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **84** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [Prior-art roadmap](prior-art-roadmap.md) — cross-session literature/work-item map and experiment-order guardrail;
@@ -14,10 +14,109 @@ For the full research record:
 
 SchemaRouter publishes routing research evidence separately from the stable library contract.
 
+## Active cycle: 0.14 end-to-end agent utility
+
+The active research question is no longer whether SchemaRouter can act as the final authoritative
+open-set classifier.
+
+The active question is:
+
+> **Does SchemaRouter improve an LLM agent's end-to-end tool-use performance by retrieving a
+> compact, typed set of executable capabilities from a large registered catalog?**
+
+The intended product boundary is now:
+
+```text
+OpenAPI / MCP / ToolSpec
+        ↓
+typed capability compiler + registry
+        ↓
+SchemaRouter Top-K retrieval
+        ↓
+LLM agent / planner
+        ↓
+schema + argument + permission + destructive-action policy
+        ↓
+tool execution
+        ↓
+result evaluation / optional corrective re-retrieval
+```
+
+SchemaRouter still owns registry-backed capability identity and typed metadata, but retrieval score
+does **not** grant irreversible execution authority. Top-1 exact route remains a useful diagnostic,
+not the sole product objective.
+
+### #418 Phase A — passed
+
+The corrected frozen benchmark contains 23 tasks across 20 / 50 / 100 / 250 endpoint catalogs.
+
+| Metric | Result |
+| --- | ---: |
+| Required-route Recall@1 | **68.97%** |
+| Recall@3 | **96.55%** |
+| Recall@5 | **100%** |
+| Recall@10 | **100%** |
+| All-required task coverage@5 | **100%** |
+| MRR | **0.82471** |
+
+Mean Top-5 serialized schema context relative to FULL:
+
+| Catalog | Top-5 / FULL |
+| --- | ---: |
+| 20 endpoints | **26.76%** |
+| 50 endpoints | **11.47%** |
+| 100 endpoints | **5.87%** |
+| 250 endpoints | **2.38%** |
+
+This is the decisive reason the research objective changed. A Top-1-only score makes multi-tool
+retrieval look artificially poor, while a compact Top-K set preserves every required capability on
+this frozen surface and rapidly reduces schema context as the catalog grows.
+
+Canonical corrected freeze:
+- workflow `36507439562`;
+- artifact `11006614997`;
+- task SHA256 `9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1`.
+
+### #420 Phase B1 — running
+
+B1 holds one real tool-calling LLM fixed and compares:
+- FULL;
+- SR-3;
+- SR-5;
+- SR-10;
+- SR-PROGRESSIVE;
+- ORACLE.
+
+It evaluates 23 tasks × 4 catalog sizes × 6 conditions = **552 episodes** with the same deterministic
+executor, task success criteria, safety policy and lexical candidate ordering.
+
+The model is `Qwen/Qwen3-0.6B` only as a reproducible **downstream agent sanity baseline**. This
+does not revive #289: #289 used the different `Qwen3-Reranker-0.6B` checkpoint as a yes/no
+SchemaRouter verifier and remains terminally rejected.
+
+The canonical B1 aggregate is running under task/catalog micro-sharding. No final B1 claim is made
+until all 552 episodes are reconstructed by the aggregator.
+
+### Required replication and answer-quality work
+
+- **#423 B2**: repeat the same frozen utility protocol with a materially stronger tool-calling agent
+  before generalizing B1 beyond a small local model.
+- **#424 final-answer quality**: separately measure factual recall, hallucination, numeric/unit
+  accuracy, provenance and final-answer completeness. Deterministic tool-use success is not treated
+  as a substitute for answer quality.
+
+The active 0.14 promotion criteria are:
+- required-tool-set Recall >= **97%** for the effective candidate budget;
+- task pass rate >= FULL minus **2 percentage points**;
+- tool-schema tokens <= **40%** of FULL;
+- total input tokens < FULL;
+- unauthorized destructive executions = **0**.
+
+
 This page is intentionally conservative: development-set success is not presented as production
 validation, and consumed fresh-confirmation corpora are never reused for tuning.
 
-## Standing operation-routing target
+## Historical 0.11–0.13 operation-routing target
 
 The current research target for the multilingual open-set operation-routing work is:
 
