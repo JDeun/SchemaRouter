@@ -3271,6 +3271,46 @@
       },
       "decision": "terminal_dev_supported_recall_fail_pr_closed_unmerged",
       "interpretation": "A fixed alpha=0.01 unsupported-null conformal gate reached the open-set safety/runtime targets, but the scalar E5 catalog score overlapped too strongly and vetoed 87.29% of raw-correct supported winners."
+    },
+    {
+      "id": "0.13-end-to-end-multilingual-operation-oos-parser",
+      "cycle": "0.13-schema-derived-open-set-membership",
+      "issue": 415,
+      "pull_request": 416,
+      "branch": "research/0.13-end-to-end-operation-parser",
+      "preregistered": true,
+      "frozen_source": "5135a29f39633421136a0c13c39675947fd92f3b",
+      "freeze_workflow_run_id": 36501993390,
+      "freeze_artifact_id": 11005867387,
+      "freeze_artifact_sha256": "89ba6d49ea03ebf00e1752e02820d5490b59a25446f300b4500550256b0a66df",
+      "training_bank_sha256": "c9bf9d378f8f9ef7388fde833e9a04c941871514319961b4a0666d97983caa68",
+      "dev_corpus_sha256": "4da38c34929fcbd7ef828a5ccee9afa89b048c960b852cf315dd68b97370f09e",
+      "confirmation_corpus_sha256": "26140a4a77ef07fbda0d875cbcba421b0f7a7465990c775fe656bfa4115c7565",
+      "dev_workflow_run_id": 36502279447,
+      "dev_artifact_id": 11005379996,
+      "dev_artifact_sha256": "8ad26fdbcbbff1a3da8bd32f4bdad11c01c2b2f58a6ac08a785b99fac0bc4152",
+      "trained_state_sha256": "dc8999e4c6c9039ad74b2cbcb5cbc67365a370a7f69445df195581c7c25aa59b",
+      "trained_metadata_sha256": "d9d5faa8f70891314b6eaa2531b4d11190c3903caf44991500482dd1129dd90a",
+      "result": {
+        "supported_exact": 0.7017543859649122,
+        "raw_supported_exact": 0.8157894736842105,
+        "raw_supported_tool_accuracy": 0.9298245614035088,
+        "near_domain_rejection": 0.6507936507936508,
+        "ood_rejection": 0.9861111111111112,
+        "false_route_rate": 0.27469135802469136,
+        "raw_correct_winner_veto_rate": 0.13978494623655913,
+        "scope_accuracy": 0.9057971014492754,
+        "supported_operation_accuracy": 0.706140350877193,
+        "near_domain_operation_accuracy": 0.5198412698412699,
+        "p95_ms": 181.4361968,
+        "training_ms": 99567.403595,
+        "authority_violations": 0,
+        "positive_route_switches": 0,
+        "execution_errors": 0,
+        "confirmation_scored": false
+      },
+      "decision": "terminal_dev_quality_fail_pr_closed_unmerged",
+      "interpretation": "End-to-end task-specific multilingual operation/OOS representation learning is fast enough and learns broad scope well, but generic operation prediction still fails to transfer accurately enough to unseen same-domain unsupported requests; symbolic set membership remains limited by parser generalization."
     }
   ],
   "current_research_conclusion": {
@@ -3380,7 +3420,7 @@
     "colbert_operation_contract_status": "#328/#329 rejected: 0 candidate-worthy rules; <=1% false-route frontier preserves only ~38.6-38.7% exact; executable p95 ~398.61 ms.",
     "colbert_status": "#328 rejected: safe ColBERT score frontiers retain only ~38.6-38.7% exact at <=1% false routes; executable p95 ~398.6 ms. Sparse diagnostic also non-viable.",
     "alias_envelope_status": "#332/#333 rejected: 0 candidate-worthy rules; p95 198.07 ms; safe C/D rules collapse exact to ~24% and still yield 1.39% false-route.",
-    "cycle_status": "0.13_first_sequence_terminal_no_active_child",
+    "cycle_status": "0.13_post_v6h_terminal_no_active_child",
     "cycle_decision": "close_0.11_without_calibration_or_blind",
     "production_target_validated": false,
     "calibration_blind_status": "not_run_entry_requirements_not_met",
@@ -3409,8 +3449,8 @@
       "false_route": 0.08487654320987655,
       "p95_ms": 278.3747833
     },
-    "final_finding": "The unresolved research problem is a surface-invariant executable-capability membership representation. Positive ranking alone is insufficient, while generic scalar similarity, synthetic geometry, generic action probes, and relevance cross-encoding all fail to separate same-domain unsupported requests without damaging supported traffic.",
-    "successor_rule": "Before any successor, search #388, the ledger, prior-art registry, issues, and research branches. The next candidate must introduce a materially new membership representation or decision structure and use new identity-disjoint DEV + frozen confirmation. Do not retune V6A-E geometry, #404 bank/probes, #408 candidate documents/thresholds, #409 GTE weights/fusion, or #412 alpha/E0/model from consumed DEV.",
+    "final_finding": "The unresolved research problem is a surface-invariant executable-capability membership representation. Positive ranking alone is insufficient; generic scalar similarity, synthetic geometry, generic action probes, relative relevance, conformal calibration, and end-to-end generic operation parsing have not separated same-domain unsupported requests while preserving supported traffic.",
+    "successor_rule": "Before any successor, search #388, the ledger, prior-art registry, issues, and research branches. The next candidate must introduce a materially new structured executable-capability representation or decision structure. Do not retune V6A-E geometry, #404 bank/probes, #408 documents/thresholds, #409 GTE weights/fusion, #412 alpha/E0/model, or #415 epochs/lr/loss/bank/model/head from consumed DEV.",
     "bge_gte_consensus_status": "#336/#337 rejected: 81.34% exact / 43.58% near rejection / 81.94% OOD / 52.16% false-route.",
     "asymmetric_ontology_veto_status": "#358 preserved raw BGE positive selection exactly (96.05% exact, zero raw-correct winner vetoes) and achieved 99.22% veto precision, but same-leaf agreement recall was only 39.51%; exact rule rejected.",
     "capability_set_membership_status": "#363 raised veto recall to 64.20% while preserving 86.40% supported exact, but near rejection remained 54.76%, false-route 35.80%, and 18 raw-correct winners were vetoed; further rule tuning over the same BGE/MiniLM projections is closed.",
@@ -3419,8 +3459,9 @@
     "independent_capability_entailment_status": "#377 raised veto recall to 76.54% but collapsed supported exact to 45.61%, vetoing 116 raw-correct winners; exact independent-pair argmax rule rejected.",
     "pairwise_nli_membership_status": "#378 reached 67.54% supported exact / 55.95% near rejection / 35.19% false-route with p95 539.92 ms; Horizon NLI decomposition family closed.",
     "positive_retrieval_status": "BGE-M3 remains the reference positive selector. Tool-Embed #406 and GTE #409 were both worse than same-surface BGE on fresh supported-only surfaces; BGE itself remains surface-sensitive.",
-    "open_set_membership_status": "V6A-E geometry, #404 naturalistic operation probes, #408 relative cross-encoding, and #412 E5 conformal gating are terminal. No tested method simultaneously preserved >=85% supported exact and met 97/100/1 open-set safety.",
-    "conformal_status": "#412 demonstrated that a conservative split-conformal gate can hit 99.21% near rejection / 100% OOD / 0.62% false-route / 244 ms p95, but supported exact collapsed to 10.09%; calibration cannot substitute for a discriminative semantic membership score."
+    "open_set_membership_status": "V6A-E geometry, #404 naturalistic probes, #408 relative cross-encoding, #412 E5 conformal gating, and #415 end-to-end multilingual operation/OOS parsing are terminal. No tested method simultaneously preserved >=85% supported exact and met 97/100/1 open-set safety.",
+    "conformal_status": "#412 demonstrated that a conservative split-conformal gate can hit 99.21% near rejection / 100% OOD / 0.62% false-route / 244 ms p95, but supported exact collapsed to 10.09%; calibration cannot substitute for a discriminative semantic membership score.",
+    "operation_parser_status": "#415 end-to-end MiniLM multitask parser reached 90.58% scope accuracy and 181.44 ms p95, but only 70.18% gated supported exact and 65.08% near rejection; operation prediction was 70.61% on supported and 51.98% on near-domain unsupported requests."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -3491,7 +3532,7 @@
     "active_experiments": [],
     "active_pull_requests": [],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "No frozen successor. Search current prior art and repository history for a materially new executable-capability membership representation; preregister before new scoring.",
+    "next_research_direction": "Investigate parameter/field/API-graph executable compatibility as a materially new structured representation, grounded in independent prior art, before preregistering any successor. Do not open another scalar threshold, embedding-family, operation-label, or calibration sweep.",
     "contingent_experiments": [
       303
     ],
@@ -3518,7 +3559,7 @@
     ],
     "runtime_only_contingency": 318,
     "current_cycle": "0.13-schema-derived-open-set-membership",
-    "current_cycle_status": "first_sequence_terminal_no_active_child",
+    "current_cycle_status": "post_v6h_terminal_no_active_child",
     "final_evaluation_issue": 198,
     "final_evaluation_status": "blocked_no_fresh_confirmed_candidate"
   },
@@ -3728,11 +3769,12 @@
         "naturalistic multilingual generic-operation linear probes improved broad OOD but did not solve same-domain unsupported membership",
         "relative multilingual cross-encoder relevance over supported/counterfactual/background documents failed quality and CPU latency",
         "split-conformal E5 membership achieved <=1% false-route safety but destroyed supported recall, demonstrating calibration cannot rescue a weakly separated scalar score",
-        "all terminal confirmation surfaces remain unopened; no row-driven repair of failed DEV formulations is permitted"
+        "all terminal confirmation surfaces remain unopened; no row-driven repair of failed DEV formulations is permitted",
+        "#415 end-to-end multilingual MiniLM scope+operation fine-tuning passed runtime (181.44 ms p95) but failed supported/near-domain quality; generic operation-label parsing is not a sufficient executable-membership representation on the frozen bank."
       ],
       "status": "terminal_sequence_no_promoted_candidate",
       "work_item": 382,
-      "current_next_action": "Search prior art and repository history for a materially new membership representation/decision structure before opening another experiment."
+      "current_next_action": "Investigate parameter/field/API-graph executable compatibility before any successor."
     }
   ],
   "early_experiment_lineage": [
