@@ -514,3 +514,85 @@ No terminal DEV rows may be used to tune a successor, and all confirmation surfa
 unopened. The canonical continuation point is issue **#388**, then issue **#382**, the
 machine-readable prior-art registry, and the experiment ledger.
 
+## 0.14 — typed capability retrieval as agent infrastructure
+
+The active research question moved in #417/#418 from **authoritative single-route
+classification** to **end-to-end agent utility**.
+
+This is an architectural reframing, not a deletion of the 0.13 evidence. The terminal 0.13 sequence
+showed that forcing one retrieval layer to simultaneously identify one exact endpoint and provide
+executor-grade open-set abstention creates a severe coverage/safety trade-off. In the most explicit
+case, #412 reached 99.21% near-domain rejection, 100% OOD rejection and 0.62% false-route while
+collapsing supported exact routing to 10.09%.
+
+The default 0.14 role is therefore:
+
+```text
+OpenAPI / MCP / ToolSpec
+        ↓
+typed capability compiler / registry
+        ↓
+SchemaRouter Top-K capability retrieval
+        ↓
+LLM agent chooses among finite registered candidates
+        ↓
+schema / argument / permission / destructive-action validation
+        ↓
+tool execution
+        ↓
+result evaluation
+        ↓
+optional corrective candidate expansion
+```
+
+SchemaRouter remains responsible for finite registry-backed capability exposure, ranking, typed
+metadata, provenance and execution constraints. The downstream agent is responsible for final
+selection among the exposed candidates. Irreversible actions remain protected by execution policy;
+retrieval confidence is not execution authority.
+
+Primary 0.14 measurements are now:
+- required-capability Recall@K / MRR / NDCG;
+- downstream deterministic task pass rate;
+- valid tool and argument construction;
+- tool-schema and total context tokens;
+- end-to-end latency, LLM/tool-call counts and cost where observable;
+- recovery under progressive retrieval;
+- destructive-action policy integrity.
+
+Top-1 exact remains a useful diagnostic but is no longer the sole product objective.
+
+### #418 Phase A
+
+A frozen 23-task benchmark (17 single-tool, 6 multi-tool) was evaluated at 20, 50, 100 and 250
+registered endpoints. Before any Phase-B agent inference, two multi-tool output contracts and two
+missing task inputs were corrected so every frozen task is actually executable. The corrected
+pre-B1 freeze is workflow `36507439562`, artifact `11006614997`, digest
+`sha256:5cec1c650bd2a98fc78f7fbb911c0b15d95a39c96a43848b939ba56302658022`.
+
+Corrected Phase-A retrieval coverage is invariant across all four catalog sizes:
+
+| Metric | Result |
+| --- | ---: |
+| Top-1 required-route recall | **68.97%** |
+| Top-3 required-route recall | **96.55%** |
+| Top-5 required-route recall | **100%** |
+| Top-10 required-route recall | **100%** |
+| Top-3 all-required task coverage | **95.65%** |
+| Top-5 all-required task coverage | **100%** |
+| Top-5 multi-tool coverage | **100%** |
+| Required-route MRR | **0.82471** |
+
+At 250 endpoints, Top-5 exposes on average only **2.379%** of the FULL serialized schema context
+while retaining every required capability in this benchmark. This is the first direct evidence for
+the intended “typed table of contents” role: compact candidate retrieval can be strong even when
+single-label Top-1 is not.
+
+### #420 Phase B1
+
+#420 is a reproducibility/sanity baseline using the causal `Qwen/Qwen3-0.6B` model only as the
+**downstream tool-using agent**. It is not a revival of #289, which terminally rejected the distinct
+`Qwen/Qwen3-Reranker-0.6B` checkpoint as a yes/no capability verifier.
+
+No Qwen score participates in SchemaRouter retrieval in #420. The agent sees lexicographically
+ordered candidate sets with no rank scores/positions. A stronger Phase-B2 agent is required before
+making a product-level generalization.
