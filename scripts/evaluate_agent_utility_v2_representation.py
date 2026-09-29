@@ -357,6 +357,16 @@ class RepresentationRetriever:
             }
         else:
             raise ValueError(f"unsupported condition: {condition}")
+        self.route_ids = tuple(sorted(documents))
+        self._typed_index_items = tuple(self.indexes.items())
+        self._typed_term_mask: dict[str, int] = {}
+        if condition == "TYPED-MULTIFIELD":
+            for position, (_, index) in enumerate(self._typed_index_items):
+                bit = 1 << position
+                for term in index.postings:
+                    self._typed_term_mask[term] = (
+                        self._typed_term_mask.get(term, 0) | bit
+                    )
         self.build_seconds = (time.perf_counter_ns() - started) / 1_000_000_000
         self.index_bytes = len(_canonical_text(serialized).encode("utf-8"))
 
@@ -366,12 +376,16 @@ class RepresentationRetriever:
             ranking = next(iter(self.indexes.values())).rank(query)
         else:
             query_counts = Counter(_tokens(query))
+            active_mask = 0
+            for term in query_counts:
+                active_mask |= self._typed_term_mask.get(term, 0)
+
             rrf: dict[str, float] = {}
-            for index in self.indexes.values():
+            for position, (_, index) in enumerate(self._typed_index_items):
+                if not active_mask & (1 << position):
+                    continue
                 field_ranking = index.rank_positive_counts(query_counts)
-                for rank, (route_id, score) in enumerate(field_ranking, start=1):
-                    if score <= 0.0:
-                        continue
+                for rank, (route_id, _) in enumerate(field_ranking, start=1):
                     rrf[route_id] = (
                         rrf.get(route_id, 0.0)
                         + 1.0 / (RRF_K + rank)
@@ -385,7 +399,7 @@ class RepresentationRetriever:
                 *positive,
                 *[
                     (route_id, 0.0)
-                    for route_id in sorted(self.documents)
+                    for route_id in self.route_ids
                     if route_id not in seen
                 ],
             ]
@@ -513,7 +527,7 @@ def evaluate(freeze_dir: Path) -> dict[str, Any]:
         "surface": "development",
         "freeze_manifest": manifest,
         "rrf_k": RRF_K,
-        "dev_representation_revision": "r3-single-tokenization-sparse-bm25",
+        "dev_representation_revision": "r4-active-field-mask",
         "conditions_scored": list(CONDITIONS),
         "conditions_blocked": {
             "INTENT-MANUAL": (
