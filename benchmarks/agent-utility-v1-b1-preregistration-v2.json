@@ -151,7 +151,9 @@
     "required_task_count_per_catalog_condition": 23,
     "unknown_task_ids_fail_closed": true,
     "duplicate_episode_keys_fail_closed": true,
-    "model_and_policy_identity_must_match_across_shards": true
+    "model_and_policy_identity_must_match_across_shards": true,
+    "runtime_identity_must_match_across_shards": true,
+    "actual_runtime_versions_recorded_in_each_shard": true
   },
   "excluded_or_superseded_episode_sources": [
     36517371433,
