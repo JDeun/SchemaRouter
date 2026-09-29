@@ -1,0 +1,92 @@
+name: Research 0.14 Representation DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "benchmarks/agent-utility-v2-representation-preregistration.json"
+      - "benchmarks/agent-utility-v2-latency-amendment.json"
+      - "benchmarks/agent_utility_v2_catalog.py"
+      - "scripts/generate_agent_utility_v2_dev.py"
+      - "scripts/evaluate_agent_utility_v2_representation.py"
+      - "tests/test_agent_utility_v2_dev_surface.py"
+      - "tests/test_agent_utility_v2_representation.py"
+      - ".github/workflows/research-0.14-representation-dev.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: representation-dev-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dev-ablation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e .
+      - name: Freeze DEV surface
+        run: |
+          python scripts/generate_agent_utility_v2_dev.py \
+            --surface development \
+            --out-dir artifacts/representation-dev-freeze
+      - name: Evaluate controlled representations
+        run: |
+          python scripts/evaluate_agent_utility_v2_representation.py \
+            --freeze-dir artifacts/representation-dev-freeze \
+            --out artifacts/representation-dev-results.json
+      - name: Verify DEV-only governance and write summary
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          result = json.loads(
+              Path("artifacts/representation-dev-results.json").read_text()
+          )
+          assert result["surface"] == "development"
+          assert result["freeze_manifest"]["confirmation_surface_opened"] is False
+          assert set(result["conditions_scored"]) == {
+              "DESCRIPTION-ONLY",
+              "RAW-SPEC",
+              "TYPED-MULTIFIELD",
+          }
+          assert "INTENT-MANUAL" in result["conditions_blocked"]
+          assert "TYPED+INTENT" in result["conditions_blocked"]
+
+          gate = result["dev_gate_descriptive"]
+          summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary.open("a", encoding="utf-8") as handle:
+              handle.write("## 0.14 representation DEV\n\n")
+              handle.write(f"- Recall@5 delta: {gate['Recall@5_delta']:.6f}\n")
+              handle.write(
+                  f"- FullCoverage@5 delta: {gate['FullCoverage@5_delta']:.6f}\n"
+              )
+              handle.write(
+                  f"- Recall@10 delta: {gate['Recall@10_delta']:.6f}\n"
+              )
+              handle.write(
+                  f"- max p95 ratio: {gate['retrieval_p95_ratio_max']:.6f}\n"
+              )
+              handle.write(
+                  f"- max index-byte ratio: {gate['index_bytes_ratio_max']:.6f}\n"
+              )
+              handle.write(
+                  f"- descriptive quality gate: {gate['quality_gain_gate']}\n"
+              )
+              handle.write(
+                  "- confirmation remains sealed; no promotion claim is made here.\n"
+              )
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: representation-dev-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30
