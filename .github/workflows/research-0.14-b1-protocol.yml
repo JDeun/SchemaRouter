@@ -9,6 +9,7 @@ on:
       - "benchmarks/agent_utility_v1_catalog.py"
       - "benchmarks/agent_utility_v1_executor.py"
       - "benchmarks/agent-utility-v1-b1-statistical-amendment.json"
+      - "benchmarks/agent-utility-v1-b1-execution-equivalence.json"
       - "scripts/generate_agent_utility_v1.py"
       - "scripts/evaluate_agent_utility_phase_a.py"
       - "scripts/evaluate_agent_utility_phase_b_qwen.py"
@@ -71,6 +72,36 @@ jobs:
           assert amendment["interpretation"]["catalog_repeats_per_task"] == 4
           PY
 
+      - name: Validate execution-sharding equivalence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          amendment = json.loads(
+              Path("benchmarks/agent-utility-v1-b1-execution-equivalence.json")
+              .read_text(encoding="utf-8")
+          )
+          assert amendment["issue"] == 420
+          assert amendment["execution_semantics_changed"] is False
+          assert amendment["acceptance_rule"]["required_episode_count"] == 552
+          assert amendment["acceptance_rule"]["required_unique_key_count"] == 552
+          assert amendment["acceptance_rule"]["required_task_count_per_catalog_condition"] == 23
+          assert amendment["acceptance_rule"][
+              "aggregate_with_latest_identity_guarded_task_cluster_bootstrap"
+          ] is True
+          sources = {
+              row["workflow_run_id"]: row
+              for row in amendment["eligible_episode_sources"]
+          }
+          assert set(sources) == {36520025834, 36520831273}
+          assert all(
+              row["core_identity_verified_equal"] is True
+              for row in sources.values()
+          )
+          assert amendment["excluded_source"]["workflow_run_id"] == 36517371433
+          PY
+
       - name: Freeze corrected tasks and catalogs
         run: |
           python scripts/generate_agent_utility_v1.py             --out-dir artifacts/agent-utility-v1
@@ -107,4 +138,5 @@ jobs:
             artifacts/agent-utility-v1/
             benchmarks/agent-utility-v1-preregistration.json
             benchmarks/agent-utility-v1-b1-statistical-amendment.json
+            benchmarks/agent-utility-v1-b1-execution-equivalence.json
           retention-days: 30
