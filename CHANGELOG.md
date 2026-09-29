@@ -7,6 +7,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+### Changed
+
+- resumed post-0.11 development on `0.12.0.dev0`; released `0.11.0` remains the stable PyPI baseline while 0.14 research continues independently.
+
 ## 0.11.0 - 2026-09-29
 
 ### Added
