@@ -56,7 +56,7 @@ def test_adaptive_shortlist_policy_selection_is_finite_and_frozen() -> None:
     assert selection["no_post_selection_retuning"] is True
 
     inclusion = data["heldout_432_inclusion"]
-    assert inclusion["allowed_only_if_confirmation_gate_passes_before_432_content_generation"] is True
+    assert (\n        inclusion["allowed_only_if_confirmation_gate_passes_before_432_content_generation"] is True\n    )
     assert inclusion["cannot_add_after_any_432_task_content_is_generated"] is True
     assert inclusion["cannot_add_after_any_432_score_is_opened"] is True
 
