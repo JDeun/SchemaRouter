@@ -47,6 +47,9 @@ jobs:
           key: "${{ env.B2_CACHE_KEY }}"
       - name: Populate exact model revision on cache miss
         if: steps.hf-cache.outputs.cache-hit != 'true'
+        env:
+          HF_HUB_OFFLINE: "0"
+          TRANSFORMERS_OFFLINE: "0"
         run: |
           python - <<'PY'
           import os
