@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from benchmarks.agent_utility_v1_catalog import TASKS  # noqa: E402
 from scripts.evaluate_agent_utility_phase_b_qwen import (  # noqa: E402
     _bootstrap_delta,
     _summary,
@@ -49,6 +50,41 @@ def aggregate(paths: list[Path]) -> dict[str, Any]:
         for result in loaded
         for episode in result["rows"]
     ]
+    expected_task_ids = {task.task_id for task in TASKS}
+    expected_conditions = {
+        "FULL",
+        "SR-3",
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE",
+        "ORACLE",
+    }
+    episode_keys = [
+        (
+            int(row["catalog_size"]),
+            str(row["task_id"]),
+            str(row["condition"]),
+        )
+        for row in rows
+    ]
+    if len(set(episode_keys)) != len(episode_keys):
+        raise ValueError("duplicate B1 episode key detected")
+
+    actual_task_ids = {str(row["task_id"]) for row in rows}
+    unknown_task_ids = sorted(actual_task_ids.difference(expected_task_ids))
+    if unknown_task_ids:
+        raise ValueError(
+            "unknown B1 task id(s): " + ", ".join(unknown_task_ids)
+        )
+
+    actual_conditions = {str(row["condition"]) for row in rows}
+    if actual_conditions != expected_conditions:
+        raise ValueError(
+            "condition set drift: "
+            f"expected={sorted(expected_conditions)} "
+            f"actual={sorted(actual_conditions)}"
+        )
+
     expected_sizes = {20, 50, 100, 250}
     actual_sizes = {int(row["catalog_size"]) for row in rows}
     if actual_sizes != expected_sizes:
@@ -67,9 +103,18 @@ def aggregate(paths: list[Path]) -> dict[str, Any]:
                 if int(row["catalog_size"]) == size
                 and row["condition"] == condition
             ]
-            if len(subset) != 23:
+            subset_task_ids = {str(row["task_id"]) for row in subset}
+            if subset_task_ids != expected_task_ids:
+                missing = sorted(expected_task_ids.difference(subset_task_ids))
+                unexpected = sorted(subset_task_ids.difference(expected_task_ids))
                 raise ValueError(
-                    f"{size}/{condition} expected 23 rows, got {len(subset)}"
+                    f"{size}/{condition} frozen task set mismatch: "
+                    f"missing={missing} unexpected={unexpected}"
+                )
+            if len(subset) != len(expected_task_ids):
+                raise ValueError(
+                    f"{size}/{condition} expected {len(expected_task_ids)} rows, "
+                    f"got {len(subset)}"
                 )
             summary_by_catalog[str(size)][condition] = _summary(subset)
 
