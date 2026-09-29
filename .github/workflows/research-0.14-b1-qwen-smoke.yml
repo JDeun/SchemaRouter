@@ -1,0 +1,40 @@
+name: Research 0.14 B1 Qwen Tool Smoke
+
+on:
+  push:
+    branches:
+      - "research/0.14-local-agent-ab"
+    paths:
+      - ".github/workflows/research-0.14-b1-qwen-smoke.yml"
+      - "scripts/smoke_qwen3_tool_call.py"
+      - "scripts/evaluate_agent_utility_phase_b_qwen.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers>=4.51,<5" safetensors
+      - run: pip install -e .
+
+      - name: Lint smoke path
+        run: |
+          pip install ruff
+          ruff check             scripts/smoke_qwen3_tool_call.py             scripts/evaluate_agent_utility_phase_b_qwen.py
+
+      - name: Run synthetic Qwen tool-call smoke
+        env:
+          HF_HUB_DISABLE_TELEMETRY: "1"
+        run: |
+          python scripts/smoke_qwen3_tool_call.py
