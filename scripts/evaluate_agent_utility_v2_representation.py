@@ -385,22 +385,52 @@ class RepresentationRetriever:
                 for rank in range(1, len(self.route_ids) + 1)
             ]
         )
-        self._typed_term_entries: dict[
-            str,
-            list[tuple[int, int, float]],
-        ] = {}
+        self._typed_term_positions: dict[str, tuple[int, ...]] = {}
+        self._typed_field_postings: tuple[
+            dict[str, tuple[tuple[int, float], ...]],
+            ...,
+        ] = ()
+        self._typed_single_term_rankings: tuple[
+            dict[str, tuple[int, ...]],
+            ...,
+        ] = ()
         if condition == "TYPED-MULTIFIELD":
+            field_postings: list[
+                dict[str, tuple[tuple[int, float], ...]]
+            ] = []
+            single_rankings: list[dict[str, tuple[int, ...]]] = []
+            term_positions: dict[str, list[int]] = {}
             for position, (_, index) in enumerate(self._typed_index_items):
+                integer_postings: dict[
+                    str,
+                    tuple[tuple[int, float], ...],
+                ] = {}
+                rankings: dict[str, tuple[int, ...]] = {}
                 for term, weights in index.weight_postings.items():
-                    entries = self._typed_term_entries.setdefault(term, [])
-                    entries.extend(
+                    entries = tuple(
                         (
-                            position,
                             self._route_index[route_id],
                             contribution,
                         )
                         for route_id, contribution in weights.items()
                     )
+                    integer_postings[term] = entries
+                    rankings[term] = tuple(
+                        route_index
+                        for route_index, _ in sorted(
+                            entries,
+                            key=lambda row: (-row[1], row[0]),
+                        )
+                    )
+                    term_positions.setdefault(term, []).append(position)
+                field_postings.append(integer_postings)
+                single_rankings.append(rankings)
+            self._typed_field_postings = tuple(field_postings)
+            self._typed_single_term_rankings = tuple(single_rankings)
+            self._typed_term_positions = {
+                term: tuple(positions)
+                for term, positions in term_positions.items()
+            }
         self.build_seconds = (time.perf_counter_ns() - started) / 1_000_000_000
         self.index_bytes = len(_canonical_text(serialized).encode("utf-8"))
 
@@ -410,50 +440,56 @@ class RepresentationRetriever:
             ranking = next(iter(self.indexes.values())).rank(query)
         else:
             query_counts = Counter(_tokens(query))
-            route_count = len(self.route_ids)
-            field_scores: list[list[float] | None] = [
-                None
-                for _ in self._typed_index_items
-            ]
-            field_touched: list[list[int] | None] = [
+            active_terms: list[list[tuple[str, int]] | None] = [
                 None
                 for _ in self._typed_index_items
             ]
             for term, query_tf in query_counts.items():
-                for position, route_index, contribution in (
-                    self._typed_term_entries.get(term, ())
-                ):
-                    scores = field_scores[position]
-                    touched = field_touched[position]
-                    if scores is None:
-                        scores = [0.0] * route_count
-                        touched = []
-                        field_scores[position] = scores
-                        field_touched[position] = touched
-                    if scores[route_index] == 0.0:
-                        touched.append(route_index)
-                    scores[route_index] += query_tf * contribution
+                for position in self._typed_term_positions.get(term, ()):
+                    terms = active_terms[position]
+                    if terms is None:
+                        terms = []
+                        active_terms[position] = terms
+                    terms.append((term, query_tf))
 
-            rrf = [0.0] * route_count
-            rrf_touched: list[int] = []
+            rrf: dict[int, float] = {}
             rrf_weights = self._rrf_weights
-            for scores, touched in zip(field_scores, field_touched, strict=True):
-                if scores is None or not touched:
+            for position, terms in enumerate(active_terms):
+                if not terms:
                     continue
-                ranked_indexes = sorted(
-                    touched,
-                    key=lambda route_index: (
-                        -scores[route_index],
-                        route_index,
-                    ),
-                )
+
+                if len(terms) == 1:
+                    term, _ = terms[0]
+                    ranked_indexes = (
+                        self._typed_single_term_rankings[position][term]
+                    )
+                else:
+                    scores: dict[int, float] = {}
+                    postings = self._typed_field_postings[position]
+                    for term, query_tf in terms:
+                        for route_index, contribution in postings[term]:
+                            scores[route_index] = (
+                                scores.get(route_index, 0.0)
+                                + query_tf * contribution
+                            )
+                    ranked_indexes = tuple(
+                        sorted(
+                            scores,
+                            key=lambda route_index: (
+                                -scores[route_index],
+                                route_index,
+                            ),
+                        )
+                    )
+
                 for rank, route_index in enumerate(ranked_indexes, start=1):
-                    if rrf[route_index] == 0.0:
-                        rrf_touched.append(route_index)
-                    rrf[route_index] += rrf_weights[rank]
+                    rrf[route_index] = (
+                        rrf.get(route_index, 0.0)
+                        + rrf_weights[rank]
+                    )
 
             positive_indexes = sorted(
-                rrf_touched,
+                rrf,
                 key=lambda route_index: (
                     -rrf[route_index],
                     route_index,
@@ -468,7 +504,7 @@ class RepresentationRetriever:
                 *[
                     (route_id, 0.0)
                     for route_index, route_id in enumerate(route_ids)
-                    if rrf[route_index] == 0.0
+                    if route_index not in rrf
                 ],
             ]
         elapsed_ms = (time.perf_counter_ns() - started) / 1_000_000
@@ -595,7 +631,7 @@ def evaluate(freeze_dir: Path) -> dict[str, Any]:
         "surface": "development",
         "freeze_manifest": manifest,
         "rrf_k": RRF_K,
-        "dev_representation_revision": "r8-repeated-latency-protocol",
+        "dev_representation_revision": "r9-single-term-field-fast-path",
         "latency_protocol": {
             "amendment_path": str(LATENCY_AMENDMENT_PATH.relative_to(ROOT)),
             "amendment_sha256": _file_sha(LATENCY_AMENDMENT_PATH),
