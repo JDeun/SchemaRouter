@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "issue": 420,
+  "status": "frozen_before_post_v2_inference",
+  "purpose": "runtime-only B1 v2 sharding; no experimental semantics change",
+  "expected_job_count": 30,
+  "expected_episode_count": 552,
+  "conditions_per_task": 6,
+  "groups": {
+    "s01": [
+      "single-paper-search",
+      "single-paper-retrieve",
+      "single-paper-summary",
+      "single-material-search"
+    ],
+    "s02": [
+      "single-material-retrieve",
+      "single-material-current",
+      "single-material-history",
+      "single-material-forecast"
+    ],
+    "s03": [
+      "single-inventory-list",
+      "single-inventory-create",
+      "single-inventory-update",
+      "single-inventory-delete"
+    ],
+    "s04": [
+      "single-message-send",
+      "single-share",
+      "single-credit-refund",
+      "single-runtime-restart"
+    ],
+    "s05": [
+      "single-export",
+      "multi-paper-search-retrieve",
+      "multi-paper-retrieve-summary",
+      "multi-material-search-current"
+    ],
+    "s06": [
+      "multi-create-share",
+      "multi-create-send",
+      "multi-retrieve-export"
+    ]
+  },
+  "catalogs": {
+    "20": [
+      "s01",
+      "s02",
+      "s03",
+      "s04",
+      "s05",
+      "s06"
+    ],
+    "50": [
+      "s01",
+      "s02",
+      "s03",
+      "s04",
+      "s05",
+      "s06"
+    ],
+    "100": [
+      "s01",
+      "s02",
+      "s03",
+      "s04",
+      "s05",
+      "s06"
+    ],
+    "250": [
+      [
+        "t01",
+        [
+          "single-paper-search",
+          "single-paper-retrieve"
+        ]
+      ],
+      [
+        "t02",
+        [
+          "single-paper-summary",
+          "single-material-search"
+        ]
+      ],
+      [
+        "t03",
+        [
+          "single-material-retrieve",
+          "single-material-current"
+        ]
+      ],
+      [
+        "t04",
+        [
+          "single-material-history",
+          "single-material-forecast"
+        ]
+      ],
+      [
+        "t05",
+        [
+          "single-inventory-list",
+          "single-inventory-create"
+        ]
+      ],
+      [
+        "t06",
+        [
+          "single-inventory-update",
+          "single-inventory-delete"
+        ]
+      ],
+      [
+        "t07",
+        [
+          "single-message-send",
+          "single-share"
+        ]
+      ],
+      [
+        "t08",
+        [
+          "single-credit-refund",
+          "single-runtime-restart"
+        ]
+      ],
+      [
+        "t09",
+        [
+          "single-export",
+          "multi-paper-search-retrieve"
+        ]
+      ],
+      [
+        "t10",
+        [
+          "multi-paper-retrieve-summary",
+          "multi-material-search-current"
+        ]
+      ],
+      [
+        "t11",
+        [
+          "multi-create-share",
+          "multi-create-send"
+        ]
+      ],
+      [
+        "t12",
+        [
+          "multi-retrieve-export"
+        ]
+      ]
+    ]
+  },
+  "invariants": {
+    "each_catalog_covers_all_23_task_ids_exactly_once": true,
+    "conditions_per_task_fixed": 6,
+    "task_query_or_contract_changed": false,
+    "candidate_sets_changed": false,
+    "model_or_prompt_changed": false,
+    "executor_or_metric_changed": false,
+    "aggregate_key": [
+      "catalog_size",
+      "task_id",
+      "condition"
+    ],
+    "required_unique_episode_keys": 552
+  }
+}
