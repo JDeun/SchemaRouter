@@ -12,6 +12,7 @@ on:
       - "benchmarks/agent-utility-v1-b1-execution-equivalence.json"
       - "benchmarks/agent-utility-v1-b1-task-contract-amendment.json"
       - "benchmarks/agent-utility-v1-b1-causality-amendment.json"
+      - "benchmarks/agent-utility-v1-b1-preregistration-v2.json"
       - "scripts/generate_agent_utility_v1.py"
       - "scripts/evaluate_agent_utility_phase_a.py"
       - "scripts/evaluate_agent_utility_phase_b_qwen.py"
@@ -157,6 +158,37 @@ jobs:
           assert "multi-create-send" in changes
           PY
 
+      - name: Validate B1 preregistration v2
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          prereg = json.loads(
+              Path("benchmarks/agent-utility-v1-b1-preregistration-v2.json")
+              .read_text(encoding="utf-8")
+          )
+          assert prereg["schema_version"] == 2
+          assert prereg["issue"] == 420
+          assert prereg["status"] == "frozen_before_any_v2_agent_inference"
+          assert prereg["corrected_freeze_identity"]["tasks_sha256"] == (
+              "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c"
+          )
+          assert prereg["tool_observation_causality"][
+              "max_executed_tool_calls_per_assistant_turn"
+          ] == 1
+          assert prereg["statistical_scope"]["bootstrap_unit"] == "task_id cluster"
+          assert prereg["aggregate_integrity"]["required_episode_count"] == 552
+          assert prereg["aggregate_integrity"][
+              "required_unique_episode_key_count"
+          ] == 552
+          assert set(prereg["excluded_or_superseded_episode_sources"]) == {
+              36517371433,
+              36520025834,
+              36520831273,
+          }
+          PY
+
       - name: Freeze corrected tasks and catalogs
         run: |
           python scripts/generate_agent_utility_v1.py             --out-dir artifacts/agent-utility-v1
@@ -181,6 +213,9 @@ jobs:
           assert freeze["task_count"] == 23
           assert freeze["single_task_count"] == 17
           assert freeze["multi_task_count"] == 6
+          assert freeze["tasks_sha256"] == (
+              "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c"
+          )
           assert result["phase_a_gate"]["phase_b_eligible"] is True
           print(json.dumps(freeze, sort_keys=True))
           print(json.dumps(result["phase_a_gate"], sort_keys=True))
@@ -192,6 +227,7 @@ jobs:
           path: |
             artifacts/agent-utility-v1/
             benchmarks/agent-utility-v1-preregistration.json
+            benchmarks/agent-utility-v1-b1-preregistration-v2.json
             benchmarks/agent-utility-v1-b1-statistical-amendment.json
             benchmarks/agent-utility-v1-b1-execution-equivalence.json
             benchmarks/agent-utility-v1-b1-task-contract-amendment.json
