@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.aggregate_agent_utility_phase_b2 import (
+from scripts.aggregate_agent_utility_phase_b2 import (  # noqa: E402
     _cluster_bootstrap_delta,
     _retrieval_coverage,
     aggregate,
