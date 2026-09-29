@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "cycle": "0.14-end-to-end-agent-utility",
+  "experiment": "final-answer-quality-v1",
+  "issue": 424,
+  "parent_issue": 417,
+  "predecessor_issues": [
+    420,
+    423
+  ],
+  "status": "preregistered_protocol_only_no_answer_inference_authorized",
+  "date": "2026-09-29",
+  "research_question": "Does bounded SchemaRouter capability context preserve deterministic final-answer factual quality while reducing tool-schema and total input context relative to FULL?",
+  "run_authorization": {
+    "b1_terminal_required": true,
+    "b2_model_choice_frozen_required": true,
+    "b2_terminal_result_required": true,
+    "current_authorized_to_run": false,
+    "reason": "Protocol may be frozen before B2 outcomes, but answer inference remains blocked until #423 is terminal."
+  },
+  "model_binding": {
+    "relation_to_b2": "Use the same frozen strong-agent model/runtime as canonical #423 unless #423 terminates before benchmark inference for infrastructure/model-feasibility reasons. Never select a replacement using #424 task outcomes.",
+    "current_candidate_model": "HuggingFaceTB/SmolLM3-3B",
+    "current_candidate_revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+    "temperature_equivalent": "greedy/do_sample=false",
+    "rank_scores_visible_to_agent": false,
+    "rank_positions_visible_to_agent": false
+  },
+  "surface": {
+    "unique_semantic_tasks": 144,
+    "task_strata": [
+      "single_property_value_unit_provenance",
+      "literature_fact_with_source_attribution",
+      "multi_source_comparison",
+      "transform_or_export_then_status_answer",
+      "corrective_expansion_required",
+      "distractor_or_contradiction_resistance"
+    ],
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "cross_balance": {
+      "tasks_per_stratum": 24,
+      "tasks_per_language": 24,
+      "tasks_per_stratum_language_cell": 4,
+      "cells": 36
+    },
+    "each_task_one_language_only": true,
+    "prior_b1_b2_wording_or_paraphrase_allowed": false,
+    "issue_432_heldout_rows_allowed": false,
+    "final_tasks_tuning_eligible": false
+  },
+  "catalogs": {
+    "endpoint_counts": [
+      100,
+      250
+    ],
+    "nested": true,
+    "repeats_nested_within_semantic_task": true,
+    "exact_hashes_required_before_inference": true
+  },
+  "conditions": [
+    "FULL",
+    "SR-5",
+    "SR-10",
+    "SR-PROGRESSIVE",
+    "ORACLE"
+  ],
+  "task_contract": {
+    "deterministic_tool_evidence_required": true,
+    "same_tool_outputs_across_conditions": true,
+    "required_reference_fact_set_required": true,
+    "forbidden_or_contradictory_fact_set_optional": true,
+    "typed_numeric_tolerance_required_when_numeric": true,
+    "canonical_unit_required_when_unit_bearing": true,
+    "provenance_source_id_required": true,
+    "corrective_expansion_tasks_must_have_initial_candidate_miss_without_ground_truth_trigger": true
+  },
+  "final_answer_surface": {
+    "primary_scoring_requires_machine_readable_envelope": true,
+    "envelope": {
+      "format": "JSON object emitted only after task evidence collection is complete",
+      "fields": {
+        "answer": "natural-language answer text",
+        "facts": "array of {key,value,unit,source_id} objects",
+        "sources": "array of source_id strings"
+      },
+      "extra_fields_allowed": false
+    },
+    "natural_language_answer_retained_for_secondary_coherence_review": true,
+    "malformed_final_envelope_counts_as_answer_failure": true
+  },
+  "deterministic_metrics": {
+    "required_fact_recall": "number of required reference facts correctly asserted / required facts",
+    "unsupported_fact_count": "claims in structured facts not licensed by deterministic evidence/reference set",
+    "unsupported_fact_rate": "unsupported structured claims / all structured claims, zero when no claims",
+    "numeric_value_accuracy": "numeric required facts within preregistered task-specific absolute/relative tolerance",
+    "unit_accuracy": "required unit-bearing facts reported in accepted canonical/convertible unit",
+    "provenance_accuracy": "required facts attributed to an allowed source_id",
+    "contradiction_count": "explicit claims contradicting deterministic evidence or forbidden fact set",
+    "exact_field_completion": "task-specific mandatory answer fields all correct"
+  },
+  "secondary_metrics": {
+    "llm_judge_optional": true,
+    "allowed_dimensions": [
+      "coherence",
+      "completeness"
+    ],
+    "judge_blinded_to_condition": true,
+    "deterministic_factual_metrics_remain_primary": true,
+    "judge_prompt_must_be_frozen_before_evaluated_answers_are_opened": true,
+    "judge_may_not_override_deterministic_fact_score": true
+  },
+  "efficiency_metrics": [
+    "tool-schema tokens",
+    "total input tokens",
+    "output tokens",
+    "model call count",
+    "tool call count",
+    "candidate expansion count",
+    "candidate-selection latency",
+    "model-generation latency",
+    "episode wall latency"
+  ],
+  "retrieval_evidence_metrics": [
+    "required-tool/evidence coverage",
+    "final candidate count",
+    "corrective expansion recovery rate"
+  ],
+  "primary_success_gate": {
+    "fact_recall_delta_vs_full_min": -0.02,
+    "numeric_accuracy_delta_vs_full_min": -0.02,
+    "unit_accuracy_delta_vs_full_min": -0.02,
+    "provenance_accuracy_delta_vs_full_min": -0.02,
+    "unsupported_fact_rate_delta_vs_full_max": 0.01,
+    "contradiction_count_not_greater_than_full": true,
+    "required_tool_evidence_coverage_min": 0.97,
+    "total_input_tokens_must_be_less_than_full": true,
+    "tool_schema_token_ratio_vs_full_max": 0.4,
+    "unauthorized_destructive_executions_max": 0
+  },
+  "statistics": {
+    "primary_unit": "semantic_task_id",
+    "catalog_repeats_nested_within_task": true,
+    "paired_conditions": true,
+    "primary_interval": {
+      "method": "stratified task-cluster bootstrap",
+      "strata": "answer_task_stratum x language",
+      "iterations": 10000,
+      "seed": 20260929,
+      "confidence_interval": 0.95
+    },
+    "no_pseudoreplication": true,
+    "report_by_language": true,
+    "report_by_task_stratum": true,
+    "no_weighted_composite_score": true
+  },
+  "claim_boundary": {
+    "allowed_if_gate_passes": "Final-answer factual quality is preserved on this frozen answer-bearing benchmark while capability context is reduced.",
+    "forbidden_from_424_alone": [
+      "population-wide noninferiority beyond this frozen surface",
+      "all-model generalization",
+      "claim that LLM-judge preference proves factual correctness"
+    ],
+    "broad_generalization_requires_issue_432": true
+  },
+  "governance": {
+    "no_task_rewrite_from_b1_or_b2_errors": true,
+    "no_task_rewrite_after_any_424_answer_opened": true,
+    "no_prompt_tuning_on_evaluated_answers": true,
+    "no_condition_removal_after_scoring": true,
+    "no_cherry_pick_task_removal": true,
+    "no_reference_fact_change_after_scoring": true,
+    "no_numeric_tolerance_change_after_scoring": true,
+    "same_evidence_payloads_across_conditions": true
+  }
+}
