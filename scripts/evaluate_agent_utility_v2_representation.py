@@ -8,6 +8,7 @@ filter policy are separately frozen.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import re
@@ -42,10 +43,19 @@ TYPED_FIELDS = (
     "read_write_destructive_policy",
 )
 RRF_K = 60
+LATENCY_WARMUP = 3
+LATENCY_REPEATS = 31
+LATENCY_AMENDMENT_PATH = (
+    ROOT / "benchmarks" / "agent-utility-v2-latency-amendment.json"
+)
 _TOKEN_RE = re.compile(
     r"[a-z0-9_./+%-]+|[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]",
     re.IGNORECASE,
 )
+
+
+def _file_sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _canonical_text(value: Any) -> str:
@@ -585,7 +595,15 @@ def evaluate(freeze_dir: Path) -> dict[str, Any]:
         "surface": "development",
         "freeze_manifest": manifest,
         "rrf_k": RRF_K,
-        "dev_representation_revision": "r7-precomputed-rrf-hotpath",
+        "dev_representation_revision": "r8-repeated-latency-protocol",
+        "latency_protocol": {
+            "amendment_path": str(LATENCY_AMENDMENT_PATH.relative_to(ROOT)),
+            "amendment_sha256": _file_sha(LATENCY_AMENDMENT_PATH),
+            "warmup_retrievals_per_query_condition": LATENCY_WARMUP,
+            "measured_retrievals_per_query_condition": LATENCY_REPEATS,
+            "row_latency_statistic": "median",
+            "aggregate_latency_statistic": "p95_of_row_medians",
+        },
         "conditions_scored": list(CONDITIONS),
         "conditions_blocked": {
             "INTENT-MANUAL": (
@@ -614,7 +632,15 @@ def evaluate(freeze_dir: Path) -> dict[str, Any]:
             rows: list[dict[str, Any]] = []
 
             for task in task_rows:
-                ranking_pairs, latency_ms = retriever.rank(str(task["query"]))
+                query = str(task["query"])
+                ranking_pairs, _ = retriever.rank(query)
+                for _ in range(LATENCY_WARMUP):
+                    retriever.rank(query)
+                latency_samples = [
+                    retriever.rank(query)[1]
+                    for _ in range(LATENCY_REPEATS)
+                ]
+                latency_ms = statistics.median(latency_samples)
                 ranking = [route_id for route_id, _ in ranking_pairs]
                 relevant = set(str(route) for route in task["required_routes"])
                 row: dict[str, Any] = {
