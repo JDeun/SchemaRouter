@@ -261,10 +261,7 @@ class DeterministicTaskExecutor:
                         "analyst@example.org",
                     )
                     and isinstance(message, str)
-                    and (
-                        "INV-NEW-1" in message
-                        or "anode-binder" in message.casefold()
-                    )
+                    and "INV-NEW-1" in message
                 )
 
         if task_id == "multi-retrieve-export":
@@ -402,6 +399,7 @@ class DeterministicTaskExecutor:
         arguments: dict[str, Any],
         *,
         available: bool = True,
+        execution_allowed: bool = True,
     ) -> ExecutionAttempt:
         endpoint = _endpoint_for(self.registry, route_id)
         if endpoint is None:
@@ -475,6 +473,24 @@ class DeterministicTaskExecutor:
                 observation={
                     "status": "error",
                     "error": schema_error,
+                },
+            )
+            self.attempts.append(attempt)
+            return attempt
+
+        if not execution_allowed:
+            attempt = ExecutionAttempt(
+                route_id=route_id,
+                arguments=arguments,
+                schema_valid=True,
+                semantic_valid=False,
+                policy_blocked=False,
+                expected_at_step=expected,
+                advanced_task=False,
+                error="parallel_tool_call_requires_observation",
+                observation={
+                    "status": "error",
+                    "error": "parallel_tool_call_requires_observation",
                 },
             )
             self.attempts.append(attempt)
