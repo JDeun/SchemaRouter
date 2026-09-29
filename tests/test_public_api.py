@@ -6,6 +6,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "__version__",
         "AggregatedField",
         "CanonicalEntity",
+        "CapabilityCandidate",
+        "CapabilityRetrieval",
         "FieldObservation",
         "RetrievalMode",
         "SourceRecord",

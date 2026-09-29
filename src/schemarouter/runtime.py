@@ -21,7 +21,7 @@ from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
 from .ingestion import SourceKind, URLSchemaLoader
 from .inspection import RouterInspection, inspect_router
-from .models import ExecutionPlan, PlanRequest, ToolResult, ToolSpec
+from .models import CapabilityRetrieval, ExecutionPlan, PlanRequest, ToolResult, ToolSpec
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
@@ -504,6 +504,26 @@ class SchemaRouter:
 
         return await self.planner.aplan(request)
 
+    def retrieve(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        """Return Top-K typed registered capabilities without executing them."""
+
+        return self.planner.retrieve(request, k=k)
+
+    async def aretrieve(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        """Async counterpart to :meth:`retrieve`."""
+
+        return await self.planner.aretrieve(request, k=k)
+
     def _binding_ready(self, tool: ToolSpec, endpoint: Any) -> bool:
         del endpoint
         return self.executor.is_binding_ready_for_contract(
@@ -525,6 +545,36 @@ class SchemaRouter:
         return await self.planner.aplan_with_additional_availability(
             request,
             self._binding_ready,
+        )
+
+    def retrieve_executable(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        """Return Top-K capabilities with a currently ready local binding."""
+
+        return self.planner.retrieve_with_additional_availability(
+            request,
+            self._binding_ready,
+            k=k,
+            executable_only=True,
+        )
+
+    async def aretrieve_executable(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        """Async counterpart to :meth:`retrieve_executable`."""
+
+        return await self.planner.aretrieve_with_additional_availability(
+            request,
+            self._binding_ready,
+            k=k,
+            executable_only=True,
         )
 
     async def _execute_plan(
@@ -1348,6 +1398,38 @@ class ConfiguredSchemaRouter:
     def __init__(self, router: SchemaRouter, config: RunConfig) -> None:
         self.router = router
         self.config = config
+
+    def retrieve(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        return self.router.retrieve(request, k=k)
+
+    async def aretrieve(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        return await self.router.aretrieve(request, k=k)
+
+    def retrieve_executable(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        return self.router.retrieve_executable(request, k=k)
+
+    async def aretrieve_executable(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        return await self.router.aretrieve_executable(request, k=k)
 
     def invoke(self, request: PlanRequest | str) -> list[ToolResult]:
         return self.router.invoke(request, config=self.config)

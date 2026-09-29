@@ -8,13 +8,13 @@ answers a different question: **what was actually tried?**
 
 Current machine-readable ledger:
 
-- independent experiment records: **79**;
+- independent experiment records: **88**;
 - legacy routing corpus lineage: **13** versioned corpora;
 - routine bugfix-only commits are not counted as independent experiments unless they changed an
   architecture invariant, evaluation protocol, or empirical claim;
 - failed, superseded, invalidated, and terminal experiments are retained rather than hidden.
 
-The 79-record count includes the terminal 0.13 post-V6E controls #404, #406, #408, #409 and #412. Their confirmation surfaces remain unopened.
+The 88-record count includes the terminal 0.13 V6A–V6H/open-set controls and the active 0.14 agent-utility lineage. Terminal 0.13 confirmation surfaces remain unopened unless explicitly recorded otherwise.
 
 The canonical machine-readable source is
 [`benchmarks/research-experiment-ledger.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json).
@@ -22,7 +22,7 @@ The narrative source is
 [Design and experiment history](design-and-experiment-history.md).
 
 For **what to try next and why**, use the
-[Prior-art roadmap](prior-art-roadmap.md) and GitHub issue **#388**. Those surfaces map literature
+[Prior-art roadmap](prior-art-roadmap.md) and active GitHub issue **#417**. Historical 0.13 prior-art mapping remains in **#388**. Those surfaces map literature
 to canonical work items and record active/next/backlog/deferred state so a new session does not
 recreate terminal experiments.
 
@@ -207,3 +207,32 @@ For full reconstruction, use all three surfaces:
 
 This separation keeps the main documentation readable without erasing negative results or abandoned
 branches.
+
+## 0.13 schema-derived open-set membership
+
+| # | Experiment | Decision / state | Purpose / interpretation | Evidence |
+| ---: | --- | --- | --- | --- |
+| 1 | `0.13-v6a-schema-adb` | **terminal_dev_quality_fail** | Schema-only positive views can define endpoint-local adaptive spherical regions that preserve supported natural-language requests while rejecting unsupported requests. | [issue #384](https://github.com/JDeun/SchemaRouter/issues/384) |
+| 2 | `0.13-v6b-hard-negative-ellipsoid` | **terminal_dev_quality_fail** | Same-resource hard negatives from the registered capability complement plus a low-rank anisotropic ellipsoid can preserve natural supported requests while rejecting near-domain OOS. | [issue #395](https://github.com/JDeun/SchemaRouter/issues/395) |
+| 3 | `0.13-v6c-tied-gaussian-density-ratio` | **terminal_dev_quality_fail** | A tied diagonal Gaussian likelihood ratio between schema positives and complement negatives can avoid absolute-boundary collapse while remaining veto-only. | [issue #397](https://github.com/JDeun/SchemaRouter/issues/397) |
+| 4 | `0.13-v6d-component-gaussian-mixture` | **terminal_dev_quality_fail_pr_closed_unmerged** | Registry-fixed endpoint/complement Gaussian components with log-sum-exp mixture evidence can model capability multimodality without changing positive route authority. | [issue #399](https://github.com/JDeun/SchemaRouter/issues/399) |
+| 5 | `0.13-v6e-knn-membership` | **terminal_dev_quality_fail_pr_closed_unmerged** | A threshold-free non-parametric k=3 local-neighborhood comparison over schema-positive, complement, and frozen generic background banks can avoid Gaussian assumptions and improve open-set membership. | [issue #401](https://github.com/JDeun/SchemaRouter/issues/401) |
+| 6 | `0.13-naturalistic-operation-probe-membership` | **terminal_dev_quality_and_runtime_fail_pr_closed_unmerged** | Naturalistic multilingual linear probes improve broad OOD recognition but remain insufficient for same-domain unsupported-operation membership and supported-route preservation. | [issue #404](https://github.com/JDeun/SchemaRouter/issues/404) · [PR #405](https://github.com/JDeun/SchemaRouter/pull/405) · workflow `36499927289` |
+| 7 | `0.13-tool-embed-positive-selector` | **terminal_positive_selector_replacement_fail_pr_closed_unmerged** | Tool-specialized Tool-Embed-0.6B did not outperform same-surface BGE-M3 and missed the runtime gate. | [issue #406](https://github.com/JDeun/SchemaRouter/issues/406) · [PR #407](https://github.com/JDeun/SchemaRouter/pull/407) · workflow `36496824066` |
+| 8 | `0.13-relative-multilingual-cross-encoder-membership` | **terminal_dev_quality_and_runtime_fail_pr_closed_unmerged** | Joint query-document relevance over registered, counterfactual, and background documents did not establish open-set membership and was far beyond the CPU runtime budget. | [issue #408](https://github.com/JDeun/SchemaRouter/issues/408) · [PR #411](https://github.com/JDeun/SchemaRouter/pull/411) · workflow `36498385690` |
+| 9 | `0.13-frozen-gte-positive-selector` | **terminal_positive_selector_replacement_fail_pr_closed_unmerged** | Historically promising GTE retrieval did not transfer to the fresh registry surface; BGE-M3 won by 16.67 percentage points while GTE retained a good CPU runtime. | [issue #409](https://github.com/JDeun/SchemaRouter/issues/409) · [PR #410](https://github.com/JDeun/SchemaRouter/pull/410) · workflow `36500171432` |
+| 10 | `0.13-conformal-multilingual-e5-membership` | **terminal_dev_supported_recall_fail_pr_closed_unmerged** | A fixed alpha=0.01 unsupported-null conformal gate reached the open-set safety/runtime targets, but the scalar E5 catalog score overlapped too strongly and vetoed 87.29% of raw-correct supported winners. | [issue #412](https://github.com/JDeun/SchemaRouter/issues/412) · [PR #413](https://github.com/JDeun/SchemaRouter/pull/413) · workflow `36498943508` |
+| 11 | `0.13-v6h-end-to-end-operation-oos-parser` | **terminal_dev_quality_fail_confirmation_unopened_pr_closed_unmerged** | End-to-end multilingual encoder fine-tuning learned tool-vs-background scope well but operation semantics generalized too weakly, especially for near-domain unsupported requests. This closes the 0.13 authoritative parser/veto formulation. | [issue #415](https://github.com/JDeun/SchemaRouter/issues/415) · [PR #416](https://github.com/JDeun/SchemaRouter/pull/416) · workflow `36502279447` |
+
+## 0.14 end-to-end agent utility
+
+| # | Experiment | Decision / state | Purpose / interpretation | Evidence |
+| ---: | --- | --- | --- | --- |
+| 1 | `0.14-agent-utility-phase-a` | **phase_a_passed_phase_b_authorized** | Top-1 is a poor primary product metric for multi-tool capability retrieval. Top-5 preserved every required capability after the B1-v2 task-contract refreeze while schema-context ratio remained 2.383% of FULL at 250 endpoints. | [issue #418](https://github.com/JDeun/SchemaRouter/issues/418) · [PR #419](https://github.com/JDeun/SchemaRouter/pull/419) · freeze `36507439562` · [`1c0dc93e84`](https://github.com/JDeun/SchemaRouter/commit/1c0dc93e843f6f9bf8a628c80ca95e02efcf5088) |
+| 2 | `0.14-b1-local-agent-ab` | **running_b1_v2_protocol_validated_canonical_execution** | B1 v2 corrects explicit user-argument contracts and tool-observation causality before any accepted aggregate; it remains a small-model sanity baseline. | [issue #420](https://github.com/JDeun/SchemaRouter/issues/420) · [PR #421](https://github.com/JDeun/SchemaRouter/pull/421) · canonical run `36529108855` · task SHA `bc0b78ff...` |
+| 3 | `0.14-b2-strong-agent-replication` | **blocked_until_strong_agent_identity_is_frozen** | Strong-agent replication is required before generalizing B1 utility beyond the small local baseline. | [issue #423](https://github.com/JDeun/SchemaRouter/issues/423) |
+| 4 | `0.14-final-answer-quality` | **blocked_until_b1_aggregate_and_b2_model_freeze** | Final-answer factual quality, unit accuracy, provenance and hallucination must be evaluated separately from deterministic tool-use task success. | [issue #424](https://github.com/JDeun/SchemaRouter/issues/424) |
+| 5 | `0.14-corrective-state-aware-reretrieval` | **no_execution_before_420_terminal** | Compare static candidate exposure with execution-state-aware re-retrieval using bounded typed observations; retrieval never becomes execution authority. | [issue #431](https://github.com/JDeun/SchemaRouter/issues/431) |
+| 6 | `0.14-large-held-out-generalization` | **freeze_sample_size_and_generation_protocol_after_b1_without_using_b1_row_failures** | Create an independently frozen, materially larger multilingual held-out surface for population-level uncertainty/generalization claims. | [issue #432](https://github.com/JDeun/SchemaRouter/issues/432) |
+| 7 | `0.14-adaptive-shortlist-depth` | **no_execution_before_b1_b2_fixed_k_evidence** | Test preregistered per-query adaptive candidate depth only after fixed-K evidence; do not derive the policy from B1 errors. | [issue #430](https://github.com/JDeun/SchemaRouter/issues/430) |
+| 8 | `0.14-public-topk-retrieval-api` | **do_not_promote_before_b1_aggregate** | Stage a first-class typed Top-K public retrieval API while keeping agent orchestration and execution authority outside the core retriever. | [issue #428](https://github.com/JDeun/SchemaRouter/issues/428) |

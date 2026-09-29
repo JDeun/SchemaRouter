@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.10.0</span>
+<span class="sr-kicker">SchemaRouter 0.11.0</span>
 
 # Put a typed execution boundary between agents and tools
 
@@ -170,15 +170,17 @@ flow and never becomes executable automatically.
 
 ## Current release
 
-Version `0.10.0` consolidates the current product boundary: field-first, route-second planning;
-typed endpoint/field contracts; optional datatype and unit metadata; explicit unit normalization;
-exact qualifiers; bounded health/policy/fallback; and optional non-authoritative decision backends.
+Version `0.11.0` promotes first-class **bounded Top-K capability retrieval** to the public product
+surface while preserving the existing typed planning/execution boundary. Applications can expose a
+compact registered candidate set to an external agent through `retrieve` / `aretrieve`, or require
+current local binding readiness through `retrieve_executable` / `aretrieve_executable`.
 
-The open-set natural-language routing target is not presented as solved. The strongest frozen DEV
-candidate passed the standing target, but the exact zero-overlap fresh confirmation failed, so no
-experimental learned router was promoted as an unconditional production default.
+Retrieval remains side-effect free and non-authoritative: the surrounding agent chooses among
+registered candidates, while SchemaRouter still owns schema validation, policy and execution
+authority. Ongoing 0.14 agent-utility research is reported separately and is not required for the
+stable package to function.
 
-[Read the 0.10.0 release notes →](releases/0.10.0.md) ·
+[Read the 0.11.0 release notes →](releases/0.11.0.md) ·
 [Read the routing research status →](research/routing-status.md) ·
 [Read the prior-art roadmap →](research/prior-art-roadmap.md)
 

@@ -17,11 +17,11 @@
 <p align="center">
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg"></a>
-  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.10.0"></a>
+  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.11.0"></a>
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-> **현재 안정판: 0.10.0** · `pip install schemarouter` · Beta / pre-1.0
+> **현재 안정판: 0.11.0** · `pip install schemarouter` · Beta / pre-1.0
 
 SchemaRouter는 RAG/Agent 애플리케이션과 외부의 구조화된 capability 사이에 위치합니다.
 OpenAPI, MCP, OPTIMADE, Python, plugin tool을 하나의 typed capability catalog로 정규화하고,
@@ -125,6 +125,29 @@ Laya, Ollama, Jev/System-One, hosted model, embedding, pairwise decision backend
 후보 선택을 보조할 수 있지만 실행 권한이 되지는 않습니다. 새로운 tool/field/credential/permission/
 side effect를 만들어낼 수 없습니다.
 
+## Agent에 compact tool 후보만 제공하기
+
+SchemaRouter는 planning이나 execution 없이 등록된 capability의 **Top-K 후보만** 반환할 수 있습니다.
+
+```python
+candidates = router.retrieve(
+    "MAT-7의 현재 Young's modulus",
+    k=5,
+)
+
+for candidate in candidates.candidates:
+    print(candidate.route_id, candidate.output_fields)
+```
+
+현재 로컬 실행 binding까지 준비된 route만 필요하면 `retrieve_executable(..., k=5)`을 사용합니다.
+비동기 API는 `aretrieve`, `aretrieve_executable`입니다.
+
+후보에는 full effective input/output JSON Schema와 등록된 parameter/output field,
+semantic ID, optional unit·qualifier, provider/access identity, read/write/destructive metadata,
+schema fingerprint가 유지됩니다.
+Retrieval 자체는 side effect가 없고 실행 권한을 부여하지 않습니다. 최종 후보 선택은 상위 Agent가
+담당하며 실제 실행은 계속 SchemaRouter의 validation과 policy를 통과해야 합니다.
+
 ## 빠른 시작
 
 ```python
@@ -166,11 +189,12 @@ LangChain, LangGraph, LlamaIndex bridge와 선택형 OpenTelemetry export를 제
 비표준 decision runtime은 `schemarouter.decision_backends` entry-point plugin으로 연결할 수
 있습니다.
 
-## 0.10.0에서 실제로 작동하는 것
+## 0.11.0에서 실제로 작동하는 것
 
 현재 배포 버전은 core architecture가 실제 동작하는 beta 구현입니다.
 
 - typed Tool / Endpoint / Parameter / Field registry contract
+- `retrieve` / `aretrieve`와 executable-ready variant를 통한 first-class bounded Top-K capability retrieval
 - Python, OpenAPI, MCP, OPTIMADE ingestion
 - field-first planning과 bounded multi-provider field coverage
 - input/raw-output JSON Schema validation
@@ -185,27 +209,41 @@ LangChain, LangGraph, LlamaIndex bridge와 선택형 OpenTelemetry export를 제
 따라서 **등록된 capability와 지원되는 routing case에 대해서는 지금 배포 버전이 실제로
 작동합니다.**
 
-## 현재 한계: open-set 자연어 routing
+## 현재 연구 방향: Agent를 위한 compact capability retrieval
 
-아직 해결되지 않은 연구 문제는 기본 실행이 아니라 다음 둘을 안정적으로 구분하는 것입니다.
+안정판 0.11.0의 실행 경계는 그대로입니다. 다만 현재 연구 질문은 SchemaRouter 자체가 최종
+open-set classifier가 되는 것에서, downstream LLM Agent를 위한 **typed capability retrieval
+substrate**로 평가하는 방향으로 바뀌었습니다.
 
-> "이 질문은 등록된 도메인과 비슷하다."
+역할 분리는 다음과 같습니다.
 
-> "이 질문에서 요구한 정확한 operation을 실제 등록 endpoint가 지원한다."
+```text
+등록된 capability catalog
+  -> SchemaRouter Top-K typed candidate
+  -> downstream agent가 후보 안에서 선택
+  -> local schema / argument / permission / destructive policy
+  -> execution
+```
 
-가장 강한 frozen DEV 후보는 목표를 통과했지만 independent zero-overlap fresh confirmation에서
-실패했습니다. 따라서 0.10.0에서는 실험적 learned router를 unconditional production default로
-승격하지 않았습니다.
+이 구분이 중요한 이유는 보정된 0.14 Phase-A frozen benchmark에서 Top-1 required-route recall은
+**68.97%**였지만 Top-5에서는 필요한 capability를 **100%** 보존했기 때문입니다. 등록 endpoint가
+250개일 때 Top-5가 노출하는 serialized schema context는 FULL의 평균 **2.38%**에 불과했습니다.
 
-첫 arbitrary-tool registry-compiled learned veto 역시 과도한 abstention 때문에 valid request를
-대부분 거부하여 terminal reject됐습니다.
+다만 이는 retrieval 결과이지 최종 production claim은 아닙니다. 현재 #420 B1에서 동일한 실제
+tool-calling agent를 FULL과 SR-3/SR-5/SR-10/progressive 조건에 놓고 deterministic task success와
+tool context/token 효율을 함께 측정하고 있습니다. 이후 더 강한 agent로 재현하는 #423과 최종
+응답의 사실성·단위·provenance·hallucination을 별도로 보는 #424가 필요합니다.
+
+기존 0.11–0.13 open-set classifier/veto 실험은 실패한 기록이 아니라 중요한 negative evidence로
+보존합니다. 0.11.0에서 실험적 learned router를 unconditional production default로 승격하지
+않는다는 점도 변하지 않습니다.
 
 자세한 내용:
 
 - [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
-- [선행연구 로드맵](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/) — 세션이 바뀌어도 동일한 연구 work item에서 재개하기 위한 canonical 지도
+- [선행연구 로드맵](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [전체 실험 인덱스](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
-- [0.10.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.10.0/)
+- [0.11.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.11.0/)
 - [Changelog](CHANGELOG.md)
 
 ## Registry와 run 확인

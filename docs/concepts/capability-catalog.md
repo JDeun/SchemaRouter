@@ -41,10 +41,51 @@ tools, endpoints, parameters, output fields, policy, availability, and evidence 
 database or vector database is not required. Deterministic indexes, embeddings, or bounded decision
 backends may help search the catalog, but the registered schema remains the authority.
 
-## The retrieved capability is executable
+## Retrieve a compact candidate set before agent selection
 
-A document retriever can return relevant context. SchemaRouter must additionally prove that the
-selected registered route can perform the requested operation and return the requested data surface.
+For agent systems, SchemaRouter can expose ranked registered capabilities without planning or
+executing them:
+
+```python
+candidates = router.retrieve(
+    "current Young's modulus for MAT-7",
+    k=5,
+)
+
+for item in candidates.candidates:
+    print(item.route_id, item.score)
+    for field in item.output_fields:
+        print(field.semantic_id, field.json_schema, field.unit)
+```
+
+Use `retrieve_executable(..., k=5)` when the candidate set should be limited to routes whose local
+execution binding is currently ready. Async counterparts are `aretrieve` and
+`aretrieve_executable`.
+
+The returned bundle carries the full effective input/output JSON Schemas together with registered
+parameters, output fields, semantic IDs, units, qualifiers, read/write/destructive classification,
+provider/access identity and schema fingerprints.
+
+Retrieval itself has no side effect and does not grant execution authority:
+
+```text
+query
+  -> SchemaRouter Top-K registered candidates
+  -> downstream agent chooses among candidates
+  -> local validation / policy
+  -> execution
+```
+
+Applications may omit rank/score from the LLM prompt and use only the candidate contracts. This is
+useful when the goal is to reduce tool-catalog context without turning SchemaRouter's ranking score
+into execution policy.
+
+## The retrieved capability has an executable contract
+
+A document retriever can return relevant context. SchemaRouter retrieval instead returns a
+**registered executable contract**: an endpoint whose declared operation, inputs, outputs and policy
+metadata are known. Plain `retrieve()` does not claim that a local invoker is currently bound or
+healthy; use `retrieve_executable()` when current local binding readiness is also required.
 
 The resulting capability contract includes:
 

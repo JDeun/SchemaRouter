@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import re
 from collections.abc import Awaitable, Callable
+from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
@@ -12,6 +13,8 @@ from .errors import PlanningError
 from .evidence import available_evidence, field_evidence_status, global_evidence_status
 from .models import (
     CandidateSelectionSource,
+    CapabilityCandidate,
+    CapabilityRetrieval,
     EndpointSpec,
     EvidenceRequirements,
     ExecutionPlan,
@@ -31,6 +34,8 @@ from .models import (
 from .registry import ToolRegistry
 from .validation import (
     canonical_field_value_schema,
+    effective_input_schema,
+    effective_output_schema,
     json_schema_types,
     json_schemas_compatible,
 )
@@ -353,6 +358,178 @@ class SchemaPlanner:
         if inspect.isawaitable(intent):
             intent = await intent
         return await self._abuild_plan(request, intent)
+
+    @staticmethod
+    def _validate_retrieval_k(k: int) -> int:
+        if not isinstance(k, int) or isinstance(k, bool) or k < 1:
+            raise ValueError("k must be an integer >= 1")
+        return k
+
+    @staticmethod
+    def _retrieval_candidate(
+        candidate: _Candidate,
+        *,
+        rank: int,
+    ) -> CapabilityCandidate:
+        tool = candidate.tool
+        endpoint = candidate.endpoint
+        return CapabilityCandidate(
+            rank=rank,
+            route_id=f"{tool.key}.{endpoint.name}",
+            tool=tool.key,
+            endpoint=endpoint.name,
+            tool_description=tool.description,
+            endpoint_description=endpoint.description,
+            score=candidate.score,
+            matched_fields=list(candidate.matched_fields),
+            score_components=list(candidate.score_components),
+            selection_source=candidate.selection_source,
+            parameters=[
+                parameter.model_copy(deep=True)
+                for parameter in endpoint.parameters
+            ],
+            input_schema=deepcopy(effective_input_schema(endpoint)),
+            output_fields=[
+                field.model_copy(deep=True)
+                for field in endpoint.output_fields
+            ],
+            output_schema=deepcopy(effective_output_schema(endpoint)),
+            read_only=endpoint.read_only,
+            destructive=endpoint.destructive,
+            source_type=tool.source_type,
+            license=tool.license,
+            provider=tool.provider,
+            access_mode=tool.access_mode,
+            tool_fingerprint=tool.fingerprint,
+            endpoint_fingerprint=endpoint.fingerprint,
+        )
+
+    def _retrieve_from_intent(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        k: int,
+        executable_only: bool = False,
+        additional_availability_predicate: Callable[
+            [ToolSpec, EndpointSpec],
+            bool,
+        ]
+        | None = None,
+    ) -> CapabilityRetrieval:
+        candidates = self._semantic_recall_catalog(
+            request,
+            intent,
+            additional_availability_predicate=additional_availability_predicate,
+        )
+        candidates.sort(
+            key=lambda candidate: (
+                -candidate.score,
+                candidate.endpoint.server_projection is None,
+                candidate.tool.key,
+                candidate.endpoint.name,
+            )
+        )
+        return CapabilityRetrieval(
+            query=request.query,
+            registry_version=self.registry.version,
+            requested_k=k,
+            total_ranked=len(candidates),
+            executable_only=executable_only,
+            candidates=[
+                self._retrieval_candidate(candidate, rank=index)
+                for index, candidate in enumerate(candidates[:k], start=1)
+            ],
+        )
+
+    def retrieve(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        """Return Top-K registered capabilities without planning or execution."""
+
+        k = self._validate_retrieval_k(k)
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            if inspect.iscoroutine(intent):
+                intent.close()
+            raise PlanningError(
+                "the configured analyzer is asynchronous; use "
+                "await planner.aretrieve(...)"
+            )
+        return self._retrieve_from_intent(request, intent, k=k)
+
+    async def aretrieve(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRetrieval:
+        """Async counterpart to :meth:`retrieve`."""
+
+        k = self._validate_retrieval_k(k)
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            intent = await intent
+        return self._retrieve_from_intent(request, intent, k=k)
+
+    def retrieve_with_additional_availability(
+        self,
+        request: PlanRequest | str,
+        predicate: Callable[[ToolSpec, EndpointSpec], bool],
+        *,
+        k: int = 5,
+        executable_only: bool = False,
+    ) -> CapabilityRetrieval:
+        """Retrieve Top-K capabilities under one additional local availability rule.
+
+        Set executable_only=True only when predicate represents current execution readiness.
+        """
+
+        k = self._validate_retrieval_k(k)
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            if inspect.iscoroutine(intent):
+                intent.close()
+            raise PlanningError(
+                "the configured analyzer is asynchronous; use "
+                "await planner.aretrieve_with_additional_availability(...)"
+            )
+        return self._retrieve_from_intent(
+            request,
+            intent,
+            k=k,
+            executable_only=executable_only,
+            additional_availability_predicate=predicate,
+        )
+
+    async def aretrieve_with_additional_availability(
+        self,
+        request: PlanRequest | str,
+        predicate: Callable[[ToolSpec, EndpointSpec], bool],
+        *,
+        k: int = 5,
+        executable_only: bool = False,
+    ) -> CapabilityRetrieval:
+        """Async counterpart to :meth:`retrieve_with_additional_availability`."""
+
+        k = self._validate_retrieval_k(k)
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            intent = await intent
+        return self._retrieve_from_intent(
+            request,
+            intent,
+            k=k,
+            executable_only=executable_only,
+            additional_availability_predicate=predicate,
+        )
 
     def plan_with_additional_availability(
         self,

@@ -7,6 +7,41 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+## 0.11.0 - 2026-09-29
+
+### Added
+
+- added first-class bounded Top-K typed capability retrieval through `SchemaPlanner.retrieve/aretrieve`
+  and `SchemaRouter.retrieve/aretrieve`, returning registered `CapabilityCandidate` bundles without
+  planning, execution, or side effects;
+- added `retrieve_executable/aretrieve_executable` for applications that need the same compact
+  candidate surface restricted to routes with current local execution binding readiness;
+- retrieval candidates preserve the full effective input/output JSON Schemas together with
+  registered parameter/output contracts, semantic IDs, datatypes, optional units/normalization/
+  qualifiers, provider/access identity, read/write/destructive metadata, and schema fingerprints;
+- added deterministic public-contract tests for Top-K ordering, K validation, async analyzers,
+  cooldown/unavailability filtering, binding readiness, detached result snapshots, and zero execution
+  side effects.
+
+### Changed
+
+- aligned the public product model with the 0.14 research framing: SchemaRouter is a typed capability
+  retrieval and validated execution boundary for surrounding RAG/agent systems, not a general agent
+  framework or autonomous final tool selector;
+- separated stable package release gates from ongoing B1/B2, answer-quality, adaptive-depth,
+  corrective-retrieval, held-out-generalization, and representation-ablation research;
+- refreshed research/status documentation while retaining prior negative results and research
+  governance as evidence rather than product blockers.
+
+### Compatibility
+
+- the new retrieval APIs are additive; existing `plan`, `plan_executable`, `invoke`, async,
+  batch, streaming, validation, policy, and execution behavior are unchanged;
+- retrieval never grants execution authority and never invents unregistered tools or fields;
+- SchemaRouter remains Beta / pre-1.0 so future 0.x minors may contain deliberate documented public
+  API refinements.
+
+
 ## 0.10.0 - 2026-09-28
 
 ### Added

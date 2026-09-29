@@ -85,6 +85,8 @@ from .inspection import (
     tool_spec_document,
 )
 from .models import (
+    CapabilityCandidate,
+    CapabilityRetrieval,
     EndpointSpec,
     EvidenceRequirements,
     ExecutionPlan,
@@ -166,6 +168,8 @@ __all__ = [
     "discover_decision_backend_plugins",
     "load_decision_backend_plugin",
     "CallableDecisionBackend",
+    "CapabilityCandidate",
+    "CapabilityRetrieval",
     "DecisionBackend",
     "DecisionFallback",
     "DecisionPolicy",

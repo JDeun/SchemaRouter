@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **69** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **88** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [Prior-art roadmap](prior-art-roadmap.md) — cross-session literature/work-item map and experiment-order guardrail;
@@ -14,10 +14,129 @@ For the full research record:
 
 SchemaRouter publishes routing research evidence separately from the stable library contract.
 
+## Active cycle: 0.14 end-to-end agent utility
+
+The active research question is no longer whether SchemaRouter can act as the final authoritative
+open-set classifier.
+
+The active question is:
+
+> **Does SchemaRouter improve an LLM agent's end-to-end tool-use performance by retrieving a
+> compact, typed set of executable capabilities from a large registered catalog?**
+
+The intended product boundary is now:
+
+```text
+OpenAPI / MCP / ToolSpec
+        ↓
+typed capability compiler + registry
+        ↓
+SchemaRouter Top-K retrieval
+        ↓
+LLM agent / planner
+        ↓
+schema + argument + permission + destructive-action policy
+        ↓
+tool execution
+        ↓
+result evaluation / optional corrective re-retrieval
+```
+
+SchemaRouter still owns registry-backed capability identity and typed metadata, but retrieval score
+does **not** grant irreversible execution authority. Top-1 exact route remains a useful diagnostic,
+not the sole product objective.
+
+### #418 Phase A — passed
+
+The corrected frozen benchmark contains 23 tasks across 20 / 50 / 100 / 250 endpoint catalogs.
+
+| Metric | Result |
+| --- | ---: |
+| Required-route Recall@1 | **65.52–68.97% by catalog** |
+| Recall@3 | **96.55%** |
+| Recall@5 | **100%** |
+| Recall@10 | **100%** |
+| All-required task coverage@5 | **100%** |
+| MRR | **0.80172–0.81897 by catalog** |
+
+Mean Top-5 serialized schema context relative to FULL:
+
+| Catalog | Top-5 / FULL |
+| --- | ---: |
+| 20 endpoints | **26.69%** |
+| 50 endpoints | **11.44%** |
+| 100 endpoints | **5.872%** |
+| 250 endpoints | **2.383%** |
+
+This is the decisive reason the research objective changed. A Top-1-only score makes multi-tool
+retrieval look artificially poor, while a compact Top-K set preserves every required capability on
+this frozen surface and rapidly reduces schema context as the catalog grows.
+
+Canonical B1-v2 freeze identity:
+- task SHA256 `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`;
+- catalog SHA256 values unchanged from the corrected catalog freeze;
+- v2 preflight + exact-pinned smoke are part of canonical workflow `36529108855`.
+
+### #420 Phase B1 — v2 running
+
+B1 still compares one real tool-calling model across:
+- FULL;
+- SR-3;
+- SR-5;
+- SR-10;
+- SR-PROGRESSIVE;
+- ORACLE.
+
+Before any accepted 552-episode aggregate, a static benchmark audit found three classes of protocol
+problems that were corrected without using condition-level success results:
+
+1. **task contract** — two user-supplied arguments were required by the deterministic executor but
+   not explicit in the query;
+2. **tool-observation causality** — multiple same-turn tool calls could previously advance dependent
+   task state before the model had observed the first result;
+3. **statistical unit** — the same 23 semantic tasks repeat across four catalog sizes, so paired
+   uncertainty is now bootstrapped by `task_id` cluster rather than pretending 92 rows are
+   independent.
+
+B1 v2 therefore freezes:
+- task SHA `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`;
+- Exact runtime pins: Python 3.12.14, torch 2.14.0+cpu, transformers 4.57.6, tokenizers 0.22.2, safetensors 0.8.0;
+- the same four catalog identities;
+- one executed tool call per assistant turn;
+- explicit observation before dependent tool calls;
+- exact 552 unique `(catalog_size, task_id, condition)` episode keys;
+- task-clustered paired bootstrap;
+- unchanged Qwen3-0.6B downstream-agent checkpoint, conditions, K values and utility gates.
+
+All prior B1 episode sources are excluded:
+`36517371433`, `36520025834`, and `36520831273`.
+
+The canonical v2 workflow is `36529108855` at source `b9eadefd3cd076f026a54bbc55a949f0424f5dab`. It is self-validating:
+**protocol/tests → corrected freeze → Phase-A gate → exact-pinned two-turn smoke → 30 inference shards → exact 552-episode aggregate**.
+No B1 product claim is accepted until that sequence succeeds.
+
+The -2pp B1 gate is descriptive only: the 23 semantic tasks are the statistical units, with catalog sizes treated as repeated measures. Paired uncertainty uses task-cluster bootstrap. #432 is required before any population-level non-inferiority/generalization claim.
+
+### Required replication and answer-quality work
+
+- **#423 B2**: repeat the same frozen utility protocol with a materially stronger tool-calling agent
+  before generalizing B1 beyond a small local model.
+- **#424 final-answer quality**: separately measure factual recall, hallucination, numeric/unit
+  accuracy, provenance and final-answer completeness. Deterministic tool-use success is not treated
+  as a substitute for answer quality.
+
+The active 0.14 promotion criteria are:
+- required-tool-set Recall >= **97%** for the effective candidate budget;
+- task pass rate >= FULL minus **2 percentage points**;
+- tool-schema tokens <= **40%** of FULL;
+- total input tokens < FULL;
+- unauthorized destructive executions = **0**.
+
+
 This page is intentionally conservative: development-set success is not presented as production
 validation, and consumed fresh-confirmation corpora are never reused for tuning.
 
-## Standing operation-routing target
+## Historical 0.11–0.13 operation-routing target
 
 The current research target for the multilingual open-set operation-routing work is:
 
@@ -514,3 +633,16 @@ No terminal DEV rows may be used to tune a successor, and all confirmation surfa
 unopened. The canonical continuation point is issue **#388**, then issue **#382**, the
 machine-readable prior-art registry, and the experiment ledger.
 
+
+
+### Staged post-B1 work
+
+The following items are preregistered/staged and **must not** be selected from B1 row-level errors:
+
+- **#428** — first-class public typed Top-K retrieval API;
+- **#430** — adaptive per-query shortlist depth after fixed-K validation;
+- **#431** — execution-state-aware corrective capability re-retrieval;
+- **#432** — materially larger independent multilingual held-out benchmark with explicit
+  sample-size/precision planning.
+
+These are successors to the fixed controlled baseline, not repairs to consumed B1 rows.

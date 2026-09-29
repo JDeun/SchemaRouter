@@ -6,16 +6,17 @@ to embed in larger ecosystems.
 
 This document tracks framework-level maturity rather than research metrics.
 
-> **0.10.0 maturity note:** the typed registry, execution, validation, policy, health, projection,
-> persistence, inspection, and integration surfaces are beta product capabilities. The standing
-> multilingual open-set operation-routing target is **not** independently validated for promotion:
-> the strongest canonical DEV candidate passed the target but its unchanged zero-overlap fresh
-> confirmation failed. See [Routing research status](research/routing-status.md).
+> **0.11.0 maturity note:** the typed registry, bounded Top-K capability retrieval, planning,
+> execution, validation, policy, health, projection, persistence, inspection, and integration
+> surfaces are beta product capabilities. Retrieval returns registered capability contracts and
+> never grants execution authority. The active 0.14 agent-utility research evaluates downstream
+> quality/efficiency separately from the stable runtime surface. See
+> [Routing research status](research/routing-status.md).
 
 | Capability | Current main | Direction |
 | --- | --- | --- |
 | Typed tool / endpoint / parameter / field contracts | Implemented | Core invariant |
-| Natural-language planning | Deterministic scoring + exact-recall candidate index cached by registry version | Add approximate/remote retrieval only behind an explicit contract if future scale requires it |
+| Capability retrieval | First-class deterministic `retrieve` / `aretrieve` + executable-ready variants over registered routes | Add alternate indexes/representations only behind explicit contracts and evidence |\n| Natural-language planning | Deterministic scoring + exact-recall candidate index cached by registry version | Keep planning/execution authority separate from external agent selection |
 | Sync / async invocation | Implemented | Stable public surface |
 | Batch execution | Implemented, including completion-order APIs | Stable public surface |
 | Result streaming | Sequential by default + explicit read-only parallel completion streaming | Keep dependency/DAG semantics out of core |
