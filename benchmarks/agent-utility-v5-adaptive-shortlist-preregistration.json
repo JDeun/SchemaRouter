@@ -200,5 +200,14 @@
     "candidate_count_and_schema_token_population": "all rows",
     "unsupported_rows": "report candidate-depth and token diagnostics separately; do not treat empty required-route sets as successful coverage",
     "retrieval_abstention_claim_allowed": false
+  },
+  "token_accounting": {
+    "definition": "exact SmolLM3-3B chat-template delta: tokens(system+user+selected tools) - tokens(system+user without tools), using the B2 exact tokenizer revision and B2 tool serialization",
+    "model": "HuggingFaceTB/SmolLM3-3B",
+    "model_revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+    "tokenizer_template": "same apply_chat_template XML tool surface as #423 B2",
+    "per_row_storage": "prefix_schema_tokens keyed by exposed depth K",
+    "candidate_token_additivity_assumed": false,
+    "selection_uses_exact_prefix_token_count": true
   }
 }
