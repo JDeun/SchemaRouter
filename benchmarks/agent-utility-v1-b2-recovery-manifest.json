@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "issue": 423,
+  "experiment": "0.14-agent-utility-b2-smollm3-v1",
+  "workflow_run_id": 36561002246,
+  "trigger_sha": "20fee33e09d4a2c64a3ae5022818996e4744a11a",
+  "status": "frozen_before_terminal_result",
+  "retry_policy": {
+    "mechanism": "github_actions_rerun_failed_jobs_same_workflow_run",
+    "same_github_sha_required": true,
+    "same_github_ref_required": true,
+    "max_failed_job_rerun_attempts": 5,
+    "successful_jobs_must_not_be_reselected_for_outcome": true,
+    "partial_task_outcomes_must_not_be_inspected_between_retries": true
+  },
+  "retry_eligibility": {
+    "infra_only_required": true,
+    "allowed_failure_signals": [
+      "The runner has received a shutdown signal",
+      "hosted runner disconnected or was terminated by GitHub infrastructure"
+    ],
+    "semantic_or_benchmark_failure_retryable": false,
+    "runtime_contract_failure_retryable": false,
+    "scoring_assertion_failure_retryable": false,
+    "model_prompt_k_condition_change_allowed": false
+  },
+  "canonical_acceptance": {
+    "exact_episode_count": 460,
+    "exact_unique_episode_keys": 460,
+    "episode_key": [
+      "catalog_size",
+      "task_id",
+      "condition"
+    ],
+    "all_identity_checks_must_pass": true,
+    "unauthorized_destructive_executions_max": 0
+  },
+  "termination": {
+    "on_non_infra_failure": "terminate_b2_and_report_failure_without_retuning",
+    "after_retry_cap": "terminate_b2_as_infrastructure_blocked_current_github_hosted_environment"
+  },
+  "governance": {
+    "b2_scores_used_to_define_recovery": false,
+    "model_changed": false,
+    "prompt_changed": false,
+    "k_changed": false,
+    "tasks_changed": false,
+    "catalogs_changed": false,
+    "candidate_sets_changed": false,
+    "conditions_changed": false,
+    "scoring_changed": false,
+    "statistics_changed": false
+  }
+}
