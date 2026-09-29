@@ -9,6 +9,12 @@ on:
       - "scripts/smoke_gemma4_b2_tool_call.py"
       - "tests/test_gemma4_b2_viability.py"
       - ".github/workflows/research-0.14-b2-gemma4-smoke.yml"
+  pull_request:
+    paths:
+      - "benchmarks/agent-utility-b2-gemma4-viability.json"
+      - "scripts/smoke_gemma4_b2_tool_call.py"
+      - "tests/test_gemma4_b2_viability.py"
+      - ".github/workflows/research-0.14-b2-gemma4-smoke.yml"
   workflow_dispatch:
 
 concurrency:
