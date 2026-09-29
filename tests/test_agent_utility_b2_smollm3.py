@@ -6,6 +6,7 @@ import pytest
 
 from benchmarks.agent_utility_b2_catalog import build_registry
 from scripts.evaluate_agent_utility_phase_b_smollm3 import (
+    _bootstrap_delta,
     _function_tool,
     _parse_tool_calls,
     _visible_tools,
@@ -64,3 +65,36 @@ def test_b2_parser_rejects_non_object_arguments() -> None:
 
     with pytest.raises(ValueError, match="arguments must be an object"):
         _parse_tool_calls(text)
+
+
+def test_b2_shard_bootstrap_keeps_catalog_repeats_in_task_cluster() -> None:
+    full = []
+    condition = []
+    for task_id, full_pass, condition_pass in (
+        ("task-a", False, True),
+        ("task-b", True, False),
+    ):
+        for catalog_size in (20, 50, 100, 250):
+            full.append(
+                {
+                    "task_id": task_id,
+                    "catalog_size": catalog_size,
+                    "passed": full_pass,
+                }
+            )
+            condition.append(
+                {
+                    "task_id": task_id,
+                    "catalog_size": catalog_size,
+                    "passed": condition_pass,
+                }
+            )
+
+    result = _bootstrap_delta(full, condition, iterations=500)
+
+    assert result["delta"] == 0.0
+    assert result["cluster_unit"] == "task_id"
+    assert result["unique_task_count"] == 2
+    assert result["catalog_repeats_per_task"] == 4
+    assert result["iterations"] == 500
+    assert result["ci_low"] <= 0.0 <= result["ci_high"]
