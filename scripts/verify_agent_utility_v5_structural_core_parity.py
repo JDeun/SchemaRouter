@@ -24,15 +24,28 @@ from scripts.evaluate_agent_utility_v5_structural_retrieval import (  # noqa: E4
     _specificity_by_route,
 )
 
-VARIANT = {
-    "id": "STRUCT-4.5-1.5",
-    "tool_identifier_bonus": 4.5,
-    "operation_family_bonus": 1.5,
-    "specificity_tiebreak": True,
-}
+PREREG = (
+    ROOT
+    / "benchmarks"
+    / "agent-utility-v5-structural-retrieval-v2-preregistration.json"
+)
+
+
+def _variant() -> dict[str, Any]:
+    prereg = json.loads(PREREG.read_text(encoding="utf-8"))
+    if prereg["status"] != "preregistered_before_confirmation_surface_generation":
+        raise AssertionError("structural v2 preregistration is not frozen")
+    candidate = dict(prereg["fixed_candidate"])
+    return {
+        "id": str(candidate["id"]),
+        "tool_identifier_bonus": float(candidate["tool_identifier_bonus"]),
+        "operation_family_bonus": float(candidate["operation_family_bonus"]),
+        "specificity_tiebreak": bool(candidate["schema_specificity_tiebreak"]),
+    }
 
 
 def verify() -> dict[str, Any]:
+    variant = _variant()
     tasks = build_tasks()
     row_count = 0
     supported_rows = 0
@@ -56,7 +69,7 @@ def verify() -> dict[str, Any]:
                 _base_candidates(research_planner, query),
                 query=query,
                 specificity=specificity,
-                variant=VARIANT,
+                variant=variant,
             )
             core = core_planner.retrieve(query, k=10)
 
@@ -96,7 +109,7 @@ def verify() -> dict[str, Any]:
     return {
         "schema_version": 1,
         "issue": 430,
-        "candidate": VARIANT["id"],
+        "candidate": variant["id"],
         "catalog_sizes": list(CATALOG_SIZES),
         "semantic_task_count": len(tasks),
         "row_count": row_count,
@@ -105,6 +118,10 @@ def verify() -> dict[str, Any]:
         "exact_route_and_score_parity": True,
         "confirmation_surface_used": False,
         "product_default_enabled": False,
+        "preregistration_path": str(PREREG.relative_to(ROOT)),
+        "tool_identifier_bonus": variant["tool_identifier_bonus"],
+        "operation_family_bonus": variant["operation_family_bonus"],
+        "specificity_tiebreak": variant["specificity_tiebreak"],
     }
 
 
