@@ -284,7 +284,7 @@ class LocalSmolLM3Agent:
             return_tensors="pt",
         )
         started = time.perf_counter_ns()
-        with self.torch.inference_mode():
+        with self.torch.no_grad():
             output = self.model.generate(
                 **encoded,
                 do_sample=False,
