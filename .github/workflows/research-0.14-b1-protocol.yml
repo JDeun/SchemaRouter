@@ -36,9 +36,22 @@ jobs:
 
       - name: Validate B1 protocol mechanics
         run: |
-          ruff check             benchmarks/agent_utility_v1_catalog.py             benchmarks/agent_utility_v1_executor.py             scripts/generate_agent_utility_v1.py             scripts/evaluate_agent_utility_phase_a.py             scripts/evaluate_agent_utility_phase_b_qwen.py             tests/test_agent_utility_v1.py             tests/test_agent_utility_v1_executor.py             tests/test_agent_utility_phase_b_qwen.py \
+          ruff check \
+            benchmarks/agent_utility_v1_catalog.py \
+            benchmarks/agent_utility_v1_executor.py \
+            scripts/generate_agent_utility_v1.py \
+            scripts/evaluate_agent_utility_phase_a.py \
+            scripts/evaluate_agent_utility_phase_b_qwen.py \
+            scripts/aggregate_agent_utility_phase_b.py \
+            tests/test_agent_utility_v1.py \
+            tests/test_agent_utility_v1_executor.py \
+            tests/test_agent_utility_phase_b_qwen.py \
             tests/test_agent_utility_phase_b_aggregate.py
-          PYTHONPATH=. pytest -q             tests/test_agent_utility_v1.py             tests/test_agent_utility_v1_executor.py             tests/test_agent_utility_phase_b_qwen.py
+          PYTHONPATH=. pytest -q \
+            tests/test_agent_utility_v1.py \
+            tests/test_agent_utility_v1_executor.py \
+            tests/test_agent_utility_phase_b_qwen.py \
+            tests/test_agent_utility_phase_b_aggregate.py
 
       - name: Freeze corrected tasks and catalogs
         run: |
