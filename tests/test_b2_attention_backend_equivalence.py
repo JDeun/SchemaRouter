@@ -20,6 +20,14 @@ def test_normalization_ignores_timing_and_backend_only() -> None:
             "name": "HuggingFaceTB/SmolLM3-3B",
         },
         "model_load_ms": 10.0,
+        "overall": {
+            "FULL": {
+                "candidate_selection_latency_ms_median": 1.5,
+                "candidate_selection_latency_ms_p95": 1.8,
+                "model_generation_latency_ms_median": 100.0,
+                "task_pass_rate": 1.0,
+            }
+        },
         "rows": [
             {
                 "task_id": "t1",
@@ -38,6 +46,14 @@ def test_normalization_ignores_timing_and_backend_only() -> None:
             "name": "HuggingFaceTB/SmolLM3-3B",
         },
         "model_load_ms": 12.0,
+        "overall": {
+            "FULL": {
+                "candidate_selection_latency_ms_median": 2.0,
+                "candidate_selection_latency_ms_p95": 2.5,
+                "model_generation_latency_ms_median": 90.0,
+                "task_pass_rate": 1.0,
+            }
+        },
         "rows": [
             {
                 "task_id": "t1",
