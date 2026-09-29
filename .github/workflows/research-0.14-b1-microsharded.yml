@@ -26,13 +26,13 @@ env:
 
 jobs:
   preflight:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
-          python-version: "3.12"
+          python-version: "3.12.14"
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev]"
@@ -143,18 +143,35 @@ jobs:
       matrix:
         catalog: [20, 50, 100, 250]
         shard: [s01, s02, s03, s04, s05, s06]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
-          python-version: "3.12"
+          python-version: "3.12.14"
           cache: pip
       - run: python -m pip install --upgrade pip
-      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
-      - run: pip install "transformers>=4.51,<5" safetensors
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
       - run: pip install -e .
+
+      - name: Verify exact inference runtime
+        run: |
+          python - <<'PY'
+          import platform
+          import safetensors
+          import tokenizers
+          import torch
+          import transformers
+
+          assert platform.python_version() == "3.12.14"
+          assert torch.__version__ == "2.14.0+cpu"
+          assert transformers.__version__ == "4.57.6"
+          assert tokenizers.__version__ == "0.22.2"
+          assert safetensors.__version__ == "0.8.0"
+          print("runtime identity verified")
+          PY
 
       - name: Resolve frozen task shard
         id: shard
@@ -222,13 +239,13 @@ jobs:
   aggregate:
     needs: evaluate
     if: ${{ success() }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
-          python-version: "3.12"
+          python-version: "3.12.14"
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e .
