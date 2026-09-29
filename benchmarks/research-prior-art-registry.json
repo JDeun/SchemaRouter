@@ -342,7 +342,7 @@
         "issue": 420,
         "parent_issue": 417,
         "phase_a_issue": 418,
-        "status": "task_contract_corrected_refreeze_required",
+        "status": "task_contract_and_causality_corrected_refreeze_required",
         "protocol_validation_pending_run_id": 36522192140,
         "phase_a_result": {
           "recall_at_3": 0.9655172413793104,
@@ -380,7 +380,10 @@
           36520025834,
           36520831273
         ],
-        "next_gate": "corrected freeze -> Phase A pass -> B1 preregistration v2 -> new B1 inference"
+        "next_gate": "corrected freeze -> Phase A pass -> B1 preregistration v2 -> new B1 inference",
+        "causality_amendment_file": "benchmarks/agent-utility-v1-b1-causality-amendment.json",
+        "execution_rule": "one_executed_tool_call_per_assistant_turn_then_observation",
+        "old_episode_sources_eligible": []
       }
     }
   ],
@@ -489,7 +492,7 @@
       ],
       "aggregate_policy": "latest_identity_guarded_task_cluster_bootstrap"
     },
-    "b1_status": "corrected_task_contract_requires_refreeze",
+    "b1_status": "corrected_task_contract_and_causality_requires_refreeze",
     "previous_task_sha256": "9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1",
     "expected_new_task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c"
   }
