@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "cycle": "0.14-end-to-end-agent-utility",
+  "experiment": "full-vs-topk-vs-progressive-agent-utility-v1",
+  "issue": 418,
+  "parent_issue": 417,
+  "status": "preregistered_before_phase_a_scoring",
+  "research_question": "Does typed capability retrieval preserve downstream tool-use utility while reducing agent context relative to the full catalog?",
+  "role_definition": {
+    "schemarouter": "typed capability retrieval substrate",
+    "agent": "final candidate selection and task reasoning",
+    "execution_policy": "validation and irreversible-action authority",
+    "top1_exact": "diagnostic_not_primary_success_metric"
+  },
+  "conditions": [
+    "FULL",
+    "SR-3",
+    "SR-5",
+    "SR-10",
+    "SR-PROGRESSIVE",
+    "ORACLE"
+  ],
+  "phase_a": {
+    "llm": false,
+    "retriever": "current-main SchemaPlanner deterministic scorer",
+    "candidate_index": false,
+    "catalog_endpoint_counts": [20, 50, 100, 250],
+    "fixed_k": [1, 3, 5, 10],
+    "primary_metrics": [
+      "required route Recall@K",
+      "all-required task coverage@K",
+      "MRR",
+      "NDCG@K",
+      "schema-context characters",
+      "schema-context UTF-8 bytes",
+      "context compression ratio"
+    ],
+    "phase_b_entry_gate": "Recall@10 >= 0.97 in every catalog-size stratum"
+  },
+  "phase_b": {
+    "llm": true,
+    "same_frozen_tasks_and_catalogs": true,
+    "same_agent_across_conditions": true,
+    "temperature": 0,
+    "primary_metrics": [
+      "task pass rate",
+      "valid tool-call rate",
+      "valid argument rate",
+      "final deterministic state correctness",
+      "tool-schema input tokens",
+      "total input tokens",
+      "total output tokens",
+      "LLM calls",
+      "tool calls",
+      "latency",
+      "recovery rate"
+    ],
+    "non_inferiority_margin_task_pass_rate_absolute": -0.02,
+    "schema_context_token_target_vs_full_max_ratio": 0.4,
+    "required_tool_set_recall_min": 0.97,
+    "unauthorized_destructive_executions_max": 0
+  },
+  "progressive_rule": {
+    "initial_k": 3,
+    "expanded_k": 10,
+    "final_fallback": "FULL",
+    "max_expansions": 2,
+    "query_rewriting": false,
+    "allowed_triggers": [
+      "explicit cannot-proceed/request-more-tools",
+      "malformed or unavailable selected tool",
+      "schema validation failure",
+      "deterministic execution failure",
+      "deterministic result-evaluation failure"
+    ],
+    "ground_truth_trigger_forbidden": true
+  },
+  "governance": {
+    "paired_tasks_across_conditions": true,
+    "no_post_result_task_removal": true,
+    "no_k_tuning_from_results": true,
+    "no_prompt_tuning_from_test_rows": true,
+    "no_retriever_weight_tuning_from_test_rows": true,
+    "report_metrics_separately": true,
+    "composite_score_forbidden": true
+  },
+  "prior_art": [
+    "https://aclanthology.org/2025.findings-acl.1258/",
+    "https://aclanthology.org/2025.knowllm-1.7/",
+    "https://arxiv.org/abs/2510.17843"
+  ]
+}
