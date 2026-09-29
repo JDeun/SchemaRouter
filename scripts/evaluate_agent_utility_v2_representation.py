@@ -104,45 +104,55 @@ class BM25Index:
             else 0.0
         )
         self.df: Counter[str] = Counter()
-        for tokens in self.tokens.values():
-            self.df.update(set(tokens))
+        self.postings: dict[str, dict[str, int]] = {}
+        for route_id, counts in self.term_counts.items():
+            self.df.update(counts)
+            for term, tf in counts.items():
+                self.postings.setdefault(term, {})[route_id] = tf
         self.n = len(self.route_ids)
 
-    def _score_tokens(
-        self,
-        query_terms: tuple[str, ...],
-        route_id: str,
-    ) -> float:
-        if not query_terms or self.n == 0:
-            return 0.0
-        term_counts = self.term_counts[route_id]
-        dl = self.lengths[route_id]
+    def rank_positive(self, query: str) -> list[tuple[str, float]]:
+        query_counts = Counter(_tokens(query))
+        if not query_counts or self.n == 0:
+            return []
+
+        scores: dict[str, float] = {}
         k1 = 1.5
         b = 0.75
-        score = 0.0
-        for term in query_terms:
-            tf = term_counts.get(term, 0)
-            if tf <= 0:
+        for term, query_tf in query_counts.items():
+            posting = self.postings.get(term)
+            if not posting:
                 continue
-            df = self.df.get(term, 0)
+            df = self.df[term]
             idf = math.log(1.0 + (self.n - df + 0.5) / (df + 0.5))
-            norm = tf + k1 * (
-                1.0 - b + b * dl / self.avgdl
-                if self.avgdl
-                else 1.0
-            )
-            score += idf * (tf * (k1 + 1.0)) / norm
-        return score
+            for route_id, tf in posting.items():
+                dl = self.lengths[route_id]
+                norm = tf + k1 * (
+                    1.0 - b + b * dl / self.avgdl
+                    if self.avgdl
+                    else 1.0
+                )
+                contribution = idf * (tf * (k1 + 1.0)) / norm
+                scores[route_id] = (
+                    scores.get(route_id, 0.0)
+                    + query_tf * contribution
+                )
+        return sorted(
+            scores.items(),
+            key=lambda row: (-row[1], row[0]),
+        )
 
     def rank(self, query: str) -> list[tuple[str, float]]:
-        query_terms = tuple(_tokens(query))
-        rows = [
-            (route_id, self._score_tokens(query_terms, route_id))
-            for route_id in self.route_ids
+        positive = self.rank_positive(query)
+        seen = {route_id for route_id, _ in positive}
+        return [
+            *positive,
+            *[
+                (route_id, 0.0)
+                for route_id in self.route_ids
+                if route_id not in seen
+            ],
         ]
-        rows.sort(key=lambda row: (-row[1], row[0]))
-        return rows
-
 
 def _datatype_text(schema: dict[str, Any]) -> str:
     if not schema:
@@ -243,8 +253,8 @@ def _document(tool: ToolSpec, endpoint: Any) -> Document:
     )
     policy = " ".join(
         [
-            "read" if endpoint.read_only else "write",
-            "destructive" if endpoint.destructive else "non_destructive",
+            f"read_only={str(bool(endpoint.read_only)).lower()}",
+            f"destructive={str(bool(endpoint.destructive)).lower()}",
         ]
     )
     typed_fields = {
@@ -355,7 +365,7 @@ class RepresentationRetriever:
                 for route_id in self.documents
             }
             for index in self.indexes.values():
-                field_ranking = index.rank(query)
+                field_ranking = index.rank_positive(query)
                 for rank, (route_id, score) in enumerate(field_ranking, start=1):
                     if score <= 0.0:
                         continue
@@ -488,6 +498,7 @@ def evaluate(freeze_dir: Path) -> dict[str, Any]:
         "surface": "development",
         "freeze_manifest": manifest,
         "rrf_k": RRF_K,
+        "dev_representation_revision": "r2-structured-policy-sparse-bm25",
         "conditions_scored": list(CONDITIONS),
         "conditions_blocked": {
             "INTENT-MANUAL": (
