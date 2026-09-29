@@ -44,6 +44,8 @@ SYSTEM_PROMPT = """You are a tool-using agent.
 Solve the user's task using only the provided registered tools.
 Never invent a tool name or hidden capability.
 Use tool results when later calls depend on earlier outputs.
+Issue at most one tool call per assistant turn.
+Wait for the tool observation before issuing any later dependent call.
 When the required capability is not available among the provided tools,
 respond with exactly REQUEST_MORE_TOOLS.
 Do not claim completion before the requested task is actually complete.
@@ -432,7 +434,7 @@ def _run_episode(
         serialized_calls: list[dict[str, Any]] = []
         had_failure = False
 
-        for call in calls:
+        for call_index, call in enumerate(calls):
             name = str(call["name"])
             route_id = name.replace("__", ".", 1)
             arguments = dict(call["arguments"])
@@ -440,6 +442,7 @@ def _run_episode(
                 route_id,
                 arguments,
                 available=route_id in visible_routes,
+                execution_allowed=call_index == 0,
             )
             serialized_calls.append(
                 {
