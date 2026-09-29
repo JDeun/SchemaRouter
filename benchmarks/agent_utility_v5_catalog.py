@@ -782,7 +782,7 @@ _MULTI_PAIRS = (
 _READ_WRITE_PAIRS = (
     ("samples.get", "samples.update"),
     ("jobs.status", "jobs.cancel"),
-    ("messages.draft", "messages.send"),
+    ("jobs.status", "jobs.restart"),
     ("assets.export", "assets.archive"),
     ("experiments.status", "experiments.create"),
 )
