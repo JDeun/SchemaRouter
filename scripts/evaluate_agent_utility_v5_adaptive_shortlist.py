@@ -215,17 +215,22 @@ def _validate_rows(
         for rank, candidate in enumerate(ranking[:max_k], start=1):
             route_id = str(candidate["route_id"])
             score = float(candidate["score"])
-            schema_tokens = int(candidate["schema_tokens"])
             if not route_id:
                 raise ValueError(f"row {index} rank {rank}: empty route_id")
             if not math.isfinite(score):
                 raise ValueError(f"row {index} rank {rank}: non-finite score")
-            if schema_tokens < 0:
-                raise ValueError(
-                    f"row {index} rank {rank}: negative schema_tokens"
-                )
             route_ids.append(route_id)
             scores.append(score)
+
+        prefix_tokens = row.get("prefix_schema_tokens")
+        if not isinstance(prefix_tokens, dict):
+            raise ValueError(f"row {index}: prefix_schema_tokens must be an object")
+        for depth in range(1, max_k + 1):
+            value = int(prefix_tokens.get(str(depth), -1))
+            if value < 0:
+                raise ValueError(
+                    f"row {index}: missing/negative prefix_schema_tokens[{depth}]"
+                )
 
         if len(route_ids) != len(set(route_ids)):
             raise ValueError(f"row {index}: duplicate route_id in ranking")
@@ -339,14 +344,7 @@ def _evaluate_policy(
             for candidate in selected
         }
         candidate_counts.append(float(k))
-        schema_tokens.append(
-            float(
-                sum(
-                    int(candidate["schema_tokens"])
-                    for candidate in selected
-                )
-            )
-        )
+        schema_tokens.append(float(row["prefix_schema_tokens"][str(k)]))
         retrieval_latencies.append(float(row["retrieval_latency_ms"]))
         selected_depths[
             f'{row["task_id"]}@{row["catalog_size"]}'
