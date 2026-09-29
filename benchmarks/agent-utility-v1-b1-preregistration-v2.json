@@ -141,7 +141,11 @@
   "aggregate_integrity": {
     "required_episode_count": 552,
     "required_unique_episode_key_count": 552,
-    "episode_key": ["catalog_size", "task_id", "condition"],
+    "episode_key": [
+      "catalog_size",
+      "task_id",
+      "condition"
+    ],
     "required_task_count_per_catalog_condition": 23,
     "unknown_task_ids_fail_closed": true,
     "duplicate_episode_keys_fail_closed": true,
@@ -157,6 +161,25 @@
     "no_k_tuning": true,
     "no_task_or_catalog_rewrite_after_v2_freeze": true,
     "no_model_swap_inside_b1": true,
-    "stronger_agent_requires_separate_b2": true
+    "stronger_agent_requires_separate_b2": true,
+    "runtime_dependency_ranges_forbidden": true
+  },
+  "runtime": {
+    "runner_os": "ubuntu-24.04",
+    "python": "3.12.14",
+    "torch": "2.14.0+cpu",
+    "transformers": "4.57.6",
+    "tokenizers": "0.22.2",
+    "safetensors": "0.8.0",
+    "source": "versions observed in the successful pre-v2 Qwen tool-call smoke; exact-pinned for v2"
+  },
+  "pre_benchmark_smoke": {
+    "required": true,
+    "exact_runtime_pins_required": true,
+    "first_tool_call_parse_required": true,
+    "dependent_second_tool_call_after_observation_required": true,
+    "repeated_identical_prompt_determinism_required": true,
+    "context_overflow_forbidden": true,
+    "benchmark_rows_consumed": false
   }
 }
