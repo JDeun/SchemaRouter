@@ -1,0 +1,352 @@
+name: Research 0.14 B2 SmolLM3 Full
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "research/0.14-b2-run"
+    paths:
+      - ".github/b2-full-run-trigger.json"
+
+permissions:
+  contents: read
+
+env:
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  TOKENIZERS_PARALLELISM: "false"
+  HF_HOME: "${{ github.workspace }}/.hf-cache"
+  TRANSFORMERS_CACHE: "${{ github.workspace }}/.hf-cache"
+  B2_MODEL: "HuggingFaceTB/SmolLM3-3B"
+  B2_REVISION: "a07cc9a04f16550a088caea529712d1d335b0ac1"
+  B2_CACHE_KEY: "b2-smollm3-a07cc9a04f16550a088caea529712d1d335b0ac1-torch2.14-transformers4.57.6"
+
+jobs:
+  authorize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      matrix: "${{ steps.plan.outputs.matrix }}"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Fail closed unless B2 is explicitly authorized
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          prereg = json.loads(
+              Path("benchmarks/agent-utility-v1-b2-preregistration.json")
+              .read_text(encoding="utf-8")
+          )
+          smoke = prereg["pre_benchmark_smoke"]
+          assert smoke.get("full_b2_inference_authorized") is True
+          assert smoke.get("authorized_smoke_source_sha")
+          assert smoke.get("authorized_smoke_artifact_digest")
+          assert smoke.get("authorized_smoke_result") == "pass"
+          assert prereg["canonical_benchmark_identity"]["candidate_set_manifest"][
+              "sha256"
+          ] == "9bea0645f64ec726abe5983d9a19eefe12afb1ab6cfae65ecd87464f545f0176"
+          print("B2 inference authorization verified")
+          PY
+      - name: Verify frozen benchmark and harness
+        run: |
+          pytest -q \
+            tests/test_agent_utility_b2_protocol.py \
+            tests/test_agent_utility_b2_smollm3.py \
+            tests/test_agent_utility_b2_aggregate.py
+          python scripts/generate_agent_utility_b2_freeze.py \
+            --out-dir artifacts/b2-freeze
+          python scripts/verify_agent_utility_b2_candidate_sets.py
+      - id: plan
+        name: Export frozen 41-job matrix
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          plan = json.loads(
+              Path("benchmarks/agent-utility-v1-b2-sharding.json")
+              .read_text(encoding="utf-8")
+          )
+          assert plan["expected_job_count"] == 41
+          assert plan["expected_episode_count"] == 460
+          include = [
+              {
+                  "job_id": row["job_id"],
+                  "task_id": row["task_id"],
+                  "catalog_sizes": ",".join(
+                      str(value) for value in row["catalog_sizes"]
+                  ),
+                  "expected_episodes": row["expected_episodes"],
+              }
+              for row in plan["jobs"]
+          ]
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(
+                  "matrix="
+                  + json.dumps({"include": include}, separators=(",", ":"))
+                  + "\n"
+              )
+          PY
+
+  model-cache:
+    needs: authorize
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - run: pip install -e .
+      - id: hf-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "${{ env.B2_CACHE_KEY }}"
+      - name: Populate exact model revision on cache miss
+        if: steps.hf-cache.outputs.cache-hit != 'true'
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+
+          path = snapshot_download(
+              repo_id=os.environ["B2_MODEL"],
+              revision=os.environ["B2_REVISION"],
+          )
+          print(path)
+          PY
+      - name: Verify exact cached revision is loadable offline
+        env:
+          HF_HUB_OFFLINE: "1"
+          TRANSFORMERS_OFFLINE: "1"
+        run: |
+          python - <<'PY'
+          import os
+          from transformers import AutoConfig, AutoTokenizer
+
+          AutoConfig.from_pretrained(
+              os.environ["B2_MODEL"],
+              revision=os.environ["B2_REVISION"],
+              local_files_only=True,
+              trust_remote_code=False,
+          )
+          AutoTokenizer.from_pretrained(
+              os.environ["B2_MODEL"],
+              revision=os.environ["B2_REVISION"],
+              local_files_only=True,
+              trust_remote_code=False,
+          )
+          print("exact SmolLM3 cache verified")
+          PY
+      - name: Verify worst-case FULL context budget before inference
+        env:
+          HF_HUB_OFFLINE: "1"
+          TRANSFORMERS_OFFLINE: "1"
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          from transformers import AutoTokenizer
+
+          from benchmarks.agent_utility_b2_catalog import TASKS, build_registry, route_ids
+          from scripts.evaluate_agent_utility_phase_b_smollm3 import (
+              MAX_NEW_TOKENS,
+              SYSTEM_PROMPT,
+              _visible_tools,
+          )
+
+          tokenizer = AutoTokenizer.from_pretrained(
+              os.environ["B2_MODEL"],
+              revision=os.environ["B2_REVISION"],
+              local_files_only=True,
+              trust_remote_code=False,
+          )
+          registry = build_registry(250)
+          tools = _visible_tools(registry, sorted(route_ids(registry)))
+          counts = {}
+          for task in TASKS:
+              input_ids = tokenizer.apply_chat_template(
+                  [
+                      {"role": "system", "content": SYSTEM_PROMPT},
+                      {"role": "user", "content": task.query},
+                  ],
+                  xml_tools=tools,
+                  enable_thinking=False,
+                  add_generation_prompt=True,
+                  tokenize=True,
+              )
+              counts[task.task_id] = len(input_ids)
+
+          max_task = max(counts, key=counts.get)
+          maximum = counts[max_task]
+          context_limit = 65536
+          assert maximum + MAX_NEW_TOKENS <= context_limit, (
+              max_task,
+              maximum,
+              MAX_NEW_TOKENS,
+              context_limit,
+          )
+          print(
+              json.dumps(
+                  {
+                      "catalog_size": 250,
+                      "max_task_id": max_task,
+                      "max_initial_input_tokens": maximum,
+                      "reserved_output_tokens": MAX_NEW_TOKENS,
+                      "context_limit": context_limit,
+                  },
+                  sort_keys=True,
+              )
+          )
+          PY
+
+  evaluate:
+    needs:
+      - authorize
+      - model-cache
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix: "${{ fromJSON(needs.authorize.outputs.matrix) }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - run: pip install -e .
+      - id: hf-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "${{ env.B2_CACHE_KEY }}"
+          fail-on-cache-miss: true
+      - name: Verify exact inference runtime
+        run: |
+          python - <<'PY'
+          import platform
+          import safetensors
+          import tokenizers
+          import torch
+          import transformers
+
+          assert platform.python_version() == "3.12.14"
+          assert torch.__version__ == "2.14.0+cpu"
+          assert transformers.__version__ == "4.57.6"
+          assert tokenizers.__version__ == "0.22.2"
+          assert safetensors.__version__ == "0.8.0"
+          print("exact B2 inference runtime verified")
+          PY
+      - name: Evaluate frozen task shard
+        run: |
+          mkdir -p artifacts/b2-shard
+          python scripts/evaluate_agent_utility_phase_b_smollm3.py \
+            --catalog-sizes "${{ matrix.catalog_sizes }}" \
+            --task-ids "${{ matrix.task_id }}" \
+            --out "artifacts/b2-shard/phase-b2-${{ matrix.job_id }}.json"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = next(Path("artifacts/b2-shard").glob("phase-b2-*.json"))
+          data = json.loads(path.read_text(encoding="utf-8"))
+          expected = int(os.environ["EXPECTED_EPISODES"])
+          assert len(data["rows"]) == expected
+          assert {row["task_id"] for row in data["rows"]} == {
+              os.environ["EXPECTED_TASK_ID"]
+          }
+          assert {row["condition"] for row in data["rows"]} == {
+              "FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE"
+          }
+          PY
+        env:
+          EXPECTED_EPISODES: "${{ matrix.expected_episodes }}"
+          EXPECTED_TASK_ID: "${{ matrix.task_id }}"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: "b2-smollm3-shard-${{ matrix.job_id }}-${{ github.run_id }}"
+          path: artifacts/b2-shard/
+          if-no-files-found: warn
+          retention-days: 30
+
+  aggregate:
+    needs: evaluate
+    if: "${{ success() }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e .
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          pattern: "b2-smollm3-shard-*-${{ github.run_id }}"
+          path: artifacts/b2-shards
+      - name: Aggregate exact 460 B2 episodes
+        run: |
+          python scripts/aggregate_agent_utility_phase_b2.py \
+            --input-dir artifacts/b2-shards \
+            --out artifacts/agent-utility-b2-canonical.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(
+              Path("artifacts/agent-utility-b2-canonical.json")
+              .read_text(encoding="utf-8")
+          )
+          assert data["episode_count"] == 460
+          assert data["expected_episode_count"] == 460
+          assert data["issue"] == 423
+          keys = {
+              (
+                  int(row["catalog_size"]),
+                  str(row["task_id"]),
+                  str(row["condition"]),
+              )
+              for row in data["rows"]
+          }
+          assert len(keys) == 460
+          for summary in data["overall"].values():
+              assert summary["unauthorized_destructive_executions"] == 0
+          print(json.dumps(data["overall"], sort_keys=True))
+          print(json.dumps(data["retrieval_coverage"], sort_keys=True))
+          print(json.dumps(data["utility_gates"], sort_keys=True))
+          print(json.dumps(data["progressive_recovery"], sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "b2-smollm3-canonical-${{ github.run_id }}"
+          path: |
+            artifacts/agent-utility-b2-canonical.json
+            benchmarks/agent-utility-v1-b2-preregistration.json
+            benchmarks/agent-utility-v1-b2-sharding.json
+          if-no-files-found: error
+          retention-days: 30
