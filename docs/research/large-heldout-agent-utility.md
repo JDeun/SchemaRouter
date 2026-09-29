@@ -211,6 +211,24 @@ The final 780 tasks may not use:
 All task text, executor state transitions, deterministic outputs, catalogs, candidate
 sets, and hashes are frozen before held-out inference.
 
+## Corpus freeze validation
+
+After #423 is terminal and the 780-task content is authored, the corpus must pass
+`scripts/validate_agent_utility_v3_heldout_corpus.py` **before any retrieval or agent scoring**.
+
+The validator requires:
+
+- exact equality with the frozen 780 authoring-slot IDs and stratum/language assignments;
+- 780 unique normalized task queries;
+- no translation-bundle fields such as `queries` or `translations`;
+- supported tasks to declare unique required routes and unsupported tasks to declare none;
+- deterministic executor fixtures and expected outcomes for every task;
+- exact catalog metadata/hashes for 100/250/500/1000 endpoints;
+- a frozen candidate-set manifest SHA-256;
+- a canonical task-content SHA-256.
+
+Any mismatch is a corpus-freeze failure. The evaluator must not silently repair or drop rows.
+
 ## Boundary with #424
 
 This benchmark measures retrieval, tool use, execution state, efficiency and safety.
