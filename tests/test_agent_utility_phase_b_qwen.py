@@ -10,6 +10,7 @@ from scripts.evaluate_agent_utility_phase_b_qwen import (
     SYSTEM_PROMPT,
     _candidate_set,
     _parse_tool_calls,
+    _run_fixed_episode,
     _tool_response_message,
     _visible_tools,
     evaluate,
@@ -150,3 +151,34 @@ def test_b1_workflow_shards_cover_every_frozen_task_exactly_once() -> None:
 def test_system_prompt_requires_observation_between_tool_calls() -> None:
     assert "at most one tool call per assistant turn" in SYSTEM_PROMPT
     assert "Wait for the tool observation" in SYSTEM_PROMPT
+
+
+def test_fixed_episode_reports_separate_latency_components() -> None:
+    class FakeAgent:
+        def generate(self, messages, tools):  # noqa: ANN001, ANN201
+            del messages, tools
+            return {
+                "text": "done",
+                "input_tokens": 10,
+                "tool_tokens": 3,
+                "output_tokens": 1,
+                "latency_ms": 2.5,
+                "context_overflow": False,
+            }
+
+    registry = build_registry(20)
+    task = next(
+        task for task in TASKS if task.task_id == "single-paper-search"
+    )
+    row = _run_fixed_episode(
+        FakeAgent(),
+        registry,
+        task,
+        "SR-5",
+    )
+
+    assert row["model_generation_latency_ms"] == 2.5
+    assert row["candidate_selection_latency_ms"] >= 0.0
+    assert row["episode_wall_latency_ms"] >= row[
+        "candidate_selection_latency_ms"
+    ]
