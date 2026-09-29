@@ -155,6 +155,13 @@ def aggregate(paths: list[Path]) -> dict[str, Any]:
     if len(model_identities) != 1:
         raise ValueError("model configuration drift across shards")
 
+    runtime_identities = {
+        json.dumps(result["runtime"], sort_keys=True, separators=(",", ":"))
+        for result in loaded
+    }
+    if len(runtime_identities) != 1:
+        raise ValueError("runtime identity drift across shards")
+
     policy_identities = {
         json.dumps(result["policy"], sort_keys=True, separators=(",", ":"))
         for result in loaded
@@ -324,6 +331,7 @@ def aggregate(paths: list[Path]) -> dict[str, Any]:
             ),
         },
         "model": loaded[0]["model"],
+        "runtime": loaded[0]["runtime"],
         "episode_count": len(rows),
         "expected_episode_count": 23 * 4 * 6,
         "summary_by_catalog": summary_by_catalog,
