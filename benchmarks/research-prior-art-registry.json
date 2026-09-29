@@ -323,7 +323,7 @@
         }
       ],
       "schemarouter_mapping": "Treat OpenAPI/MCP/ToolSpec as typed executable documents. Retrieve a compact high-recall Top-K candidate set plus typed metadata for a downstream LLM agent; keep final execution authority in the agent + execution-policy layer.",
-      "trigger": "Active 0.14 direction. #418 Phase A passed with Recall@5=100% across the frozen 20/50/100/250-endpoint benchmark and strong context compression; #420 B1 end-to-end agent A/B is running.",
+      "trigger": "Active 0.14 direction. B1 v2 passed preflight + exact-pinned two-turn smoke and is running the canonical 552-episode evaluation. Task-contract and causality amendments were frozen before any accepted aggregate.",
       "terminal_controls": [
         {
           "issue": 406,
@@ -342,57 +342,28 @@
         "issue": 420,
         "parent_issue": 417,
         "phase_a_issue": 418,
-        "status": "queued_b1_v2_self_validating",
-        "protocol_validation_pending_run_id": 36522192140,
+        "status": "running_b1_v2_protocol_validated_canonical_execution",
+        "canonical_run_id": 36529108855,
+        "canonical_source_revision": "b9eadefd3cd076f026a54bbc55a949f0424f5dab",
+        "task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
+        "protocol_validation_run_id": 36528950357,
         "phase_a_result": {
           "recall_at_3": 0.9655172413793104,
           "recall_at_5": 1,
           "recall_at_10": 1,
-          "top5_context_ratio_at_250": 0.023791301779351147
+          "top5_context_ratio_at_250": 0.023833039497124713
         },
-        "statistical_amendment": "benchmarks/agent-utility-v1-b1-statistical-amendment.json",
-        "bootstrap_unit": "task_id_cluster",
-        "unique_semantic_task_count": 23,
+        "protocol_v2": {
+          "max_executed_tool_calls_per_assistant_turn": 1,
+          "dependent_calls_require_prior_observation": true,
+          "bootstrap_unit": "task_id cluster",
+          "expected_episode_count": 552,
+          "expected_job_count": 30
+        },
         "next_required_replication": 423,
+        "large_held_out_generalization_issue": 432,
         "final_answer_quality_issue": 424,
-        "adaptive_depth_issue": 430,
-        "corrective_reretrieval_issue": 431,
-        "heldout_generalization_issue": 432,
-        "public_topk_api_issue": 428,
-        "invalidated_run_id": 36517371433,
-        "superseded_runs": [
-          36520027240,
-          36520831273
-        ],
-        "execution_equivalence": {
-          "amendment_file": "benchmarks/agent-utility-v1-b1-execution-equivalence.json",
-          "eligible_run_ids": [
-            36520025834,
-            36520831273
-          ],
-          "selection_rule": "first_complete_valid_552_episode_source_independent_of_results",
-          "excluded_run_id": 36517371433
-        },
-        "statistical_amendment_file": "benchmarks/agent-utility-v1-b1-statistical-amendment.json",
-        "previous_task_sha256": "9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1",
-        "expected_new_task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
-        "superseded_run_ids": [
-          36520025834,
-          36520831273
-        ],
-        "next_gate": "corrected freeze -> Phase A pass -> B1 preregistration v2 -> new B1 inference",
-        "causality_amendment_file": "benchmarks/agent-utility-v1-b1-causality-amendment.json",
-        "execution_rule": "one_executed_tool_call_per_assistant_turn_then_observation",
-        "old_episode_sources_eligible": [],
-        "canonical_run_id": 36526572267,
-        "canonical_source_revision": "62111bda592264fd2c10f3d274af7a0606d042f4",
-        "preregistration_v2": "benchmarks/agent-utility-v1-b1-preregistration-v2.json",
-        "tasks_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
-        "superseded_episode_sources": [
-          36517371433,
-          36520025834,
-          36520831273
-        ]
+        "adaptive_depth_issue": 430
       }
     }
   ],
@@ -488,7 +459,7 @@
     "current_experiment": 420,
     "staged_replication": 423,
     "staged_answer_quality": 424,
-    "canonical_b1_run_id": 36526572267,
+    "canonical_b1_run_id": 36529108855,
     "protocol_validation_pending_run_id": 36522192140,
     "staged_adaptive_depth": 430,
     "staged_corrective_reretrieval": 431,
@@ -504,6 +475,9 @@
     "b1_status": "corrected_task_contract_and_causality_requires_refreeze",
     "previous_task_sha256": "9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1",
     "expected_new_task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
-    "b1_protocol_generation": "v2"
+    "b1_protocol_generation": "v2",
+    "b1_v2_task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
+    "protocol_validation_run_id": 36528950357,
+    "required_generalization_benchmark": 432
   }
 }
