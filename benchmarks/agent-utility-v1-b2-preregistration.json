@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "cycle": "0.14-end-to-end-agent-utility",
+  "experiment": "phase-b2-smollm3-3b-strong-agent-replication-v1",
+  "issue": 423,
+  "parent_issue": 417,
+  "parent_experiment_issue": 418,
+  "predecessor_issue": 420,
+  "status": "frozen_before_any_b2_model_inference",
+  "date": "2026-09-29",
+  "purpose": "Strong non-Qwen replication of the canonical B1 candidate-compression utility experiment.",
+  "model": {
+    "name": "HuggingFaceTB/SmolLM3-3B",
+    "revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+    "family": "SmolLM3",
+    "parameters": "3B",
+    "license": "Apache-2.0",
+    "role": "downstream generative tool-using agent",
+    "device": "cpu",
+    "dtype": "bfloat16",
+    "enable_thinking": false,
+    "do_sample": false,
+    "max_new_tokens_per_turn": 256,
+    "max_turns": 6,
+    "seed": 20260929,
+    "cpu_threads": 4,
+    "generation_stopping": {
+      "eos_token": true,
+      "completed_tool_call_suffix": "</tool_call>",
+      "rule": "Stop generation after the first complete native XML tool call closing tag, or EOS for non-tool final text.",
+      "condition_independent": true,
+      "benchmark_row_dependent": false,
+      "rationale": "Interface-level runtime bound frozen after synthetic smoke showed completed tool calls continued generating until the token cap; no B2 benchmark row had been consumed."
+    }
+  },
+  "model_selection_governance": {
+    "materially_stronger_than_b1": true,
+    "non_qwen_family": true,
+    "selected_from_b1_row_errors": false,
+    "reason": "Public open-weight 3B model with documented native XML tool-calling support; selected for family independence and reproducibility.",
+    "source_evidence": [
+      "https://huggingface.co/HuggingFaceTB/SmolLM3-3B",
+      "https://huggingface.co/HuggingFaceTB/SmolLM3-3B/commit/a07cc9a04f16550a088caea529712d1d335b0ac1"
+    ]
+  },
+  "canonical_benchmark_identity": {
+    "source_sha": "b9eadefd3cd076f026a54bbc55a949f0424f5dab",
+    "source_workflow_run": 36529108855,
+    "source_preflight_artifact_id": 11016475507,
+    "task_count": 23,
+    "single_task_count": 17,
+    "multi_task_count": 6,
+    "tasks_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
+    "catalog_sha256": {
+      "20": "b90e3ab473217f4becffb4933fc96e7016cf60f28b030b4d2ae8cb1639c40f5c",
+      "50": "e43400681d64315cadfeb54f4f3dadb0490e557e5f6bf2514c4f8e2e6d424ac3",
+      "100": "52b58b39ec31d377c90c16572997f69523742c8917a37e33326d429b51afc225",
+      "250": "e5ca7d199dd5d2e7bb89eb97d8ac0cae37f403def1fc43037f2fc816a775d2a9"
+    },
+    "candidate_set_manifest": {
+      "rows": 92,
+      "contents": [
+        "top3",
+        "top5",
+        "top10",
+        "full",
+        "oracle"
+      ],
+      "sha256": "9bea0645f64ec726abe5983d9a19eefe12afb1ab6cfae65ecd87464f545f0176",
+      "source": "canonical B1 aggregate workflow 36529108855",
+      "verification_required_before_b2_inference": true
+    }
+  },
+  "conditions": [
+    "FULL",
+    "SR-5",
+    "SR-10",
+    "SR-PROGRESSIVE",
+    "ORACLE"
+  ],
+  "expected_episode_count": 460,
+  "candidate_order": {
+    "retrieval_rank_used_only_for_set_membership": true,
+    "visible_tools_sorted_by": "registered_route_id_lexicographic",
+    "rank_scores_visible_to_agent": false,
+    "rank_positions_visible_to_agent": false
+  },
+  "tool_interface": {
+    "tokenizer_argument": "xml_tools",
+    "schema_shape": "SmolLM native XML tool signature: name + description + JSON Schema parameters",
+    "function_name_encoding": "route_id dots replaced with double underscore",
+    "parser": "JSON object inside <tool_call>...</tool_call>",
+    "max_executed_tool_calls_per_assistant_turn": 1,
+    "dependent_call_requires_prior_tool_observation": true,
+    "observation_message_role": "tool",
+    "observation_payload": "<tool_response> JSON </tool_response>"
+  },
+  "system_prompt_identity": "same semantic instruction text as canonical B1",
+  "progressive": {
+    "initial_k": 3,
+    "expanded_k": 10,
+    "final_stage": "FULL",
+    "max_expansions": 2,
+    "query_rewriting": false,
+    "ground_truth_expansion_trigger": false
+  },
+  "executor": {
+    "network": false,
+    "deterministic": true,
+    "canonical_b1_semantics": true,
+    "typed_argument_validation": true,
+    "multi_step_data_dependencies": true,
+    "wrong_destructive_calls_blocked": true,
+    "ground_truth_route_revealed_in_observation": false
+  },
+  "runtime_candidate": {
+    "runner": "ubuntu-24.04",
+    "python": "3.12.14",
+    "torch": "2.14.0+cpu",
+    "transformers": "4.57.6",
+    "tokenizers": "0.22.2",
+    "safetensors": "0.8.0",
+    "exact_versions_required": true
+  },
+  "pre_benchmark_smoke": {
+    "required": true,
+    "benchmark_rows_consumed": false,
+    "exact_revision_load_required": true,
+    "exact_runtime_pins_required": true,
+    "first_tool_call_parse_required": true,
+    "dependent_second_tool_call_after_observation_required": true,
+    "repeated_identical_prompt_determinism_required": true,
+    "no_context_overflow": true,
+    "feasibility_record_model_load_seconds": true,
+    "feasibility_record_generation_seconds": true,
+    "full_b2_inference_authorized_only_after_smoke_pass": true,
+    "initial_functional_smoke": {
+      "workflow_run": 36547250951,
+      "source_sha": "9119dd519262774e9cca84a95c79a2b1487e0432",
+      "result": "pass",
+      "model_load_seconds": 19.635010228,
+      "max_rss_mb": 6531.875,
+      "generation_seconds": [
+        117.814477974,
+        117.823018967,
+        136.535557654
+      ],
+      "interpretation": "Tool semantics passed, but naive EOS-only generation is too slow for the full matrix; rerun with the frozen completed-tool-call stop rule before authorization."
+    },
+    "latest_smoke_must_validate_generation_stopping_rule": true
+  },
+  "product_utility_gate": {
+    "task_pass_noninferiority_vs_full_absolute": -0.02,
+    "required_tool_set_recall_min": 0.97,
+    "tool_schema_token_ratio_vs_full_max": 0.4,
+    "total_input_tokens_must_be_less_than_full": true,
+    "unauthorized_destructive_executions_max": 0,
+    "execution_policy_integrity": 1
+  },
+  "statistics": {
+    "paired_conditions": true,
+    "bootstrap_unit": "task_id cluster",
+    "unique_semantic_tasks": 23,
+    "catalog_repeats_per_task": 4,
+    "iterations": 5000,
+    "seed": 20260929,
+    "confidence_interval": 0.95,
+    "broad_population_noninferiority_claim_allowed": false
+  },
+  "stopping_rule": {
+    "no_prompt_tuning_from_b2_rows": true,
+    "no_k_tuning": true,
+    "no_task_or_catalog_rewrite": true,
+    "no_model_swap_after_b2_rows_begin": true,
+    "smoke_failure_allows_model_feasibility_reconsideration_before_any_benchmark_row": true
+  },
+  "interpretation": {
+    "replicated_if": "At least one deployable SR condition passes all B2 utility gates and context/token reduction direction matches B1.",
+    "if_b2_fails": "Do not claim general agent utility; preserve B1 as small-model mechanism evidence.",
+    "final_answer_quality_claim": false
+  }
+}
