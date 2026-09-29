@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from schemarouter import (
+    CallableDecisionBackend,
     EndpointSpec,
     FieldSpec,
     InMemoryRegistry,
@@ -350,3 +351,22 @@ def test_retrieval_result_is_detached_from_registry_state() -> None:
     assert fresh.candidates[0].output_fields[0].name == original_field_name
     assert fresh.candidates[0].parameters[0].name == original_parameter_name
     assert "mutated-match" not in fresh.candidates[0].matched_fields
+
+
+def test_retrieve_does_not_invoke_planning_candidate_recall_backend() -> None:
+    router = make_retrieval_router()
+    called = False
+
+    def planning_recall_backend(_request):
+        nonlocal called
+        called = True
+        raise AssertionError("public retrieve must stay deterministic")
+
+    router.planner.candidate_recall_backend = CallableDecisionBackend(
+        planning_recall_backend
+    )
+
+    result = router.retrieve("current Young's modulus", k=2)
+
+    assert len(result.candidates) == 2
+    assert called is False
