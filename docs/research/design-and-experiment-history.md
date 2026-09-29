@@ -3020,3 +3020,56 @@ The resulting architectural constraint is stronger than before: a future candida
 positive-retriever replacement, generic operation classification, relative relevance ranking nor
 conformal calibration over a weak scalar score is sufficient by itself.
 
+## 63. 0.14 reframing — retrieval utility before classifier perfection
+
+After the post-V6E sequence, the research question itself was audited.
+
+The accumulated 0.13 evidence had been optimizing SchemaRouter as if it were an autonomous
+single-label open-set classifier. That assumption is stricter than the intended system role:
+SchemaRouter can instead expose a compact set of typed, executable, registry-backed capabilities to
+a downstream agent, while schema validation, permissions and destructive-action policy retain
+execution authority.
+
+This changes the primary question from:
+
+> Can SchemaRouter itself choose exactly one endpoint and reject every unsupported request?
+
+to:
+
+> Does SchemaRouter give an LLM agent a smaller, typed capability set that preserves required-tool
+> coverage and improves or preserves end-to-end task success, tokens, latency, recovery and safety?
+
+Issues #417/#418 formalized this 0.14 cycle.
+
+The first Phase-A benchmark froze 23 tasks across 20/50/100/250 endpoint catalogs. Before any LLM
+benchmark inference, implementation of the deterministic Phase-B executor exposed two missing
+inter-tool artifact outputs and two incomplete task inputs. Those contracts were corrected and the
+benchmark was re-frozen before model scoring.
+
+Canonical corrected pre-B1 freeze:
+- workflow `36507439562`;
+- source `c0975d84a7c87c6058d3a3edbc95c15e5223e4e1`;
+- artifact `11006614997`;
+- digest `sha256:5cec1c650bd2a98fc78f7fbb911c0b15d95a39c96a43848b939ba56302658022`;
+- task SHA `9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1`.
+
+The corrected Phase-A result was stable across all catalog sizes:
+- required-route Recall@1 **68.97%**;
+- Recall@3 **96.55%**;
+- Recall@5 and Recall@10 **100%**;
+- Top-5 all-required task coverage **100%**;
+- Top-5 multi-tool task coverage **100%**;
+- required-route MRR **0.82471**.
+
+At 250 endpoints, Top-5 serialized only **2.379%** of the FULL schema context on average.
+
+This is an important interpretation change. The same routing layer looks inadequate under a strict
+Top-1 objective but fully preserves the required candidate set at K=5 while sharply reducing
+context. Therefore Top-1 exact is retained as a diagnostic rather than a proxy for end-to-end
+product value.
+
+#420 then preregistered Phase B1: FULL vs fixed Top-K vs progressive candidate expansion vs ORACLE
+under one identical local tool-calling agent and deterministic executor. The causal
+`Qwen/Qwen3-0.6B` checkpoint is used only as a reproducibility/sanity downstream agent. This must
+not be confused with #289's terminal `Qwen/Qwen3-Reranker-0.6B` yes/no verifier experiment. A
+stronger Phase-B2 agent is required before product-level conclusions are accepted.
