@@ -24,7 +24,10 @@ def _normalize(value: Any) -> Any:
                 continue
             if key == "runtime":
                 continue
-            if key == "attention_implementation":
+            if key in {
+                "attention_implementation",
+                "static_prefix_cache",
+            }:
                 continue
             normalized[key] = _normalize(child)
         return normalized
