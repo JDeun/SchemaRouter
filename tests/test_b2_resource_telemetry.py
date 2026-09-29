@@ -13,8 +13,8 @@ def _workflow() -> str:
 def test_b2_resource_telemetry_is_observability_only() -> None:
     text = _workflow()
 
-    assert "max-parallel: 6" in text
-    assert "timeout-minutes: 180" in text
+    assert "max-parallel: 4" in text
+    assert "timeout-minutes: 45" in text
     assert 'matrix: "${{ fromJSON(needs.authorize.outputs.matrix) }}"' in text
     assert "continue-on-error: true" not in text
 
@@ -25,7 +25,7 @@ def test_b2_resource_telemetry_is_observability_only() -> None:
     assert "memory.max" in text
     assert "ps -eo pid,ppid,rss,vsz,pcpu,pmem,etime,comm --sort=-rss" in text
     assert "sleep 60" in text
-    assert "/usr/bin/time -v python scripts/evaluate_agent_utility_phase_b_smollm3.py" in text
+    assert "/usr/bin/time -v python -u scripts/evaluate_agent_utility_phase_b_smollm3.py" in text
 
 
 def test_b2_resource_telemetry_preserves_frozen_evaluator_arguments() -> None:
@@ -37,4 +37,6 @@ def test_b2_resource_telemetry_preserves_frozen_evaluator_arguments() -> None:
 
     assert 'EXPECTED_EPISODES: "${{ matrix.expected_episodes }}"' in text
     assert 'EXPECTED_TASK_ID: "${{ matrix.task_id }}"' in text
-    assert '"FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE"' in text
+    assert 'EXPECTED_CONDITIONS: "${{ matrix.conditions }}"' in text
+    assert '--conditions "${{ matrix.conditions }}"' in text
+    assert "agent-utility-v1-b2-sharding-runner-hardened.json" in text
