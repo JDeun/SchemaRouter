@@ -100,8 +100,8 @@ adaptive policy is selected.
 
 An adaptive policy is eligible only if it satisfies all of:
 
-- required-tool-set Recall >= 97%;
-- all-required FullCoverage >= 97%;
+- required-tool-set Recall >= 97% at each of 100/250/500 endpoints;
+- all-required FullCoverage >= 97% at each of 100/250/500 endpoints;
 - mean exposed candidate count < 5;
 - p95 exposed candidate count <= 10;
 - mean tool-schema tokens < fixed K=5.
@@ -122,7 +122,8 @@ There is no post-selection threshold retuning.
 The confirmation surface is not tuning eligible.
 
 For promotion, the selected adaptive policy must retain >=97% required-tool coverage and
-FullCoverage, average no more than 4.5 candidates, reduce tool-schema tokens relative to fixed K=5,
+FullCoverage independently at each catalog size, average no more than 4.5 candidates,
+reduce tool-schema tokens relative to fixed K=5,
 and — after B2 is terminal — preserve downstream task pass within 2 percentage points of fixed K=5
 with zero unauthorized destructive execution.
 
