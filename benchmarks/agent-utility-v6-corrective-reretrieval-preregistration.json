@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "cycle": "0.14-end-to-end-agent-utility",
+  "experiment": "execution-state-aware-corrective-retrieval-v1",
+  "issue": 431,
+  "parent_issue": 417,
+  "status": "preregistered_protocol_only_no_execution_until_b2_terminal",
+  "date": "2026-09-29",
+  "research_question": "Can re-retrieval conditioned only on observable typed execution state recover missing next-step capabilities more efficiently than static progressive widening?",
+  "run_authorization": {
+    "b2_terminal_required": true,
+    "current_authorized_to_run": false
+  },
+  "independence": {
+    "b1_row_content_allowed": false,
+    "b1_failure_tuning_allowed": false,
+    "b2_row_content_allowed": false,
+    "b2_failure_tuning_allowed": false,
+    "heldout_432_rows_allowed": false,
+    "final_answer_424_rows_allowed": false,
+    "hidden_future_route_labels_allowed": false,
+    "oracle_task_graph_allowed": false
+  },
+  "state_contract": {
+    "serialization": "canonical JSON with sorted keys; rendered as an execution-state suffix to the original user query for the research retriever only",
+    "allowed_fields": [
+      "original_query",
+      "executed_registered_route_ids",
+      "observation_field_names",
+      "observation_semantic_ids",
+      "observation_value_types",
+      "observation_units",
+      "observation_dimensions",
+      "observation_qualifiers",
+      "stable_observed_identifiers",
+      "last_execution_status",
+      "last_error_class",
+      "task_incomplete_boolean"
+    ],
+    "forbidden_fields": [
+      "future_required_route_id",
+      "gold_next_route_id",
+      "oracle_task_graph",
+      "hidden_expected_answer",
+      "hidden_reference_fact",
+      "condition_name",
+      "SchemaRouter rank score",
+      "SchemaRouter rank position"
+    ],
+    "free_text_tool_output_injected_into_retrieval": false,
+    "execution_authority_unchanged": true
+  },
+  "surface": {
+    "unique_semantic_tasks": 180,
+    "task_strata": [
+      "two_step_state_dependency",
+      "three_step_state_dependency",
+      "recoverable_execution_failure",
+      "identifier_provenance_propagation",
+      "typed_unit_state_transition"
+    ],
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "tasks_per_stratum_language_cell": 6,
+    "cells": 30,
+    "each_task_one_language_only": true,
+    "tuning_eligible": false
+  },
+  "catalogs": {
+    "endpoint_counts": [
+      100,
+      250,
+      500
+    ],
+    "nested": true,
+    "exact_hashes_required_before_scoring": true
+  },
+  "conditions": [
+    "SR-5-STATIC",
+    "SR-PROGRESSIVE-STATIC",
+    "SR-5-STATE-AWARE",
+    "FULL",
+    "ORACLE"
+  ],
+  "condition_contracts": {
+    "SR-5-STATIC": "initial Top-5 only; no retrieval refresh",
+    "SR-PROGRESSIVE-STATIC": "frozen static widening of original-query candidates only",
+    "SR-5-STATE-AWARE": "initial Top-5, then at most one fresh Top-5 retrieval after each completed/failed tool turn using only the allowed observable state contract",
+    "FULL": "full registered capability catalog",
+    "ORACLE": "gold required capabilities exposed for upper-bound diagnosis only"
+  },
+  "candidate_budget": {
+    "state_aware_per_retrieval_max": 5,
+    "maximum_retrieval_refreshes_per_episode": 5,
+    "report_total_unique_candidates_exposed": true,
+    "report_total_candidate_schema_tokens": true
+  },
+  "primary_metrics": [
+    "deterministic task pass",
+    "next-required-tool Recall@5 after each observable state transition",
+    "initial-miss recovery rate",
+    "multi-step state completion",
+    "total unique candidates exposed",
+    "tool-schema tokens",
+    "total input tokens",
+    "retrieval calls",
+    "model turns",
+    "tool calls",
+    "episode wall latency",
+    "failed executions",
+    "unauthorized destructive executions"
+  ],
+  "success_gate": {
+    "task_pass_delta_vs_static_progressive_min": -0.02,
+    "next_required_tool_recall_min": 0.97,
+    "initial_miss_recovery_rate_must_exceed_static_progressive": true,
+    "mean_tool_schema_tokens_must_be_less_than_static_progressive": true,
+    "unauthorized_destructive_executions_max": 0,
+    "execution_policy_integrity": 1
+  },
+  "statistics": {
+    "primary_unit": "semantic_task_id",
+    "catalog_repeats_nested_within_task": true,
+    "paired_conditions": true,
+    "primary_interval": {
+      "method": "stratified task-cluster bootstrap",
+      "strata": "task_stratum x language",
+      "iterations": 10000,
+      "seed": 20260929,
+      "confidence_interval": 0.95
+    },
+    "no_pseudoreplication": true
+  },
+  "governance": {
+    "same_downstream_agent_as_terminal_b2_required": true,
+    "no_rule_tuning_from_b2_failures": true,
+    "no_state_field_addition_after_scoring": true,
+    "no_hidden_ground_truth_in_state": true,
+    "dynamic_retrieval_changes_candidate_exposure_only": true,
+    "no_execution_authority_from_retrieval": true,
+    "no_failed_row_removal": true
+  }
+}
