@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable
 
 from schemarouter import (
     EndpointSpec,
@@ -561,7 +561,10 @@ TASKS = (
     ),
     AgentUtilityTask(
         "multi-create-share",
-        "Create a research-credit request and share the resulting artifact with analyst@example.org.",
+        (
+            "Create a research-credit request and share the resulting artifact "
+            "with analyst@example.org."
+        ),
         ("credits.create", "messaging.share"),
         "multi",
         "credit request created and artifact shared",
