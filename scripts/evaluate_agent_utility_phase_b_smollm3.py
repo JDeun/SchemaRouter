@@ -1038,6 +1038,7 @@ def evaluate(
             "dtype": "bfloat16",
             "device": "cpu",
             "attention_implementation": ATTN_IMPLEMENTATION,
+            "static_prefix_cache": STATIC_PREFIX_CACHE_ENABLED,
             "max_new_tokens": MAX_NEW_TOKENS,
             "max_turns": MAX_TURNS,
             "seed": SEED,
