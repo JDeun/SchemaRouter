@@ -18,6 +18,16 @@ MODEL = {
     "context_limit": 40960,
 }
 
+POLICY = {
+    "qwen_is_downstream_agent_only": True,
+    "schemarouter_rank_scores_visible_to_agent": False,
+    "candidate_routes_lexically_sorted": True,
+    "task_ground_truth_visible_to_agent": False,
+    "silent_truncation": False,
+    "full_context_overflow_is_failure": True,
+    "unauthorized_destructive_execution_allowed": False,
+}
+
 
 def _write_result(
     tmp_path: Path,
@@ -27,7 +37,15 @@ def _write_result(
 ) -> Path:
     path = tmp_path / name
     path.write_text(
-        json.dumps({"model": MODEL, "rows": rows}),
+        json.dumps(
+            {
+                "experiment": "0.14-agent-utility-phase-b1-qwen3-0.6b",
+                "issue": 420,
+                "model": MODEL,
+                "policy": POLICY,
+                "rows": rows,
+            }
+        ),
         encoding="utf-8",
     )
     return path
@@ -94,3 +112,38 @@ def test_cluster_bootstrap_resamples_semantic_tasks_not_catalog_rows() -> None:
     assert result["cluster_unit"] == "task_id"
     assert result["unique_task_count"] == 2
     assert result["catalog_repeats_per_task"] == 4
+
+
+def test_aggregate_rejects_model_configuration_drift(
+    tmp_path: Path,
+) -> None:
+    first = _write_result(
+        tmp_path,
+        [_row(task_id="single-paper-search")],
+        name="phase-b1-a.json",
+    )
+    payload = json.loads(first.read_text(encoding="utf-8"))
+    payload["model"] = {**MODEL, "max_turns": 99}
+    second = tmp_path / "phase-b1-b.json"
+    second.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="model configuration drift"):
+        aggregate([first, second])
+
+
+def test_aggregate_rejects_policy_drift(tmp_path: Path) -> None:
+    first = _write_result(
+        tmp_path,
+        [_row(task_id="single-paper-search")],
+        name="phase-b1-a.json",
+    )
+    payload = json.loads(first.read_text(encoding="utf-8"))
+    payload["policy"] = {
+        **POLICY,
+        "candidate_routes_lexically_sorted": False,
+    }
+    second = tmp_path / "phase-b1-b.json"
+    second.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="policy drift"):
+        aggregate([first, second])
