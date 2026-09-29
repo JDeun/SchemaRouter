@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "cycle": "0.14-end-to-end-agent-utility",
+  "experiment": "b2-gemma4-e2b-tool-calling-viability-v1",
+  "issue": 444,
+  "parent_issue": 423,
+  "status": "frozen_before_viability_inference",
+  "purpose": "Validate multi-turn structured tool calling and runner feasibility before freezing a Gemma 4 runtime for B2.",
+  "benchmark_rows_consumed": false,
+  "model": {
+    "base_family": "Gemma 4",
+    "base_model": "google/gemma-4-E2B-it",
+    "base_model_reference_revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+    "quantized_repo": "unsloth/gemma-4-E2B-it-GGUF",
+    "quantized_repo_revision": "0314792d7f1f7e229411f620751375812bb9faf2",
+    "filename": "gemma-4-E2B-it-Q4_0.gguf",
+    "sha256": "31d3a3c630d4e71a7416498c42660dd3805066948acaec76a47e1ffac7010132",
+    "quantization": "Q4_0",
+    "license": "Apache-2.0"
+  },
+  "runtime": {
+    "engine": "llama.cpp",
+    "build_tag": "b11193",
+    "linux_asset": "llama-b11193-bin-ubuntu-x64.tar.gz",
+    "linux_asset_sha256": "def277c3a4f0c5e2ec3b1413971878d7d5e7da7eee64f5120a0cd8f024f5a364",
+    "server_flags": [
+      "--jinja",
+      "--no-mmproj-auto",
+      "-c 8192",
+      "-t 4",
+      "--temp 0",
+      "--no-warmup"
+    ],
+    "api": "OpenAI-compatible /v1/chat/completions",
+    "device": "CPU",
+    "runner": "ubuntu-24.04 public GitHub-hosted runner"
+  },
+  "generation": {
+    "temperature": 0,
+    "top_p": 1,
+    "seed": 20260929,
+    "max_tokens_per_turn": 256,
+    "parallel_tool_calls": false,
+    "tool_choice": "required"
+  },
+  "tools": [
+    {
+      "name": "lookup_record",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "record_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "record_id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "send_message",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "recipient": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipient",
+          "message"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "task": {
+    "user_request": "Use the tools to look up record R-7 first. After you receive the lookup result, send its exact title to alice@example.org. Do not send anything before the lookup.",
+    "lookup_observation": {
+      "title": "alpha"
+    }
+  },
+  "pass_requirements": [
+    "two repeated fresh initial requests both produce exactly one structured lookup_record call",
+    "both first calls use record_id R-7",
+    "no initial send_message call",
+    "after the deterministic lookup observation, the next assistant turn produces exactly one structured send_message call",
+    "second call recipient is alice@example.org",
+    "second call message contains alpha",
+    "tool calls are returned in OpenAI-compatible structured tool_calls fields",
+    "workflow completes within the hard timeout"
+  ],
+  "failure_policy": {
+    "no_prompt_repair_from_B1_rows": true,
+    "no_B2_task_or_catalog_exposure": true,
+    "no_model_or_runtime_promotion_on_failure": true,
+    "failure_is_terminal_for_this_exact_runtime_candidate": true
+  }
+}
