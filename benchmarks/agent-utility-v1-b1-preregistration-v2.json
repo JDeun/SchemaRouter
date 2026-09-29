@@ -115,13 +115,15 @@
     "cumulative input/output tokens",
     "turn count",
     "tool-call count",
-    "latency p50/p95",
     "context overflow",
     "progressive recovery",
     "policy blocks",
     "unauthorized destructive executions",
     "actual exposed-candidate required-route recall",
-    "task-clustered paired bootstrap 95% CI for task-pass delta vs FULL"
+    "task-clustered paired bootstrap 95% CI for task-pass delta vs FULL",
+    "candidate-selection latency p50/p95",
+    "model-generation latency p50/p95",
+    "episode wall latency p50/p95"
   ],
   "statistical_scope": {
     "bootstrap_unit": "task_id cluster",
@@ -149,7 +151,9 @@
     "required_task_count_per_catalog_condition": 23,
     "unknown_task_ids_fail_closed": true,
     "duplicate_episode_keys_fail_closed": true,
-    "model_and_policy_identity_must_match_across_shards": true
+    "model_and_policy_identity_must_match_across_shards": true,
+    "runtime_identity_must_match_across_shards": true,
+    "actual_runtime_versions_recorded_in_each_shard": true
   },
   "excluded_or_superseded_episode_sources": [
     36517371433,
@@ -165,13 +169,13 @@
     "runtime_dependency_ranges_forbidden": true
   },
   "runtime": {
-    "runner_os": "ubuntu-24.04",
+    "runner": "ubuntu-24.04",
     "python": "3.12.14",
     "torch": "2.14.0+cpu",
     "transformers": "4.57.6",
     "tokenizers": "0.22.2",
     "safetensors": "0.8.0",
-    "source": "versions observed in the successful pre-v2 Qwen tool-call smoke; exact-pinned for v2"
+    "source": "versions observed in the successful pre-v2 Qwen tool-calling smoke and frozen before v2 inference"
   },
   "pre_benchmark_smoke": {
     "required": true,
@@ -181,5 +185,16 @@
     "repeated_identical_prompt_determinism_required": true,
     "context_overflow_forbidden": true,
     "benchmark_rows_consumed": false
+  },
+  "latency_accounting": {
+    "model_load": "reported separately per shard; excluded from per-episode request latency",
+    "candidate_selection": "measured from condition-specific candidate selection/ranking through candidate-set construction",
+    "model_generation": "sum of model.generate wall time across agent turns",
+    "episode_wall": "measured from candidate selection start through final episode termination; includes ranking, tool serialization/tokenization, model generation, and deterministic executor/evaluator overhead",
+    "report": [
+      "candidate_selection p50/p95",
+      "model_generation p50/p95",
+      "episode_wall p50/p95"
+    ]
   }
 }
