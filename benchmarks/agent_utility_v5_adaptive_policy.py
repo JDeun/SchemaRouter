@@ -31,7 +31,7 @@ def _validate_top10(scores: Sequence[float]) -> tuple[float, ...]:
     if not all(math.isfinite(value) for value in top10):
         raise ValueError("adaptive depth requires finite ranked scores")
 
-    if any(left < right for left, right in zip(top10, top10[1:], strict=True)):
+    if any(left < right for left, right in zip(top10, top10[1:])):
         raise ValueError("adaptive depth requires scores sorted in non-increasing order")
 
     return top10
