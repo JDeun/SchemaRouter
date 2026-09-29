@@ -1,13 +1,8 @@
 name: Research 0.14 B1 Task-Sharded Agent A-B
 
+# Legacy execution path retained only for manual diagnostics. Canonical B1 uses micro-sharding.
 on:
-  push:
-    branches:
-      - "research/0.14-local-agent-ab"
-    paths:
-      - ".github/workflows/research-0.14-b1-task-sharded.yml"
   workflow_dispatch:
-
 permissions:
   contents: read
 
