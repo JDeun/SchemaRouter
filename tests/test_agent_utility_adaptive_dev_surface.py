@@ -1,20 +1,24 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from collections import Counter
 from pathlib import Path
 
-from benchmarks.agent_utility_v5_catalog import (
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from benchmarks.agent_utility_v5_catalog import (  # noqa: E402
+    _READ_WRITE_PAIRS,
     CATALOG_SIZES,
     LANGUAGES,
     STRATA,
     TASKS_PER_CELL,
-    _READ_WRITE_PAIRS,
     build_registry,
     build_tasks,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = ROOT / "scripts" / "generate_agent_utility_v5_adaptive_dev.py"
 
 
