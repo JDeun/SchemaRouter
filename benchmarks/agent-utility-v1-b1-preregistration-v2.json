@@ -1,0 +1,185 @@
+{
+  "schema_version": 2,
+  "cycle": "0.14-end-to-end-agent-utility",
+  "experiment": "phase-b1-local-qwen3-agent-ab-v2",
+  "issue": 420,
+  "parent_issue": 417,
+  "parent_experiment_issue": 418,
+  "status": "frozen_before_any_v2_agent_inference",
+  "interpretation": "sanity_and_reproducibility_baseline_only",
+  "supersedes": "benchmarks/agent-utility-v1-b1-preregistration.json",
+  "amendments": [
+    "benchmarks/agent-utility-v1-b1-task-contract-amendment.json",
+    "benchmarks/agent-utility-v1-b1-causality-amendment.json",
+    "benchmarks/agent-utility-v1-b1-statistical-amendment.json",
+    "benchmarks/agent-utility-v1-b1-execution-equivalence.json"
+  ],
+  "prior_qwen_distinction": {
+    "terminal_issue": 289,
+    "terminal_model": "Qwen/Qwen3-Reranker-0.6B",
+    "terminal_role": "winner-only yes/no capability verifier",
+    "this_model": "Qwen/Qwen3-0.6B",
+    "this_role": "downstream generative tool-using agent",
+    "qwen_score_affects_schemarouter_retrieval": false
+  },
+  "model": {
+    "name": "Qwen/Qwen3-0.6B",
+    "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "device": "cpu",
+    "dtype": "float32",
+    "enable_thinking": false,
+    "do_sample": false,
+    "max_new_tokens_per_turn": 256,
+    "max_turns": 6,
+    "seed": 20260929,
+    "cpu_threads": 4
+  },
+  "corrected_freeze_identity": {
+    "task_count": 23,
+    "single_task_count": 17,
+    "multi_task_count": 6,
+    "tasks_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
+    "catalog_sha256": {
+      "20": "b90e3ab473217f4becffb4933fc96e7016cf60f28b030b4d2ae8cb1639c40f5c",
+      "50": "e43400681d64315cadfeb54f4f3dadb0490e557e5f6bf2514c4f8e2e6d424ac3",
+      "100": "52b58b39ec31d377c90c16572997f69523742c8917a37e33326d429b51afc225",
+      "250": "e5ca7d199dd5d2e7bb89eb97d8ac0cae37f403def1fc43037f2fc816a775d2a9"
+    },
+    "phase_a_must_be_rerun_on_this_identity": true,
+    "phase_b_entry_gate": "Recall@10 >= 0.97 in every catalog-size stratum"
+  },
+  "conditions": [
+    "FULL",
+    "SR-3",
+    "SR-5",
+    "SR-10",
+    "SR-PROGRESSIVE",
+    "ORACLE"
+  ],
+  "candidate_order": {
+    "retrieval_rank_used_only_for_set_membership": true,
+    "visible_tools_sorted_by": "registered_route_id_lexicographic",
+    "rank_scores_visible_to_agent": false,
+    "rank_positions_visible_to_agent": false
+  },
+  "tool_observation_causality": {
+    "max_executed_tool_calls_per_assistant_turn": 1,
+    "later_same_turn_calls_recorded_but_not_executed": true,
+    "later_same_turn_error": "parallel_tool_call_requires_observation",
+    "dependent_call_requires_prior_tool_observation": true
+  },
+  "corrected_user_argument_contracts": {
+    "single-message-send": {
+      "recipient": "analyst@example.org",
+      "message": "Experiment complete."
+    },
+    "multi-create-share": {
+      "credits.create.amount": 100,
+      "messaging.share.recipient": "analyst@example.org"
+    },
+    "multi-create-send": {
+      "inventory.create.item_name": "anode-binder",
+      "messaging.send.recipient": "analyst@example.org",
+      "followup_message_must_reference_observed_item_id": "INV-NEW-1"
+    }
+  },
+  "progressive": {
+    "initial_k": 3,
+    "expanded_k": 10,
+    "final_stage": "FULL",
+    "max_expansions": 2,
+    "query_rewriting": false,
+    "ground_truth_expansion_trigger": false
+  },
+  "context": {
+    "declared_limit_source": "model.config.max_position_embeddings",
+    "overflow_rule": "rendered_input_tokens + 256 > declared_limit",
+    "silent_truncation": false
+  },
+  "executor": {
+    "network": false,
+    "deterministic": true,
+    "typed_argument_validation": true,
+    "multi_step_data_dependencies": true,
+    "wrong_destructive_calls_blocked": true,
+    "ground_truth_route_revealed_in_observation": false
+  },
+  "metrics": [
+    "deterministic task pass rate",
+    "single-tool task pass rate",
+    "multi-tool task pass rate",
+    "required-route call coverage",
+    "schema-valid call rate",
+    "semantic-valid call rate",
+    "tool-schema tokens",
+    "cumulative input/output tokens",
+    "turn count",
+    "tool-call count",
+    "latency p50/p95",
+    "context overflow",
+    "progressive recovery",
+    "policy blocks",
+    "unauthorized destructive executions",
+    "actual exposed-candidate required-route recall",
+    "task-clustered paired bootstrap 95% CI for task-pass delta vs FULL"
+  ],
+  "statistical_scope": {
+    "bootstrap_unit": "task_id cluster",
+    "unique_semantic_tasks": 23,
+    "catalog_repeats_per_task": 4,
+    "iterations": 5000,
+    "seed": 20260929,
+    "minus_2pp_gate": "descriptive sanity gate only; not a population-level non-inferiority claim"
+  },
+  "product_utility_gate": {
+    "task_pass_noninferiority_vs_full_absolute": -0.02,
+    "tool_schema_token_ratio_vs_full_max": 0.4,
+    "total_input_tokens_must_be_less_than_full": true,
+    "required_tool_set_recall_min": 0.97,
+    "unauthorized_destructive_executions_max": 0
+  },
+  "aggregate_integrity": {
+    "required_episode_count": 552,
+    "required_unique_episode_key_count": 552,
+    "episode_key": [
+      "catalog_size",
+      "task_id",
+      "condition"
+    ],
+    "required_task_count_per_catalog_condition": 23,
+    "unknown_task_ids_fail_closed": true,
+    "duplicate_episode_keys_fail_closed": true,
+    "model_and_policy_identity_must_match_across_shards": true
+  },
+  "excluded_or_superseded_episode_sources": [
+    36517371433,
+    36520025834,
+    36520831273
+  ],
+  "stopping_rule": {
+    "no_prompt_repair_from_benchmark_rows": true,
+    "no_k_tuning": true,
+    "no_task_or_catalog_rewrite_after_v2_freeze": true,
+    "no_model_swap_inside_b1": true,
+    "stronger_agent_requires_separate_b2": true,
+    "runtime_dependency_ranges_forbidden": true
+  },
+  "runtime": {
+    "runner_os": "ubuntu-24.04",
+    "python": "3.12.14",
+    "torch": "2.14.0+cpu",
+    "transformers": "4.57.6",
+    "tokenizers": "0.22.2",
+    "safetensors": "0.8.0",
+    "source": "versions observed in the successful pre-v2 Qwen tool-call smoke; exact-pinned for v2"
+  },
+  "pre_benchmark_smoke": {
+    "required": true,
+    "exact_runtime_pins_required": true,
+    "first_tool_call_parse_required": true,
+    "dependent_second_tool_call_after_observation_required": true,
+    "repeated_identical_prompt_determinism_required": true,
+    "context_overflow_forbidden": true,
+    "benchmark_rows_consumed": false
+  }
+}
