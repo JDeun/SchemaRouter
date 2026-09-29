@@ -1,6 +1,7 @@
 name: Research 0.14 B1 Micro-Sharded Agent A-B
 
 # Canonical B1 v2 execution.
+# Canonical candidate source after shard-coverage regression fix: c411f7a79cf55a57b368e28b1c3f8a521f194f13.
 # Inference is authorized only after protocol/freeze/Phase-A preflight and
 # exact-pinned two-turn Qwen smoke both pass in this same workflow run.
 
