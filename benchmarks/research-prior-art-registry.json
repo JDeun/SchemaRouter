@@ -5,13 +5,13 @@
   "roadmap_issue": 417,
   "session_bootstrap": [
     "Read GitHub issue #417 first.",
-    "Read active experiment #420 before changing B1 code or execution.",
-    "Read this registry.",
+    "Read active B1 issue #420 and its v2 preregistration before changing execution code.",
+    "Read benchmarks/agent-utility-v1-b1-preregistration-v2.json.",
     "Read benchmarks/research-experiment-ledger.json.",
     "Read docs/research/routing-status.md.",
-    "Search existing open/closed issues, branches, and frozen artifacts before creating a new experiment.",
-    "Treat 0.11-0.13 classifier/open-set work as terminal evidence unless a new research question explicitly requires it.",
-    "Resume the first active 0.14 workstream/experiment; do not recreate terminal methods."
+    "Treat B1 runs 36517371433, 36520025834 and 36520831273 as ineligible/superseded.",
+    "Do not change B1 task/catalog/model/prompt/K semantics after v2 freeze from benchmark outcomes.",
+    "Resume the first active 0.14 workstream/experiment; do not recreate terminal 0.13 methods."
   ],
   "invariants": [
     "Only registered schema-backed tools/endpoints may ever become executable candidates.",
@@ -342,7 +342,7 @@
         "issue": 420,
         "parent_issue": 417,
         "phase_a_issue": 418,
-        "status": "task_contract_and_causality_corrected_refreeze_required",
+        "status": "queued_b1_v2_self_validating",
         "protocol_validation_pending_run_id": 36522192140,
         "phase_a_result": {
           "recall_at_3": 0.9655172413793104,
@@ -383,7 +383,16 @@
         "next_gate": "corrected freeze -> Phase A pass -> B1 preregistration v2 -> new B1 inference",
         "causality_amendment_file": "benchmarks/agent-utility-v1-b1-causality-amendment.json",
         "execution_rule": "one_executed_tool_call_per_assistant_turn_then_observation",
-        "old_episode_sources_eligible": []
+        "old_episode_sources_eligible": [],
+        "canonical_run_id": 36526572267,
+        "canonical_source_revision": "62111bda592264fd2c10f3d274af7a0606d042f4",
+        "preregistration_v2": "benchmarks/agent-utility-v1-b1-preregistration-v2.json",
+        "tasks_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
+        "superseded_episode_sources": [
+          36517371433,
+          36520025834,
+          36520831273
+        ]
       }
     }
   ],
@@ -479,7 +488,7 @@
     "current_experiment": 420,
     "staged_replication": 423,
     "staged_answer_quality": 424,
-    "canonical_b1_run_id": 36520831273,
+    "canonical_b1_run_id": 36526572267,
     "protocol_validation_pending_run_id": 36522192140,
     "staged_adaptive_depth": 430,
     "staged_corrective_reretrieval": 431,
@@ -494,6 +503,7 @@
     },
     "b1_status": "corrected_task_contract_and_causality_requires_refreeze",
     "previous_task_sha256": "9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1",
-    "expected_new_task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c"
+    "expected_new_task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
+    "b1_protocol_generation": "v2"
   }
 }
