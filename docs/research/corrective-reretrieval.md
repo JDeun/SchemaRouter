@@ -8,6 +8,20 @@ list generated from the original query.
 
 Execution is blocked until #423 B2 is terminal.
 
+## Prior art
+
+This protocol is independently motivated by two 2026 results:
+
+- Patel et al., *Dynamic Tool Dependency Retrieval for Lightweight Function Calling*
+  (Findings ACL 2026), which conditions retrieval on the initial query plus evolving tool-calling
+  state/dependencies.
+- Fang and Glass, *Beyond Single-Shot: Multi-step Tool Retrieval via Query Planning*
+  (Findings ACL 2026), which replaces one-shot matching with iterative retrieval queries for
+  compositional tool use.
+
+SchemaRouter's experiment is intentionally narrower: it permits only observable typed execution
+state, never hidden future routes, oracle task graphs, or retrieval-derived execution authority.
+
 ## Frozen state contract
 
 The research retriever may condition on:
