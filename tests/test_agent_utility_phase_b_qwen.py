@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 import pytest
 
 from benchmarks.agent_utility_v1_catalog import TASKS, build_registry, route_ids
@@ -117,3 +120,27 @@ def test_unknown_task_shard_id_fails_before_model_load() -> None:
             catalog_sizes=(20,),
             task_ids={"multi-inventory-create-send"},
         )
+
+
+def test_b1_workflow_shards_cover_every_frozen_task_exactly_once() -> None:
+    expected = {task.task_id for task in TASKS}
+    workflow_paths = (
+        Path(".github/workflows/research-0.14-b1-task-sharded.yml"),
+        Path(".github/workflows/research-0.14-b1-microsharded.yml"),
+    )
+
+    for path in workflow_paths:
+        text = path.read_text(encoding="utf-8")
+        groups = re.findall(
+            r'(?:task_ids:\s*"|TASK_IDS=")([^"]+)"',
+            text,
+        )
+        task_ids = [
+            task_id.strip()
+            for group in groups
+            for task_id in group.split(",")
+            if task_id.strip()
+        ]
+        assert len(task_ids) == len(expected)
+        assert len(set(task_ids)) == len(task_ids)
+        assert set(task_ids) == expected
