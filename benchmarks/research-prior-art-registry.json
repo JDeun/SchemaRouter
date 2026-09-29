@@ -342,7 +342,7 @@
         "issue": 420,
         "parent_issue": 417,
         "phase_a_issue": 418,
-        "status": "awaiting_latest_protocol_validation_before_final_canonical_run",
+        "status": "task_contract_corrected_refreeze_required",
         "protocol_validation_pending_run_id": 36522192140,
         "phase_a_result": {
           "recall_at_3": 0.9655172413793104,
@@ -373,7 +373,14 @@
           "selection_rule": "first_complete_valid_552_episode_source_independent_of_results",
           "excluded_run_id": 36517371433
         },
-        "statistical_amendment_file": "benchmarks/agent-utility-v1-b1-statistical-amendment.json"
+        "statistical_amendment_file": "benchmarks/agent-utility-v1-b1-statistical-amendment.json",
+        "previous_task_sha256": "9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1",
+        "expected_new_task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
+        "superseded_run_ids": [
+          36520025834,
+          36520831273
+        ],
+        "next_gate": "corrected freeze -> Phase A pass -> B1 preregistration v2 -> new B1 inference"
       }
     }
   ],
@@ -481,6 +488,9 @@
         36520831273
       ],
       "aggregate_policy": "latest_identity_guarded_task_cluster_bootstrap"
-    }
+    },
+    "b1_status": "corrected_task_contract_requires_refreeze",
+    "previous_task_sha256": "9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1",
+    "expected_new_task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c"
   }
 }
