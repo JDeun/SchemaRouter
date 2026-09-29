@@ -49,7 +49,7 @@ jobs:
             s03) TASK_IDS="single-inventory-list,single-inventory-create,single-inventory-update,single-inventory-delete" ;;
             s04) TASK_IDS="single-message-send,single-share,single-credit-refund,single-runtime-restart" ;;
             s05) TASK_IDS="single-export,multi-paper-search-retrieve,multi-paper-retrieve-summary,multi-material-search-current" ;;
-            s06) TASK_IDS="multi-create-share,multi-inventory-create-send,multi-retrieve-export" ;;
+            s06) TASK_IDS="multi-create-share,multi-create-send,multi-retrieve-export" ;;
             *) echo "unknown shard"; exit 1 ;;
           esac
           echo "task_ids=$TASK_IDS" >> "$GITHUB_OUTPUT"
