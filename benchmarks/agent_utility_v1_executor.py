@@ -180,7 +180,7 @@ class DeterministicTaskExecutor:
                 "paper_id",
                 "P-205",
             ),
-            ("multi-inventory-create-send", "inventory.create"): (
+            ("multi-create-send", "inventory.create"): (
                 "item_name",
                 "anode-binder",
             ),
@@ -251,7 +251,7 @@ class DeterministicTaskExecutor:
                     )
                 )
 
-        if task_id == "multi-inventory-create-send":
+        if task_id == "multi-create-send":
             if route_id == "messaging.send":
                 message = arguments.get("message")
                 return (
