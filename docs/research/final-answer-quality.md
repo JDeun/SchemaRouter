@@ -81,6 +81,25 @@ Conditions:
 - SR-PROGRESSIVE;
 - ORACLE.
 
+
+## Corpus identity validation
+
+Before any generated corpus can be frozen or scored, run
+`scripts/validate_agent_utility_corpus_identity.py` against the authored rows.
+
+The validator is deliberately narrower than the later semantic scorer. It enforces only
+pre-scoring integrity that must not depend on benchmark outcomes:
+
+- every preregistered authoring slot appears exactly once;
+- semantic task IDs match the frozen slot plan;
+- task/answer stratum and language assignments cannot drift;
+- query text must be non-empty;
+- normalized query text must be unique across semantic tasks;
+- stable identity/query-content SHA-256 values are emitted for the freeze manifest.
+
+The validator does **not** generate content, approve content quality, authorize inference,
+or inspect model outcomes.
+
 ## Deterministic evidence
 
 Every task freezes:
