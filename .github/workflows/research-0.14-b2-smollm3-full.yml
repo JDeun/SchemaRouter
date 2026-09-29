@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: research-0.14-b2-smollm3-full
+  cancel-in-progress: true
+
 env:
   HF_HUB_DISABLE_TELEMETRY: "1"
   TOKENIZERS_PARALLELISM: "false"
@@ -63,7 +67,7 @@ jobs:
             --out-dir artifacts/b2-freeze
           python scripts/verify_agent_utility_b2_candidate_sets.py
       - id: plan
-        name: Export frozen 41-job matrix
+        name: Export resilient 92-job matrix
         run: |
           python - <<'PY'
           import json
@@ -71,10 +75,10 @@ jobs:
           from pathlib import Path
 
           plan = json.loads(
-              Path("benchmarks/agent-utility-v1-b2-sharding.json")
+              Path("benchmarks/agent-utility-v1-b2-sharding-resilient.json")
               .read_text(encoding="utf-8")
           )
-          assert plan["expected_job_count"] == 41
+          assert plan["expected_job_count"] == 92
           assert plan["expected_episode_count"] == 460
           include = [
               {
@@ -351,5 +355,6 @@ jobs:
             artifacts/agent-utility-b2-canonical.json
             benchmarks/agent-utility-v1-b2-preregistration.json
             benchmarks/agent-utility-v1-b2-sharding.json
+            benchmarks/agent-utility-v1-b2-sharding-resilient.json
           if-no-files-found: error
           retention-days: 30
