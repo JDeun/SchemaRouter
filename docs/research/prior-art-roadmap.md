@@ -27,9 +27,61 @@ Before creating a new routing experiment:
 | Hard-negative OOS generation | #389 / #395 | **terminal** | V6B separated synthetic evidence but rejected every natural DEV query |
 | Energy/density/open-space scoring | #390 / #397 / #399 / #401 | **terminal / no active successor** | V6C/V6D/V6E terminal; do not retune consumed geometry |
 | Selective/conformal abstention | #391 / #412 | **terminal tested formulation** | E5 conformal safety passed open-set gates but destroyed supported recall |
-| Tool/executable-schema retrieval | #392 / #406 / #408 / #409 | **ongoing architecture / no active experiment** | Tool-Embed/GTE replacements and tested cross-encoder veto are terminal |
+| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | **active primary direction** | Phase A passed at Recall@5=100%; B1 downstream-agent A/B is running |
 
-Parent roadmap: **#388**.
+Active research parent: **#417**. Historical 0.13 prior-art parent: **#388**.
+
+## 0. Active 0.14 research question: typed capability retrieval for agents
+
+The 0.11–0.13 open-set work is retained as evidence, but it is no longer the primary product
+objective. Those cycles repeatedly showed that asking one retrieval layer to provide both positive
+route selection and executor-grade abstention creates a severe safety/coverage trade-off.
+
+The active 0.14 architecture is:
+
+```text
+registered executable schemas
+        ↓
+typed capability index
+        ↓
+high-recall Top-K retrieval
+        ↓
+downstream LLM agent
+        ↓
+execution validation / policy
+        ↓
+tool execution
+        ↓
+result evaluation and optional candidate expansion
+```
+
+Relevant current work:
+- #417 — active research parent;
+- #418 — FULL vs Top-K vs progressive utility protocol;
+- #420 — B1 local downstream-agent A/B, running;
+- #423 — stronger-agent B2 replication protocol;
+- #424 — final-answer factual-quality protocol.
+
+Phase A already establishes the retrieval-side premise on the corrected frozen benchmark:
+- Recall@1 **68.97%**;
+- Recall@3 **96.55%**;
+- Recall@5 / Recall@10 **100% / 100%**;
+- at 250 endpoints, Top-5 exposes only **2.38%** of FULL serialized schema context on average.
+
+The corresponding evaluation hierarchy is therefore:
+1. **Recall@K / required-tool-set coverage** — did retrieval preserve what the agent needs?
+2. **downstream deterministic task success** — can the same agent complete the task?
+3. **context/token/latency/cost** — is the candidate reduction operationally useful?
+4. **recovery** — can progressive expansion repair an initial miss without hidden ground truth?
+5. **execution safety** — can policy prevent unauthorized destructive actions regardless of rank?
+6. **final-answer quality** — does context reduction preserve factual completeness, units and provenance?
+
+Top-1 exact remains diagnostic. It is not treated as a proxy for all six outcomes.
+
+Independent literature supporting this framing includes:
+- ToolRet, Findings ACL 2025;
+- ToolReAGt, KnowLLM 2025;
+- GRETEL, arXiv 2025, for execution-grounded retrieval/selection feedback.
 
 ## 1. Adaptive Decision Boundary
 
@@ -237,7 +289,16 @@ The following rules apply across all workstreams:
 
 ## Execution order
 
-The current order is:
+The current order is now governed by #417:
+
+1. complete the frozen #420 B1 aggregate without changing task/catalog/model/prompt/K semantics;
+2. freeze and execute #423 with a materially stronger downstream agent;
+3. execute #424 only after its separate answer-bearing benchmark is frozen;
+4. keep #384/#395/#397/#399/#401/#404/#406/#408/#409/#412/#415 as terminal 0.13 controls;
+5. revisit open-set/conformal methods only if a future retrieval/safety question requires them, never as a post-hoc repair of consumed DEV;
+6. maintain #392 as the prior-art bridge between executable-schema retrieval and the active 0.14 agent-utility work.
+
+Historical 0.13 order was:
 
 1. retain **#384 / V6A** as the terminal positive-only spherical ADB reference; its confirmation stays unopened;
 2. retain **#395 / V6B** as the terminal hard-negative ellipsoid reference; its confirmation stays unopened;
@@ -250,3 +311,49 @@ The current order is:
 
 This order is not a claim that later methods are superior. It is the governance sequence that avoids
 mixing hypotheses and reusing evidence.
+
+
+## 0.14 staged successors after the fixed-K baseline
+
+These are staged before any accepted B1 aggregate and must not be derived from B1 row-level failures.
+
+- **#428 — public typed Top-K API:** expose retrieval as a first-class composition surface while
+  leaving final agent choice and execution authority outside the retriever.
+- **#430 — adaptive shortlist depth:** test preregistered per-query K after fixed K=3/5/10 evidence.
+  Repantis et al. (arXiv:2605.24660) independently motivates shortlist depth as a first-class
+  variable.
+- **#431 — execution-state-aware corrective re-retrieval:** compare static widening with retrieval
+  conditioned on bounded typed observations/current state. DTDR (Findings ACL 2026) is the main
+  external reference.
+- **#432 — large independent held-out surface:** required because B1 has only 23 unique semantic
+  tasks repeated across catalog sizes.
+
+### Statistical scope correction before B1 aggregate
+
+B1's four catalog-size rows per semantic task are repeated measures, not independent samples.
+Therefore the canonical paired bootstrap resamples **task_id clusters**, keeping the four
+catalog-size deltas together. The -2pp gate remains a descriptive engineering threshold in B1.
+A population-level non-inferiority/generalization claim requires #432 with an independently frozen,
+materially larger task population and preregistered precision/sample-size analysis.
+
+
+### B1 v2 canonical execution status
+
+The accepted B1 path is now v2:
+- frozen task SHA: `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`;
+- canonical workflow: `36529108855`;
+- canonical source: `b9eadefd3cd076f026a54bbc55a949f0424f5dab`;
+- exact runtime pins: Python 3.12.14, torch 2.14.0+cpu, transformers 4.57.6,
+  tokenizers 0.22.2, safetensors 0.8.0;
+- 30 frozen inference jobs aggregate into exactly 552 unique episodes.
+
+Before any accepted aggregate, B1 v2 corrected hidden user-argument requirements and enforces a
+tool-observation causality barrier: only one tool call may execute per assistant turn and dependent
+calls require the previous observation.
+
+The v2 preflight re-ran Phase A and retained Recall@3 **96.55%**, Recall@5/@10 **100%**, and
+mean Top-5 schema context **2.383% of FULL** at 250 endpoints.
+
+Paired uncertainty uses task-cluster bootstrap because catalog sizes are repeated measures of the
+same 23 semantic tasks. This prevents pseudoreplication but does not make B1 a population-level
+non-inferiority study; #432 remains mandatory for that claim.
