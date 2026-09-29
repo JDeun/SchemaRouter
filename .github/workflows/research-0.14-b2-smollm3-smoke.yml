@@ -2,16 +2,6 @@ name: Research 0.14 B2 SmolLM3 Smoke
 
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - "benchmarks/agent_utility_b2_catalog.py"
-      - "benchmarks/agent_utility_b2_executor.py"
-      - "benchmarks/agent-utility-v1-b2-preregistration.json"
-      - "scripts/generate_agent_utility_b2_freeze.py"
-      - "scripts/verify_agent_utility_b2_candidate_sets.py"
-      - "scripts/smoke_smollm3_tool_call.py"
-      - "tests/test_agent_utility_b2_protocol.py"
-      - ".github/workflows/research-0.14-b2-smollm3-smoke.yml"
 
 permissions:
   contents: read
