@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "issue": 423,
+  "purpose": "arm64_250_full_operational_smoke",
+  "semantic_tuning_allowed": false,
+  "created_date": "2026-09-29",
+  "implementation_sha": "3cc2d388fb2dc262d1c6b8cea2749aaee825a026",
+  "runner": "ubuntu-24.04-arm",
+  "catalog_size": 250,
+  "task_id": "multi-create-send",
+  "condition": "FULL",
+  "attention_implementation": "sdpa",
+  "x64_failure_reference": {
+    "extended_smoke_run": 36609566306,
+    "timeout_minutes": 180,
+    "generation_complete_count": 0,
+    "peak_rss_gib_observed": 9.74924087524414,
+    "swap_used": false
+  },
+  "arm64_20_reference": {
+    "run": 36631665803,
+    "behavior_sha256": "18c73f3ea2127463d57b4a67ca21b6875bb9f7965dd7be850b38f09b86e3d7a8",
+    "episode_wall_latency_ms": 101015.720882,
+    "peak_rss_kib": 7266120
+  },
+  "promotion_rule": "ARM64 250 FULL must complete without OOM/timeout; semantic row must not be used for tuning"
+}
