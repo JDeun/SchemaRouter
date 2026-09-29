@@ -244,3 +244,41 @@ def test_prefix_tool_tokens_are_used_instead_of_candidate_additivity() -> None:
     )
 
     assert result["policy_metrics"]["FIXED-3"]["schema_tokens"]["mean"] == 91
+
+
+def test_worst_catalog_coverage_prevents_pooled_masking() -> None:
+    prereg = _prereg()
+    scores = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+    rows = [
+        _row(
+            task_id="catalog-robustness",
+            stratum="clear_single_tool",
+            required=["tool.route_1"],
+            scores=scores,
+            catalog_size=size,
+        )
+        for size in (100, 250, 500)
+    ]
+    rows[-1]["ranking"] = [
+        *rows[-1]["ranking"][1:],
+        rows[-1]["ranking"][0],
+    ]
+
+    result = adaptive_eval.evaluate(
+        rows,
+        prereg,
+        strict_surface=False,
+    )
+    fixed3 = result["policy_metrics"]["FIXED-3"]
+
+    assert fixed3["supported_required_route_recall"] == 2 / 3
+    assert fixed3["worst_catalog_required_route_recall"] == 0.0
+    assert fixed3["per_catalog"]["100"][
+        "supported_required_route_recall"
+    ] == 1.0
+    assert fixed3["per_catalog"]["250"][
+        "supported_required_route_recall"
+    ] == 1.0
+    assert fixed3["per_catalog"]["500"][
+        "supported_required_route_recall"
+    ] == 0.0
