@@ -10,31 +10,55 @@ on:
       - "scripts/evaluate_agent_utility_phase_b_qwen.py"
   workflow_dispatch:
 
+concurrency:
+  group: research-0.14-b1-qwen-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
   smoke:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
-          python-version: "3.12"
+          python-version: "3.12.14"
           cache: pip
       - run: python -m pip install --upgrade pip
-      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
-      - run: pip install "transformers>=4.51,<5" safetensors
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
       - run: pip install -e .
+
+      - name: Verify exact smoke runtime
+        run: |
+          python - <<'PY'
+          import platform
+          import safetensors
+          import tokenizers
+          import torch
+          import transformers
+
+          assert platform.python_version() == "3.12.14"
+          assert torch.__version__ == "2.14.0+cpu"
+          assert transformers.__version__ == "4.57.6"
+          assert tokenizers.__version__ == "0.22.2"
+          assert safetensors.__version__ == "0.8.0"
+          print("exact B1 smoke runtime verified")
+          PY
 
       - name: Lint smoke path
         run: |
           pip install ruff
-          ruff check             scripts/smoke_qwen3_tool_call.py             scripts/evaluate_agent_utility_phase_b_qwen.py
+          ruff check \
+            scripts/smoke_qwen3_tool_call.py \
+            scripts/evaluate_agent_utility_phase_b_qwen.py
 
-      - name: Run synthetic Qwen tool-call smoke
+      - name: Run exact-pinned two-turn Qwen tool-call smoke
         env:
           HF_HUB_DISABLE_TELEMETRY: "1"
+          TOKENIZERS_PARALLELISM: "false"
         run: |
           python scripts/smoke_qwen3_tool_call.py
