@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "experiment": "adaptive-structural-retrieval-v1",
+  "created_date": "2026-09-30",
+  "surface": "development",
+  "purpose": "Recover large-catalog Top-10 capability recall before retrying adaptive K.",
+  "evidence_used_to_form_hypothesis": {
+    "diagnosis_run": 36644894275,
+    "allowed_surface": "development only",
+    "summary": {
+      "overall_misses": 39,
+      "tie_collisions": 14,
+      "below_cutoff": 25,
+      "catalog_500_misses": 27,
+      "catalog_500_tie_collisions": 12,
+      "catalog_500_below_cutoff": 15
+    },
+    "confirmation_surface_used": false,
+    "b2_outcomes_used": false
+  },
+  "frozen_base_scorer": "current SchemaPlanner deterministic score; no existing component is removed or reweighted",
+  "structural_features": {
+    "tool_identifier_match": {
+      "definition": "Add a bonus only when an ASCII query token matches the complete tool name/key leaf after conservative English singularization. Partial identifier components such as aux_job_076 do not count as exact tool identifiers.",
+      "singularization": "ies->y; terminal s removed for words longer than 3 except ss; otherwise unchanged"
+    },
+    "operation_family_match": {
+      "definition": "Add a bonus when a query token and endpoint-name/operation-alias token are exact or share a conservative ASCII alphabetic prefix family.",
+      "minimum_token_length": 4,
+      "minimum_common_prefix": 4,
+      "minimum_prefix_fraction_of_shorter_token": 0.7
+    },
+    "schema_specificity_tiebreak": {
+      "definition": "Tie-break equal final scores by descending mean catalog discrimination of schema terms; never added to score.",
+      "terms": "tool name/description, endpoint name/description/operation aliases, field name/semantic_id/aliases/projection path",
+      "discrimination": "log((N+1)/(df+1))/log(N+1)"
+    }
+  },
+  "variants": [
+    {
+      "id": "BASELINE",
+      "tool_identifier_bonus": 0,
+      "operation_family_bonus": 0,
+      "specificity_tiebreak": false
+    },
+    {
+      "id": "SPEC-TIE",
+      "tool_identifier_bonus": 0,
+      "operation_family_bonus": 0,
+      "specificity_tiebreak": true
+    },
+    {
+      "id": "STRUCT-1.5-1.5",
+      "tool_identifier_bonus": 1.5,
+      "operation_family_bonus": 1.5,
+      "specificity_tiebreak": true
+    },
+    {
+      "id": "STRUCT-1.5-3.0",
+      "tool_identifier_bonus": 1.5,
+      "operation_family_bonus": 3,
+      "specificity_tiebreak": true
+    },
+    {
+      "id": "STRUCT-3.0-1.5",
+      "tool_identifier_bonus": 3,
+      "operation_family_bonus": 1.5,
+      "specificity_tiebreak": true
+    },
+    {
+      "id": "STRUCT-3.0-3.0",
+      "tool_identifier_bonus": 3,
+      "operation_family_bonus": 3,
+      "specificity_tiebreak": true
+    },
+    {
+      "id": "STRUCT-4.5-1.5",
+      "tool_identifier_bonus": 4.5,
+      "operation_family_bonus": 1.5,
+      "specificity_tiebreak": true
+    },
+    {
+      "id": "STRUCT-4.5-3.0",
+      "tool_identifier_bonus": 4.5,
+      "operation_family_bonus": 3,
+      "specificity_tiebreak": true
+    }
+  ],
+  "evaluation": {
+    "catalog_sizes": [
+      100,
+      250,
+      500
+    ],
+    "supported_task_rows_per_catalog": 180,
+    "required_route_instances_per_catalog": 210,
+    "top_k": 10,
+    "primary_metrics": [
+      "required-route Recall@10 per catalog",
+      "all-required FullCoverage@10 per catalog"
+    ],
+    "diagnostics": [
+      "per-stratum recall/full-coverage",
+      "per-language recall/full-coverage",
+      "required-route rank deltas vs BASELINE",
+      "newly recovered required routes",
+      "newly lost required routes"
+    ]
+  },
+  "eligibility": {
+    "each_catalog_required_route_recall_at_10_min": 0.97,
+    "each_catalog_all_required_full_coverage_at_10_min": 0.97,
+    "typed_numeric_units_required_route_recall_at_10_min": 1,
+    "no_catalog_recall_regression_vs_baseline": true
+  },
+  "dev_selection": [
+    "eligible variants only",
+    "lowest sum(tool_identifier_bonus + operation_family_bonus)",
+    "lowest max(tool_identifier_bonus, operation_family_bonus)",
+    "highest worst-catalog required-route Recall@10",
+    "highest worst-catalog all-required FullCoverage@10",
+    "lexicographically smallest variant id"
+  ],
+  "claim_boundary": "DEV scorer selection only. No confirmation/generalization claim and no product-core change until a candidate passes the frozen DEV gate."
+}
