@@ -25,9 +25,9 @@ Before creating a new routing experiment:
 | --- | ---: | --- | --- |
 | Adaptive/open decision boundaries | #384 | **terminal** | V6A positive-only spherical ADB rejected every DEV request |
 | Hard-negative OOS generation | #389 / #395 | **terminal** | V6B separated synthetic evidence but rejected every natural DEV query |
-| Energy/density/open-space scoring | #390 / #397 / #399 / #401 | **active research / no frozen successor** | V6C/V6D/V6E terminal; next method must be structurally different |
-| Selective/conformal abstention | #391 | deferred | Calibrate abstention only after a useful semantic membership score exists |
-| Tool/executable-schema retrieval | #392 | ongoing | Keep retrieval research aligned with the typed capability architecture |
+| Energy/density/open-space scoring | #390 / #397 / #399 / #401 | **terminal / no active successor** | V6C/V6D/V6E terminal; do not retune consumed geometry |
+| Selective/conformal abstention | #391 / #412 | **terminal tested formulation** | E5 conformal safety passed open-set gates but destroyed supported recall |
+| Tool/executable-schema retrieval | #392 / #406 / #408 / #409 | **ongoing architecture / no active experiment** | Tool-Embed/GTE replacements and tested cross-encoder veto are terminal |
 
 Parent roadmap: **#388**.
 
@@ -196,6 +196,31 @@ SchemaRouter's closest RAG analogy remains:
 This literature informs retrieval architecture and benchmarks. It does **not** justify moving task
 decomposition, ReAct loops, or autonomous agent behavior into SchemaRouter.
 
+
+## Post-V6E terminal sequence
+
+The next preregistered screens changed the semantic evidence source rather than tuning V6E geometry.
+
+| Experiment | Role | Supported exact | Near reject | OOD | False-route | p95 | Decision |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| #404 naturalistic MiniLM probes | veto-only membership | **75.44%** | **59.52%** | **95.83%** | **32.41%** | **297.36 ms** | terminal |
+| #406 Tool-Embed-0.6B | positive selector | **78.07%** | — | — | — | **287.42 ms** | terminal; same-surface BGE 86.84% |
+| #408 mMARCO cross-encoder | veto-only membership | **79.39%** | **19.84%** | **59.72%** | **71.30%** | **2992.17 ms** | terminal |
+| #409 GTE multilingual | positive selector | **71.49%** | — | — | — | **100.14 ms** | terminal; same-surface BGE 88.16% |
+| #412 E5 split conformal | veto-only membership | **10.09%** | **99.21%** | **100%** | **0.62%** | **244.24 ms** | terminal |
+
+All associated confirmation surfaces remain unopened.
+
+The aggregate result is more informative than any one failure:
+
+- BGE-M3 remains the strongest tested positive-route reference, but its fresh supported exact rate is surface-sensitive.
+- Replacing BGE with a tool-specialized or general multilingual retriever did not generalize.
+- Naturalistic generic-operation learning improves broad OOD recognition but does not establish same-domain capability membership.
+- Joint relevance cross-encoding does not make counterfactual capability documents a reliable open-set boundary and is too slow on CPU.
+- Conservative conformal calibration can satisfy the <=1% false-route target, but not when the underlying scalar membership score overlaps heavily between supported and unsupported requests.
+
+**There is currently no active frozen 0.13 child experiment.** The next experiment must introduce a materially new membership representation or decision structure. It must not be a post-hoc change to V6A-E geometry, #404 training bank/probes, #408 candidate texts/thresholds, #409 GTE weights/fusion, or #412 alpha/E0/model.
+
 ## Research invariants
 
 The following rules apply across all workstreams:
@@ -218,9 +243,10 @@ The current order is:
 2. retain **#395 / V6B** as the terminal hard-negative ellipsoid reference; its confirmation stays unopened;
 3. retain **#397 / V6C** and **#399 / V6D** as terminal relative-density controls; both confirmations stay unopened;
 4. retain **#401 / V6E** as the terminal non-parametric local-neighborhood reference; its confirmation stays unopened;
-5. before opening a successor, search prior art and repository history for a materially different semantic representation or membership signal; do not tune k, thresholds, weighting, background anchors, or schema wording from V6E DEV;
-6. if a useful semantic membership score exists, evaluate selective/conformal safety from **#391**;
-7. continuously maintain ToolRet/ToolReAGt architectural alignment in **#392**.
+5. retain **#404**, **#406**, **#408**, **#409**, and **#412** as terminal post-V6E controls; all confirmations stay unopened;
+6. before opening a successor, search prior art and repository history for a materially different membership representation or decision structure;
+7. revisit selective/conformal safety from **#391** only after a substantially more discriminative semantic membership score exists;
+8. continuously maintain tool-retrieval architectural alignment in **#392** without giving retrieval models execution authority.
 
 This order is not a claim that later methods are superior. It is the governance sequence that avoids
 mixing hypotheses and reusing evidence.

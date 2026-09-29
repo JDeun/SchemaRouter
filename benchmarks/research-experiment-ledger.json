@@ -3111,6 +3111,166 @@
       "decision": "terminal_dev_quality_fail_pr_closed_unmerged",
       "failure_reason": "Non-parametric neighborhoods improved unsupported recall versus V6C/V6D, but positive/complement natural-language manifolds still overlapped heavily and the sparse generic background bank covered little natural OOD; supported exact also fell below target.",
       "tuning_policy": "No k sweep, thresholds, neighbor weighting, background-anchor editing, evidence rewriting, or decision-order changes from consumed DEV."
+    },
+    {
+      "id": "0.13-naturalistic-operation-probe-membership",
+      "cycle": "0.13-schema-derived-open-set-membership",
+      "issue": 404,
+      "pull_request": 405,
+      "branch": "research/0.13-naturalistic-operation-probe",
+      "preregistered": true,
+      "frozen_source": "fb5902a6a3193d9e3e088efa3244ba45dc140a7b",
+      "freeze_workflow_run_id": 36495841617,
+      "freeze_artifact_id": 11003556320,
+      "freeze_artifact_sha256": "f4de965db3e2306ede6320ffa24fa19dd9974737764fadf9ebb33430330c9fb7",
+      "evidence_bank_sha256": "c9bf9d378f8f9ef7388fde833e9a04c941871514319961b4a0666d97983caa68",
+      "dev_corpus_sha256": "b3cfffd5ec3aa748484673f924b968ac839f33cefb0fa4d93fd7163337af8511",
+      "confirmation_corpus_sha256": "b7a3caf7706323b541ddaf646e020e14934c7b517591e909ab6b4de97fba510a",
+      "dev_workflow_run_id": 36499927289,
+      "dev_artifact_id": 11005435533,
+      "dev_artifact_sha256": "6ffe652b6a7b75cf64920b411cb1831e250fb7b14cb5c08314584f8df0bec198",
+      "result": {
+        "supported_exact": 0.7543859649122807,
+        "raw_supported_exact": 0.8464912280701754,
+        "raw_supported_tool_accuracy": 0.9342105263157895,
+        "near_domain_rejection": 0.5952380952380952,
+        "ood_rejection": 0.9583333333333334,
+        "false_route_rate": 0.32407407407407407,
+        "raw_correct_winner_veto_rate": 0.10880829015544041,
+        "p95_ms": 297.36178575,
+        "authority_violations": 0,
+        "positive_route_switches": 0,
+        "execution_errors": 0,
+        "confirmation_scored": false
+      },
+      "decision": "terminal_dev_quality_and_runtime_fail_pr_closed_unmerged",
+      "interpretation": "Naturalistic multilingual linear probes improve broad OOD recognition but remain insufficient for same-domain unsupported-operation membership and supported-route preservation."
+    },
+    {
+      "id": "0.13-tool-embed-positive-selector",
+      "cycle": "0.13-schema-derived-open-set-membership",
+      "issue": 406,
+      "pull_request": 407,
+      "branch": "research/0.13-tool-specialized-retriever",
+      "preregistered": true,
+      "frozen_source": "f40252c57a608cf19c255784ad6d2fb3c1f9a27d",
+      "dev_workflow_run_id": 36496824066,
+      "dev_artifact_id": 11003029892,
+      "dev_artifact_sha256": "b0b097501c1bfdde74df5070d06e10d0b48265c661bf333ae7361591a6aa26bd",
+      "dev_corpus_sha256": "23fa9eaa24e919ea6dcf78c7c5c1fa34b4294df304e67d7343d744d1f54473e0",
+      "confirmation_corpus_sha256": "1eb392415dea0b6e735833e48be742a48edd227f1f3f7673abd910d1740e31ab",
+      "result": {
+        "tool_embed_supported_exact": 0.780702,
+        "tool_embed_tool_accuracy": 0.877193,
+        "same_surface_bge_exact": 0.868421,
+        "same_surface_bge_tool_accuracy": 0.942982,
+        "tool_embed_p95_ms": 287.4228,
+        "execution_errors": 0,
+        "confirmation_scored": false
+      },
+      "decision": "terminal_positive_selector_replacement_fail_pr_closed_unmerged",
+      "interpretation": "Tool-specialized Tool-Embed-0.6B did not outperform same-surface BGE-M3 and missed the runtime gate."
+    },
+    {
+      "id": "0.13-relative-multilingual-cross-encoder-membership",
+      "cycle": "0.13-schema-derived-open-set-membership",
+      "issue": 408,
+      "pull_request": 411,
+      "branch": "research/0.13-relative-cross-encoder-gate",
+      "preregistered": true,
+      "frozen_source": "ffe0e7921ae7fd98e8f446cef0075e9bc7961442",
+      "freeze_workflow_run_id": 36498182834,
+      "freeze_artifact_id": 11004291661,
+      "freeze_artifact_sha256": "08f89f2df452d30beccdcb9b42e489cb2ee45c60e14bee35ca316bdb03df6b53",
+      "dev_corpus_sha256": "1b0f4f6d117b17cba527661c8dc11f874a642fd25c698ec7efa63401bdbbc4fb",
+      "confirmation_corpus_sha256": "ed79e9f55c719c7f83e006d879a1e2056a3dd9252b4dfce9832f91fadbc7e353",
+      "dev_workflow_run_id": 36498385690,
+      "dev_artifact_id": 11004813045,
+      "dev_artifact_sha256": "cef7a100413169387f682cfc94f3ea7fcc0c714328e78402804fc75bfc67b691",
+      "result": {
+        "supported_exact": 0.793859649122807,
+        "raw_supported_exact": 0.8552631578947368,
+        "raw_supported_tool_accuracy": 0.9078947368421053,
+        "near_domain_rejection": 0.1984126984126984,
+        "ood_rejection": 0.5972222222222222,
+        "false_route_rate": 0.7129629629629629,
+        "raw_correct_winner_veto_rate": 0.07179487179487179,
+        "p95_ms": 2992.1676114,
+        "cross_encoder_batch_p95_ms": 2742.301621,
+        "authority_violations": 0,
+        "positive_route_switches": 0,
+        "execution_errors": 0,
+        "confirmation_scored": false
+      },
+      "decision": "terminal_dev_quality_and_runtime_fail_pr_closed_unmerged",
+      "interpretation": "Joint query-document relevance over registered, counterfactual, and background documents did not establish open-set membership and was far beyond the CPU runtime budget."
+    },
+    {
+      "id": "0.13-frozen-gte-positive-selector",
+      "cycle": "0.13-schema-derived-open-set-membership",
+      "issue": 409,
+      "pull_request": 410,
+      "branch": "research/0.13-gte-positive-retriever",
+      "preregistered": true,
+      "frozen_source": "723038fd388ebc263bf923ff93eee79af1ce30f4",
+      "freeze_workflow_run_id": 36498141137,
+      "freeze_artifact_id": 11004286579,
+      "freeze_artifact_sha256": "89615a7040ebfc3c5a5a6b2f8206b6cca572c86a1de1d63e5a5f404493ef713c",
+      "dev_corpus_sha256": "d30d0227f7ca78adf1d44a84ffc4f20bac4440dc5d2495dcdee673f8707e473d",
+      "confirmation_corpus_sha256": "9934e5b6f88a2dc6dad50190530c4cac1c2a90617558448392c21dab75092e07",
+      "dev_workflow_run_id": 36500171432,
+      "dev_artifact_id": 11004624812,
+      "dev_artifact_sha256": "fa97f12ea277deb5749436afbd38c58acb5eba2fcb4a6da4cc337a6d171ae853",
+      "result": {
+        "gte_supported_exact": 0.7149122807017544,
+        "gte_supported_tool_accuracy": 0.8508771929824561,
+        "same_surface_bge_exact": 0.881578947368421,
+        "same_surface_bge_tool_accuracy": 0.9429824561403509,
+        "route_disagreements": 76,
+        "gte_correct_bge_wrong": 14,
+        "bge_correct_gte_wrong": 52,
+        "gte_p95_ms": 100.13944095,
+        "execution_errors": 0,
+        "confirmation_scored": false
+      },
+      "decision": "terminal_positive_selector_replacement_fail_pr_closed_unmerged",
+      "interpretation": "Historically promising GTE retrieval did not transfer to the fresh registry surface; BGE-M3 won by 16.67 percentage points while GTE retained a good CPU runtime."
+    },
+    {
+      "id": "0.13-conformal-multilingual-e5-membership",
+      "cycle": "0.13-schema-derived-open-set-membership",
+      "issue": 412,
+      "pull_request": 413,
+      "branch": "research/0.13-conformal-e5-membership",
+      "preregistered": true,
+      "frozen_source": "fa47fa57c08338a86a01d1e254f9d82b8e7a3895",
+      "freeze_workflow_run_id": 36498806432,
+      "freeze_artifact_id": 11004552257,
+      "freeze_artifact_sha256": "29a88915ee443ab4839daef51d3800a1c2ed20af14a495e1ef32418037f7efa1",
+      "calibration_corpus_sha256": "79dadf6a384cc959b9b58fa617fcc173ceeb1ecdae83686257b0cd80b656a292",
+      "dev_corpus_sha256": "4aa787f2100486daa4765723cc2aa1bf279fb8a7af26f329b3c902e7687d2ad2",
+      "confirmation_corpus_sha256": "c57bbfb6154cc672b1aba1234048897ea56c81811823b920ebb48faffe023122",
+      "dev_workflow_run_id": 36498943508,
+      "dev_artifact_id": 11004463414,
+      "dev_artifact_sha256": "c068950c833980812a8924007976f40dc2d4e6ae0a020179a1dfb4477772ca67",
+      "result": {
+        "supported_exact": 0.10087719298245613,
+        "raw_supported_exact": 0.793859649122807,
+        "raw_supported_tool_accuracy": 0.9342105263157895,
+        "near_domain_rejection": 0.9920634920634921,
+        "ood_rejection": 1,
+        "false_routes": 2,
+        "false_route_rate": 0.006172839506172839,
+        "raw_correct_winners_vetoed": 158,
+        "raw_correct_winner_veto_rate": 0.8729281767955801,
+        "p95_ms": 244.23597575,
+        "authority_violations": 0,
+        "positive_route_switches": 0,
+        "execution_errors": 0,
+        "confirmation_scored": false
+      },
+      "decision": "terminal_dev_supported_recall_fail_pr_closed_unmerged",
+      "interpretation": "A fixed alpha=0.01 unsupported-null conformal gate reached the open-set safety/runtime targets, but the scalar E5 catalog score overlapped too strongly and vetoed 87.29% of raw-correct supported winners."
     }
   ],
   "current_research_conclusion": {
@@ -3127,7 +3287,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": 383,
+    "active_experiment": null,
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -3220,7 +3380,7 @@
     "colbert_operation_contract_status": "#328/#329 rejected: 0 candidate-worthy rules; <=1% false-route frontier preserves only ~38.6-38.7% exact; executable p95 ~398.61 ms.",
     "colbert_status": "#328 rejected: safe ColBERT score frontiers retain only ~38.6-38.7% exact at <=1% false routes; executable p95 ~398.6 ms. Sparse diagnostic also non-viable.",
     "alias_envelope_status": "#332/#333 rejected: 0 candidate-worthy rules; p95 198.07 ms; safe C/D rules collapse exact to ~24% and still yield 1.39% false-route.",
-    "cycle_status": "terminal_no_promoted_candidate",
+    "cycle_status": "0.13_first_sequence_terminal_no_active_child",
     "cycle_decision": "close_0.11_without_calibration_or_blind",
     "production_target_validated": false,
     "calibration_blind_status": "not_run_entry_requirements_not_met",
@@ -3249,15 +3409,18 @@
       "false_route": 0.08487654320987655,
       "p95_ms": 278.3747833
     },
-    "final_finding": "The remaining bottleneck is surface-invariant capability membership/open-set rejection, not registered-route ranking capacity. Repeated tuning on the current DEV is no longer justified.",
-    "successor_rule": "Any later cycle must introduce a materially new source of capability evidence and a new preregistered protocol; it must not repair from #270/#287/#326 fresh rows or extend terminal 0.11 families post hoc.",
+    "final_finding": "The unresolved research problem is a surface-invariant executable-capability membership representation. Positive ranking alone is insufficient, while generic scalar similarity, synthetic geometry, generic action probes, and relevance cross-encoding all fail to separate same-domain unsupported requests without damaging supported traffic.",
+    "successor_rule": "Before any successor, search #388, the ledger, prior-art registry, issues, and research branches. The next candidate must introduce a materially new membership representation or decision structure and use new identity-disjoint DEV + frozen confirmation. Do not retune V6A-E geometry, #404 bank/probes, #408 candidate documents/thresholds, #409 GTE weights/fusion, or #412 alpha/E0/model from consumed DEV.",
     "bge_gte_consensus_status": "#336/#337 rejected: 81.34% exact / 43.58% near rejection / 81.94% OOD / 52.16% false-route.",
     "asymmetric_ontology_veto_status": "#358 preserved raw BGE positive selection exactly (96.05% exact, zero raw-correct winner vetoes) and achieved 99.22% veto precision, but same-leaf agreement recall was only 39.51%; exact rule rejected.",
     "capability_set_membership_status": "#363 raised veto recall to 64.20% while preserving 86.40% supported exact, but near rejection remained 54.76%, false-route 35.80%, and 18 raw-correct winners were vetoed; further rule tuning over the same BGE/MiniLM projections is closed.",
     "external_zeroshot_membership_status": "#371 preserved supported routing (93.42%) but OUTSIDE won only 7/552 rows; near rejection 1.59%, false-route 98.15%, p95 274.52 ms. Exact multiclass formulation rejected.",
     "set_conditioned_entailment_status": "#374 returned not_entailment on all 552 DEV cases, preserving zero false routes but collapsing supported exact to 0%; exact formulation rejected.",
     "independent_capability_entailment_status": "#377 raised veto recall to 76.54% but collapsed supported exact to 45.61%, vetoing 116 raw-correct winners; exact independent-pair argmax rule rejected.",
-    "pairwise_nli_membership_status": "#378 reached 67.54% supported exact / 55.95% near rejection / 35.19% false-route with p95 539.92 ms; Horizon NLI decomposition family closed."
+    "pairwise_nli_membership_status": "#378 reached 67.54% supported exact / 55.95% near rejection / 35.19% false-route with p95 539.92 ms; Horizon NLI decomposition family closed.",
+    "positive_retrieval_status": "BGE-M3 remains the reference positive selector. Tool-Embed #406 and GTE #409 were both worse than same-surface BGE on fresh supported-only surfaces; BGE itself remains surface-sensitive.",
+    "open_set_membership_status": "V6A-E geometry, #404 naturalistic operation probes, #408 relative cross-encoding, and #412 E5 conformal gating are terminal. No tested method simultaneously preserved >=85% supported exact and met 97/100/1 open-set safety.",
+    "conformal_status": "#412 demonstrated that a conservative split-conformal gate can hit 99.21% near rejection / 100% OOD / 0.62% false-route / 244 ms p95, but supported exact collapsed to 10.09%; calibration cannot substitute for a discriminative semantic membership score."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -3270,7 +3433,7 @@
   "work_tracking": {
     "canonical_tracker_issue": 200,
     "history_backfill_issue": 196,
-    "active_research_issue": 197,
+    "active_research_issue": 382,
     "confirmation_evaluation_issue": 198,
     "follow_up_paper_issue": 199,
     "existing_open_work": [
@@ -3326,11 +3489,9 @@
       328
     ],
     "active_experiments": [],
-    "active_pull_requests": [
-      235
-    ],
+    "active_pull_requests": [],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "preregister registry-self-calibrated BGE alias-envelope gate; reuse one BGE query embedding, derive acceptance envelope only from trusted endpoint name/operation_aliases, no DEV-fitted score threshold",
+    "next_research_direction": "No frozen successor. Search current prior art and repository history for a materially new executable-capability membership representation; preregister before new scoring.",
     "contingent_experiments": [
       303
     ],
@@ -3356,10 +3517,10 @@
       318
     ],
     "runtime_only_contingency": 318,
-    "current_cycle": "0.11-operation-routing-quality-v4",
-    "current_cycle_status": "closed_without_promoted_candidate",
+    "current_cycle": "0.13-schema-derived-open-set-membership",
+    "current_cycle_status": "first_sequence_terminal_no_active_child",
     "final_evaluation_issue": 198,
-    "final_evaluation_status": "not_run_entry_requirements_not_met"
+    "final_evaluation_status": "blocked_no_fresh_confirmed_candidate"
   },
   "design_lineage": [
     {
@@ -3556,6 +3717,22 @@
       "status": "active_external_pretrained_capability_verifier",
       "work_item": 197,
       "current_next_action": "Evaluate #289 without using failed fresh confirmations, calibration, or blind evidence."
+    },
+    {
+      "phase": "v0.13-schema-derived-open-set-membership",
+      "date": "2026-09-28/29",
+      "design_goal": "Construct an open-set executable-capability membership boundary from registry/schema evidence while preserving registered-route-only authority and independent confirmation hygiene.",
+      "material_decisions": [
+        "BGE-M3 retained as the positive-route reference after Tool-Embed and GTE replacement selectors failed fresh supported-only screens",
+        "schema-derived spherical/ellipsoidal/Gaussian-mixture/kNN geometry treated as terminal after repeated synthetic-to-natural membership failure",
+        "naturalistic multilingual generic-operation linear probes improved broad OOD but did not solve same-domain unsupported membership",
+        "relative multilingual cross-encoder relevance over supported/counterfactual/background documents failed quality and CPU latency",
+        "split-conformal E5 membership achieved <=1% false-route safety but destroyed supported recall, demonstrating calibration cannot rescue a weakly separated scalar score",
+        "all terminal confirmation surfaces remain unopened; no row-driven repair of failed DEV formulations is permitted"
+      ],
+      "status": "terminal_sequence_no_promoted_candidate",
+      "work_item": 382,
+      "current_next_action": "Search prior art and repository history for a materially new membership representation/decision structure before opening another experiment."
     }
   ],
   "early_experiment_lineage": [
