@@ -7,9 +7,54 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+## 0.12.0 - 2026-09-29
+
+### Added
+
+- published an explicit stable-core contract that freezes the current product architecture around
+  typed capability registration/retrieval, downstream agent selection, validated invocation, and
+  local execution-policy authority while allowing future research improvements behind that boundary;
+- added public-facade regression coverage for `SchemaRouter` and `ConfiguredSchemaRouter`
+  `retrieve` / `aretrieve` / executable-retrieval signatures and for the full
+  `CapabilityCandidate` schema/fingerprint contract;
+- added installed-package consumer acceptance for bounded retrieval, async retrieval, executable
+  filtering, zero retrieval side effects, full input/output schema preservation, fingerprints, and
+  the subsequent separation between retrieval and actual invocation;
+- added LangChain and LlamaIndex regression tests proving framework adapters cannot bypass
+  SchemaRouter mutation policy.
+
 ### Changed
 
-- resumed post-0.11 development on `0.12.0.dev0`; released `0.11.0` remains the stable PyPI baseline while 0.14 research continues independently.
+- formally closed the current product-development cycle as a pre-1.0 stable-core boundary:
+  performance/research work may change compatible retrieval indexes, ranking backends, shortlist
+  policies, adaptive depth, corrective re-retrieval, and defaults without redefining the public
+  execution-authority boundary;
+- repaired the framework-maturity documentation table and added the stable-core contract to the
+  public documentation navigation;
+- refreshed CodeQL action pins to v4.38.2 and aligned release-metadata expectations;
+- retained ongoing B2/held-out/final-answer research as independent evidence tracks rather than
+  package-release blockers unless they expose a reproducible correctness, security, policy,
+  execution-authority, API-integrity, or packaging defect.
+
+### Compatibility
+
+- no intentional breaking change is introduced relative to 0.11.0;
+- the Top-K typed retrieval APIs shipped in 0.11.0 remain the frozen public retrieval facade for the
+  current research cycles;
+- existing planning, invocation, async, batch, streaming, policy, validation, inspection, tracing,
+  persistence, and optional framework integration surfaces remain available;
+- SchemaRouter remains Beta / pre-1.0: future 0.x minors may still make explicit, documented
+  compatibility changes, but benchmark improvements alone are no longer sufficient justification
+  to redesign the core facade.
+
+### Release integrity
+
+- protected CI validates Python 3.10-3.14, Windows smoke, minimum dependencies, typing, branch
+  coverage, docs, packaging, optional integrations, security auditing, and CodeQL;
+- wheel and sdist clean-install acceptance exercises the released retrieval surface;
+- the automated release pipeline builds from the exact green main SHA, creates the annotated tag,
+  emits provenance attestations and an SPDX SBOM, publishes through PyPI OIDC, and verifies public
+  wheel/sdist digests and exact-version installs after publication.
 
 ## 0.11.0 - 2026-09-29
 
