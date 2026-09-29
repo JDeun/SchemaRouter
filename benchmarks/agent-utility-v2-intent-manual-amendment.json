@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "issue": 434,
+  "experiment": "typed-multifield-intent-manual-retrieval-ablation-v1",
+  "amendment": "intent-manual-generator-v1",
+  "date": "2026-09-29",
+  "status": "frozen_before_intent_manual_dev_scoring",
+  "generator": {
+    "revision": "deterministic-capability-intent-manual-v1",
+    "type": "deterministic_template_no_llm",
+    "model": null,
+    "prompt_contract": {
+      "llm_prompt_used": false,
+      "template_revision": "intent-templates-v1",
+      "templates": [
+        "capability_action",
+        "output_need",
+        "input_to_output",
+        "policy_sensitive_action"
+      ]
+    },
+    "intents_per_capability_max": 4,
+    "deduplicate_exact_normalized_text": true,
+    "minimum_nonempty_intents_per_capability": 1,
+    "sorting": "template_order_then_lexicographic_text"
+  },
+  "authoritative_source_fields": [
+    "tool.key",
+    "tool.description",
+    "tool.provider",
+    "tool.source_type",
+    "tool.access_mode",
+    "endpoint.name",
+    "endpoint.description",
+    "endpoint.operation_aliases",
+    "endpoint.parameters.name",
+    "endpoint.parameters.description",
+    "endpoint.parameters.required",
+    "endpoint.parameters.json_schema",
+    "endpoint.output_fields.name",
+    "endpoint.output_fields.semantic_id",
+    "endpoint.output_fields.description",
+    "endpoint.output_fields.json_schema",
+    "endpoint.output_fields.unit",
+    "endpoint.output_fields.unit_normalization.dimension",
+    "endpoint.output_fields.unit_normalization.canonical_unit",
+    "endpoint.read_only",
+    "endpoint.destructive"
+  ],
+  "forbidden_inputs": [
+    "evaluation_queries",
+    "evaluation_task_ids",
+    "gold_required_routes",
+    "B1_rows",
+    "B1_errors",
+    "confirmation_rows",
+    "retrieval_results",
+    "retrieval_ranks",
+    "post_scoring_manual_edits"
+  ],
+  "template_semantics": {
+    "capability_action": "Express the registered endpoint description as a user-facing capability request while retaining tool/resource and operation identity.",
+    "output_need": "Express a need for declared output semantic IDs, field descriptions, datatypes, units and dimensions, without inventing undeclared outputs.",
+    "input_to_output": "Express a request that supplies or refers to declared required inputs and asks for the registered endpoint outcome.",
+    "policy_sensitive_action": "Encode read-only, write, and destructive distinctions using deterministic user-facing wording derived only from endpoint policy flags and endpoint identity."
+  },
+  "normalization": {
+    "lowercase_for_dedup_only": true,
+    "collapse_whitespace": true,
+    "strip_surrounding_whitespace": true,
+    "retain_original_generated_text": true
+  },
+  "provenance": {
+    "route_id_required": true,
+    "tool_fingerprint_required": true,
+    "endpoint_fingerprint_required": true,
+    "generator_revision_required": true,
+    "source_catalog_sha256_required": true
+  },
+  "filter_policy": {
+    "allowed": [
+      "remove exact normalized duplicate intents",
+      "remove empty intents"
+    ],
+    "forbidden": [
+      "quality filtering using evaluation queries",
+      "source-capability recovery scoring after seeing DEV retrieval results",
+      "manual deletion based on downstream retrieval errors",
+      "manual paraphrasing after scoring"
+    ]
+  },
+  "evaluation": {
+    "development_allowed": true,
+    "confirmation_allowed": false,
+    "confirmation_unlock_condition": "A candidate representation and exact generator revision must be frozen after DEV and before confirmation corpus generation.",
+    "conditions_unblocked_for_dev": [
+      "INTENT-MANUAL",
+      "TYPED+INTENT"
+    ],
+    "typed_plus_intent_fusion": {
+      "method": "reciprocal_rank_fusion",
+      "rrf_k": 60,
+      "components": [
+        "TYPED-MULTIFIELD",
+        "INTENT-MANUAL"
+      ],
+      "component_weights": {
+        "TYPED-MULTIFIELD": 1.0,
+        "INTENT-MANUAL": 1.0
+      }
+    }
+  },
+  "governance": {
+    "no_confirmation_surface_opened_before_this_freeze": true,
+    "no_B1_retrofit": true,
+    "no_change_to_promotion_gate": true,
+    "no_change_to_latency_protocol": true,
+    "no_change_to_DEV_queries_or_catalogs": true,
+    "no_claim_about_end_to_end_agent_utility": true
+  }
+}
