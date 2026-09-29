@@ -8,6 +8,7 @@ on:
       - ".github/workflows/research-0.14-b1-protocol.yml"
       - "benchmarks/agent_utility_v1_catalog.py"
       - "benchmarks/agent_utility_v1_executor.py"
+      - "benchmarks/agent-utility-v1-b1-statistical-amendment.json"
       - "scripts/generate_agent_utility_v1.py"
       - "scripts/evaluate_agent_utility_phase_a.py"
       - "scripts/evaluate_agent_utility_phase_b_qwen.py"
@@ -53,6 +54,23 @@ jobs:
             tests/test_agent_utility_phase_b_qwen.py \
             tests/test_agent_utility_phase_b_aggregate.py
 
+      - name: Validate statistical amendment
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          amendment = json.loads(
+              Path("benchmarks/agent-utility-v1-b1-statistical-amendment.json")
+              .read_text(encoding="utf-8")
+          )
+          assert amendment["issue"] == 420
+          assert amendment["execution_protocol_changed"] is False
+          assert amendment["statistical_change"]["canonical_bootstrap_unit"] == "task_id cluster"
+          assert amendment["interpretation"]["unique_semantic_task_count"] == 23
+          assert amendment["interpretation"]["catalog_repeats_per_task"] == 4
+          PY
+
       - name: Freeze corrected tasks and catalogs
         run: |
           python scripts/generate_agent_utility_v1.py             --out-dir artifacts/agent-utility-v1
@@ -88,4 +106,5 @@ jobs:
           path: |
             artifacts/agent-utility-v1/
             benchmarks/agent-utility-v1-preregistration.json
+            benchmarks/agent-utility-v1-b1-statistical-amendment.json
           retention-days: 30
