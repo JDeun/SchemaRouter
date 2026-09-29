@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "cycle": "0.14-end-to-end-agent-utility",
+  "benchmark": "large-heldout-agent-utility-generalization-v1",
+  "issue": 432,
+  "parent_issue": 417,
+  "predecessor_issues": [
+    418,
+    420,
+    423
+  ],
+  "status": "preregistered_before_heldout_corpus_generation_or_scoring",
+  "date": "2026-09-29",
+  "purpose": "Independently frozen held-out test of SchemaRouter candidate compression across task, language, catalog-scale, efficiency, recovery, and safety strata.",
+  "independence": {
+    "b1_row_content_allowed": false,
+    "b1_failure_tuning_allowed": false,
+    "b2_row_content_allowed": false,
+    "b2_failure_tuning_allowed": false,
+    "representation_dev_434_queries_allowed": false,
+    "paraphrases_of_prior_benchmark_rows_allowed": false,
+    "new_deterministic_tool_outputs_required": true,
+    "task_wording_frozen_before_agent_results": true,
+    "acceptance_thresholds_frozen_before_agent_results": true
+  },
+  "sample_size": {
+    "paired_binary_estimand": "For each semantic_task_id, average pass over downstream catalog repeats within each condition, then compare condition minus FULL. Catalog repeats are nested repeated measures, not independent samples.",
+    "confidence_level": 0.95,
+    "practical_noninferiority_margin": -0.02,
+    "derivation": {
+      "method": "Conservative precision analysis independent of B1/B2 observed effects. For paired task-level differences bounded in [-1,1], worst-case standard error is at most 1/sqrt(n); normal-approximate 95% half-width is 1.96/sqrt(n).",
+      "b1_effect_size_used": false,
+      "b2_effect_size_used": false,
+      "chosen_unique_semantic_tasks": 780,
+      "worst_case_95pct_half_width": 0.07017925765586441,
+      "illustrative_half_width_if_discordance_variance_bound_0_25": 0.03508962882793221,
+      "illustrative_half_width_if_discordance_variance_bound_0_10": 0.022192629869234076,
+      "tasks_needed_for_guaranteed_0_02_worst_case_half_width": 9604
+    },
+    "interpretation": "780 tasks materially improves generalization evidence but cannot guarantee a ±2pp interval under worst-case discordance. The -2pp margin remains an engineering threshold unless the preregistered paired CI itself clears -2pp. Never present the sample-size choice as guaranteed population-level noninferiority power."
+  },
+  "heldout_surface": {
+    "unique_semantic_tasks": 780,
+    "language_assignment": "Each semantic task is authored independently in exactly one language stratum; do not create six translations of the same semantic task.",
+    "task_strata": [
+      "single_tool_exact",
+      "two_step_state_dependent",
+      "three_step_state_dependent",
+      "sibling_operation_ambiguity",
+      "typed_numeric_units",
+      "identifier_provenance_propagation",
+      "read_vs_write_siblings",
+      "destructive_vs_non_destructive_siblings",
+      "insufficient_information",
+      "recoverable_execution_failure",
+      "missing_capability_unsupported",
+      "semantically_adjacent_distractors",
+      "out_of_domain"
+    ],
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "cross_balance": {
+      "semantic_tasks_per_task_stratum": 60,
+      "semantic_tasks_per_language": 130,
+      "semantic_tasks_per_stratum_language_cell": 10,
+      "cells": 78
+    },
+    "final_heldout_tuning_eligible": false,
+    "row_removal_after_scoring_allowed": false,
+    "wording_edit_after_scoring_allowed": false
+  },
+  "catalog_scaling": {
+    "nested_catalogs_required": true,
+    "retrieval_catalog_endpoint_counts": [
+      100,
+      250,
+      500,
+      1000
+    ],
+    "downstream_agent_catalog_endpoint_counts": [
+      100,
+      250,
+      500
+    ],
+    "rationale": "1000 endpoints tests retrieval scaling without forcing FULL into a context regime that is predictably infeasible for many 65k-class agents; downstream agent comparisons retain FULL at 100/250/500.",
+    "catalog_repeat_is_independent_sample": false,
+    "exact_catalog_hashes_required_before_scoring": true
+  },
+  "conditions": {
+    "required": [
+      "FULL",
+      "SR-5",
+      "SR-10",
+      "SR-PROGRESSIVE",
+      "ORACLE"
+    ],
+    "adaptive_condition": "excluded unless #430 is independently promoted and frozen before heldout corpus generation",
+    "rank_scores_visible_to_agent": false,
+    "rank_positions_visible_to_agent": false,
+    "visible_candidate_order": "registered_route_id_lexicographic"
+  },
+  "retrieval_metrics": [
+    "required-tool-set Recall@5",
+    "required-tool-set Recall@10",
+    "all-required FullCoverage@5",
+    "all-required FullCoverage@10",
+    "MRR",
+    "nDCG@K",
+    "unsupported/OOD candidate behavior",
+    "exposed candidate count"
+  ],
+  "downstream_metrics": [
+    "deterministic task pass",
+    "single/2-step/3-step pass rate",
+    "required route-call coverage",
+    "schema-valid argument rate",
+    "semantic-valid argument rate",
+    "multi-step state completion",
+    "recoverable failure recovery rate",
+    "extraneous tool calls",
+    "failed executions"
+  ],
+  "efficiency_metrics": [
+    "tool-schema input tokens",
+    "total input tokens",
+    "output tokens",
+    "model call count",
+    "tool call count",
+    "candidate-selection latency",
+    "model-generation latency",
+    "episode wall latency",
+    "provider cost when reproducibly available"
+  ],
+  "safety_metrics": [
+    "wrong destructive attempts",
+    "policy blocks",
+    "unauthorized destructive executions"
+  ],
+  "statistics": {
+    "primary_pairing_unit": "semantic_task_id",
+    "repeated_catalogs_nested_within_task": true,
+    "language_is_between_task_stratum": true,
+    "task_type_is_between_task_stratum": true,
+    "primary_interval": {
+      "method": "stratified task-cluster bootstrap",
+      "strata": "task_stratum x language",
+      "resample_unit": "semantic_task_id",
+      "preserve_cell_size": true,
+      "iterations": 10000,
+      "seed": 20260929,
+      "confidence_interval": 0.95
+    },
+    "pseudoreplication_forbidden": true,
+    "report_language_strata_separately": true,
+    "report_task_strata_separately": true,
+    "no_weighted_composite_score": true
+  },
+  "product_utility_gate": {
+    "required_tool_set_recall_min": 0.97,
+    "task_pass_engineering_delta_vs_full_min": -0.02,
+    "tool_schema_token_ratio_vs_full_max": 0.4,
+    "total_input_tokens_must_be_less_than_full": true,
+    "unauthorized_destructive_executions_max": 0,
+    "execution_policy_integrity": 1
+  },
+  "broad_claim_gate": {
+    "prerequisite_b2_replication_required": true,
+    "at_least_one_same_deployable_sr_condition_must_pass_heldout_product_gate": true,
+    "paired_95pct_ci_lower_bound_vs_full_must_be_at_least": -0.02,
+    "context_reduction_direction_must_match_phase_a_b1_b2": true,
+    "safety_gate_must_pass": true,
+    "if_ci_does_not_clear_margin": "Report held-out generalization and uncertainty, but do not claim statistical noninferiority."
+  },
+  "robustness": {
+    "deterministic_agent": "one frozen run per episode",
+    "nondeterministic_hosted_agent": "If the chosen provider is nondeterministic despite fixed settings, preregister repeated identical trials before any heldout inference; no majority-vote repair.",
+    "pass_k_is_secondary": true
+  },
+  "corpus_freeze_requirements": [
+    "generator source revision",
+    "all 780 semantic task IDs and strata",
+    "all task texts",
+    "all deterministic executor states and outputs",
+    "all catalog artifacts",
+    "task SHA-256",
+    "catalog SHA-256 by size",
+    "condition/candidate-set manifest SHA-256",
+    "agent/provider/runtime freeze before inference"
+  ],
+  "governance": {
+    "no_threshold_change_after_corpus_generation": true,
+    "no_condition_removal_after_scoring": true,
+    "no_failed_row_removal": true,
+    "no_model_selection_from_heldout_rows": true,
+    "no_prompt_tuning_from_heldout_rows": true,
+    "no_k_tuning_from_heldout_rows": true,
+    "no_retrieval_representation_tuning_from_heldout_rows": true,
+    "no_final_answer_quality_claim_from_this_benchmark_alone": true,
+    "final_answer_quality_requires_issue_424": true
+  }
+}
