@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import platform
 import random
 import re
@@ -36,6 +37,11 @@ MAX_NEW_TOKENS = 256
 MAX_TURNS = 6
 SEED = 20260929
 THREADS = 4
+ATTN_IMPLEMENTATION = os.environ.get("B2_ATTN_IMPLEMENTATION", "eager")
+if ATTN_IMPLEMENTATION not in {"eager", "sdpa"}:
+    raise ValueError(
+        "B2_ATTN_IMPLEMENTATION must be one of: eager, sdpa"
+    )
 ALL_CONDITIONS = ("FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE")
 TOOL_CALL_RE = re.compile(
     r"<tool_call>\s*(\{.*?\})\s*</tool_call>",
@@ -197,7 +203,7 @@ class LocalSmolLM3Agent:
             trust_remote_code=False,
             torch_dtype=torch.bfloat16,
             device_map=None,
-            attn_implementation="eager",
+            attn_implementation=ATTN_IMPLEMENTATION,
         )
         self.model.eval()
         self.context_limit = int(
@@ -418,6 +424,27 @@ def _run_episode(
     for turn in range(1, MAX_TURNS + 1):
         tools = _visible_tools(registry, visible_routes)
         generated = agent.generate(messages, tools)
+        if os.environ.get("B2_PROGRESS_TRACE") == "1":
+            print(
+                json.dumps(
+                    {
+                        "event": "generation_complete",
+                        "task_id": task.task_id,
+                        "condition": condition,
+                        "turn": turn,
+                        "candidate_count": len(visible_routes),
+                        "input_tokens": int(generated["input_tokens"]),
+                        "output_tokens": int(generated["output_tokens"]),
+                        "tool_tokens": int(generated["tool_tokens"]),
+                        "latency_ms": float(generated["latency_ms"]),
+                        "context_overflow": bool(
+                            generated["context_overflow"]
+                        ),
+                    },
+                    sort_keys=True,
+                ),
+                flush=True,
+            )
         total_input += int(generated["input_tokens"])
         total_output += int(generated["output_tokens"])
         total_tool_tokens += int(generated["tool_tokens"])
@@ -919,6 +946,7 @@ def evaluate(
             "revision": MODEL_REVISION,
             "dtype": "bfloat16",
             "device": "cpu",
+            "attention_implementation": ATTN_IMPLEMENTATION,
             "max_new_tokens": MAX_NEW_TOKENS,
             "max_turns": MAX_TURNS,
             "seed": SEED,
