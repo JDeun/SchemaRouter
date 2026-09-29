@@ -193,6 +193,26 @@ Use a stratified task-cluster bootstrap over answer-task-stratum × language:
 
 Report language and task-stratum results separately as diagnostics.
 
+## Corpus freeze validation
+
+After #423 is terminal and the 144 answer-bearing tasks are authored, the corpus must pass
+`scripts/validate_agent_utility_v4_final_answer_corpus.py` **before answer inference**.
+
+The validator requires:
+
+- exact equality with the frozen 144 authoring-slot IDs and stratum/language assignments;
+- 144 unique normalized queries;
+- frozen evidence payloads and allowed provenance/source IDs;
+- non-empty required reference facts with unique keys;
+- numeric tolerances for every numeric required fact;
+- accepted-unit sets for every unit-bearing fact, including the canonical unit;
+- provenance IDs that resolve to frozen evidence;
+- explicit corrective-expansion contracts where the preregistered stratum requires them;
+- exact 100/250 catalog hashes, candidate-set manifest hash and task-content hash.
+
+A malformed or drifting corpus is rejected before inference rather than repaired after answers
+are observed.
+
 ## Claim boundary
 
 If #424 passes, the permitted claim is scoped to the frozen answer-bearing benchmark:
