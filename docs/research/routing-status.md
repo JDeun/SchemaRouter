@@ -77,9 +77,9 @@ Canonical corrected freeze:
 - artifact `11006614997`;
 - task SHA256 `9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1`.
 
-### #420 Phase B1 — running
+### #420 Phase B1 — v2 queued
 
-B1 holds one real tool-calling LLM fixed and compares:
+B1 still compares one real tool-calling model across:
 - FULL;
 - SR-3;
 - SR-5;
@@ -87,26 +87,32 @@ B1 holds one real tool-calling LLM fixed and compares:
 - SR-PROGRESSIVE;
 - ORACLE.
 
-It evaluates 23 tasks × 4 catalog sizes × 6 conditions = **552 episodes** with the same deterministic
-executor, task success criteria, safety policy and lexical candidate ordering.
+Before any accepted 552-episode aggregate, a static benchmark audit found three classes of protocol
+problems that were corrected without using condition-level success results:
 
-The model is `Qwen/Qwen3-0.6B` only as a reproducible **downstream agent sanity baseline**. This
-does not revive #289: #289 used the different `Qwen3-Reranker-0.6B` checkpoint as a yes/no
-SchemaRouter verifier and remains terminally rejected.
+1. **task contract** — two user-supplied arguments were required by the deterministic executor but
+   not explicit in the query;
+2. **tool-observation causality** — multiple same-turn tool calls could previously advance dependent
+   task state before the model had observed the first result;
+3. **statistical unit** — the same 23 semantic tasks repeat across four catalog sizes, so paired
+   uncertainty is now bootstrapped by `task_id` cluster rather than pretending 92 rows are
+   independent.
 
-B1 is currently awaiting the latest protocol-validation checkpoint after two research-integrity
-hardening changes were frozen before any accepted 552-episode aggregate:
+B1 v2 therefore freezes:
+- task SHA `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`;
+- the same four catalog identities;
+- one executed tool call per assistant turn;
+- explicit observation before dependent tool calls;
+- exact 552 unique `(catalog_size, task_id, condition)` episode keys;
+- task-clustered paired bootstrap;
+- unchanged Qwen3-0.6B downstream-agent checkpoint, conditions, K values and utility gates.
 
-- exact frozen task-ID / duplicate episode-key validation;
-- paired **task-cluster bootstrap** across the four repeated catalog-size strata.
+All prior B1 episode sources are excluded:
+`36517371433`, `36520025834`, and `36520831273`.
 
-The 23 semantic tasks are the statistical units; the 92 task×catalog rows are repeated measures.
-Therefore the -2pp B1 gate is treated as a descriptive engineering sanity criterion, not a powered
-population-level non-inferiority proof. #432 stages the independent larger held-out surface required
-for generalization.
-
-No final B1 claim is made until one protocol-validated run reconstructs exactly 552 unique
-`(catalog, task, condition)` episodes.
+The canonical v2 workflow is `36526572267`. It is self-validating:
+**protocol/tests → corrected freeze → Phase-A gate → 24 inference shards → exact aggregate**.
+No B1 product claim is accepted until that sequence succeeds.
 
 ### Required replication and answer-quality work
 
