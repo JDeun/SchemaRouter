@@ -1,0 +1,410 @@
+{
+  "schema_version": 1,
+  "issue": 423,
+  "experiment": "phase-b2-smollm3-3b-strong-agent-replication-v1",
+  "status": "frozen_before_any_b2_benchmark_inference",
+  "conditions": [
+    "FULL",
+    "SR-5",
+    "SR-10",
+    "SR-PROGRESSIVE",
+    "ORACLE"
+  ],
+  "catalog_sizes": [
+    20,
+    50,
+    100,
+    250
+  ],
+  "semantic_task_count": 23,
+  "expected_job_count": 41,
+  "expected_episode_count": 460,
+  "strategy": {
+    "single_tasks": "one semantic task per job across all four catalog sizes",
+    "multi_tasks": "one semantic task and one catalog size per job",
+    "rationale": "Bound multi-step CPU inference duration while amortizing model load for single-step tasks.",
+    "fail_fast": false,
+    "timeout_minutes_per_evaluate_job": 180
+  },
+  "jobs": [
+    {
+      "job_id": "single-01",
+      "task_id": "single-paper-search",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-02",
+      "task_id": "single-paper-retrieve",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-03",
+      "task_id": "single-paper-summary",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-04",
+      "task_id": "single-material-search",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-05",
+      "task_id": "single-material-retrieve",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-06",
+      "task_id": "single-material-current",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-07",
+      "task_id": "single-material-history",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-08",
+      "task_id": "single-material-forecast",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-09",
+      "task_id": "single-inventory-list",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-10",
+      "task_id": "single-inventory-create",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-11",
+      "task_id": "single-inventory-update",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-12",
+      "task_id": "single-inventory-delete",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-13",
+      "task_id": "single-message-send",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-14",
+      "task_id": "single-share",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-15",
+      "task_id": "single-credit-refund",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-16",
+      "task_id": "single-runtime-restart",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "single-17",
+      "task_id": "single-export",
+      "catalog_sizes": [
+        20,
+        50,
+        100,
+        250
+      ],
+      "expected_episodes": 20
+    },
+    {
+      "job_id": "multi-paper-search-retrieve-20",
+      "task_id": "multi-paper-search-retrieve",
+      "catalog_sizes": [
+        20
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-paper-search-retrieve-50",
+      "task_id": "multi-paper-search-retrieve",
+      "catalog_sizes": [
+        50
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-paper-search-retrieve-100",
+      "task_id": "multi-paper-search-retrieve",
+      "catalog_sizes": [
+        100
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-paper-search-retrieve-250",
+      "task_id": "multi-paper-search-retrieve",
+      "catalog_sizes": [
+        250
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-paper-retrieve-summary-20",
+      "task_id": "multi-paper-retrieve-summary",
+      "catalog_sizes": [
+        20
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-paper-retrieve-summary-50",
+      "task_id": "multi-paper-retrieve-summary",
+      "catalog_sizes": [
+        50
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-paper-retrieve-summary-100",
+      "task_id": "multi-paper-retrieve-summary",
+      "catalog_sizes": [
+        100
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-paper-retrieve-summary-250",
+      "task_id": "multi-paper-retrieve-summary",
+      "catalog_sizes": [
+        250
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-material-search-current-20",
+      "task_id": "multi-material-search-current",
+      "catalog_sizes": [
+        20
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-material-search-current-50",
+      "task_id": "multi-material-search-current",
+      "catalog_sizes": [
+        50
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-material-search-current-100",
+      "task_id": "multi-material-search-current",
+      "catalog_sizes": [
+        100
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-material-search-current-250",
+      "task_id": "multi-material-search-current",
+      "catalog_sizes": [
+        250
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-create-share-20",
+      "task_id": "multi-create-share",
+      "catalog_sizes": [
+        20
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-create-share-50",
+      "task_id": "multi-create-share",
+      "catalog_sizes": [
+        50
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-create-share-100",
+      "task_id": "multi-create-share",
+      "catalog_sizes": [
+        100
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-create-share-250",
+      "task_id": "multi-create-share",
+      "catalog_sizes": [
+        250
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-create-send-20",
+      "task_id": "multi-create-send",
+      "catalog_sizes": [
+        20
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-create-send-50",
+      "task_id": "multi-create-send",
+      "catalog_sizes": [
+        50
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-create-send-100",
+      "task_id": "multi-create-send",
+      "catalog_sizes": [
+        100
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-create-send-250",
+      "task_id": "multi-create-send",
+      "catalog_sizes": [
+        250
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-retrieve-export-20",
+      "task_id": "multi-retrieve-export",
+      "catalog_sizes": [
+        20
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-retrieve-export-50",
+      "task_id": "multi-retrieve-export",
+      "catalog_sizes": [
+        50
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-retrieve-export-100",
+      "task_id": "multi-retrieve-export",
+      "catalog_sizes": [
+        100
+      ],
+      "expected_episodes": 5
+    },
+    {
+      "job_id": "multi-retrieve-export-250",
+      "task_id": "multi-retrieve-export",
+      "catalog_sizes": [
+        250
+      ],
+      "expected_episodes": 5
+    }
+  ]
+}
