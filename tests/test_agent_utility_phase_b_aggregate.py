@@ -4,7 +4,10 @@ import json
 from pathlib import Path
 
 import pytest
-from scripts.aggregate_agent_utility_phase_b import aggregate
+from scripts.aggregate_agent_utility_phase_b import (
+    _cluster_bootstrap_delta,
+    aggregate,
+)
 
 
 MODEL = {
@@ -62,3 +65,32 @@ def test_aggregate_rejects_unknown_frozen_task_id(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="unknown B1 task id"):
         aggregate([path])
+
+
+def test_cluster_bootstrap_resamples_semantic_tasks_not_catalog_rows() -> None:
+    full_rows = [
+        {"task_id": "task-a", "catalog_size": size, "passed": False}
+        for size in (20, 50, 100, 250)
+    ] + [
+        {"task_id": "task-b", "catalog_size": size, "passed": True}
+        for size in (20, 50, 100, 250)
+    ]
+    condition_rows = [
+        {"task_id": "task-a", "catalog_size": size, "passed": True}
+        for size in (20, 50, 100, 250)
+    ] + [
+        {"task_id": "task-b", "catalog_size": size, "passed": True}
+        for size in (20, 50, 100, 250)
+    ]
+
+    result = _cluster_bootstrap_delta(
+        full_rows,
+        condition_rows,
+        iterations=200,
+        seed=1,
+    )
+
+    assert result["delta"] == 0.5
+    assert result["cluster_unit"] == "task_id"
+    assert result["unique_task_count"] == 2
+    assert result["catalog_repeats_per_task"] == 4
