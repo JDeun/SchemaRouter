@@ -16,9 +16,9 @@ The project is pre-1.0 and follows the compatibility rules in
   planning, execution, or side effects;
 - added `retrieve_executable/aretrieve_executable` for applications that need the same compact
   candidate surface restricted to routes with current local execution binding readiness;
-- retrieval candidates preserve registered parameter/output contracts, semantic IDs, datatypes,
-  optional units/normalization/qualifiers, provider/access identity, read/write/destructive metadata,
-  and schema fingerprints;
+- retrieval candidates preserve the full effective input/output JSON Schemas together with
+  registered parameter/output contracts, semantic IDs, datatypes, optional units/normalization/
+  qualifiers, provider/access identity, read/write/destructive metadata, and schema fingerprints;
 - added deterministic public-contract tests for Top-K ordering, K validation, async analyzers,
   cooldown/unavailability filtering, binding readiness, detached result snapshots, and zero execution
   side effects.
