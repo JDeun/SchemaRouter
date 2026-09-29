@@ -246,6 +246,14 @@ def aggregate(paths: list[Path]) -> dict[str, Any]:
         "experiment": "0.14-agent-utility-phase-b1-qwen3-0.6b",
         "issue": 420,
         "interpretation": "sanity_and_reproducibility_baseline_only",
+        "statistical_scope": {
+            "unique_semantic_task_count": len({str(row["task_id"]) for row in rows}),
+            "catalog_repeats_per_task": 4,
+            "bootstrap_unit": "task_id_cluster",
+            "minus_2pp_gate": (
+                "descriptive_sanity_gate_not_population_noninferiority_claim"
+            ),
+        },
         "model": loaded[0]["model"],
         "episode_count": len(rows),
         "expected_episode_count": 23 * 4 * 6,
