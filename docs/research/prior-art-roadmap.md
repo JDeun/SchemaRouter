@@ -250,3 +250,54 @@ The current order is:
 
 This order is not a claim that later methods are superior. It is the governance sequence that avoids
 mixing hypotheses and reusing evidence.
+
+## 6. End-to-end agent utility and corrective capability retrieval
+
+Active parent: **#417**. First controlled experiment: **#418**. Local reproducibility baseline:
+**#420**.
+
+The 0.13 open-set line remains valid negative/ablation evidence, but it no longer defines the
+primary product objective. SchemaRouter is now evaluated as a **typed capability retrieval
+substrate** feeding a downstream LLM agent.
+
+Primary references:
+
+- Shi et al., *Retrieval Models Aren't Tool-Savvy: Benchmarking Tool Retrieval for Large Language
+  Models (ToolRet)*, Findings ACL 2025:
+  https://aclanthology.org/2025.findings-acl.1258/
+- Braunschweiler et al., *ToolReAGt: Tool Retrieval for LLM-based Complex Task Solution via
+  Retrieval Augmented Generation*, KnowLLM 2025:
+  https://aclanthology.org/2025.knowllm-1.7/
+- Wu et al., *GRETEL: A Goal-driven Retrieval and Execution-based Trial Framework for LLM Tool
+  Selection Enhancing*, arXiv 2025:
+  https://arxiv.org/abs/2510.17843
+
+The transferable distinction is between **candidate retrieval** and **final tool use**. A retriever
+does not have to be the final execution authority to improve a tool-using system. Its useful
+properties can instead be measured by high Recall@K, smaller exposed schema context and better or
+non-inferior downstream task completion.
+
+The first #418 Phase-A benchmark directly tests this framing. After the pre-agent execution-validity
+correction, the frozen deterministic SchemaPlanner reached:
+- Recall@1 **68.97%**;
+- Recall@3 **96.55%**;
+- Recall@5 / Recall@10 **100% / 100%**;
+- all-required Top-5 task coverage **100%**, including all multi-tool tasks;
+- at 250 endpoints, mean Top-5 serialized schema context **2.379% of FULL**.
+
+This means a Top-1-only evaluation would characterize the same retriever as weak while a Top-5
+candidate-retrieval evaluation shows complete required-capability coverage on this controlled
+surface. Phase B therefore measures what matters next: whether the same candidate reduction
+preserves or improves actual agent task success while reducing tokens/context.
+
+### 0.14 execution order
+
+1. keep all 0.13 classifier/open-set results terminal and immutable;
+2. retain #418's corrected frozen tasks/catalogs;
+3. measure FULL vs SR-3 / SR-5 / SR-10 / SR-PROGRESSIVE / ORACLE with an identical downstream
+   agent and deterministic executor;
+4. report retrieval and downstream metrics separately; do not hide regressions in one composite
+   score;
+5. treat #420's 0.6B local agent as a sanity/reproducibility baseline only;
+6. require a separate stronger-agent Phase B2 before product-level generalization;
+7. keep destructive execution safety in policy/validation even when retrieval recall is high.
