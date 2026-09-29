@@ -1,5 +1,7 @@
 name: Research 0.14 B1 Micro-Sharded Agent A-B
 
+# Canonical source parent validated by protocol run 36520356798.
+
 on:
   push:
     branches:
