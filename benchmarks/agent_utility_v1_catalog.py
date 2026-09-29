@@ -519,7 +519,7 @@ TASKS = (
     ),
     AgentUtilityTask(
         "single-message-send",
-        "Send a research message to analyst@example.org.",
+        "Send the research message 'Experiment complete.' to analyst@example.org.",
         ("messaging.send",),
         "single",
         "message sent",
@@ -576,7 +576,7 @@ TASKS = (
     AgentUtilityTask(
         "multi-create-share",
         (
-            "Create a research-credit request and share the resulting artifact "
+            "Create a research-credit request for 100 credits and share the resulting artifact "
             "with analyst@example.org."
         ),
         ("credits.create", "messaging.share"),
