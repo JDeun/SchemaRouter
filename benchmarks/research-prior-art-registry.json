@@ -310,6 +310,16 @@
           "title": "ToolReAGt: Tool Retrieval for LLM-based Complex Task Solution via Retrieval Augmented Generation",
           "venue": "KnowLLM 2025",
           "url": "https://aclanthology.org/2025.knowllm-1.7/"
+        },
+        {
+          "title": "How Many Tools Should an LLM Agent See? A Chance-Corrected Answer",
+          "venue": "arXiv 2026",
+          "url": "https://arxiv.org/abs/2605.24660"
+        },
+        {
+          "title": "Dynamic Tool Dependency Retrieval for Lightweight Function Calling",
+          "venue": "Findings ACL 2026",
+          "url": "https://aclanthology.org/2026.findings-acl.1680/"
         }
       ],
       "schemarouter_mapping": "Treat OpenAPI/MCP/ToolSpec as typed executable documents. Retrieve a compact high-recall Top-K candidate set plus typed metadata for a downstream LLM agent; keep final execution authority in the agent + execution-policy layer.",
@@ -332,20 +342,28 @@
         "issue": 420,
         "parent_issue": 417,
         "phase_a_issue": 418,
-        "status": "queued_final_protocol_validated_b1_canonical_microsharded",
-        "canonical_run_id": 36520831273,
+        "status": "awaiting_latest_protocol_validation_before_final_canonical_run",
+        "protocol_validation_pending_run_id": 36522192140,
         "phase_a_result": {
           "recall_at_3": 0.9655172413793104,
           "recall_at_5": 1,
           "recall_at_10": 1,
           "top5_context_ratio_at_250": 0.023791301779351147
         },
+        "statistical_amendment": "benchmarks/agent-utility-v1-b1-statistical-amendment.json",
+        "bootstrap_unit": "task_id_cluster",
+        "unique_semantic_task_count": 23,
         "next_required_replication": 423,
         "final_answer_quality_issue": 424,
+        "adaptive_depth_issue": 430,
+        "corrective_reretrieval_issue": 431,
+        "heldout_generalization_issue": 432,
+        "public_topk_api_issue": 428,
         "invalidated_run_id": 36517371433,
-        "canonical_source_revision": "028194a0cae56ac8e1dbfe33c95f4c1cdab5c807",
-        "protocol_validation_run_id": 36520356798,
-        "superseded_run_id": 36520027240
+        "superseded_runs": [
+          36520027240,
+          36520831273
+        ]
       }
     }
   ],
@@ -441,6 +459,11 @@
     "current_experiment": 420,
     "staged_replication": 423,
     "staged_answer_quality": 424,
-    "canonical_b1_run_id": 36520831273
+    "canonical_b1_run_id": 36520831273,
+    "protocol_validation_pending_run_id": 36522192140,
+    "staged_adaptive_depth": 430,
+    "staged_corrective_reretrieval": 431,
+    "staged_heldout_generalization": 432,
+    "staged_product_api": 428
   }
 }
