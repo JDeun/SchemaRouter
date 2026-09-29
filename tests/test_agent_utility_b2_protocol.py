@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from scripts.generate_agent_utility_b2_freeze import (
     EXPECTED_CATALOG_SHAS,
@@ -14,7 +19,6 @@ from scripts.verify_agent_utility_b2_candidate_sets import (
     verify,
 )
 
-ROOT = Path(__file__).resolve().parents[1]
 PREREG = ROOT / "benchmarks" / "agent-utility-v1-b2-preregistration.json"
 
 
