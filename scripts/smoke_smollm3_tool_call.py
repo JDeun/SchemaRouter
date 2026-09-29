@@ -15,7 +15,7 @@ from typing import Any
 
 MODEL_NAME = "HuggingFaceTB/SmolLM3-3B"
 MODEL_REVISION = "a07cc9a04f16550a088caea529712d1d335b0ac1"
-MAX_NEW_TOKENS = 192
+MAX_NEW_TOKENS = 256
 SEED = 20260929
 THREADS = 4
 TOOL_CALL_RE = re.compile(
@@ -113,7 +113,12 @@ def max_rss_mb() -> float:
 
 def main() -> None:
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import (
+        AutoModelForCausalLM,
+        AutoTokenizer,
+        StoppingCriteria,
+        StoppingCriteriaList,
+    )
 
     torch.manual_seed(SEED)
     torch.set_num_threads(THREADS)
@@ -137,6 +142,25 @@ def main() -> None:
     context_limit = int(
         getattr(model.config, "max_position_embeddings", 32768)
     )
+
+    stop_ids = tokenizer(
+        "</tool_call>",
+        add_special_tokens=False,
+    )["input_ids"]
+
+    class StopAfterCompleteToolCall(StoppingCriteria):
+        def __call__(
+            self,
+            input_ids: Any,
+            scores: Any,
+            **kwargs: Any,
+        ) -> bool:
+            del scores, kwargs
+            if not stop_ids or input_ids.shape[-1] < len(stop_ids):
+                return False
+            return input_ids[0, -len(stop_ids) :].tolist() == stop_ids
+
+    stopping_criteria = StoppingCriteriaList([StopAfterCompleteToolCall()])
 
     def generate(messages: list[dict[str, str]]) -> dict[str, Any]:
         encoded = tokenizer.apply_chat_template(
@@ -163,6 +187,7 @@ def main() -> None:
                 do_sample=False,
                 max_new_tokens=MAX_NEW_TOKENS,
                 pad_token_id=tokenizer.eos_token_id,
+                stopping_criteria=stopping_criteria,
             )
         generation_seconds = time.perf_counter() - started
         generated = output[0, input_ids.shape[-1] :]
@@ -254,7 +279,11 @@ def main() -> None:
                 "repeat_generation_seconds": first_b["generation_seconds"],
                 "second_generation_seconds": second["generation_seconds"],
                 "first_input_tokens": first_a["input_tokens"],
+                "first_output_tokens": first_a["output_tokens"],
+                "repeat_output_tokens": first_b["output_tokens"],
                 "second_input_tokens": second["input_tokens"],
+                "second_output_tokens": second["output_tokens"],
+                "tool_call_stop_token_count": len(stop_ids),
                 "first_call": first_call,
                 "second_call": second_call,
             },
