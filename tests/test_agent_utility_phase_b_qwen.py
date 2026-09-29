@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from benchmarks.agent_utility_v1_catalog import TASKS, build_registry, route_ids
 import pytest
 
+from benchmarks.agent_utility_v1_catalog import TASKS, build_registry, route_ids
 from scripts.evaluate_agent_utility_phase_b_qwen import (
     _candidate_set,
     _parse_tool_calls,
