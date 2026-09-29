@@ -13,6 +13,7 @@ on:
       - "benchmarks/agent-utility-v1-b1-task-contract-amendment.json"
       - "benchmarks/agent-utility-v1-b1-causality-amendment.json"
       - "benchmarks/agent-utility-v1-b1-preregistration-v2.json"
+      - "benchmarks/agent-utility-v1-b1-sharding-v2.json"
       - "scripts/generate_agent_utility_v1.py"
       - "scripts/evaluate_agent_utility_phase_a.py"
       - "scripts/evaluate_agent_utility_phase_b_qwen.py"
@@ -208,6 +209,47 @@ jobs:
           assert prereg["stopping_rule"][
               "runtime_dependency_ranges_forbidden"
           ] is True
+          PY
+
+      - name: Validate B1 v2 sharding plan
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          from benchmarks.agent_utility_v1_catalog import TASKS
+
+          plan = json.loads(
+              Path("benchmarks/agent-utility-v1-b1-sharding-v2.json")
+              .read_text(encoding="utf-8")
+          )
+          task_ids = {task.task_id for task in TASKS}
+          assert plan["issue"] == 420
+          assert plan["status"] == "frozen_before_post_v2_inference"
+          assert plan["expected_job_count"] == 30
+          assert plan["expected_episode_count"] == 552
+
+          base_groups = plan["groups"]
+          for size in ("20", "50", "100"):
+              flattened = [
+                  task_id
+                  for group_id in plan["catalogs"][size]
+                  for task_id in base_groups[group_id]
+              ]
+              assert len(flattened) == 23
+              assert len(set(flattened)) == 23
+              assert set(flattened) == task_ids
+
+          split_250 = plan["catalogs"]["250"]
+          flattened_250 = [
+              task_id
+              for _, group in split_250
+              for task_id in group
+          ]
+          assert len(split_250) == 12
+          assert len(flattened_250) == 23
+          assert len(set(flattened_250)) == 23
+          assert set(flattened_250) == task_ids
           PY
 
       - name: Freeze corrected tasks and catalogs
