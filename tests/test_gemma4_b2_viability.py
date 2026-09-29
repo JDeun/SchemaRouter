@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
-import scripts.smoke_gemma4_b2_tool_call as smoke
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+import scripts.smoke_gemma4_b2_tool_call as smoke  # noqa: E402
 
 
 def _response(
