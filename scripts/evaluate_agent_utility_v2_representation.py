@@ -111,8 +111,10 @@ class BM25Index:
                 self.postings.setdefault(term, {})[route_id] = tf
         self.n = len(self.route_ids)
 
-    def rank_positive(self, query: str) -> list[tuple[str, float]]:
-        query_counts = Counter(_tokens(query))
+    def rank_positive_counts(
+        self,
+        query_counts: Counter[str],
+    ) -> list[tuple[str, float]]:
         if not query_counts or self.n == 0:
             return []
 
@@ -141,6 +143,9 @@ class BM25Index:
             scores.items(),
             key=lambda row: (-row[1], row[0]),
         )
+
+    def rank_positive(self, query: str) -> list[tuple[str, float]]:
+        return self.rank_positive_counts(Counter(_tokens(query)))
 
     def rank(self, query: str) -> list[tuple[str, float]]:
         positive = self.rank_positive(query)
@@ -360,20 +365,30 @@ class RepresentationRetriever:
         if self.condition != "TYPED-MULTIFIELD":
             ranking = next(iter(self.indexes.values())).rank(query)
         else:
-            rrf: dict[str, float] = {
-                route_id: 0.0
-                for route_id in self.documents
-            }
+            query_counts = Counter(_tokens(query))
+            rrf: dict[str, float] = {}
             for index in self.indexes.values():
-                field_ranking = index.rank_positive(query)
+                field_ranking = index.rank_positive_counts(query_counts)
                 for rank, (route_id, score) in enumerate(field_ranking, start=1):
                     if score <= 0.0:
                         continue
-                    rrf[route_id] += 1.0 / (RRF_K + rank)
-            ranking = sorted(
+                    rrf[route_id] = (
+                        rrf.get(route_id, 0.0)
+                        + 1.0 / (RRF_K + rank)
+                    )
+            positive = sorted(
                 rrf.items(),
                 key=lambda row: (-row[1], row[0]),
             )
+            seen = set(rrf)
+            ranking = [
+                *positive,
+                *[
+                    (route_id, 0.0)
+                    for route_id in sorted(self.documents)
+                    if route_id not in seen
+                ],
+            ]
         elapsed_ms = (time.perf_counter_ns() - started) / 1_000_000
         return ranking, elapsed_ms
 
@@ -498,7 +513,7 @@ def evaluate(freeze_dir: Path) -> dict[str, Any]:
         "surface": "development",
         "freeze_manifest": manifest,
         "rrf_k": RRF_K,
-        "dev_representation_revision": "r2-structured-policy-sparse-bm25",
+        "dev_representation_revision": "r3-single-tokenization-sparse-bm25",
         "conditions_scored": list(CONDITIONS),
         "conditions_blocked": {
             "INTENT-MANUAL": (
