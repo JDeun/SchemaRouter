@@ -94,18 +94,30 @@ def aggregate(paths: list[Path]) -> dict[str, Any]:
         raise ValueError("no B1 shard results supplied")
 
     loaded = [json.loads(path.read_text(encoding="utf-8")) for path in paths]
-    models = {
-        (
-            row["model"]["name"],
-            row["model"]["revision"],
-            row["model"]["dtype"],
-            row["model"]["device"],
-            row["model"]["context_limit"],
+
+    experiments = {str(result.get("experiment")) for result in loaded}
+    if experiments != {"0.14-agent-utility-phase-b1-qwen3-0.6b"}:
+        raise ValueError(
+            f"experiment identity drift across shards: {sorted(experiments)}"
         )
-        for row in loaded
+
+    issues = {result.get("issue") for result in loaded}
+    if issues != {420}:
+        raise ValueError(f"issue identity drift across shards: {issues}")
+
+    model_identities = {
+        json.dumps(result["model"], sort_keys=True, separators=(",", ":"))
+        for result in loaded
     }
-    if len(models) != 1:
-        raise ValueError(f"model identity drift across shards: {models}")
+    if len(model_identities) != 1:
+        raise ValueError("model configuration drift across shards")
+
+    policy_identities = {
+        json.dumps(result["policy"], sort_keys=True, separators=(",", ":"))
+        for result in loaded
+    }
+    if len(policy_identities) != 1:
+        raise ValueError("B1 policy drift across shards")
 
     rows = [
         episode
