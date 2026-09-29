@@ -188,7 +188,7 @@ jobs:
               36520831273,
           }
           assert prereg["runtime"] == {
-              "runner_os": "ubuntu-24.04",
+              "runner": "ubuntu-24.04",
               "python": "3.12.14",
               "torch": "2.14.0+cpu",
               "transformers": "4.57.6",
@@ -196,7 +196,7 @@ jobs:
               "safetensors": "0.8.0",
               "source": (
                   "versions observed in the successful pre-v2 Qwen "
-                  "tool-call smoke; exact-pinned for v2"
+                  "tool-calling smoke and frozen before v2 inference"
               ),
           }
           assert prereg["pre_benchmark_smoke"][
