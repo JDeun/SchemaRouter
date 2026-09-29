@@ -400,7 +400,12 @@ class RepresentationRetriever:
             ranking = next(iter(self.indexes.values())).rank(query)
         else:
             query_counts = Counter(_tokens(query))
-            field_scores: list[dict[int, float] | None] = [
+            route_count = len(self.route_ids)
+            field_scores: list[list[float] | None] = [
+                None
+                for _ in self._typed_index_items
+            ]
+            field_touched: list[list[int] | None] = [
                 None
                 for _ in self._typed_index_items
             ]
@@ -409,34 +414,36 @@ class RepresentationRetriever:
                     self._typed_term_entries.get(term, ())
                 ):
                     scores = field_scores[position]
+                    touched = field_touched[position]
                     if scores is None:
-                        scores = {}
+                        scores = [0.0] * route_count
+                        touched = []
                         field_scores[position] = scores
-                    scores[route_index] = (
-                        scores.get(route_index, 0.0)
-                        + query_tf * contribution
-                    )
+                        field_touched[position] = touched
+                    if scores[route_index] == 0.0:
+                        touched.append(route_index)
+                    scores[route_index] += query_tf * contribution
 
-            rrf: dict[int, float] = {}
+            rrf = [0.0] * route_count
+            rrf_touched: list[int] = []
             rrf_weights = self._rrf_weights
-            rrf_get = rrf.get
-            for scores in field_scores:
-                if not scores:
+            for scores, touched in zip(field_scores, field_touched, strict=True):
+                if scores is None or not touched:
                     continue
                 ranked_indexes = sorted(
-                    scores,
+                    touched,
                     key=lambda route_index: (
                         -scores[route_index],
                         route_index,
                     ),
                 )
                 for rank, route_index in enumerate(ranked_indexes, start=1):
-                    rrf[route_index] = (
-                        rrf_get(route_index, 0.0)
-                        + rrf_weights[rank]
-                    )
+                    if rrf[route_index] == 0.0:
+                        rrf_touched.append(route_index)
+                    rrf[route_index] += rrf_weights[rank]
+
             positive_indexes = sorted(
-                rrf,
+                rrf_touched,
                 key=lambda route_index: (
                     -rrf[route_index],
                     route_index,
@@ -451,7 +458,7 @@ class RepresentationRetriever:
                 *[
                     (route_id, 0.0)
                     for route_index, route_id in enumerate(route_ids)
-                    if route_index not in rrf
+                    if rrf[route_index] == 0.0
                 ],
             ]
         elapsed_ms = (time.perf_counter_ns() - started) / 1_000_000
