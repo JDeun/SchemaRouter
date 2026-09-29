@@ -1,6 +1,7 @@
 # SchemaRouter design and experiment history
 
-> Canonical research/session roadmap: GitHub issue #388  
+> Active research/session roadmap: GitHub issue #417  
+> Historical 0.13 prior-art roadmap: GitHub issue #388  
 > Prior-art roadmap: `docs/research/prior-art-roadmap.md`  
 > Machine-readable prior-art registry: `benchmarks/research-prior-art-registry.json`  
 > Historical session-resume tracker: GitHub issue #200  
@@ -3020,3 +3021,149 @@ The resulting architectural constraint is stronger than before: a future candida
 positive-retriever replacement, generic operation classification, relative relevance ranking nor
 conformal calibration over a weak scalar score is sufficient by itself.
 
+
+
+## 2026-09-29 — V6H closes the authoritative parser line and 0.14 reframes the product question
+
+### #415 / PR #416 — V6H end-to-end multilingual operation/OOS parser
+
+V6H was the last 0.13 attempt to make a learned semantic parser act as a veto over the frozen BGE
+winner. Unlike #404, the multilingual MiniLM encoder itself was fine-tuned end-to-end for
+TOOL_OPERATION/BACKGROUND scope and 18-way generic operation classification.
+
+The experiment was frozen before model scoring:
+- freeze workflow `36501993390`;
+- source `5135a29f39633421136a0c13c39675947fd92f3b`;
+- training bank SHA `c9bf9d378f8f9ef7388fde833e9a04c941871514319961b4a0666d97983caa68`;
+- DEV SHA `4da38c34929fcbd7ef828a5ccee9afa89b048c960b852cf315dd68b97370f09e`;
+- confirmation SHA `26140a4a77ef07fbda0d875cbcba421b0f7a7465990c775fe656bfa4115c7565`.
+
+DEV result:
+- gated supported exact **70.18%**;
+- raw BGE exact **81.58%**;
+- raw BGE tool accuracy **92.98%**;
+- near-domain rejection **65.08%**;
+- OOD rejection **98.61%**;
+- false-route **27.47%**;
+- raw-correct winner veto **13.98%**;
+- scope accuracy **90.58%**;
+- supported operation accuracy **70.61%**;
+- near-domain unsupported operation accuracy **51.98%**;
+- combined p95 **181.44 ms**;
+- authority / route-switch / execution errors **0 / 0 / 0**.
+
+The result is important because representation learning did improve the generic scope task and stayed
+inside the runtime target, yet the same-domain operation distinction still did not generalize well
+enough. Confirmation remained unopened and the exact V6H training/decision formulation is terminal.
+
+### The conceptual correction
+
+At this point the research question itself was re-examined.
+
+SchemaRouter's stable product architecture already compiles and indexes registered executable
+capabilities with typed metadata. In an LLM-agent system, that layer is naturally analogous to a
+typed executable **retriever/index**, not necessarily the final autonomous tool-choice authority.
+
+The 0.11–0.13 research had gradually burdened the retrieval layer with three distinct responsibilities:
+1. retrieve the exact route;
+2. decide whether the request belongs to the registered capability set;
+3. make the final execution/no-execution decision.
+
+The terminal lineage showed that this combination can force a safety/coverage trade-off. #412 is the
+clearest example: near rejection **99.21%**, OOD **100%**, false-route **0.62%**, and p95 **244 ms**
+were achieved only by collapsing supported exact to **10.09%**.
+
+0.14 therefore separates concerns:
+
+```text
+query
+  -> SchemaRouter typed Top-K capability retrieval
+  -> downstream LLM agent
+  -> execution validation / permission / destructive policy
+  -> tool
+  -> deterministic result evaluation
+  -> optional candidate expansion / retry
+```
+
+This does not mean retrieval accuracy is irrelevant. It changes the relevant accuracy question from
+"did the retriever itself choose the one final endpoint?" to "did the compact candidate set preserve
+all capabilities needed by the downstream agent?"
+
+### #417 / #418 / PR #419 — Phase A establishes the retrieval premise
+
+The first 0.14 benchmark froze 23 single/multi-tool tasks across 20, 50, 100 and 250 endpoint
+catalogs. Before agent inference, two multi-tool data-dependency contracts and missing explicit task
+arguments were corrected so the benchmark was actually executable; the corrected corpus was then
+re-frozen and the old hashes superseded.
+
+Corrected canonical freeze:
+- workflow `36507439562`;
+- artifact `11006614997`;
+- digest `sha256:5cec1c650bd2a98fc78f7fbb911c0b15d95a39c96a43848b939ba56302658022`;
+- task SHA `9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1`.
+
+Phase A:
+- Recall@1 **68.97%**;
+- Recall@3 **96.55%**;
+- Recall@5 **100%**;
+- Recall@10 **100%**;
+- all-required task coverage@5 **100%**;
+- MRR **0.82471**.
+
+Mean Top-5 serialized schema context versus FULL:
+- 20 endpoints: **26.76%**;
+- 50: **11.47%**;
+- 100: **5.87%**;
+- 250: **2.38%**.
+
+This is the first direct evidence for the revised product thesis: a low Top-1 number can coexist with
+complete Top-K capability preservation, and candidate reduction becomes more valuable as the catalog
+grows.
+
+PR #419 was merged to main as `1c0dc93e843f6f9bf8a628c80ca95e02efcf5088`.
+
+### #420 / PR #421 — B1 end-to-end downstream-agent A/B
+
+B1 adds a real tool-calling model but keeps SchemaRouter retrieval and the agent role strictly
+separate.
+
+Conditions:
+- FULL;
+- SR-3;
+- SR-5;
+- SR-10;
+- SR-PROGRESSIVE;
+- ORACLE.
+
+The same deterministic executor enforces typed arguments, multi-step data dependencies and destructive
+policy. SchemaRouter rank scores and positions are hidden; after Top-K set membership is chosen, tools
+are lexically ordered before being shown to the agent.
+
+The local model is `Qwen/Qwen3-0.6B` at immutable revision
+`c1899de289a04d12100db370d81485cdf75e47ca`. It is deliberately a reproducible sanity baseline, not
+the final product model.
+
+This does **not** revive #289. #289 tested `Qwen3-Reranker-0.6B` as a yes/no capability verifier
+inside the routing boundary and remains terminal. B1 uses a different causal model only as the
+downstream tool-using agent; no Qwen score affects retrieval.
+
+The canonical B1 evaluation contains **552 episodes**:
+23 tasks × 4 catalog sizes × 6 conditions.
+
+A tool-calling smoke passed before the benchmark. Long CPU FULL-catalog episodes required runtime-only
+micro-sharding, but task/catalog/model/prompt/K/executor semantics remained frozen. The canonical
+aggregate is accepted only if all 552 episodes are reconstructed.
+
+### #423 and #424 — required replication layers
+
+B1 alone cannot establish general agent utility.
+
+- #423 requires the same frozen benchmark to be replicated with a materially stronger tool-calling
+  agent before generalizing beyond the small local baseline.
+- #424 separates final-answer factual quality from tool-call success and will measure required fact
+  recall, hallucination, numeric/unit accuracy and provenance under FULL vs compact capability
+  context.
+
+The research endpoint is therefore no longer "find a better open-set threshold." It is to establish
+whether a typed capability retrieval substrate improves downstream agent utility, efficiency and
+safety under controlled and then realistic conditions.
