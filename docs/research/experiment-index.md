@@ -8,13 +8,13 @@ answers a different question: **what was actually tried?**
 
 Current machine-readable ledger:
 
-- independent experiment records: **84**;
+- independent experiment records: **88**;
 - legacy routing corpus lineage: **13** versioned corpora;
 - routine bugfix-only commits are not counted as independent experiments unless they changed an
   architecture invariant, evaluation protocol, or empirical claim;
 - failed, superseded, invalidated, and terminal experiments are retained rather than hidden.
 
-The 84-record count includes the terminal 0.13 V6A–V6H/open-set controls and the active 0.14 agent-utility lineage. Terminal 0.13 confirmation surfaces remain unopened unless explicitly recorded otherwise.
+The 88-record count includes the terminal 0.13 V6A–V6H/open-set controls and the active 0.14 agent-utility lineage. Terminal 0.13 confirmation surfaces remain unopened unless explicitly recorded otherwise.
 
 The canonical machine-readable source is
 [`benchmarks/research-experiment-ledger.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json).
@@ -232,3 +232,7 @@ branches.
 | 2 | `0.14-b1-local-agent-ab` | **in_progress_no_terminal_claim** | B1 is a reproducible sanity baseline only. Product-level agent utility requires separate stronger-agent B2 replication. | [issue #420](https://github.com/JDeun/SchemaRouter/issues/420) · [PR #421](https://github.com/JDeun/SchemaRouter/pull/421) · freeze `36507439562` |
 | 3 | `0.14-b2-strong-agent-replication` | **blocked_until_strong_agent_identity_is_frozen** | Strong-agent replication is required before generalizing B1 utility beyond the small local baseline. | [issue #423](https://github.com/JDeun/SchemaRouter/issues/423) |
 | 4 | `0.14-final-answer-quality` | **blocked_until_b1_aggregate_and_b2_model_freeze** | Final-answer factual quality, unit accuracy, provenance and hallucination must be evaluated separately from deterministic tool-use task success. | [issue #424](https://github.com/JDeun/SchemaRouter/issues/424) |
+| 5 | `0.14-corrective-state-aware-reretrieval` | **no_execution_before_420_terminal** | Compare static candidate exposure with execution-state-aware re-retrieval using bounded typed observations; retrieval never becomes execution authority. | [issue #431](https://github.com/JDeun/SchemaRouter/issues/431) |
+| 6 | `0.14-large-held-out-generalization` | **freeze_sample_size_and_generation_protocol_after_b1_without_using_b1_row_failures** | Create an independently frozen, materially larger multilingual held-out surface for population-level uncertainty/generalization claims. | [issue #432](https://github.com/JDeun/SchemaRouter/issues/432) |
+| 7 | `0.14-adaptive-shortlist-depth` | **no_execution_before_b1_b2_fixed_k_evidence** | Test preregistered per-query adaptive candidate depth only after fixed-K evidence; do not derive the policy from B1 errors. | [issue #430](https://github.com/JDeun/SchemaRouter/issues/430) |
+| 8 | `0.14-public-topk-retrieval-api` | **do_not_promote_before_b1_aggregate** | Stage a first-class typed Top-K public retrieval API while keeping agent orchestration and execution authority outside the core retriever. | [issue #428](https://github.com/JDeun/SchemaRouter/issues/428) |
