@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **84** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all **88** machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [Prior-art roadmap](prior-art-roadmap.md) — cross-session literature/work-item map and experiment-order guardrail;
@@ -94,8 +94,19 @@ The model is `Qwen/Qwen3-0.6B` only as a reproducible **downstream agent sanity 
 does not revive #289: #289 used the different `Qwen3-Reranker-0.6B` checkpoint as a yes/no
 SchemaRouter verifier and remains terminally rejected.
 
-The canonical B1 aggregate is running under task/catalog micro-sharding. No final B1 claim is made
-until all 552 episodes are reconstructed by the aggregator.
+B1 is currently awaiting the latest protocol-validation checkpoint after two research-integrity
+hardening changes were frozen before any accepted 552-episode aggregate:
+
+- exact frozen task-ID / duplicate episode-key validation;
+- paired **task-cluster bootstrap** across the four repeated catalog-size strata.
+
+The 23 semantic tasks are the statistical units; the 92 task×catalog rows are repeated measures.
+Therefore the -2pp B1 gate is treated as a descriptive engineering sanity criterion, not a powered
+population-level non-inferiority proof. #432 stages the independent larger held-out surface required
+for generalization.
+
+No final B1 claim is made until one protocol-validated run reconstructs exactly 552 unique
+`(catalog, task, condition)` episodes.
 
 ### Required replication and answer-quality work
 
@@ -613,3 +624,16 @@ No terminal DEV rows may be used to tune a successor, and all confirmation surfa
 unopened. The canonical continuation point is issue **#388**, then issue **#382**, the
 machine-readable prior-art registry, and the experiment ledger.
 
+
+
+### Staged post-B1 work
+
+The following items are preregistered/staged and **must not** be selected from B1 row-level errors:
+
+- **#428** — first-class public typed Top-K retrieval API;
+- **#430** — adaptive per-query shortlist depth after fixed-K validation;
+- **#431** — execution-state-aware corrective capability re-retrieval;
+- **#432** — materially larger independent multilingual held-out benchmark with explicit
+  sample-size/precision planning.
+
+These are successors to the fixed controlled baseline, not repairs to consumed B1 rows.
