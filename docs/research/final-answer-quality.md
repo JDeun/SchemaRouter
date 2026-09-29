@@ -22,6 +22,33 @@ The benchmark uses the same frozen strong-agent model family/runtime as B2 unles
 terminates before benchmark inference for model-feasibility reasons. A replacement may
 never be selected from #424 task outcomes.
 
+## Pre-B2-terminal authoring scaffold
+
+Before B2 is terminal, the benchmark may freeze only deterministic **authoring slots**.
+The scaffold fixes:
+
+- 144 unique `semantic_task_id` values;
+- one preregistered answer-task stratum per ID;
+- one preregistered language stratum per ID;
+- four independent slots in each of the 36 stratum × language cells.
+
+It does **not** generate or contain:
+
+- task/query wording;
+- gold/required routes;
+- deterministic evidence payloads or tool outputs;
+- reference/forbidden facts;
+- numeric tolerances or canonical units;
+- provenance/source IDs;
+- expected answers;
+- catalogs, candidate sets, scores or labels.
+
+The generator is
+`scripts/generate_agent_utility_v4_final_answer_authoring_plan.py`.
+Both `content_generation_authorized` and `answer_inference_authorized` remain false
+until #423 is terminal. This allows balance/identity bookkeeping to be validated without
+using B2 outcomes or opening the answer benchmark early.
+
 ## Surface
 
 The final benchmark contains **144 independent semantic tasks**:
