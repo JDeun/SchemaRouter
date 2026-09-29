@@ -400,6 +400,8 @@ class DeterministicTaskExecutor:
         self,
         route_id: str,
         arguments: dict[str, Any],
+        *,
+        available: bool = True,
     ) -> ExecutionAttempt:
         endpoint = _endpoint_for(self.registry, route_id)
         if endpoint is None:
@@ -422,6 +424,25 @@ class DeterministicTaskExecutor:
 
         schema_valid, schema_error = _schema_valid(endpoint, arguments)
         expected = route_id == self.next_expected_route
+
+        if not available:
+            blocked = bool(endpoint.destructive)
+            attempt = ExecutionAttempt(
+                route_id=route_id,
+                arguments=arguments,
+                schema_valid=schema_valid,
+                semantic_valid=False,
+                policy_blocked=blocked,
+                expected_at_step=expected,
+                advanced_task=False,
+                error="unavailable_tool",
+                observation={
+                    "status": "blocked" if blocked else "error",
+                    "error": "unavailable_tool",
+                },
+            )
+            self.attempts.append(attempt)
+            return attempt
 
         if bool(endpoint.destructive) and not expected:
             attempt = ExecutionAttempt(
