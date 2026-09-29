@@ -1,6 +1,6 @@
 name: Research 0.14 B1 Micro-Sharded Agent A-B
 
-# Canonical source parent validated by protocol run 36520356798.
+# Canonical v2 execution: preregistration + freeze + Phase-A gate are validated in preflight.
 
 on:
   push:
@@ -10,18 +10,134 @@ on:
       - ".github/workflows/research-0.14-b1-microsharded.yml"
   workflow_dispatch:
 
+concurrency:
+  group: research-0.14-b1-microsharded-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 env:
-  TASKS_SHA256: "9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1"
+  TASKS_SHA256: "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c"
   CATALOG_20_SHA256: "b90e3ab473217f4becffb4933fc96e7016cf60f28b030b4d2ae8cb1639c40f5c"
   CATALOG_50_SHA256: "e43400681d64315cadfeb54f4f3dadb0490e557e5f6bf2514c4f8e2e6d424ac3"
   CATALOG_100_SHA256: "52b58b39ec31d377c90c16572997f69523742c8917a37e33326d429b51afc225"
   CATALOG_250_SHA256: "e5ca7d199dd5d2e7bb89eb97d8ac0cae37f403def1fc43037f2fc816a775d2a9"
 
 jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+
+      - name: Validate frozen B1 v2 protocol
+        run: |
+          ruff check \
+            benchmarks/agent_utility_v1_catalog.py \
+            benchmarks/agent_utility_v1_executor.py \
+            scripts/generate_agent_utility_v1.py \
+            scripts/evaluate_agent_utility_phase_a.py \
+            scripts/evaluate_agent_utility_phase_b_qwen.py \
+            scripts/aggregate_agent_utility_phase_b.py \
+            tests/test_agent_utility_v1.py \
+            tests/test_agent_utility_v1_executor.py \
+            tests/test_agent_utility_phase_b_qwen.py \
+            tests/test_agent_utility_phase_b_aggregate.py
+          PYTHONPATH=. pytest -q \
+            tests/test_agent_utility_v1.py \
+            tests/test_agent_utility_v1_executor.py \
+            tests/test_agent_utility_phase_b_qwen.py \
+            tests/test_agent_utility_phase_b_aggregate.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          prereg = json.loads(
+              Path("benchmarks/agent-utility-v1-b1-preregistration-v2.json")
+              .read_text(encoding="utf-8")
+          )
+          assert prereg["schema_version"] == 2
+          assert prereg["issue"] == 420
+          assert prereg["status"] == "frozen_before_any_v2_agent_inference"
+          assert prereg["corrected_freeze_identity"]["tasks_sha256"] == (
+              "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c"
+          )
+          assert prereg["tool_observation_causality"][
+              "max_executed_tool_calls_per_assistant_turn"
+          ] == 1
+          assert prereg["statistical_scope"]["bootstrap_unit"] == "task_id cluster"
+          assert prereg["aggregate_integrity"]["required_episode_count"] == 552
+          PY
+
+      - name: Freeze v2 tasks and catalogs
+        run: |
+          python scripts/generate_agent_utility_v1.py \
+            --out-dir artifacts/agent-utility-v1
+
+      - name: Verify v2 identities and Phase-A entry gate
+        run: |
+          python scripts/evaluate_agent_utility_phase_a.py \
+            --out artifacts/agent-utility-v1/phase-a-result.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          root = Path("artifacts/agent-utility-v1")
+          freeze = json.loads(
+              (root / "freeze-manifest.json").read_text(encoding="utf-8")
+          )
+          result = json.loads(
+              (root / "phase-a-result.json").read_text(encoding="utf-8")
+          )
+          assert freeze["task_count"] == 23
+          assert freeze["single_task_count"] == 17
+          assert freeze["multi_task_count"] == 6
+          assert freeze["tasks_sha256"] == os.environ["TASKS_SHA256"]
+          for size in ("20", "50", "100", "250"):
+              assert freeze["catalogs"][size]["sha256"] == os.environ[
+                  f"CATALOG_{size}_SHA256"
+              ]
+          assert result["phase_a_gate"]["phase_b_eligible"] is True
+          print(json.dumps(freeze, sort_keys=True))
+          print(json.dumps(result["phase_a_gate"], sort_keys=True))
+          print(json.dumps({
+              size: {
+                  "recall3": result["catalog_sizes"][size]["k"]["3"][
+                      "required_route_recall"
+                  ],
+                  "recall5": result["catalog_sizes"][size]["k"]["5"][
+                      "required_route_recall"
+                  ],
+                  "recall10": result["catalog_sizes"][size]["k"]["10"][
+                      "required_route_recall"
+                  ],
+              }
+              for size in ("20", "50", "100", "250")
+          }, sort_keys=True))
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: agent-utility-b1-v2-preflight-${{ github.run_id }}
+          path: |
+            artifacts/agent-utility-v1/
+            benchmarks/agent-utility-v1-b1-preregistration-v2.json
+            benchmarks/agent-utility-v1-b1-task-contract-amendment.json
+            benchmarks/agent-utility-v1-b1-causality-amendment.json
+            benchmarks/agent-utility-v1-b1-statistical-amendment.json
+            benchmarks/agent-utility-v1-b1-execution-equivalence.json
+          retention-days: 30
+
   evaluate:
+    needs: preflight
     strategy:
       fail-fast: false
       matrix:
@@ -99,13 +215,13 @@ jobs:
           path: |
             artifacts/agent-utility-b1/
             artifacts/agent-utility-v1/freeze-manifest.json
-            benchmarks/agent-utility-v1-b1-preregistration.json
+            benchmarks/agent-utility-v1-b1-preregistration-v2.json
           if-no-files-found: warn
           retention-days: 30
 
   aggregate:
     needs: evaluate
-    if: always()
+    if: ${{ success() }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -155,6 +271,6 @@ jobs:
           name: agent-utility-b1-canonical-${{ github.run_id }}
           path: |
             artifacts/agent-utility-b1-aggregate.json
-            benchmarks/agent-utility-v1-b1-preregistration.json
+            benchmarks/agent-utility-v1-b1-preregistration-v2.json
           if-no-files-found: warn
           retention-days: 30
