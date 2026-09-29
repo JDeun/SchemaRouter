@@ -22,6 +22,10 @@ on:
       - "tests/test_agent_utility_phase_b_aggregate.py"
   workflow_dispatch:
 
+concurrency:
+  group: research-0.14-b1-protocol
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
