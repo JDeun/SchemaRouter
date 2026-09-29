@@ -268,43 +268,31 @@ jobs:
       - name: Evaluate frozen task shard
         run: |
           mkdir -p artifacts/b2-shard
-
-          echo "=== B2 runner resource baseline ==="
-          date -u +"%Y-%m-%dT%H:%M:%SZ"
-          nproc
-          free -m || true
-          df -h . || true
-          ulimit -a || true
-
-          monitor_resources() {
+          telemetry() {
             while true; do
-              echo "=== B2 resource telemetry ==="
-              date -u +"%Y-%m-%dT%H:%M:%SZ"
+              echo "[b2-runner-telemetry] timestamp=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
               free -m || true
-              if [[ -r /sys/fs/cgroup/memory.current ]]; then
-                echo "cgroup memory.current=$(cat /sys/fs/cgroup/memory.current)"
-              fi
-              if [[ -r /sys/fs/cgroup/memory.max ]]; then
-                echo "cgroup memory.max=$(cat /sys/fs/cgroup/memory.max)"
-              fi
-              ps -eo pid,ppid,rss,vsz,pcpu,pmem,etime,comm --sort=-rss | head -n 20 || true
-              df -h . || true
+              df -h . /tmp || true
+              ps -eo pid,ppid,rss,vsz,%mem,%cpu,cmd --sort=-rss | head -n 12 || true
               sleep 60
             done
           }
-
-          monitor_resources &
-          RESOURCE_MONITOR_PID=$!
-          cleanup_resource_monitor() {
-            kill "$RESOURCE_MONITOR_PID" 2>/dev/null || true
-            wait "$RESOURCE_MONITOR_PID" 2>/dev/null || true
+          telemetry &
+          TELEMETRY_PID=$!
+          cleanup_telemetry() {
+            kill "$TELEMETRY_PID" 2>/dev/null || true
+            wait "$TELEMETRY_PID" 2>/dev/null || true
           }
-          trap cleanup_resource_monitor EXIT
+          trap cleanup_telemetry EXIT INT TERM
 
           /usr/bin/time -v python scripts/evaluate_agent_utility_phase_b_smollm3.py \
             --catalog-sizes "${{ matrix.catalog_sizes }}" \
             --task-ids "${{ matrix.task_id }}" \
             --out "artifacts/b2-shard/phase-b2-${{ matrix.job_id }}.json"
+
+          cleanup_telemetry
+          trap - EXIT INT TERM
+
           python - <<'PY'
           import json
           import os
