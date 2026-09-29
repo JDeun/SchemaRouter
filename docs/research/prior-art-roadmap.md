@@ -311,3 +311,27 @@ Historical 0.13 order was:
 
 This order is not a claim that later methods are superior. It is the governance sequence that avoids
 mixing hypotheses and reusing evidence.
+
+
+## 0.14 staged successors after the fixed-K baseline
+
+These are staged before any accepted B1 aggregate and must not be derived from B1 row-level failures.
+
+- **#428 — public typed Top-K API:** expose retrieval as a first-class composition surface while
+  leaving final agent choice and execution authority outside the retriever.
+- **#430 — adaptive shortlist depth:** test preregistered per-query K after fixed K=3/5/10 evidence.
+  Repantis et al. (arXiv:2605.24660) independently motivates shortlist depth as a first-class
+  variable.
+- **#431 — execution-state-aware corrective re-retrieval:** compare static widening with retrieval
+  conditioned on bounded typed observations/current state. DTDR (Findings ACL 2026) is the main
+  external reference.
+- **#432 — large independent held-out surface:** required because B1 has only 23 unique semantic
+  tasks repeated across catalog sizes.
+
+### Statistical scope correction before B1 aggregate
+
+B1's four catalog-size rows per semantic task are repeated measures, not independent samples.
+Therefore the canonical paired bootstrap resamples **task_id clusters**, keeping the four
+catalog-size deltas together. The -2pp gate remains a descriptive engineering threshold in B1.
+A population-level non-inferiority/generalization claim requires #432 with an independently frozen,
+materially larger task population and preregistered precision/sample-size analysis.
