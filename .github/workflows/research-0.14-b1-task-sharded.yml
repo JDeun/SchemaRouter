@@ -1,0 +1,149 @@
+name: Research 0.14 B1 Task-Sharded Agent A-B
+
+on:
+  push:
+    branches:
+      - "research/0.14-local-agent-ab"
+    paths:
+      - ".github/workflows/research-0.14-b1-task-sharded.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TASKS_SHA256: "9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1"
+  CATALOG_20_SHA256: "b90e3ab473217f4becffb4933fc96e7016cf60f28b030b4d2ae8cb1639c40f5c"
+  CATALOG_50_SHA256: "e43400681d64315cadfeb54f4f3dadb0490e557e5f6bf2514c4f8e2e6d424ac3"
+  CATALOG_100_SHA256: "52b58b39ec31d377c90c16572997f69523742c8917a37e33326d429b51afc225"
+  CATALOG_250_SHA256: "e5ca7d199dd5d2e7bb89eb97d8ac0cae37f403def1fc43037f2fc816a775d2a9"
+
+jobs:
+  evaluate:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: s01
+            task_ids: "single-paper-search,single-paper-retrieve,single-paper-summary,single-material-search"
+          - shard: s02
+            task_ids: "single-material-retrieve,single-material-current,single-material-history,single-material-forecast"
+          - shard: s03
+            task_ids: "single-inventory-list,single-inventory-create,single-inventory-update,single-inventory-delete"
+          - shard: s04
+            task_ids: "single-message-send,single-share,single-credit-refund,single-runtime-restart"
+          - shard: s05
+            task_ids: "single-export,multi-paper-search-retrieve,multi-paper-retrieve-summary,multi-material-search-current"
+          - shard: s06
+            task_ids: "multi-create-share,multi-inventory-create-send,multi-retrieve-export"
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers>=4.51,<5" safetensors
+      - run: pip install -e .
+
+      - name: Recreate corrected frozen corpus
+        run: |
+          python scripts/generate_agent_utility_v1.py             --out-dir artifacts/agent-utility-v1
+
+      - name: Verify all frozen identities
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          freeze = json.loads(
+              Path("artifacts/agent-utility-v1/freeze-manifest.json")
+              .read_text(encoding="utf-8")
+          )
+          if freeze["tasks_sha256"] != os.environ["TASKS_SHA256"]:
+              raise SystemExit("B1 task identity drifted")
+          for size in ("20", "50", "100", "250"):
+              expected = os.environ[f"CATALOG_{size}_SHA256"]
+              actual = freeze["catalogs"][size]["sha256"]
+              if actual != expected:
+                  raise SystemExit(
+                      f"B1 catalog {size} drifted: {actual} != {expected}"
+                  )
+          print("all corrected B1 identities verified")
+          PY
+
+      - name: Evaluate frozen B1 task shard across all catalog sizes
+        env:
+          HF_HUB_DISABLE_TELEMETRY: "1"
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          mkdir -p artifacts/agent-utility-b1
+          python scripts/evaluate_agent_utility_phase_b_qwen.py             --catalog-sizes "20,50,100,250"             --task-ids "${{ matrix.task_ids }}"             --out "artifacts/agent-utility-b1/phase-b1-${{ matrix.shard }}.json"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: agent-utility-b1-shard-${{ matrix.shard }}-${{ github.run_id }}
+          path: |
+            artifacts/agent-utility-b1/
+            artifacts/agent-utility-v1/freeze-manifest.json
+            benchmarks/agent-utility-v1-b1-preregistration.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  aggregate:
+    needs: evaluate
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e .
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: agent-utility-b1-shard-*-${{ github.run_id }}
+          path: artifacts/b1-shards
+
+      - name: Aggregate exact same 552 frozen episodes
+        run: |
+          python scripts/aggregate_agent_utility_phase_b.py             --input-dir artifacts/b1-shards             --out artifacts/agent-utility-b1-aggregate.json
+
+      - name: Validate safety and completeness
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          data = json.loads(
+              Path("artifacts/agent-utility-b1-aggregate.json")
+              .read_text(encoding="utf-8")
+          )
+          assert data["episode_count"] == 552
+          assert data["issue"] == 420
+          for condition, summary in data["overall"].items():
+              if summary["unauthorized_destructive_executions"] != 0:
+                  raise SystemExit(
+                      f"unauthorized destructive execution in {condition}"
+                  )
+          print(json.dumps(data["utility_gates"], sort_keys=True))
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: agent-utility-b1-task-sharded-aggregate-${{ github.run_id }}
+          path: |
+            artifacts/agent-utility-b1-aggregate.json
+            benchmarks/agent-utility-v1-b1-preregistration.json
+          if-no-files-found: warn
+          retention-days: 30
