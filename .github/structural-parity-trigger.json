@@ -1,0 +1,22 @@
+{
+  "schema_version": 2,
+  "issue": 430,
+  "successor_issue": 432,
+  "purpose": "core_research_ranking_parity",
+  "created_date": "2026-09-30",
+  "implementation_sha": "33535c6fb78efc2bcdd6a7ddc87da1ed5f8c12e5",
+  "preregistration_path": "benchmarks/agent-utility-v5-structural-retrieval-v2-preregistration.json",
+  "candidate": "STRUCT-4.5-1.5",
+  "catalog_sizes": [
+    100,
+    250,
+    500
+  ],
+  "semantic_tasks": 240,
+  "expected_rows": 720,
+  "expected_supported_rows": 540,
+  "expected_top10_positions": 7200,
+  "exact_route_and_score_parity_required": true,
+  "confirmation_surface_used": false,
+  "product_default_enabled": false
+}
