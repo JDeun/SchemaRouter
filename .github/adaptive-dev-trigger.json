@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "experiment": "adaptive-capability-shortlist-depth-v1",
+  "authorization": "one_shot_development_surface",
+  "created_date": "2026-09-29",
+  "implementation_sha": "2275edc6cdb74e46fcf250bef2d8f5261870f1ef",
+  "surface": "development",
+  "confirmation_authorized": false,
+  "b1_b2_row_outcomes_allowed": false,
+  "heldout_432_rows_allowed": false,
+  "final_answer_424_rows_allowed": false,
+  "expected_semantic_tasks": 240,
+  "expected_catalog_sizes": [
+    100,
+    250,
+    500
+  ],
+  "expected_ranking_rows": 720,
+  "token_accounting": "exact SmolLM3-3B B2 chat-template prefix deltas",
+  "note": "DEV may run independently of B2. If implementation changes after this freeze, this run is noncanonical and must not be used for policy selection."
+}
