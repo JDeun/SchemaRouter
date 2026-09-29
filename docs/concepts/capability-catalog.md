@@ -62,9 +62,9 @@ Use `retrieve_executable(..., k=5)` when the candidate set should be limited to 
 execution binding is currently ready. Async counterparts are `aretrieve` and
 `aretrieve_executable`.
 
-The returned bundle carries registered typed metadata such as parameters, output fields, semantic
-IDs, units, qualifiers, read/write/destructive classification, provider/access identity and schema
-fingerprints.
+The returned bundle carries the full effective input/output JSON Schemas together with registered
+parameters, output fields, semantic IDs, units, qualifiers, read/write/destructive classification,
+provider/access identity and schema fingerprints.
 
 Retrieval itself has no side effect and does not grant execution authority:
 
