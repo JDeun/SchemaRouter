@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: research-0.14-structural-confirmation
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   confirm:
@@ -27,6 +27,24 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev]"
+      - name: Verify one-shot authorization
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          trigger = json.loads(
+              Path(".github/structural-confirmation-trigger.json")
+              .read_text(encoding="utf-8")
+          )
+          assert trigger["issue"] == 430
+          assert trigger["surface"] == "confirmation"
+          assert trigger["candidate"] == "STRUCT-4.5-1.5"
+          assert trigger["confirmation_attempt"] == 1
+          assert trigger["tuning_allowed_after_scoring"] is False
+          assert trigger["b2_outcomes_used"] is False
+          assert trigger["product_default_enabled"] is False
+          PY
       - name: Verify confirmation contracts before generation
         run: |
           pytest -q tests/test_agent_utility_structural_confirmation.py
