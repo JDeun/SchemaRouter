@@ -147,7 +147,29 @@
       ],
       "interpretation": "Tool semantics passed, but naive EOS-only generation is too slow for the full matrix; rerun with the frozen completed-tool-call stop rule before authorization."
     },
-    "latest_smoke_must_validate_generation_stopping_rule": true
+    "latest_smoke_must_validate_generation_stopping_rule": true,
+    "authorized_smoke_result": "pass",
+    "authorized_smoke_workflow_run": 36548416952,
+    "authorized_smoke_source_sha": "7391b0a0703c7cabb086421f81b838111abefdc3",
+    "authorized_smoke_artifact_id": 11023736716,
+    "authorized_smoke_artifact_digest": "sha256:7a0e1c93f83a5937a4ea3baaaa088caf88d5eb0a79229113dbd6a0f7b24243ca",
+    "authorized_protocol_artifact_id": 11023960640,
+    "authorized_protocol_artifact_digest": "sha256:f921b3c322cb5186e11ebc17b45d052bdd02fc4bf9835d82e54191a3798caeaf",
+    "authorized_metrics": {
+      "context_limit": 65536,
+      "dtype": "bfloat16",
+      "model_load_seconds": 37.89141605,
+      "max_rss_mb": 6663.10546875,
+      "first_generation_seconds": 9.007173138,
+      "deterministic_repeat_generation_seconds": 9.277727277,
+      "dependent_second_generation_seconds": 10.793243913,
+      "first_output_tokens": 21,
+      "repeat_output_tokens": 21,
+      "second_output_tokens": 25,
+      "completed_tool_call_stop_token_count": 1
+    },
+    "full_b2_inference_authorized": true,
+    "authorization_note": "Authorized before any B2 benchmark row after canonical identity PASS and optimized synthetic two-turn SmolLM3 smoke PASS."
   },
   "product_utility_gate": {
     "task_pass_noninferiority_vs_full_absolute": -0.02,
