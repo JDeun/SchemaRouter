@@ -3366,7 +3366,7 @@
       "pull_request": 421,
       "branch": "research/0.14-local-agent-ab",
       "preregistered": true,
-      "status": "task_contract_corrected_refreeze_required_before_new_b1",
+      "status": "task_contract_and_causality_corrected_refreeze_required",
       "model": {
         "name": "Qwen/Qwen3-0.6B",
         "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
@@ -3388,7 +3388,7 @@
       "corrected_freeze_workflow_run_id": 36507439562,
       "tool_call_smoke_workflow_run_id": 36507510580,
       "result": null,
-      "decision": "refreeze_corrected_tasks_then_rerun_phase_a_before_any_new_b1_inference",
+      "decision": "refreeze_corrected_tasks_then_rerun_phase_a_then_freeze_b1_preregistration_v2",
       "interpretation": "B1 is a reproducible sanity baseline only. Product-level agent utility requires separate stronger-agent B2 replication.",
       "canonical_source_revision": null,
       "protocol_correction": {
@@ -3448,6 +3448,18 @@
         ],
         "reason": "required user-supplied arguments were absent from task query but enforced by deterministic executor",
         "accepted_aggregate_before_correction": false
+      },
+      "causality_correction": {
+        "amendment_file": "benchmarks/agent-utility-v1-b1-causality-amendment.json",
+        "status": "frozen_before_any_accepted_aggregate",
+        "execution_protocol_changed": true,
+        "rule": "at most one tool call may execute per assistant turn; later same-turn calls require an observation first",
+        "multi_create_send_dependency": "follow-up message must contain INV-NEW-1 from inventory.create observation",
+        "previous_sources_superseded": [
+          36517371433,
+          36520025834,
+          36520831273
+        ]
       }
     },
     {
@@ -3668,7 +3680,7 @@
     "conformal_status": "#412 demonstrated that a conservative split-conformal gate can hit 99.21% near rejection / 100% OOD / 0.62% false-route / 244 ms p95, but supported exact collapsed to 10.09%; calibration cannot substitute for a discriminative semantic membership score.",
     "active_cycle": "0.14-end-to-end-agent-utility",
     "agent_utility_phase_a_status": "#418 passed: corrected frozen benchmark Recall@3=96.55%, Recall@5=100%, Recall@10=100%; Top-5 mean schema context is 2.38% of FULL at 250 endpoints.",
-    "b1_status": "#420 task-contract audit found two hidden user-supplied arguments before any accepted aggregate. Previous task SHA 966314... and B1 sources 36520025834/36520831273 are superseded. Correct single-message-send and multi-create-share, refreeze tasks, rerun Phase A, then freeze B1 preregistration v2 before new inference.",
+    "b1_status": "#420 now has two pre-aggregate validity corrections: explicit user-argument task contract and tool-observation causality barrier. No old B1 episode source is eligible. Refreeze tasks, rerun Phase A, then freeze B1 preregistration v2 before any new inference.",
     "b2_status": "#423 protocol placeholder requires a materially stronger frozen agent before inference.",
     "final_answer_quality_status": "#424 protocol placeholder separates deterministic tool-use success from factual final-answer quality.",
     "statistical_scope": "B1 has 23 unique semantic tasks repeated over four catalog sizes. Paired uncertainty is cluster-bootstrapped by task_id; the -2pp gate is descriptive. #432 is required for population-level generalization."
@@ -3746,7 +3758,7 @@
       421
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "Finish the corrected #420 task refreeze and Phase-A re-evaluation first. Do not use any old B1 episode source. After Phase A re-passes, freeze B1 preregistration v2 and run one new B1 source; then #423/#424/#432.",
+    "next_research_direction": "Pass #420 protocol with task-contract + causality amendments; confirm corrected task SHA and Phase-A metrics; freeze B1 preregistration v2; only then launch a new B1 source.",
     "contingent_experiments": [
       303
     ],
