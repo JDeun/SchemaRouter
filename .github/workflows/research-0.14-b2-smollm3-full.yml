@@ -103,6 +103,7 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - run: pip install -e .
       - id: hf-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
@@ -143,6 +144,68 @@ jobs:
               trust_remote_code=False,
           )
           print("exact SmolLM3 cache verified")
+          PY
+      - name: Verify worst-case FULL context budget before inference
+        env:
+          HF_HUB_OFFLINE: "1"
+          TRANSFORMERS_OFFLINE: "1"
+        run: |
+          python - <<'PY'
+          import json
+          import os
+
+          from transformers import AutoTokenizer
+
+          from benchmarks.agent_utility_b2_catalog import TASKS, build_registry, route_ids
+          from scripts.evaluate_agent_utility_phase_b_smollm3 import (
+              MAX_NEW_TOKENS,
+              SYSTEM_PROMPT,
+              _visible_tools,
+          )
+
+          tokenizer = AutoTokenizer.from_pretrained(
+              os.environ["B2_MODEL"],
+              revision=os.environ["B2_REVISION"],
+              local_files_only=True,
+              trust_remote_code=False,
+          )
+          registry = build_registry(250)
+          tools = _visible_tools(registry, sorted(route_ids(registry)))
+          counts = {}
+          for task in TASKS:
+              input_ids = tokenizer.apply_chat_template(
+                  [
+                      {"role": "system", "content": SYSTEM_PROMPT},
+                      {"role": "user", "content": task.query},
+                  ],
+                  xml_tools=tools,
+                  enable_thinking=False,
+                  add_generation_prompt=True,
+                  tokenize=True,
+              )
+              counts[task.task_id] = len(input_ids)
+
+          max_task = max(counts, key=counts.get)
+          maximum = counts[max_task]
+          context_limit = 65536
+          assert maximum + MAX_NEW_TOKENS <= context_limit, (
+              max_task,
+              maximum,
+              MAX_NEW_TOKENS,
+              context_limit,
+          )
+          print(
+              json.dumps(
+                  {
+                      "catalog_size": 250,
+                      "max_task_id": max_task,
+                      "max_initial_input_tokens": maximum,
+                      "reserved_output_tokens": MAX_NEW_TOKENS,
+                      "context_limit": context_limit,
+                  },
+                  sort_keys=True,
+              )
+          )
           PY
 
   evaluate:
