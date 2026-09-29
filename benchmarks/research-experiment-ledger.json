@@ -29,6 +29,14 @@
       "false_route_rate_max": 0.01,
       "invalid_plan_rate_max": 0,
       "execution_authority_violation_rate_max": 0
+    },
+    "agent_utility_0_14": {
+      "required_tool_set_recall_min": 0.97,
+      "task_pass_noninferiority_vs_full_absolute": -0.02,
+      "tool_schema_token_ratio_vs_full_max": 0.4,
+      "total_input_tokens_less_than_full": true,
+      "unauthorized_destructive_executions_max": 0,
+      "top1_exact_is_primary": false
     }
   },
   "legacy_evidence_inventory": {
@@ -3271,6 +3279,291 @@
       },
       "decision": "terminal_dev_supported_recall_fail_pr_closed_unmerged",
       "interpretation": "A fixed alpha=0.01 unsupported-null conformal gate reached the open-set safety/runtime targets, but the scalar E5 catalog score overlapped too strongly and vetoed 87.29% of raw-correct supported winners."
+    },
+    {
+      "id": "0.13-v6h-end-to-end-operation-oos-parser",
+      "cycle": "0.13-schema-derived-open-set-membership",
+      "issue": 415,
+      "pull_request": 416,
+      "branch": "research/0.13-end-to-end-operation-parser",
+      "preregistered": true,
+      "frozen_source": "5135a29f39633421136a0c13c39675947fd92f3b",
+      "freeze_workflow_run_id": 36501993390,
+      "freeze_artifact_id": 11005867387,
+      "freeze_artifact_sha256": "89ba6d49ea03ebf00e1752e02820d5490b59a25446f300b4500550256b0a66df",
+      "training_bank_sha256": "c9bf9d378f8f9ef7388fde833e9a04c941871514319961b4a0666d97983caa68",
+      "dev_corpus_sha256": "4da38c34929fcbd7ef828a5ccee9afa89b048c960b852cf315dd68b97370f09e",
+      "confirmation_corpus_sha256": "26140a4a77ef07fbda0d875cbcba421b0f7a7465990c775fe656bfa4115c7565",
+      "dev_workflow_run_id": 36502279447,
+      "dev_artifact_id": 11005379996,
+      "dev_artifact_sha256": "8ad26fdbcbbff1a3da8bd32f4bdad11c01c2b2f58a6ac08a785b99fac0bc4152",
+      "trained_state_sha256": "dc8999e4c6c9039ad74b2cbcb5cbc67365a370a7f69445df195581c7c25aa59b",
+      "result": {
+        "supported_exact": 0.701754,
+        "raw_supported_exact": 0.815789,
+        "raw_supported_tool_accuracy": 0.929825,
+        "near_domain_rejection": 0.650794,
+        "ood_rejection": 0.986111,
+        "false_routes": 89,
+        "false_route_rate": 0.274691,
+        "raw_correct_winners_vetoed": 26,
+        "raw_correct_winner_veto_rate": 0.139785,
+        "scope_accuracy": 0.905797,
+        "supported_operation_accuracy": 0.70614,
+        "near_domain_unsupported_operation_accuracy": 0.519841,
+        "p95_ms": 181.436,
+        "authority_violations": 0,
+        "positive_route_switches": 0,
+        "execution_errors": 0,
+        "confirmation_scored": false
+      },
+      "decision": "terminal_dev_quality_fail_confirmation_unopened_pr_closed_unmerged",
+      "interpretation": "End-to-end multilingual encoder fine-tuning learned tool-vs-background scope well but operation semantics generalized too weakly, especially for near-domain unsupported requests. This closes the 0.13 authoritative parser/veto formulation."
+    },
+    {
+      "id": "0.14-agent-utility-phase-a",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 418,
+      "pull_request": 419,
+      "branch": "research/0.14-agent-utility",
+      "preregistered": true,
+      "merged_commit": "1c0dc93e843f6f9bf8a628c80ca95e02efcf5088",
+      "corrected_freeze_workflow_run_id": 36507439562,
+      "corrected_freeze_artifact_id": 11006614997,
+      "corrected_freeze_artifact_sha256": "5cec1c650bd2a98fc78f7fbb911c0b15d95a39c96a43848b939ba56302658022",
+      "task_count": 23,
+      "single_task_count": 17,
+      "multi_task_count": 6,
+      "tasks_sha256": "9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1",
+      "catalog_sha256": {
+        "20": "b90e3ab473217f4becffb4933fc96e7016cf60f28b030b4d2ae8cb1639c40f5c",
+        "50": "e43400681d64315cadfeb54f4f3dadb0490e557e5f6bf2514c4f8e2e6d424ac3",
+        "100": "52b58b39ec31d377c90c16572997f69523742c8917a37e33326d429b51afc225",
+        "250": "e5ca7d199dd5d2e7bb89eb97d8ac0cae37f403def1fc43037f2fc816a775d2a9"
+      },
+      "result": {
+        "required_route_recall_at_1": 0.6896551724137931,
+        "required_route_recall_at_3": 0.9655172413793104,
+        "required_route_recall_at_5": 1,
+        "required_route_recall_at_10": 1,
+        "all_required_task_coverage_at_5": 1,
+        "mrr": 0.824712643678161,
+        "mean_top5_context_ratio_vs_full": {
+          "20": 0.26763387211735223,
+          "50": 0.11468167632112432,
+          "100": 0.058712722710960084,
+          "250": 0.023791301779351147
+        },
+        "phase_b_eligible": true
+      },
+      "decision": "phase_a_passed_phase_b_authorized",
+      "interpretation": "Top-1 is a poor primary product metric for multi-tool capability retrieval. Top-5 preserved every required capability on the frozen benchmark while schema-context ratio fell to 2.38% of FULL at 250 endpoints."
+    },
+    {
+      "id": "0.14-b1-local-agent-ab",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 420,
+      "pull_request": 421,
+      "branch": "research/0.14-local-agent-ab",
+      "preregistered": true,
+      "status": "running_b1_v2_protocol_validated_canonical_execution",
+      "model": {
+        "name": "Qwen/Qwen3-0.6B",
+        "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+        "role": "downstream_generative_tool_using_agent_only",
+        "prior_qwen_verifier_issue": 289,
+        "prior_qwen_verifier_reused": false
+      },
+      "conditions": [
+        "FULL",
+        "SR-3",
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE",
+        "ORACLE"
+      ],
+      "expected_episode_count": 552,
+      "canonical_run_id": 36529108855,
+      "task_sharded_fallback_run_id": 36517143772,
+      "corrected_freeze_workflow_run_id": 36507439562,
+      "tool_call_smoke_workflow_run_id": 36507510580,
+      "result": null,
+      "decision": "in_progress_b1_v2_no_terminal_claim",
+      "interpretation": "B1 v2 is the first eligible accepted-execution protocol after static task-contract and causality audits. It remains a small-model sanity baseline; broad utility claims require B2 and a larger held-out task population.",
+      "canonical_source_revision": "b9eadefd3cd076f026a54bbc55a949f0424f5dab",
+      "protocol_correction": {
+        "executor_task_id_fix": "be7ef080ceac45797fbf8e2dcd45f1d6f628d102",
+        "unknown_task_fail_closed_guard": "f56beb2cec1116ead8bcf70a52fbb24eed262d71",
+        "task_shard_fix": "1177f3a6cd5f80bff9fcfa704acfbb5c7356aa39",
+        "micro_shard_fix": "6d03fe5afe2e47cc6875ebbb9315c2a7a7f56f0b",
+        "frozen_task_catalog_identity_changed": false
+      },
+      "protocol_validation_run_id": 36528950357,
+      "protocol_validated_parent_revision": "0a55985cf8316e8a17b5652b3ee2c8db352e410d",
+      "superseded_runs": [
+        {
+          "run_id": 36517371433,
+          "source_revision": "070d88de87cab34b87763aed0e326f70c77e3f7b",
+          "reason": "s06 requested nonexistent multi-inventory-create-send instead of frozen multi-create-send; completed 20/50 catalogs contained 22/23 tasks; no 552-episode aggregate produced"
+        },
+        {
+          "run_id": 36520027240,
+          "source_revision": "6d03fe5afe2e47cc6875ebbb9315c2a7a7f56f0b",
+          "reason": "superseded before canonical execution so final benchmark provenance starts after the successful regression/lint checkpoint"
+        }
+      ],
+      "statistical_amendment": "benchmarks/agent-utility-v1-b1-statistical-amendment.json",
+      "protocol_validation_pending_run_id": 36522192140,
+      "raw_execution_runs_superseded_or_invalid": [
+        36517371433,
+        36520027240,
+        36520831273
+      ],
+      "execution_equivalence": {
+        "status": "superseded_for_final_b1_by_task_contract_correction",
+        "historical_amendment_file": "benchmarks/agent-utility-v1-b1-execution-equivalence.json",
+        "superseded_run_ids": [
+          36520025834,
+          36520831273
+        ],
+        "invalid_run_id": 36517371433,
+        "next_rule": "no episode source eligible until corrected freeze + Phase A gate + B1 preregistration v2"
+      },
+      "task_contract_correction": {
+        "amendment_file": "benchmarks/agent-utility-v1-b1-task-contract-amendment.json",
+        "previous_task_sha256": "9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1",
+        "expected_new_task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
+        "corrected_tasks": [
+          "single-message-send",
+          "multi-create-share"
+        ],
+        "reason": "required user-supplied arguments were absent from task query but enforced by deterministic executor",
+        "accepted_aggregate_before_correction": false
+      },
+      "causality_correction": {
+        "amendment_file": "benchmarks/agent-utility-v1-b1-causality-amendment.json",
+        "status": "frozen_before_any_accepted_aggregate",
+        "execution_protocol_changed": true,
+        "rule": "at most one tool call may execute per assistant turn; later same-turn calls require an observation first",
+        "multi_create_send_dependency": "follow-up message must contain INV-NEW-1 from inventory.create observation",
+        "previous_sources_superseded": [
+          36517371433,
+          36520025834,
+          36520831273
+        ]
+      },
+      "preregistration_v2": "benchmarks/agent-utility-v1-b1-preregistration-v2.json",
+      "superseded_episode_sources": [
+        36517371433,
+        36520025834,
+        36520831273
+      ],
+      "tasks_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
+      "task_contract_amendment": "benchmarks/agent-utility-v1-b1-task-contract-amendment.json",
+      "causality_amendment": "benchmarks/agent-utility-v1-b1-causality-amendment.json",
+      "sharding_plan": "benchmarks/agent-utility-v1-b1-sharding-v2.json",
+      "phase_a_v2": {
+        "recall_at_1_by_catalog": {
+          "20": 0.6896551724137931,
+          "50": 0.6896551724137931,
+          "100": 0.6896551724137931,
+          "250": 0.6551724137931034
+        },
+        "recall_at_3": 0.9655172413793104,
+        "recall_at_5": 1,
+        "recall_at_10": 1,
+        "mean_top5_context_ratio_vs_full": {
+          "20": 0.2669073184190559,
+          "50": 0.11443168901579216,
+          "100": 0.058719670022548985,
+          "250": 0.023833039497124713
+        },
+        "phase_b_eligible": true
+      },
+      "runtime_v2": {
+        "runner": "ubuntu-24.04",
+        "python": "3.12.14",
+        "torch": "2.14.0+cpu",
+        "transformers": "4.57.6",
+        "tokenizers": "0.22.2",
+        "safetensors": "0.8.0"
+      },
+      "protocol_v2": {
+        "max_executed_tool_calls_per_assistant_turn": 1,
+        "dependent_calls_require_prior_observation": true,
+        "bootstrap_unit": "task_id cluster",
+        "expected_job_count": 30,
+        "expected_episode_count": 552,
+        "duplicate_episode_keys_fail_closed": true,
+        "unknown_task_ids_fail_closed": true
+      }
+    },
+    {
+      "id": "0.14-b2-strong-agent-replication",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 423,
+      "preregistered": true,
+      "status": "protocol_placeholder_model_not_pinned",
+      "conditions": [
+        "FULL",
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE",
+        "ORACLE"
+      ],
+      "result": null,
+      "decision": "blocked_until_strong_agent_identity_is_frozen",
+      "interpretation": "Strong-agent replication is required before generalizing B1 utility beyond the small local baseline."
+    },
+    {
+      "id": "0.14-final-answer-quality",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 424,
+      "preregistered": true,
+      "status": "protocol_placeholder",
+      "result": null,
+      "decision": "blocked_until_b1_aggregate_and_b2_model_freeze",
+      "interpretation": "Final-answer factual quality, unit accuracy, provenance and hallucination must be evaluated separately from deterministic tool-use task success."
+    },
+    {
+      "id": "0.14-corrective-state-aware-reretrieval",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 431,
+      "preregistered": true,
+      "status": "staged_blocked_until_b1_terminal",
+      "result": null,
+      "decision": "no_execution_before_420_terminal",
+      "interpretation": "Compare fixed/static candidate exposure with execution-state-aware re-retrieval using only bounded typed observations and current task state; retrieval may change candidate exposure but never execution authority."
+    },
+    {
+      "id": "0.14-large-held-out-generalization",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 432,
+      "preregistered": true,
+      "status": "staged_independent_heldout_design",
+      "result": null,
+      "decision": "freeze_sample_size_and_generation_protocol_after_b1_without_using_b1_row_failures",
+      "interpretation": "B1 has 23 unique semantic tasks repeated across catalog sizes. This larger independent multilingual held-out surface is required before population-level non-inferiority/general agent-utility claims."
+    },
+    {
+      "id": "0.14-adaptive-shortlist-depth",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 430,
+      "preregistered": true,
+      "status": "staged_blocked_until_fixed_k_validation",
+      "result": null,
+      "decision": "no_execution_before_b1_b2_fixed_k_evidence",
+      "interpretation": "Evaluate preregistered per-query adaptive candidate depth only after fixed K baselines; do not derive the adaptive rule from B1 row-level failures."
+    },
+    {
+      "id": "0.14-public-topk-retrieval-api",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 428,
+      "preregistered": false,
+      "status": "staged_product_work",
+      "result": null,
+      "decision": "do_not_promote_before_b1_aggregate",
+      "interpretation": "Make typed Top-K retrieval a first-class public API while keeping execution authority and agent orchestration outside the retrieval core."
     }
   ],
   "current_research_conclusion": {
@@ -3287,7 +3580,7 @@
     "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
     "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
     "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": null,
+    "active_experiment": 420,
     "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
     "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
     "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
@@ -3380,7 +3673,7 @@
     "colbert_operation_contract_status": "#328/#329 rejected: 0 candidate-worthy rules; <=1% false-route frontier preserves only ~38.6-38.7% exact; executable p95 ~398.61 ms.",
     "colbert_status": "#328 rejected: safe ColBERT score frontiers retain only ~38.6-38.7% exact at <=1% false routes; executable p95 ~398.6 ms. Sparse diagnostic also non-viable.",
     "alias_envelope_status": "#332/#333 rejected: 0 candidate-worthy rules; p95 198.07 ms; safe C/D rules collapse exact to ~24% and still yield 1.39% false-route.",
-    "cycle_status": "0.13_first_sequence_terminal_no_active_child",
+    "cycle_status": "0.14_phase_a_passed_b1_running",
     "cycle_decision": "close_0.11_without_calibration_or_blind",
     "production_target_validated": false,
     "calibration_blind_status": "not_run_entry_requirements_not_met",
@@ -3409,8 +3702,8 @@
       "false_route": 0.08487654320987655,
       "p95_ms": 278.3747833
     },
-    "final_finding": "The unresolved research problem is a surface-invariant executable-capability membership representation. Positive ranking alone is insufficient, while generic scalar similarity, synthetic geometry, generic action probes, and relevance cross-encoding all fail to separate same-domain unsupported requests without damaging supported traffic.",
-    "successor_rule": "Before any successor, search #388, the ledger, prior-art registry, issues, and research branches. The next candidate must introduce a materially new membership representation or decision structure and use new identity-disjoint DEV + frozen confirmation. Do not retune V6A-E geometry, #404 bank/probes, #408 candidate documents/thresholds, #409 GTE weights/fusion, or #412 alpha/E0/model from consumed DEV.",
+    "final_finding": "SchemaRouter is now evaluated primarily as a typed capability retrieval substrate for LLM agents rather than as the final authoritative open-set classifier. The 0.13 lineage remains terminal evidence showing the safety/coverage cost of executor-level abstention in the retrieval layer.",
+    "successor_rule": "Complete the frozen 0.14 B1 aggregate without changing model/prompt/K/tasks, then replicate with the separately frozen stronger-agent B2 protocol. Evaluate final-answer quality in a separate frozen benchmark. Do not repair 0.13 terminal methods from consumed DEV.",
     "bge_gte_consensus_status": "#336/#337 rejected: 81.34% exact / 43.58% near rejection / 81.94% OOD / 52.16% false-route.",
     "asymmetric_ontology_veto_status": "#358 preserved raw BGE positive selection exactly (96.05% exact, zero raw-correct winner vetoes) and achieved 99.22% veto precision, but same-leaf agreement recall was only 39.51%; exact rule rejected.",
     "capability_set_membership_status": "#363 raised veto recall to 64.20% while preserving 86.40% supported exact, but near rejection remained 54.76%, false-route 35.80%, and 18 raw-correct winners were vetoed; further rule tuning over the same BGE/MiniLM projections is closed.",
@@ -3420,7 +3713,13 @@
     "pairwise_nli_membership_status": "#378 reached 67.54% supported exact / 55.95% near rejection / 35.19% false-route with p95 539.92 ms; Horizon NLI decomposition family closed.",
     "positive_retrieval_status": "BGE-M3 remains the reference positive selector. Tool-Embed #406 and GTE #409 were both worse than same-surface BGE on fresh supported-only surfaces; BGE itself remains surface-sensitive.",
     "open_set_membership_status": "V6A-E geometry, #404 naturalistic operation probes, #408 relative cross-encoding, and #412 E5 conformal gating are terminal. No tested method simultaneously preserved >=85% supported exact and met 97/100/1 open-set safety.",
-    "conformal_status": "#412 demonstrated that a conservative split-conformal gate can hit 99.21% near rejection / 100% OOD / 0.62% false-route / 244 ms p95, but supported exact collapsed to 10.09%; calibration cannot substitute for a discriminative semantic membership score."
+    "conformal_status": "#412 demonstrated that a conservative split-conformal gate can hit 99.21% near rejection / 100% OOD / 0.62% false-route / 244 ms p95, but supported exact collapsed to 10.09%; calibration cannot substitute for a discriminative semantic membership score.",
+    "active_cycle": "0.14-end-to-end-agent-utility",
+    "agent_utility_phase_a_status": "#418/B1-v2 re-freeze: task SHA bc0b78ff...; Recall@3=96.55%, Recall@5=100%, Recall@10=100% across all catalog sizes; at 250 endpoints mean Top-5 schema context is 2.383% of FULL.",
+    "b1_status": "#420 B1 v2 is running as workflow 36529108855 at b9eadef after successful preflight and exact-pinned two-turn smoke. Task SHA is bc0b78ff...; Phase A still has Recall@3=96.55% and Recall@5/@10=100%. No terminal B1 claim until exactly 552 unique episodes aggregate.",
+    "b2_status": "#423 protocol placeholder requires a materially stronger frozen agent before inference.",
+    "final_answer_quality_status": "#424 protocol placeholder separates deterministic tool-use success from factual final-answer quality.",
+    "statistical_scope": "B1 has 23 unique semantic tasks repeated over four catalog sizes. Paired uncertainty is cluster-bootstrapped by task_id; the -2pp gate is descriptive. #432 is required for population-level generalization."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -3433,7 +3732,7 @@
   "work_tracking": {
     "canonical_tracker_issue": 200,
     "history_backfill_issue": 196,
-    "active_research_issue": 382,
+    "active_research_issue": 417,
     "confirmation_evaluation_issue": 198,
     "follow_up_paper_issue": 199,
     "existing_open_work": [
@@ -3442,7 +3741,7 @@
       98,
       100
     ],
-    "session_resume_rule": "Read issue #200, then the active child issue, then this ledger and the active preregistration before changing code.",
+    "session_resume_rule": "Read #417, then active #420, then this ledger and the frozen B1 preregistration before changing code. Do not revive terminal 0.13 classifier/veto methods.",
     "completed_work": [
       196,
       204,
@@ -3488,17 +3787,26 @@
       327,
       328
     ],
-    "active_experiments": [],
-    "active_pull_requests": [],
+    "active_experiments": [
+      420
+    ],
+    "active_pull_requests": [
+      426
+    ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "No frozen successor. Search current prior art and repository history for a materially new executable-capability membership representation; preregister before new scoring.",
+    "next_research_direction": "Finish #420 B1 v2 canonical aggregate unchanged. Then freeze a materially stronger B2 agent (#423). Use #432 before any population-level non-inferiority/generalization claim. #424 separately measures final-answer factual quality; #430 adaptive K remains post-fixed-K work.",
     "contingent_experiments": [
       303
     ],
     "active_tracking_issues": [
       293
     ],
-    "staged_experiments": [],
+    "staged_experiments": [
+      423,
+      424,
+      430,
+      432
+    ],
     "infrastructure_in_progress": [],
     "contingent_pull_requests": [],
     "technical_contingencies": {
@@ -3517,10 +3825,13 @@
       318
     ],
     "runtime_only_contingency": 318,
-    "current_cycle": "0.13-schema-derived-open-set-membership",
-    "current_cycle_status": "first_sequence_terminal_no_active_child",
+    "current_cycle": "0.14-end-to-end-agent-utility",
+    "current_cycle_status": "phase_a_v2_passed_b1_v2_running",
     "final_evaluation_issue": 198,
-    "final_evaluation_status": "blocked_no_fresh_confirmed_candidate"
+    "final_evaluation_status": "blocked_no_fresh_confirmed_candidate",
+    "staged_product_work": [
+      428
+    ]
   },
   "design_lineage": [
     {
