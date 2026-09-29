@@ -2,37 +2,53 @@
   "schema_version": 1,
   "experiment": "0.14-agent-utility-phase-b1-qwen3-0.6b",
   "issue": 420,
-  "amendment": "tool-observation-causality",
+  "amendment": "tool-observation-causality-barrier",
   "status": "frozen_before_any_accepted_552_episode_aggregate",
-  "reason": "Static agent-loop audit found that multiple tool calls emitted in one assistant turn were executed sequentially even when later calls semantically depended on observations from earlier calls. Dependent multi-tool tasks must require an observation boundary rather than allow same-turn lookahead/guessing.",
+  "reason": "A static runner/executor audit found that multiple tool calls emitted in one assistant turn were executed sequentially, allowing a later dependent call to use executor state created by an earlier call even though the model had not yet observed that earlier tool result.",
   "execution_protocol_changed": true,
-  "correction": {
-    "rule": "Only the first tool call emitted in an assistant turn may execute. Additional calls in the same turn receive parallel_tool_call_requires_observation and cannot advance task state.",
-    "rationale": "A later dependent tool call must be generated only after the prior tool observation is visible to the agent.",
-    "scope": "all B1 conditions identically; no condition-specific behavior"
-  },
+  "corrections": [
+    {
+      "surface": "agent system prompt",
+      "change": "issue at most one tool call per assistant turn and wait for the tool observation before any later dependent call"
+    },
+    {
+      "surface": "runner",
+      "change": "only call_index=0 is execution_allowed; later same-turn calls are recorded but cannot execute"
+    },
+    {
+      "surface": "executor",
+      "change": "execution_allowed=false returns parallel_tool_call_requires_observation and never advances deterministic task state"
+    },
+    {
+      "surface": "multi-create-send",
+      "change": "the follow-up message must contain INV-NEW-1 from the inventory.create observation; mentioning only the user-supplied item name is insufficient"
+    }
+  ],
   "unchanged": [
-    "23 corrected task IDs and required route sets",
-    "corrected user-visible task arguments",
-    "20/50/100/250 catalog definitions",
+    "23 task IDs",
+    "required route sets and task kinds",
+    "20/50/100/250 endpoint catalog definitions",
     "Qwen/Qwen3-0.6B model and revision",
     "FULL/SR-3/SR-5/SR-10/SR-PROGRESSIVE/ORACLE conditions",
-    "candidate ranking and K values",
-    "lexical candidate ordering",
+    "candidate ranking/K values and lexical ordering",
     "max turns/tokens/seed",
     "destructive execution policy",
-    "metrics and utility gates"
+    "primary metrics and utility gates"
   ],
-  "source_commits": {
-    "executor_guard": "c83dd58a3e340dd6f9c6a386886c618a30564ce6",
-    "evaluator_enforcement": "1a484a11d7d0cd363000a7eeb8d1fc014319b943"
-  },
-  "accepted_episode_sources_before_amendment": [],
+  "old_episode_sources_eligible_for_final_b1": [],
+  "previous_sources_superseded": [
+    36517371433,
+    36520025834,
+    36520831273
+  ],
+  "phase_a_affected": false,
+  "phase_a_note": "This amendment changes only downstream B1 execution causality. Phase A retrieval changes only because of the separate explicit-user-argument task-text correction.",
   "required_next_steps": [
-    "complete the corrected task-contract freeze and Phase-A revalidation",
-    "pass the full B1 protocol suite including causality regression tests",
-    "create B1 episode sources only after that protocol-success checkpoint",
-    "accept only a 552-unique-key aggregate from post-amendment sources"
+    "pass regression tests for same-turn dependency blocking",
+    "complete the corrected task refreeze",
+    "rerun Phase A and record the actual corrected task SHA and Recall@K",
+    "freeze B1 preregistration v2 including the one-call-per-turn observation barrier",
+    "run only new B1 episode sources after preregistration v2"
   ],
-  "provenance_note": "This amendment was identified by static control-flow audit before any accepted complete B1 aggregate. No condition-level B1 result was used to introduce the causality rule."
+  "provenance_note": "This correction was made from static causal-semantics audit before any accepted complete B1 aggregate and was not selected from task-success outcomes."
 }
