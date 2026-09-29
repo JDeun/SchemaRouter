@@ -125,7 +125,10 @@ def _base_tools() -> list[ToolSpec]:
                     "Retrieve one material record by material identifier",
                     read_only=True,
                     parameters=("material_id",),
-                    fields=(_field("formula", semantic_id="material.formula"),),
+                    fields=(
+                        _field("formula", semantic_id="material.formula"),
+                        _field("artifact_id", semantic_id="artifact.id"),
+                    ),
                 ),
                 _endpoint(
                     "current",
@@ -234,7 +237,10 @@ def _base_tools() -> list[ToolSpec]:
                     "Create a new research-credit request",
                     read_only=False,
                     parameters=("amount",),
-                    fields=(_field("credit_id", semantic_id="credit.id"),),
+                    fields=(
+                        _field("credit_id", semantic_id="credit.id"),
+                        _field("artifact_id", semantic_id="artifact.id"),
+                    ),
                 ),
                 _endpoint(
                     "cancel",
