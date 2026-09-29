@@ -10,8 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from benchmarks.agent_utility_b2_catalog import build_registry
-from scripts.evaluate_agent_utility_phase_b_smollm3 import (
+from benchmarks.agent_utility_b2_catalog import build_registry  # noqa: E402
+from scripts.evaluate_agent_utility_phase_b_smollm3 import (  # noqa: E402
     _bootstrap_delta,
     _function_tool,
     _parse_tool_calls,
