@@ -23,7 +23,7 @@ def test_014_ledger_records_b1_as_terminal() -> None:
     data = _load()
     b1 = _experiment(data, "0.14-b1-local-agent-ab")
 
-    assert b1["status"] == "terminal_completed"
+    assert b1["status"] == "terminal_canonical_b1"
     assert b1["result"]["episode_count"] == 552
     assert b1["result"]["sr5_required_route_recall"] == 1.0
     assert b1["result"]["sr5_all_required_task_coverage"] == 1.0
@@ -34,12 +34,12 @@ def test_014_ledger_keeps_b2_frozen_and_nonterminal() -> None:
     data = _load()
     b2 = _experiment(data, "0.14-b2-strong-agent-replication")
 
-    assert b2["status"] == "active_frozen_protocol_infrastructure_recovery"
+    assert b2["status"] == "attempt5_running_frozen_same_run_infra_recovery"
     assert b2["expected_episode_count"] == 460
     assert b2["semantic_task_count"] == 23
-    assert b2["current_attempt"]["workflow_run_id"] == 36561002246
-    assert b2["current_attempt"]["partial_outcomes_tuning_eligible"] is False
-    assert "no_terminal_claim" in b2["decision"]
+    assert b2["canonical_attempt5_workflow_run_id"] == 36561002246
+    assert b2["observed_infrastructure_failures"]["partial_outcomes_used_for_tuning"] is False
+    assert "attempt5_terminal" in b2["decision"]
 
 
 def test_014_ledger_records_representation_negative_result() -> None:
@@ -58,12 +58,12 @@ def test_014_ledger_keeps_future_content_sealed() -> None:
     heldout = _experiment(data, "0.14-large-held-out-generalization")
     answer = _experiment(data, "0.14-final-answer-quality")
 
-    assert heldout["result"]["unique_semantic_tasks"] == 780
-    assert heldout["result"]["content_generation_authorized"] is False
+    assert heldout["unique_semantic_tasks"] == 780
+    assert heldout["corpus_content_generated"] is False
 
-    assert answer["result"]["unique_semantic_tasks"] == 144
-    assert answer["result"]["content_generation_authorized"] is False
-    assert answer["result"]["answer_inference_authorized"] is False
+    assert answer["unique_semantic_tasks"] == 144
+    assert answer["content_generation_authorized"] is False
+    assert answer["answer_inference_authorized"] is False
 
 
 def test_014_ledger_resume_rule_points_to_active_b2() -> None:
