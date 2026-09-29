@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "experiment": "0.14-agent-utility-phase-b1-qwen3-0.6b",
+  "issue": 420,
+  "amendment": "tool-observation-causality-barrier",
+  "status": "frozen_before_any_accepted_552_episode_aggregate",
+  "reason": "A static runner/executor audit found that multiple tool calls emitted in one assistant turn were executed sequentially, allowing a later dependent call to use executor state created by an earlier call even though the model had not yet observed that earlier tool result.",
+  "execution_protocol_changed": true,
+  "corrections": [
+    {
+      "surface": "agent system prompt",
+      "change": "issue at most one tool call per assistant turn and wait for the tool observation before any later dependent call"
+    },
+    {
+      "surface": "runner",
+      "change": "only call_index=0 is execution_allowed; later same-turn calls are recorded but cannot execute"
+    },
+    {
+      "surface": "executor",
+      "change": "execution_allowed=false returns parallel_tool_call_requires_observation and never advances deterministic task state"
+    },
+    {
+      "surface": "multi-create-send",
+      "change": "the follow-up message must contain INV-NEW-1 from the inventory.create observation; mentioning only the user-supplied item name is insufficient"
+    }
+  ],
+  "unchanged": [
+    "23 task IDs",
+    "required route sets and task kinds",
+    "20/50/100/250 endpoint catalog definitions",
+    "Qwen/Qwen3-0.6B model and revision",
+    "FULL/SR-3/SR-5/SR-10/SR-PROGRESSIVE/ORACLE conditions",
+    "candidate ranking/K values and lexical ordering",
+    "max turns/tokens/seed",
+    "destructive execution policy",
+    "primary metrics and utility gates"
+  ],
+  "old_episode_sources_eligible_for_final_b1": [],
+  "previous_sources_superseded": [
+    36517371433,
+    36520025834,
+    36520831273
+  ],
+  "phase_a_affected": false,
+  "phase_a_note": "This amendment changes only downstream B1 execution causality. Phase A retrieval changes only because of the separate explicit-user-argument task-text correction.",
+  "required_next_steps": [
+    "pass regression tests for same-turn dependency blocking",
+    "complete the corrected task refreeze",
+    "rerun Phase A and record the actual corrected task SHA and Recall@K",
+    "freeze B1 preregistration v2 including the one-call-per-turn observation barrier",
+    "run only new B1 episode sources after preregistration v2"
+  ],
+  "provenance_note": "This correction was made from static causal-semantics audit before any accepted complete B1 aggregate and was not selected from task-success outcomes."
+}
