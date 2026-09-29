@@ -2,6 +2,11 @@ name: Research 0.14 B2 SmolLM3 Full
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "research/0.14-b2-run"
+    paths:
+      - ".github/b2-full-run-trigger.json"
 
 permissions:
   contents: read
