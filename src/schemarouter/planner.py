@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import inspect
 import re
-from copy import deepcopy
 from collections.abc import Awaitable, Callable
+from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
