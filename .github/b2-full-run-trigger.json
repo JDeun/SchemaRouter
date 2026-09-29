@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "issue": 423,
+  "experiment": "0.14-agent-utility-phase-b2-smollm3-3b",
+  "authorization": "one_shot_full_b2",
+  "created_date": "2026-09-30",
+  "harness_main_sha": "426b026dd1f8410dd7a910ccd73f81f957c2eed7",
+  "model": {
+    "name": "HuggingFaceTB/SmolLM3-3B",
+    "revision": "a07cc9a04f16550a088caea529712d1d335b0ac1"
+  },
+  "authorized_smoke": {
+    "workflow_run": 36548416952,
+    "source_sha": "7391b0a0703c7cabb086421f81b838111abefdc3",
+    "artifact_digest": "sha256:7a0e1c93f83a5937a4ea3baaaa088caf88d5eb0a79229113dbd6a0f7b24243ca"
+  },
+  "frozen_matrix": {
+    "jobs": 184,
+    "episodes": 460,
+    "conditions": [
+      "FULL",
+      "SR-5",
+      "SR-10",
+      "SR-PROGRESSIVE",
+      "ORACLE"
+    ],
+    "task_count": 23,
+    "catalog_sizes": [
+      20,
+      50,
+      100,
+      250
+    ],
+    "sharding": "one task x one catalog x condition-group per job; FULL+ORACLE or SR-5+SR-10+SR-PROGRESSIVE"
+  },
+  "attempt": 9,
+  "infrastructure_retry_of": [
+    36580929852
+  ],
+  "attempt8_status": "noncanonical_x64_hosted_runner_memory_and_runtime_failure",
+  "attempt8_partial_outcomes_used_for_tuning": false,
+  "attempt8_results_canonical": false,
+  "execution_infrastructure": {
+    "evaluator_runner": "ubuntu-24.04-arm",
+    "model_cache_runner": "ubuntu-24.04-arm",
+    "attention_implementation": "sdpa",
+    "max_parallel": 4,
+    "evaluate_timeout_minutes": 90,
+    "cache_key": "b2-smollm3-arm64-a07cc9a04f16550a088caea529712d1d335b0ac1-torch2.14-transformers4.57.6",
+    "progress_trace": true
+  },
+  "validation_evidence": {
+    "eager_sdpa_behavioral_equivalence_run": 36609690366,
+    "x64_arm64_behavioral_identity_run": 36631665803,
+    "arm64_250_full_smoke_run": 36632395258,
+    "behavioral_sha256": "18c73f3ea2127463d57b4a67ca21b6875bb9f7965dd7be850b38f09b86e3d7a8",
+    "arm64_20_tool_speedup_vs_x64_sdpa": 15.35,
+    "arm64_250_full_completed": true
+  },
+  "sharding_file": "benchmarks/agent-utility-v1-b2-sharding-runner-hardened.json",
+  "expected_job_count": 184,
+  "expected_episode_count": 460,
+  "condition_groups": [
+    "full_oracle",
+    "sr"
+  ],
+  "partial_prior_attempt_outcomes_used_for_tuning": false,
+  "note": "Attempt 9 changes infrastructure only: validated ARM64 runner plus SDPA, ARM64-specific model cache, 90-minute job ceiling, and progress telemetry. Exact frozen model/tasks/catalogs/candidate sets/prompt/tool serialization/stopping/executor/scoring/statistics remain unchanged."
+}
