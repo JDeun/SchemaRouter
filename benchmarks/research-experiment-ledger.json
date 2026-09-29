@@ -3427,7 +3427,30 @@
         36517371433,
         36520027240,
         36520831273
-      ]
+      ],
+      "execution_equivalence": {
+        "status": "frozen_before_any_accepted_aggregate",
+        "amendment_file": "benchmarks/agent-utility-v1-b1-execution-equivalence.json",
+        "eligible_sources": [
+          {
+            "run_id": 36520025834,
+            "source_revision": "1177f3a6cd5f80bff9fcfa704acfbb5c7356aa39",
+            "sharding": "6_task_groups_x_all_catalogs"
+          },
+          {
+            "run_id": 36520831273,
+            "source_revision": "028194a0cae56ac8e1dbfe33c95f4c1cdab5c807",
+            "sharding": "24_catalog_x_task_group_microshards"
+          }
+        ],
+        "selection_rule": "first complete valid 552-unique-episode source, independent of task-success values",
+        "identical_core_blobs": {
+          "catalog": "914d7634ffba397dcbfde1e412a48cd280f5255d",
+          "executor": "8732a27593e7135e5b2a36c33b101c4030a7fbe9",
+          "evaluator": "daa167fa2a228d7e951967280643fe6881cd4e6c",
+          "preregistration": "f4484c9b884a266e2cc51b57908fb29e3c590da2"
+        }
+      }
     },
     {
       "id": "0.14-b2-strong-agent-replication",
@@ -3647,7 +3670,7 @@
     "conformal_status": "#412 demonstrated that a conservative split-conformal gate can hit 99.21% near rejection / 100% OOD / 0.62% false-route / 244 ms p95, but supported exact collapsed to 10.09%; calibration cannot substitute for a discriminative semantic membership score.",
     "active_cycle": "0.14-end-to-end-agent-utility",
     "agent_utility_phase_a_status": "#418 passed: corrected frozen benchmark Recall@3=96.55%, Recall@5=100%, Recall@10=100%; Top-5 mean schema context is 2.38% of FULL at 250 endpoints.",
-    "b1_status": "#420 is awaiting the latest protocol validation after aggregate identity guards and task-cluster bootstrap were frozen. Earlier raw execution runs are not accepted as canonical evidence until a final run is stamped after the latest protocol-success checkpoint.",
+    "b1_status": "#420 has frozen statistical and execution-sharding amendments before any accepted 552-episode aggregate. Eligible corrected sources 36520025834 and 36520831273 have byte-identical catalog/executor/evaluator/preregistration; use the first full valid 552-episode source independent of result values and aggregate with the latest identity-guarded task-cluster bootstrap.",
     "b2_status": "#423 protocol placeholder requires a materially stronger frozen agent before inference.",
     "final_answer_quality_status": "#424 protocol placeholder separates deterministic tool-use success from factual final-answer quality.",
     "statistical_scope": "B1 has 23 unique semantic tasks repeated over four catalog sizes. Paired uncertainty is cluster-bootstrapped by task_id; the -2pp gate is descriptive. #432 is required for population-level generalization."
