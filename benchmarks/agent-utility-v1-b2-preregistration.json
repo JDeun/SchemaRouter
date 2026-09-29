@@ -48,6 +48,19 @@
       "50": "e43400681d64315cadfeb54f4f3dadb0490e557e5f6bf2514c4f8e2e6d424ac3",
       "100": "52b58b39ec31d377c90c16572997f69523742c8917a37e33326d429b51afc225",
       "250": "e5ca7d199dd5d2e7bb89eb97d8ac0cae37f403def1fc43037f2fc816a775d2a9"
+    },
+    "candidate_set_manifest": {
+      "rows": 92,
+      "contents": [
+        "top3",
+        "top5",
+        "top10",
+        "full",
+        "oracle"
+      ],
+      "sha256": "9bea0645f64ec726abe5983d9a19eefe12afb1ab6cfae65ecd87464f545f0176",
+      "source": "canonical B1 aggregate workflow 36529108855",
+      "verification_required_before_b2_inference": true
     }
   },
   "conditions": [
