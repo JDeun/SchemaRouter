@@ -110,6 +110,22 @@ class BM25Index:
             for term, tf in counts.items():
                 self.postings.setdefault(term, {})[route_id] = tf
         self.n = len(self.route_ids)
+        self.weight_postings: dict[str, dict[str, float]] = {}
+        k1 = 1.5
+        b = 0.75
+        for term, posting in self.postings.items():
+            df = self.df[term]
+            idf = math.log(1.0 + (self.n - df + 0.5) / (df + 0.5))
+            weights: dict[str, float] = {}
+            for route_id, tf in posting.items():
+                dl = self.lengths[route_id]
+                norm = tf + k1 * (
+                    1.0 - b + b * dl / self.avgdl
+                    if self.avgdl
+                    else 1.0
+                )
+                weights[route_id] = idf * (tf * (k1 + 1.0)) / norm
+            self.weight_postings[term] = weights
 
     def rank_positive_counts(
         self,
@@ -119,22 +135,11 @@ class BM25Index:
             return []
 
         scores: dict[str, float] = {}
-        k1 = 1.5
-        b = 0.75
         for term, query_tf in query_counts.items():
-            posting = self.postings.get(term)
-            if not posting:
+            weights = self.weight_postings.get(term)
+            if not weights:
                 continue
-            df = self.df[term]
-            idf = math.log(1.0 + (self.n - df + 0.5) / (df + 0.5))
-            for route_id, tf in posting.items():
-                dl = self.lengths[route_id]
-                norm = tf + k1 * (
-                    1.0 - b + b * dl / self.avgdl
-                    if self.avgdl
-                    else 1.0
-                )
-                contribution = idf * (tf * (k1 + 1.0)) / norm
+            for route_id, contribution in weights.items():
                 scores[route_id] = (
                     scores.get(route_id, 0.0)
                     + query_tf * contribution
@@ -359,13 +364,15 @@ class RepresentationRetriever:
             raise ValueError(f"unsupported condition: {condition}")
         self.route_ids = tuple(sorted(documents))
         self._typed_index_items = tuple(self.indexes.items())
-        self._typed_term_mask: dict[str, int] = {}
+        self._typed_term_entries: dict[
+            str,
+            list[tuple[int, dict[str, float]]],
+        ] = {}
         if condition == "TYPED-MULTIFIELD":
             for position, (_, index) in enumerate(self._typed_index_items):
-                bit = 1 << position
-                for term in index.postings:
-                    self._typed_term_mask[term] = (
-                        self._typed_term_mask.get(term, 0) | bit
+                for term, weights in index.weight_postings.items():
+                    self._typed_term_entries.setdefault(term, []).append(
+                        (position, weights)
                     )
         self.build_seconds = (time.perf_counter_ns() - started) / 1_000_000_000
         self.index_bytes = len(_canonical_text(serialized).encode("utf-8"))
@@ -376,15 +383,22 @@ class RepresentationRetriever:
             ranking = next(iter(self.indexes.values())).rank(query)
         else:
             query_counts = Counter(_tokens(query))
-            active_mask = 0
-            for term in query_counts:
-                active_mask |= self._typed_term_mask.get(term, 0)
+            field_scores: dict[int, dict[str, float]] = {}
+            for term, query_tf in query_counts.items():
+                for position, weights in self._typed_term_entries.get(term, ()):
+                    scores = field_scores.setdefault(position, {})
+                    for route_id, contribution in weights.items():
+                        scores[route_id] = (
+                            scores.get(route_id, 0.0)
+                            + query_tf * contribution
+                        )
 
             rrf: dict[str, float] = {}
-            for position, (_, index) in enumerate(self._typed_index_items):
-                if not active_mask & (1 << position):
-                    continue
-                field_ranking = index.rank_positive_counts(query_counts)
+            for scores in field_scores.values():
+                field_ranking = sorted(
+                    scores.items(),
+                    key=lambda row: (-row[1], row[0]),
+                )
                 for rank, (route_id, _) in enumerate(field_ranking, start=1):
                     rrf[route_id] = (
                         rrf.get(route_id, 0.0)
@@ -527,7 +541,7 @@ def evaluate(freeze_dir: Path) -> dict[str, Any]:
         "surface": "development",
         "freeze_manifest": manifest,
         "rrf_k": RRF_K,
-        "dev_representation_revision": "r4-active-field-mask",
+        "dev_representation_revision": "r5-fused-field-scoring",
         "conditions_scored": list(CONDITIONS),
         "conditions_blocked": {
             "INTENT-MANUAL": (
