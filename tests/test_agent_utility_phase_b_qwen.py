@@ -131,7 +131,7 @@ def test_b1_workflow_shards_cover_every_frozen_task_exactly_once() -> None:
         ".github/workflows/research-0.14-b1-task-sharded.yml"
     ).read_text(encoding="utf-8")
     legacy_groups = re.findall(
-        r'(?:task_ids:\\s*"|TASK_IDS=")([^"]+)"',
+        r'(?:task_ids:\s*"|TASK_IDS=")([^"]+)"',
         task_sharded,
     )
     legacy_task_ids = [
@@ -148,8 +148,8 @@ def test_b1_workflow_shards_cover_every_frozen_task_exactly_once() -> None:
         ".github/workflows/research-0.14-b1-microsharded.yml"
     ).read_text(encoding="utf-8")
     rows = re.findall(
-        r'catalog:\\s*(20|50|100|250),\\s*'
-        r'shard:\\s*[^,}]+,\\s*task_ids:\\s*"([^"]+)"',
+        r'catalog:\s*(20|50|100|250),\s*'
+        r'shard:\s*[^,}]+,\s*task_ids:\s*"([^"]+)"',
         micro,
     )
     assert len(rows) == 30
