@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "issue": 423,
+  "purpose": "runner_runtime_benchmark",
+  "semantic_tuning_allowed": false,
+  "created_date": "2026-09-29",
+  "implementation_sha": "5418377e89c9e0461e2ccb201c6cc8b1213c560d",
+  "runner": "ubuntu-24.04-arm",
+  "catalog_size": 20,
+  "task_id": "multi-create-send",
+  "condition": "FULL",
+  "attention_implementation": "sdpa",
+  "expected_behavior_sha256": "18c73f3ea2127463d57b4a67ca21b6875bb9f7965dd7be850b38f09b86e3d7a8",
+  "x64_reference": {
+    "workflow_run": 36609690366,
+    "elapsed": "26:50.22",
+    "peak_rss_kib": 6909944
+  },
+  "promotion_rule": "ARM64 is eligible only if behavior hash is identical and runtime materially improves"
+}
