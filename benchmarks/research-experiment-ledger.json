@@ -3366,7 +3366,7 @@
       "pull_request": 421,
       "branch": "research/0.14-local-agent-ab",
       "preregistered": true,
-      "status": "queued_final_protocol_validated_canonical_microsharded_execution",
+      "status": "awaiting_latest_protocol_validation_before_final_canonical_run",
       "model": {
         "name": "Qwen/Qwen3-0.6B",
         "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
@@ -3383,14 +3383,14 @@
         "ORACLE"
       ],
       "expected_episode_count": 552,
-      "canonical_run_id": 36520831273,
+      "canonical_run_id": null,
       "task_sharded_fallback_run_id": 36517143772,
       "corrected_freeze_workflow_run_id": 36507439562,
       "tool_call_smoke_workflow_run_id": 36507510580,
       "result": null,
       "decision": "in_progress_no_terminal_claim",
       "interpretation": "B1 is a reproducible sanity baseline only. Product-level agent utility requires separate stronger-agent B2 replication.",
-      "canonical_source_revision": "028194a0cae56ac8e1dbfe33c95f4c1cdab5c807",
+      "canonical_source_revision": null,
       "protocol_correction": {
         "executor_task_id_fix": "be7ef080ceac45797fbf8e2dcd45f1d6f628d102",
         "unknown_task_fail_closed_guard": "f56beb2cec1116ead8bcf70a52fbb24eed262d71",
@@ -3411,6 +3411,22 @@
           "source_revision": "6d03fe5afe2e47cc6875ebbb9315c2a7a7f56f0b",
           "reason": "superseded before canonical execution so final benchmark provenance starts after the successful regression/lint checkpoint"
         }
+      ],
+      "statistical_amendment": {
+        "file": "benchmarks/agent-utility-v1-b1-statistical-amendment.json",
+        "status": "frozen_before_any_accepted_canonical_aggregate",
+        "bootstrap_unit": "task_id_cluster",
+        "unique_semantic_task_count": 23,
+        "catalog_repeats_per_task": 4,
+        "iterations": 5000,
+        "seed": 20260929,
+        "interpretation": "The -2pp B1 gate is descriptive only; B1 is not a powered population non-inferiority proof."
+      },
+      "protocol_validation_pending_run_id": 36522192140,
+      "raw_execution_runs_superseded_or_invalid": [
+        36517371433,
+        36520027240,
+        36520831273
       ]
     },
     {
@@ -3439,6 +3455,46 @@
       "result": null,
       "decision": "blocked_until_b1_aggregate_and_b2_model_freeze",
       "interpretation": "Final-answer factual quality, unit accuracy, provenance and hallucination must be evaluated separately from deterministic tool-use task success."
+    },
+    {
+      "id": "0.14-corrective-state-aware-reretrieval",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 431,
+      "preregistered": true,
+      "status": "staged_blocked_until_b1_terminal",
+      "result": null,
+      "decision": "no_execution_before_420_terminal",
+      "interpretation": "Compare fixed/static candidate exposure with execution-state-aware re-retrieval using only bounded typed observations and current task state; retrieval may change candidate exposure but never execution authority."
+    },
+    {
+      "id": "0.14-large-held-out-generalization",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 432,
+      "preregistered": true,
+      "status": "staged_independent_heldout_design",
+      "result": null,
+      "decision": "freeze_sample_size_and_generation_protocol_after_b1_without_using_b1_row_failures",
+      "interpretation": "B1 has 23 unique semantic tasks repeated across catalog sizes. This larger independent multilingual held-out surface is required before population-level non-inferiority/general agent-utility claims."
+    },
+    {
+      "id": "0.14-adaptive-shortlist-depth",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 430,
+      "preregistered": true,
+      "status": "staged_blocked_until_fixed_k_validation",
+      "result": null,
+      "decision": "no_execution_before_b1_b2_fixed_k_evidence",
+      "interpretation": "Evaluate preregistered per-query adaptive candidate depth only after fixed K baselines; do not derive the adaptive rule from B1 row-level failures."
+    },
+    {
+      "id": "0.14-public-topk-retrieval-api",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 428,
+      "preregistered": false,
+      "status": "staged_product_work",
+      "result": null,
+      "decision": "do_not_promote_before_b1_aggregate",
+      "interpretation": "Make typed Top-K retrieval a first-class public API while keeping execution authority and agent orchestration outside the retrieval core."
     }
   ],
   "current_research_conclusion": {
@@ -3591,9 +3647,10 @@
     "conformal_status": "#412 demonstrated that a conservative split-conformal gate can hit 99.21% near rejection / 100% OOD / 0.62% false-route / 244 ms p95, but supported exact collapsed to 10.09%; calibration cannot substitute for a discriminative semantic membership score.",
     "active_cycle": "0.14-end-to-end-agent-utility",
     "agent_utility_phase_a_status": "#418 passed: corrected frozen benchmark Recall@3=96.55%, Recall@5=100%, Recall@10=100%; Top-5 mean schema context is 2.38% of FULL at 250 endpoints.",
-    "b1_status": "#420 final canonical 552-episode micro-sharded evaluation is workflow 36520831273 at source 028194a0..., after successful protocol validation workflow 36520356798. Run 36517371433 is invalid; 36520027240 is superseded before canonical execution.",
+    "b1_status": "#420 is awaiting the latest protocol validation after aggregate identity guards and task-cluster bootstrap were frozen. Earlier raw execution runs are not accepted as canonical evidence until a final run is stamped after the latest protocol-success checkpoint.",
     "b2_status": "#423 protocol placeholder requires a materially stronger frozen agent before inference.",
-    "final_answer_quality_status": "#424 protocol placeholder separates deterministic tool-use success from factual final-answer quality."
+    "final_answer_quality_status": "#424 protocol placeholder separates deterministic tool-use success from factual final-answer quality.",
+    "statistical_scope": "B1 has 23 unique semantic tasks repeated over four catalog sizes. Paired uncertainty is cluster-bootstrapped by task_id; the -2pp gate is descriptive. #432 is required for population-level generalization."
   },
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
@@ -3668,7 +3725,7 @@
       421
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "Finish #420 canonical aggregate unchanged; then pin a stronger B2 agent in #423 and later run #424 final-answer quality. 0.13 remains a terminal evidence archive.",
+    "next_research_direction": "Pass the latest #420 protocol suite including aggregate identity guards and clustered-bootstrap amendment; stamp and run one final canonical 552-episode micro-sharded execution; then record B1, proceed to #423 strong-agent replication, and freeze #432 held-out sample-size/corpus protocol without using B1 row-level failures.",
     "contingent_experiments": [
       303
     ],
@@ -3677,7 +3734,10 @@
     ],
     "staged_experiments": [
       423,
-      424
+      424,
+      430,
+      431,
+      432
     ],
     "infrastructure_in_progress": [],
     "contingent_pull_requests": [],
@@ -3700,7 +3760,10 @@
     "current_cycle": "0.14-end-to-end-agent-utility",
     "current_cycle_status": "phase_a_passed_b1_running",
     "final_evaluation_issue": 198,
-    "final_evaluation_status": "blocked_no_fresh_confirmed_candidate"
+    "final_evaluation_status": "blocked_no_fresh_confirmed_candidate",
+    "staged_product_work": [
+      428
+    ]
   },
   "design_lineage": [
     {
