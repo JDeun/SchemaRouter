@@ -140,7 +140,14 @@
       "lexicographically smallest policy id"
     ],
     "select_exactly_one_policy": true,
-    "no_post_selection_retuning": true
+    "no_post_selection_retuning": true,
+    "eligibility_thresholds": {
+      "required_tool_set_recall_min": 0.97,
+      "all_required_full_coverage_min": 0.97,
+      "mean_candidate_count_max_exclusive": 5,
+      "p95_candidate_count_max": 10,
+      "mean_schema_tokens_must_be_less_than_fixed5": true
+    }
   },
   "confirmation_gate": {
     "required_tool_set_recall_min": 0.97,
@@ -171,6 +178,27 @@
     "adaptive_policy_selection_uses_bits_over_random": false,
     "bits_over_random_used_as_inference_signal": false,
     "learned_depth_policy_allowed": false,
-    "purpose": "contextualize fixed-depth coverage against random inclusion at the same depth without changing adaptive-policy eligibility or selection"
+    "purpose": "contextualize fixed-depth coverage against random inclusion at the same depth without changing adaptive-policy eligibility or selection",
+    "fixed_k_definition": "BoR_any = log2(P_obs_any_required / mean(P_rand_any_required)); P_rand_any_required = 1 - C(N-R,K)/C(N,K) for each supported row with catalog size N and R required routes",
+    "adaptive_policy_bor_reported_as_post_selection_diagnostic": true
+  },
+  "metric_populations": {
+    "supported_task_strata": [
+      "clear_single_tool",
+      "sibling_operation_ambiguity",
+      "semantically_adjacent_distractors",
+      "multi_step_first_hop",
+      "typed_numeric_units",
+      "read_write_siblings"
+    ],
+    "unsupported_task_strata": [
+      "near_domain_unsupported",
+      "out_of_domain"
+    ],
+    "required_tool_recall_population": "supported rows only; denominator is required-route instances",
+    "all_required_full_coverage_population": "supported rows only",
+    "candidate_count_and_schema_token_population": "all rows",
+    "unsupported_rows": "report candidate-depth and token diagnostics separately; do not treat empty required-route sets as successful coverage",
+    "retrieval_abstention_claim_allowed": false
   }
 }
