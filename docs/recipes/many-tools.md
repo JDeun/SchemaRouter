@@ -52,8 +52,9 @@ FieldSpec(
 )
 ```
 
-A candidate can retain parameter contracts, output datatype/shape, semantic IDs, optional units and
-qualifiers, provider/access identity, read/write/destructive metadata, and schema fingerprints.
+A candidate retains the full effective input/output JSON Schemas together with parameter contracts,
+output fields, semantic IDs, optional units and qualifiers, provider/access identity,
+read/write/destructive metadata, and schema fingerprints.
 
 ## Use preferred tools only when the application has trusted context
 
