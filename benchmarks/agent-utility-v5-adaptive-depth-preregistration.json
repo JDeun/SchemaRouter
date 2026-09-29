@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "cycle": "0.14-end-to-end-agent-utility",
+  "experiment": "adaptive-shortlist-depth-v1",
+  "issue": 430,
+  "parent_issue": 417,
+  "prerequisite_issues": [
+    420,
+    423
+  ],
+  "status": "preregistered_policy_only_execution_blocked_until_b2_terminal",
+  "date": "2026-09-29",
+  "research_question": "Can a deterministic query-relative shortlist depth expose fewer than five candidates on average while preserving fixed-K retrieval coverage, downstream task utility, and execution safety?",
+  "independence": {
+    "b1_row_content_used_to_choose_policy": false,
+    "b1_failure_text_used_to_choose_policy": false,
+    "b2_row_content_used_to_choose_policy": false,
+    "b2_failure_text_used_to_choose_policy": false,
+    "issue_434_dev_queries_used_to_choose_policy": false,
+    "learned_depth_model_allowed": false,
+    "threshold_sweep_allowed": false,
+    "post_result_policy_edit_allowed": false
+  },
+  "policy": {
+    "name": "largest-adjacent-gap-v1",
+    "implementation": "benchmarks/adaptive_shortlist.py",
+    "retrieval_pool_k": 10,
+    "min_k": 3,
+    "max_k": 10,
+    "algorithm": [
+      "Retrieve the already-ranked internal Top-10 candidate pool.",
+      "Require finite non-increasing candidate scores.",
+      "Compute every adjacent score drop score[k]-score[k+1].",
+      "If every adjacent drop is zero, expose the full available Top-10 pool.",
+      "Otherwise choose the position of the largest adjacent drop.",
+      "If the largest drop is tied at multiple positions, choose the latest position as a recall-first tie break.",
+      "Clamp the selected depth to at least K=3 and at most the available Top-10 candidate count."
+    ],
+    "absolute_score_threshold_used": false,
+    "learned_parameter_used": false,
+    "agent_sees_rank_scores": false,
+    "agent_sees_rank_positions": false,
+    "visible_candidate_order": "registered_route_id_lexicographic after adaptive prefix selection",
+    "execution_authority_changed": false
+  },
+  "evaluation_surface": {
+    "execution_authorized_now": false,
+    "authorization_condition": "#423 must be terminal before downstream adaptive scoring begins.",
+    "task_surface": "canonical frozen #423 B2 semantic tasks",
+    "semantic_task_count": 23,
+    "catalog_endpoint_counts": [
+      20,
+      50,
+      100,
+      250
+    ],
+    "downstream_agent": "same frozen strong-agent model/runtime as canonical #423",
+    "candidate_source": "same deterministic SchemaRouter ranking used to construct fixed SR conditions",
+    "b2_task_outcomes_may_select_or_modify_policy": false
+  },
+  "conditions": [
+    "FULL",
+    "SR-3",
+    "SR-5",
+    "SR-10",
+    "SR-ADAPTIVE-ELBOW",
+    "ORACLE"
+  ],
+  "metrics": {
+    "retrieval": [
+      "required-tool-set Recall",
+      "all-required task coverage",
+      "mean/p50/p95 exposed candidate count"
+    ],
+    "downstream": [
+      "deterministic task pass",
+      "single-task pass",
+      "multi-task pass",
+      "required route-call coverage",
+      "failed executions",
+      "extraneous tool calls"
+    ],
+    "efficiency": [
+      "tool-schema tokens",
+      "total input tokens",
+      "output tokens",
+      "model calls",
+      "tool calls",
+      "candidate-selection latency",
+      "episode wall latency"
+    ],
+    "safety": [
+      "wrong destructive attempts",
+      "policy blocks",
+      "unauthorized destructive executions"
+    ]
+  },
+  "promotion_gate_for_issue_432": {
+    "required_tool_set_recall_min": 0.97,
+    "task_pass_delta_vs_sr5_min": -0.02,
+    "mean_exposed_candidate_count_must_be_less_than": 5,
+    "tool_schema_tokens_must_be_less_than_sr5": true,
+    "total_input_tokens_must_not_exceed_sr5": true,
+    "unauthorized_destructive_executions_max": 0,
+    "execution_policy_integrity": 1,
+    "all_conditions_required": true,
+    "decision": "Promote SR-ADAPTIVE-ELBOW into #432 only if every gate passes on the frozen #423 surface. Otherwise #432 retains its preregistered fixed conditions only."
+  },
+  "statistics": {
+    "primary_unit": "semantic_task_id",
+    "catalog_repeats_nested_within_task": true,
+    "task_count_too_small_for_broad_population_claim": true,
+    "paired_task_cluster_bootstrap_allowed_as_diagnostic": true,
+    "no_population_noninferiority_claim_from_430": true,
+    "broad_generalization_if_promoted_requires_issue_432": true
+  },
+  "governance": {
+    "no_policy_tuning_after_b2_outcomes_opened": true,
+    "no_policy_tuning_after_adaptive_results_opened": true,
+    "no_failed_row_removal": true,
+    "no_condition_removal_after_scoring": true,
+    "adaptive_depth_changes_candidate_exposure_only": true,
+    "adaptive_depth_never_grants_execution_authority": true,
+    "if_not_promoted_keep_as_negative_or_neutral_research_evidence": true
+  }
+}
