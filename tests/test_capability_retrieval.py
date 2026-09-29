@@ -321,3 +321,32 @@ def test_planner_additional_availability_does_not_imply_executable() -> None:
     assert [item.route_id for item in result.candidates] == [
         "materials.current"
     ]
+
+
+def test_retrieval_result_is_detached_from_registry_state() -> None:
+    router = make_retrieval_router()
+    result = router.retrieve("current Young's modulus", k=1)
+    candidate = result.candidates[0]
+
+    original_endpoint = router.registry.endpoint(
+        candidate.tool,
+        candidate.endpoint,
+    )
+    original_field_name = original_endpoint.output_fields[0].name
+    original_parameter_name = original_endpoint.parameters[0].name
+
+    candidate.output_fields[0].name = "mutated-field"
+    candidate.parameters[0].name = "mutated-parameter"
+    candidate.matched_fields.append("mutated-match")
+
+    endpoint_after = router.registry.endpoint(
+        candidate.tool,
+        candidate.endpoint,
+    )
+    assert endpoint_after.output_fields[0].name == original_field_name
+    assert endpoint_after.parameters[0].name == original_parameter_name
+
+    fresh = router.retrieve("current Young's modulus", k=1)
+    assert fresh.candidates[0].output_fields[0].name == original_field_name
+    assert fresh.candidates[0].parameters[0].name == original_parameter_name
+    assert "mutated-match" not in fresh.candidates[0].matched_fields
