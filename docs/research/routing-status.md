@@ -486,3 +486,31 @@ Therefore the next experiment must introduce a **materially different semantic r
 membership signal**. It must not be a post-hoc sweep over V6E k, distance thresholds, margins,
 neighbor weights, background anchors, or schema/complement wording. All V6A–V6E confirmation
 surfaces remain unopened.
+
+
+## 0.13 post-V6E evidence
+
+The first 0.13 open-set sequence is now terminal with **no active frozen child experiment**.
+
+| Experiment | Tested signal | Supported exact | Near reject | OOD | False-route | p95 | Result |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| #404 | naturalistic MiniLM scope + 18-way operation probes | **75.44%** | **59.52%** | **95.83%** | **32.41%** | **297.36 ms** | terminal |
+| #406 | Tool-Embed-0.6B positive selector | **78.07%** | — | — | — | **287.42 ms** | terminal; BGE 86.84% on same surface |
+| #408 | multilingual relative cross-encoder membership | **79.39%** | **19.84%** | **59.72%** | **71.30%** | **2992.17 ms** | terminal |
+| #409 | frozen GTE multilingual positive selector | **71.49%** | — | — | — | **100.14 ms** | terminal; BGE 88.16% on same surface |
+| #412 | multilingual-E5 + fixed alpha=0.01 split conformal | **10.09%** | **99.21%** | **100%** | **0.62%** | **244.24 ms** | terminal |
+
+The key contrast is #412: it is the first method in this sequence to satisfy near-domain rejection,
+OOD rejection, false-route, authority and runtime gates simultaneously, but it vetoed **158 of 181**
+raw-correct BGE winners. The safety calibration worked; the underlying scalar catalog-membership
+score did not separate supported traffic strongly enough.
+
+The retained research conclusion is therefore:
+
+> The unresolved bottleneck is a **surface-invariant executable-capability membership
+> representation**, not another threshold or calibration rule over a weak score.
+
+No terminal DEV rows may be used to tune a successor, and all confirmation surfaces above remain
+unopened. The canonical continuation point is issue **#388**, then issue **#382**, the
+machine-readable prior-art registry, and the experiment ledger.
+
