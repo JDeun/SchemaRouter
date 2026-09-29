@@ -36,6 +36,14 @@
 
 ::: schemarouter.ExecutionPlan
 
+## CapabilityCandidate
+
+::: schemarouter.CapabilityCandidate
+
+## CapabilityRetrieval
+
+::: schemarouter.CapabilityRetrieval
+
 ## FallbackRoute
 
 ::: schemarouter.FallbackRoute
