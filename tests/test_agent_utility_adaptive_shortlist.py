@@ -51,6 +51,10 @@ def _row(
         "required_route_ids": required,
         "retrieval_latency_ms": 12.5,
         "ranking": _ranking(scores),
+        "prefix_schema_tokens": {
+            str(depth): depth * 25
+            for depth in range(1, 11)
+        },
     }
 
 
@@ -220,3 +224,23 @@ def test_adaptive_eligibility_reads_machine_preregistered_gates() -> None:
         fixed5,
         prereg,
     )
+
+
+def test_prefix_tool_tokens_are_used_instead_of_candidate_additivity() -> None:
+    prereg = _prereg()
+    scores = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+    row = _row(
+        task_id="token-accounting",
+        stratum="clear_single_tool",
+        required=["tool.route_1"],
+        scores=scores,
+    )
+    row["prefix_schema_tokens"]["3"] = 91
+
+    result = adaptive_eval.evaluate(
+        [row],
+        prereg,
+        strict_surface=False,
+    )
+
+    assert result["policy_metrics"]["FIXED-3"]["schema_tokens"]["mean"] == 91
