@@ -146,6 +146,16 @@ def test_retrieve_returns_typed_ranked_registered_candidates() -> None:
         "materials",
         "current",
     ).fingerprint
+    assert first.input_schema == {
+        "type": "object",
+        "properties": {"material_id": {"type": "string"}},
+        "additionalProperties": False,
+        "required": ["material_id"],
+    }
+    assert first.output_schema == {
+        "type": "object",
+        "properties": {"youngs_modulus": {"type": "number"}},
+    }
 
     field = first.output_fields[0]
     assert field.semantic_id == "material.youngs_modulus"
@@ -155,6 +165,71 @@ def test_retrieve_returns_typed_ranked_registered_candidates() -> None:
     assert field.unit_normalization.dimension == "elastic_modulus"
     assert field.unit_normalization.canonical_unit == "GPa"
     assert field.qualifiers == {"temperature": "300 K"}
+
+
+def test_retrieve_preserves_explicit_complex_endpoint_schemas() -> None:
+    router = SchemaRouter()
+    input_schema = {
+        "type": "object",
+        "properties": {
+            "mode": {"type": "string", "enum": ["fast", "safe"]},
+            "payload": {
+                "oneOf": [
+                    {"type": "string"},
+                    {"type": "object", "additionalProperties": False},
+                ]
+            },
+        },
+        "required": ["mode", "payload"],
+        "additionalProperties": False,
+    }
+    output_schema = {
+        "oneOf": [
+            {
+                "type": "object",
+                "properties": {"status": {"const": "ok"}},
+                "required": ["status"],
+                "additionalProperties": False,
+            },
+            {"type": "null"},
+        ]
+    }
+    router.add_tool(
+        ToolSpec(
+            name="complex",
+            endpoints=[
+                EndpointSpec(
+                    name="run",
+                    description="Run complex operation",
+                    read_only=True,
+                    parameters=[
+                        ParameterSpec(
+                            name="mode",
+                            required=True,
+                            json_schema={"type": "string", "enum": ["fast", "safe"]},
+                        ),
+                        ParameterSpec(
+                            name="payload",
+                            required=True,
+                            json_schema={
+                                "oneOf": [
+                                    {"type": "string"},
+                                    {"type": "object", "additionalProperties": False},
+                                ]
+                            },
+                        ),
+                    ],
+                    input_schema=input_schema,
+                    output_schema=output_schema,
+                )
+            ],
+        )
+    )
+
+    candidate = router.retrieve("run complex operation", k=1).candidates[0]
+
+    assert candidate.input_schema == input_schema
+    assert candidate.output_schema == output_schema
 
 
 def test_retrieve_tie_order_is_deterministic_and_registered_only() -> None:
@@ -338,6 +413,8 @@ def test_retrieval_result_is_detached_from_registry_state() -> None:
 
     candidate.output_fields[0].name = "mutated-field"
     candidate.parameters[0].name = "mutated-parameter"
+    candidate.input_schema["properties"]["material_id"]["type"] = "integer"
+    candidate.output_schema["properties"]["youngs_modulus"]["type"] = "string"
     candidate.matched_fields.append("mutated-match")
 
     endpoint_after = router.registry.endpoint(
@@ -350,6 +427,8 @@ def test_retrieval_result_is_detached_from_registry_state() -> None:
     fresh = router.retrieve("current Young's modulus", k=1)
     assert fresh.candidates[0].output_fields[0].name == original_field_name
     assert fresh.candidates[0].parameters[0].name == original_parameter_name
+    assert fresh.candidates[0].input_schema["properties"]["material_id"]["type"] == "string"
+    assert fresh.candidates[0].output_schema["properties"]["youngs_modulus"]["type"] == "number"
     assert "mutated-match" not in fresh.candidates[0].matched_fields
 
 
