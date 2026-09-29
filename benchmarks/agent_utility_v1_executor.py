@@ -297,12 +297,12 @@ class DeterministicTaskExecutor:
                 "title": "Selected paper",
             }
         if route_id == "papers.retrieve":
-            paper_id = (
-                self.state.get("selected_paper_id")
-                or "P-205"
-                if self.task.task_id == "multi-paper-retrieve-summary"
-                else "P-104"
-            )
+            if self.task.task_id == "multi-paper-search-retrieve":
+                paper_id = str(self.state.get("selected_paper_id", ""))
+            elif self.task.task_id == "multi-paper-retrieve-summary":
+                paper_id = "P-205"
+            else:
+                paper_id = "P-104"
             return {
                 "status": "ok",
                 "paper_id": paper_id,
