@@ -100,6 +100,7 @@ class SchemaRouter:
         execution_hooks: ExecutionHooks | None = None,
         registry: ToolRegistry | None = None,
         adapter_registry: AdapterRegistry | None = None,
+        structural_retrieval: bool = False,
         unavailable_cooldown_seconds: float = 30.0,
     ) -> None:
         self.registry = registry if registry is not None else InMemoryRegistry()
@@ -113,6 +114,7 @@ class SchemaRouter:
         self.planner = SchemaPlanner(
             self.registry,
             analyzer=analyzer,
+            structural_retrieval=structural_retrieval,
             availability_predicate=(
                 lambda tool, endpoint: self.executor.is_access_available_for_contract(
                     tool.key,

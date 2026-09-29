@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import math
 import re
 from collections.abc import Awaitable, Callable
 from copy import deepcopy
@@ -148,6 +149,130 @@ def _tokens(text: str) -> set[str]:
                 expanded.add(token[: -len(suffix)])
                 break
     return expanded
+
+
+_STRUCTURAL_TOOL_IDENTIFIER_BONUS = 4.5
+_STRUCTURAL_OPERATION_FAMILY_BONUS = 1.5
+_SIMPLE_IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9_]+$")
+
+
+def _singularize_identifier(value: str) -> str:
+    lowered = value.casefold()
+    if not lowered.isalpha():
+        return lowered
+    if len(lowered) > 4 and lowered.endswith("ies"):
+        return lowered[:-3] + "y"
+    if (
+        len(lowered) > 3
+        and lowered.endswith("s")
+        and not lowered.endswith("ss")
+    ):
+        return lowered[:-1]
+    return lowered
+
+
+def _tool_identifier_forms(tool: ToolSpec) -> set[str]:
+    raw = {tool.name, tool.key.rsplit(".", 1)[-1]}
+    return {
+        _singularize_identifier(value)
+        for value in raw
+        if value and _SIMPLE_IDENTIFIER_RE.fullmatch(value)
+    }
+
+
+def _tool_identifier_match(
+    query_tokens: set[str],
+    tool: ToolSpec,
+) -> bool:
+    query_forms = {
+        _singularize_identifier(token)
+        for token in query_tokens
+        if token.isascii() and token.isalnum()
+    }
+    return bool(query_forms & _tool_identifier_forms(tool))
+
+
+def _common_prefix_length(left: str, right: str) -> int:
+    count = 0
+    for left_char, right_char in zip(left, right, strict=False):
+        if left_char != right_char:
+            break
+        count += 1
+    return count
+
+
+def _same_operation_family(left: str, right: str) -> bool:
+    left = left.casefold()
+    right = right.casefold()
+    if left == right:
+        return True
+    if not (
+        left.isascii()
+        and right.isascii()
+        and left.isalpha()
+        and right.isalpha()
+    ):
+        return False
+    shorter = min(len(left), len(right))
+    if shorter < 4:
+        return False
+    prefix = _common_prefix_length(left, right)
+    return prefix >= 4 and prefix / shorter >= 0.7
+
+
+def _operation_tokens(endpoint: EndpointSpec) -> set[str]:
+    tokens = set(
+        _tokens(
+            endpoint.name.replace("_", " ").replace("-", " ")
+        )
+    )
+    for alias in endpoint.operation_aliases:
+        tokens.update(_tokens(alias))
+    return {
+        token
+        for token in tokens
+        if token.isascii() and token.isalpha()
+    }
+
+
+def _operation_family_match(
+    query_tokens: set[str],
+    endpoint: EndpointSpec,
+) -> bool:
+    query_ascii = {
+        token
+        for token in query_tokens
+        if token.isascii() and token.isalpha()
+    }
+    operations = _operation_tokens(endpoint)
+    return any(
+        _same_operation_family(query_token, operation)
+        for query_token in query_ascii
+        for operation in operations
+    )
+
+
+def _schema_specificity_terms(
+    tool: ToolSpec,
+    endpoint: EndpointSpec,
+) -> set[str]:
+    parts = [
+        tool.name,
+        tool.description,
+        endpoint.name,
+        endpoint.description,
+        *endpoint.operation_aliases,
+    ]
+    for field in endpoint.output_fields:
+        parts.extend(
+            [
+                field.name,
+                field.semantic_id or "",
+                *field.aliases,
+                ".".join(field.projection_path),
+            ]
+        )
+    return _tokens(" ".join(parts))
 
 
 class QueryAnalyzer(Protocol):
@@ -318,6 +443,7 @@ class SchemaPlanner:
         operation_fit_backend: DecisionBackend | None = None,
         endpoint_disambiguation_backend: DecisionBackend | None = None,
         candidate_index: bool = True,
+        structural_retrieval: bool = False,
         availability_predicate: Callable[[ToolSpec, EndpointSpec], bool] | None = None,
     ) -> None:
         if (
@@ -336,8 +462,12 @@ class SchemaPlanner:
         self.operation_fit_backend = operation_fit_backend
         self.endpoint_disambiguation_backend = endpoint_disambiguation_backend
         self.candidate_index = candidate_index
+        self.structural_retrieval = structural_retrieval
         self.availability_predicate = availability_predicate
         self._candidate_index: _CandidateIndex | None = None
+        self._structural_specificity_cache: (
+            tuple[int, dict[str, float]] | None
+        ) = None
         if self.decision_policy.enabled and self.decision_backend is None:
             raise PlanningError("decision policy is enabled but no decision backend is configured")
 
@@ -422,14 +552,7 @@ class SchemaPlanner:
             intent,
             additional_availability_predicate=additional_availability_predicate,
         )
-        candidates.sort(
-            key=lambda candidate: (
-                -candidate.score,
-                candidate.endpoint.server_projection is None,
-                candidate.tool.key,
-                candidate.endpoint.name,
-            )
-        )
+        candidates.sort(key=self._candidate_sort_key)
         return CapabilityRetrieval(
             query=request.query,
             registry_version=self.registry.version,
@@ -650,7 +773,7 @@ class SchemaPlanner:
                 return False
             return True
 
-        if self.candidate_index:
+        if self.candidate_index and not self.structural_retrieval:
             endpoint_pairs = self._index().endpoint_pairs(request, intent)
         else:
             endpoint_pairs = tuple(
@@ -685,15 +808,84 @@ class SchemaPlanner:
                 for endpoint in tool.endpoints
                 if is_available(tool, endpoint)
             ]
-        candidates.sort(
-            key=lambda candidate: (
-                -candidate.score,
-                candidate.endpoint.server_projection is None,
-                candidate.tool.key,
-                candidate.endpoint.name,
-            )
-        )
+        candidates.sort(key=self._candidate_sort_key)
         return candidates
+
+    def _structural_specificity_by_route(self) -> dict[str, float]:
+        if not self.structural_retrieval:
+            return {}
+
+        current_version = self.registry.version
+        if (
+            self._structural_specificity_cache is not None
+            and self._structural_specificity_cache[0] == current_version
+        ):
+            return self._structural_specificity_cache[1]
+
+        entries: list[tuple[str, set[str]]] = []
+        frequencies: dict[str, int] = {}
+        for tool in self.registry.tools():
+            for endpoint in tool.endpoints:
+                route_id = f"{tool.key}.{endpoint.name}"
+                terms = _schema_specificity_terms(tool, endpoint)
+                entries.append((route_id, terms))
+                for term in terms:
+                    frequencies[term] = frequencies.get(term, 0) + 1
+
+        endpoint_count = len(entries)
+        if endpoint_count <= 1:
+            result = {
+                route_id: 0.0
+                for route_id, _terms in entries
+            }
+        else:
+            denominator = math.log(endpoint_count + 1)
+            discrimination = {
+                term: math.log(
+                    (endpoint_count + 1) / (frequency + 1)
+                )
+                / denominator
+                for term, frequency in frequencies.items()
+            }
+            result: dict[str, float] = {}
+            for route_id, terms in entries:
+                values = [
+                    discrimination[term]
+                    for term in terms
+                    if term in discrimination
+                ]
+                result[route_id] = (
+                    sum(values) / len(values)
+                    if values
+                    else 0.0
+                )
+
+        self._structural_specificity_cache = (
+            current_version,
+            result,
+        )
+        return result
+
+    def _candidate_sort_key(
+        self,
+        candidate: _Candidate,
+    ) -> tuple[float, float, bool, str, str]:
+        specificity = 0.0
+        if self.structural_retrieval:
+            route_id = (
+                f"{candidate.tool.key}.{candidate.endpoint.name}"
+            )
+            specificity = self._structural_specificity_by_route().get(
+                route_id,
+                0.0,
+            )
+        return (
+            -candidate.score,
+            -specificity,
+            candidate.endpoint.server_projection is None,
+            candidate.tool.key,
+            candidate.endpoint.name,
+        )
 
     def _semantic_recall_catalog(
         self,
@@ -3086,6 +3278,32 @@ class SchemaPlanner:
             score += 1.5
             components.append(
                 ScoreComponent(kind="tool_token", value=1.5, matched=token)
+            )
+
+        if self.structural_retrieval and _tool_identifier_match(
+            query_tokens,
+            tool,
+        ):
+            score += _STRUCTURAL_TOOL_IDENTIFIER_BONUS
+            components.append(
+                ScoreComponent(
+                    kind="tool_identifier",
+                    value=_STRUCTURAL_TOOL_IDENTIFIER_BONUS,
+                    matched=tool.key,
+                )
+            )
+
+        if self.structural_retrieval and _operation_family_match(
+            query_tokens,
+            endpoint,
+        ):
+            score += _STRUCTURAL_OPERATION_FAMILY_BONUS
+            components.append(
+                ScoreComponent(
+                    kind="operation_family",
+                    value=_STRUCTURAL_OPERATION_FAMILY_BONUS,
+                    matched=endpoint.name,
+                )
             )
 
         matched_fields: list[str] = []
