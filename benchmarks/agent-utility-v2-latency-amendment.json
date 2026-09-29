@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "issue": 434,
+  "experiment": "typed-multifield-intent-manual-retrieval-ablation-v1",
+  "amendment": "retrieval-latency-measurement-v1",
+  "date": "2026-09-29",
+  "timing": {
+    "clock": "time.perf_counter_ns",
+    "warmup_retrievals_per_query_condition": 3,
+    "measured_retrievals_per_query_condition": 31,
+    "row_latency_statistic": "median",
+    "aggregate_latency_statistic": "p95_of_row_medians",
+    "same_process_same_runner": true,
+    "ranking_and_serialization_work_included": true
+  },
+  "comparison": {
+    "comparator": "RAW-SPEC under same BM25 implementation and frozen catalog",
+    "typed_condition": "TYPED-MULTIFIELD",
+    "gate": "typed_p95 / raw_spec_p95 <= 1.5"
+  },
+  "rationale": "DEV one-shot retrievals are sub-millisecond and exact-equivalent runtime revisions showed material p95 ratio jitter. A repeated per-row median is frozen before any confirmation surface is generated or scored so scheduler and timer noise do not decide the latency promotion gate.",
+  "governance": {
+    "confirmation_surface_opened_before_amendment": false,
+    "quality_metrics_changed": false,
+    "latency_ratio_gate_changed": false,
+    "catalogs_or_queries_changed": false,
+    "apply_identically_to_all_conditions": true,
+    "no_best_of_runs_selection": true,
+    "this_protocol_is_canonical_for_all_later_dev_and_confirmation_latency_claims": true
+  }
+}
