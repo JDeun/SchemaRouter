@@ -7,6 +7,7 @@ import pytest
 
 from benchmarks.agent_utility_v1_catalog import TASKS, build_registry, route_ids
 from scripts.evaluate_agent_utility_phase_b_qwen import (
+    SYSTEM_PROMPT,
     _candidate_set,
     _parse_tool_calls,
     _tool_response_message,
@@ -144,3 +145,8 @@ def test_b1_workflow_shards_cover_every_frozen_task_exactly_once() -> None:
         assert len(task_ids) == len(expected)
         assert len(set(task_ids)) == len(task_ids)
         assert set(task_ids) == expected
+
+
+def test_system_prompt_requires_observation_between_tool_calls() -> None:
+    assert "at most one tool call per assistant turn" in SYSTEM_PROMPT
+    assert "Wait for the tool observation" in SYSTEM_PROMPT
