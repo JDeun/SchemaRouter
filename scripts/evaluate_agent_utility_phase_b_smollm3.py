@@ -173,7 +173,12 @@ def _runtime_identity() -> dict[str, str]:
 class LocalSmolLM3Agent:
     def __init__(self) -> None:
         import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import (
+            AutoModelForCausalLM,
+            AutoTokenizer,
+            StoppingCriteria,
+            StoppingCriteriaList,
+        )
 
         torch.manual_seed(SEED)
         torch.set_num_threads(THREADS)
@@ -194,6 +199,26 @@ class LocalSmolLM3Agent:
         self.model.eval()
         self.context_limit = int(
             getattr(self.model.config, "max_position_embeddings", 32768)
+        )
+        stop_ids = self.tokenizer(
+            "</tool_call>",
+            add_special_tokens=False,
+        )["input_ids"]
+
+        class StopAfterCompleteToolCall(StoppingCriteria):
+            def __call__(
+                self,
+                input_ids: Any,
+                scores: Any,
+                **kwargs: Any,
+            ) -> bool:
+                del scores, kwargs
+                if not stop_ids or input_ids.shape[-1] < len(stop_ids):
+                    return False
+                return input_ids[0, -len(stop_ids) :].tolist() == stop_ids
+
+        self.stopping_criteria = StoppingCriteriaList(
+            [StopAfterCompleteToolCall()]
         )
 
     def _render(
@@ -257,6 +282,7 @@ class LocalSmolLM3Agent:
                 max_new_tokens=MAX_NEW_TOKENS,
                 pad_token_id=self.tokenizer.eos_token_id,
                 eos_token_id=self.tokenizer.eos_token_id,
+                stopping_criteria=self.stopping_criteria,
             )
         elapsed_ms = (time.perf_counter_ns() - started) / 1_000_000
         generated = output[0, encoded["input_ids"].shape[-1] :]
@@ -858,6 +884,7 @@ def evaluate(
             "threads": THREADS,
             "context_limit": agent.context_limit,
             "enable_thinking": False,
+            "generation_stopping": "eos_or_complete_tool_call",
         },
         "model_load_ms": model_load_ms,
         "catalog_sizes": list(catalog_sizes),
@@ -876,6 +903,7 @@ def evaluate(
         "policy": {
             "smollm3_is_downstream_agent_only": True,
             "native_tool_template": "xml_tools",
+            "generation_stopping": "eos_or_complete_tool_call",
             "observation_message_role": "tool",
             "schemarouter_rank_scores_visible_to_agent": False,
             "candidate_routes_lexically_sorted": True,
