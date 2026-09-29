@@ -80,10 +80,12 @@ Applications may omit rank/score from the LLM prompt and use only the candidate 
 useful when the goal is to reduce tool-catalog context without turning SchemaRouter's ranking score
 into execution policy.
 
-## The retrieved capability is executable
+## The retrieved capability has an executable contract
 
-A document retriever can return relevant context. SchemaRouter must additionally prove that the
-selected registered route can perform the requested operation and return the requested data surface.
+A document retriever can return relevant context. SchemaRouter retrieval instead returns a
+**registered executable contract**: an endpoint whose declared operation, inputs, outputs and policy
+metadata are known. Plain `retrieve()` does not claim that a local invoker is currently bound or
+healthy; use `retrieve_executable()` when current local binding readiness is also required.
 
 The resulting capability contract includes:
 
