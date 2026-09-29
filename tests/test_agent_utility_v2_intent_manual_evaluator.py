@@ -19,6 +19,8 @@ def test_intent_conditions_score_without_opening_confirmation(
 
     monkeypatch.setattr(base_eval, "CATALOG_SIZES", (100,))
     monkeypatch.setattr(intent_eval, "CATALOG_SIZES", (100,))
+    monkeypatch.setattr(base_eval, "LATENCY_WARMUP", 0)
+    monkeypatch.setattr(base_eval, "LATENCY_REPEATS", 1)
 
     result = intent_eval.evaluate(freeze_dir, intent_dir)
 
