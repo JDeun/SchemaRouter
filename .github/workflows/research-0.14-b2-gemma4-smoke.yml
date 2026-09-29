@@ -179,6 +179,7 @@ jobs:
         if: always()
         shell: bash
         run: |
+          mkdir -p artifacts/runtime
           if [ -f artifacts/runtime/server.pid ]; then
             PID="$(cat artifacts/runtime/server.pid)"
             kill "$PID" 2>/dev/null || true
