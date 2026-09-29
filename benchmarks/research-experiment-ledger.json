@@ -3366,7 +3366,7 @@
       "pull_request": 421,
       "branch": "research/0.14-local-agent-ab",
       "preregistered": true,
-      "status": "terminal_completed",
+      "status": "terminal_canonical_b1",
       "model": {
         "name": "Qwen/Qwen3-0.6B",
         "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
@@ -3388,38 +3388,26 @@
       "corrected_freeze_workflow_run_id": 36507439562,
       "tool_call_smoke_workflow_run_id": 36507510580,
       "result": {
-        "workflow_run_id": 36529108855,
-        "source_revision": "b9eadefd3cd076f026a54bbc55a949f0424f5dab",
-        "artifact_id": 11021506964,
-        "artifact_digest": "sha256:2e101d62dbe7f3202a24f0f40c49000064991b1521c4154c8feeb587de510271",
-        "aggregate_sha256": "33678700298a47b451ea1f03377cd874a1a1e373597cf961d207e07ae39f568d",
         "episode_count": 552,
-        "unique_semantic_tasks": 23,
-        "task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
-        "model": "Qwen/Qwen3-0.6B",
-        "model_revision": "c1899de289a04d12100db370d81485cdf75e47ca",
-        "task_pass": {
-          "FULL": 0.6847826086956522,
-          "SR-3": 0.8260869565217391,
-          "SR-5": 0.9130434782608695,
-          "SR-10": 0.8152173913043478,
-          "SR-PROGRESSIVE": 0.8260869565217391,
-          "ORACLE": 0.8695652173913043
-        },
-        "sr5_delta_vs_full": 0.22826086956521738,
-        "sr5_task_cluster_bootstrap_95pct_interval": [
-          0.097826,
-          0.369565
+        "full_task_pass_rate": 0.6847826086956522,
+        "sr5_task_pass_rate": 0.9130434782608695,
+        "sr10_task_pass_rate": 0.8152173913043478,
+        "sr5_task_pass_delta_vs_full": 0.2282608695652173,
+        "sr5_task_cluster_bootstrap_ci": [
+          0.09782608695652174,
+          0.3695652173913043
         ],
         "sr5_required_route_recall": 1,
         "sr5_all_required_task_coverage": 1,
-        "sr5_tool_schema_token_ratio_vs_full": 0.054218,
+        "sr5_tool_schema_token_ratio_vs_full": 0.05421849436514438,
+        "sr10_required_route_recall": 1,
+        "sr10_tool_schema_token_ratio_vs_full": 0.10205352116334698,
         "unauthorized_destructive_executions": 0,
-        "progressive_initial_required_set_misses": 4,
-        "progressive_recovered_completed_tasks": 0
+        "progressive_initial_required_set_miss_count": 4,
+        "progressive_recovered_count": 0
       },
-      "decision": "controlled_mechanism_signal_passed_broad_generalization_not_claimed",
-      "interpretation": "B1 supports the mechanism claim that bounded candidate context can preserve or improve task success while sharply reducing visible tool-schema context on this controlled 23-task Qwen3-0.6B surface. It does not establish broad population noninferiority or all-agent generalization.",
+      "decision": "terminal_b1_pass_controlled_mechanism_evidence",
+      "interpretation": "Canonical B1 is terminal. SR-5 and SR-10 pass the frozen utility gates on the 23-task Qwen3-0.6B controlled surface, with large schema-context reduction. This is mechanism/sanity evidence only; broad agent generalization still requires #423/#432 and final-answer quality requires #424.",
       "canonical_source_revision": "b9eadefd3cd076f026a54bbc55a949f0424f5dab",
       "protocol_correction": {
         "executor_task_id_fix": "be7ef080ceac45797fbf8e2dcd45f1d6f628d102",
@@ -3533,7 +3521,7 @@
       "cycle": "0.14-end-to-end-agent-utility",
       "issue": 423,
       "preregistered": true,
-      "status": "active_frozen_protocol_infrastructure_recovery",
+      "status": "attempt5_running_frozen_same_run_infra_recovery",
       "conditions": [
         "FULL",
         "SR-5",
@@ -3542,34 +3530,42 @@
         "ORACLE"
       ],
       "result": null,
-      "decision": "no_terminal_claim_until_exact_460_episode_aggregate",
-      "interpretation": "Strong-agent replication is required before generalizing B1 utility beyond the small local baseline.",
-      "model_freeze": {
-        "model": "HuggingFaceTB/SmolLM3-3B",
+      "decision": "await_attempt5_terminal_then_apply_frozen_same_run_infra_recovery",
+      "interpretation": "Strong non-Qwen replication is actively executing on the frozen 23-task/4-catalog/5-condition surface. Partial task outcomes remain unopened for tuning. Runner-shutdown failures are handled only through the preregistered same-run failed-job recovery rule.",
+      "model": {
+        "name": "HuggingFaceTB/SmolLM3-3B",
         "revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+        "family": "SmolLM3",
+        "parameters": "3B",
+        "role": "downstream generative tool-using agent",
         "device": "cpu",
         "dtype": "bfloat16",
-        "tool_surface": "xml_tools",
         "thinking": false,
-        "decoding": "greedy",
-        "context_limit": 65536
+        "greedy": true
       },
-      "candidate_set_manifest_sha256": "9bea0645f64ec726abe5983d9a19eefe12afb1ab6cfae65ecd87464f545f0176",
       "expected_episode_count": 460,
-      "semantic_task_count": 23,
-      "current_attempt": {
-        "workflow_run_id": 36561002246,
-        "trigger_source_revision": "20fee33e09d4a2c64a3ae5022818996e4744a11a",
-        "sharding": "92 task x catalog jobs; 5 frozen condition episodes/job",
-        "state": "running_with_hosted_runner_shutdown_failures",
-        "partial_outcomes_tuning_eligible": false,
-        "recovery_rule": "After terminal state, re-run failed jobs on the same workflow only when every failure is infrastructure-only; maximum five failed-job reruns; never change model/prompt/K/tasks/catalogs/conditions/scoring from partial outcomes."
+      "candidate_set_manifest_sha256": "9bea0645f64ec726abe5983d9a19eefe12afb1ab6cfae65ecd87464f545f0176",
+      "task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
+      "canonical_attempt5_workflow_run_id": 36561002246,
+      "resilient_sharding": {
+        "evaluate_job_count": 92,
+        "episodes_per_job": 5,
+        "max_parallel": 6,
+        "evaluate_timeout_minutes": 180
       },
-      "infrastructure": {
-        "resilient_sharding_pr": 455,
-        "telemetry_pr": 461,
-        "telemetry_merge_revision": "1e51c1d5cad5168fc71de1434a4de1e13abe11f3",
-        "telemetry_activation": "future new workflow attempt only if same-run failed-job recovery cannot complete the frozen benchmark"
+      "observed_infrastructure_failures": {
+        "classification": "github_hosted_runner_shutdown",
+        "failed_job_ids": [
+          109382297197,
+          109382297293
+        ],
+        "partial_outcomes_used_for_tuning": false
+      },
+      "recovery_rule": {
+        "trigger": "after attempt5 workflow becomes terminal",
+        "action": "rerun failed jobs on the same workflow run only when every failure is infra-only",
+        "max_failed_job_rerun_attempts": 5,
+        "no_model_prompt_k_task_catalog_condition_scoring_changes": true
       }
     },
     {
@@ -3577,20 +3573,20 @@
       "cycle": "0.14-end-to-end-agent-utility",
       "issue": 424,
       "preregistered": true,
-      "status": "preregistered_authoring_scaffold_merged_inference_blocked",
-      "result": {
-        "preregistration_path": "benchmarks/agent-utility-v4-final-answer-preregistration.json",
-        "unique_semantic_tasks": 144,
+      "status": "preregistered_144_slot_scaffold_merged_content_and_inference_sealed",
+      "result": null,
+      "decision": "content_generation_and_inference_blocked_until_b2_terminal",
+      "interpretation": "The final-answer protocol and deterministic 144-slot identity scaffold are frozen. Task wording, evidence/reference facts, units/tolerances/provenance and answer inference remain sealed until #423 is terminal.",
+      "authoring_scaffold_commit": "465922f8390f23c96a215f4ac4491891339907cb",
+      "unique_semantic_tasks": 144,
+      "cross_balance": {
         "answer_task_strata": 6,
         "languages": 6,
         "tasks_per_cell": 4,
-        "authoring_scaffold_pr": 460,
-        "authoring_scaffold_revision": "465922f8390f23c96a215f4ac4491891339907cb",
-        "content_generation_authorized": false,
-        "answer_inference_authorized": false
+        "cells": 36
       },
-      "decision": "content_and_inference_remain_sealed_until_423_terminal",
-      "interpretation": "Final-answer factual quality, unit accuracy, provenance and hallucination must be evaluated separately from deterministic tool-use task success."
+      "content_generation_authorized": false,
+      "answer_inference_authorized": false
     },
     {
       "id": "0.14-corrective-state-aware-reretrieval",
@@ -3607,22 +3603,19 @@
       "cycle": "0.14-end-to-end-agent-utility",
       "issue": 432,
       "preregistered": true,
-      "status": "preregistered_authoring_scaffold_merged_content_sealed",
-      "result": {
-        "preregistration_path": "benchmarks/agent-utility-v3-heldout-preregistration.json",
-        "unique_semantic_tasks": 780,
+      "status": "preregistered_780_slot_scaffold_merged_content_sealed",
+      "result": null,
+      "decision": "content_generation_and_scoring_blocked_until_b2_terminal",
+      "interpretation": "The independent held-out protocol and deterministic 780-slot identity scaffold are frozen without B1/B2 row-outcome tuning. Actual task text, executor fixtures, catalogs and scoring remain sealed until #423 is terminal.",
+      "authoring_scaffold_commit": "76458700d32df8f3d3f4b08b2347bf49944d74fb",
+      "unique_semantic_tasks": 780,
+      "cross_balance": {
         "task_strata": 13,
         "languages": 6,
         "tasks_per_cell": 10,
-        "cells": 78,
-        "authoring_scaffold_pr": 458,
-        "authoring_scaffold_revision": "76458700d32df8f3d3f4b08b2347bf49944d74fb",
-        "content_generation_authorized": false,
-        "worst_case_95pct_half_width": 0.07017925765586441,
-        "tasks_needed_for_guaranteed_0_02_worst_case_half_width": 9604
+        "cells": 78
       },
-      "decision": "freeze_identity_and_balance_only_before_b2_terminal_no_task_content_generation",
-      "interpretation": "B1 has 23 unique semantic tasks repeated across catalog sizes. This larger independent multilingual held-out surface is required before population-level non-inferiority/general agent-utility claims."
+      "corpus_content_generated": false
     },
     {
       "id": "0.14-adaptive-shortlist-depth",
@@ -3639,14 +3632,24 @@
       "cycle": "0.14-end-to-end-agent-utility",
       "issue": 428,
       "preregistered": false,
-      "status": "superseded_by_shipped_product_api_and_0_12_stable_core_freeze",
+      "status": "shipped_and_frozen_product_baseline",
       "result": {
-        "stable_product_version": "0.12.0",
-        "release_commit": "4bd8e8b08925bac3f040f5bcb509aafe6c50d25b",
-        "product_track_closed": true
+        "public_methods": [
+          "retrieve",
+          "aretrieve",
+          "retrieve_executable",
+          "aretrieve_executable"
+        ],
+        "typed_candidate_contract": true,
+        "full_input_output_json_schema_preserved": true,
+        "retrieval_executes_tools": false,
+        "execution_authority_remains_policy_gated": true
       },
-      "decision": "product_surface_shipped_in_0_11_and_closed_as_stable_baseline_0_12",
-      "interpretation": "Make typed Top-K retrieval a first-class public API while keeping execution authority and agent orchestration outside the retrieval core."
+      "decision": "product_track_closed_research_must_stay_behind_stable_facade",
+      "interpretation": "First-class typed Top-K retrieval shipped in 0.11.0 and the stable-core product boundary was frozen and released as 0.12.0. Research may improve compatible internals/defaults but does not reopen the public architecture for benchmark gains alone.",
+      "released_in": "0.11.0",
+      "frozen_product_baseline": "0.12.0",
+      "issue_state": "closed"
     },
     {
       "id": "0.14-typed-representation-dev-ablation",
@@ -3703,164 +3706,7 @@
       ]
     }
   ],
-  "current_research_conclusion": {
-    "supported_selection_problem": "Accepted operation-fit selector materially reduces wrong-endpoint errors.",
-    "unsupported_boundary_problem": "Near-domain unsupported rejection does not improve when selector quality improves.",
-    "global_threshold_problem": "Candidate-fit similarity distributions overlap too strongly for one scalar threshold to satisfy both supported recall and unsupported rejection.",
-    "next_candidate_direction": [
-      "keep #198 blocked until a materially new candidate passes DEV and a new zero-overlap fresh confirmation",
-      "do not use #270/#287/#326 fresh rows for design or tuning",
-      "do not extend ColBERT/sparse or registry alias-envelope families with post-hoc threshold dimensions or exceptions",
-      "the next hypothesis must introduce a materially different source of open-set capability evidence while preserving finite registered authority and a credible <=250 ms runtime path"
-    ],
-    "historical_negative_control": "A generic none_of_the_above sentinel was already tested in the earlier empty-recall decision surface and removed as counterproductive. v0.11 negative-capability work must therefore use distinct typed boundary evidence rather than repeating that mechanism.",
-    "route_local_filter_then_rank_problem": "Per-option filter-then-rank thresholds can fall through from a rejected raw winner to a lower-ranked executable route; open-set safety requires winner-first gating or an equivalent no-fallback boundary.",
-    "pairwise_tool_hierarchy_result": "Pairwise stage-1 tool ranking can exceed the 70% supported development gate but does not solve unsupported-operation rejection.",
-    "direct_nli_result": "Direct multilingual entailment can raise rejection only by collapsing supported recall; it is rejected as the primary operation boundary.",
-    "active_experiment": 423,
-    "generic_no_route_sentinel_constraint": "Do not reintroduce none_of_the_above as a competing pseudo-route; prior full-corpus evidence showed it was counterproductive. Negative capability must remain a distinct typed boundary signal or abstention rule.",
-    "bounded_rerank_raw_ceiling": "All-candidate contrastive BGE with recall width 4 reaches 90.71% raw supported top-1 on fresh v4 development.",
-    "winner_only_boundary_result": "At width 4, winner-only route-local score thresholds can reach 75.78% supported exact-route with 1.85% canonical false-route and 98.09% actual near-domain rejection.",
-    "negative_model_status": "A cross-encoder applied to every winner or every base rejection has not reached the 85% exact target. #255 recovered only 5 correct cases at zero additional false routes. #262 therefore tests cross-model agreement before optional cross-encoder rescue.",
-    "latency_bottleneck": "The original unconditional width-2 BGE tail-latency bottleneck has been removed by the confirmed BGE-M3 embedding base: #259 executes at ~118/135 ms mean/p95 with <=1% false-route. The remaining blocker is recovering at least 15 supported abstentions without adding false routes.",
-    "joint_margin_result": "Adding route-local top margin to score thresholds yields only ~0.35 percentage points at the 12-false-route budget and is not selected for the immediate candidate.",
-    "action_only_evidence_status": "Cheap MiniLM action-only evidence remains useful diagnostic evidence but is no longer the leading architecture; BGE-M3 dual-view embedding is the confirmed robust base.",
-    "robust_base_status": "#259/#260 confirmed BGE-M3 0.55/0.45 budget-6 with preregistered 1e-6 comparison epsilon: 83.77% exact, 98.96% near-domain rejection, 0.93% false-route, 118/135 ms mean/p95, zero parity/authority/runtime failures.",
-    "route_local_stable_fusion_status": "#256 raised raw exact to 90.54% but strict accepted exact remained 83.59%; rejected.",
-    "zero_false_crossencoder_rescue_status": "#255 rescued only 5 correct supported cases at zero added false routes, reaching 84.20%; rejected.",
-    "fresh_surface_result": "#265/#270 passed same-corpus 85/97/1 but failed zero-overlap fresh-surface open-set safety: 86.72% exact, 77.78% near rejection, 19.75% false-route. Ranking generalized; positive acceptance thresholds did not.",
-    "generic_nli_status": "#273 rejected contradiction-only NLI because both supported and unsupported operation pairs were predominantly neutral.",
-    "explicit_negative_prototype_status": "#275 showed useful near-domain signal, while #277/#279/#281 demonstrated that fixed scalar and relative-rank prototype heuristics cannot meet the 85/97/1/100 target. This heuristic family is closed.",
-    "learned_verifier_status": "#285 grouped OOF passed, but #287 frozen fit-once HGB failed zero-overlap fresh-surface DEV at 82.64% exact / 93.23% near rejection / 6.02% false-route / 252.77 ms p95. Same model SHA was reused without refit.",
-    "system_one_provider_status": "#291/#292 merged a generic Jev-compatible SystemOneDecisionBackend; future compatible models can swap base_url/model/provider_name without a new planner class.",
-    "model_swap_infrastructure": "#291/#292, #297/#298, #304/#305, and #306/#308 are merged: System One wire-compatible, one-off bounded callables, and reusable non-wire plugins can all be swapped without model-specific planner changes.",
-    "direct_laya_status": "#293/#294 direct full-catalog Laya rejected: raw exact 60.07%, 0/8 rules pass, p95 1041ms; PR closed unmerged.",
-    "contingent_architecture": "#303 preregisters BGE top-4 recall + provider-neutral per-candidate noul routing, but must not execute unless winner-only capability veto cannot promote.",
-    "qwen3_external_verifier_status": "#289/#290 rejected: 0/8 rules pass; safe p=0.99 gives 62.76% exact despite 99.13% near rejection / 0.77% false-route; combined CPU p95 2059ms.",
-    "laya_typed_checkpoint_note": "Official Laya typed-decisions checkpoint is fine-tuned on four specific typed-decision workflows; its published strong noul result is not a zero-shot SchemaRouter result. Any use requires a separate pinned frozen-harness experiment.",
-    "system_one_extension_status": "#291/#292 generic SystemOneDecisionBackend, #297/#298 generic System One benchmark CLI, #304/#305 callable benchmark path, and #306/#308 reusable third-party decision-backend entry-point plugins are merged.",
-    "laya_noul_status": "#301/#302 rejected: P(true) does not separate correct supported from near/OOD; 0/8 rules pass; combined p95 1098.75ms.",
-    "topk_same_laya_status": "#310 closed without execution: at p>=0.95 the same Laya signal has a hard best-case exact bound of 151/1152=13.11%, so compute would be wasted.",
-    "laya_winner_noul_status": "#301/#302 rejected: 0/8 pass; correct-supported median P(true)=0.6784 vs near unsupported=0.67245; combined p95=1098.75ms.",
-    "top4_typed_routing_status": "#303 remains provider-neutral contingency only; same pinned Laya top-4 is mathematically dominated and not canonical evidence.",
-    "external_verifier_status": "Qwen3 direct semantic verifier #289 rejected; pinned Laya noul veto #301 rejected; full-catalog Laya choice+noul #295 superseded before execution.",
-    "next_external_candidate": "#311/#313 stages AnyJev L0 with content_free prior and Qwen3-0.6B; manual-only until Kev terminal.",
-    "kev_composition_contingency": "#314/#315 is fully staged before #299 result inspection: it reuses exact #299 global Kev noul probabilities and measured latency while BGE raw top-1 remains sole route authority; no new Kev inference.",
-    "freeze_infrastructure": "#316 merged as fad004cdfce8e40c2119d3758ab47332d52e6253: canonical production target JSON, freeze manifest template, validator, and #197→fresh→#198 ownership protocol are now on main.",
-    "kev_family_promotion_policy": {
-      "preregistered_before_299_terminal": true,
-      "evaluate_299_then_314_if_complete_noul_exists": true,
-      "preferred_if_both_pass": "#314 BGE raw route authority + Kev global noul veto",
-      "fallback_if_314_fails_but_299_passes": "#299 Kev native choice+noul",
-      "rationale": "preserve established BGE route authority and keep external model veto-only when both satisfy all gates",
-      "no_posthoc_slice_prompt_or_failed_fresh_selection": true
-    },
-    "kev_timeout_rescue": {
-      "active_run_id": 36366508183,
-      "rescue_branch": "research/v4-kev-08b-system-one-timeout-rescue",
-      "rescue_commit": "6934e97c5cd6f837aea405e3545995d5cb481374",
-      "original_research_source_revision": "250513c70d08e926251ce28683b404fe97581527",
-      "changed_semantics": false,
-      "allowed_change": "GitHub Actions evaluate timeout 180 -> 360 minutes only",
-      "dispatch_rule": "manual only if active run terminates by timeout without a valid terminal analysis artifact"
-    },
-    "activation_protocol": "Staged #314/#315 and #311/#313 remain dormant until explicit guarded activation. #314 can be triggered by committing its activation JSON with the exact #299 artifact ID/source run; #311 can be triggered only after Kev-family non-promotion using an activation marker declaring after_issue=299 and reason=kev_family_non_promotable.",
-    "runtime_optimization": "#318 is dormant and activates only after a Kev-based quality pass with latency failure; parity must preserve every frozen route/accept decision before optimized timing counts.",
-    "runtime_parity_infrastructure": "#320 acaca1e... adds runtime parity validation; #321 31bda6e... ensures failed parity writes mismatch/drift evidence before exiting non-zero.",
-    "runtime_realism": "Do not repeat multi-hour CPU/fp32 typed-decision screens. #299 may contribute a terminal semantic signal if it completes, but timeout means stop that runtime. Future Kev/AnyJev evaluation requires a plausibly deployable runtime path to <=250 ms.",
-    "kev_status": "Kev-0.8B CPU/fp32 #299 ended cancelled without analysis.json after ~3h; no quality conclusion, exact runtime path retired.",
-    "anyjev_status": "AnyJev CPU execution PR #313 retired unexecuted; architecture remains only as a runtime-gated option if a credible <=250 ms path exists.",
-    "current_frontier": "#322 offline composition passed 85.0694% exact / 99.3056% near rejection / 100% OOD / 0.6173% false-route. #324 is measuring exact row parity and direct p95.",
-    "expensive_typed_decision_status": "CPU Laya/Qwen/Kev/AnyJev product-path experiments are terminal; current work is BGE-native/lightweight and <=250 ms by design.",
-    "runtime_only_policy": "#318 is model-neutral and dormant: activate only after a frozen candidate passes quality + semantic parity but misses p95<=250ms; #320/#321 parity tooling is mandatory.",
-    "active_candidate": null,
-    "active_workflow_run_id": null,
-    "fresh_contract_status": "#326 terminal valid fresh failure; corpus consumed confirmation-only. #198 remains blocked.",
-    "latest_fresh_result": "#326 valid zero-overlap fresh confirmation failed: exact 84.8090%, near rejection 90.4514%, OOD 100%, false-route 8.4877%, p95 278.3748 ms; candidate terminated, fresh surface consumed and non-tuning.",
-    "generalization_status": "Three independent candidate families have now shown DEV-to-fresh open-set degradation (#270, #287, #326). Next architecture must reduce dependence on DEV-fitted acceptance geometry.",
-    "last_frozen_candidate": {
-      "issue": 326,
-      "pull_request": 327,
-      "semantic_source_revision": "caca039aff1c7b2960d167196f883e3bcbc5d431",
-      "dev_workflow_run_id": 36380771103,
-      "dev_artifact_id": 10952711288,
-      "dev_artifact_digest": "sha256:4ad9d0cc76500dd8705e0db0f677a21e44dbebb74cc3a9ca097723eb453abdc3",
-      "dev_metrics": {
-        "exact": 0.8506944444444444,
-        "near_rejection": 0.9930555555555556,
-        "ood_rejection": 1,
-        "false_route": 0.006172839506172839,
-        "p95_ms": 176.9435595
-      },
-      "fresh_workflow_run_id": 36382647406,
-      "fresh_seed": "operation-routing-quality-v4-lightweight-bge-gte-confirmation-2026-09-28-a",
-      "fresh_surface": "lightweight-bge-gte-operational-envelope-v1",
-      "freeze_status": "frozen-dev",
-      "status": "rejected_after_valid_fresh_failure",
-      "terminal_issue": 326,
-      "terminal_pull_request": 327,
-      "fresh_metrics": {
-        "exact": 0.8480902777777778,
-        "near_rejection": 0.9045138888888888,
-        "ood_rejection": 1,
-        "false_route": 0.08487654320987655,
-        "p95_ms": 278.3747833
-      }
-    },
-    "colbert_operation_contract_status": "#328/#329 rejected: 0 candidate-worthy rules; <=1% false-route frontier preserves only ~38.6-38.7% exact; executable p95 ~398.61 ms.",
-    "colbert_status": "#328 rejected: safe ColBERT score frontiers retain only ~38.6-38.7% exact at <=1% false routes; executable p95 ~398.6 ms. Sparse diagnostic also non-viable.",
-    "alias_envelope_status": "#332/#333 rejected: 0 candidate-worthy rules; p95 198.07 ms; safe C/D rules collapse exact to ~24% and still yield 1.39% false-route.",
-    "cycle_status": "0.14_b1_terminal_b2_infrastructure_recovery",
-    "cycle_decision": "close_0.11_without_calibration_or_blind",
-    "production_target_validated": false,
-    "calibration_blind_status": "not_run_entry_requirements_not_met",
-    "best_conservative_reference": {
-      "issue": 259,
-      "description": "robust BGE-M3 strict base; retained as a conservative reference profile, not a production-target pass",
-      "exact": 0.837674,
-      "near_rejection": 0.989583,
-      "false_route": 0.009259,
-      "planner_p95_ms": 134.9514
-    },
-    "strongest_dev_candidate": {
-      "issue": 324,
-      "exact": 0.8506944444444444,
-      "near_rejection": 0.9930555555555556,
-      "ood_rejection": 1,
-      "false_route": 0.006172839506172839,
-      "p95_ms": 176.9436,
-      "status": "terminal_after_fresh_failure"
-    },
-    "strongest_dev_candidate_fresh_result": {
-      "issue": 326,
-      "exact": 0.8480902777777778,
-      "near_rejection": 0.9045138888888888,
-      "ood_rejection": 1,
-      "false_route": 0.08487654320987655,
-      "p95_ms": 278.3747833
-    },
-    "final_finding": "SchemaRouter is now evaluated primarily as a typed capability retrieval substrate for LLM agents rather than as the final authoritative open-set classifier. The 0.13 lineage remains terminal evidence showing the safety/coverage cost of executor-level abstention in the retrieval layer.",
-    "successor_rule": "Finish #423 under the frozen strong-agent protocol and infra-only recovery rule. After #423 is terminal, generate/freeze #432 and #424 corpus content without using B1/B2 row outcomes. Do not reopen 0.13 terminal classifier/veto families or the 0.12 product facade from partial research outcomes.",
-    "bge_gte_consensus_status": "#336/#337 rejected: 81.34% exact / 43.58% near rejection / 81.94% OOD / 52.16% false-route.",
-    "asymmetric_ontology_veto_status": "#358 preserved raw BGE positive selection exactly (96.05% exact, zero raw-correct winner vetoes) and achieved 99.22% veto precision, but same-leaf agreement recall was only 39.51%; exact rule rejected.",
-    "capability_set_membership_status": "#363 raised veto recall to 64.20% while preserving 86.40% supported exact, but near rejection remained 54.76%, false-route 35.80%, and 18 raw-correct winners were vetoed; further rule tuning over the same BGE/MiniLM projections is closed.",
-    "external_zeroshot_membership_status": "#371 preserved supported routing (93.42%) but OUTSIDE won only 7/552 rows; near rejection 1.59%, false-route 98.15%, p95 274.52 ms. Exact multiclass formulation rejected.",
-    "set_conditioned_entailment_status": "#374 returned not_entailment on all 552 DEV cases, preserving zero false routes but collapsing supported exact to 0%; exact formulation rejected.",
-    "independent_capability_entailment_status": "#377 raised veto recall to 76.54% but collapsed supported exact to 45.61%, vetoing 116 raw-correct winners; exact independent-pair argmax rule rejected.",
-    "pairwise_nli_membership_status": "#378 reached 67.54% supported exact / 55.95% near rejection / 35.19% false-route with p95 539.92 ms; Horizon NLI decomposition family closed.",
-    "positive_retrieval_status": "BGE-M3 remains the reference positive selector. Tool-Embed #406 and GTE #409 were both worse than same-surface BGE on fresh supported-only surfaces; BGE itself remains surface-sensitive.",
-    "open_set_membership_status": "V6A-E geometry, #404 naturalistic operation probes, #408 relative cross-encoding, and #412 E5 conformal gating are terminal. No tested method simultaneously preserved >=85% supported exact and met 97/100/1 open-set safety.",
-    "conformal_status": "#412 demonstrated that a conservative split-conformal gate can hit 99.21% near rejection / 100% OOD / 0.62% false-route / 244 ms p95, but supported exact collapsed to 10.09%; calibration cannot substitute for a discriminative semantic membership score.",
-    "active_cycle": "0.14-end-to-end-agent-utility",
-    "agent_utility_phase_a_status": "#418 corrected freeze: task SHA bc0b78ff...; Recall@3=96.55%, Recall@5=100%, Recall@10=100%; at 250 endpoints mean Top-5 schema context is 2.383% of FULL.",
-    "b1_status": "#420 terminal: exact 552-episode aggregate. FULL task pass 68.48%; SR-5 91.30% (+22.83pp), required-route recall 100%, all-required task coverage 100%, tool-schema tokens 5.4218% of FULL, unauthorized destructive executions 0. Controlled 23-task mechanism result only.",
-    "b2_status": "#423 frozen SmolLM3-3B strong-agent replication is active in workflow 36561002246. 92 task×catalog shards preserve exactly 460 episodes. Hosted-runner shutdown failures are handled only by the preregistered infra-only same-run failed-job recovery rule; no partial outcome tuning.",
-    "final_answer_quality_status": "#424 preregistered 144 independent answer-bearing tasks (6 strata × 6 languages × 4/cell). Deterministic authoring-slot scaffold merged in #460; content generation and answer inference remain blocked until #423 terminal.",
-    "statistical_scope": "B1/B2 use 23 unique semantic tasks and catalog repeats are nested measures. Broad generalization requires #432's 780 independent tasks and its preregistered task-cluster interval; final-answer factuality requires #424. No population-wide noninferiority claim from B1/B2 alone.",
-    "typed_representation_status": "#434 terminal DEV: typed multi-field showed partial quality signal (+1.538pp Recall@5, +2.000pp FullCoverage@5) but missed the <=1.5x p95 latency gate (~1.793x); no promotion and confirmation remains sealed.",
-    "large_heldout_status": "#432 preregistered 780 independent semantic tasks (13 strata × 6 languages × 10/cell). Deterministic authoring-slot scaffold merged in #458; actual task content remains sealed until #423 terminal.",
-    "product_baseline": "SchemaRouter Product is CLOSED at 0.12.0. Research may change compatible internals/defaults behind the frozen public facade but does not reopen product architecture for benchmark gains alone."
-  },
+  "current_research_conclusion": "0.12.0 product track is closed. 0.14 research now tests the frozen typed capability-retrieval facade: B1 is terminal positive controlled evidence; B2 strong-agent attempt 5 is actively executing under a frozen infra-only recovery rule; #432 and #424 protocols plus authoring-slot scaffolds are frozen while actual corpus content/inference remain sealed until B2 is terminal.",
   "paper_reconstruction_checklist": [
     "Use only ledger entries with explicit tuning_eligible roles when discussing model/threshold selection.",
     "Report rejected ablations, not only successful candidates.",
