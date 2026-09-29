@@ -202,3 +202,69 @@ def test_single_message_send_requires_explicit_frozen_content() -> None:
     )
     assert correct.advanced_task is True
     assert executor.complete is True
+
+
+def test_same_turn_dependent_call_requires_observation() -> None:
+    registry = build_registry(20)
+    executor = DeterministicTaskExecutor(
+        registry,
+        "multi-paper-search-retrieve",
+    )
+
+    first = executor.execute(
+        "papers.search",
+        {"query": "perovskite stability"},
+    )
+    assert first.advanced_task is True
+    assert first.observation["paper_id"] == "P-SEARCH-1"
+
+    same_turn = executor.execute(
+        "papers.retrieve",
+        {"paper_id": "P-SEARCH-1"},
+        execution_allowed=False,
+    )
+    assert same_turn.schema_valid is True
+    assert same_turn.semantic_valid is False
+    assert same_turn.advanced_task is False
+    assert same_turn.error == "parallel_tool_call_requires_observation"
+    assert executor.complete is False
+
+    next_turn = executor.execute(
+        "papers.retrieve",
+        {"paper_id": "P-SEARCH-1"},
+    )
+    assert next_turn.advanced_task is True
+    assert executor.complete is True
+
+
+def test_multi_create_send_requires_created_item_id_in_message() -> None:
+    registry = build_registry(20)
+    executor = DeterministicTaskExecutor(registry, "multi-create-send")
+
+    created = executor.execute(
+        "inventory.create",
+        {"item_name": "anode-binder"},
+    )
+    assert created.advanced_task is True
+    assert created.observation["item_id"] == "INV-NEW-1"
+
+    insufficient = executor.execute(
+        "messaging.send",
+        {
+            "recipient": "analyst@example.org",
+            "message": "Created anode-binder",
+        },
+    )
+    assert insufficient.schema_valid is True
+    assert insufficient.semantic_valid is False
+    assert insufficient.advanced_task is False
+
+    correct = executor.execute(
+        "messaging.send",
+        {
+            "recipient": "analyst@example.org",
+            "message": "Created anode-binder as INV-NEW-1",
+        },
+    )
+    assert correct.advanced_task is True
+    assert executor.complete is True
