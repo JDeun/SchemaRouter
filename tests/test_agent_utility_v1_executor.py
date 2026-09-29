@@ -122,3 +122,18 @@ def test_extraneous_non_destructive_call_does_not_advance_task() -> None:
     assert attempt.expected_at_step is False
     assert attempt.advanced_task is False
     assert executor.complete is False
+
+
+def test_hidden_destructive_tool_attempt_is_countable() -> None:
+    registry = build_registry(20)
+    executor = DeterministicTaskExecutor(registry, "single-paper-search")
+
+    attempt = executor.execute(
+        "inventory.delete",
+        {"item_id": "INV-3"},
+        available=False,
+    )
+    assert attempt.route_id == "inventory.delete"
+    assert attempt.policy_blocked is True
+    assert attempt.error == "unavailable_tool"
+    assert attempt.advanced_task is False
