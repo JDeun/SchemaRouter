@@ -3,7 +3,7 @@
   "experiment": "0.14-agent-utility-phase-b1-qwen3-0.6b",
   "issue": 420,
   "amendment": "execution-sharding-equivalence",
-  "status": "frozen_before_any_accepted_552_episode_aggregate",
+  "status": "superseded_by_explicit_user_argument_contract_correction",
   "reason": "The 6-way task-sharded and 24-way catalog-by-task micro-sharded workflows differ only in process scheduling. Their frozen catalog, executor, evaluator and preregistration blobs are byte-identical. Scheduling topology is not an experimental treatment.",
   "execution_semantics_changed": false,
   "core_identity": {
@@ -12,22 +12,9 @@
     "scripts/evaluate_agent_utility_phase_b_qwen.py": "daa167fa2a228d7e951967280643fe6881cd4e6c",
     "benchmarks/agent-utility-v1-b1-preregistration.json": "f4484c9b884a266e2cc51b57908fb29e3c590da2"
   },
-  "eligible_episode_sources": [
-    {
-      "workflow_run_id": 36520025834,
-      "source_revision": "1177f3a6cd5f80bff9fcfa704acfbb5c7356aa39",
-      "sharding": "6 frozen task groups, each evaluates all four catalog sizes",
-      "core_identity_verified_equal": true
-    },
-    {
-      "workflow_run_id": 36520831273,
-      "source_revision": "028194a0cae56ac8e1dbfe33c95f4c1cdab5c807",
-      "sharding": "24 catalog-by-frozen-task-group micro-shards",
-      "core_identity_verified_equal": true
-    }
-  ],
+  "eligible_episode_sources": [],
   "acceptance_rule": {
-    "selection": "use the first eligible source that completes a full valid 552-episode set; selection must not depend on task-success values",
+    "selection": "no episode source is eligible until the corrected task corpus is re-frozen, Phase A re-passes, and new B1 execution sources are created",
     "required_episode_count": 552,
     "required_unique_key": "(catalog_size, task_id, condition)",
     "required_unique_key_count": 552,
@@ -40,7 +27,12 @@
       "SR-PROGRESSIVE",
       "ORACLE"
     ],
-    "required_catalog_sizes": [20, 50, 100, 250],
+    "required_catalog_sizes": [
+      20,
+      50,
+      100,
+      250
+    ],
     "unauthorized_destructive_executions_max": 0,
     "aggregate_with_latest_identity_guarded_task_cluster_bootstrap": true
   },
@@ -48,5 +40,17 @@
     "workflow_run_id": 36517371433,
     "reason": "s06 referenced a nonexistent frozen task ID, producing incomplete 22/23-task surfaces; no accepted aggregate"
   },
-  "provenance_note": "This equivalence rule was frozen before any accepted 552-episode aggregate and before any completed corrected-source shard artifact was used to choose between the eligible sources."
+  "provenance_note": "The prior sharding-equivalence rule remains historically true for the old contract, but both eligible sources are superseded because the benchmark task contract was corrected before any accepted aggregate.",
+  "superseded_episode_sources": [
+    {
+      "workflow_run_id": 36520025834,
+      "source_revision": "1177f3a6cd5f80bff9fcfa704acfbb5c7356aa39",
+      "reason": "uses the pre-correction task contract"
+    },
+    {
+      "workflow_run_id": 36520831273,
+      "source_revision": "028194a0cae56ac8e1dbfe33c95f4c1cdab5c807",
+      "reason": "uses the pre-correction task contract"
+    }
+  ]
 }
