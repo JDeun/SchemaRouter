@@ -259,10 +259,18 @@ def test_worst_catalog_coverage_prevents_pooled_masking() -> None:
         )
         for size in (100, 250, 500)
     ]
-    rows[-1]["ranking"] = [
-        *rows[-1]["ranking"][1:],
-        rows[-1]["ranking"][0],
+    ranking = rows[-1]["ranking"]
+    route_ids = [
+        candidate["route_id"]
+        for candidate in ranking
     ]
+    shifted_route_ids = [*route_ids[1:], route_ids[0]]
+    for candidate, route_id in zip(
+        ranking,
+        shifted_route_ids,
+        strict=True,
+    ):
+        candidate["route_id"] = route_id
 
     result = adaptive_eval.evaluate(
         rows,
