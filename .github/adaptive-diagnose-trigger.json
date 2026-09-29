@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "purpose": "development_retrieval_miss_taxonomy",
+  "created_date": "2026-09-30",
+  "implementation_sha": "33d31a69d3ad91f04c2892f36238655b4fc60c09",
+  "attempt": 2,
+  "retry_of": 36644811008,
+  "retry_reason": "attempt 1 stopped before diagnosis because pytest was not installed in the workflow",
+  "scorer_changed": false,
+  "top_k": 10,
+  "confirmation_surface_used": false,
+  "b2_outcomes_used": false,
+  "expected_catalog_sizes": [
+    100,
+    250,
+    500
+  ],
+  "expected_supported_task_rows": 540,
+  "classifications": [
+    "covered",
+    "tie_collision",
+    "below_cutoff",
+    "zero_score",
+    "missing_from_catalog",
+    "ordering_anomaly"
+  ]
+}
