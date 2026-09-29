@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "experiment": "adaptive-structural-retrieval-v1",
+  "created_date": "2026-09-30",
+  "implementation_sha": "32fa6f5bd7a7a233242caa33cec71d6242a34c5b",
+  "surface": "development",
+  "confirmation_surface_used": false,
+  "b2_outcomes_used": false,
+  "scorer_core_changed": false,
+  "variants": [
+    "BASELINE",
+    "SPEC-TIE",
+    "STRUCT-1.5-1.5",
+    "STRUCT-1.5-3.0",
+    "STRUCT-3.0-1.5",
+    "STRUCT-3.0-3.0",
+    "STRUCT-4.5-1.5",
+    "STRUCT-4.5-3.0"
+  ],
+  "eligibility": "Recall@10 and FullCoverage@10 >= 0.97 independently at 100/250/500; typed numeric recall remains 1.0; no catalog recall regression vs baseline"
+}
