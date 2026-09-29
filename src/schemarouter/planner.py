@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import re
+from copy import deepcopy
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, replace
 from typing import Any, Protocol
@@ -33,6 +34,8 @@ from .models import (
 from .registry import ToolRegistry
 from .validation import (
     canonical_field_value_schema,
+    effective_input_schema,
+    effective_output_schema,
     json_schema_types,
     json_schemas_compatible,
 )
@@ -385,10 +388,12 @@ class SchemaPlanner:
                 parameter.model_copy(deep=True)
                 for parameter in endpoint.parameters
             ],
+            input_schema=deepcopy(effective_input_schema(endpoint)),
             output_fields=[
                 field.model_copy(deep=True)
                 for field in endpoint.output_fields
             ],
+            output_schema=deepcopy(effective_output_schema(endpoint)),
             read_only=endpoint.read_only,
             destructive=endpoint.destructive,
             source_type=tool.source_type,
