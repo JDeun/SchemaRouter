@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "cycle": "0.14-end-to-end-agent-utility",
+  "experiment": "typed-multifield-intent-manual-retrieval-ablation-v1",
+  "issue": 434,
+  "status": "terminal_dev_iteration_no_promotion",
+  "canonical_dev_run": {
+    "workflow_run": 36547832179,
+    "source_sha": "9cf85e3c45491886a5f01a190e8e8e04f24898a7",
+    "artifact_id": 11023311599,
+    "artifact_name": "intent-manual-dev-36547832179",
+    "artifact_digest": "sha256:04719f39ab2e9198da8ead2ae276090c072df339854d19d5d4d5300bd604df40",
+    "result_json_sha256": "bb05aa1f53c084a45500fd3437dcd420dc204a8c82c8e84501b8655f52bd4e82"
+  },
+  "dev_surface": {
+    "semantic_tasks": 60,
+    "language_rows": 360,
+    "catalog_endpoint_counts": [
+      100,
+      250,
+      500,
+      1000
+    ],
+    "confirmation_state": "sealed_not_generated_not_scored",
+    "dev_rows_sha256": "ece680ef12c8e586a334b1eb0bc5654b9f32dff4d3e7b0d5e021fc375f5dedd9"
+  },
+  "intent_manual_freeze": {
+    "generator_revision": "deterministic-capability-intent-manual-v1",
+    "amendment_sha256": "c199bb6f027e394e9e23e34e77b2ec424b57f8eb93e11953f7d617853da444c7",
+    "catalog_rows_sha256": {
+      "100": "391c41adeb54471e9889b44771a10db285252b10379bcdb1bdebc2037f5ce2e4",
+      "250": "9f783e885a76541c3088a075fbc56ca5b15afc416ab786a2621769a42dede0df",
+      "500": "fd9a753cd1c69e60dfc897e824fb8c81c340d08f7c65ee8d3e6b8eedda4e8a0b",
+      "1000": "f34ff6620a47902d8a3d2ee8100f79553eda2680258f8c7796f14369538527b9"
+    }
+  },
+  "promotion_gate": {
+    "comparator": "RAW-SPEC under same BM25",
+    "Recall5_or_FullCoverage5_delta_min": 0.02,
+    "Recall10_delta_min": -0.005,
+    "retrieval_p95_ratio_max": 1.5,
+    "index_bytes_ratio_max": 3
+  },
+  "conditions": {
+    "TYPED-MULTIFIELD": {
+      "Recall5_delta": 0.015384615384615441,
+      "FullCoverage5_delta": 0.020000000000000018,
+      "Recall10_delta": 0,
+      "retrieval_p95_ratio_max": 1.873186668265196,
+      "index_bytes_ratio_max": 1.469245215143256,
+      "quality_gain_gate": true,
+      "Recall10_guardrail": true,
+      "latency_guardrail": false,
+      "index_size_guardrail": true,
+      "promotion_ready_on_dev": false
+    },
+    "INTENT-MANUAL": {
+      "Recall5_delta": 0.011538461538461497,
+      "FullCoverage5_delta": 0.015000000000000013,
+      "Recall10_delta": -0.015384615384615441,
+      "retrieval_p95_ratio_max": 1.7073792111257646,
+      "index_bytes_ratio_max": 1.3277038824164311,
+      "quality_gain_gate": false,
+      "Recall10_guardrail": false,
+      "latency_guardrail": false,
+      "index_size_guardrail": true,
+      "promotion_ready_on_dev": false
+    },
+    "TYPED+INTENT": {
+      "Recall5_delta": 0.011538461538461497,
+      "FullCoverage5_delta": 0.015000000000000013,
+      "Recall10_delta": -0.007692307692307665,
+      "retrieval_p95_ratio_max": 5.887455041361948,
+      "index_bytes_ratio_max": 2.787002993774656,
+      "quality_gain_gate": false,
+      "Recall10_guardrail": false,
+      "latency_guardrail": false,
+      "index_size_guardrail": true,
+      "promotion_ready_on_dev": false
+    }
+  },
+  "scaling_observation": {
+    "1000_endpoints": {
+      "RAW_SPEC": {
+        "Recall5": 0.9384615384615385,
+        "FullCoverage5": 0.92,
+        "Recall10": 0.9846153846153847,
+        "retrieval_p95_ms": 0.47883945
+      },
+      "INTENT_MANUAL": {
+        "Recall5": 0.9692307692307692,
+        "FullCoverage5": 0.96,
+        "Recall10": 0.9692307692307692,
+        "retrieval_p95_ms": 0.52132695
+      },
+      "TYPED_MULTIFIELD": {
+        "Recall5": 0.9538461538461539,
+        "FullCoverage5": 0.94,
+        "Recall10": 0.9846153846153847,
+        "retrieval_p95_ms": 0.636536
+      },
+      "TYPED_PLUS_INTENT": {
+        "Recall5": 0.9692307692307692,
+        "FullCoverage5": 0.96,
+        "Recall10": 0.9846153846153847,
+        "retrieval_p95_ms": 2.24023175
+      }
+    }
+  },
+  "stratum_observation": {
+    "typed_multifield_three_step_FullCoverage5_delta": 0.35,
+    "intent_manual_three_step_FullCoverage5_delta": 0.15,
+    "typed_multifield_destructive_sibling_FullCoverage5_delta": -0.1,
+    "typed_multifield_read_write_sibling_FullCoverage5_delta": -0.05,
+    "note": "The aggregate typed gain is concentrated in three-step composition; deterministic intent expansion adds a smaller composition gain but does not satisfy the global gate."
+  },
+  "decision": {
+    "open_confirmation": false,
+    "promoted_condition": null,
+    "further_DEV_retuning": false,
+    "rationale": "No candidate satisfies all frozen DEV promotion guardrails. Preserve the negative result and move to the independent B2/held-out/final-answer evidence program rather than tune against this DEV surface indefinitely."
+  }
+}
