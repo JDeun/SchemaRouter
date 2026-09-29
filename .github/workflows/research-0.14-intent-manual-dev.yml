@@ -1,0 +1,108 @@
+name: Research 0.14 Intent Manual DEV
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "benchmarks/agent-utility-v2-intent-manual-amendment.json"
+      - "scripts/generate_agent_utility_v2_intent_manual.py"
+      - "scripts/evaluate_agent_utility_v2_intent_manual.py"
+      - "tests/test_agent_utility_v2_intent_manual.py"
+      - "tests/test_agent_utility_v2_intent_manual_evaluator.py"
+      - ".github/workflows/research-0.14-intent-manual-dev.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-0.14-intent-manual-dev-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dev-intent-manual:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e .
+
+      - name: Freeze unchanged DEV surface
+        run: |
+          python scripts/generate_agent_utility_v2_dev.py \
+            --surface development \
+            --out-dir artifacts/representation-dev-freeze
+
+      - name: Generate frozen metadata-only intent manual
+        run: |
+          python scripts/generate_agent_utility_v2_intent_manual.py \
+            --surface development \
+            --freeze-dir artifacts/representation-dev-freeze \
+            --out-dir artifacts/intent-manual
+
+      - name: Evaluate intent conditions
+        run: |
+          python scripts/evaluate_agent_utility_v2_intent_manual.py \
+            --freeze-dir artifacts/representation-dev-freeze \
+            --intent-dir artifacts/intent-manual \
+            --out artifacts/intent-manual-dev-results.json
+
+      - name: Validate governance and summarize
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          path = Path("artifacts/intent-manual-dev-results.json")
+          result = json.loads(path.read_text(encoding="utf-8"))
+
+          assert result["confirmation_state"] == "sealed_not_generated_not_scored"
+          assert result["freeze_manifest"]["confirmation_surface_opened"] is False
+          assert {
+              "INTENT-MANUAL",
+              "TYPED+INTENT",
+          } <= set(result["conditions_scored"])
+          assert result["conditions_blocked"] == {}
+
+          summary = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary.open("a", encoding="utf-8") as handle:
+              handle.write("## 0.14 intent-manual DEV\n\n")
+              for name, gate in result["dev_gates_descriptive"].items():
+                  handle.write(f"### {name}\n")
+                  handle.write(
+                      f"- Recall@5 delta: {gate['Recall@5_delta']:.6f}\n"
+                  )
+                  handle.write(
+                      f"- FullCoverage@5 delta: "
+                      f"{gate['FullCoverage@5_delta']:.6f}\n"
+                  )
+                  handle.write(
+                      f"- Recall@10 delta: {gate['Recall@10_delta']:.6f}\n"
+                  )
+                  handle.write(
+                      f"- max p95 ratio: "
+                      f"{gate['retrieval_p95_ratio_max']:.6f}\n"
+                  )
+                  handle.write(
+                      f"- max index-byte ratio: "
+                      f"{gate['index_bytes_ratio_max']:.6f}\n"
+                  )
+                  handle.write(
+                      f"- DEV all-gates pass: "
+                      f"{result['promotion_ready_on_dev'][name]}\n\n"
+                  )
+              handle.write(
+                  "Confirmation remains sealed; DEV does not authorize promotion.\n"
+              )
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: intent-manual-dev-${{ github.run_id }}
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 30
