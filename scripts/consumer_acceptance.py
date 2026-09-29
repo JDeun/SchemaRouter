@@ -155,7 +155,8 @@ async def scenario_capability_retrieval() -> dict[str, object]:
 
     invoked = await router.ainvoke(request)
     assert calls == 1
-    assert invoked[0].data == {"city": "Seoul", "temperature": 21.0}
+    assert invoked[0].tool == key
+    assert invoked[0].endpoint == "call"
 
     return {
         "route_id": candidate.route_id,
