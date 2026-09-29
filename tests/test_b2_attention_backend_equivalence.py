@@ -17,6 +17,7 @@ def test_normalization_ignores_timing_and_backend_only() -> None:
         "runtime": {"python": "3.12.14"},
         "model": {
             "attention_implementation": "eager",
+            "static_prefix_cache": False,
             "name": "HuggingFaceTB/SmolLM3-3B",
         },
         "model_load_ms": 10.0,
@@ -43,6 +44,7 @@ def test_normalization_ignores_timing_and_backend_only() -> None:
         "runtime": {"python": "3.12.14"},
         "model": {
             "attention_implementation": "sdpa",
+            "static_prefix_cache": True,
             "name": "HuggingFaceTB/SmolLM3-3B",
         },
         "model_load_ms": 12.0,
