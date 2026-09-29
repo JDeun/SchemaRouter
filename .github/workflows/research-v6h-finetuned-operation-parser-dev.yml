@@ -1,0 +1,90 @@
+name: Research V6H Fine-Tuned Operation Parser DEV
+
+on:
+  push:
+    branches:
+      - "research/0.13-end-to-end-operation-parser"
+    paths:
+      - ".github/workflows/research-v6h-finetuned-operation-parser-dev.yml"
+      - "scripts/evaluate_finetuned_operation_parser_v6h.py"
+      - "scripts/verify_v6h_frozen_inputs.py"
+      - "scripts/validate_v6h_dev_analysis.py"
+  pull_request:
+    paths:
+      - ".github/workflows/research-v6h-finetuned-operation-parser-dev.yml"
+      - "scripts/evaluate_finetuned_operation_parser_v6h.py"
+      - "scripts/verify_v6h_frozen_inputs.py"
+      - "scripts/validate_v6h_dev_analysis.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FROZEN_SOURCE: "5135a29f39633421136a0c13c39675947fd92f3b"
+  BANK_SHA256: "c9bf9d378f8f9ef7388fde833e9a04c941871514319961b4a0666d97983caa68"
+  DEV_SHA256: "4da38c34929fcbd7ef828a5ccee9afa89b048c960b852cf315dd68b97370f09e"
+  CONFIRM_SHA256: "26140a4a77ef07fbda0d875cbcba421b0f7a7465990c775fe656bfa4115c7565"
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Verify frozen behavior source
+        run: |
+          git diff --exit-code "${FROZEN_SOURCE}" --             benchmarks/operation-routing-v6h-finetuned-operation-parser-preregistration.json             benchmarks/operation_routing_v6h_catalog.py             benchmarks/schema_finetuned_operation_parser.py             benchmarks/v6f-naturalistic-utterance-bank.json             scripts/generate_operation_routing_v6h.py             tests/test_schema_finetuned_operation_parser.py             tests/test_operation_routing_v6h_protocol.py
+      - name: Validate evaluator and protocol
+        run: |
+          ruff check             scripts/evaluate_finetuned_operation_parser_v6h.py             scripts/verify_v6h_frozen_inputs.py             scripts/validate_v6h_dev_analysis.py
+          PYTHONPATH=. pytest -q             tests/test_schema_finetuned_operation_parser.py             tests/test_operation_routing_v6h_protocol.py
+
+  evaluate-development:
+    needs: protocol
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "sentence-transformers>=3,<6" einops
+      - run: pip install -e ".[dev]"
+      - name: Recreate frozen corpora
+        run: python scripts/generate_operation_routing_v6h.py --out-dir artifacts/operation-routing-v6h
+      - name: Verify frozen inputs
+        run: |
+          python scripts/verify_v6h_frozen_inputs.py             --root artifacts/operation-routing-v6h             --bank benchmarks/v6f-naturalistic-utterance-bank.json             --bank-sha256 "${BANK_SHA256}"             --dev-sha256 "${DEV_SHA256}"             --confirm-sha256 "${CONFIRM_SHA256}"
+      - name: Train parser and score DEV only
+        run: |
+          python scripts/evaluate_finetuned_operation_parser_v6h.py             --development artifacts/operation-routing-v6h/development.json             --state-out artifacts/operation-routing-v6h/trained-parser-state.pt             --metadata-out artifacts/operation-routing-v6h/trained-parser-metadata.json             --out artifacts/operation-routing-v6h/dev-analysis.json
+      - name: Validate DEV governance
+        run: |
+          python scripts/validate_v6h_dev_analysis.py             --analysis artifacts/operation-routing-v6h/dev-analysis.json             --state artifacts/operation-routing-v6h/trained-parser-state.pt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: operation-routing-v6h-dev-${{ github.run_id }}
+          path: |
+            artifacts/operation-routing-v6h/dev-analysis.json
+            artifacts/operation-routing-v6h/trained-parser-metadata.json
+            artifacts/operation-routing-v6h/trained-parser-state.pt
+            artifacts/operation-routing-v6h/development-manifest.json
+            artifacts/operation-routing-v6h/confirmation-manifest.json
+            artifacts/operation-routing-v6h/freeze-manifest.json
+          if-no-files-found: warn
+          retention-days: 30
