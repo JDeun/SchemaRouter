@@ -141,9 +141,9 @@ for candidate in candidates.candidates:
 Use `retrieve_executable(..., k=5)` when candidates must also have a currently ready local
 execution binding. Async counterparts are `aretrieve` and `aretrieve_executable`.
 
-The returned candidates retain the registered parameter/output schemas, semantic IDs, optional
-units and qualifiers, provider/access identity, read/write/destructive metadata, and schema
-fingerprints. Retrieval has no side effect and does not grant execution authority; the surrounding
+The returned candidates retain the full effective input/output JSON Schemas plus registered
+parameters/output fields, semantic IDs, optional units and qualifiers, provider/access identity,
+read/write/destructive metadata, and schema fingerprints. Retrieval has no side effect and does not grant execution authority; the surrounding
 agent still chooses among candidates and execution remains subject to SchemaRouter validation and
 policy.
 
