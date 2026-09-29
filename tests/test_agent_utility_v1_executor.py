@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from benchmarks.agent_utility_v1_catalog import build_registry
+from benchmarks.agent_utility_v1_catalog import TASKS, build_registry
 from benchmarks.agent_utility_v1_executor import DeterministicTaskExecutor
 
 
@@ -166,4 +166,39 @@ def test_multi_create_send_dependency_uses_frozen_task_id() -> None:
         },
     )
     assert sent.advanced_task is True
+    assert executor.complete is True
+
+
+def test_user_supplied_arguments_are_explicit_in_frozen_queries() -> None:
+    queries = {task.task_id: task.query for task in TASKS}
+
+    assert "Experiment complete." in queries["single-message-send"]
+    assert "analyst@example.org" in queries["single-message-send"]
+    assert "100 credits" in queries["multi-create-share"]
+    assert "analyst@example.org" in queries["multi-create-share"]
+
+
+def test_single_message_send_requires_explicit_frozen_content() -> None:
+    registry = build_registry(20)
+    executor = DeterministicTaskExecutor(registry, "single-message-send")
+
+    wrong = executor.execute(
+        "messaging.send",
+        {
+            "recipient": "analyst@example.org",
+            "message": "Something else",
+        },
+    )
+    assert wrong.schema_valid is True
+    assert wrong.semantic_valid is False
+    assert wrong.advanced_task is False
+
+    correct = executor.execute(
+        "messaging.send",
+        {
+            "recipient": "analyst@example.org",
+            "message": "Experiment complete.",
+        },
+    )
+    assert correct.advanced_task is True
     assert executor.complete is True
