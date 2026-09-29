@@ -11,7 +11,6 @@ from scripts.aggregate_agent_utility_phase_b import (
     aggregate,
 )
 
-
 RUNTIME = {
     "platform": "Linux-test",
     "python": "3.12.14",
