@@ -195,19 +195,26 @@ def test_adaptive_dev_authoring_plan_freezes_slots_without_content() -> None:
 def test_adaptive_eligibility_reads_machine_preregistered_gates() -> None:
     prereg = _prereg()
     gates = prereg["dev_selection"]["eligibility_thresholds"]
-    assert gates == {
-        "required_tool_set_recall_min": 0.97,
-        "all_required_full_coverage_min": 0.97,
-        "mean_candidate_count_max_exclusive": 5.0,
-        "p95_candidate_count_max": 10,
-        "mean_schema_tokens_must_be_less_than_fixed5": True,
-    }
+    assert gates["required_tool_set_recall_min"] == 0.97
+    assert gates["all_required_full_coverage_min"] == 0.97
+    assert gates["mean_candidate_count_max_exclusive"] == 5
+    assert gates["p95_candidate_count_max"] == 10
+    assert gates["mean_schema_tokens_must_be_less_than_fixed5"] is True
+    assert gates["coverage_must_pass_each_catalog"] is True
+    assert gates["catalog_sizes"] == [100, 250, 500]
 
     metrics = {
         "supported_required_route_recall": 0.98,
         "supported_all_required_full_coverage": 0.98,
+        "worst_catalog_required_route_recall": 0.98,
+        "worst_catalog_all_required_full_coverage": 0.98,
         "candidate_count": {"mean": 4.0, "p95": 8.0},
         "schema_tokens": {"mean": 80.0},
+        "per_catalog": {
+            "100": {},
+            "250": {},
+            "500": {},
+        },
     }
     fixed5 = {"schema_tokens": {"mean": 100.0}}
     assert adaptive_eval._adaptive_eligible(
