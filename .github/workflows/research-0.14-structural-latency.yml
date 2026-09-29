@@ -1,0 +1,96 @@
+name: Research 0.14 Structural Retrieval Latency
+
+on:
+  push:
+    branches:
+      - "research/0.14-structural-latency-run"
+    paths:
+      - ".github/structural-latency-trigger.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-0.14-structural-latency
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: pip install -e .
+      - name: Benchmark 500-endpoint retrieval latency
+        run: |
+          python - <<'PY'
+          import json
+          import math
+          import statistics
+          import sys
+          import time
+          from pathlib import Path
+
+          ROOT = Path.cwd()
+          sys.path.insert(0, str(ROOT))
+          from benchmarks.agent_utility_v5_catalog import build_registry, build_tasks
+          from schemarouter import SchemaPlanner
+
+          registry = build_registry(500)
+          tasks = build_tasks()
+          baseline = SchemaPlanner(registry, candidate_index=True)
+          structural = SchemaPlanner(
+              registry,
+              candidate_index=True,
+              structural_retrieval=True,
+          )
+
+          def percentile(values, q):
+              ordered=sorted(values)
+              pos=q*(len(ordered)-1)
+              lo=math.floor(pos); hi=math.ceil(pos)
+              if lo==hi:
+                  return ordered[lo]
+              w=pos-lo
+              return ordered[lo]*(1-w)+ordered[hi]*w
+
+          # Warm caches without recording.
+          for task in tasks[:20]:
+              baseline.retrieve(task["query"], k=10)
+              structural.retrieve(task["query"], k=10)
+
+          results={}
+          for name, planner in [("baseline", baseline), ("structural", structural)]:
+              values=[]
+              for _repeat in range(3):
+                  for task in tasks:
+                      started=time.perf_counter_ns()
+                      planner.retrieve(task["query"], k=10)
+                      values.append((time.perf_counter_ns()-started)/1_000_000)
+              results[name]={
+                  "count":len(values),
+                  "mean_ms":statistics.fmean(values),
+                  "median_ms":statistics.median(values),
+                  "p95_ms":percentile(values,0.95),
+                  "max_ms":max(values),
+              }
+
+          results["ratio"]={
+              key:results["structural"][key]/results["baseline"][key]
+              for key in ("mean_ms","median_ms","p95_ms")
+          }
+          Path("structural-latency.json").write_text(
+              json.dumps(results,indent=2,sort_keys=True)+"\n",
+              encoding="utf-8",
+          )
+          print(json.dumps(results,sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "structural-latency-${{ github.run_id }}"
+          path: structural-latency.json
+          if-no-files-found: error
+          retention-days: 30
