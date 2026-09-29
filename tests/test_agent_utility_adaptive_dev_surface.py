@@ -9,6 +9,7 @@ from benchmarks.agent_utility_v5_catalog import (
     LANGUAGES,
     STRATA,
     TASKS_PER_CELL,
+    _READ_WRITE_PAIRS,
     build_registry,
     build_tasks,
 )
@@ -93,3 +94,16 @@ def test_adaptive_dev_freeze_precedes_scoring_and_has_no_exact_prior_overlap(
     assert (tmp_path / "dev-tasks.json").is_file()
     for size in CATALOG_SIZES:
         assert (tmp_path / f"catalog-{size}.json").is_file()
+
+
+def test_read_write_pairs_match_endpoint_authority() -> None:
+    registry = build_registry(100)
+    lookup = {
+        f"{tool.key}.{endpoint.name}": endpoint
+        for tool in registry.tools()
+        for endpoint in tool.endpoints
+    }
+
+    for read_route, write_route in _READ_WRITE_PAIRS:
+        assert lookup[read_route].read_only is True
+        assert lookup[write_route].read_only is False
