@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import platform
 import random
 import re
 import statistics
@@ -156,6 +157,22 @@ def _tool_response_message(observations: list[dict[str, Any]]) -> str:
     )
 
 
+def _runtime_identity() -> dict[str, str]:
+    import safetensors
+    import tokenizers
+    import torch
+    import transformers
+
+    return {
+        "platform": platform.platform(),
+        "python": platform.python_version(),
+        "torch": torch.__version__,
+        "transformers": transformers.__version__,
+        "tokenizers": tokenizers.__version__,
+        "safetensors": safetensors.__version__,
+    }
+
+
 class LocalQwenAgent:
     def __init__(self) -> None:
         import torch
@@ -282,13 +299,18 @@ def _run_fixed_episode(
     task: Any,
     condition: str,
 ) -> dict[str, Any]:
+    episode_started = time.perf_counter_ns()
+    selection_started = time.perf_counter_ns()
     visible_routes = _candidate_set(
         registry,
         task.query,
         condition,
         task.required_routes,
     )
-    return _run_episode(
+    selection_ms = (
+        time.perf_counter_ns() - selection_started
+    ) / 1_000_000
+    row = _run_episode(
         agent,
         registry,
         task,
@@ -296,6 +318,11 @@ def _run_fixed_episode(
         initial_routes=visible_routes,
         progressive=False,
     )
+    row["candidate_selection_latency_ms"] = selection_ms
+    row["episode_wall_latency_ms"] = (
+        time.perf_counter_ns() - episode_started
+    ) / 1_000_000
+    return row
 
 
 def _run_progressive_episode(
@@ -303,6 +330,8 @@ def _run_progressive_episode(
     registry: Any,
     task: Any,
 ) -> dict[str, Any]:
+    episode_started = time.perf_counter_ns()
+    selection_started = time.perf_counter_ns()
     ranked = _rank(registry, task.query)
     ranking = [str(row["route_id"]) for row in ranked]
     stages = [
@@ -310,7 +339,10 @@ def _run_progressive_episode(
         sorted(ranking[:10]),
         sorted(route_ids(registry)),
     ]
-    return _run_episode(
+    selection_ms = (
+        time.perf_counter_ns() - selection_started
+    ) / 1_000_000
+    row = _run_episode(
         agent,
         registry,
         task,
@@ -319,6 +351,11 @@ def _run_progressive_episode(
         progressive=True,
         progressive_stages=stages,
     )
+    row["candidate_selection_latency_ms"] = selection_ms
+    row["episode_wall_latency_ms"] = (
+        time.perf_counter_ns() - episode_started
+    ) / 1_000_000
+    return row
 
 
 def _run_episode(
@@ -536,7 +573,7 @@ def _run_episode(
         "input_tokens": total_input,
         "output_tokens": total_output,
         "tool_schema_tokens": total_tool_tokens,
-        "latency_ms": total_latency,
+        "model_generation_latency_ms": total_latency,
         "tool_call_count": len(attempts),
         "schema_valid_call_rate": (
             valid_schema_calls / len(attempts) if attempts else None
@@ -606,11 +643,23 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "mean_expansions": statistics.fmean(
             float(row["expansions"]) for row in rows
         ),
-        "latency_ms_median": statistics.median(
-            float(row["latency_ms"]) for row in rows
+        "candidate_selection_latency_ms_median": statistics.median(
+            float(row["candidate_selection_latency_ms"]) for row in rows
         ),
-        "latency_ms_p95": _p95(
-            [float(row["latency_ms"]) for row in rows]
+        "candidate_selection_latency_ms_p95": _p95(
+            [float(row["candidate_selection_latency_ms"]) for row in rows]
+        ),
+        "model_generation_latency_ms_median": statistics.median(
+            float(row["model_generation_latency_ms"]) for row in rows
+        ),
+        "model_generation_latency_ms_p95": _p95(
+            [float(row["model_generation_latency_ms"]) for row in rows]
+        ),
+        "episode_wall_latency_ms_median": statistics.median(
+            float(row["episode_wall_latency_ms"]) for row in rows
+        ),
+        "episode_wall_latency_ms_p95": _p95(
+            [float(row["episode_wall_latency_ms"]) for row in rows]
         ),
         "context_overflow_rate": sum(
             row["context_overflow"] for row in rows
@@ -799,6 +848,7 @@ def evaluate(
     return {
         "experiment": "0.14-agent-utility-phase-b1-qwen3-0.6b",
         "issue": 420,
+        "runtime": _runtime_identity(),
         "model": {
             "name": MODEL_NAME,
             "revision": MODEL_REVISION,
