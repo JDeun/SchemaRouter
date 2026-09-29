@@ -3366,7 +3366,7 @@
       "pull_request": 421,
       "branch": "research/0.14-local-agent-ab",
       "preregistered": true,
-      "status": "queued_b1_v2_self_validating_canonical_execution",
+      "status": "running_b1_v2_protocol_validated_canonical_execution",
       "model": {
         "name": "Qwen/Qwen3-0.6B",
         "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
@@ -3383,14 +3383,14 @@
         "ORACLE"
       ],
       "expected_episode_count": 552,
-      "canonical_run_id": 36526572267,
+      "canonical_run_id": 36529108855,
       "task_sharded_fallback_run_id": 36517143772,
       "corrected_freeze_workflow_run_id": 36507439562,
       "tool_call_smoke_workflow_run_id": 36507510580,
       "result": null,
-      "decision": "b1_v2_queued_no_accepted_aggregate",
-      "interpretation": "B1 is a reproducible sanity baseline only. Product-level agent utility requires separate stronger-agent B2 replication.",
-      "canonical_source_revision": "62111bda592264fd2c10f3d274af7a0606d042f4",
+      "decision": "in_progress_b1_v2_no_terminal_claim",
+      "interpretation": "B1 v2 is the first eligible accepted-execution protocol after static task-contract and causality audits. It remains a small-model sanity baseline; broad utility claims require B2 and a larger held-out task population.",
+      "canonical_source_revision": "b9eadefd3cd076f026a54bbc55a949f0424f5dab",
       "protocol_correction": {
         "executor_task_id_fix": "be7ef080ceac45797fbf8e2dcd45f1d6f628d102",
         "unknown_task_fail_closed_guard": "f56beb2cec1116ead8bcf70a52fbb24eed262d71",
@@ -3398,7 +3398,7 @@
         "micro_shard_fix": "6d03fe5afe2e47cc6875ebbb9315c2a7a7f56f0b",
         "frozen_task_catalog_identity_changed": false
       },
-      "protocol_validation_run_id": 36520356798,
+      "protocol_validation_run_id": 36528950357,
       "protocol_validated_parent_revision": "0a55985cf8316e8a17b5652b3ee2c8db352e410d",
       "superseded_runs": [
         {
@@ -3412,16 +3412,7 @@
           "reason": "superseded before canonical execution so final benchmark provenance starts after the successful regression/lint checkpoint"
         }
       ],
-      "statistical_amendment": {
-        "file": "benchmarks/agent-utility-v1-b1-statistical-amendment.json",
-        "status": "frozen_before_any_accepted_canonical_aggregate",
-        "bootstrap_unit": "task_id_cluster",
-        "unique_semantic_task_count": 23,
-        "catalog_repeats_per_task": 4,
-        "iterations": 5000,
-        "seed": 20260929,
-        "interpretation": "The -2pp B1 gate is descriptive only; B1 is not a powered population non-inferiority proof."
-      },
+      "statistical_amendment": "benchmarks/agent-utility-v1-b1-statistical-amendment.json",
       "protocol_validation_pending_run_id": 36522192140,
       "raw_execution_runs_superseded_or_invalid": [
         36517371433,
@@ -3461,28 +3452,51 @@
           36520831273
         ]
       },
-      "preregistration_v2": {
-        "path": "benchmarks/agent-utility-v1-b1-preregistration-v2.json",
-        "commit": "141593bcbf4ff6553b2c37ff4bba7f98013369d8",
-        "tasks_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
-        "phase_a_gate_required_before_inference": true,
-        "one_executed_tool_call_per_assistant_turn": true,
-        "bootstrap_unit": "task_id_cluster"
-      },
+      "preregistration_v2": "benchmarks/agent-utility-v1-b1-preregistration-v2.json",
       "superseded_episode_sources": [
-        {
-          "run_id": 36517371433,
-          "reason": "invalid 22/23 task surface from wrong s06 task id"
+        36517371433,
+        36520025834,
+        36520831273
+      ],
+      "tasks_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
+      "task_contract_amendment": "benchmarks/agent-utility-v1-b1-task-contract-amendment.json",
+      "causality_amendment": "benchmarks/agent-utility-v1-b1-causality-amendment.json",
+      "sharding_plan": "benchmarks/agent-utility-v1-b1-sharding-v2.json",
+      "phase_a_v2": {
+        "recall_at_1_by_catalog": {
+          "20": 0.6896551724137931,
+          "50": 0.6896551724137931,
+          "100": 0.6896551724137931,
+          "250": 0.6551724137931034
         },
-        {
-          "run_id": 36520025834,
-          "reason": "pre-v2 task contract"
+        "recall_at_3": 0.9655172413793104,
+        "recall_at_5": 1,
+        "recall_at_10": 1,
+        "mean_top5_context_ratio_vs_full": {
+          "20": 0.2669073184190559,
+          "50": 0.11443168901579216,
+          "100": 0.058719670022548985,
+          "250": 0.023833039497124713
         },
-        {
-          "run_id": 36520831273,
-          "reason": "pre-v2 task contract/causality"
-        }
-      ]
+        "phase_b_eligible": true
+      },
+      "runtime_v2": {
+        "runner": "ubuntu-24.04",
+        "python": "3.12.14",
+        "torch": "2.14.0+cpu",
+        "transformers": "4.57.6",
+        "tokenizers": "0.22.2",
+        "safetensors": "0.8.0"
+      },
+      "protocol_v2": {
+        "max_executed_tool_calls_per_assistant_turn": 1,
+        "dependent_calls_require_prior_observation": true,
+        "bootstrap_unit": "task_id cluster",
+        "expected_job_count": 30,
+        "expected_episode_count": 552,
+        "duplicate_episode_keys_fail_closed": true,
+        "unknown_task_ids_fail_closed": true
+      }
     },
     {
       "id": "0.14-b2-strong-agent-replication",
@@ -3701,8 +3715,8 @@
     "open_set_membership_status": "V6A-E geometry, #404 naturalistic operation probes, #408 relative cross-encoding, and #412 E5 conformal gating are terminal. No tested method simultaneously preserved >=85% supported exact and met 97/100/1 open-set safety.",
     "conformal_status": "#412 demonstrated that a conservative split-conformal gate can hit 99.21% near rejection / 100% OOD / 0.62% false-route / 244 ms p95, but supported exact collapsed to 10.09%; calibration cannot substitute for a discriminative semantic membership score.",
     "active_cycle": "0.14-end-to-end-agent-utility",
-    "agent_utility_phase_a_status": "#418 passed: corrected frozen benchmark Recall@3=96.55%, Recall@5=100%, Recall@10=100%; Top-5 mean schema context is 2.38% of FULL at 250 endpoints.",
-    "b1_status": "#420 B1 v2 is queued as self-validating workflow 36526572267. It must pass v2 protocol checks, new task SHA bc0b78ff..., and the rerun Phase-A entry gate before inference. No previous B1 episode source is eligible.",
+    "agent_utility_phase_a_status": "#418/B1-v2 re-freeze: task SHA bc0b78ff...; Recall@3=96.55%, Recall@5=100%, Recall@10=100% across all catalog sizes; at 250 endpoints mean Top-5 schema context is 2.383% of FULL.",
+    "b1_status": "#420 B1 v2 is running as workflow 36529108855 at b9eadef after successful preflight and exact-pinned two-turn smoke. Task SHA is bc0b78ff...; Phase A still has Recall@3=96.55% and Recall@5/@10=100%. No terminal B1 claim until exactly 552 unique episodes aggregate.",
     "b2_status": "#423 protocol placeholder requires a materially stronger frozen agent before inference.",
     "final_answer_quality_status": "#424 protocol placeholder separates deterministic tool-use success from factual final-answer quality.",
     "statistical_scope": "B1 has 23 unique semantic tasks repeated over four catalog sizes. Paired uncertainty is cluster-bootstrapped by task_id; the -2pp gate is descriptive. #432 is required for population-level generalization."
@@ -3780,7 +3794,7 @@
       426
     ],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "Finish #420 B1 v2 self-validating 552-episode aggregate unchanged. Then freeze and run #423 B2 stronger-agent replication; #424 remains separate final-answer quality.",
+    "next_research_direction": "Finish #420 B1 v2 canonical aggregate unchanged. Then freeze a materially stronger B2 agent (#423). Use #432 before any population-level non-inferiority/generalization claim. #424 separately measures final-answer factual quality; #430 adaptive K remains post-fixed-K work.",
     "contingent_experiments": [
       303
     ],
@@ -3791,7 +3805,6 @@
       423,
       424,
       430,
-      431,
       432
     ],
     "infrastructure_in_progress": [],
@@ -3813,7 +3826,7 @@
     ],
     "runtime_only_contingency": 318,
     "current_cycle": "0.14-end-to-end-agent-utility",
-    "current_cycle_status": "phase_a_passed_b1_running",
+    "current_cycle_status": "phase_a_v2_passed_b1_v2_running",
     "final_evaluation_issue": 198,
     "final_evaluation_status": "blocked_no_fresh_confirmed_candidate",
     "staged_product_work": [
