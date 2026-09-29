@@ -8,12 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.generate_agent_utility_b2_freeze import (
+from scripts.generate_agent_utility_b2_freeze import (  # noqa: E402
     EXPECTED_CATALOG_SHAS,
     EXPECTED_TASK_SHA,
     freeze,
 )
-from scripts.verify_agent_utility_b2_candidate_sets import (
+from scripts.verify_agent_utility_b2_candidate_sets import (  # noqa: E402
     EXPECTED_ROWS,
     EXPECTED_SHA256,
     verify,
