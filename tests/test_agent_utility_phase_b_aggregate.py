@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from scripts.aggregate_agent_utility_phase_b import (
     _cluster_bootstrap_delta,
+    _retrieval_coverage,
     aggregate,
 )
 
@@ -147,3 +148,39 @@ def test_aggregate_rejects_policy_drift(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="policy drift"):
         aggregate([first, second])
+
+
+def test_retrieval_coverage_uses_final_exposed_candidate_set() -> None:
+    rows = [
+        {
+            "catalog_size": 20,
+            "required_routes": ["a", "b"],
+            "candidate_history": [["a"], ["a", "b"]],
+        },
+        {
+            "catalog_size": 50,
+            "required_routes": ["a", "b"],
+            "candidate_history": [["a"]],
+        },
+    ]
+
+    result = _retrieval_coverage(rows)
+
+    assert result["required_route_recall"] == 0.75
+    assert result["all_required_task_coverage"] == 0.5
+    assert result["minimum_required_route_recall_by_catalog"] == 0.5
+    assert result["by_catalog"]["20"]["required_route_recall"] == 1.0
+    assert result["by_catalog"]["50"]["required_route_recall"] == 0.5
+
+
+def test_retrieval_coverage_rejects_missing_candidate_history() -> None:
+    with pytest.raises(ValueError, match="missing candidate_history"):
+        _retrieval_coverage(
+            [
+                {
+                    "catalog_size": 20,
+                    "required_routes": ["a"],
+                    "candidate_history": [],
+                }
+            ]
+        )
