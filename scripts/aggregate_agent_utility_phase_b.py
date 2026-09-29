@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
+import random
+import statistics
 import sys
 from pathlib import Path
 from typing import Any
@@ -13,10 +16,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from benchmarks.agent_utility_v1_catalog import TASKS  # noqa: E402
-from scripts.evaluate_agent_utility_phase_b_qwen import (  # noqa: E402
-    _bootstrap_delta,
-    _summary,
-)
+from scripts.evaluate_agent_utility_phase_b_qwen import _summary  # noqa: E402
 
 DEPLOYABLE = ("SR-3", "SR-5", "SR-10", "SR-PROGRESSIVE")
 RETRIEVAL_ELIGIBLE = {
@@ -25,6 +25,68 @@ RETRIEVAL_ELIGIBLE = {
     "SR-10": True,
     "SR-PROGRESSIVE": True,
 }
+
+
+def _cluster_bootstrap_delta(
+    full_rows: list[dict[str, Any]],
+    condition_rows: list[dict[str, Any]],
+    *,
+    iterations: int = 5000,
+    seed: int = 20260929,
+) -> dict[str, Any]:
+    """Bootstrap paired pass-rate deltas by semantic task, not repeated catalog row."""
+
+    full = {
+        (str(row["task_id"]), int(row["catalog_size"])): bool(row["passed"])
+        for row in full_rows
+    }
+    condition = {
+        (str(row["task_id"]), int(row["catalog_size"])): bool(row["passed"])
+        for row in condition_rows
+    }
+    if set(full) != set(condition):
+        raise ValueError("paired condition keys do not match FULL")
+
+    task_ids = sorted({task_id for task_id, _ in full})
+    if not task_ids:
+        raise ValueError("no paired tasks for bootstrap")
+
+    task_deltas: dict[str, float] = {}
+    for task_id in task_ids:
+        keys = sorted(key for key in full if key[0] == task_id)
+        task_deltas[task_id] = statistics.fmean(
+            int(condition[key]) - int(full[key])
+            for key in keys
+        )
+
+    delta = statistics.fmean(task_deltas.values())
+    rng = random.Random(seed)
+    samples = sorted(
+        statistics.fmean(
+            task_deltas[task_ids[rng.randrange(len(task_ids))]]
+            for _ in range(len(task_ids))
+        )
+        for _ in range(iterations)
+    )
+
+    def quantile(probability: float) -> float:
+        position = probability * (len(samples) - 1)
+        low = math.floor(position)
+        high = math.ceil(position)
+        if low == high:
+            return samples[low]
+        weight = position - low
+        return samples[low] * (1.0 - weight) + samples[high] * weight
+
+    return {
+        "delta": delta,
+        "ci_low": quantile(0.025),
+        "ci_high": quantile(0.975),
+        "cluster_unit": "task_id",
+        "unique_task_count": len(task_ids),
+        "catalog_repeats_per_task": len(full) // len(task_ids),
+        "iterations": iterations,
+    }
 
 
 def aggregate(paths: list[Path]) -> dict[str, Any]:
@@ -127,7 +189,7 @@ def aggregate(paths: list[Path]) -> dict[str, Any]:
 
     full_rows = [row for row in rows if row["condition"] == "FULL"]
     paired = {
-        condition: _bootstrap_delta(
+        condition: _cluster_bootstrap_delta(
             full_rows,
             [row for row in rows if row["condition"] == condition],
         )
