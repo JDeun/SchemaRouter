@@ -23,7 +23,15 @@
     "max_new_tokens_per_turn": 256,
     "max_turns": 6,
     "seed": 20260929,
-    "cpu_threads": 4
+    "cpu_threads": 4,
+    "generation_stopping": {
+      "eos_token": true,
+      "completed_tool_call_suffix": "</tool_call>",
+      "rule": "Stop generation after the first complete native XML tool call closing tag, or EOS for non-tool final text.",
+      "condition_independent": true,
+      "benchmark_row_dependent": false,
+      "rationale": "Interface-level runtime bound frozen after synthetic smoke showed completed tool calls continued generating until the token cap; no B2 benchmark row had been consumed."
+    }
   },
   "model_selection_governance": {
     "materially_stronger_than_b1": true,
@@ -125,7 +133,21 @@
     "no_context_overflow": true,
     "feasibility_record_model_load_seconds": true,
     "feasibility_record_generation_seconds": true,
-    "full_b2_inference_authorized_only_after_smoke_pass": true
+    "full_b2_inference_authorized_only_after_smoke_pass": true,
+    "initial_functional_smoke": {
+      "workflow_run": 36547250951,
+      "source_sha": "9119dd519262774e9cca84a95c79a2b1487e0432",
+      "result": "pass",
+      "model_load_seconds": 19.635010228,
+      "max_rss_mb": 6531.875,
+      "generation_seconds": [
+        117.814477974,
+        117.823018967,
+        136.535557654
+      ],
+      "interpretation": "Tool semantics passed, but naive EOS-only generation is too slow for the full matrix; rerun with the frozen completed-tool-call stop rule before authorization."
+    },
+    "latest_smoke_must_validate_generation_stopping_rule": true
   },
   "product_utility_gate": {
     "task_pass_noninferiority_vs_full_absolute": -0.02,
