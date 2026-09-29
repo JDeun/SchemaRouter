@@ -137,3 +137,33 @@ def test_hidden_destructive_tool_attempt_is_countable() -> None:
     assert attempt.policy_blocked is True
     assert attempt.error == "unavailable_tool"
     assert attempt.advanced_task is False
+
+
+def test_multi_create_send_dependency_uses_frozen_task_id() -> None:
+    registry = build_registry(20)
+    executor = DeterministicTaskExecutor(registry, "multi-create-send")
+
+    wrong = executor.execute(
+        "inventory.create",
+        {"item_name": "wrong-name"},
+    )
+    assert wrong.schema_valid is True
+    assert wrong.semantic_valid is False
+    assert wrong.advanced_task is False
+
+    created = executor.execute(
+        "inventory.create",
+        {"item_name": "anode-binder"},
+    )
+    assert created.advanced_task is True
+    assert created.observation["item_id"] == "INV-NEW-1"
+
+    sent = executor.execute(
+        "messaging.send",
+        {
+            "recipient": "analyst@example.org",
+            "message": "Created anode-binder as INV-NEW-1",
+        },
+    )
+    assert sent.advanced_task is True
+    assert executor.complete is True
