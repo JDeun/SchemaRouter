@@ -42,7 +42,7 @@ from scripts.generate_operation_routing_v6e import build as build_v6e
 from scripts.generate_operation_routing_v6h import build
 
 
-def test_v6h_preregistration_is_bound_to_issue_404() -> None:
+def test_v6h_preregistration_is_bound_to_issue_415() -> None:
     data = json.loads(
         (
             ROOT
@@ -54,15 +54,16 @@ def test_v6h_preregistration_is_bound_to_issue_404() -> None:
     assert data["experiment"] == (
         "end-to-end-multilingual-operation-oos-parser-v1"
     )
-    assert data["semantic_encoder"]["revision"] == (
+    assert data["base_encoder"]["revision"] == (
         "e8f8c211226b894fcb81acc59f3b34ba3efd5f42"
     )
-    assert data["probes"]["C"] == 1.0
-    assert data["probes"]["solver"] == "lbfgs"
-    assert data["probes"]["probability_threshold"] is None
-    assert data["probes"]["margin_threshold"] is None
-    assert data["route_authority"]["positive_rerank"] is False
-    assert data["route_authority"]["endpoint_switch"] is False
+    assert data["base_encoder"]["encoder_trainable"] is True
+    assert data["training"]["epochs"] == 4
+    assert data["training"]["learning_rate"] == 2e-5
+    assert data["training"]["probability_threshold"] is None
+    assert data["training"]["margin_threshold"] is None
+    assert data["positive_selector"]["positive_rerank"] is False
+    assert data["positive_selector"]["endpoint_switch"] is False
 
 
 def test_v6h_route_identities_are_disjoint_from_v6a_through_v6e() -> None:
@@ -93,9 +94,9 @@ def test_v6h_dev_and_confirmation_counts_and_bank_disjointness() -> None:
         assert manifest["tool_count"] == 7
         assert manifest["endpoint_counts"] == [2, 2, 3, 3, 3, 3, 3]
         assert manifest["synthetic_positives_per_route"] == 18
-        assert manifest["probe_operation_examples"] == 432
-        assert manifest["probe_background_examples"] == 384
-        assert len(manifest["probe_bank_sha256"]) == 64
+        assert manifest["training_operation_examples"] == 432
+        assert manifest["training_background_examples"] == 384
+        assert len(manifest["training_bank_sha256"]) == 64
         assert set(manifest["adapters"]) == {"native", "openapi", "mcp"}
         assert manifest["corpus_sha256"]
         assert training.isdisjoint({str(row["query"]) for row in rows})
