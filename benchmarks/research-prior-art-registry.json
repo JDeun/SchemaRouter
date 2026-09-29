@@ -141,7 +141,7 @@
       "title": "Energy, density, and open-space membership scoring",
       "issue": 390,
       "parent_issue": 388,
-      "status": "active_research_no_frozen_successor",
+      "status": "terminal_no_active_successor",
       "canonical_references": [
         {
           "title": "GEM: Gaussian Embedding Modeling for Out-of-Distribution Detection in GUI Agents",
@@ -175,7 +175,7 @@
         397,
         399
       ],
-      "trigger": "No successor is frozen. Search prior art and repository history for a materially different semantic representation or membership signal. Do not tune V6E k, thresholds, weights, background anchors, evidence wording, or decision order from consumed DEV.",
+      "trigger": "V6C/V6D/V6E are terminal. No active geometry successor; do not tune k, Gaussian parameters, thresholds, weights, anchors, or schema/complement wording from consumed DEV.",
       "current_experiment": {
         "issue": 401,
         "branch": "research/0.13-knn-membership",
@@ -244,7 +244,7 @@
       "title": "Selective prediction and conformal abstention",
       "issue": 391,
       "parent_issue": 388,
-      "status": "deferred",
+      "status": "terminal_tested_formulation_no_active_successor",
       "canonical_references": [
         {
           "title": "Conformal Predictive Systems Under Covariate Shift",
@@ -272,14 +272,29 @@
         "#198 calibration",
         "#198 blind"
       ],
-      "trigger": "Only after a preregistered membership score has a credible precision-recall tradeoff."
+      "trigger": "Revisit conformal/selective calibration only after a substantially more discriminative semantic membership score exists. Do not tune #412 alpha/E0/model from consumed DEV.",
+      "current_experiment": {
+        "issue": 412,
+        "branch": "research/0.13-conformal-e5-membership",
+        "status": "terminal_dev_supported_recall_fail",
+        "result": {
+          "supported_exact": 0.10087719298245613,
+          "raw_supported_exact": 0.793859649122807,
+          "near_domain_rejection": 0.9920634920634921,
+          "ood_rejection": 1,
+          "false_route_rate": 0.006172839506172839,
+          "raw_correct_winner_veto_rate": 0.8729281767955801,
+          "p95_ms": 244.23597575,
+          "confirmation_scored": false
+        }
+      }
     },
     {
       "id": "tool-retrieval-alignment",
       "title": "Tool retrieval and executable-schema retrieval alignment",
       "issue": 392,
       "parent_issue": 388,
-      "status": "ongoing_architecture",
+      "status": "ongoing_architecture_no_active_experiment",
       "canonical_references": [
         {
           "title": "Retrieval Models Aren't Tool-Savvy: Benchmarking Tool Retrieval for Large Language Models",
@@ -294,7 +309,21 @@
         }
       ],
       "schemarouter_mapping": "Treat OpenAPI/MCP/ToolSpec as typed executable documents: adapter->Tool/Endpoint/Field->registry/index->retrieval. Keep downstream task decomposition/agent loops outside SchemaRouter.",
-      "trigger": "Maintain continuously; this workstream informs architecture and benchmarks but does not obtain positive execution authority."
+      "trigger": "Maintain architecture/literature mapping continuously. No active retrieval experiment; do not revive tested Tool-Embed/GTE replacement or relative cross-encoder formulations without a materially new representation.",
+      "terminal_controls": [
+        {
+          "issue": 406,
+          "result": "Tool-Embed-0.6B positive selector: 78.07% exact vs 86.84% same-surface BGE; p95 287.42 ms; terminal."
+        },
+        {
+          "issue": 408,
+          "result": "Relative mMARCO cross-encoder veto: 79.39% supported exact, 19.84% near rejection, 59.72% OOD, 71.30% false-route, p95 2992 ms; terminal."
+        },
+        {
+          "issue": 409,
+          "result": "GTE positive selector: 71.49% exact vs 88.16% same-surface BGE; p95 100.14 ms; terminal."
+        }
+      ]
     }
   ],
   "terminal_semantic_membership_lineage": [
@@ -349,6 +378,26 @@
     {
       "issue": 401,
       "result": "V6E k=3 non-parametric membership: supported exact 83.33%, near/OOD rejection 60.71%/54.17%, false-route 40.74%, p95 176.50 ms; confirmation unopened"
+    },
+    {
+      "issue": 404,
+      "result": "Naturalistic multilingual operation/scope linear probes: supported exact 75.44%, near/OOD rejection 59.52%/95.83%, false-route 32.41%, p95 297.36 ms; confirmation unopened."
+    },
+    {
+      "issue": 406,
+      "result": "Tool-Embed positive selector: exact 78.07% vs same-surface BGE 86.84%, p95 287.42 ms; confirmation unopened."
+    },
+    {
+      "issue": 408,
+      "result": "Relative multilingual cross-encoder membership: supported 79.39%, near/OOD rejection 19.84%/59.72%, false-route 71.30%, p95 2992 ms; confirmation unopened."
+    },
+    {
+      "issue": 409,
+      "result": "Frozen GTE positive selector: exact 71.49% vs same-surface BGE 88.16%, p95 100.14 ms; confirmation unopened."
+    },
+    {
+      "issue": 412,
+      "result": "Multilingual-E5 split-conformal gate: supported 10.09%, near 99.21%, OOD 100%, false-route 0.62%, p95 244.24 ms; safety passed but supported recall collapsed; confirmation unopened."
     }
   ]
 }
