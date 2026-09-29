@@ -2985,3 +2985,38 @@ This closes the Horizon zero-shot/NLI decomposition family (#371/#374/#377/#378)
 cycle (#382) moves to a materially different family grounded in open-intent/OOS literature:
 schema-derived adaptive decision boundaries, then schema-derived hard negatives and energy-based
 open-set evidence.
+
+
+## 2026-09-28/29 — 0.13 post-V6E semantic-evidence sequence
+
+After V6A-V6E showed that schema-synthetic spherical, ellipsoidal, Gaussian-mixture and local-kNN
+geometry did not transfer cleanly to natural requests, the research line changed evidence sources
+rather than retuning geometry.
+
+Five preregistered controls were consumed:
+
+1. **#404 naturalistic generic-operation probes** trained fixed MiniLM linear probes on a frozen
+   multilingual utterance bank. Broad OOD improved, but supported exact fell to 75.44%, near-domain
+   rejection reached only 59.52%, and p95 was 297.36 ms.
+2. **#406 Tool-Embed positive retrieval** tested an external tool-specialized embedding model as the
+   positive selector. It reached 78.07% exact versus 86.84% for same-surface BGE-M3 and missed the
+   latency target.
+3. **#408 relative multilingual cross-encoding** jointly scored requests against registered,
+   same-resource counterfactual, and background documents. It reached 79.39% supported exact,
+   19.84% near rejection, 59.72% OOD rejection, 71.30% false-route, and ~2.99 s p95.
+4. **#409 frozen GTE multilingual positive retrieval** revisited a historically strong pre-V6F
+   representation on a new supported-only registry. GTE reached 71.49% exact versus 88.16% for
+   same-surface BGE, despite a viable 100.14 ms p95.
+5. **#412 multilingual-E5 split-conformal membership** separated route selection from abstention and
+   calibrated a one-sided unsupported null at fixed alpha=0.01. It achieved 99.21% near rejection,
+   100% OOD rejection, 0.62% false-route and 244.24 ms p95, but supported exact collapsed to 10.09%
+   because 87.29% of raw-correct BGE winners were vetoed.
+
+Every associated confirmation surface remained unopened because DEV failed at least one
+preregistered gate.
+
+The resulting architectural constraint is stronger than before: a future candidate must improve the
+**semantic separability of supported versus same-domain unsupported capability requests**. Neither
+positive-retriever replacement, generic operation classification, relative relevance ranking nor
+conformal calibration over a weak scalar score is sufficient by itself.
+
