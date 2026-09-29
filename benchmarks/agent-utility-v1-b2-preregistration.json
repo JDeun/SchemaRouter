@@ -120,7 +120,17 @@
     "transformers": "4.57.6",
     "tokenizers": "0.22.2",
     "safetensors": "0.8.0",
-    "exact_versions_required": true
+    "exact_versions_required": true,
+    "jinja2": "3.1.6",
+    "infrastructure_amendments": [
+      {
+        "date": "2026-09-29",
+        "reason": "Full-run model-cache context preflight calls tokenizer.apply_chat_template before torch is installed; smoke installed Jinja2 transitively through torch.",
+        "change": "Pin jinja2==3.1.6 explicitly in full-run runtime.",
+        "benchmark_rows_consumed_before_change": 0,
+        "benchmark_semantics_changed": false
+      }
+    ]
   },
   "pre_benchmark_smoke": {
     "required": true,

@@ -106,7 +106,7 @@ jobs:
           python-version: "3.12.14"
           cache: pip
       - run: python -m pip install --upgrade pip
-      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0" "jinja2==3.1.6"
       - run: pip install -e .
       - id: hf-cache
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
@@ -133,8 +133,10 @@ jobs:
         run: |
           python - <<'PY'
           import os
+          import jinja2
           from transformers import AutoConfig, AutoTokenizer
 
+          assert jinja2.__version__ == "3.1.6"
           AutoConfig.from_pretrained(
               os.environ["B2_MODEL"],
               revision=os.environ["B2_REVISION"],
@@ -245,6 +247,7 @@ jobs:
         run: |
           python - <<'PY'
           import platform
+          import jinja2
           import safetensors
           import tokenizers
           import torch
@@ -255,6 +258,7 @@ jobs:
           assert transformers.__version__ == "4.57.6"
           assert tokenizers.__version__ == "0.22.2"
           assert safetensors.__version__ == "0.8.0"
+          assert jinja2.__version__ == "3.1.6"
           print("exact B2 inference runtime verified")
           PY
       - name: Evaluate frozen task shard

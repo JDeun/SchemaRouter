@@ -155,6 +155,7 @@ def _tool_response_message(observations: list[dict[str, Any]]) -> str:
 
 
 def _runtime_identity() -> dict[str, str]:
+    import jinja2
     import safetensors
     import tokenizers
     import torch
@@ -163,6 +164,7 @@ def _runtime_identity() -> dict[str, str]:
     return {
         "platform": platform.platform(),
         "python": platform.python_version(),
+        "jinja2": jinja2.__version__,
         "torch": torch.__version__,
         "transformers": transformers.__version__,
         "tokenizers": tokenizers.__version__,

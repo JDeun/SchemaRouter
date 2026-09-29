@@ -37,6 +37,13 @@ def test_b2_preregistration_pins_strong_non_qwen_model() -> None:
     assert data["model"]["do_sample"] is False
     assert data["model_selection_governance"]["non_qwen_family"] is True
     assert data["model_selection_governance"]["selected_from_b1_row_errors"] is False
+    assert data["runtime_candidate"]["jinja2"] == "3.1.6"
+    assert data["runtime_candidate"]["infrastructure_amendments"][-1][
+        "benchmark_rows_consumed_before_change"
+    ] == 0
+    assert data["runtime_candidate"]["infrastructure_amendments"][-1][
+        "benchmark_semantics_changed"
+    ] is False
 
     assert data["conditions"] == [
         "FULL",
