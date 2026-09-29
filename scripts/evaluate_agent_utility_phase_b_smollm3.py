@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import platform
 import random
 import re
@@ -36,6 +37,11 @@ MAX_NEW_TOKENS = 256
 MAX_TURNS = 6
 SEED = 20260929
 THREADS = 4
+ATTN_IMPLEMENTATION = os.environ.get("B2_ATTN_IMPLEMENTATION", "eager")
+if ATTN_IMPLEMENTATION not in {"eager", "sdpa"}:
+    raise ValueError(
+        "B2_ATTN_IMPLEMENTATION must be one of: eager, sdpa"
+    )
 ALL_CONDITIONS = ("FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE")
 TOOL_CALL_RE = re.compile(
     r"<tool_call>\s*(\{.*?\})\s*</tool_call>",
@@ -197,7 +203,7 @@ class LocalSmolLM3Agent:
             trust_remote_code=False,
             torch_dtype=torch.bfloat16,
             device_map=None,
-            attn_implementation="eager",
+            attn_implementation=ATTN_IMPLEMENTATION,
         )
         self.model.eval()
         self.context_limit = int(
@@ -278,7 +284,7 @@ class LocalSmolLM3Agent:
             return_tensors="pt",
         )
         started = time.perf_counter_ns()
-        with self.torch.no_grad():
+        with self.torch.inference_mode():
             output = self.model.generate(
                 **encoded,
                 do_sample=False,
@@ -919,6 +925,7 @@ def evaluate(
             "revision": MODEL_REVISION,
             "dtype": "bfloat16",
             "device": "cpu",
+            "attention_implementation": ATTN_IMPLEMENTATION,
             "max_new_tokens": MAX_NEW_TOKENS,
             "max_turns": MAX_TURNS,
             "seed": SEED,
