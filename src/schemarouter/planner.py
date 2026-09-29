@@ -478,8 +478,12 @@ class SchemaPlanner:
         predicate: Callable[[ToolSpec, EndpointSpec], bool],
         *,
         k: int = 5,
+        executable_only: bool = False,
     ) -> CapabilityRetrieval:
-        """Retrieve Top-K capabilities under one additional local availability rule."""
+        """Retrieve Top-K capabilities under one additional local availability rule.
+
+        Set executable_only=True only when predicate represents current execution readiness.
+        """
 
         k = self._validate_retrieval_k(k)
         request = self._prepare_request(request)
@@ -495,7 +499,7 @@ class SchemaPlanner:
             request,
             intent,
             k=k,
-            executable_only=True,
+            executable_only=executable_only,
             additional_availability_predicate=predicate,
         )
 
@@ -505,6 +509,7 @@ class SchemaPlanner:
         predicate: Callable[[ToolSpec, EndpointSpec], bool],
         *,
         k: int = 5,
+        executable_only: bool = False,
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_with_additional_availability`."""
 
@@ -517,7 +522,7 @@ class SchemaPlanner:
             request,
             intent,
             k=k,
-            executable_only=True,
+            executable_only=executable_only,
             additional_availability_predicate=predicate,
         )
 
