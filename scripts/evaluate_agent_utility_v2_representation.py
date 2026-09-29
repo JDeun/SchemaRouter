@@ -363,16 +363,26 @@ class RepresentationRetriever:
         else:
             raise ValueError(f"unsupported condition: {condition}")
         self.route_ids = tuple(sorted(documents))
+        self._route_index = {
+            route_id: index
+            for index, route_id in enumerate(self.route_ids)
+        }
         self._typed_index_items = tuple(self.indexes.items())
         self._typed_term_entries: dict[
             str,
-            list[tuple[int, dict[str, float]]],
+            list[tuple[int, int, float]],
         ] = {}
         if condition == "TYPED-MULTIFIELD":
             for position, (_, index) in enumerate(self._typed_index_items):
                 for term, weights in index.weight_postings.items():
-                    self._typed_term_entries.setdefault(term, []).append(
-                        (position, weights)
+                    entries = self._typed_term_entries.setdefault(term, [])
+                    entries.extend(
+                        (
+                            position,
+                            self._route_index[route_id],
+                            contribution,
+                        )
+                        for route_id, contribution in weights.items()
                     )
         self.build_seconds = (time.perf_counter_ns() - started) / 1_000_000_000
         self.index_bytes = len(_canonical_text(serialized).encode("utf-8"))
@@ -383,38 +393,56 @@ class RepresentationRetriever:
             ranking = next(iter(self.indexes.values())).rank(query)
         else:
             query_counts = Counter(_tokens(query))
-            field_scores: dict[int, dict[str, float]] = {}
+            field_scores: list[dict[int, float] | None] = [
+                None
+                for _ in self._typed_index_items
+            ]
             for term, query_tf in query_counts.items():
-                for position, weights in self._typed_term_entries.get(term, ()):
-                    scores = field_scores.setdefault(position, {})
-                    for route_id, contribution in weights.items():
-                        scores[route_id] = (
-                            scores.get(route_id, 0.0)
-                            + query_tf * contribution
-                        )
+                for position, route_index, contribution in (
+                    self._typed_term_entries.get(term, ())
+                ):
+                    scores = field_scores[position]
+                    if scores is None:
+                        scores = {}
+                        field_scores[position] = scores
+                    scores[route_index] = (
+                        scores.get(route_index, 0.0)
+                        + query_tf * contribution
+                    )
 
-            rrf: dict[str, float] = {}
-            for scores in field_scores.values():
-                field_ranking = sorted(
-                    scores.items(),
-                    key=lambda row: (-row[1], row[0]),
+            rrf: dict[int, float] = {}
+            for scores in field_scores:
+                if not scores:
+                    continue
+                ranked_indexes = sorted(
+                    scores,
+                    key=lambda route_index: (
+                        -scores[route_index],
+                        route_index,
+                    ),
                 )
-                for rank, (route_id, _) in enumerate(field_ranking, start=1):
-                    rrf[route_id] = (
-                        rrf.get(route_id, 0.0)
+                for rank, route_index in enumerate(ranked_indexes, start=1):
+                    rrf[route_index] = (
+                        rrf.get(route_index, 0.0)
                         + 1.0 / (RRF_K + rank)
                     )
-            positive = sorted(
-                rrf.items(),
-                key=lambda row: (-row[1], row[0]),
+            positive_indexes = sorted(
+                rrf,
+                key=lambda route_index: (
+                    -rrf[route_index],
+                    route_index,
+                ),
             )
             seen = set(rrf)
             ranking = [
-                *positive,
+                *[
+                    (self.route_ids[route_index], rrf[route_index])
+                    for route_index in positive_indexes
+                ],
                 *[
                     (route_id, 0.0)
-                    for route_id in self.route_ids
-                    if route_id not in seen
+                    for route_index, route_id in enumerate(self.route_ids)
+                    if route_index not in seen
                 ],
             ]
         elapsed_ms = (time.perf_counter_ns() - started) / 1_000_000
@@ -541,7 +569,7 @@ def evaluate(freeze_dir: Path) -> dict[str, Any]:
         "surface": "development",
         "freeze_manifest": manifest,
         "rrf_k": RRF_K,
-        "dev_representation_revision": "r5-fused-field-scoring",
+        "dev_representation_revision": "r6-integer-route-slots",
         "conditions_scored": list(CONDITIONS),
         "conditions_blocked": {
             "INTENT-MANUAL": (
