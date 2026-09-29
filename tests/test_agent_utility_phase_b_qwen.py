@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from benchmarks.agent_utility_v1_catalog import TASKS, build_registry, route_ids
+import pytest
+
 from scripts.evaluate_agent_utility_phase_b_qwen import (
     _candidate_set,
     _parse_tool_calls,
     _tool_response_message,
     _visible_tools,
+    evaluate,
 )
 
 
@@ -106,3 +109,11 @@ def test_tool_response_format_matches_qwen_protocol_shape() -> None:
     assert rendered.startswith("<tool_response>\n")
     assert rendered.endswith("\n</tool_response>")
     assert '"paper_id": "P-1"' in rendered
+
+
+def test_unknown_task_shard_id_fails_before_model_load() -> None:
+    with pytest.raises(ValueError, match="unknown frozen task id"):
+        evaluate(
+            catalog_sizes=(20,),
+            task_ids={"multi-inventory-create-send"},
+        )
