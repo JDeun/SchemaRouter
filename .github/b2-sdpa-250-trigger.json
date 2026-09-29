@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "issue": 423,
+  "purpose": "memory_only",
+  "semantic_tuning_allowed": false,
+  "created_date": "2026-09-29",
+  "implementation_sha": "d5d79905a29c52e22d689203fd7229c829cdcdc7",
+  "attention_implementation": "sdpa",
+  "catalog_size": 250,
+  "task_id": "multi-create-send",
+  "condition": "FULL",
+  "attempt": 2,
+  "retry_of": 36594699080,
+  "retry_reason": "attempt 1 remained memory-stable for 60 minutes but hit workflow timeout before episode completion; timeout extended only",
+  "prior_peak_rss_gib_observed": 6.524330139160156,
+  "eager_failure_peak_rss_gib_observed": 14.755,
+  "promotion_gate": "must complete and preserve memory headroom; semantic row not used for tuning"
+}
