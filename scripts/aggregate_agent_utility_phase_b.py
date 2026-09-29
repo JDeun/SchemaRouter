@@ -19,12 +19,6 @@ from benchmarks.agent_utility_v1_catalog import TASKS  # noqa: E402
 from scripts.evaluate_agent_utility_phase_b_qwen import _summary  # noqa: E402
 
 DEPLOYABLE = ("SR-3", "SR-5", "SR-10", "SR-PROGRESSIVE")
-RETRIEVAL_ELIGIBLE = {
-    "SR-3": False,
-    "SR-5": True,
-    "SR-10": True,
-    "SR-PROGRESSIVE": True,
-}
 
 
 def _cluster_bootstrap_delta(
@@ -87,6 +81,55 @@ def _cluster_bootstrap_delta(
         "catalog_repeats_per_task": len(full) // len(task_ids),
         "iterations": iterations,
     }
+
+
+def _retrieval_coverage(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Measure coverage from the candidate sets actually exposed to the agent."""
+
+    if not rows:
+        raise ValueError("no rows for retrieval coverage")
+
+    def metrics(subset: list[dict[str, Any]]) -> dict[str, float | int]:
+        required_total = 0
+        required_hits = 0
+        fully_covered = 0
+        candidate_counts: list[int] = []
+
+        for row in subset:
+            history = row.get("candidate_history")
+            if not isinstance(history, list) or not history:
+                raise ValueError("missing candidate_history in B1 episode")
+            final_candidates = set(history[-1])
+            required = set(row["required_routes"])
+            required_total += len(required)
+            required_hits += len(required.intersection(final_candidates))
+            fully_covered += int(required.issubset(final_candidates))
+            candidate_counts.append(len(final_candidates))
+
+        return {
+            "episodes": len(subset),
+            "required_route_instances": required_total,
+            "required_route_recall": (
+                required_hits / required_total if required_total else 1.0
+            ),
+            "all_required_task_coverage": fully_covered / len(subset),
+            "mean_final_candidate_count": statistics.fmean(candidate_counts),
+        }
+
+    catalog_sizes = sorted({int(row["catalog_size"]) for row in rows})
+    by_catalog = {
+        str(size): metrics(
+            [row for row in rows if int(row["catalog_size"]) == size]
+        )
+        for size in catalog_sizes
+    }
+    overall = metrics(rows)
+    overall["minimum_required_route_recall_by_catalog"] = min(
+        float(bucket["required_route_recall"])
+        for bucket in by_catalog.values()
+    )
+    overall["by_catalog"] = by_catalog
+    return overall
 
 
 def aggregate(paths: list[Path]) -> dict[str, Any]:
@@ -199,6 +242,13 @@ def aggregate(paths: list[Path]) -> dict[str, Any]:
         for condition in conditions
     }
 
+    retrieval_coverage = {
+        condition: _retrieval_coverage(
+            [row for row in rows if row["condition"] == condition]
+        )
+        for condition in conditions
+    }
+
     full_rows = [row for row in rows if row["condition"] == "FULL"]
     paired = {
         condition: _cluster_bootstrap_delta(
@@ -221,7 +271,14 @@ def aggregate(paths: list[Path]) -> dict[str, Any]:
             float(current["task_pass_rate"]) - float(full["task_pass_rate"])
         )
         gates = {
-            "retrieval_eligible": RETRIEVAL_ELIGIBLE[condition],
+            "retrieval_eligible": (
+                float(
+                    retrieval_coverage[condition][
+                        "minimum_required_route_recall_by_catalog"
+                    ]
+                )
+                >= 0.97
+            ),
             "task_pass_noninferior_minus_2pp": pass_delta >= -0.02,
             "tool_schema_tokens_at_most_40pct_full": (
                 schema_ratio is not None and schema_ratio <= 0.40
@@ -272,6 +329,7 @@ def aggregate(paths: list[Path]) -> dict[str, Any]:
         "summary_by_catalog": summary_by_catalog,
         "overall": overall,
         "paired_task_pass_delta_vs_full": paired,
+        "retrieval_coverage": retrieval_coverage,
         "utility_gates": utility_gates,
         "progressive_recovery": {
             "initial_required_set_miss_count": len(initial_misses),
@@ -310,6 +368,7 @@ def main() -> None:
             {
                 "episode_count": result["episode_count"],
                 "overall": result["overall"],
+                "retrieval_coverage": result["retrieval_coverage"],
                 "utility_gates": result["utility_gates"],
                 "progressive_recovery": result["progressive_recovery"],
             },
