@@ -1,23 +1,27 @@
 {
   "schema_version": 1,
   "updated_at": "2026-09-29",
-  "purpose": "Cross-session prior-art and experiment navigation for SchemaRouter open-set capability routing research.",
-  "roadmap_issue": 388,
+  "purpose": "Cross-session prior-art and experiment navigation for SchemaRouter typed capability retrieval, historical open-set routing evidence, and end-to-end agent-utility research.",
+  "roadmap_issue": 417,
   "session_bootstrap": [
-    "Read GitHub issue #388 first.",
+    "Read GitHub issue #417 first.",
+    "Read active experiment #420 before changing B1 code or execution.",
     "Read this registry.",
     "Read benchmarks/research-experiment-ledger.json.",
     "Read docs/research/routing-status.md.",
-    "Search existing open/closed issues and research branches before creating a new experiment.",
-    "Resume the first active workstream/experiment; do not recreate terminal methods."
+    "Search existing open/closed issues, branches, and frozen artifacts before creating a new experiment.",
+    "Treat 0.11-0.13 classifier/open-set work as terminal evidence unless a new research question explicitly requires it.",
+    "Resume the first active 0.14 workstream/experiment; do not recreate terminal methods."
   ],
   "invariants": [
-    "Registered schema-backed routes are the only source of positive execution authority.",
-    "Open-set methods may preserve the raw registered winner or abstain to NO_ROUTE; they may not invent a route.",
-    "No rank-2 fallback or pseudo-route.",
-    "No route-specific retraining for newly registered OpenAPI/MCP tools.",
-    "Datatype, semantic_id, optional unit, canonical unit normalization, dimension, qualifiers, read/write/destructive metadata remain part of the typed capability graph independently of the open-set method.",
-    "Consumed DEV/fresh/confirmation rows may not be used to repair a terminal method."
+    "Only registered schema-backed tools/endpoints may ever become executable candidates.",
+    "SchemaRouter 0.14 is evaluated primarily as a typed Top-K capability retrieval substrate; downstream agents select among retrieved candidates.",
+    "Retrieval rank/score does not itself grant destructive or irreversible execution authority.",
+    "Execution safety remains a separate validation/policy layer for schema, arguments, permissions, provenance, and destructive actions.",
+    "Datatype, semantic_id, optional unit, canonical unit normalization, dimension, qualifiers, read/write/destructive metadata remain first-class capability facts.",
+    "Top-1 exact route is diagnostic rather than the sole primary product objective; Recall@K and downstream task utility are primary.",
+    "Consumed DEV/fresh/confirmation rows from terminal 0.11-0.13 methods may not be used to repair those methods.",
+    "B1/B2 conditions must keep tasks, catalogs, agent configuration, executor semantics, and candidate ordering frozen across FULL and SchemaRouter conditions."
   ],
   "workstreams": [
     {
@@ -293,8 +297,8 @@
       "id": "tool-retrieval-alignment",
       "title": "Tool retrieval and executable-schema retrieval alignment",
       "issue": 392,
-      "parent_issue": 388,
-      "status": "ongoing_architecture_no_active_experiment",
+      "parent_issue": 417,
+      "status": "active_primary_research_direction",
       "canonical_references": [
         {
           "title": "Retrieval Models Aren't Tool-Savvy: Benchmarking Tool Retrieval for Large Language Models",
@@ -308,8 +312,8 @@
           "url": "https://aclanthology.org/2025.knowllm-1.7/"
         }
       ],
-      "schemarouter_mapping": "Treat OpenAPI/MCP/ToolSpec as typed executable documents: adapter->Tool/Endpoint/Field->registry/index->retrieval. Keep downstream task decomposition/agent loops outside SchemaRouter.",
-      "trigger": "Maintain architecture/literature mapping continuously. No active retrieval experiment; do not revive tested Tool-Embed/GTE replacement or relative cross-encoder formulations without a materially new representation.",
+      "schemarouter_mapping": "Treat OpenAPI/MCP/ToolSpec as typed executable documents. Retrieve a compact high-recall Top-K candidate set plus typed metadata for a downstream LLM agent; keep final execution authority in the agent + execution-policy layer.",
+      "trigger": "Active 0.14 direction. #418 Phase A passed with Recall@5=100% across the frozen 20/50/100/250-endpoint benchmark and strong context compression; #420 B1 end-to-end agent A/B is running.",
       "terminal_controls": [
         {
           "issue": 406,
@@ -323,7 +327,22 @@
           "issue": 409,
           "result": "GTE positive selector: 71.49% exact vs 88.16% same-surface BGE; p95 100.14 ms; terminal."
         }
-      ]
+      ],
+      "current_experiment": {
+        "issue": 420,
+        "parent_issue": 417,
+        "phase_a_issue": 418,
+        "status": "running_b1_canonical_microsharded",
+        "canonical_run_id": 36517371433,
+        "phase_a_result": {
+          "recall_at_3": 0.9655172413793104,
+          "recall_at_5": 1,
+          "recall_at_10": 1,
+          "top5_context_ratio_at_250": 0.023791301779351147
+        },
+        "next_required_replication": 423,
+        "final_answer_quality_issue": 424
+      }
     }
   ],
   "terminal_semantic_membership_lineage": [
@@ -399,5 +418,24 @@
       "issue": 412,
       "result": "Multilingual-E5 split-conformal gate: supported 10.09%, near 99.21%, OOD 100%, false-route 0.62%, p95 244.24 ms; safety passed but supported recall collapsed; confirmation unopened."
     }
-  ]
+  ],
+  "active_cycle": {
+    "id": "0.14-end-to-end-agent-utility",
+    "parent_issue": 417,
+    "research_question": "Does SchemaRouter improve an LLM agent's end-to-end tool-use performance by retrieving a compact, typed set of executable capabilities from a large registered catalog?",
+    "primary_metrics": [
+      "required-tool Recall@K",
+      "MRR/NDCG",
+      "agent task pass rate",
+      "valid tool/argument rate",
+      "tool-schema and total input tokens",
+      "latency and model/tool call counts",
+      "progressive recovery",
+      "destructive execution safety",
+      "final-answer factual quality in separate benchmark"
+    ],
+    "current_experiment": 420,
+    "staged_replication": 423,
+    "staged_answer_quality": 424
+  }
 }
