@@ -142,8 +142,9 @@ for candidate in candidates.candidates:
 현재 로컬 실행 binding까지 준비된 route만 필요하면 `retrieve_executable(..., k=5)`을 사용합니다.
 비동기 API는 `aretrieve`, `aretrieve_executable`입니다.
 
-후보에는 등록된 parameter/output schema, semantic ID, optional unit·qualifier,
-provider/access identity, read/write/destructive metadata, schema fingerprint가 유지됩니다.
+후보에는 full effective input/output JSON Schema와 등록된 parameter/output field,
+semantic ID, optional unit·qualifier, provider/access identity, read/write/destructive metadata,
+schema fingerprint가 유지됩니다.
 Retrieval 자체는 side effect가 없고 실행 권한을 부여하지 않습니다. 최종 후보 선택은 상위 Agent가
 담당하며 실제 실행은 계속 SchemaRouter의 validation과 policy를 통과해야 합니다.
 
