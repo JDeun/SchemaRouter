@@ -155,6 +155,7 @@ nav:
       - Adapter authoring: adapter-authoring.md
       - Security model: security/threat-model.md
   - Project:
+      - Stable core contract: stable-core.md
       - Versioning: versioning.md
       - Release notes:
           - 0.11.0: releases/0.11.0.md
