@@ -3196,3 +3196,54 @@ The staged 0.14 successors are:
 - #432 independent held-out generalization surface.
 
 None may use B1 row-level failures to rewrite the frozen B1 task surface.
+
+
+### B1 v2 canonical protocol
+
+A further static benchmark audit, still before any accepted complete B1 aggregate, found two user
+arguments that the executor required but the original task text did not explicitly provide:
+`single-message-send` lacked exact message content and `multi-create-share` lacked the numeric
+credit amount. The task contract was corrected rather than allowing the agent to guess hidden user
+intent.
+
+This changed the frozen task SHA from
+`9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1` to
+`bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`.
+Task IDs, required-route sets, task kinds, catalogs, K values and retrieval algorithm did not change.
+
+A separate causality audit also found that multiple tool calls emitted in one assistant turn could
+previously be executed sequentially before the model observed the first tool result. B1 v2 now
+enforces:
+- at most one executed tool call per assistant turn;
+- later same-turn calls are recorded but cannot advance task state;
+- dependent calls require a prior tool observation;
+- `multi-create-send` must propagate the observed `INV-NEW-1` identifier.
+
+The exact B1 runtime is frozen to:
+- Ubuntu 24.04;
+- Python 3.12.14;
+- torch 2.14.0+cpu;
+- transformers 4.57.6;
+- tokenizers 0.22.2;
+- safetensors 0.8.0.
+
+A two-turn deterministic smoke must pass before inference in the same workflow. In canonical run
+`36529108855`, preflight and smoke both passed; the smoke produced
+`lookup__value(key="alpha")` followed, after the observation, by
+`calculator__add(a=41,b=1)`, with deterministic repeat behavior.
+
+B1 v2 Phase A re-passed:
+- Recall@3 **96.55%** across every catalog size;
+- Recall@5 / Recall@10 **100% / 100%**;
+- Top-1 **68.97%** for 20/50/100 endpoints and **65.52%** at 250;
+- mean Top-5 serialized context at 250 endpoints **2.383% of FULL**.
+
+The canonical v2 run is `36529108855` at
+`b9eadefd3cd076f026a54bbc55a949f0424f5dab`. It uses 30 execution jobs because the 250-endpoint
+surface is split into smaller task groups for wall-clock control. Scheduling is not an experimental
+treatment; all jobs are checked against the frozen sharding plan and aggregate into exactly 552
+unique `(catalog_size, task_id, condition)` episodes.
+
+No B1 result is accepted until that aggregate succeeds. The 23 semantic tasks remain a controlled
+mechanism surface, so the -2pp criterion is only a descriptive engineering gate; #432 is required
+before a population-level generalization or non-inferiority claim.
