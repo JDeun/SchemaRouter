@@ -27,9 +27,61 @@ Before creating a new routing experiment:
 | Hard-negative OOS generation | #389 / #395 | **terminal** | V6B separated synthetic evidence but rejected every natural DEV query |
 | Energy/density/open-space scoring | #390 / #397 / #399 / #401 | **terminal / no active successor** | V6C/V6D/V6E terminal; do not retune consumed geometry |
 | Selective/conformal abstention | #391 / #412 | **terminal tested formulation** | E5 conformal safety passed open-set gates but destroyed supported recall |
-| Tool/executable-schema retrieval | #392 / #406 / #408 / #409 | **ongoing architecture / no active experiment** | Tool-Embed/GTE replacements and tested cross-encoder veto are terminal |
+| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | **active primary direction** | Phase A passed at Recall@5=100%; B1 downstream-agent A/B is running |
 
-Parent roadmap: **#388**.
+Active research parent: **#417**. Historical 0.13 prior-art parent: **#388**.
+
+## 0. Active 0.14 research question: typed capability retrieval for agents
+
+The 0.11–0.13 open-set work is retained as evidence, but it is no longer the primary product
+objective. Those cycles repeatedly showed that asking one retrieval layer to provide both positive
+route selection and executor-grade abstention creates a severe safety/coverage trade-off.
+
+The active 0.14 architecture is:
+
+```text
+registered executable schemas
+        ↓
+typed capability index
+        ↓
+high-recall Top-K retrieval
+        ↓
+downstream LLM agent
+        ↓
+execution validation / policy
+        ↓
+tool execution
+        ↓
+result evaluation and optional candidate expansion
+```
+
+Relevant current work:
+- #417 — active research parent;
+- #418 — FULL vs Top-K vs progressive utility protocol;
+- #420 — B1 local downstream-agent A/B, running;
+- #423 — stronger-agent B2 replication protocol;
+- #424 — final-answer factual-quality protocol.
+
+Phase A already establishes the retrieval-side premise on the corrected frozen benchmark:
+- Recall@1 **68.97%**;
+- Recall@3 **96.55%**;
+- Recall@5 / Recall@10 **100% / 100%**;
+- at 250 endpoints, Top-5 exposes only **2.38%** of FULL serialized schema context on average.
+
+The corresponding evaluation hierarchy is therefore:
+1. **Recall@K / required-tool-set coverage** — did retrieval preserve what the agent needs?
+2. **downstream deterministic task success** — can the same agent complete the task?
+3. **context/token/latency/cost** — is the candidate reduction operationally useful?
+4. **recovery** — can progressive expansion repair an initial miss without hidden ground truth?
+5. **execution safety** — can policy prevent unauthorized destructive actions regardless of rank?
+6. **final-answer quality** — does context reduction preserve factual completeness, units and provenance?
+
+Top-1 exact remains diagnostic. It is not treated as a proxy for all six outcomes.
+
+Independent literature supporting this framing includes:
+- ToolRet, Findings ACL 2025;
+- ToolReAGt, KnowLLM 2025;
+- GRETEL, arXiv 2025, for execution-grounded retrieval/selection feedback.
 
 ## 1. Adaptive Decision Boundary
 
@@ -237,7 +289,16 @@ The following rules apply across all workstreams:
 
 ## Execution order
 
-The current order is:
+The current order is now governed by #417:
+
+1. complete the frozen #420 B1 aggregate without changing task/catalog/model/prompt/K semantics;
+2. freeze and execute #423 with a materially stronger downstream agent;
+3. execute #424 only after its separate answer-bearing benchmark is frozen;
+4. keep #384/#395/#397/#399/#401/#404/#406/#408/#409/#412/#415 as terminal 0.13 controls;
+5. revisit open-set/conformal methods only if a future retrieval/safety question requires them, never as a post-hoc repair of consumed DEV;
+6. maintain #392 as the prior-art bridge between executable-schema retrieval and the active 0.14 agent-utility work.
+
+Historical 0.13 order was:
 
 1. retain **#384 / V6A** as the terminal positive-only spherical ADB reference; its confirmation stays unopened;
 2. retain **#395 / V6B** as the terminal hard-negative ellipsoid reference; its confirmation stays unopened;
