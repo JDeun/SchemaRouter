@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import platform
 import random
 import re
 import statistics
@@ -154,6 +155,22 @@ def _tool_response_message(observations: list[dict[str, Any]]) -> str:
         + "\n</tool_response>"
         for observation in observations
     )
+
+
+def _runtime_identity() -> dict[str, str]:
+    import safetensors
+    import tokenizers
+    import torch
+    import transformers
+
+    return {
+        "platform": platform.platform(),
+        "python": platform.python_version(),
+        "torch": torch.__version__,
+        "transformers": transformers.__version__,
+        "tokenizers": tokenizers.__version__,
+        "safetensors": safetensors.__version__,
+    }
 
 
 class LocalQwenAgent:
@@ -831,6 +848,7 @@ def evaluate(
     return {
         "experiment": "0.14-agent-utility-phase-b1-qwen3-0.6b",
         "issue": 420,
+        "runtime": _runtime_identity(),
         "model": {
             "name": MODEL_NAME,
             "revision": MODEL_REVISION,
