@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "experiment": "0.14-agent-utility-phase-b1-qwen3-0.6b",
+  "issue": 420,
+  "amendment": "task-clustered-bootstrap-and-b1-inference-scope",
+  "status": "frozen_before_any_canonical_552_episode_aggregate",
+  "reason": "The 23 semantic tasks are repeated across four catalog-size strata. Treating the 92 task/catalog rows as independent bootstrap units would pseudoreplicate task semantics and understate uncertainty.",
+  "execution_protocol_changed": false,
+  "unchanged": [
+    "23 frozen task definitions",
+    "20/50/100/250 endpoint catalog identities",
+    "Qwen/Qwen3-0.6B checkpoint and revision",
+    "agent system prompt",
+    "temperature/generation settings",
+    "FULL/SR-3/SR-5/SR-10/SR-PROGRESSIVE/ORACLE conditions",
+    "candidate sets and lexical ordering",
+    "deterministic executor and task-success criteria",
+    "retrieval eligibility thresholds",
+    "minus-2pp descriptive utility gate"
+  ],
+  "statistical_change": {
+    "old_unsuitable_unit": "catalog_size_x_task_id episode rows treated independently",
+    "canonical_bootstrap_unit": "task_id cluster",
+    "cluster_contents": "all four catalog-size paired deltas for the sampled semantic task",
+    "iterations": 5000,
+    "seed": 20260929,
+    "confidence_interval": "paired cluster-bootstrap 95% interval"
+  },
+  "interpretation": {
+    "unique_semantic_task_count": 23,
+    "catalog_repeats_per_task": 4,
+    "minus_2pp_gate": "descriptive sanity gate only in B1; not a sufficiently powered statistical non-inferiority claim",
+    "generalization_requirement": "A materially larger independently frozen held-out task benchmark with a preregistered power/sample-size rationale is required before claiming population-level non-inferiority or general agent utility."
+  },
+  "provenance_note": "This amendment was made from design-level dependence structure before any accepted canonical 552-episode aggregate. Partial invalid/superseded runs are not used to choose the bootstrap unit or change execution semantics."
+}
