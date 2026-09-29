@@ -154,6 +154,30 @@ A broad SchemaRouter agent-utility claim requires all of the following:
 If the CI does not clear -2pp, the paper/README must report the uncertainty rather than
 promote the engineering threshold into a statistical theorem.
 
+## Pre-B2-terminal authoring scaffold
+
+A deterministic scaffold may be prepared before B2 is terminal, but it is deliberately limited to
+**authoring slots**. It freezes only:
+
+- 780 unique `semantic_task_id` values;
+- one preregistered task stratum per ID;
+- one preregistered language stratum per ID;
+- ten independent slots in each of the 78 task-stratum × language cells.
+
+The scaffold does **not** generate or contain:
+
+- task/query wording;
+- required/gold routes;
+- expected answers;
+- executor states or deterministic tool outputs;
+- catalogs or candidate sets;
+- scores or labels.
+
+The generator is `scripts/generate_agent_utility_v3_heldout_authoring_plan.py`. Its
+`content_generation_authorized` flag remains false and the actual held-out corpus stays sealed
+until #423 is terminal. This allows the cross-balance and unique task identities to be tested
+without introducing B2-result-dependent authoring.
+
 ## Independence rules
 
 The final 780 tasks may not use:
