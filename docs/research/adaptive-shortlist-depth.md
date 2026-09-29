@@ -21,15 +21,31 @@ guaranteed to have the same scale across backends or catalogs.
 
 For that reason this protocol forbids absolute score thresholds.
 
-The only adaptive signal is a scale-invariant adjacent relative gap within the already ranked
+The only adaptive signal is an adjacent gap normalized by the score range of the already ranked
 Top-10 list:
 
 ```text
 gap_i = (score_i - score_{i+1}) /
-        max(abs(score_i), abs(score_{i+1}), 1e-9)
+        max(score_1 - score_10, 1e-9)
 ```
 
+This quantity is invariant to any positive affine score transform
+`score' = a * score + b` where `a > 0`. That matters because a ranking backend may preserve the
+same ordering while changing score scale or offset. If the Top-10 score range is effectively zero,
+the rule fails closed to `max_k`.
+
 Evaluated cut positions are ranks 3 through 9.
+
+## Prior-art boundary
+
+Repantis et al., *How Many Tools Should an LLM Agent See? A Chance-Corrected Answer*
+(arXiv:2605.24660), treats shortlist depth itself as an evaluation target and introduces
+Bits-over-Random (BoR) to correct success for the random chance introduced by larger K.
+
+This cycle reports fixed-K BoR as a diagnostic, but **does not** use BoR as an inference signal,
+selection criterion, or learned depth-policy reward. The frozen adaptive candidates remain
+deterministic score-geometry rules. This keeps the current experiment training-free while making
+the fixed-depth comparison easier to interpret.
 
 ## Frozen candidate policies
 
