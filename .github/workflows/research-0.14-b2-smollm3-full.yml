@@ -15,7 +15,6 @@ env:
   HF_HUB_DISABLE_TELEMETRY: "1"
   TOKENIZERS_PARALLELISM: "false"
   HF_HOME: "${{ github.workspace }}/.hf-cache"
-  TRANSFORMERS_CACHE: "${{ github.workspace }}/.hf-cache"
   B2_MODEL: "HuggingFaceTB/SmolLM3-3B"
   B2_REVISION: "a07cc9a04f16550a088caea529712d1d335b0ac1"
   B2_CACHE_KEY: "b2-smollm3-a07cc9a04f16550a088caea529712d1d335b0ac1-torch2.14-transformers4.57.6"
