@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "cycle": "0.14-end-to-end-agent-utility",
+  "experiment": "phase-b1-local-qwen3-agent-ab-v1",
+  "issue": 420,
+  "parent_issue": 417,
+  "parent_experiment_issue": 418,
+  "status": "frozen_before_benchmark_agent_inference",
+  "interpretation": "sanity_and_reproducibility_baseline_only",
+  "prior_qwen_distinction": {
+    "terminal_issue": 289,
+    "terminal_model": "Qwen/Qwen3-Reranker-0.6B",
+    "terminal_role": "winner-only yes/no capability verifier",
+    "this_model": "Qwen/Qwen3-0.6B",
+    "this_role": "downstream generative tool-using agent",
+    "qwen_score_affects_schemarouter_retrieval": false
+  },
+  "model": {
+    "name": "Qwen/Qwen3-0.6B",
+    "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+    "device": "cpu",
+    "dtype": "float32",
+    "enable_thinking": false,
+    "do_sample": false,
+    "max_new_tokens_per_turn": 256,
+    "max_turns": 6,
+    "seed": 20260929,
+    "cpu_threads": 4
+  },
+  "corrected_freeze": {
+    "workflow": 36507439562,
+    "source_head": "c0975d84a7c87c6058d3a3edbc95c15e5223e4e1",
+    "artifact": 11006614997,
+    "artifact_digest": "sha256:5cec1c650bd2a98fc78f7fbb911c0b15d95a39c96a43848b939ba56302658022",
+    "tasks_sha256": "9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1",
+    "catalog_sha256": {
+      "20": "b90e3ab473217f4becffb4933fc96e7016cf60f28b030b4d2ae8cb1639c40f5c",
+      "50": "e43400681d64315cadfeb54f4f3dadb0490e557e5f6bf2514c4f8e2e6d424ac3",
+      "100": "52b58b39ec31d377c90c16572997f69523742c8917a37e33326d429b51afc225",
+      "250": "e5ca7d199dd5d2e7bb89eb97d8ac0cae37f403def1fc43037f2fc816a775d2a9"
+    }
+  },
+  "conditions": [
+    "FULL",
+    "SR-3",
+    "SR-5",
+    "SR-10",
+    "SR-PROGRESSIVE",
+    "ORACLE"
+  ],
+  "candidate_order": {
+    "retrieval_rank_used_only_for_set_membership": true,
+    "visible_tools_sorted_by": "registered_route_id_lexicographic",
+    "rank_scores_visible_to_agent": false,
+    "rank_positions_visible_to_agent": false
+  },
+  "progressive": {
+    "initial_k": 3,
+    "expanded_k": 10,
+    "final_stage": "FULL",
+    "max_expansions": 2,
+    "query_rewriting": false,
+    "ground_truth_expansion_trigger": false
+  },
+  "context": {
+    "declared_limit_source": "model.config.max_position_embeddings",
+    "overflow_rule": "rendered_input_tokens + 256 > declared_limit",
+    "silent_truncation": false
+  },
+  "executor": {
+    "network": false,
+    "deterministic": true,
+    "typed_argument_validation": true,
+    "multi_step_data_dependencies": true,
+    "wrong_destructive_calls_blocked": true,
+    "ground_truth_route_revealed_in_observation": false
+  },
+  "metrics": [
+    "deterministic task pass rate",
+    "single-tool task pass rate",
+    "multi-tool task pass rate",
+    "required-route call coverage",
+    "schema-valid call rate",
+    "semantic-valid call rate",
+    "tool-schema tokens",
+    "cumulative input/output tokens",
+    "turn count",
+    "tool-call count",
+    "latency p50/p95",
+    "context overflow",
+    "progressive recovery",
+    "policy blocks",
+    "unauthorized destructive executions",
+    "paired bootstrap 95% CI for task-pass delta vs FULL"
+  ],
+  "phase_a_retrieval_gate": {
+    "top3_required_route_recall": 0.9655172413793104,
+    "top5_required_route_recall": 1.0,
+    "top10_required_route_recall": 1.0
+  },
+  "product_utility_gate": {
+    "task_pass_noninferiority_vs_full_absolute": -0.02,
+    "tool_schema_token_ratio_vs_full_max": 0.4,
+    "total_input_tokens_must_be_less_than_full": true,
+    "required_tool_set_recall_min": 0.97,
+    "unauthorized_destructive_executions_max": 0
+  },
+  "stopping_rule": {
+    "no_prompt_repair_from_benchmark_rows": true,
+    "no_k_tuning": true,
+    "no_task_or_catalog_rewrite": true,
+    "no_model_swap_inside_b1": true,
+    "stronger_agent_requires_separate_b2": true
+  }
+}
