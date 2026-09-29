@@ -335,3 +335,25 @@ Therefore the canonical paired bootstrap resamples **task_id clusters**, keeping
 catalog-size deltas together. The -2pp gate remains a descriptive engineering threshold in B1.
 A population-level non-inferiority/generalization claim requires #432 with an independently frozen,
 materially larger task population and preregistered precision/sample-size analysis.
+
+
+### B1 v2 canonical execution status
+
+The accepted B1 path is now v2:
+- frozen task SHA: `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`;
+- canonical workflow: `36529108855`;
+- canonical source: `b9eadefd3cd076f026a54bbc55a949f0424f5dab`;
+- exact runtime pins: Python 3.12.14, torch 2.14.0+cpu, transformers 4.57.6,
+  tokenizers 0.22.2, safetensors 0.8.0;
+- 30 frozen inference jobs aggregate into exactly 552 unique episodes.
+
+Before any accepted aggregate, B1 v2 corrected hidden user-argument requirements and enforces a
+tool-observation causality barrier: only one tool call may execute per assistant turn and dependent
+calls require the previous observation.
+
+The v2 preflight re-ran Phase A and retained Recall@3 **96.55%**, Recall@5/@10 **100%**, and
+mean Top-5 schema context **2.383% of FULL** at 250 endpoints.
+
+Paired uncertainty uses task-cluster bootstrap because catalog sizes are repeated measures of the
+same 23 semantic tasks. This prevents pseudoreplication but does not make B1 a population-level
+non-inferiority study; #432 remains mandatory for that claim.
