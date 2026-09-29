@@ -328,8 +328,6 @@ class EndpointSpec(StrictModel):
     input_schema: dict[str, Any] = Field(default_factory=dict)
     output_fields: list[FieldSpec] = Field(default_factory=list)
     output_schema: dict[str, Any] = Field(default_factory=dict)
-    input_schema: dict[str, Any] = Field(default_factory=dict)
-    output_schema: dict[str, Any] = Field(default_factory=dict)
     method: str | None = None
     path: str | None = None
     read_only: bool | None = None
@@ -683,7 +681,9 @@ class CapabilityCandidate(StrictModel):
     score_components: list[ScoreComponent] = Field(default_factory=list)
     selection_source: CandidateSelectionSource = "deterministic"
     parameters: list[ParameterSpec] = Field(default_factory=list)
+    input_schema: dict[str, Any] = Field(default_factory=dict)
     output_fields: list[FieldSpec] = Field(default_factory=list)
+    output_schema: dict[str, Any] = Field(default_factory=dict)
     read_only: bool | None = None
     destructive: bool | None = None
     source_type: str | None = None
