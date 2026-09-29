@@ -21,7 +21,7 @@ env:
   HF_HOME: "${{ github.workspace }}/.hf-cache"
   B2_MODEL: "HuggingFaceTB/SmolLM3-3B"
   B2_REVISION: "a07cc9a04f16550a088caea529712d1d335b0ac1"
-  B2_CACHE_KEY: "b2-smollm3-a07cc9a04f16550a088caea529712d1d335b0ac1-torch2.14-transformers4.57.6"
+  B2_CACHE_KEY: "b2-smollm3-arm64-a07cc9a04f16550a088caea529712d1d335b0ac1-torch2.14-transformers4.57.6"
 
 jobs:
   authorize:
@@ -103,7 +103,7 @@ jobs:
 
   model-cache:
     needs: authorize
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -228,11 +228,13 @@ jobs:
       fail-fast: false
       max-parallel: 4
       matrix: "${{ fromJSON(needs.authorize.outputs.matrix) }}"
-    runs-on: ubuntu-24.04
-    timeout-minutes: 45
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
     env:
       HF_HUB_OFFLINE: "1"
       TRANSFORMERS_OFFLINE: "1"
+      B2_ATTN_IMPLEMENTATION: "sdpa"
+      B2_PROGRESS_TRACE: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -252,6 +254,7 @@ jobs:
       - name: Verify exact inference runtime
         run: |
           python - <<'PY'
+          import os
           import platform
           import jinja2
           import safetensors
@@ -260,6 +263,8 @@ jobs:
           import transformers
 
           assert platform.python_version() == "3.12.14"
+          assert platform.machine() in {"aarch64", "arm64"}
+          assert os.environ["B2_ATTN_IMPLEMENTATION"] == "sdpa"
           assert torch.__version__ == "2.14.0+cpu"
           assert transformers.__version__ == "4.57.6"
           assert tokenizers.__version__ == "0.22.2"
@@ -316,6 +321,7 @@ jobs:
           path = next(Path("artifacts/b2-shard").glob("phase-b2-*.json"))
           data = json.loads(path.read_text(encoding="utf-8"))
           expected = int(os.environ["EXPECTED_EPISODES"])
+          assert data["model"]["attention_implementation"] == "sdpa"
           assert len(data["rows"]) == expected
           assert {row["task_id"] for row in data["rows"]} == {
               os.environ["EXPECTED_TASK_ID"]
