@@ -331,6 +331,8 @@ def _run_episode(
     progressive_stages: list[list[str]] | None = None,
 ) -> dict[str, Any]:
     executor = DeterministicTaskExecutor(registry, task.task_id)
+    if progressive and progressive_stages is None:
+        raise ValueError("progressive stages are required")
     messages: list[dict[str, str]] = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": task.query},
@@ -435,10 +437,11 @@ def _run_episode(
             name = str(call["name"])
             route_id = name.replace("__", ".", 1)
             arguments = dict(call["arguments"])
-            if route_id not in visible_routes:
-                attempt = executor.execute("__unavailable__." + route_id, arguments)
-            else:
-                attempt = executor.execute(route_id, arguments)
+            attempt = executor.execute(
+                route_id,
+                arguments,
+                available=route_id in visible_routes,
+            )
             serialized_calls.append(
                 {
                     "name": name,
@@ -567,16 +570,20 @@ def _p95(values: list[float]) -> float | None:
 
 def _summary(rows: list[dict[str, Any]]) -> dict[str, Any]:
     calls = [row for row in rows if row["tool_call_count"] > 0]
+    single = [row for row in rows if row["kind"] == "single"]
+    multi = [row for row in rows if row["kind"] == "multi"]
     return {
         "episodes": len(rows),
         "task_pass_rate": sum(row["passed"] for row in rows) / len(rows),
         "single_task_pass_rate": (
-            sum(row["passed"] for row in rows if row["kind"] == "single")
-            / sum(row["kind"] == "single" for row in rows)
+            sum(row["passed"] for row in single) / len(single)
+            if single
+            else None
         ),
         "multi_task_pass_rate": (
-            sum(row["passed"] for row in rows if row["kind"] == "multi")
-            / sum(row["kind"] == "multi" for row in rows)
+            sum(row["passed"] for row in multi) / len(multi)
+            if multi
+            else None
         ),
         "required_route_call_coverage": statistics.fmean(
             float(row["required_route_call_coverage"]) for row in rows
