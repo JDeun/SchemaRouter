@@ -3167,3 +3167,32 @@ B1 alone cannot establish general agent utility.
 The research endpoint is therefore no longer "find a better open-set threshold." It is to establish
 whether a typed capability retrieval substrate improves downstream agent utility, efficiency and
 safety under controlled and then realistic conditions.
+
+
+## 2026-09-29 — B1 integrity hardening before canonical aggregate
+
+Before any accepted 552-episode B1 aggregate, artifact inspection exposed a mechanical shard-ID
+bug: the frozen task ID `multi-create-send` had been referenced as
+`multi-inventory-create-send` in the s06 execution workflow and executor-specific validation
+branch. The affected pre-correction run never produced an accepted full aggregate.
+
+The correction did not alter task text, catalog contents, model identity, K values, prompt,
+candidate ordering, executor success semantics, or thresholds. The evaluator now fails closed on
+unknown task IDs, workflow tests prove that each frozen task appears exactly once across shards, and
+the aggregator verifies unique `(catalog_size, task_id, condition)` identities and the exact frozen
+23-task set.
+
+A second design-level correction was frozen before an accepted aggregate: because the same 23
+semantic tasks repeat under four catalog sizes, paired uncertainty is now bootstrapped by
+**task_id cluster** rather than treating 92 task×catalog rows as independent. This prevents
+pseudoreplication. The B1 -2pp non-inferiority margin is consequently interpreted only as a
+descriptive engineering sanity gate; #432 stages the larger independent held-out task population
+required for a population-level inference.
+
+The staged 0.14 successors are:
+- #428 public typed Top-K retrieval API;
+- #430 adaptive shortlist depth;
+- #431 execution-state-aware corrective re-retrieval;
+- #432 independent held-out generalization surface.
+
+None may use B1 row-level failures to rewrite the frozen B1 task surface.
