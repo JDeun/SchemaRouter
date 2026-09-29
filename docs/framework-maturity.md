@@ -16,7 +16,8 @@ This document tracks framework-level maturity rather than research metrics.
 | Capability | Current main | Direction |
 | --- | --- | --- |
 | Typed tool / endpoint / parameter / field contracts | Implemented | Core invariant |
-| Capability retrieval | First-class deterministic `retrieve` / `aretrieve` + executable-ready variants over registered routes | Add alternate indexes/representations only behind explicit contracts and evidence |\n| Natural-language planning | Deterministic scoring + exact-recall candidate index cached by registry version | Keep planning/execution authority separate from external agent selection |
+| Capability retrieval | First-class deterministic `retrieve` / `aretrieve` + executable-ready variants over registered routes | Add alternate indexes/representations only behind explicit contracts and evidence |
+| Natural-language planning | Deterministic scoring + exact-recall candidate index cached by registry version | Keep planning/execution authority separate from external agent selection |
 | Sync / async invocation | Implemented | Stable public surface |
 | Batch execution | Implemented, including completion-order APIs | Stable public surface |
 | Result streaming | Sequential by default + explicit read-only parallel completion streaming | Keep dependency/DAG semantics out of core |
