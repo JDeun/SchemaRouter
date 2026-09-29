@@ -733,34 +733,55 @@ def _bootstrap_delta(
     condition_rows: list[dict[str, Any]],
     *,
     iterations: int = 5000,
-) -> dict[str, float]:
-    by_key_full = {
-        (int(row["catalog_size"]), str(row["task_id"])): bool(row["passed"])
+) -> dict[str, Any]:
+    """Bootstrap paired pass-rate deltas by semantic task cluster."""
+
+    full = {
+        (str(row["task_id"]), int(row["catalog_size"])): bool(row["passed"])
         for row in full_rows
     }
-    by_key_cond = {
-        (int(row["catalog_size"]), str(row["task_id"])): bool(row["passed"])
+    condition = {
+        (str(row["task_id"]), int(row["catalog_size"])): bool(row["passed"])
         for row in condition_rows
     }
-    keys = sorted(set(by_key_full).intersection(by_key_cond))
-    if not keys:
-        return {"delta": 0.0, "ci_low": 0.0, "ci_high": 0.0}
+    if set(full) != set(condition):
+        raise ValueError("paired condition keys do not match FULL")
 
-    paired = [
-        int(by_key_cond[key]) - int(by_key_full[key])
-        for key in keys
-    ]
-    delta = statistics.fmean(paired)
-    rng = random.Random(SEED)
-    samples: list[float] = []
-    for _ in range(iterations):
-        samples.append(
-            statistics.fmean(
-                paired[rng.randrange(len(paired))]
-                for _ in range(len(paired))
-            )
+    task_ids = sorted({task_id for task_id, _ in full})
+    if not task_ids:
+        return {
+            "delta": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.0,
+            "cluster_unit": "task_id",
+            "unique_task_count": 0,
+            "catalog_repeats_per_task": 0,
+            "iterations": iterations,
+        }
+
+    task_deltas: dict[str, float] = {}
+    repeat_counts: set[int] = set()
+    for task_id in task_ids:
+        keys = sorted(key for key in full if key[0] == task_id)
+        repeat_counts.add(len(keys))
+        task_deltas[task_id] = statistics.fmean(
+            int(condition[key]) - int(full[key])
+            for key in keys
         )
-    samples.sort()
+    if len(repeat_counts) != 1:
+        raise ValueError(
+            f"catalog repeat count drift across task clusters: {sorted(repeat_counts)}"
+        )
+
+    delta = statistics.fmean(task_deltas.values())
+    rng = random.Random(SEED)
+    samples = sorted(
+        statistics.fmean(
+            task_deltas[task_ids[rng.randrange(len(task_ids))]]
+            for _ in range(len(task_ids))
+        )
+        for _ in range(iterations)
+    )
 
     def q(prob: float) -> float:
         pos = prob * (len(samples) - 1)
@@ -775,6 +796,10 @@ def _bootstrap_delta(
         "delta": delta,
         "ci_low": q(0.025),
         "ci_high": q(0.975),
+        "cluster_unit": "task_id",
+        "unique_task_count": len(task_ids),
+        "catalog_repeats_per_task": next(iter(repeat_counts)),
+        "iterations": iterations,
     }
 
 
