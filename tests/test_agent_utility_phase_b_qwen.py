@@ -125,27 +125,55 @@ def test_unknown_task_shard_id_fails_before_model_load() -> None:
 
 def test_b1_workflow_shards_cover_every_frozen_task_exactly_once() -> None:
     expected = {task.task_id for task in TASKS}
-    workflow_paths = (
-        Path(".github/workflows/research-0.14-b1-task-sharded.yml"),
-        Path(".github/workflows/research-0.14-b1-microsharded.yml"),
-    )
 
-    for path in workflow_paths:
-        text = path.read_text(encoding="utf-8")
-        groups = re.findall(
-            r'(?:task_ids:\s*"|TASK_IDS=")([^"]+)"',
-            text,
-        )
-        task_ids = [
+    task_sharded = Path(
+        ".github/workflows/research-0.14-b1-task-sharded.yml"
+    ).read_text(encoding="utf-8")
+    legacy_groups = re.findall(
+        r'(?:task_ids:\\s*"|TASK_IDS=")([^"]+)"',
+        task_sharded,
+    )
+    legacy_task_ids = [
+        task_id.strip()
+        for group in legacy_groups
+        for task_id in group.split(",")
+        if task_id.strip()
+    ]
+    assert len(legacy_task_ids) == len(expected)
+    assert len(set(legacy_task_ids)) == len(legacy_task_ids)
+    assert set(legacy_task_ids) == expected
+
+    micro = Path(
+        ".github/workflows/research-0.14-b1-microsharded.yml"
+    ).read_text(encoding="utf-8")
+    rows = re.findall(
+        r'catalog:\\s*(20|50|100|250),\\s*'
+        r'shard:\\s*[^,}]+,\\s*task_ids:\\s*"([^"]+)"',
+        micro,
+    )
+    assert len(rows) == 30
+
+    by_catalog: dict[int, list[str]] = {
+        20: [],
+        50: [],
+        100: [],
+        250: [],
+    }
+    group_count: dict[int, int] = {20: 0, 50: 0, 100: 0, 250: 0}
+    for raw_size, group in rows:
+        size = int(raw_size)
+        group_count[size] += 1
+        by_catalog[size].extend(
             task_id.strip()
-            for group in groups
             for task_id in group.split(",")
             if task_id.strip()
-        ]
+        )
+
+    assert group_count == {20: 6, 50: 6, 100: 6, 250: 12}
+    for task_ids in by_catalog.values():
         assert len(task_ids) == len(expected)
         assert len(set(task_ids)) == len(task_ids)
         assert set(task_ids) == expected
-
 
 def test_system_prompt_requires_observation_between_tool_calls() -> None:
     assert "at most one tool call per assistant turn" in SYSTEM_PROMPT
