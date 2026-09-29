@@ -11,6 +11,15 @@ from scripts.aggregate_agent_utility_phase_b import (
 )
 
 
+RUNTIME = {
+    "platform": "Linux-test",
+    "python": "3.12.14",
+    "torch": "2.14.0+cpu",
+    "transformers": "4.57.6",
+    "tokenizers": "0.22.2",
+    "safetensors": "0.8.0",
+}
+
 MODEL = {
     "name": "Qwen/Qwen3-0.6B",
     "revision": "test-revision",
@@ -42,6 +51,7 @@ def _write_result(
             {
                 "experiment": "0.14-agent-utility-phase-b1-qwen3-0.6b",
                 "issue": 420,
+                "runtime": RUNTIME,
                 "model": MODEL,
                 "policy": POLICY,
                 "rows": rows,
@@ -184,3 +194,20 @@ def test_retrieval_coverage_rejects_missing_candidate_history() -> None:
                 }
             ]
         )
+
+
+def test_aggregate_rejects_runtime_identity_drift(
+    tmp_path: Path,
+) -> None:
+    first = _write_result(
+        tmp_path,
+        [_row(task_id="single-paper-search")],
+        name="phase-b1-a.json",
+    )
+    payload = json.loads(first.read_text(encoding="utf-8"))
+    payload["runtime"] = {**RUNTIME, "transformers": "different"}
+    second = tmp_path / "phase-b1-b.json"
+    second.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="runtime identity drift"):
+        aggregate([first, second])
