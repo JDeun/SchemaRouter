@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "purpose": "structural_retrieval_latency_diagnostic",
+  "implementation_sha": "33535c6fb78efc2bcdd6a7ddc87da1ed5f8c12e5",
+  "candidate": "STRUCT-4.5-1.5",
+  "catalog_size": 500,
+  "semantic_tasks": 240,
+  "repetitions": 3,
+  "ranking_semantics_changed": false,
+  "confirmation_surface_used": false,
+  "tuning_allowed": false
+}
