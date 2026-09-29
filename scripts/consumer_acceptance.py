@@ -109,6 +109,63 @@ async def scenario_happy_path() -> dict[str, object]:
     return {"tool": key, "result": results[0].data}
 
 
+async def scenario_capability_retrieval() -> dict[str, object]:
+    calls = 0
+
+    @schema_tool(read_only=True)
+    def retrieval_probe(city: str) -> Weather:
+        """Return weather for capability-retrieval acceptance validation."""
+        nonlocal calls
+        calls += 1
+        return Weather(city=city, temperature=21.0)
+
+    router = SchemaRouter()
+    key = router.add_callable(retrieval_probe)
+    request = PlanRequest(
+        query="current weather city",
+        preferred_tools=[key],
+        arguments={"city": "Seoul"},
+    )
+
+    sync_result = router.retrieve(request, k=1)
+    async_result = await router.aretrieve(request, k=1)
+    executable = router.retrieve_executable(request, k=1)
+    async_executable = await router.aretrieve_executable(request, k=1)
+
+    assert calls == 0
+    assert sync_result.requested_k == 1
+    assert sync_result.executable_only is False
+    assert executable.executable_only is True
+    assert async_executable.executable_only is True
+    assert len(sync_result.candidates) == 1
+
+    candidate = sync_result.candidates[0]
+    assert candidate.route_id == f"{key}.call"
+    assert candidate.route_id == async_result.candidates[0].route_id
+    assert candidate.route_id == executable.candidates[0].route_id
+    assert candidate.route_id == async_executable.candidates[0].route_id
+    assert candidate.input_schema["type"] == "object"
+    assert "city" in candidate.input_schema["properties"]
+    assert candidate.output_schema
+    assert candidate.tool_fingerprint == router.registry.get(key).fingerprint
+    assert (
+        candidate.endpoint_fingerprint
+        == router.registry.endpoint(key, "call").fingerprint
+    )
+
+    invoked = await router.ainvoke(request)
+    assert calls == 1
+    assert invoked[0].data == {"city": "Seoul", "temperature": 21.0}
+
+    return {
+        "route_id": candidate.route_id,
+        "retrieval_side_effects": calls - 1,
+        "full_input_schema": bool(candidate.input_schema),
+        "full_output_schema": bool(candidate.output_schema),
+        "executable_filter": executable.executable_only,
+    }
+
+
 async def scenario_policy_and_approval() -> dict[str, object]:
     denied_router = SchemaRouter()
     denied_key = denied_router.add_callable(update_profile)
@@ -787,6 +844,7 @@ Scenario = Callable[[], Awaitable[dict[str, object]]]
 
 SCENARIOS: tuple[tuple[str, Scenario], ...] = (
     ("happy_path", scenario_happy_path),
+    ("capability_retrieval", scenario_capability_retrieval),
     ("policy_and_approval", scenario_policy_and_approval),
     ("scoped_policy_rule", scenario_scoped_policy_rule),
     ("schema_drift", scenario_schema_drift),
