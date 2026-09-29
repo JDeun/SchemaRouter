@@ -53,6 +53,33 @@ def _normalize_query(value: str) -> str:
     return " ".join(value.lower().split())
 
 
+def _prior_json_queries() -> set[str]:
+    keys = {"query", "queries", "prompt", "prompts", "task_text", "task_texts"}
+    values: set[str] = set()
+
+    def visit(value: Any, parent_key: str | None = None) -> None:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                visit(child, str(key))
+            return
+        if isinstance(value, list):
+            for child in value:
+                visit(child, parent_key)
+            return
+        if isinstance(value, str) and parent_key in keys:
+            normalized = _normalize_query(value)
+            if normalized:
+                values.add(normalized)
+
+    for path in sorted((ROOT / "benchmarks").glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        visit(payload)
+    return values
+
+
 def _route_ids(registry: Any) -> set[str]:
     return {
         f"{tool.key}.{endpoint.name}"
@@ -117,6 +144,7 @@ def _validate_tasks(tasks: list[dict[str, Any]]) -> None:
         _normalize_query(str(task.query))
         for task in B2_TASKS
     )
+    prior_queries.update(_prior_json_queries())
     overlap = sorted(new_queries & prior_queries)
     if overlap:
         raise RuntimeError(
