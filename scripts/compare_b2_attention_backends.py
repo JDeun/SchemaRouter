@@ -8,19 +8,19 @@ from pathlib import Path
 from typing import Any
 
 TIMING_KEYS = {
-    "latency_ms",
-    "model_generation_latency_ms",
-    "episode_wall_latency_ms",
-    "candidate_selection_latency_ms",
     "model_load_ms",
 }
+
+
+def _is_timing_key(key: str) -> bool:
+    return key in TIMING_KEYS or "latency_ms" in key
 
 
 def _normalize(value: Any) -> Any:
     if isinstance(value, dict):
         normalized: dict[str, Any] = {}
         for key, child in value.items():
-            if key in TIMING_KEYS:
+            if _is_timing_key(key):
                 continue
             if key == "runtime":
                 continue
