@@ -184,27 +184,39 @@ The released package provides a working beta implementation of the core architec
 
 So **the architecture works today** for declared capabilities and supported routing cases.
 
-## Current limitation: open-set natural-language routing
+## Current research direction: compact capability retrieval for agents
 
-The unresolved research problem is not basic execution. It is reliably distinguishing:
+The stable 0.10.0 execution boundary is unchanged. The active research question has shifted from
+making SchemaRouter itself the final open-set classifier to evaluating it as a **typed capability
+retrieval substrate** for a downstream LLM agent.
 
-> "This request is similar to a registered domain"
+The intended separation is:
 
-from:
+```text
+registered capability catalog
+  -> SchemaRouter Top-K typed candidates
+  -> downstream agent chooses among candidates
+  -> local schema / argument / permission / destructive policy
+  -> execution
+```
 
-> "This exact operation is actually supported by a registered capability."
+Why this matters: on the corrected frozen 0.14 Phase-A benchmark, Top-1 required-route recall is
+**68.97%**, while Top-5 preserves **100%** of required capabilities. At 250 registered endpoints,
+Top-5 exposes only **2.38%** of the FULL serialized schema context on average.
 
-The strongest frozen development candidate met the standing target on canonical DEV, but failed the
-independent zero-overlap fresh confirmation. Therefore no experimental learned router is promoted as
-an unconditional production default in 0.10.0.
+Those are retrieval results, not a completed production claim. The active #420 B1 experiment is
+measuring whether the same real tool-calling agent maintains or improves deterministic task success
+while consuming less tool context under FULL vs SR-3/SR-5/SR-10/progressive conditions. A separate
+strong-agent replication (#423) and final-answer quality benchmark (#424) are required before
+generalizing the result.
 
-The first arbitrary-tool registry-compiled learned veto was also terminally rejected because it
-became too conservative and rejected most valid supported requests.
+The earlier 0.11–0.13 open-set classifier/veto experiments remain valuable negative evidence. No
+experimental learned router is promoted as an unconditional production default in 0.10.0.
 
 See:
 
 - [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
-- [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/) — canonical literature/work-item map for cross-session research continuity
+- [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [Complete experiment index](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
 - [0.10.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.10.0/)
 - [Changelog](CHANGELOG.md)
