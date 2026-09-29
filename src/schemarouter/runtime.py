@@ -559,6 +559,7 @@ class SchemaRouter:
             request,
             self._binding_ready,
             k=k,
+            executable_only=True,
         )
 
     async def aretrieve_executable(
@@ -573,6 +574,7 @@ class SchemaRouter:
             request,
             self._binding_ready,
             k=k,
+            executable_only=True,
         )
 
     async def _execute_plan(
