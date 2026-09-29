@@ -90,6 +90,10 @@ class BM25Index:
             route_id: _tokens(documents[route_id])
             for route_id in self.route_ids
         }
+        self.term_counts = {
+            route_id: Counter(tokens)
+            for route_id, tokens in self.tokens.items()
+        }
         self.lengths = {
             route_id: len(tokens)
             for route_id, tokens in self.tokens.items()
@@ -104,11 +108,14 @@ class BM25Index:
             self.df.update(set(tokens))
         self.n = len(self.route_ids)
 
-    def score(self, query: str, route_id: str) -> float:
-        query_terms = _tokens(query)
+    def _score_tokens(
+        self,
+        query_terms: tuple[str, ...],
+        route_id: str,
+    ) -> float:
         if not query_terms or self.n == 0:
             return 0.0
-        term_counts = Counter(self.tokens[route_id])
+        term_counts = self.term_counts[route_id]
         dl = self.lengths[route_id]
         k1 = 1.5
         b = 0.75
@@ -128,8 +135,9 @@ class BM25Index:
         return score
 
     def rank(self, query: str) -> list[tuple[str, float]]:
+        query_terms = tuple(_tokens(query))
         rows = [
-            (route_id, self.score(query, route_id))
+            (route_id, self._score_tokens(query_terms, route_id))
             for route_id in self.route_ids
         ]
         rows.sort(key=lambda row: (-row[1], row[0]))
