@@ -72,6 +72,16 @@ The tuning-eligible development surface contains **240 independent semantic task
 - 6 languages;
 - 5 tasks per stratum × language cell.
 
+Language rendering policy:
+
+- each semantic task appears in exactly one language cell;
+- surrounding request grammar is written in the assigned language;
+- canonical scientific/tooling terms such as `Raman peak`, units, and registered
+  operation nouns may remain in English where that is normal technical usage;
+- this surface therefore tests adaptive shortlist depth under multilingual request
+  framing, not standalone translation quality;
+- no cross-language translations of the same DEV task are used as repeated rows.
+
 Task strata cover:
 
 1. clear single-tool requests;
@@ -90,8 +100,8 @@ adaptive policy is selected.
 
 An adaptive policy is eligible only if it satisfies all of:
 
-- required-tool-set Recall >= 97%;
-- all-required FullCoverage >= 97%;
+- required-tool-set Recall >= 97% at each of 100/250/500 endpoints;
+- all-required FullCoverage >= 97% at each of 100/250/500 endpoints;
 - mean exposed candidate count < 5;
 - p95 exposed candidate count <= 10;
 - mean tool-schema tokens < fixed K=5.
@@ -112,7 +122,8 @@ There is no post-selection threshold retuning.
 The confirmation surface is not tuning eligible.
 
 For promotion, the selected adaptive policy must retain >=97% required-tool coverage and
-FullCoverage, average no more than 4.5 candidates, reduce tool-schema tokens relative to fixed K=5,
+FullCoverage independently at each catalog size, average no more than 4.5 candidates,
+reduce tool-schema tokens relative to fixed K=5,
 and — after B2 is terminal — preserve downstream task pass within 2 percentage points of fixed K=5
 with zero unauthorized destructive execution.
 

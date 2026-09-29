@@ -51,6 +51,10 @@ def _row(
         "required_route_ids": required,
         "retrieval_latency_ms": 12.5,
         "ranking": _ranking(scores),
+        "prefix_schema_tokens": {
+            str(depth): depth * 25
+            for depth in range(1, 11)
+        },
     }
 
 
@@ -220,3 +224,69 @@ def test_adaptive_eligibility_reads_machine_preregistered_gates() -> None:
         fixed5,
         prereg,
     )
+
+
+def test_prefix_tool_tokens_are_used_instead_of_candidate_additivity() -> None:
+    prereg = _prereg()
+    scores = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+    row = _row(
+        task_id="token-accounting",
+        stratum="clear_single_tool",
+        required=["tool.route_1"],
+        scores=scores,
+    )
+    row["prefix_schema_tokens"]["3"] = 91
+
+    result = adaptive_eval.evaluate(
+        [row],
+        prereg,
+        strict_surface=False,
+    )
+
+    assert result["policy_metrics"]["FIXED-3"]["schema_tokens"]["mean"] == 91
+
+
+def test_worst_catalog_coverage_prevents_pooled_masking() -> None:
+    prereg = _prereg()
+    scores = [1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1]
+    rows = [
+        _row(
+            task_id="catalog-robustness",
+            stratum="clear_single_tool",
+            required=["tool.route_1"],
+            scores=scores,
+            catalog_size=size,
+        )
+        for size in (100, 250, 500)
+    ]
+    ranking = rows[-1]["ranking"]
+    route_ids = [
+        candidate["route_id"]
+        for candidate in ranking
+    ]
+    shifted_route_ids = [*route_ids[1:], route_ids[0]]
+    for candidate, route_id in zip(
+        ranking,
+        shifted_route_ids,
+        strict=True,
+    ):
+        candidate["route_id"] = route_id
+
+    result = adaptive_eval.evaluate(
+        rows,
+        prereg,
+        strict_surface=False,
+    )
+    fixed3 = result["policy_metrics"]["FIXED-3"]
+
+    assert fixed3["supported_required_route_recall"] == 2 / 3
+    assert fixed3["worst_catalog_required_route_recall"] == 0.0
+    assert fixed3["per_catalog"]["100"][
+        "supported_required_route_recall"
+    ] == 1.0
+    assert fixed3["per_catalog"]["250"][
+        "supported_required_route_recall"
+    ] == 1.0
+    assert fixed3["per_catalog"]["500"][
+        "supported_required_route_recall"
+    ] == 0.0

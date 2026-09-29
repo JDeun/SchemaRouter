@@ -215,17 +215,22 @@ def _validate_rows(
         for rank, candidate in enumerate(ranking[:max_k], start=1):
             route_id = str(candidate["route_id"])
             score = float(candidate["score"])
-            schema_tokens = int(candidate["schema_tokens"])
             if not route_id:
                 raise ValueError(f"row {index} rank {rank}: empty route_id")
             if not math.isfinite(score):
                 raise ValueError(f"row {index} rank {rank}: non-finite score")
-            if schema_tokens < 0:
-                raise ValueError(
-                    f"row {index} rank {rank}: negative schema_tokens"
-                )
             route_ids.append(route_id)
             scores.append(score)
+
+        prefix_tokens = row.get("prefix_schema_tokens")
+        if not isinstance(prefix_tokens, dict):
+            raise ValueError(f"row {index}: prefix_schema_tokens must be an object")
+        for depth in range(1, max_k + 1):
+            value = int(prefix_tokens.get(str(depth), -1))
+            if value < 0:
+                raise ValueError(
+                    f"row {index}: missing/negative prefix_schema_tokens[{depth}]"
+                )
 
         if len(route_ids) != len(set(route_ids)):
             raise ValueError(f"row {index}: duplicate route_id in ranking")
@@ -309,15 +314,21 @@ def _evaluate_policy(
         for value in prereg["score_semantics"]["evaluated_positions"]
     ]
 
-    required_hits = 0
-    required_total = 0
-    supported_full_coverage = 0
-    supported_any_hit = 0
-    supported_count = 0
-    random_any_probabilities: list[float] = []
-    candidate_counts: list[float] = []
-    schema_tokens: list[float] = []
-    retrieval_latencies: list[float] = []
+    def new_bucket() -> dict[str, Any]:
+        return {
+            "required_hits": 0,
+            "required_total": 0,
+            "supported_full_coverage": 0,
+            "supported_any_hit": 0,
+            "supported_count": 0,
+            "random_any_probabilities": [],
+            "candidate_counts": [],
+            "schema_tokens": [],
+            "retrieval_latencies": [],
+        }
+
+    pooled = new_bucket()
+    per_catalog_acc: dict[str, dict[str, Any]] = {}
     selected_depths: dict[str, int] = {}
     unsupported_depths: dict[str, list[float]] = {}
 
@@ -338,16 +349,18 @@ def _evaluate_policy(
             str(candidate["route_id"])
             for candidate in selected
         }
-        candidate_counts.append(float(k))
-        schema_tokens.append(
-            float(
-                sum(
-                    int(candidate["schema_tokens"])
-                    for candidate in selected
-                )
+        catalog_key = str(int(row["catalog_size"]))
+        bucket = per_catalog_acc.setdefault(catalog_key, new_bucket())
+
+        for target in (pooled, bucket):
+            target["candidate_counts"].append(float(k))
+            target["schema_tokens"].append(
+                float(row["prefix_schema_tokens"][str(k)])
             )
-        )
-        retrieval_latencies.append(float(row["retrieval_latency_ms"]))
+            target["retrieval_latencies"].append(
+                float(row["retrieval_latency_ms"])
+            )
+
         selected_depths[
             f'{row["task_id"]}@{row["catalog_size"]}'
         ] = k
@@ -359,53 +372,97 @@ def _evaluate_policy(
         }
         if stratum in supported:
             hits = len(required & selected_routes)
-            required_hits += hits
-            required_total += len(required)
-            supported_full_coverage += int(hits == len(required))
-            supported_any_hit += int(hits > 0)
-            supported_count += 1
-            random_any_probabilities.append(
-                _random_any_required_probability(
-                    int(row["catalog_size"]),
-                    len(required),
-                    k,
-                )
+            random_probability = _random_any_required_probability(
+                int(row["catalog_size"]),
+                len(required),
+                k,
             )
+            for target in (pooled, bucket):
+                target["required_hits"] += hits
+                target["required_total"] += len(required)
+                target["supported_full_coverage"] += int(
+                    hits == len(required)
+                )
+                target["supported_any_hit"] += int(hits > 0)
+                target["supported_count"] += 1
+                target["random_any_probabilities"].append(
+                    random_probability
+                )
         else:
             unsupported_depths.setdefault(stratum, []).append(float(k))
 
-    observed_any = (
-        supported_any_hit / supported_count
-        if supported_count
-        else 0.0
-    )
-    random_any = (
-        statistics.fmean(random_any_probabilities)
-        if random_any_probabilities
-        else 0.0
-    )
+    def summarize(bucket: dict[str, Any]) -> dict[str, Any]:
+        supported_count = int(bucket["supported_count"])
+        observed_any = (
+            bucket["supported_any_hit"] / supported_count
+            if supported_count
+            else 0.0
+        )
+        random_values = bucket["random_any_probabilities"]
+        random_any = (
+            statistics.fmean(random_values)
+            if random_values
+            else 0.0
+        )
+        required_total = int(bucket["required_total"])
+        return {
+            "supported_required_route_recall": (
+                bucket["required_hits"] / required_total
+                if required_total
+                else None
+            ),
+            "supported_all_required_full_coverage": (
+                bucket["supported_full_coverage"] / supported_count
+                if supported_count
+                else None
+            ),
+            "supported_any_required_coverage": observed_any,
+            "bits_over_random_any_required": _bits_over_random(
+                observed_any,
+                random_any,
+            ),
+            "mean_random_any_required_probability": random_any,
+            "candidate_count": _distribution(bucket["candidate_counts"]),
+            "schema_tokens": _distribution(bucket["schema_tokens"]),
+            "retrieval_latency_ms": _distribution(
+                bucket["retrieval_latencies"]
+            ),
+        }
+
+    pooled_summary = summarize(pooled)
+    per_catalog = {
+        key: summarize(value)
+        for key, value in sorted(
+            per_catalog_acc.items(),
+            key=lambda item: int(item[0]),
+        )
+    }
+    catalog_recalls = [
+        value["supported_required_route_recall"]
+        for value in per_catalog.values()
+        if value["supported_required_route_recall"] is not None
+    ]
+    catalog_coverages = [
+        value["supported_all_required_full_coverage"]
+        for value in per_catalog.values()
+        if value["supported_all_required_full_coverage"] is not None
+    ]
+
     return {
         "policy_id": str(policy["id"]),
         "adaptive": adaptive,
-        "supported_required_route_recall": (
-            required_hits / required_total
-            if required_total
+        **pooled_summary,
+        "per_catalog": per_catalog,
+        "worst_catalog_required_route_recall": (
+            min(catalog_recalls)
+            if catalog_recalls
             else None
         ),
-        "supported_all_required_full_coverage": (
-            supported_full_coverage / supported_count
-            if supported_count
+        "worst_catalog_all_required_full_coverage": (
+            min(catalog_coverages)
+            if catalog_coverages
             else None
         ),
-        "supported_any_required_coverage": observed_any,
-        "bits_over_random_any_required": _bits_over_random(
-            observed_any,
-            random_any,
-        ),
-        "mean_random_any_required_probability": random_any,
-        "candidate_count": _distribution(candidate_counts),
-        "schema_tokens": _distribution(schema_tokens),
-        "retrieval_latency_ms": _distribution(retrieval_latencies),
         "unsupported_candidate_count": {
             stratum: _distribution(values)
             for stratum, values in sorted(unsupported_depths.items())
@@ -419,25 +476,36 @@ def _adaptive_eligible(
     fixed5: dict[str, Any],
     prereg: dict[str, Any],
 ) -> bool:
-    recall = metrics["supported_required_route_recall"]
-    coverage = metrics["supported_all_required_full_coverage"]
+    worst_recall = metrics["worst_catalog_required_route_recall"]
+    worst_coverage = metrics[
+        "worst_catalog_all_required_full_coverage"
+    ]
     mean_count = metrics["candidate_count"]["mean"]
     p95_count = metrics["candidate_count"]["p95"]
     mean_tokens = metrics["schema_tokens"]["mean"]
     fixed5_tokens = fixed5["schema_tokens"]["mean"]
     if None in {
-        recall,
-        coverage,
+        worst_recall,
+        worst_coverage,
         mean_count,
         p95_count,
         mean_tokens,
         fixed5_tokens,
     }:
         return False
+
     gates = prereg["dev_selection"]["eligibility_thresholds"]
+    expected_catalogs = {
+        str(int(value))
+        for value in gates["catalog_sizes"]
+    }
+    if set(metrics["per_catalog"]) != expected_catalogs:
+        return False
+
     return bool(
-        recall >= float(gates["required_tool_set_recall_min"])
-        and coverage >= float(gates["all_required_full_coverage_min"])
+        worst_recall >= float(gates["required_tool_set_recall_min"])
+        and worst_coverage
+        >= float(gates["all_required_full_coverage_min"])
         and mean_count
         < float(gates["mean_candidate_count_max_exclusive"])
         and p95_count <= float(gates["p95_candidate_count_max"])
@@ -452,8 +520,9 @@ def _adaptive_eligible(
 def _selection_key(metrics: dict[str, Any]) -> tuple[Any, ...]:
     return (
         float(metrics["candidate_count"]["mean"]),
+        -float(metrics["worst_catalog_required_route_recall"]),
+        -float(metrics["worst_catalog_all_required_full_coverage"]),
         -float(metrics["supported_required_route_recall"]),
-        -float(metrics["supported_all_required_full_coverage"]),
         float(metrics["schema_tokens"]["mean"]),
         float(metrics["retrieval_latency_ms"]["p95"]),
         str(metrics["policy_id"]),

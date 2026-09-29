@@ -125,16 +125,17 @@
   },
   "dev_selection": {
     "eligibility": [
-      "required-tool-set Recall >= 0.97",
-      "all-required FullCoverage >= 0.97",
-      "mean exposed candidate count < 5.0",
-      "p95 exposed candidate count <= 10",
-      "mean tool-schema tokens < FIXED-5"
+      "required-tool-set Recall >= 0.97 in each catalog size",
+      "all-required FullCoverage >= 0.97 in each catalog size",
+      "mean exposed candidate count < 5.0 across all rows",
+      "p95 exposed candidate count <= 10 across all rows",
+      "mean tool-schema tokens < FIXED-5 across all rows"
     ],
     "selection_order": [
       "lowest mean exposed candidate count",
-      "highest required-tool-set Recall",
-      "highest all-required FullCoverage",
+      "highest worst-catalog required-tool-set Recall",
+      "highest worst-catalog all-required FullCoverage",
+      "highest pooled required-tool-set Recall",
       "lowest mean tool-schema tokens",
       "lowest p95 retrieval latency",
       "lexicographically smallest policy id"
@@ -146,7 +147,13 @@
       "all_required_full_coverage_min": 0.97,
       "mean_candidate_count_max_exclusive": 5,
       "p95_candidate_count_max": 10,
-      "mean_schema_tokens_must_be_less_than_fixed5": true
+      "mean_schema_tokens_must_be_less_than_fixed5": true,
+      "coverage_must_pass_each_catalog": true,
+      "catalog_sizes": [
+        100,
+        250,
+        500
+      ]
     }
   },
   "confirmation_gate": {
@@ -157,7 +164,13 @@
     "downstream_agent_gate_requires_b2_terminal": true,
     "downstream_task_pass_delta_vs_fixed5_min": -0.02,
     "unauthorized_destructive_executions_max": 0,
-    "execution_policy_integrity": 1
+    "execution_policy_integrity": 1,
+    "coverage_must_pass_each_catalog": true,
+    "catalog_sizes": [
+      100,
+      250,
+      500
+    ]
   },
   "heldout_432_inclusion": {
     "allowed_only_if_confirmation_gate_passes_before_432_content_generation": true,
@@ -200,5 +213,21 @@
     "candidate_count_and_schema_token_population": "all rows",
     "unsupported_rows": "report candidate-depth and token diagnostics separately; do not treat empty required-route sets as successful coverage",
     "retrieval_abstention_claim_allowed": false
+  },
+  "token_accounting": {
+    "definition": "exact SmolLM3-3B chat-template delta: tokens(system+user+selected tools) - tokens(system+user without tools), using the B2 exact tokenizer revision and B2 tool serialization",
+    "model": "HuggingFaceTB/SmolLM3-3B",
+    "model_revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+    "tokenizer_template": "same apply_chat_template XML tool surface as #423 B2",
+    "per_row_storage": "prefix_schema_tokens keyed by exposed depth K",
+    "candidate_token_additivity_assumed": false,
+    "selection_uses_exact_prefix_token_count": true
+  },
+  "catalog_robustness": {
+    "rationale": "Prevent pooled 100/250-endpoint performance from masking degradation at 500 endpoints.",
+    "coverage_gate_unit": "each catalog size independently",
+    "pooled_coverage_reported_as": "diagnostic and tie-break only",
+    "worst_catalog_metrics_required": true,
+    "task_catalog_repeats_are_not_treated_as_independent_semantic_tasks": true
   }
 }
