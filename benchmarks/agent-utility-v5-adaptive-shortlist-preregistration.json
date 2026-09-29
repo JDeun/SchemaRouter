@@ -20,8 +20,10 @@
   "score_semantics": {
     "absolute_score_thresholds_allowed": false,
     "rationale": "CapabilityCandidate.score is a deterministic ranking score, not a calibrated probability shared across retrieval backends or catalogs.",
-    "adaptive_signal": "scale-invariant adjacent relative score gap inside the already-ranked Top-10 list",
-    "formula": "gap_i = (score_i - score_{i+1}) / max(abs(score_i), abs(score_{i+1}), 1e-9)",
+    "adaptive_signal": "positive-affine-invariant adjacent score gap normalized by the already-ranked Top-10 score range",
+    "formula": "gap_i = (score_i - score_{i+1}) / max(score_1 - score_10, 1e-9)",
+    "invariance": "unchanged under score' = a*score+b for any a>0",
+    "zero_spread_rule": "if score_1 - score_10 <= 1e-9, return max_k",
     "evaluated_positions": [
       3,
       4,
@@ -162,5 +164,13 @@
     "no_threshold_change_after_dev_selection": true,
     "no_confirmation_row_removal": true,
     "no_weighted_composite_score": true
+  },
+  "chance_corrected_diagnostics": {
+    "reference": "Repantis et al. 2026, arXiv:2605.24660",
+    "fixed_k_bits_over_random_reported": true,
+    "adaptive_policy_selection_uses_bits_over_random": false,
+    "bits_over_random_used_as_inference_signal": false,
+    "learned_depth_policy_allowed": false,
+    "purpose": "contextualize fixed-depth coverage against random inclusion at the same depth without changing adaptive-policy eligibility or selection"
   }
 }
