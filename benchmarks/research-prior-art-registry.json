@@ -2,15 +2,8 @@
   "schema_version": 1,
   "updated_at": "2026-09-29",
   "purpose": "Cross-session prior-art and experiment navigation for SchemaRouter open-set capability routing research.",
-  "roadmap_issue": 388,
-  "session_bootstrap": [
-    "Read GitHub issue #388 first.",
-    "Read this registry.",
-    "Read benchmarks/research-experiment-ledger.json.",
-    "Read docs/research/routing-status.md.",
-    "Search existing open/closed issues and research branches before creating a new experiment.",
-    "Resume the first active workstream/experiment; do not recreate terminal methods."
-  ],
+  "roadmap_issue": 417,
+  "session_bootstrap": "Read #417, #418 and active #420 before proposing another routing experiment; 0.13 classifier/open-set formulations are terminal and must not be retuned from consumed evidence.",
   "invariants": [
     "Registered schema-backed routes are the only source of positive execution authority.",
     "Open-set methods may preserve the raw registered winner or abstain to NO_ROUTE; they may not invent a route.",
@@ -324,6 +317,47 @@
           "result": "GTE positive selector: 71.49% exact vs 88.16% same-surface BGE; p95 100.14 ms; terminal."
         }
       ]
+    },
+    {
+      "id": "end-to-end-agent-utility",
+      "title": "End-to-end agent utility of typed capability retrieval",
+      "issue": 417,
+      "parent_issue": null,
+      "status": "active",
+      "canonical_references": [
+        {
+          "title": "Retrieval Models Aren't Tool-Savvy: Benchmarking Tool Retrieval for Large Language Models",
+          "short_name": "ToolRet",
+          "venue": "Findings ACL 2025",
+          "url": "https://aclanthology.org/2025.findings-acl.1258/"
+        },
+        {
+          "title": "ToolReAGt: Tool Retrieval for LLM-based Complex Task Solution via Retrieval Augmented Generation",
+          "short_name": "ToolReAGt",
+          "venue": "KnowLLM 2025",
+          "url": "https://aclanthology.org/2025.knowllm-1.7/"
+        },
+        {
+          "title": "GRETEL: A Goal-driven Retrieval and Execution-based Trial Framework for LLM Tool Selection Enhancing",
+          "short_name": "GRETEL",
+          "venue": "arXiv 2025",
+          "url": "https://arxiv.org/abs/2510.17843"
+        }
+      ],
+      "schemarouter_mapping": "Use the registry as a typed executable capability corpus; retrieve a compact high-recall candidate set for an external agent, keep execution policy local, and evaluate both retrieval coverage and downstream task utility.",
+      "phase_a": {
+        "issue": 418,
+        "status": "pass_phase_b_eligible",
+        "required_route_recall_at_5": 1,
+        "required_route_recall_at_10": 1,
+        "catalog_250_top5_context_ratio_vs_full": 0.023791301779351147
+      },
+      "current_experiment": {
+        "issue": 420,
+        "status": "active_b1_sanity_baseline",
+        "role": "FULL vs SR-3/SR-5/SR-10/SR-PROGRESSIVE/ORACLE with one identical downstream local tool-calling agent"
+      },
+      "next_action": "Complete B1, preserve it as sanity evidence, then preregister a stronger B2 agent over the same frozen tasks/catalogs before any product-level claim."
     }
   ],
   "terminal_semantic_membership_lineage": [
