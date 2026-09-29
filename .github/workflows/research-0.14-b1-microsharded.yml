@@ -1,6 +1,8 @@
 name: Research 0.14 B1 Micro-Sharded Agent A-B
 
-# Canonical v2 execution: preregistration + freeze + Phase-A gate are validated in preflight.
+# Canonical B1 v2 execution.
+# Inference is authorized only after protocol/freeze/Phase-A preflight and
+# exact-pinned two-turn Qwen smoke both pass in this same workflow run.
 
 on:
   push:
@@ -46,6 +48,7 @@ jobs:
             scripts/evaluate_agent_utility_phase_a.py \
             scripts/evaluate_agent_utility_phase_b_qwen.py \
             scripts/aggregate_agent_utility_phase_b.py \
+            scripts/smoke_qwen3_tool_call.py \
             tests/test_agent_utility_v1.py \
             tests/test_agent_utility_v1_executor.py \
             tests/test_agent_utility_phase_b_qwen.py \
@@ -59,6 +62,8 @@ jobs:
           import json
           from pathlib import Path
 
+          from benchmarks.agent_utility_v1_catalog import TASKS
+
           prereg = json.loads(
               Path("benchmarks/agent-utility-v1-b1-preregistration-v2.json")
               .read_text(encoding="utf-8")
@@ -69,11 +74,49 @@ jobs:
           assert prereg["corrected_freeze_identity"]["tasks_sha256"] == (
               "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c"
           )
+          assert prereg["pre_benchmark_smoke"]["required"] is True
+          assert prereg["pre_benchmark_smoke"][
+              "exact_runtime_pins_required"
+          ] is True
+          assert prereg["pre_benchmark_smoke"][
+              "dependent_second_tool_call_after_observation_required"
+          ] is True
+          assert prereg["pre_benchmark_smoke"][
+              "repeated_identical_prompt_determinism_required"
+          ] is True
           assert prereg["tool_observation_causality"][
               "max_executed_tool_calls_per_assistant_turn"
           ] == 1
           assert prereg["statistical_scope"]["bootstrap_unit"] == "task_id cluster"
           assert prereg["aggregate_integrity"]["required_episode_count"] == 552
+
+          plan = json.loads(
+              Path("benchmarks/agent-utility-v1-b1-sharding-v2.json")
+              .read_text(encoding="utf-8")
+          )
+          task_ids = {task.task_id for task in TASKS}
+          assert plan["expected_job_count"] == 30
+          assert plan["expected_episode_count"] == 552
+          base_groups = plan["groups"]
+          for size in ("20", "50", "100"):
+              flattened = [
+                  task_id
+                  for group_id in plan["catalogs"][size]
+                  for task_id in base_groups[group_id]
+              ]
+              assert len(flattened) == 23
+              assert len(set(flattened)) == 23
+              assert set(flattened) == task_ids
+          split_250 = plan["catalogs"]["250"]
+          flattened_250 = [
+              task_id
+              for _, group in split_250
+              for task_id in group
+          ]
+          assert len(split_250) == 12
+          assert len(flattened_250) == 23
+          assert len(set(flattened_250)) == 23
+          assert set(flattened_250) == task_ids
           PY
 
       - name: Freeze v2 tasks and catalogs
@@ -108,20 +151,6 @@ jobs:
           assert result["phase_a_gate"]["phase_b_eligible"] is True
           print(json.dumps(freeze, sort_keys=True))
           print(json.dumps(result["phase_a_gate"], sort_keys=True))
-          print(json.dumps({
-              size: {
-                  "recall3": result["catalog_sizes"][size]["k"]["3"][
-                      "required_route_recall"
-                  ],
-                  "recall5": result["catalog_sizes"][size]["k"]["5"][
-                      "required_route_recall"
-                  ],
-                  "recall10": result["catalog_sizes"][size]["k"]["10"][
-                      "required_route_recall"
-                  ],
-              }
-              for size in ("20", "50", "100", "250")
-          }, sort_keys=True))
           PY
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -130,19 +159,88 @@ jobs:
           path: |
             artifacts/agent-utility-v1/
             benchmarks/agent-utility-v1-b1-preregistration-v2.json
+            benchmarks/agent-utility-v1-b1-sharding-v2.json
             benchmarks/agent-utility-v1-b1-task-contract-amendment.json
             benchmarks/agent-utility-v1-b1-causality-amendment.json
             benchmarks/agent-utility-v1-b1-statistical-amendment.json
             benchmarks/agent-utility-v1-b1-execution-equivalence.json
           retention-days: 30
 
-  evaluate:
+  smoke:
     needs: preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - run: pip install -e .
+
+      - name: Verify exact pinned smoke runtime
+        run: |
+          python - <<'PY'
+          import platform
+          import safetensors
+          import tokenizers
+          import torch
+          import transformers
+
+          assert platform.python_version() == "3.12.14"
+          assert torch.__version__ == "2.14.0+cpu"
+          assert transformers.__version__ == "4.57.6"
+          assert tokenizers.__version__ == "0.22.2"
+          assert safetensors.__version__ == "0.8.0"
+          print("exact B1 smoke runtime verified")
+          PY
+
+      - name: Run required two-turn deterministic smoke
+        env:
+          HF_HUB_DISABLE_TELEMETRY: "1"
+          TOKENIZERS_PARALLELISM: "false"
+        run: |
+          python scripts/smoke_qwen3_tool_call.py
+
+  evaluate:
+    needs: smoke
     strategy:
       fail-fast: false
       matrix:
-        catalog: [20, 50, 100, 250]
-        shard: [s01, s02, s03, s04, s05, s06]
+        include:
+          - {catalog: 20, shard: s01, task_ids: "single-paper-search,single-paper-retrieve,single-paper-summary,single-material-search"}
+          - {catalog: 20, shard: s02, task_ids: "single-material-retrieve,single-material-current,single-material-history,single-material-forecast"}
+          - {catalog: 20, shard: s03, task_ids: "single-inventory-list,single-inventory-create,single-inventory-update,single-inventory-delete"}
+          - {catalog: 20, shard: s04, task_ids: "single-message-send,single-share,single-credit-refund,single-runtime-restart"}
+          - {catalog: 20, shard: s05, task_ids: "single-export,multi-paper-search-retrieve,multi-paper-retrieve-summary,multi-material-search-current"}
+          - {catalog: 20, shard: s06, task_ids: "multi-create-share,multi-create-send,multi-retrieve-export"}
+          - {catalog: 50, shard: s01, task_ids: "single-paper-search,single-paper-retrieve,single-paper-summary,single-material-search"}
+          - {catalog: 50, shard: s02, task_ids: "single-material-retrieve,single-material-current,single-material-history,single-material-forecast"}
+          - {catalog: 50, shard: s03, task_ids: "single-inventory-list,single-inventory-create,single-inventory-update,single-inventory-delete"}
+          - {catalog: 50, shard: s04, task_ids: "single-message-send,single-share,single-credit-refund,single-runtime-restart"}
+          - {catalog: 50, shard: s05, task_ids: "single-export,multi-paper-search-retrieve,multi-paper-retrieve-summary,multi-material-search-current"}
+          - {catalog: 50, shard: s06, task_ids: "multi-create-share,multi-create-send,multi-retrieve-export"}
+          - {catalog: 100, shard: s01, task_ids: "single-paper-search,single-paper-retrieve,single-paper-summary,single-material-search"}
+          - {catalog: 100, shard: s02, task_ids: "single-material-retrieve,single-material-current,single-material-history,single-material-forecast"}
+          - {catalog: 100, shard: s03, task_ids: "single-inventory-list,single-inventory-create,single-inventory-update,single-inventory-delete"}
+          - {catalog: 100, shard: s04, task_ids: "single-message-send,single-share,single-credit-refund,single-runtime-restart"}
+          - {catalog: 100, shard: s05, task_ids: "single-export,multi-paper-search-retrieve,multi-paper-retrieve-summary,multi-material-search-current"}
+          - {catalog: 100, shard: s06, task_ids: "multi-create-share,multi-create-send,multi-retrieve-export"}
+          - {catalog: 250, shard: t01, task_ids: "single-paper-search,single-paper-retrieve"}
+          - {catalog: 250, shard: t02, task_ids: "single-paper-summary,single-material-search"}
+          - {catalog: 250, shard: t03, task_ids: "single-material-retrieve,single-material-current"}
+          - {catalog: 250, shard: t04, task_ids: "single-material-history,single-material-forecast"}
+          - {catalog: 250, shard: t05, task_ids: "single-inventory-list,single-inventory-create"}
+          - {catalog: 250, shard: t06, task_ids: "single-inventory-update,single-inventory-delete"}
+          - {catalog: 250, shard: t07, task_ids: "single-message-send,single-share"}
+          - {catalog: 250, shard: t08, task_ids: "single-credit-refund,single-runtime-restart"}
+          - {catalog: 250, shard: t09, task_ids: "single-export,multi-paper-search-retrieve"}
+          - {catalog: 250, shard: t10, task_ids: "multi-paper-retrieve-summary,multi-material-search-current"}
+          - {catalog: 250, shard: t11, task_ids: "multi-create-share,multi-create-send"}
+          - {catalog: 250, shard: t12, task_ids: "multi-retrieve-export"}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     steps:
@@ -173,29 +271,41 @@ jobs:
           print("runtime identity verified")
           PY
 
-      - name: Resolve frozen task shard
-        id: shard
+      - name: Verify this job matches frozen sharding plan
         env:
-          SHARD: ${{ matrix.shard }}
+          CATALOG_SIZE: "${{ matrix.catalog }}"
+          SHARD: "${{ matrix.shard }}"
+          TASK_IDS: "${{ matrix.task_ids }}"
         run: |
-          case "$SHARD" in
-            s01) TASK_IDS="single-paper-search,single-paper-retrieve,single-paper-summary,single-material-search" ;;
-            s02) TASK_IDS="single-material-retrieve,single-material-current,single-material-history,single-material-forecast" ;;
-            s03) TASK_IDS="single-inventory-list,single-inventory-create,single-inventory-update,single-inventory-delete" ;;
-            s04) TASK_IDS="single-message-send,single-share,single-credit-refund,single-runtime-restart" ;;
-            s05) TASK_IDS="single-export,multi-paper-search-retrieve,multi-paper-retrieve-summary,multi-material-search-current" ;;
-            s06) TASK_IDS="multi-create-share,multi-create-send,multi-retrieve-export" ;;
-            *) echo "unknown shard"; exit 1 ;;
-          esac
-          echo "task_ids=$TASK_IDS" >> "$GITHUB_OUTPUT"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          plan = json.loads(
+              Path("benchmarks/agent-utility-v1-b1-sharding-v2.json")
+              .read_text(encoding="utf-8")
+          )
+          size = os.environ["CATALOG_SIZE"]
+          shard = os.environ["SHARD"]
+          actual = os.environ["TASK_IDS"].split(",")
+          if size in {"20", "50", "100"}:
+              expected = plan["groups"][shard]
+              assert shard in plan["catalogs"][size]
+          else:
+              lookup = dict(plan["catalogs"]["250"])
+              expected = lookup[shard]
+          assert actual == expected, (size, shard, actual, expected)
+          PY
 
       - name: Recreate corrected frozen corpus
         run: |
-          python scripts/generate_agent_utility_v1.py             --out-dir artifacts/agent-utility-v1
+          python scripts/generate_agent_utility_v1.py \
+            --out-dir artifacts/agent-utility-v1
 
       - name: Verify frozen identities
         env:
-          CATALOG_SIZE: ${{ matrix.catalog }}
+          CATALOG_SIZE: "${{ matrix.catalog }}"
         run: |
           python - <<'PY'
           import json
@@ -223,7 +333,10 @@ jobs:
           TOKENIZERS_PARALLELISM: "false"
         run: |
           mkdir -p artifacts/agent-utility-b1
-          python scripts/evaluate_agent_utility_phase_b_qwen.py             --catalog-sizes "${{ matrix.catalog }}"             --task-ids "${{ steps.shard.outputs.task_ids }}"             --out "artifacts/agent-utility-b1/phase-b1-${{ matrix.catalog }}-${{ matrix.shard }}.json"
+          python scripts/evaluate_agent_utility_phase_b_qwen.py \
+            --catalog-sizes "${{ matrix.catalog }}" \
+            --task-ids "${{ matrix.task_ids }}" \
+            --out "artifacts/agent-utility-b1/phase-b1-${{ matrix.catalog }}-${{ matrix.shard }}.json"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
@@ -233,6 +346,7 @@ jobs:
             artifacts/agent-utility-b1/
             artifacts/agent-utility-v1/freeze-manifest.json
             benchmarks/agent-utility-v1-b1-preregistration-v2.json
+            benchmarks/agent-utility-v1-b1-sharding-v2.json
           if-no-files-found: warn
           retention-days: 30
 
@@ -255,9 +369,11 @@ jobs:
           pattern: agent-utility-b1-micro-*-${{ github.run_id }}
           path: artifacts/b1-shards
 
-      - name: Aggregate exact same 552 frozen episodes
+      - name: Aggregate exact 552 frozen episodes
         run: |
-          python scripts/aggregate_agent_utility_phase_b.py             --input-dir artifacts/b1-shards             --out artifacts/agent-utility-b1-aggregate.json
+          python scripts/aggregate_agent_utility_phase_b.py \
+            --input-dir artifacts/b1-shards \
+            --out artifacts/agent-utility-b1-aggregate.json
 
       - name: Validate canonical B1 aggregate
         run: |
@@ -272,12 +388,22 @@ jobs:
           assert data["episode_count"] == 552
           assert data["expected_episode_count"] == 552
           assert data["issue"] == 420
+          keys = {
+              (
+                  int(row["catalog_size"]),
+                  str(row["task_id"]),
+                  str(row["condition"]),
+              )
+              for row in data["rows"]
+          }
+          assert len(keys) == 552
           for condition, summary in data["overall"].items():
               if summary["unauthorized_destructive_executions"] != 0:
                   raise SystemExit(
                       f"unauthorized destructive execution in {condition}"
                   )
           print(json.dumps(data["overall"], sort_keys=True))
+          print(json.dumps(data["retrieval_coverage"], sort_keys=True))
           print(json.dumps(data["utility_gates"], sort_keys=True))
           print(json.dumps(data["progressive_recovery"], sort_keys=True))
           PY
@@ -289,5 +415,6 @@ jobs:
           path: |
             artifacts/agent-utility-b1-aggregate.json
             benchmarks/agent-utility-v1-b1-preregistration-v2.json
+            benchmarks/agent-utility-v1-b1-sharding-v2.json
           if-no-files-found: warn
           retention-days: 30
