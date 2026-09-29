@@ -332,8 +332,8 @@
         "issue": 420,
         "parent_issue": 417,
         "phase_a_issue": 418,
-        "status": "running_b1_canonical_microsharded",
-        "canonical_run_id": 36517371433,
+        "status": "running_corrected_b1_canonical_microsharded",
+        "canonical_run_id": 36520027240,
         "phase_a_result": {
           "recall_at_3": 0.9655172413793104,
           "recall_at_5": 1,
@@ -341,7 +341,8 @@
           "top5_context_ratio_at_250": 0.023791301779351147
         },
         "next_required_replication": 423,
-        "final_answer_quality_issue": 424
+        "final_answer_quality_issue": 424,
+        "invalidated_run_id": 36517371433
       }
     }
   ],
@@ -436,6 +437,7 @@
     ],
     "current_experiment": 420,
     "staged_replication": 423,
-    "staged_answer_quality": 424
+    "staged_answer_quality": 424,
+    "canonical_b1_run_id": 36520027240
   }
 }
