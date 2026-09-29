@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "issue": 423,
+  "experiment": "0.14-agent-utility-b2-smollm3-v1",
+  "status": "future_infrastructure_diagnostic_only_not_active_for_attempt5",
+  "date": "2026-09-29",
+  "observed_workflow_run": 36561002246,
+  "purpose": "Record runner resource telemetry for any future full B2 attempt if same-run infra-only retries cannot recover the frozen benchmark.",
+  "activation": {
+    "attempt5_same_run_retries_take_precedence": true,
+    "apply_to_current_attempt5": false,
+    "only_for_future_new_workflow_attempt_if_needed": true
+  },
+  "telemetry": {
+    "interval_seconds": 60,
+    "records": [
+      "UTC timestamp",
+      "free -m",
+      "df -h for workspace and /tmp",
+      "top RSS processes",
+      "/usr/bin/time -v evaluator resource summary"
+    ]
+  },
+  "frozen_semantics": {
+    "model_changed": false,
+    "revision_changed": false,
+    "prompt_changed": false,
+    "tasks_changed": false,
+    "catalogs_changed": false,
+    "candidate_sets_changed": false,
+    "conditions_changed": false,
+    "max_parallel_changed": false,
+    "timeout_changed": false,
+    "stopping_rule_changed": false,
+    "executor_changed": false,
+    "scoring_changed": false,
+    "statistics_changed": false
+  },
+  "governance": {
+    "telemetry_must_not_read_or_branch_on_task_outcomes": true,
+    "telemetry_must_not_change_candidate_visibility": true,
+    "telemetry_must_not_change_retry_eligibility": true,
+    "benchmark_rows_must_not_be_selected_or_removed_from_telemetry": true
+  }
+}
