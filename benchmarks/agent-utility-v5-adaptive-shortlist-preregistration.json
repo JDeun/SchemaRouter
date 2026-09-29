@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "cycle": "0.14-end-to-end-agent-utility",
+  "experiment": "adaptive-capability-shortlist-depth-v1",
+  "issue": 430,
+  "parent_issue": 417,
+  "status": "preregistered_before_dev_corpus_generation_or_scoring",
+  "date": "2026-09-29",
+  "research_question": "Can a bounded per-query shortlist expose fewer candidates than fixed K=5 while preserving required-tool coverage and downstream task success?",
+  "independence": {
+    "b1_row_content_allowed": false,
+    "b1_failure_tuning_allowed": false,
+    "b2_row_content_allowed": false,
+    "b2_failure_tuning_allowed": false,
+    "representation_dev_434_queries_allowed": false,
+    "heldout_432_rows_allowed": false,
+    "final_answer_424_rows_allowed": false,
+    "prior_benchmark_paraphrases_allowed": false
+  },
+  "score_semantics": {
+    "absolute_score_thresholds_allowed": false,
+    "rationale": "CapabilityCandidate.score is a deterministic ranking score, not a calibrated probability shared across retrieval backends or catalogs.",
+    "adaptive_signal": "positive-affine-invariant adjacent score gap normalized by the already-ranked Top-10 score range",
+    "formula": "gap_i = (score_i - score_{i+1}) / max(score_1 - score_10, 1e-9)",
+    "invariance": "unchanged under score' = a*score+b for any a>0",
+    "zero_spread_rule": "if score_1 - score_10 <= 1e-9, return max_k",
+    "evaluated_positions": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ]
+  },
+  "candidate_policies": {
+    "controls": [
+      {
+        "id": "FIXED-3",
+        "k": 3
+      },
+      {
+        "id": "FIXED-5",
+        "k": 5
+      },
+      {
+        "id": "FIXED-10",
+        "k": 10
+      }
+    ],
+    "adaptive": [
+      {
+        "id": "REL-GAP-005",
+        "min_k": 3,
+        "max_k": 10,
+        "threshold": 0.05,
+        "rule": "return the smallest i in evaluated_positions with gap_i >= threshold; otherwise max_k"
+      },
+      {
+        "id": "REL-GAP-010",
+        "min_k": 3,
+        "max_k": 10,
+        "threshold": 0.1,
+        "rule": "return the smallest i in evaluated_positions with gap_i >= threshold; otherwise max_k"
+      },
+      {
+        "id": "REL-GAP-020",
+        "min_k": 3,
+        "max_k": 10,
+        "threshold": 0.2,
+        "rule": "return the smallest i in evaluated_positions with gap_i >= threshold; otherwise max_k"
+      },
+      {
+        "id": "MAX-GAP-010",
+        "min_k": 3,
+        "max_k": 10,
+        "threshold": 0.1,
+        "rule": "choose i with the largest gap_i, breaking ties toward smaller i, only if that maximum >= threshold; otherwise max_k"
+      }
+    ],
+    "learned_policy_allowed": false
+  },
+  "development_surface": {
+    "unique_semantic_tasks": 240,
+    "task_strata": [
+      "clear_single_tool",
+      "sibling_operation_ambiguity",
+      "semantically_adjacent_distractors",
+      "multi_step_first_hop",
+      "typed_numeric_units",
+      "read_write_siblings",
+      "near_domain_unsupported",
+      "out_of_domain"
+    ],
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "tasks_per_stratum_language_cell": 5,
+    "cells": 48,
+    "each_task_one_language_only": true,
+    "tuning_eligible": true
+  },
+  "confirmation_surface": {
+    "unique_semantic_tasks": 240,
+    "same_balance_as_development": true,
+    "independent_from_development": true,
+    "sealed_until_one_policy_selected": true,
+    "tuning_eligible": false
+  },
+  "catalogs": {
+    "endpoint_counts": [
+      100,
+      250,
+      500
+    ],
+    "nested": true,
+    "top10_ranked_list_required": true,
+    "exact_hashes_required_before_scoring": true
+  },
+  "dev_selection": {
+    "eligibility": [
+      "required-tool-set Recall >= 0.97",
+      "all-required FullCoverage >= 0.97",
+      "mean exposed candidate count < 5.0",
+      "p95 exposed candidate count <= 10",
+      "mean tool-schema tokens < FIXED-5"
+    ],
+    "selection_order": [
+      "lowest mean exposed candidate count",
+      "highest required-tool-set Recall",
+      "highest all-required FullCoverage",
+      "lowest mean tool-schema tokens",
+      "lowest p95 retrieval latency",
+      "lexicographically smallest policy id"
+    ],
+    "select_exactly_one_policy": true,
+    "no_post_selection_retuning": true
+  },
+  "confirmation_gate": {
+    "required_tool_set_recall_min": 0.97,
+    "all_required_full_coverage_min": 0.97,
+    "mean_candidate_count_max": 4.5,
+    "tool_schema_tokens_must_be_less_than_fixed5": true,
+    "downstream_agent_gate_requires_b2_terminal": true,
+    "downstream_task_pass_delta_vs_fixed5_min": -0.02,
+    "unauthorized_destructive_executions_max": 0,
+    "execution_policy_integrity": 1
+  },
+  "heldout_432_inclusion": {
+    "allowed_only_if_confirmation_gate_passes_before_432_content_generation": true,
+    "cannot_add_after_any_432_task_content_is_generated": true,
+    "cannot_add_after_any_432_score_is_opened": true
+  },
+  "governance": {
+    "adaptive_depth_changes_candidate_exposure_only": true,
+    "execution_authority_unchanged": true,
+    "no_policy_selection_from_b1_b2_failures": true,
+    "no_threshold_change_after_dev_selection": true,
+    "no_confirmation_row_removal": true,
+    "no_weighted_composite_score": true
+  },
+  "chance_corrected_diagnostics": {
+    "reference": "Repantis et al. 2026, arXiv:2605.24660",
+    "fixed_k_bits_over_random_reported": true,
+    "adaptive_policy_selection_uses_bits_over_random": false,
+    "bits_over_random_used_as_inference_signal": false,
+    "learned_depth_policy_allowed": false,
+    "purpose": "contextualize fixed-depth coverage against random inclusion at the same depth without changing adaptive-policy eligibility or selection"
+  }
+}
