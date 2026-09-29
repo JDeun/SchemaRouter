@@ -2,7 +2,7 @@ import pytest
 
 pytest.importorskip("langchain_core")
 
-from schemarouter import SchemaRouter, SchemaValidationError, schema_tool
+from schemarouter import PolicyViolationError, SchemaRouter, SchemaValidationError, schema_tool
 from schemarouter.integrations import to_langchain_tool, to_langchain_tools
 
 
@@ -10,6 +10,12 @@ from schemarouter.integrations import to_langchain_tool, to_langchain_tools
 def add(a: int, b: int) -> int:
     """Add two integers."""
     return a + b
+
+
+@schema_tool(read_only=False)
+def mutate_value(value: int) -> int:
+    """Mutate one value."""
+    return value
 
 
 def make_router() -> SchemaRouter:
@@ -50,3 +56,12 @@ def test_langchain_tool_collection_exports_registered_endpoints() -> None:
     tools = to_langchain_tools(router)
 
     assert [tool.name for tool in tools] == ["schemarouter__add__call"]
+
+
+def test_langchain_tool_cannot_bypass_execution_policy() -> None:
+    router = SchemaRouter()
+    router.add_callable(mutate_value)
+    tool = to_langchain_tool(router, "mutate_value", "call")
+
+    with pytest.raises(PolicyViolationError, match="allow_mutations"):
+        tool.invoke({"value": 7})
