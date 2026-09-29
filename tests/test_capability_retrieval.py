@@ -306,3 +306,18 @@ def test_configured_router_exposes_same_retrieval_surface() -> None:
     configured_result = configured.retrieve("Young's modulus", k=2)
 
     assert configured_result == direct
+
+
+def test_planner_additional_availability_does_not_imply_executable() -> None:
+    router = make_retrieval_router()
+
+    result = router.planner.retrieve_with_additional_availability(
+        "Young's modulus",
+        lambda tool, endpoint: endpoint.name == "current",
+        k=5,
+    )
+
+    assert result.executable_only is False
+    assert [item.route_id for item in result.candidates] == [
+        "materials.current"
+    ]
