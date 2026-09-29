@@ -200,7 +200,7 @@ class DeterministicTaskExecutor:
         if task_id == "single-message-send" and route_id == "messaging.send":
             return (
                 _eq_string(arguments, "recipient", "analyst@example.org")
-                and _has_text(arguments, "message")
+                and _eq_string(arguments, "message", "Experiment complete.")
             )
 
         if task_id == "single-share" and route_id == "messaging.share":
