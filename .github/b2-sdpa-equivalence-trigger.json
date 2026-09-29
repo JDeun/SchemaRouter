@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "issue": 423,
+  "purpose": "backend_behavior_equivalence",
+  "semantic_tuning_allowed": false,
+  "created_date": "2026-09-29",
+  "implementation_sha": "13cf0406842c4aade68f02f104d4a4cd56e89db0",
+  "task_id": "multi-create-send",
+  "catalog_size": 20,
+  "condition": "FULL",
+  "eager_backend": "eager",
+  "candidate_backend": "sdpa",
+  "comparison": "all behavioral outputs equal after removing runtime/timing/backend metadata",
+  "prior_supporting_run": 36590168880
+}
