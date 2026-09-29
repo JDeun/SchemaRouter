@@ -360,11 +360,11 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
 
-    paths = sorted(args.input_dir.rglob("phase-b1-*.json"))
+    paths = sorted(args.input_dir.rglob("phase-b2-*.json"))
     result = aggregate(paths)
     if result["episode_count"] != result["expected_episode_count"]:
         raise SystemExit(
-            "incomplete B1 result set: "
+            "incomplete B2 result set: "
             f"{result['episode_count']} != {result['expected_episode_count']}"
         )
 
