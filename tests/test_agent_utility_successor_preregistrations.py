@@ -12,13 +12,16 @@ def _load(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def test_adaptive_shortlist_protocol_is_independent_and_scale_invariant() -> None:
+def test_adaptive_shortlist_protocol_is_independent_and_affine_invariant() -> None:
     data = _load(ADAPTIVE)
 
     assert data["issue"] == 430
     assert data["status"] == "preregistered_before_dev_corpus_generation_or_scoring"
-    assert data["score_semantics"]["absolute_score_thresholds_allowed"] is False
-    assert "max(abs(score_i), abs(score_{i+1}), 1e-9)" in data["score_semantics"]["formula"]
+    semantics = data["score_semantics"]
+    assert semantics["absolute_score_thresholds_allowed"] is False
+    assert "score_1 - score_10" in semantics["formula"]
+    assert "a*score+b" in semantics["invariance"]
+    assert semantics["zero_spread_rule"].endswith("return max_k")
 
     independence = data["independence"]
     assert all(value is False for value in independence.values())
@@ -32,6 +35,11 @@ def test_adaptive_shortlist_protocol_is_independent_and_scale_invariant() -> Non
     assert data["confirmation_surface"]["unique_semantic_tasks"] == 240
     assert data["confirmation_surface"]["sealed_until_one_policy_selected"] is True
     assert data["confirmation_surface"]["tuning_eligible"] is False
+
+    diagnostics = data["chance_corrected_diagnostics"]
+    assert diagnostics["fixed_k_bits_over_random_reported"] is True
+    assert diagnostics["adaptive_policy_selection_uses_bits_over_random"] is False
+    assert diagnostics["bits_over_random_used_as_inference_signal"] is False
 
 
 def test_adaptive_shortlist_policy_selection_is_finite_and_frozen() -> None:
@@ -56,7 +64,12 @@ def test_adaptive_shortlist_policy_selection_is_finite_and_frozen() -> None:
     assert selection["no_post_selection_retuning"] is True
 
     inclusion = data["heldout_432_inclusion"]
-    assert (\n        inclusion["allowed_only_if_confirmation_gate_passes_before_432_content_generation"] is True\n    )
+    assert (
+        inclusion[
+            "allowed_only_if_confirmation_gate_passes_before_432_content_generation"
+        ]
+        is True
+    )
     assert inclusion["cannot_add_after_any_432_task_content_is_generated"] is True
     assert inclusion["cannot_add_after_any_432_score_is_opened"] is True
 
