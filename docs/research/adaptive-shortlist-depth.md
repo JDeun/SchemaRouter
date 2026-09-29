@@ -72,6 +72,16 @@ The tuning-eligible development surface contains **240 independent semantic task
 - 6 languages;
 - 5 tasks per stratum × language cell.
 
+Language rendering policy:
+
+- each semantic task appears in exactly one language cell;
+- surrounding request grammar is written in the assigned language;
+- canonical scientific/tooling terms such as `Raman peak`, units, and registered
+  operation nouns may remain in English where that is normal technical usage;
+- this surface therefore tests adaptive shortlist depth under multilingual request
+  framing, not standalone translation quality;
+- no cross-language translations of the same DEV task are used as repeated rows.
+
 Task strata cover:
 
 1. clear single-tool requests;
