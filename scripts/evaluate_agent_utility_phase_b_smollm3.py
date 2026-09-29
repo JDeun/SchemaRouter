@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import math
 import os
@@ -42,6 +43,10 @@ if ATTN_IMPLEMENTATION not in {"eager", "sdpa"}:
     raise ValueError(
         "B2_ATTN_IMPLEMENTATION must be one of: eager, sdpa"
     )
+STATIC_PREFIX_CACHE = os.environ.get("B2_STATIC_PREFIX_CACHE", "0")
+if STATIC_PREFIX_CACHE not in {"0", "1"}:
+    raise ValueError("B2_STATIC_PREFIX_CACHE must be 0 or 1")
+STATIC_PREFIX_CACHE_ENABLED = STATIC_PREFIX_CACHE == "1"
 ALL_CONDITIONS = ("FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE")
 TOOL_CALL_RE = re.compile(
     r"<tool_call>\s*(\{.*?\})\s*</tool_call>",
@@ -206,6 +211,7 @@ class LocalSmolLM3Agent:
             attn_implementation=ATTN_IMPLEMENTATION,
         )
         self.model.eval()
+        self._static_prefix_caches: dict[str, tuple[Any, int]] = {}
         self.context_limit = int(
             getattr(self.model.config, "max_position_embeddings", 32768)
         )
@@ -262,6 +268,59 @@ class LocalSmolLM3Agent:
         tool_tokens = max(0, input_tokens - int(plain_ids.shape[-1]))
         return prompt, input_tokens, tool_tokens
 
+    def _static_prefix_cache(
+        self,
+        tools: list[dict[str, Any]],
+    ) -> tuple[Any, int]:
+        key = json.dumps(
+            tools,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        cached = self._static_prefix_caches.get(key)
+        if cached is not None:
+            return cached
+
+        prefix_prompt = self.tokenizer.apply_chat_template(
+            [{"role": "system", "content": SYSTEM_PROMPT}],
+            xml_tools=tools,
+            add_generation_prompt=False,
+            tokenize=False,
+            enable_thinking=False,
+        )
+        prefix_encoded = self.tokenizer(
+            prefix_prompt,
+            add_special_tokens=False,
+            return_tensors="pt",
+        )
+        prefix_length = int(prefix_encoded["input_ids"].shape[-1])
+        built_started = time.perf_counter_ns()
+        with self.torch.no_grad():
+            base_output = self.model.model(
+                **prefix_encoded,
+                use_cache=True,
+                return_dict=True,
+            )
+        cache = base_output.past_key_values
+        if cache is None:
+            raise RuntimeError("static prefix prefill did not return a KV cache")
+        build_ms = (time.perf_counter_ns() - built_started) / 1_000_000
+        self._static_prefix_caches[key] = (cache, prefix_length)
+        if os.environ.get("B2_PROGRESS_TRACE") == "1":
+            print(
+                json.dumps(
+                    {
+                        "event": "static_prefix_cache_built",
+                        "prefix_tokens": prefix_length,
+                        "build_ms": build_ms,
+                    },
+                    sort_keys=True,
+                ),
+                flush=True,
+            )
+        return cache, prefix_length
+
     def generate(
         self,
         messages: list[dict[str, str]],
@@ -284,9 +343,41 @@ class LocalSmolLM3Agent:
             return_tensors="pt",
         )
         started = time.perf_counter_ns()
+        generation_kwargs: dict[str, Any] = {}
+        if STATIC_PREFIX_CACHE_ENABLED:
+            prefix_cache, prefix_length = self._static_prefix_cache(tools)
+            full_ids = encoded["input_ids"]
+            cached_prefix_ids = self.tokenizer(
+                self.tokenizer.apply_chat_template(
+                    [{"role": "system", "content": SYSTEM_PROMPT}],
+                    xml_tools=tools,
+                    add_generation_prompt=False,
+                    tokenize=False,
+                    enable_thinking=False,
+                ),
+                add_special_tokens=False,
+                return_tensors="pt",
+            )["input_ids"]
+            if prefix_length != int(cached_prefix_ids.shape[-1]):
+                raise RuntimeError("static prefix token length drifted")
+            if full_ids.shape[-1] < prefix_length:
+                raise RuntimeError("full prompt is shorter than cached prefix")
+            if not self.torch.equal(
+                full_ids[:, :prefix_length],
+                cached_prefix_ids,
+            ):
+                raise RuntimeError(
+                    "static tool prefix is not an exact token prefix"
+                )
+            generation_kwargs["past_key_values"] = copy.deepcopy(
+                prefix_cache
+            )
+            generation_kwargs["use_cache"] = True
+
         with self.torch.no_grad():
             output = self.model.generate(
                 **encoded,
+                **generation_kwargs,
                 do_sample=False,
                 max_new_tokens=MAX_NEW_TOKENS,
                 pad_token_id=self.tokenizer.eos_token_id,
