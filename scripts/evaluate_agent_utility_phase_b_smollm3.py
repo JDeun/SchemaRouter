@@ -424,6 +424,27 @@ def _run_episode(
     for turn in range(1, MAX_TURNS + 1):
         tools = _visible_tools(registry, visible_routes)
         generated = agent.generate(messages, tools)
+        if os.environ.get("B2_PROGRESS_TRACE") == "1":
+            print(
+                json.dumps(
+                    {
+                        "event": "generation_complete",
+                        "task_id": task.task_id,
+                        "condition": condition,
+                        "turn": turn,
+                        "candidate_count": len(visible_routes),
+                        "input_tokens": int(generated["input_tokens"]),
+                        "output_tokens": int(generated["output_tokens"]),
+                        "tool_tokens": int(generated["tool_tokens"]),
+                        "latency_ms": float(generated["latency_ms"]),
+                        "context_overflow": bool(
+                            generated["context_overflow"]
+                        ),
+                    },
+                    sort_keys=True,
+                ),
+                flush=True,
+            )
         total_input += int(generated["input_tokens"])
         total_output += int(generated["output_tokens"])
         total_tool_tokens += int(generated["tool_tokens"])
