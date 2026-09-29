@@ -1,0 +1,93 @@
+name: Research 0.14 Agent Utility Phase A
+
+on:
+  push:
+    branches:
+      - "research/0.14-agent-utility"
+    paths:
+      - ".github/workflows/research-0.14-agent-utility-phase-a.yml"
+      - "benchmarks/agent-utility-v1-preregistration.json"
+      - "benchmarks/agent_utility_v1_catalog.py"
+      - "scripts/generate_agent_utility_v1.py"
+      - "scripts/evaluate_agent_utility_phase_a.py"
+      - "tests/test_agent_utility_v1.py"
+  pull_request:
+    paths:
+      - ".github/workflows/research-0.14-agent-utility-phase-a.yml"
+      - "benchmarks/agent-utility-v1-preregistration.json"
+      - "benchmarks/agent_utility_v1_catalog.py"
+      - "scripts/generate_agent_utility_v1.py"
+      - "scripts/evaluate_agent_utility_phase_a.py"
+      - "tests/test_agent_utility_v1.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase-a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+
+      - name: Validate preregistered Phase-A protocol
+        run: |
+          ruff check             benchmarks/agent_utility_v1_catalog.py             scripts/generate_agent_utility_v1.py             scripts/evaluate_agent_utility_phase_a.py             tests/test_agent_utility_v1.py
+          PYTHONPATH=. pytest -q tests/test_agent_utility_v1.py
+
+      - name: Freeze tasks and catalog strata
+        run: |
+          python scripts/generate_agent_utility_v1.py             --out-dir artifacts/agent-utility-v1
+
+      - name: Evaluate retrieval coverage and context compression
+        run: |
+          python scripts/evaluate_agent_utility_phase_a.py             --out artifacts/agent-utility-v1/phase-a-result.json
+
+      - name: Validate experiment identity
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("artifacts/agent-utility-v1")
+          freeze = json.loads(
+              (root / "freeze-manifest.json").read_text(encoding="utf-8")
+          )
+          result = json.loads(
+              (root / "phase-a-result.json").read_text(encoding="utf-8")
+          )
+
+          assert freeze["issue"] == 418
+          assert freeze["task_count"] == 23
+          assert freeze["single_task_count"] == 17
+          assert freeze["multi_task_count"] == 6
+          assert {
+              int(size): row["endpoint_count"]
+              for size, row in freeze["catalogs"].items()
+          } == {20: 20, 50: 50, 100: 100, 250: 250}
+
+          assert result["issue"] == 418
+          assert result["phase"] == "A"
+          assert result["policy"]["llm_called"] is False
+          assert result["policy"]["top1_is_diagnostic_only"] is True
+          print("phase_b_eligible=", result["phase_a_gate"]["phase_b_eligible"])
+          print("minimum_recall_at_10=", result["phase_a_gate"]["minimum_recall_at_10"])
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: agent-utility-v1-phase-a-${{ github.run_id }}
+          path: |
+            artifacts/agent-utility-v1/
+            benchmarks/agent-utility-v1-preregistration.json
+          if-no-files-found: warn
+          retention-days: 30
