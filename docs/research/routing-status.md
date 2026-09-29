@@ -52,32 +52,32 @@ The corrected frozen benchmark contains 23 tasks across 20 / 50 / 100 / 250 endp
 
 | Metric | Result |
 | --- | ---: |
-| Required-route Recall@1 | **68.97%** |
+| Required-route Recall@1 | **65.52–68.97% by catalog** |
 | Recall@3 | **96.55%** |
 | Recall@5 | **100%** |
 | Recall@10 | **100%** |
 | All-required task coverage@5 | **100%** |
-| MRR | **0.82471** |
+| MRR | **0.80172–0.81897 by catalog** |
 
 Mean Top-5 serialized schema context relative to FULL:
 
 | Catalog | Top-5 / FULL |
 | --- | ---: |
-| 20 endpoints | **26.76%** |
-| 50 endpoints | **11.47%** |
-| 100 endpoints | **5.87%** |
-| 250 endpoints | **2.38%** |
+| 20 endpoints | **26.69%** |
+| 50 endpoints | **11.44%** |
+| 100 endpoints | **5.872%** |
+| 250 endpoints | **2.383%** |
 
 This is the decisive reason the research objective changed. A Top-1-only score makes multi-tool
 retrieval look artificially poor, while a compact Top-K set preserves every required capability on
 this frozen surface and rapidly reduces schema context as the catalog grows.
 
-Canonical corrected freeze:
-- workflow `36507439562`;
-- artifact `11006614997`;
-- task SHA256 `9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1`.
+Canonical B1-v2 freeze identity:
+- task SHA256 `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`;
+- catalog SHA256 values unchanged from the corrected catalog freeze;
+- v2 preflight + exact-pinned smoke are part of canonical workflow `36529108855`.
 
-### #420 Phase B1 — v2 queued
+### #420 Phase B1 — v2 running
 
 B1 still compares one real tool-calling model across:
 - FULL;
@@ -100,6 +100,7 @@ problems that were corrected without using condition-level success results:
 
 B1 v2 therefore freezes:
 - task SHA `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`;
+- Exact runtime pins: Python 3.12.14, torch 2.14.0+cpu, transformers 4.57.6, tokenizers 0.22.2, safetensors 0.8.0;
 - the same four catalog identities;
 - one executed tool call per assistant turn;
 - explicit observation before dependent tool calls;
@@ -110,9 +111,11 @@ B1 v2 therefore freezes:
 All prior B1 episode sources are excluded:
 `36517371433`, `36520025834`, and `36520831273`.
 
-The canonical v2 workflow is `36526572267`. It is self-validating:
-**protocol/tests → corrected freeze → Phase-A gate → 24 inference shards → exact aggregate**.
+The canonical v2 workflow is `36529108855` at source `b9eadefd3cd076f026a54bbc55a949f0424f5dab`. It is self-validating:
+**protocol/tests → corrected freeze → Phase-A gate → exact-pinned two-turn smoke → 30 inference shards → exact 552-episode aggregate**.
 No B1 product claim is accepted until that sequence succeeds.
+
+The -2pp B1 gate is descriptive only: the 23 semantic tasks are the statistical units, with catalog sizes treated as repeated measures. Paired uncertainty uses task-cluster bootstrap. #432 is required before any population-level non-inferiority/generalization claim.
 
 ### Required replication and answer-quality work
 
