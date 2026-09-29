@@ -188,3 +188,46 @@ def test_b2_retrieval_coverage_uses_final_exposed_set() -> None:
     assert result["required_route_recall"] == 0.75
     assert result["all_required_task_coverage"] == 0.5
     assert result["minimum_required_route_recall_by_catalog"] == 0.5
+
+
+def test_b2_sharding_plan_covers_exact_460_episode_surface() -> None:
+    from benchmarks.agent_utility_b2_catalog import TASKS
+
+    plan = json.loads(
+        (
+            Path(__file__).resolve().parents[1]
+            / "benchmarks"
+            / "agent-utility-v1-b2-sharding.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert plan["expected_job_count"] == 41
+    assert plan["expected_episode_count"] == 460
+    assert plan["conditions"] == [
+        "FULL",
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE",
+        "ORACLE",
+    ]
+
+    expected_task_ids = {task.task_id for task in TASKS}
+    represented = set()
+    episode_keys: set[tuple[int, str, str]] = set()
+
+    for job in plan["jobs"]:
+        task_id = job["task_id"]
+        represented.add(task_id)
+        sizes = job["catalog_sizes"]
+        assert job["expected_episodes"] == len(sizes) * len(plan["conditions"])
+        for size in sizes:
+            for condition in plan["conditions"]:
+                key = (int(size), task_id, condition)
+                assert key not in episode_keys
+                episode_keys.add(key)
+
+    assert represented == expected_task_ids
+    assert len(episode_keys) == 460
+    assert {
+        size for size, _, _ in episode_keys
+    } == {20, 50, 100, 250}
