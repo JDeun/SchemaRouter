@@ -368,6 +368,13 @@ class RepresentationRetriever:
             for index, route_id in enumerate(self.route_ids)
         }
         self._typed_index_items = tuple(self.indexes.items())
+        self._rrf_weights = tuple(
+            [0.0]
+            + [
+                1.0 / (RRF_K + rank)
+                for rank in range(1, len(self.route_ids) + 1)
+            ]
+        )
         self._typed_term_entries: dict[
             str,
             list[tuple[int, int, float]],
@@ -411,6 +418,8 @@ class RepresentationRetriever:
                     )
 
             rrf: dict[int, float] = {}
+            rrf_weights = self._rrf_weights
+            rrf_get = rrf.get
             for scores in field_scores:
                 if not scores:
                     continue
@@ -423,8 +432,8 @@ class RepresentationRetriever:
                 )
                 for rank, route_index in enumerate(ranked_indexes, start=1):
                     rrf[route_index] = (
-                        rrf.get(route_index, 0.0)
-                        + 1.0 / (RRF_K + rank)
+                        rrf_get(route_index, 0.0)
+                        + rrf_weights[rank]
                     )
             positive_indexes = sorted(
                 rrf,
@@ -433,16 +442,16 @@ class RepresentationRetriever:
                     route_index,
                 ),
             )
-            seen = set(rrf)
+            route_ids = self.route_ids
             ranking = [
                 *[
-                    (self.route_ids[route_index], rrf[route_index])
+                    (route_ids[route_index], rrf[route_index])
                     for route_index in positive_indexes
                 ],
                 *[
                     (route_id, 0.0)
-                    for route_index, route_id in enumerate(self.route_ids)
-                    if route_index not in seen
+                    for route_index, route_id in enumerate(route_ids)
+                    if route_index not in rrf
                 ],
             ]
         elapsed_ms = (time.perf_counter_ns() - started) / 1_000_000
@@ -569,7 +578,7 @@ def evaluate(freeze_dir: Path) -> dict[str, Any]:
         "surface": "development",
         "freeze_manifest": manifest,
         "rrf_k": RRF_K,
-        "dev_representation_revision": "r6-integer-route-slots",
+        "dev_representation_revision": "r7-precomputed-rrf-hotpath",
         "conditions_scored": list(CONDITIONS),
         "conditions_blocked": {
             "INTENT-MANUAL": (
