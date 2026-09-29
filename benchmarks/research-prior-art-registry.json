@@ -363,7 +363,17 @@
         "superseded_runs": [
           36520027240,
           36520831273
-        ]
+        ],
+        "execution_equivalence": {
+          "amendment_file": "benchmarks/agent-utility-v1-b1-execution-equivalence.json",
+          "eligible_run_ids": [
+            36520025834,
+            36520831273
+          ],
+          "selection_rule": "first_complete_valid_552_episode_source_independent_of_results",
+          "excluded_run_id": 36517371433
+        },
+        "statistical_amendment_file": "benchmarks/agent-utility-v1-b1-statistical-amendment.json"
       }
     }
   ],
@@ -464,6 +474,13 @@
     "staged_adaptive_depth": 430,
     "staged_corrective_reretrieval": 431,
     "staged_heldout_generalization": 432,
-    "staged_product_api": 428
+    "staged_product_api": 428,
+    "b1_execution_equivalence": {
+      "eligible_run_ids": [
+        36520025834,
+        36520831273
+      ],
+      "aggregate_policy": "latest_identity_guarded_task_cluster_bootstrap"
+    }
   }
 }
