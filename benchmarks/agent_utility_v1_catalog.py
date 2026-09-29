@@ -232,15 +232,23 @@ def _base_tools() -> list[ToolSpec]:
             name="credits",
             description="Research-credit request and payment lifecycle",
             endpoints=[
-                _endpoint(
-                    "create",
-                    "Create a new research-credit request",
-                    read_only=False,
-                    parameters=("amount",),
-                    fields=(
+                EndpointSpec(
+                    name="create",
+                    description="Create a new research-credit request",
+                    parameters=[
+                        ParameterSpec(
+                            name="amount",
+                            description="research credit amount",
+                            required=True,
+                            json_schema={"type": "number"},
+                        )
+                    ],
+                    output_fields=[
                         _field("credit_id", semantic_id="credit.id"),
                         _field("artifact_id", semantic_id="artifact.id"),
-                    ),
+                    ],
+                    read_only=False,
+                    destructive=False,
                 ),
                 _endpoint(
                     "cancel",
@@ -577,7 +585,10 @@ TASKS = (
     ),
     AgentUtilityTask(
         "multi-create-send",
-        "Create a laboratory inventory item and send a research message confirming creation.",
+        (
+            "Create a laboratory inventory item named anode-binder and send "
+            "analyst@example.org a research message confirming creation."
+        ),
         ("inventory.create", "messaging.send"),
         "multi",
         "inventory item created and confirmation sent",
