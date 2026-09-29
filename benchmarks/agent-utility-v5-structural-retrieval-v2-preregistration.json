@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "successor_issue": 432,
+  "experiment": "adaptive-structural-retrieval-v2-subgroup-robust",
+  "created_date": "2026-09-30",
+  "status": "preregistered_before_confirmation_surface_generation",
+  "parent_experiment": "adaptive-structural-retrieval-v1",
+  "tuning_surface": "the already-open v1 development surface only",
+  "evidence_allowed": {
+    "v1_dev_workflow_run": 36645758734,
+    "v1_dev_artifact_id": 11067818387,
+    "miss_taxonomy_workflow_run": 36644894275,
+    "confirmation_surface_used": false,
+    "heldout_432_rows_used": false,
+    "b2_row_outcomes_used": false
+  },
+  "fixed_candidate": {
+    "id": "STRUCT-4.5-1.5",
+    "tool_identifier_bonus": 4.5,
+    "operation_family_bonus": 1.5,
+    "schema_specificity_tiebreak": true,
+    "tool_identifier_rule": "complete ASCII tool name/key leaf match after conservative singularization only",
+    "operation_family_rule": {
+      "minimum_token_length": 4,
+      "minimum_common_prefix": 4,
+      "minimum_prefix_fraction_of_shorter_token": 0.7
+    },
+    "specificity_rule": "mean catalog discrimination log((N+1)/(df+1))/log(N+1), used only as equal-score tie-break"
+  },
+  "dev_rationale": {
+    "candidate_family_was_preregistered_in_v1": true,
+    "v1_primary_selector_result": "STRUCT-1.5-1.5",
+    "reason_for_successor": "v1 subgroup diagnostics showed residual clear-single-tool and mixed-language weakness before confirmation opened",
+    "fixed_candidate_dev_result": {
+      "required_route_recall_at_10": {
+        "100": 1,
+        "250": 1,
+        "500": 1
+      },
+      "all_required_full_coverage_at_10": {
+        "100": 1,
+        "250": 1,
+        "500": 1
+      },
+      "all_supported_strata_required_route_recall_at_10": 1,
+      "all_languages_required_route_recall_at_10": 1,
+      "newly_recovered_required_routes_vs_baseline": 39,
+      "newly_lost_required_routes_vs_baseline": 0
+    },
+    "why_4_5_1_5": "lowest operation-family bonus among the DEV variants that achieved 100% Recall@10 and FullCoverage@10 for every catalog, supported stratum and language with zero lost baseline routes"
+  },
+  "core_implementation": {
+    "feature_flag": "structural_retrieval",
+    "default_enabled": false,
+    "exact_dev_ranking_parity_required": true,
+    "parity_workflow_run": 36646694060
+  },
+  "confirmation_protocol": {
+    "unique_semantic_tasks": 240,
+    "same_balance_as_dev": true,
+    "independent_from_dev": true,
+    "candidate_fixed_before_generation": true,
+    "tuning_eligible": false,
+    "required_tool_set_recall_min_each_catalog": 0.97,
+    "all_required_full_coverage_min_each_catalog": 0.97,
+    "typed_numeric_units_recall_min": 1,
+    "no_candidate_or_weight_change_after_generation": true,
+    "if_failed": "close v2; do not retune on or reuse this confirmation surface for a successor candidate"
+  },
+  "governance": {
+    "confirmation_rows_generated": false,
+    "confirmation_rows_inspected": false,
+    "no_post_prereg_dev_retuning": true,
+    "no_confirmation_row_removal": true,
+    "product_default_must_remain_false_until_confirmation_passes": true,
+    "downstream_adaptive_k_work_resumes_only_after_confirmation_retrieval_gate": true
+  },
+  "claim_boundary": "DEV-tuned fixed structural scorer candidate only. Generalization requires the still-sealed independent confirmation surface."
+}
