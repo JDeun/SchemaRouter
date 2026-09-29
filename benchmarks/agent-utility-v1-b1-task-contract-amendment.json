@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "experiment": "0.14-agent-utility-phase-b1-qwen3-0.6b",
+  "issue": 420,
+  "amendment": "explicit-user-argument-contract-correction",
+  "status": "frozen_before_any_accepted_552_episode_aggregate",
+  "reason": "Static executor/task audit found two user-supplied arguments that were required by deterministic execution but absent from the user query. A valid agent benchmark must not require guessing hidden user intent.",
+  "execution_protocol_changed": true,
+  "corrections": [
+    {
+      "task_id": "single-message-send",
+      "problem": "recipient was explicit but message content was absent; executor accepted any non-empty invented message",
+      "correction": "query now specifies the exact message 'Experiment complete.' and executor validates that exact content"
+    },
+    {
+      "task_id": "multi-create-share",
+      "problem": "credits.create requires numeric amount and executor requires 100, but the query omitted the amount",
+      "correction": "query now explicitly requests 100 credits; executor's existing amount=100 validation is unchanged"
+    }
+  ],
+  "unchanged": [
+    "23 task IDs",
+    "required route sets and task kinds",
+    "20/50/100/250 endpoint catalog definitions",
+    "Qwen/Qwen3-0.6B model and revision",
+    "FULL/SR-3/SR-5/SR-10/SR-PROGRESSIVE/ORACLE conditions",
+    "candidate ranking/K values and lexical ordering",
+    "max turns/tokens/seed",
+    "destructive execution policy",
+    "primary metrics and utility gates"
+  ],
+  "previous_frozen_task_sha256": "9663145d1e331007a45901a6426f62df4e67179ca44dc1b7e0e5bfa6390d1fd1",
+  "previous_episode_sources_invalidated": [
+    36520025834,
+    36520831273
+  ],
+  "already_invalid_source": 36517371433,
+  "source_commits": {
+    "task_query_correction": "22e1201c536c00788188684269e4e5e4e574e52c",
+    "executor_message_validation": "9a8dcf67f6f40a78331e30bde52f1b2ba10d5051",
+    "regression_tests": "c3e42b287df40bdf7106c93bcf8c85245524c44f"
+  },
+  "required_next_steps": [
+    "rerun the freeze generator and record the new task SHA256",
+    "rerun Phase A on the corrected task text",
+    "require the same preregistered Phase-B entry gate",
+    "only then create new B1 episode-source run IDs",
+    "do not reuse any old B1 episode artifact in the corrected aggregate"
+  ],
+  "provenance_note": "This correction was made from static contract audit before any accepted complete B1 aggregate. It is not based on condition-level task-success results."
+}
