@@ -707,6 +707,14 @@ def evaluate(
     catalog_sizes: tuple[int, ...],
     task_ids: set[str] | None = None,
 ) -> dict[str, Any]:
+    if task_ids is not None:
+        known_task_ids = {task.task_id for task in TASKS}
+        unknown_task_ids = sorted(task_ids.difference(known_task_ids))
+        if unknown_task_ids:
+            raise ValueError(
+                "unknown frozen task id(s): " + ", ".join(unknown_task_ids)
+            )
+
     started = time.perf_counter_ns()
     agent = LocalQwenAgent()
     model_load_ms = (time.perf_counter_ns() - started) / 1_000_000
