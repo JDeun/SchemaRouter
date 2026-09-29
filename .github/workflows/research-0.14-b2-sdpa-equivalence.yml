@@ -1,0 +1,109 @@
+name: Research 0.14 B2 SDPA Equivalence
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "research/0.14-b2-sdpa-equivalence-run"
+    paths:
+      - ".github/b2-sdpa-equivalence-trigger.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-0.14-b2-sdpa-equivalence
+  cancel-in-progress: true
+
+env:
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  TOKENIZERS_PARALLELISM: "false"
+  HF_HOME: "${{ github.workspace }}/.hf-cache"
+  B2_MODEL: "HuggingFaceTB/SmolLM3-3B"
+  B2_REVISION: "a07cc9a04f16550a088caea529712d1d335b0ac1"
+  B2_CACHE_KEY: "b2-smollm3-a07cc9a04f16550a088caea529712d1d335b0ac1-torch2.14-transformers4.57.6"
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0" "jinja2==3.1.6"
+      - run: pip install -e .
+      - id: hf-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "${{ env.B2_CACHE_KEY }}"
+      - name: Populate exact model revision on cache miss
+        if: steps.hf-cache.outputs.cache-hit != 'true'
+        env:
+          HF_HUB_OFFLINE: "0"
+          TRANSFORMERS_OFFLINE: "0"
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+          snapshot_download(
+              repo_id=os.environ["B2_MODEL"],
+              revision=os.environ["B2_REVISION"],
+          )
+          PY
+      - name: Verify equivalence authorization
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          trigger = json.loads(
+              Path(".github/b2-sdpa-equivalence-trigger.json")
+              .read_text(encoding="utf-8")
+          )
+          assert trigger["purpose"] == "backend_behavior_equivalence"
+          assert trigger["semantic_tuning_allowed"] is False
+          assert trigger["task_id"] == "multi-create-send"
+          assert trigger["catalog_size"] == 20
+          assert trigger["condition"] == "FULL"
+          PY
+      - name: Run eager reference
+        env:
+          B2_ATTN_IMPLEMENTATION: "eager"
+        run: |
+          mkdir -p artifacts/b2-sdpa-equivalence
+          /usr/bin/time -v -o artifacts/b2-sdpa-equivalence/eager-time.txt \
+            python -u scripts/evaluate_agent_utility_phase_b_smollm3.py \
+              --catalog-sizes "20" \
+              --task-ids "multi-create-send" \
+              --conditions "FULL" \
+              --out artifacts/b2-sdpa-equivalence/eager.json
+      - name: Run SDPA candidate
+        env:
+          B2_ATTN_IMPLEMENTATION: "sdpa"
+        run: |
+          /usr/bin/time -v -o artifacts/b2-sdpa-equivalence/sdpa-time.txt \
+            python -u scripts/evaluate_agent_utility_phase_b_smollm3.py \
+              --catalog-sizes "20" \
+              --task-ids "multi-create-send" \
+              --conditions "FULL" \
+              --out artifacts/b2-sdpa-equivalence/sdpa.json
+      - name: Require exact behavioral equivalence
+        run: |
+          python scripts/compare_b2_attention_backends.py \
+            --eager artifacts/b2-sdpa-equivalence/eager.json \
+            --sdpa artifacts/b2-sdpa-equivalence/sdpa.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: "b2-sdpa-equivalence-${{ github.run_id }}"
+          path: artifacts/b2-sdpa-equivalence/
+          if-no-files-found: warn
+          retention-days: 30
