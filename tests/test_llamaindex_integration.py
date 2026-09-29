@@ -2,7 +2,7 @@ import pytest
 
 pytest.importorskip("llama_index.core")
 
-from schemarouter import SchemaRouter, SchemaValidationError, schema_tool
+from schemarouter import PolicyViolationError, SchemaRouter, SchemaValidationError, schema_tool
 from schemarouter.integrations import to_llamaindex_tool, to_llamaindex_tools
 from schemarouter.integrations.llamaindex import _llamaindex_schema_model
 
@@ -11,6 +11,12 @@ from schemarouter.integrations.llamaindex import _llamaindex_schema_model
 def add(a: int, b: int) -> int:
     """Add two integers."""
     return a + b
+
+
+@schema_tool(read_only=False)
+def mutate_value(value: int) -> int:
+    """Mutate one value."""
+    return value
 
 
 def make_router() -> SchemaRouter:
@@ -79,3 +85,12 @@ def test_llamaindex_schema_model_rewrites_openapi_component_refs() -> None:
     exported = schema_model.model_json_schema()
     assert exported["properties"]["payload"]["$ref"] == "#/$defs/Payload"
     assert exported["$defs"]["Payload"]["properties"]["value"]["type"] == "string"
+
+
+def test_llamaindex_tool_cannot_bypass_execution_policy() -> None:
+    router = SchemaRouter()
+    router.add_callable(mutate_value)
+    tool = to_llamaindex_tool(router, "mutate_value", "call")
+
+    with pytest.raises(PolicyViolationError, match="allow_mutations"):
+        tool(value=7)
