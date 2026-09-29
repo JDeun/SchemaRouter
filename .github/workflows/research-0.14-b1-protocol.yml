@@ -11,6 +11,7 @@ on:
       - "benchmarks/agent-utility-v1-b1-statistical-amendment.json"
       - "benchmarks/agent-utility-v1-b1-execution-equivalence.json"
       - "benchmarks/agent-utility-v1-b1-task-contract-amendment.json"
+      - "benchmarks/agent-utility-v1-b1-causality-amendment.json"
       - "scripts/generate_agent_utility_v1.py"
       - "scripts/evaluate_agent_utility_phase_a.py"
       - "scripts/evaluate_agent_utility_phase_b_qwen.py"
@@ -123,6 +124,35 @@ jobs:
           assert amendment["excluded_source"]["workflow_run_id"] == 36517371433
           PY
 
+      - name: Validate tool-observation causality amendment
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          amendment = json.loads(
+              Path("benchmarks/agent-utility-v1-b1-causality-amendment.json")
+              .read_text(encoding="utf-8")
+          )
+          assert amendment["issue"] == 420
+          assert amendment["execution_protocol_changed"] is True
+          assert amendment["phase_a_affected"] is False
+          assert amendment["old_episode_sources_eligible_for_final_b1"] == []
+          assert set(amendment["previous_sources_superseded"]) == {
+              36517371433,
+              36520025834,
+              36520831273,
+          }
+          changes = {
+              row["surface"]: row["change"]
+              for row in amendment["corrections"]
+          }
+          assert "agent system prompt" in changes
+          assert "runner" in changes
+          assert "executor" in changes
+          assert "multi-create-send" in changes
+          PY
+
       - name: Freeze corrected tasks and catalogs
         run: |
           python scripts/generate_agent_utility_v1.py             --out-dir artifacts/agent-utility-v1
@@ -161,4 +191,5 @@ jobs:
             benchmarks/agent-utility-v1-b1-statistical-amendment.json
             benchmarks/agent-utility-v1-b1-execution-equivalence.json
             benchmarks/agent-utility-v1-b1-task-contract-amendment.json
+            benchmarks/agent-utility-v1-b1-causality-amendment.json
           retention-days: 30
