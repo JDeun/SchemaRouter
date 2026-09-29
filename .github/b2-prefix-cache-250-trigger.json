@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "issue": 423,
+  "purpose": "arm64_250_full_static_prefix_cache_smoke",
+  "semantic_tuning_allowed": false,
+  "created_date": "2026-09-29",
+  "implementation_sha": "44922cdd1f13711b97e9b20c0f2c651584aa760a",
+  "runner": "ubuntu-24.04-arm",
+  "catalog_size": 250,
+  "task_id": "multi-create-send",
+  "condition": "FULL",
+  "attention_implementation": "sdpa",
+  "static_prefix_cache": true,
+  "validated_20_behavior_sha256": "18c73f3ea2127463d57b4a67ca21b6875bb9f7965dd7be850b38f09b86e3d7a8",
+  "validated_20_cached_episode_wall_latency_ms": 65573.789651,
+  "semantic_result_must_not_be_used_for_tuning": true
+}
