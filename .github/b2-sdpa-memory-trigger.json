@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "issue": 423,
+  "experiment": "0.14-b2-sdpa-memory-validation",
+  "created_date": "2026-09-29",
+  "implementation_sha": "6663c15e940074e6e9e8bc4b008b278279a8653a",
+  "attempt": 5,
+  "prior_attempts": [
+    {
+      "workflow_run": 36589674457,
+      "status": "noncanonical_cache_scope_failure_before_inference"
+    },
+    {
+      "workflow_run": 36589950371,
+      "status": "noncanonical_offline_cache_fill_failure_before_inference"
+    },
+    {
+      "workflow_run": 36590168880,
+      "status": "noncanonical_comparator_timing_summary_bug_after_behavioral_equivalence_rows_matched"
+    },
+    {
+      "workflow_run": 36592667979,
+      "status": "superseded_by_comparator_fix"
+    }
+  ],
+  "behavioral_equivalence_required": true,
+  "canonical_b2_semantics_changed": false,
+  "eager_reference": {
+    "catalog_sizes": [
+      20
+    ],
+    "task_ids": [
+      "single-material-current",
+      "multi-create-send"
+    ],
+    "conditions": [
+      "FULL",
+      "ORACLE"
+    ]
+  },
+  "sdpa_memory_smoke": {
+    "catalog_sizes": [
+      250
+    ],
+    "task_ids": [
+      "multi-create-send"
+    ],
+    "conditions": [
+      "FULL"
+    ]
+  },
+  "promotion_rule": "promote SDPA only if behavioral equivalence passes and 250-tool FULL smoke completes"
+}
