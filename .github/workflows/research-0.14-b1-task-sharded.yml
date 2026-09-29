@@ -35,7 +35,7 @@ jobs:
           - shard: s05
             task_ids: "single-export,multi-paper-search-retrieve,multi-paper-retrieve-summary,multi-material-search-current"
           - shard: s06
-            task_ids: "multi-create-share,multi-inventory-create-send,multi-retrieve-export"
+            task_ids: "multi-create-share,multi-create-send,multi-retrieve-export"
     runs-on: ubuntu-latest
     timeout-minutes: 120
     steps:
