@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "successor_issue": 432,
+  "experiment": "adaptive-structural-retrieval-v1",
+  "created_date": "2026-09-30",
+  "status": "confirmation_candidate_frozen_before_confirmation_surface",
+  "development_evidence": {
+    "workflow_run": 36645758734,
+    "artifact_id": 11067818387,
+    "artifact_digest": "sha256:ce8405b00123ae37d7477800d19adf5c3e0423643696c32a25e3a18d7a2302c7",
+    "miss_taxonomy_workflow_run": 36644894275,
+    "miss_taxonomy_artifact_id": 11068336649
+  },
+  "candidate": {
+    "id": "STRUCT-4.5-1.5",
+    "tool_identifier_bonus": 4.5,
+    "operation_family_bonus": 1.5,
+    "schema_specificity_tiebreak": true,
+    "tool_identifier_rule": "complete ASCII tool name/key leaf match after conservative singularization only",
+    "operation_family_rule": {
+      "minimum_token_length": 4,
+      "minimum_common_prefix": 4,
+      "minimum_prefix_fraction_of_shorter_token": 0.7
+    },
+    "specificity_rule": "mean catalog discrimination log((N+1)/(df+1))/log(N+1), used only as equal-score tie-break"
+  },
+  "development_result": {
+    "required_route_recall_at_10": {
+      "100": 1,
+      "250": 1,
+      "500": 1
+    },
+    "all_required_full_coverage_at_10": {
+      "100": 1,
+      "250": 1,
+      "500": 1
+    },
+    "all_supported_strata_required_route_recall_at_10": 1,
+    "all_languages_required_route_recall_at_10": 1,
+    "newly_recovered_required_routes_vs_baseline": 39,
+    "newly_lost_required_routes_vs_baseline": 0
+  },
+  "selection_rationale": [
+    "The original minimal-intervention DEV selector chose STRUCT-1.5-1.5 and that variant passed the global per-catalog 0.97 gates.",
+    "Post-selection DEV subgroup diagnostics showed residual clear-single-tool and mixed-language weaknesses for STRUCT-1.5-1.5.",
+    "DEV is the tuning surface, so subgroup diagnostics may be used before confirmation is opened.",
+    "STRUCT-4.5-1.5 was the lowest operation-family bonus among variants achieving 100% Recall@10 and FullCoverage@10 across every catalog, supported stratum and language while losing zero previously covered required routes.",
+    "STRUCT-4.5-3.0 was equally perfect but uses a larger unnecessary operation-family bonus and is therefore not selected."
+  ],
+  "research_integrity": {
+    "confirmation_rows_generated": false,
+    "confirmation_rows_inspected": false,
+    "confirmation_metrics_used": false,
+    "b2_outcomes_used": false,
+    "product_default_changed": false,
+    "dev_is_tuning_surface": true,
+    "candidate_must_not_change_after_confirmation_generation": true
+  },
+  "promotion_sequence": [
+    "implement candidate as opt-in core behavior with default disabled",
+    "prove exact ranking parity between research evaluator and core implementation on the frozen DEV surface",
+    "freeze core implementation SHA",
+    "only then generate/open the sealed confirmation surface",
+    "promote to product default only if confirmation gates pass"
+  ]
+}
