@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - "benchmarks/agent-utility-v2-representation-preregistration.json"
+      - "benchmarks/agent-utility-v2-latency-amendment.json"
       - "benchmarks/agent_utility_v2_catalog.py"
       - "scripts/generate_agent_utility_v2_dev.py"
       - "scripts/evaluate_agent_utility_v2_representation.py"
