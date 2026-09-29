@@ -17,11 +17,11 @@
 <p align="center">
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg"></a>
-  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.10.0"></a>
+  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.11.0"></a>
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-> **Stable release: 0.10.0** · `pip install schemarouter` · Beta / pre-1.0
+> **Stable release: 0.11.0** · `pip install schemarouter` · Beta / pre-1.0
 
 SchemaRouter sits between a RAG/agent application and its structured external capabilities. It
 normalizes OpenAPI, MCP, OPTIMADE, Python, and plugin-defined tools into a typed capability catalog,
@@ -124,6 +124,29 @@ Optional Laya, Ollama, Jev/System-One, hosted-model, embedding, or pairwise deci
 assist selection over locally registered candidates. They do not become execution authority and
 cannot invent tools, fields, credentials, permissions, or side effects.
 
+## Retrieve a compact tool set for an agent
+
+SchemaRouter can return registered capability candidates **without planning or executing them**:
+
+```python
+candidates = router.retrieve(
+    "current Young's modulus for MAT-7",
+    k=5,
+)
+
+for candidate in candidates.candidates:
+    print(candidate.route_id, candidate.output_fields)
+```
+
+Use `retrieve_executable(..., k=5)` when candidates must also have a currently ready local
+execution binding. Async counterparts are `aretrieve` and `aretrieve_executable`.
+
+The returned candidates retain the registered parameter/output schemas, semantic IDs, optional
+units and qualifiers, provider/access identity, read/write/destructive metadata, and schema
+fingerprints. Retrieval has no side effect and does not grant execution authority; the surrounding
+agent still chooses among candidates and execution remains subject to SchemaRouter validation and
+policy.
+
 ## Quickstart
 
 ```python
@@ -165,11 +188,12 @@ Framework bridges are available for LangChain, LangGraph, and LlamaIndex. OpenTe
 Third-party bounded decision backends can be published through the
 `schemarouter.decision_backends` entry-point group.
 
-## What works in 0.10.0
+## What works in 0.11.0
 
 The released package provides a working beta implementation of the core architecture:
 
 - typed Tool / Endpoint / Parameter / Field registry contracts;
+- first-class bounded Top-K capability retrieval through `retrieve` / `aretrieve` and executable-ready variants;
 - Python, OpenAPI, MCP, and OPTIMADE ingestion paths;
 - field-first planning and bounded multi-provider field coverage;
 - input and raw-output JSON Schema validation;
@@ -186,7 +210,7 @@ So **the architecture works today** for declared capabilities and supported rout
 
 ## Current research direction: compact capability retrieval for agents
 
-The stable 0.10.0 execution boundary is unchanged. The active research question has shifted from
+The stable 0.11.0 execution boundary is unchanged. The active research question has shifted from
 making SchemaRouter itself the final open-set classifier to evaluating it as a **typed capability
 retrieval substrate** for a downstream LLM agent.
 
@@ -211,14 +235,14 @@ strong-agent replication (#423) and final-answer quality benchmark (#424) are re
 generalizing the result.
 
 The earlier 0.11–0.13 open-set classifier/veto experiments remain valuable negative evidence. No
-experimental learned router is promoted as an unconditional production default in 0.10.0.
+experimental learned router is promoted as an unconditional production default in 0.11.0.
 
 See:
 
 - [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
 - [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [Complete experiment index](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
-- [0.10.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.10.0/)
+- [0.11.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.11.0/)
 - [Changelog](CHANGELOG.md)
 
 ## Inspect the registry and runs
