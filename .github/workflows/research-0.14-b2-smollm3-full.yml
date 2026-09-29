@@ -67,7 +67,7 @@ jobs:
             --out-dir artifacts/b2-freeze
           python scripts/verify_agent_utility_b2_candidate_sets.py
       - id: plan
-        name: Export resilient 92-job matrix
+        name: Export runner-hardened 184-job matrix
         run: |
           python - <<'PY'
           import json
@@ -75,10 +75,10 @@ jobs:
           from pathlib import Path
 
           plan = json.loads(
-              Path("benchmarks/agent-utility-v1-b2-sharding-resilient.json")
+              Path("benchmarks/agent-utility-v1-b2-sharding-runner-hardened.json")
               .read_text(encoding="utf-8")
           )
-          assert plan["expected_job_count"] == 92
+          assert plan["expected_job_count"] == 184
           assert plan["expected_episode_count"] == 460
           include = [
               {
@@ -88,6 +88,8 @@ jobs:
                       str(value) for value in row["catalog_sizes"]
                   ),
                   "expected_episodes": row["expected_episodes"],
+                  "conditions": row["conditions_csv"],
+                  "condition_group": row["condition_group"],
               }
               for row in plan["jobs"]
           ]
@@ -224,10 +226,10 @@ jobs:
       - model-cache
     strategy:
       fail-fast: false
-      max-parallel: 6
+      max-parallel: 4
       matrix: "${{ fromJSON(needs.authorize.outputs.matrix) }}"
     runs-on: ubuntu-24.04
-    timeout-minutes: 180
+    timeout-minutes: 45
     env:
       HF_HUB_OFFLINE: "1"
       TRANSFORMERS_OFFLINE: "1"
@@ -301,9 +303,10 @@ jobs:
           }
           trap cleanup_resource_monitor EXIT
 
-          /usr/bin/time -v python scripts/evaluate_agent_utility_phase_b_smollm3.py \
+          /usr/bin/time -v python -u scripts/evaluate_agent_utility_phase_b_smollm3.py \
             --catalog-sizes "${{ matrix.catalog_sizes }}" \
             --task-ids "${{ matrix.task_id }}" \
+            --conditions "${{ matrix.conditions }}" \
             --out "artifacts/b2-shard/phase-b2-${{ matrix.job_id }}.json"
           python - <<'PY'
           import json
@@ -317,13 +320,22 @@ jobs:
           assert {row["task_id"] for row in data["rows"]} == {
               os.environ["EXPECTED_TASK_ID"]
           }
-          assert {row["condition"] for row in data["rows"]} == {
-              "FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE"
+          expected_conditions = {
+              value.strip()
+              for value in os.environ["EXPECTED_CONDITIONS"].split(",")
+              if value.strip()
           }
+          assert data["conditions"] == [
+              value.strip()
+              for value in os.environ["EXPECTED_CONDITIONS"].split(",")
+              if value.strip()
+          ]
+          assert {row["condition"] for row in data["rows"]} == expected_conditions
           PY
         env:
           EXPECTED_EPISODES: "${{ matrix.expected_episodes }}"
           EXPECTED_TASK_ID: "${{ matrix.task_id }}"
+          EXPECTED_CONDITIONS: "${{ matrix.conditions }}"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
@@ -389,5 +401,6 @@ jobs:
             benchmarks/agent-utility-v1-b2-preregistration.json
             benchmarks/agent-utility-v1-b2-sharding.json
             benchmarks/agent-utility-v1-b2-sharding-resilient.json
+            benchmarks/agent-utility-v1-b2-sharding-runner-hardened.json
           if-no-files-found: error
           retention-days: 30

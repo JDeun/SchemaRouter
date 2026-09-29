@@ -1,0 +1,2742 @@
+{
+  "schema_version": 2,
+  "issue": 423,
+  "experiment": "phase-b2-smollm3-3b-strong-agent-replication-v1",
+  "status": "runner_hardening_v2_after_attempt5_stalled_evaluator_jobs",
+  "source_sharding_file": "benchmarks/agent-utility-v1-b2-sharding-resilient.json",
+  "source_expected_episode_count": 460,
+  "conditions": [
+    "FULL",
+    "SR-5",
+    "SR-10",
+    "SR-PROGRESSIVE",
+    "ORACLE"
+  ],
+  "catalog_sizes": [
+    20,
+    50,
+    100,
+    250
+  ],
+  "semantic_task_count": 23,
+  "expected_job_count": 184,
+  "expected_episode_count": 460,
+  "condition_groups": [
+    {
+      "group_id": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ]
+    },
+    {
+      "group_id": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ]
+    }
+  ],
+  "strategy": {
+    "task_catalog_condition_group_per_job": true,
+    "rationale": "Attempt 5 showed two hosted-runner shutdowns and six evaluator jobs remaining in-progress for over two hours while 83 jobs were queued. Split each frozen task×catalog block into two condition groups so each runner performs only two or three frozen episodes.",
+    "fail_fast": false,
+    "max_parallel": 4,
+    "timeout_minutes_per_evaluate_job": 45,
+    "result_based_tuning": false,
+    "benchmark_semantics_changed": false
+  },
+  "governance": {
+    "attempt5_workflow": 36561002246,
+    "attempt5_partial_results_canonical": false,
+    "partial_task_outcomes_used_to_choose_hardening": false,
+    "hardening_basis": [
+      "job status",
+      "runner shutdown signal",
+      "wall duration",
+      "queue saturation"
+    ],
+    "model_changed": false,
+    "prompt_changed": false,
+    "tasks_changed": false,
+    "catalogs_changed": false,
+    "candidate_sets_changed": false,
+    "conditions_changed": false,
+    "condition_episode_definition_changed": false,
+    "stopping_changed": false,
+    "executor_changed": false,
+    "scoring_changed": false,
+    "statistics_changed": false
+  },
+  "jobs": [
+    {
+      "job_id": "multi-create-send-20-full-oracle",
+      "task_id": "multi-create-send",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-create-send-20-sr-bounded",
+      "task_id": "multi-create-send",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-create-send-50-full-oracle",
+      "task_id": "multi-create-send",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-create-send-50-sr-bounded",
+      "task_id": "multi-create-send",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-create-send-100-full-oracle",
+      "task_id": "multi-create-send",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-create-send-100-sr-bounded",
+      "task_id": "multi-create-send",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-create-send-250-full-oracle",
+      "task_id": "multi-create-send",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-create-send-250-sr-bounded",
+      "task_id": "multi-create-send",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-create-share-20-full-oracle",
+      "task_id": "multi-create-share",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-create-share-20-sr-bounded",
+      "task_id": "multi-create-share",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-create-share-50-full-oracle",
+      "task_id": "multi-create-share",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-create-share-50-sr-bounded",
+      "task_id": "multi-create-share",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-create-share-100-full-oracle",
+      "task_id": "multi-create-share",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-create-share-100-sr-bounded",
+      "task_id": "multi-create-share",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-create-share-250-full-oracle",
+      "task_id": "multi-create-share",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-create-share-250-sr-bounded",
+      "task_id": "multi-create-share",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-material-search-current-20-full-oracle",
+      "task_id": "multi-material-search-current",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-material-search-current-20-sr-bounded",
+      "task_id": "multi-material-search-current",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-material-search-current-50-full-oracle",
+      "task_id": "multi-material-search-current",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-material-search-current-50-sr-bounded",
+      "task_id": "multi-material-search-current",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-material-search-current-100-full-oracle",
+      "task_id": "multi-material-search-current",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-material-search-current-100-sr-bounded",
+      "task_id": "multi-material-search-current",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-material-search-current-250-full-oracle",
+      "task_id": "multi-material-search-current",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-material-search-current-250-sr-bounded",
+      "task_id": "multi-material-search-current",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-paper-retrieve-summary-20-full-oracle",
+      "task_id": "multi-paper-retrieve-summary",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-paper-retrieve-summary-20-sr-bounded",
+      "task_id": "multi-paper-retrieve-summary",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-paper-retrieve-summary-50-full-oracle",
+      "task_id": "multi-paper-retrieve-summary",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-paper-retrieve-summary-50-sr-bounded",
+      "task_id": "multi-paper-retrieve-summary",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-paper-retrieve-summary-100-full-oracle",
+      "task_id": "multi-paper-retrieve-summary",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-paper-retrieve-summary-100-sr-bounded",
+      "task_id": "multi-paper-retrieve-summary",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-paper-retrieve-summary-250-full-oracle",
+      "task_id": "multi-paper-retrieve-summary",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-paper-retrieve-summary-250-sr-bounded",
+      "task_id": "multi-paper-retrieve-summary",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-paper-search-retrieve-20-full-oracle",
+      "task_id": "multi-paper-search-retrieve",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-paper-search-retrieve-20-sr-bounded",
+      "task_id": "multi-paper-search-retrieve",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-paper-search-retrieve-50-full-oracle",
+      "task_id": "multi-paper-search-retrieve",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-paper-search-retrieve-50-sr-bounded",
+      "task_id": "multi-paper-search-retrieve",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-paper-search-retrieve-100-full-oracle",
+      "task_id": "multi-paper-search-retrieve",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-paper-search-retrieve-100-sr-bounded",
+      "task_id": "multi-paper-search-retrieve",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-paper-search-retrieve-250-full-oracle",
+      "task_id": "multi-paper-search-retrieve",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-paper-search-retrieve-250-sr-bounded",
+      "task_id": "multi-paper-search-retrieve",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-retrieve-export-20-full-oracle",
+      "task_id": "multi-retrieve-export",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-retrieve-export-20-sr-bounded",
+      "task_id": "multi-retrieve-export",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-retrieve-export-50-full-oracle",
+      "task_id": "multi-retrieve-export",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-retrieve-export-50-sr-bounded",
+      "task_id": "multi-retrieve-export",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-retrieve-export-100-full-oracle",
+      "task_id": "multi-retrieve-export",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-retrieve-export-100-sr-bounded",
+      "task_id": "multi-retrieve-export",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "multi-retrieve-export-250-full-oracle",
+      "task_id": "multi-retrieve-export",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "multi-retrieve-export-250-sr-bounded",
+      "task_id": "multi-retrieve-export",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-credit-refund-20-full-oracle",
+      "task_id": "single-credit-refund",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-credit-refund-20-sr-bounded",
+      "task_id": "single-credit-refund",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-credit-refund-50-full-oracle",
+      "task_id": "single-credit-refund",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-credit-refund-50-sr-bounded",
+      "task_id": "single-credit-refund",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-credit-refund-100-full-oracle",
+      "task_id": "single-credit-refund",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-credit-refund-100-sr-bounded",
+      "task_id": "single-credit-refund",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-credit-refund-250-full-oracle",
+      "task_id": "single-credit-refund",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-credit-refund-250-sr-bounded",
+      "task_id": "single-credit-refund",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-export-20-full-oracle",
+      "task_id": "single-export",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-export-20-sr-bounded",
+      "task_id": "single-export",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-export-50-full-oracle",
+      "task_id": "single-export",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-export-50-sr-bounded",
+      "task_id": "single-export",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-export-100-full-oracle",
+      "task_id": "single-export",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-export-100-sr-bounded",
+      "task_id": "single-export",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-export-250-full-oracle",
+      "task_id": "single-export",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-export-250-sr-bounded",
+      "task_id": "single-export",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-create-20-full-oracle",
+      "task_id": "single-inventory-create",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-create-20-sr-bounded",
+      "task_id": "single-inventory-create",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-create-50-full-oracle",
+      "task_id": "single-inventory-create",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-create-50-sr-bounded",
+      "task_id": "single-inventory-create",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-create-100-full-oracle",
+      "task_id": "single-inventory-create",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-create-100-sr-bounded",
+      "task_id": "single-inventory-create",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-create-250-full-oracle",
+      "task_id": "single-inventory-create",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-create-250-sr-bounded",
+      "task_id": "single-inventory-create",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-delete-20-full-oracle",
+      "task_id": "single-inventory-delete",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-delete-20-sr-bounded",
+      "task_id": "single-inventory-delete",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-delete-50-full-oracle",
+      "task_id": "single-inventory-delete",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-delete-50-sr-bounded",
+      "task_id": "single-inventory-delete",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-delete-100-full-oracle",
+      "task_id": "single-inventory-delete",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-delete-100-sr-bounded",
+      "task_id": "single-inventory-delete",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-delete-250-full-oracle",
+      "task_id": "single-inventory-delete",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-delete-250-sr-bounded",
+      "task_id": "single-inventory-delete",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-list-20-full-oracle",
+      "task_id": "single-inventory-list",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-list-20-sr-bounded",
+      "task_id": "single-inventory-list",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-list-50-full-oracle",
+      "task_id": "single-inventory-list",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-list-50-sr-bounded",
+      "task_id": "single-inventory-list",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-list-100-full-oracle",
+      "task_id": "single-inventory-list",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-list-100-sr-bounded",
+      "task_id": "single-inventory-list",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-list-250-full-oracle",
+      "task_id": "single-inventory-list",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-list-250-sr-bounded",
+      "task_id": "single-inventory-list",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-update-20-full-oracle",
+      "task_id": "single-inventory-update",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-update-20-sr-bounded",
+      "task_id": "single-inventory-update",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-update-50-full-oracle",
+      "task_id": "single-inventory-update",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-update-50-sr-bounded",
+      "task_id": "single-inventory-update",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-update-100-full-oracle",
+      "task_id": "single-inventory-update",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-update-100-sr-bounded",
+      "task_id": "single-inventory-update",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-inventory-update-250-full-oracle",
+      "task_id": "single-inventory-update",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-inventory-update-250-sr-bounded",
+      "task_id": "single-inventory-update",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-current-20-full-oracle",
+      "task_id": "single-material-current",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-current-20-sr-bounded",
+      "task_id": "single-material-current",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-current-50-full-oracle",
+      "task_id": "single-material-current",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-current-50-sr-bounded",
+      "task_id": "single-material-current",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-current-100-full-oracle",
+      "task_id": "single-material-current",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-current-100-sr-bounded",
+      "task_id": "single-material-current",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-current-250-full-oracle",
+      "task_id": "single-material-current",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-current-250-sr-bounded",
+      "task_id": "single-material-current",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-forecast-20-full-oracle",
+      "task_id": "single-material-forecast",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-forecast-20-sr-bounded",
+      "task_id": "single-material-forecast",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-forecast-50-full-oracle",
+      "task_id": "single-material-forecast",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-forecast-50-sr-bounded",
+      "task_id": "single-material-forecast",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-forecast-100-full-oracle",
+      "task_id": "single-material-forecast",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-forecast-100-sr-bounded",
+      "task_id": "single-material-forecast",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-forecast-250-full-oracle",
+      "task_id": "single-material-forecast",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-forecast-250-sr-bounded",
+      "task_id": "single-material-forecast",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-history-20-full-oracle",
+      "task_id": "single-material-history",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-history-20-sr-bounded",
+      "task_id": "single-material-history",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-history-50-full-oracle",
+      "task_id": "single-material-history",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-history-50-sr-bounded",
+      "task_id": "single-material-history",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-history-100-full-oracle",
+      "task_id": "single-material-history",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-history-100-sr-bounded",
+      "task_id": "single-material-history",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-history-250-full-oracle",
+      "task_id": "single-material-history",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-history-250-sr-bounded",
+      "task_id": "single-material-history",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-retrieve-20-full-oracle",
+      "task_id": "single-material-retrieve",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-retrieve-20-sr-bounded",
+      "task_id": "single-material-retrieve",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-retrieve-50-full-oracle",
+      "task_id": "single-material-retrieve",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-retrieve-50-sr-bounded",
+      "task_id": "single-material-retrieve",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-retrieve-100-full-oracle",
+      "task_id": "single-material-retrieve",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-retrieve-100-sr-bounded",
+      "task_id": "single-material-retrieve",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-retrieve-250-full-oracle",
+      "task_id": "single-material-retrieve",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-retrieve-250-sr-bounded",
+      "task_id": "single-material-retrieve",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-search-20-full-oracle",
+      "task_id": "single-material-search",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-search-20-sr-bounded",
+      "task_id": "single-material-search",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-search-50-full-oracle",
+      "task_id": "single-material-search",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-search-50-sr-bounded",
+      "task_id": "single-material-search",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-search-100-full-oracle",
+      "task_id": "single-material-search",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-search-100-sr-bounded",
+      "task_id": "single-material-search",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-material-search-250-full-oracle",
+      "task_id": "single-material-search",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-material-search-250-sr-bounded",
+      "task_id": "single-material-search",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-message-send-20-full-oracle",
+      "task_id": "single-message-send",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-message-send-20-sr-bounded",
+      "task_id": "single-message-send",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-message-send-50-full-oracle",
+      "task_id": "single-message-send",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-message-send-50-sr-bounded",
+      "task_id": "single-message-send",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-message-send-100-full-oracle",
+      "task_id": "single-message-send",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-message-send-100-sr-bounded",
+      "task_id": "single-message-send",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-message-send-250-full-oracle",
+      "task_id": "single-message-send",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-message-send-250-sr-bounded",
+      "task_id": "single-message-send",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-paper-retrieve-20-full-oracle",
+      "task_id": "single-paper-retrieve",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-paper-retrieve-20-sr-bounded",
+      "task_id": "single-paper-retrieve",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-paper-retrieve-50-full-oracle",
+      "task_id": "single-paper-retrieve",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-paper-retrieve-50-sr-bounded",
+      "task_id": "single-paper-retrieve",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-paper-retrieve-100-full-oracle",
+      "task_id": "single-paper-retrieve",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-paper-retrieve-100-sr-bounded",
+      "task_id": "single-paper-retrieve",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-paper-retrieve-250-full-oracle",
+      "task_id": "single-paper-retrieve",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-paper-retrieve-250-sr-bounded",
+      "task_id": "single-paper-retrieve",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-paper-search-20-full-oracle",
+      "task_id": "single-paper-search",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-paper-search-20-sr-bounded",
+      "task_id": "single-paper-search",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-paper-search-50-full-oracle",
+      "task_id": "single-paper-search",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-paper-search-50-sr-bounded",
+      "task_id": "single-paper-search",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-paper-search-100-full-oracle",
+      "task_id": "single-paper-search",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-paper-search-100-sr-bounded",
+      "task_id": "single-paper-search",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-paper-search-250-full-oracle",
+      "task_id": "single-paper-search",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-paper-search-250-sr-bounded",
+      "task_id": "single-paper-search",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-paper-summary-20-full-oracle",
+      "task_id": "single-paper-summary",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-paper-summary-20-sr-bounded",
+      "task_id": "single-paper-summary",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-paper-summary-50-full-oracle",
+      "task_id": "single-paper-summary",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-paper-summary-50-sr-bounded",
+      "task_id": "single-paper-summary",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-paper-summary-100-full-oracle",
+      "task_id": "single-paper-summary",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-paper-summary-100-sr-bounded",
+      "task_id": "single-paper-summary",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-paper-summary-250-full-oracle",
+      "task_id": "single-paper-summary",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-paper-summary-250-sr-bounded",
+      "task_id": "single-paper-summary",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-runtime-restart-20-full-oracle",
+      "task_id": "single-runtime-restart",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-runtime-restart-20-sr-bounded",
+      "task_id": "single-runtime-restart",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-runtime-restart-50-full-oracle",
+      "task_id": "single-runtime-restart",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-runtime-restart-50-sr-bounded",
+      "task_id": "single-runtime-restart",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-runtime-restart-100-full-oracle",
+      "task_id": "single-runtime-restart",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-runtime-restart-100-sr-bounded",
+      "task_id": "single-runtime-restart",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-runtime-restart-250-full-oracle",
+      "task_id": "single-runtime-restart",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-runtime-restart-250-sr-bounded",
+      "task_id": "single-runtime-restart",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-share-20-full-oracle",
+      "task_id": "single-share",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-share-20-sr-bounded",
+      "task_id": "single-share",
+      "catalog_sizes": [
+        20
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-share-50-full-oracle",
+      "task_id": "single-share",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-share-50-sr-bounded",
+      "task_id": "single-share",
+      "catalog_sizes": [
+        50
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-share-100-full-oracle",
+      "task_id": "single-share",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-share-100-sr-bounded",
+      "task_id": "single-share",
+      "catalog_sizes": [
+        100
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    },
+    {
+      "job_id": "single-share-250-full-oracle",
+      "task_id": "single-share",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "full-oracle",
+      "conditions": [
+        "FULL",
+        "ORACLE"
+      ],
+      "conditions_csv": "FULL,ORACLE",
+      "expected_episodes": 2
+    },
+    {
+      "job_id": "single-share-250-sr-bounded",
+      "task_id": "single-share",
+      "catalog_sizes": [
+        250
+      ],
+      "condition_group": "sr-bounded",
+      "conditions": [
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE"
+      ],
+      "conditions_csv": "SR-5,SR-10,SR-PROGRESSIVE",
+      "expected_episodes": 3
+    }
+  ]
+}

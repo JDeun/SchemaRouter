@@ -36,6 +36,7 @@ MAX_NEW_TOKENS = 256
 MAX_TURNS = 6
 SEED = 20260929
 THREADS = 4
+ALL_CONDITIONS = ("FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE")
 TOOL_CALL_RE = re.compile(
     r"<tool_call>\s*(\{.*?\})\s*</tool_call>",
     flags=re.DOTALL,
@@ -809,6 +810,7 @@ def evaluate(
     *,
     catalog_sizes: tuple[int, ...],
     task_ids: set[str] | None = None,
+    conditions: tuple[str, ...] = ALL_CONDITIONS,
 ) -> dict[str, Any]:
     if task_ids is not None:
         known_task_ids = {task.task_id for task in TASKS}
@@ -818,11 +820,20 @@ def evaluate(
                 "unknown frozen task id(s): " + ", ".join(unknown_task_ids)
             )
 
+    if not conditions:
+        raise ValueError("at least one B2 condition is required")
+    invalid_conditions = sorted(set(conditions).difference(ALL_CONDITIONS))
+    if invalid_conditions:
+        raise ValueError(
+            "unknown B2 condition(s): " + ", ".join(invalid_conditions)
+        )
+    if len(set(conditions)) != len(conditions):
+        raise ValueError("B2 conditions must be unique")
+
     started = time.perf_counter_ns()
     agent = LocalSmolLM3Agent()
     model_load_ms = (time.perf_counter_ns() - started) / 1_000_000
 
-    conditions = ("FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE")
     rows: list[dict[str, Any]] = []
 
     for size in catalog_sizes:
@@ -878,11 +889,14 @@ def evaluate(
 
     full_rows = [row for row in rows if row["condition"] == "FULL"]
     paired_deltas = {}
-    for condition in ("SR-5", "SR-10", "SR-PROGRESSIVE"):
-        paired_deltas[condition] = _bootstrap_delta(
-            full_rows,
-            [row for row in rows if row["condition"] == condition],
-        )
+    if full_rows:
+        for condition in ("SR-5", "SR-10", "SR-PROGRESSIVE"):
+            if condition not in conditions:
+                continue
+            paired_deltas[condition] = _bootstrap_delta(
+                full_rows,
+                [row for row in rows if row["condition"] == condition],
+            )
 
     progressive_rows = [
         row for row in rows if row["condition"] == "SR-PROGRESSIVE"
@@ -916,6 +930,7 @@ def evaluate(
         "model_load_ms": model_load_ms,
         "catalog_sizes": list(catalog_sizes),
         "task_ids": sorted(task_ids) if task_ids is not None else None,
+        "conditions": list(conditions),
         "rows": rows,
         "summary_by_catalog": summaries,
         "overall": overall,
@@ -956,6 +971,12 @@ def main() -> None:
         default="",
         help="Comma-separated task IDs for mechanical smoke only.",
     )
+    parser.add_argument(
+        "--conditions",
+        type=str,
+        default=",".join(ALL_CONDITIONS),
+        help="Comma-separated frozen B2 condition subset for mechanical sharding.",
+    )
     args = parser.parse_args()
 
     catalog_sizes = tuple(
@@ -973,7 +994,24 @@ def main() -> None:
         if value.strip()
     } or None
 
-    result = evaluate(catalog_sizes=catalog_sizes, task_ids=task_ids)
+    conditions = tuple(
+        value.strip()
+        for value in args.conditions.split(",")
+        if value.strip()
+    )
+    invalid_conditions = sorted(set(conditions).difference(ALL_CONDITIONS))
+    if invalid_conditions:
+        raise ValueError(f"unsupported B2 conditions: {invalid_conditions}")
+    if not conditions:
+        raise ValueError("at least one B2 condition is required")
+    if len(set(conditions)) != len(conditions):
+        raise ValueError("B2 conditions must be unique")
+
+    result = evaluate(
+        catalog_sizes=catalog_sizes,
+        task_ids=task_ids,
+        conditions=conditions,
+    )
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(
         json.dumps(result, ensure_ascii=False, indent=2) + "\n",
