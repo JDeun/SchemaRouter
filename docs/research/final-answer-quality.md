@@ -15,16 +15,20 @@ B1/B2 answer the question:
 
 ## Run gate
 
-The protocol may be frozen now, but answer inference is **not authorized** until #423
-B2 is terminal.
+B2 is now terminal, but that is no longer the final launch condition. Under the automated
+#500 research conveyor, #424 answer inference remains **blocked until #432 finishes
+successfully**. #432 itself is gated by the terminal #431 corrective result and the frozen
+held-out condition manifest.
 
-The benchmark uses the same frozen strong-agent model family/runtime as B2 unless B2
-terminates before benchmark inference for model-feasibility reasons. A replacement may
-never be selected from #424 task outcomes.
+Do not manually dispatch #424 around that sequence.
 
-## Pre-B2-terminal authoring scaffold
+The benchmark keeps the same frozen strong-agent model family/runtime lineage as B2 unless a
+preregistered infrastructure-only feasibility rule requires otherwise. A replacement may never be
+selected from #424 task outcomes.
 
-Before B2 is terminal, the benchmark may freeze only deterministic **authoring slots**.
+## Authoring scaffold and current gate
+
+The benchmark freezes deterministic **authoring slots** independently of model outcomes.
 The scaffold fixes:
 
 - 144 unique `semantic_task_id` values;
@@ -45,9 +49,9 @@ It does **not** generate or contain:
 
 The generator is
 `scripts/generate_agent_utility_v4_final_answer_authoring_plan.py`.
-Both `content_generation_authorized` and `answer_inference_authorized` remain false
-until #423 is terminal. This allows balance/identity bookkeeping to be validated without
-using B2 outcomes or opening the answer benchmark early.
+The authoring scaffold remains outcome-independent. Content generation and answer inference are
+controlled by the current conveyor gate rather than by B2 terminal state alone; the active launch
+boundary is successful terminal #432.
 
 ## Surface
 
