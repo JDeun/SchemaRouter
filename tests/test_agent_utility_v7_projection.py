@@ -660,6 +660,34 @@ def test_both_workflows_refuse_a_checkout_without_the_experiment():
 # --- governance (review #508, finding 2) ------------------------------------
 
 
+def test_the_corpus_is_not_labelled_as_one_arms_surface():
+    # Both arms regenerate this corpus from the same frozen source, so a
+    # "development" label would be stamped on the confirmation artifact too.
+    from scripts.generate_agent_utility_v7_projection_corpus import build_corpus
+
+    corpus = build_corpus("a" * 40)
+    assert corpus["surface"] == "shared_frozen_projection"
+    assert corpus["surface"] not in {"development", "confirmation"}
+
+
+def test_the_preregistration_does_not_claim_the_old_chain_freeze():
+    import json
+    from pathlib import Path
+
+    from scripts.research_014_conveyor import DOWNSTREAM_IMPLEMENTATION_SHA
+
+    prereg_path = (
+        Path(__file__).resolve().parents[1]
+        / "benchmarks"
+        / "agent-utility-v7-field-projection-preregistration.json"
+    )
+    prereg = json.loads(prereg_path.read_text(encoding="utf-8"))
+    identity = prereg["staging"]["development_screen"]["conveyor_identity"]
+    assert "projection implementation SHA" in identity
+    assert "frozen downstream implementation SHA;" not in identity
+    assert DOWNSTREAM_IMPLEMENTATION_SHA not in prereg_path.read_text(encoding="utf-8")
+
+
 def test_the_preregistration_states_one_unambiguous_dev_rule():
     import json
     from pathlib import Path
