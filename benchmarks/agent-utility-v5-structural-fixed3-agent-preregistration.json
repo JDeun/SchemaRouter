@@ -15,7 +15,8 @@
     "only_b2_terminal_status_and_frozen_surface_identity_may_be_used_before_launch": true,
     "fixed3_candidate_already_frozen": true,
     "fixed3_confirmation_run": 36653940042,
-    "fixed3_confirmation_result": "benchmarks/agent-utility-v5-structural-fixed3-v4-result.json"
+    "fixed3_confirmation_result": "benchmarks/agent-utility-v5-structural-fixed3-v4-result.json",
+    "b2_success_required_before_launch": true
   },
   "frozen_agent_surface": {
     "semantic_tasks": 23,
@@ -80,7 +81,8 @@
     "no_condition_addition_after_launch": true,
     "no_episode_removal": true,
     "no_rerun_selected_by_outcome": true,
-    "infrastructure_retry_allowed_only_if_semantics_unchanged": true
+    "infrastructure_retry_allowed_only_if_semantics_unchanged": true,
+    "canonical_b2_success_required": true
   },
   "after_result": {
     "if_passed": "freeze downstream-confirmed STRUCT-FIXED-3 candidate; product default remains unchanged pending broader held-out/final-answer gates",
@@ -101,6 +103,7 @@
     "thresholds_changed": false,
     "candidate_changed": false,
     "task_surface_changed": false,
-    "model_or_generation_changed": false
+    "model_or_generation_changed": false,
+    "auto_launch_requires_canonical_b2_conclusion": "success"
   }
 }
