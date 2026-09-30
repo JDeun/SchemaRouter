@@ -104,7 +104,7 @@ jobs:
           python scripts/generate_agent_utility_v6_corrective_corpus.py             --source-revision "${{ inputs.source_sha }}"             --out artifacts/corrective/corrective-corpus.json
           python scripts/validate_agent_utility_v6_corrective_corpus.py             --corpus artifacts/corrective/corrective-corpus.json
       - id: matrix
-        name: Export frozen 90-job evaluation matrix
+        name: Export frozen 180-job evaluation matrix
         run: |
           python - <<'PY'
           import json
@@ -116,7 +116,7 @@ jobs:
               .read_text(encoding="utf-8")
           )
           ids = [str(task["semantic_task_id"]) for task in data["tasks"]]
-          chunks = [ids[index:index + 6] for index in range(0, len(ids), 6)]
+          chunks = [ids[index:index + 3] for index in range(0, len(ids), 3)]
           include = []
           for catalog in (100, 250, 500):
               for index, chunk in enumerate(chunks):
@@ -127,7 +127,7 @@ jobs:
                           "task_ids": ",".join(chunk),
                       }
                   )
-          assert len(include) == 90
+          assert len(include) == 180
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               handle.write(
                   "matrix="
@@ -206,7 +206,7 @@ jobs:
       max-parallel: 8
       matrix: "${{ fromJSON(needs.prepare.outputs.matrix) }}"
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 120
+    timeout-minutes: 240
     env:
       HF_HUB_OFFLINE: "1"
       TRANSFORMERS_OFFLINE: "1"
