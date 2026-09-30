@@ -672,7 +672,6 @@ class OPTIMADERemoteInvoker:
     """Call-aware OPTIMADE invoker that maps planned fields to response_fields."""
 
     projects_fields = True
-    projects_explicit_paths = True
 
     def __init__(
         self,
@@ -833,17 +832,11 @@ class OPTIMADERemoteInvoker:
                 and len(field_spec.projection_path) > 1
                 and field_spec.projection_path[0] == wire_name
             ):
-                value: Any = raw[wire_name]
-                found = True
-                for segment in field_spec.projection_path[1:]:
-                    if not isinstance(value, dict) or segment not in value:
-                        found = False
-                        break
-                    value = value[segment]
-                if not found:
-                    missing.append(field_name)
-                    continue
-                projected[field_name] = value
+                # Return the owning source object here. The generic executor validates that
+                # server-projected source shape, then applies FieldSpec.path/result_path exactly
+                # once. This preserves raw-schema validation and avoids adapter/core double
+                # projection for nested OPTIMADE fields.
+                projected[wire_name] = raw[wire_name]
             else:
                 projected[field_name] = raw[wire_name]
 
