@@ -156,6 +156,81 @@ def _fixed_k(policy: dict[str, Any]) -> int:
     return int(policy["k"])
 
 
+def _surface_contract(
+    rows: list[dict[str, Any]],
+    prereg: dict[str, Any],
+    all_strata: set[str],
+) -> tuple[list[int], int, set[str], int]:
+    dev = prereg["development_surface"]
+
+    explicit_catalogs = prereg.get("catalogs")
+    if (
+        isinstance(explicit_catalogs, dict)
+        and "endpoint_counts" in explicit_catalogs
+    ):
+        catalogs = [
+            int(value)
+            for value in explicit_catalogs["endpoint_counts"]
+        ]
+    else:
+        frozen_catalogs = dev.get("catalogs")
+        if not isinstance(frozen_catalogs, list):
+            raise ValueError(
+                "development surface must declare catalog sizes"
+            )
+        catalogs = [int(value) for value in frozen_catalogs]
+
+    expected_tasks_raw = dev.get(
+        "unique_semantic_tasks",
+        dev.get("semantic_task_count"),
+    )
+    if expected_tasks_raw is None:
+        raise ValueError(
+            "development surface must declare semantic task count"
+        )
+    expected_tasks = int(expected_tasks_raw)
+
+    explicit_languages = dev.get("languages")
+    explicit_cell = dev.get(
+        "tasks_per_stratum_language_cell"
+    )
+    if explicit_languages is not None and explicit_cell is not None:
+        return (
+            catalogs,
+            expected_tasks,
+            {str(value) for value in explicit_languages},
+            int(explicit_cell),
+        )
+
+    # Successor experiments may reuse an already-frozen DEV surface by
+    # identity instead of duplicating every shape field. Permit shape
+    # inference only when both frozen task/catalog identities are present.
+    if not (
+        isinstance(dev.get("task_rows_sha256"), str)
+        and isinstance(dev.get("catalog_family_sha256"), str)
+    ):
+        raise ValueError(
+            "implicit development shape requires frozen task/catalog identity"
+        )
+
+    languages = {
+        str(row["language"])
+        for row in rows
+    }
+    if not languages:
+        raise ValueError("development surface has no languages")
+    cell_denominator = len(all_strata) * len(languages)
+    if (
+        cell_denominator <= 0
+        or expected_tasks % cell_denominator != 0
+    ):
+        raise ValueError(
+            "cannot infer balanced development cell size"
+        )
+    expected_cell = expected_tasks // cell_denominator
+    return catalogs, expected_tasks, languages, expected_cell
+
+
 def _validate_rows(
     rows: list[dict[str, Any]],
     prereg: dict[str, Any],
@@ -165,11 +240,15 @@ def _validate_rows(
     if not rows:
         raise ValueError("no evaluation rows")
 
-    catalogs = [int(value) for value in prereg["catalogs"]["endpoint_counts"]]
     supported = set(prereg["metric_populations"]["supported_task_strata"])
     unsupported = set(prereg["metric_populations"]["unsupported_task_strata"])
     all_strata = supported | unsupported
-    languages = set(prereg["development_surface"]["languages"])
+    (
+        catalogs,
+        expected_tasks,
+        languages,
+        expected_cell,
+    ) = _surface_contract(rows, prereg, all_strata)
     max_k = max(
         int(policy.get("k", policy.get("max_k", 0)))
         for policy in (
@@ -255,9 +334,6 @@ def _validate_rows(
     if not strict_surface:
         return
 
-    expected_tasks = int(
-        prereg["development_surface"]["unique_semantic_tasks"]
-    )
     expected_rows = expected_tasks * len(catalogs)
     if len(task_metadata) != expected_tasks:
         raise ValueError(
@@ -277,9 +353,6 @@ def _validate_rows(
                 f"task {task_id} does not appear in every catalog"
             )
 
-    expected_cell = int(
-        prereg["development_surface"]["tasks_per_stratum_language_cell"]
-    )
     cell_counts: dict[tuple[str, str], int] = {}
     for _task_id, (_query, stratum, language, _required) in task_metadata.items():
         key = (stratum, language)
