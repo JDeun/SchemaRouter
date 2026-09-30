@@ -866,6 +866,29 @@ class URLSchemaLoader:
 
         return self._commit(result, replace=replace)
 
+    def commit_candidate_if_current(
+        self,
+        result: AdapterLoadResult,
+        *,
+        expected_fingerprint: str,
+        expected_version: int,
+    ) -> ToolSpec:
+        """Commit an inspected replacement only if the compared registry snapshot is still current."""
+
+        key = replace_if_current(
+            self.registry,
+            result.tool,
+            expected_fingerprint=expected_fingerprint,
+            expected_version=expected_version,
+        )
+        if result.invoker is not None:
+            self.executor.bind(
+                key,
+                result.invoker,
+                expected_fingerprint=result.tool.fingerprint,
+            )
+        return self.registry.get(key)
+
     async def inspect(
         self,
         url: str,
