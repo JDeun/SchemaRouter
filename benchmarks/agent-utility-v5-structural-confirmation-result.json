@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "experiment": "adaptive-structural-retrieval-v2-subgroup-robust",
+  "status": "independent_confirmation_passed",
+  "confirmation": {
+    "workflow_run": 36648848734,
+    "artifact_id": 11069272435,
+    "artifact_digest": "sha256:80b3f03751eae8e48e11396714663d7e67bd559b45e30a895ebde2f8df140651",
+    "run_source_sha": "573178e2c5a95ffacdec8b63a97cd98946f738c7",
+    "implementation_main_sha": "7ba402f1a564b2b6e0aeebb82942c41ba611f254",
+    "semantic_task_count": 240,
+    "task_rows_sha256": "ca953b3c67ec57d8f24210a524adcdfce7e3a110f3a01340aed36471d3c2facc",
+    "catalog_family_sha256": "499450ff0f0f18f95b3dfdc6c6caa513c31ce1d6134f46c25e57146c690b572e",
+    "catalog_sha256": {
+      "100": "205242392795353be70eed8107f79e9a5bfacbaafbd689637d125ca4dbba3777",
+      "250": "a7ba82a2bef3a8bce5dd2cabc3bb9d77ace17ed12e2ea76c636ac1ca35980821",
+      "500": "c73846362f04be27c42f92e201f3b084f4c05d03c8a18616c38f0bff19ad5e9f"
+    },
+    "exact_normalized_dev_query_overlap_count": 0,
+    "shared_dev_routes_are_canonical_only": true
+  },
+  "fixed_candidate": {
+    "id": "STRUCT-4.5-1.5",
+    "feature_flag": "structural_retrieval",
+    "product_default_enabled": false,
+    "tool_identifier_bonus": 4.5,
+    "operation_family_bonus": 1.5,
+    "schema_specificity_tiebreak": true
+  },
+  "candidate_result": {
+    "required_route_recall_at_10": {
+      "100": 1,
+      "250": 1,
+      "500": 1
+    },
+    "all_required_full_coverage_at_10": {
+      "100": 1,
+      "250": 1,
+      "500": 1
+    },
+    "all_supported_strata_required_route_recall_at_10": 1,
+    "all_supported_strata_full_coverage_at_10": 1,
+    "all_languages_required_route_recall_at_10": 1,
+    "all_languages_full_coverage_at_10": 1,
+    "typed_numeric_units_recall_at_10": 1
+  },
+  "baseline_result": {
+    "required_route_recall_at_10": {
+      "100": 0.9904761904761905,
+      "250": 0.9857142857142858,
+      "500": 0.8857142857142857
+    },
+    "all_required_full_coverage_at_10": {
+      "100": 0.9888888888888889,
+      "250": 0.9833333333333333,
+      "500": 0.8666666666666667
+    }
+  },
+  "gates": {
+    "each_catalog_required_route_recall_min": 0.97,
+    "each_catalog_full_coverage_min": 0.97,
+    "typed_numeric_units_recall_min": 1,
+    "passed": true
+  },
+  "research_integrity": {
+    "confirmation_attempts": 1,
+    "confirmation_surface_tuning_used": false,
+    "b2_outcomes_used": false,
+    "product_default_changed": false,
+    "structural_weights_frozen_before_confirmation": true
+  },
+  "claim_boundary": "Independent retrieval-generalization confirmation only. Adaptive depth, downstream-agent utility, and broad #432 held-out generalization remain separate gates."
+}
