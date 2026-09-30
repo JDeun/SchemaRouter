@@ -75,12 +75,23 @@ def aggregate(
             f"missing={missing[:3]} extra={extra[:3]}"
         )
 
-    platform_shapes = {
-        json.dumps(identity.get("platform", {}), sort_keys=True)
+    runtime_signatures = {
+        (
+            str(identity.get("candidate_model")),
+            str(identity.get("model_revision")),
+            str(identity.get("dtype")),
+            str(identity.get("device")),
+            str(identity.get("tool_template")),
+            str(identity.get("attention_implementation")),
+            str(identity.get("platform", {}).get("machine")),
+            str(identity.get("platform", {}).get("python")),
+            str(identity.get("platform", {}).get("torch")),
+            str(identity.get("platform", {}).get("transformers")),
+        )
         for identity in runtime_identities
     }
-    if len(platform_shapes) != 1:
-        raise ValueError("qualification shards used inconsistent runtime platforms")
+    if len(runtime_signatures) != 1:
+        raise ValueError("qualification shards used inconsistent frozen runtimes")
 
     evidence: dict[str, Any] = {
         "schema_version": 1,
