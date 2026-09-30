@@ -139,6 +139,13 @@ input surface, reclassify a destructive operation as read-only, or relax the
 validation of a response the source declared. A refused amendment registers
 nothing and leaves the binding untouched.
 
+`metadata` is refused too, on either the tool or an endpoint, even though it
+looks like free-form annotation: validation can derive requirements from it
+(`endpoint.metadata["output_required"]` shapes the synthesized output schema
+when a source published no `output_schema`), so a metadata-only amendment
+could otherwise change what a response must contain without touching a listed
+aspect or the fingerprint.
+
 Fingerprints still change on amendment, so stale-binding and stale-plan
 protection are unchanged.
 

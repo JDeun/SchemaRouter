@@ -131,21 +131,28 @@ from schemarouter import FieldSpec
 tool = router.registry.get(key)
 endpoint = tool.endpoint("lookup")
 
+amended_endpoint = endpoint.model_copy(
+    update={
+        "output_fields": [
+            FieldSpec(
+                name="band_gap",
+                semantic_id="materials.band_gap",
+                unit="eV",
+                qualifiers={"method": "measured"},
+            ),
+        ]
+    }
+)
+
+# The endpoint set is frozen: amend the one endpoint you're declaring for and
+# keep every other endpoint on the tool as-is, or amend_capability refuses
+# with "endpoints removed" for any tool with more than one endpoint — which is
+# the normal case for an imported MCP server.
 amended = tool.model_copy(
     update={
         "endpoints": [
-            endpoint.model_copy(
-                update={
-                    "output_fields": [
-                        FieldSpec(
-                            name="band_gap",
-                            semantic_id="materials.band_gap",
-                            unit="eV",
-                            qualifiers={"method": "measured"},
-                        ),
-                    ]
-                }
-            )
+            amended_endpoint if candidate.name == endpoint.name else candidate
+            for candidate in tool.endpoints
         ]
     }
 )
@@ -181,3 +188,17 @@ caller receives and which routes are reachable:
   availability, which the executor enforces as a hard gate. An amendment can
   unblock an evidence-gated route by declaration alone, with no change to
   what the underlying source actually returns.
+- **Access health.** Access-availability cooldowns (`mark_access_unavailable`)
+  are keyed by tool fingerprint. An amendment changes the fingerprint, so it
+  clears any active cooldown for the capability. `add_tool(..., replace=True)`
+  also clears cooldowns this way, but leaves the capability unexecutable until
+  it is rebound; amendment is the operation that clears a cooldown while
+  keeping the capability executable through the re-stamped binding.
+- **Framework bridge tools must be rebuilt.** `to_langchain_tool` /
+  `to_langchain_tools` and the LlamaIndex bridge capture the tool/endpoint
+  fingerprint and output field list when the bridge tool is built. Every
+  bridge tool built before an amendment raises `SchemaDriftError` on every
+  call afterward — correct fail-closed behaviour, but it means you must
+  rebuild bridge tools from the amended router, not just re-amend the
+  capability. `to_langgraph_node` is unaffected, since it calls
+  `router.invoke()` per invocation instead of capturing fingerprints upfront.

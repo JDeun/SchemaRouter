@@ -59,6 +59,40 @@ def _endpoint(tool: ToolSpec) -> EndpointSpec:
     return tool.endpoints[0]
 
 
+def _output_required_tool() -> ToolSpec:
+    """An MCP-style endpoint with no `output_schema`: like most imported MCP
+    servers, its validation schema is synthesized from `output_fields` plus
+    `metadata["output_required"]` (`validation._synthesized_output_schema`,
+    validation.py:31-46), not from a declared `output_schema`.
+    """
+    return ToolSpec(
+        name="materials",
+        namespace="lab",
+        provider="internal",
+        access_mode="python",
+        source_type="calculated",
+        endpoints=[
+            EndpointSpec(
+                name="lookup",
+                read_only=True,
+                destructive=False,
+                parameters=[
+                    ParameterSpec(
+                        name="material_id",
+                        required=True,
+                        json_schema={"type": "string"},
+                    )
+                ],
+                output_fields=[
+                    FieldSpec(name="band_gap", json_schema={"type": "number"}),
+                    FieldSpec(name="note", json_schema={"type": "string"}),
+                ],
+                metadata={"output_required": ["band_gap", "note"]},
+            )
+        ],
+    )
+
+
 # --- accepted ---------------------------------------------------------------
 
 
@@ -512,3 +546,211 @@ def test_the_amendment_path_is_not_reachable_from_model_facing_code():
         text = (root / name).read_text(encoding="utf-8")
         assert "amend_capability" not in text, name
         assert "restamp_binding" not in text, name
+
+
+# --- refused: metadata (review finding 1) -----------------------------------
+
+
+def test_a_metadata_only_change_is_refused():
+    # `metadata` must be compared like any other unlisted aspect, not
+    # special-cased out the way the fingerprint definitions are.
+    current = _output_required_tool()
+    endpoint = _endpoint(current)
+    amended = _with_endpoint(current, endpoint.model_copy(update={"metadata": {}}))
+    with pytest.raises(ContractAmendmentError):
+        validate_amendment(current, amended)
+
+
+def test_an_amendment_that_leaves_metadata_untouched_still_succeeds():
+    # The fix must freeze metadata specifically, not forbid amendment outright.
+    current = _output_required_tool()
+    endpoint = _endpoint(current)
+    amended = _with_endpoint(
+        current,
+        endpoint.model_copy(
+            update={
+                "output_fields": [
+                    field.model_copy(update={"semantic_id": f"materials.{field.name}"})
+                    for field in endpoint.output_fields
+                ]
+            }
+        ),
+    )
+    validate_amendment(current, amended)
+    assert amended.endpoints[0].metadata == current.endpoints[0].metadata
+
+
+@pytest.mark.asyncio
+async def test_a_metadata_only_amendment_cannot_relax_a_required_output_field():
+    """Reviewer's reproduction (finding 1).
+
+    An endpoint with an empty `output_schema` and declared `output_fields`
+    derives its validation schema from `metadata["output_required"]`
+    (`validation._synthesized_output_schema`, validation.py:31-46) — the
+    normal MCP-server-without-`outputSchema` case `amend_capability` exists to
+    serve. Before the fix, `metadata` was excluded from both amendment
+    comparisons (amendment.py:38 and 95-96), so amending only `metadata={}`
+    passed `validate_amendment` untouched, left both fingerprints unchanged,
+    and let the same pre-amendment binding return a response missing a field
+    the caller had declared required.
+    """
+    from schemarouter import SchemaRouter, SchemaValidationError, ToolCall
+
+    router = SchemaRouter()
+    key = router.add_tool(_output_required_tool())
+    router.executor.bind(key, lambda endpoint_name, arguments: {"note": "hi"})
+
+    tool = router.registry.get(key)
+    endpoint = tool.endpoints[0]
+    call = ToolCall(
+        tool=key,
+        endpoint="lookup",
+        arguments={"material_id": "M1"},
+        fields=["band_gap", "note"],
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+
+    # Before any amendment: a response missing the required field is rejected.
+    with pytest.raises(SchemaValidationError):
+        await router.executor.execute_call(call)
+
+    amended = tool.model_copy(
+        update={"endpoints": [endpoint.model_copy(update={"metadata": {}})]}
+    )
+
+    with pytest.raises(ContractAmendmentError):
+        router.amend_capability(key, amended)
+
+    # Refused: nothing changed, and the same call still rejects the same
+    # incomplete response through the untouched binding.
+    assert router.registry.get(key).fingerprint == tool.fingerprint
+    with pytest.raises(SchemaValidationError):
+        await router.executor.execute_call(call)
+
+
+# --- refused: invalid shape (review finding 3, minor) -----------------------
+
+
+def test_a_dict_in_output_fields_raises_contract_amendment_error_not_attribute_error():
+    # `model_copy(update=...)` — the documented amendment idiom — does not
+    # validate, so `output_fields` can end up holding plain dicts instead of
+    # `FieldSpec` instances. That must fail closed with a named problem, not
+    # a bare AttributeError from `field.name` deep inside validation.
+    current = _tool()
+    endpoint = _endpoint(current)
+    amended = _with_endpoint(
+        endpoint=endpoint.model_copy(update={"output_fields": [{"name": "band_gap"}]}),
+        tool=current,
+    )
+    with pytest.raises(ContractAmendmentError, match="FieldSpec"):
+        validate_amendment(current, amended)
+
+
+# --- restamp signal (review finding 3, minor) --------------------------------
+
+
+def test_amend_capability_signals_when_a_bound_capability_cannot_be_restamped(monkeypatch):
+    # runtime.py used to discard restamp_binding's return value: a race left
+    # the binding stale with no signal until BindingDriftError at execution.
+    # amend_capability must surface that immediately instead.
+    from schemarouter import BindingDriftError
+
+    router, key = _bound_router()
+    tool = router.registry.get(key)
+    endpoint = tool.endpoints[0]
+    amended = tool.model_copy(
+        update={"endpoints": [endpoint.model_copy(update={"description": "annotated"})]}
+    )
+
+    monkeypatch.setattr(router.executor, "restamp_binding", lambda *args, **kwargs: False)
+
+    with pytest.raises(BindingDriftError):
+        router.amend_capability(key, amended)
+
+    # The validated amendment is still registered; only the binding is stale.
+    assert router.registry.get(key).fingerprint == amended.fingerprint
+
+
+def test_amend_capability_does_not_signal_when_there_was_no_binding_to_restamp():
+    # An unbound capability has nothing to restamp; restamp_binding's False
+    # there is expected, not a failure, and must not raise.
+    router, key = _declaring_router()
+    from schemarouter import FieldSpec
+
+    tool = router.registry.get(key)
+    endpoint = tool.endpoints[0]
+    amended = tool.model_copy(
+        update={
+            "endpoints": [
+                endpoint.model_copy(
+                    update={"output_fields": [FieldSpec(name="band_gap")]}
+                )
+            ]
+        }
+    )
+
+    assert not router.executor.bound_keys()
+    assert router.amend_capability(key, amended) == key
+
+
+# --- docs example regression (review finding 2) ------------------------------
+
+
+def test_amending_one_endpoint_of_several_preserves_the_others():
+    # docs/guides/mcp.md's worked example: MCP import produces one endpoint
+    # per advertised tool, so amending must replace only the targeted
+    # endpoint and keep every other endpoint on the tool in place, or any
+    # multi-endpoint tool hits "endpoints removed: [...] (the endpoint set is
+    # frozen)".
+    from schemarouter import FieldSpec, SchemaRouter
+
+    router = SchemaRouter()
+    key = router.add_tool(
+        ToolSpec(
+            name="materials",
+            provider="internal",
+            access_mode="python",
+            endpoints=[
+                EndpointSpec(
+                    name="lookup",
+                    read_only=True,
+                    destructive=False,
+                    parameters=[ParameterSpec(name="material_id", required=True)],
+                ),
+                EndpointSpec(
+                    name="history",
+                    description="Historical record",
+                    read_only=True,
+                    destructive=False,
+                    parameters=[ParameterSpec(name="material_id", required=True)],
+                ),
+            ],
+        )
+    )
+
+    tool = router.registry.get(key)
+    endpoint = tool.endpoint("lookup")
+
+    amended_endpoint = endpoint.model_copy(
+        update={
+            "output_fields": [
+                FieldSpec(name="band_gap", semantic_id="materials.band_gap", unit="eV"),
+            ]
+        }
+    )
+    amended = tool.model_copy(
+        update={
+            "endpoints": [
+                amended_endpoint if candidate.name == endpoint.name else candidate
+                for candidate in tool.endpoints
+            ]
+        }
+    )
+
+    assert router.amend_capability(key, amended) == key
+
+    result = router.registry.get(key)
+    assert [endpoint.name for endpoint in result.endpoints] == ["lookup", "history"]
+    assert [field.name for field in result.endpoint("lookup").output_fields] == ["band_gap"]
+    assert result.endpoint("history").description == "Historical record"
