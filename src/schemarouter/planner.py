@@ -869,7 +869,7 @@ class SchemaPlanner:
     def _candidate_sort_key(
         self,
         candidate: _Candidate,
-    ) -> tuple[float, float, bool, bool, bool, str, str]:
+    ) -> tuple[float, bool, bool, float, bool, str, str]:
         specificity = 0.0
         if self.structural_retrieval:
             route_id = (
