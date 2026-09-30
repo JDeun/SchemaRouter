@@ -3,8 +3,8 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from schemarouter.adapters import tool_from_odata_metadata
 from schemarouter import ExecutionPlan, SchemaRouter, ToolCall
+from schemarouter.adapters import tool_from_odata_metadata
 
 
 METADATA = b"""<?xml version="1.0" encoding="utf-8"?>
