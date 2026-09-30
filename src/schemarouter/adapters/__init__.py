@@ -22,6 +22,7 @@ from .mcp import (
     tool_from_mcp,
 )
 from .openapi import OpenAPIRemoteInvoker, resolve_openapi_base_url, tool_from_openapi
+from .openrpc import OpenRPCRemoteInvoker, OpenRPCSourceAdapter, tool_from_openrpc
 from .optimade import OPTIMADERemoteInvoker, OPTIMADESourceAdapter
 from .plugins import (
     ADAPTER_ENTRY_POINT_GROUP,
@@ -53,6 +54,8 @@ __all__ = [
     "OpenAPICompatibilityIssue",
     "OpenAPICompatibilityReport",
     "OpenAPIRemoteInvoker",
+    "OpenRPCRemoteInvoker",
+    "OpenRPCSourceAdapter",
     "PythonCallableInvoker",
     "SourceAdapter",
     "analyze_openapi_compatibility",
@@ -68,4 +71,5 @@ __all__ = [
     "tool_from_graphql_introspection",
     "tool_from_mcp",
     "tool_from_openapi",
+    "tool_from_openrpc",
 ]

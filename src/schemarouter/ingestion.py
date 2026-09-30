@@ -21,6 +21,7 @@ from .adapters.openapi import (
     same_origin,
     tool_from_openapi,
 )
+from .adapters.openrpc import OpenRPCSourceAdapter
 from .adapters.optimade import OPTIMADESourceAdapter
 from .errors import SchemaSourceError, UnsupportedSchemaSourceError
 from .executor import RegistryExecutor
@@ -793,6 +794,7 @@ def default_adapter_registry() -> AdapterRegistry:
     return AdapterRegistry(
         [
             OpenAPISourceAdapter(),
+            OpenRPCSourceAdapter(),
             OPTIMADESourceAdapter(),
             MCPSourceAdapter(),
             GraphQLSourceAdapter(),
