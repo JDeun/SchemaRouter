@@ -29,12 +29,18 @@ def _fail(message: str) -> None:
     raise SystemExit(f"corpus validation failed: {message}")
 
 
-def validate(corpus: dict[str, Any]) -> dict[str, Any]:
+def validate(
+    corpus: dict[str, Any],
+    *,
+    expected_slots: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     tasks = corpus.get("tasks")
     if not isinstance(tasks, list) or not tasks:
         _fail("no tasks")
 
-    expected_slots = projection_authoring_slots()
+    expected_slots = (
+        projection_authoring_slots() if expected_slots is None else expected_slots
+    )
     if len(tasks) != len(expected_slots):
         _fail(f"task count drifted: expected={len(expected_slots)} actual={len(tasks)}")
     if sha256_json(expected_slots) != corpus.get("authoring_slots_sha256"):

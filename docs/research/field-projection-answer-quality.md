@@ -173,6 +173,12 @@ Wanting a design change out of the screen's results means closing this
 experiment as consumed and preregistering a successor with its own
 query-disjoint surface, not amending this one.
 
+The development screen returned a null result on run 36682589574: the frozen B1
+agent never called a tool, so there was nothing for projection to affect. It is
+consumed. Its replacement, with an instrument chosen by a frozen capability gate
+and its own query-disjoint surface, is the
+[successor screen](successor-screen.md). The confirmation arm is unaffected.
+
 ## Independence
 
 - fresh disjoint task surface;
