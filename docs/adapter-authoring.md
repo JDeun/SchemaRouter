@@ -145,6 +145,37 @@ projection, but the full input/output schema should remain available for runtime
 
 Unsupported constructs should be preserved as metadata or rejected explicitly rather than guessed.
 
+### Field-contract conformance
+
+Every adapter that exposes planner-visible fields should preserve the same `FieldSpec` contract,
+even when its wire protocol differs.
+
+For each declared field, preserve what the source actually provides:
+
+- `json_schema` for datatype/shape;
+- `description` and conservative aliases;
+- `path` for the validated provider/source location;
+- `result_path` when the downstream projection key differs;
+- `unit` only when the source contract explicitly declares one;
+- `identifier` only when the source identity semantics are known;
+- `source_type` when the adapter can state it reliably.
+
+Nested object fields may be exposed as additional planner-visible fields only when the adapter can
+project them without corrupting record alignment. Parent fields may remain available at the same
+time, so nested fields should use disjoint `result_path` values.
+
+Array-item traversal must not be guessed. An adapter should keep an array field opaque until it has
+an explicit record-preserving item-projection rule.
+
+Semantic IDs, unit-normalization dimensions/conversions, qualifiers, licences, and provenance are
+trusted contracts. Import them only from an authoritative structured source or attach them through
+trusted local enrichment such as `amend_capability()`. Never derive them from arbitrary remote
+descriptions or from a model.
+
+Third-party adapters are responsible for this fidelity. SchemaRouter validates the returned
+`ToolSpec`, but it does not silently crawl or rewrite a plugin's private payload schema after the
+adapter returns it.
+
 ## Custom registries
 
 Applications can provide any structural implementation of `ToolRegistry`:
@@ -177,6 +208,11 @@ New adapters should test:
 - credential separation;
 - mutation/destructive policy;
 - selected-field propagation when the protocol supports server-side projection;
+- nested object path/result-path fidelity when nested fields are exposed;
+- source-unit preservation without inferred conversion factors;
+- parent-field queries not implicitly selecting every nested descendant;
+- array-item behavior remaining opaque unless record-preserving traversal is explicitly supported;
+- trusted enrichment of semantic IDs, normalization/dimension, qualifiers, source type and licence;
 - transport-specific origin/redirect behavior where relevant.
 
 
