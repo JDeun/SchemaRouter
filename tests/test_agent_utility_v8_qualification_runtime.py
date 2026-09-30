@@ -177,7 +177,10 @@ def test_workflow_downloads_qualification_corpus_at_repo_root():
     ]
     assert qualification_blocks
     assert all("\n          path: .\n" in block for block in qualification_blocks)
-    assert all(\n        "\\n          path: artifacts/qualification\\n" not in block\n        for block in qualification_blocks\n    )
+    assert all(
+        "\n          path: artifacts/qualification\n" not in block
+        for block in qualification_blocks
+    )
 
 
 def test_workflow_launch_is_armed_only_by_the_explicit_trigger_file():
