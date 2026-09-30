@@ -940,6 +940,7 @@ class URLSchemaLoader:
 
     def _commit(self, result: AdapterLoadResult, *, replace: bool) -> ToolSpec:
         if replace:
+            expected_version = self.registry.version
             try:
                 current = self.registry.get(result.tool.key)
             except KeyError:
@@ -949,6 +950,7 @@ class URLSchemaLoader:
                     self.registry,
                     result.tool,
                     expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
                 )
         else:
             key = self.registry.register(result.tool)
