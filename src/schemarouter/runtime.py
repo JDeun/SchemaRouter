@@ -320,6 +320,7 @@ class SchemaRouter:
         at execution time. The amendment itself is still registered; call
         `RegistryExecutor.bind()` again to recover.
         """
+        expected_version = self.registry.version
         current = self.registry.get(tool_key)
         validate_amendment(current, amended)
         was_bound = tool_key in self.executor.bound_keys()
@@ -327,6 +328,7 @@ class SchemaRouter:
             self.registry,
             amended,
             expected_fingerprint=current.fingerprint,
+            expected_version=expected_version,
         )
         restamped = self.executor.restamp_binding(key, amended.fingerprint)
         if was_bound and not restamped:
@@ -399,6 +401,7 @@ class SchemaRouter:
         )
         invoker = PythonCallableInvoker(function)
         if replace:
+            expected_version = self.registry.version
             try:
                 current = self.registry.get(tool.key)
             except KeyError:
@@ -408,6 +411,7 @@ class SchemaRouter:
                     self.registry,
                     tool,
                     expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
                 )
         else:
             key = self.registry.register(tool)
@@ -442,6 +446,7 @@ class SchemaRouter:
         trusted_headers: dict[str, str] | None = None,
         timeout: float = 20.0,
     ) -> None:
+        expected_version = self.registry.version
         tool = self.registry.get(tool_key)
         if tool.execution_metadata.get("adapter") != "openapi":
             raise RegistrationError(
@@ -475,6 +480,7 @@ class SchemaRouter:
             self.registry,
             updated,
             expected_fingerprint=tool.fingerprint,
+            expected_version=expected_version,
         )
         self.executor.bind(
             tool_key,
@@ -544,6 +550,7 @@ class SchemaRouter:
         except ValueError as exc:
             raise ProposalApprovalError("invalid proposal execution binding") from exc
         if replace:
+            expected_version = self.registry.version
             try:
                 current = self.registry.get(tool.key)
             except KeyError:
@@ -553,6 +560,7 @@ class SchemaRouter:
                     self.registry,
                     tool,
                     expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
                 )
         else:
             key = self.registry.register(tool)
