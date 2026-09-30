@@ -422,6 +422,67 @@ class SchemaRouter:
         )
         return key
 
+    def add_http_tool(
+        self,
+        tool: ToolSpec,
+        *,
+        base_url: str,
+        provider: str | None = None,
+        access_mode: str | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        timeout: float = 20.0,
+        max_response_bytes: int = 10 * 1024 * 1024,
+        replace: bool = False,
+    ) -> str:
+        """Register and bind a trusted declarative HTTP/JSON ToolSpec.
+
+        The supplied ToolSpec is the machine-readable manifest. Authentication remains only in
+        trusted_headers and is never copied into model-visible schema metadata.
+        """
+
+        from .adapters.http_json import (
+            build_http_json_invoker,
+            prepare_http_json_tool,
+        )
+
+        prepared = prepare_http_json_tool(
+            tool,
+            base_url=base_url,
+            provider=provider,
+            access_mode=access_mode,
+        )
+        invoker = build_http_json_invoker(
+            prepared,
+            base_url=base_url,
+            trusted_headers=trusted_headers,
+            timeout=timeout,
+            max_response_bytes=max_response_bytes,
+            http_client=self.loader.http_client,
+        )
+
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(prepared.key)
+            except KeyError:
+                key = self.registry.register(prepared)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    prepared,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(prepared)
+
+        self.executor.bind(
+            key,
+            invoker,
+            expected_fingerprint=prepared.fingerprint,
+        )
+        return key
+
     async def inspect_url(
         self,
         url: str,
