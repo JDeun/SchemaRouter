@@ -4,7 +4,15 @@ from dataclasses import dataclass
 
 import pytest
 
-from schemarouter import EndpointSpec, FieldSpec, PlanRequest, SchemaRouter, ToolCall, ToolSpec
+from schemarouter import (
+    EndpointSpec,
+    FieldSpec,
+    PlanRequest,
+    RegistrationError,
+    SchemaRouter,
+    ToolCall,
+    ToolSpec,
+)
 
 
 def _finance_tool() -> ToolSpec:
@@ -121,5 +129,5 @@ def test_add_bound_tool_rejects_duplicate_without_replace() -> None:
     tool = _finance_tool()
     router.add_bound_tool(tool, SDKInvoker())
 
-    with pytest.raises(Exception):
+    with pytest.raises(RegistrationError, match="already registered"):
         router.add_bound_tool(tool, SDKInvoker())
