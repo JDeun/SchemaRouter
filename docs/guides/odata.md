@@ -74,6 +74,11 @@ Common `Edm.*` primitive types are mapped to JSON Schema:
 
 Entity keys are marked as identifiers. Complex types become nested object schemas.
 
+Structured CSDL measure annotations are preserved when declared. In particular,
+`Org.OData.Measures.V1.Unit` and `Org.OData.Measures.V1.ISOCurrency` values become
+`FieldSpec.unit`. SchemaRouter does not infer dimensions or conversion factors from those strings;
+trusted enrichment remains responsible for normalization contracts.
+
 ## Trust and security
 
 OData metadata describes data shape. It does not grant write authority.
