@@ -1,0 +1,6 @@
+{
+  "issue": 510,
+  "launch": "runtime-qualification-v1",
+  "policy": "run once when this trigger reaches main",
+  "candidates": "frozen ordered roster; later candidate only after measured failure"
+}
