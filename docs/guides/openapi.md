@@ -297,6 +297,12 @@ descend through arrays of objects: a schema such as `data[].band_gap` keeps `dat
 planner-visible field until record-preserving array-item projection semantics are implemented.
 SchemaRouter never guesses array wildcard behavior from payloads.
 
+Nested discovery also preserves the existing typed-contract split. Provider-declared JSON Schema,
+description, and source unit metadata are imported when available. Semantic IDs, qualifiers,
+canonical-unit normalization, source type, and licence may be attached afterward through trusted
+`amend_capability()`. Conversion factors and semantic provenance are never inferred from unit
+strings or arbitrary remote documentation.
+
 ## Current common subset
 
 Supported paths include:
