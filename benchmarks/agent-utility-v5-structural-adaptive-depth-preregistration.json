@@ -204,5 +204,25 @@
     "bits_over_random_used_as_inference_signal": false,
     "fixed_k_definition": "BoR_any = log2(P_obs_any_required / mean(P_rand_any_required)); P_rand_any_required = 1 - C(N-R,K)/C(N,K) for each supported row with catalog size N and R required routes",
     "adaptive_policy_bor_reported_as_post_selection_diagnostic": true
+  },
+  "catalogs": {
+    "endpoint_counts": [
+      100,
+      250,
+      500
+    ],
+    "nested": true,
+    "top10_ranked_list_required": true,
+    "exact_hashes_required_before_scoring": true
+  },
+  "preregistration_correction": {
+    "stage": "before_any_structural_adaptive_dev_policy_scoring",
+    "change": "add evaluator-compatible top-level catalogs metadata mirroring the already-frozen development_surface catalog sizes",
+    "policy_thresholds_changed": false,
+    "policy_logic_changed": false,
+    "retriever_changed": false,
+    "task_or_catalog_content_changed": false,
+    "prior_attempts_scored": false,
+    "reason": "shared adaptive evaluator reads catalogs.endpoint_counts"
   }
 }
