@@ -3330,12 +3330,26 @@ class SchemaPlanner:
                 ".".join(field.projection_path),
             ]
             norms = {_normalize(name) for name in names if name}
+
+            # Nested source paths are planner-visible by their full dotted identity for exact
+            # requests, but parent-path tokens must not make every descendant look relevant.
+            # Lexical/substring matching therefore uses semantic/leaf aliases for nested fields.
+            lexical_names = names
+            if len(field.projection_path) > 1:
+                leaf = field.projection_path[-1]
+                lexical_names = [
+                    field.semantic_id or "",
+                    *field.aliases,
+                    leaf,
+                ]
+
             exact = bool(norms & concept_norms)
-            lexical = any(query_tokens & _tokens(name) for name in names)
+            lexical = any(query_tokens & _tokens(name) for name in lexical_names if name)
+            lexical_norms = {_normalize(name) for name in lexical_names if name}
             substring = any(
                 _semantic_substring_match(concept, norm)
                 for concept in concept_norms
-                for norm in norms
+                for norm in lexical_norms
             )
             if exact:
                 score += 6.0
