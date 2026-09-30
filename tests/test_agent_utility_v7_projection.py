@@ -429,6 +429,166 @@ def test_aggregate_requires_every_condition():
         aggregate([_shard([_row("P0000", "RAW-FULL", 100, 0.5, 400)])])
 
 
+# --- conveyor wiring --------------------------------------------------------
+
+
+class _ConveyorAPI:
+    """Minimal stub of the conveyor's GitHub surface."""
+
+    def __init__(self, runs=None, b2_status=("queued", None)):
+        self.runs_by_workflow = dict(runs or {})
+        self.dispatched: list[tuple[str, dict]] = []
+        self._b2_status = b2_status
+
+    def workflow_runs(self, workflow_file):
+        return self.runs_by_workflow.get(workflow_file, [])
+
+    def dispatch(self, workflow_file, *, ref, inputs=None):
+        del ref
+        self.dispatched.append((workflow_file, dict(inputs or {})))
+
+    def run(self, run_id):
+        del run_id
+        status, conclusion = self._b2_status
+        return {
+            "id": 1,
+            "status": status,
+            "conclusion": conclusion,
+            "display_title": "b2",
+            "created_at": "2026-09-30T00:00:00Z",
+            "html_url": "",
+            "run_attempt": 1,
+            "head_sha": "a" * 40,
+        }
+
+    def ref_sha(self, ref):
+        del ref
+        return "b" * 40
+
+
+def _run_row(run_id: int, title: str, conclusion: str | None) -> dict:
+    return {
+        "id": run_id,
+        "status": "completed" if conclusion else "in_progress",
+        "conclusion": conclusion,
+        "display_title": title,
+        "created_at": "2026-09-30T00:00:00Z",
+        "html_url": "",
+        "run_attempt": 1,
+        "head_sha": "c" * 40,
+    }
+
+
+def test_the_dev_screen_is_dispatched_even_while_the_chain_waits_on_b2():
+    # The development screen consumes no upstream artifact. If it were advanced
+    # after the B2 gate, every early return would starve it indefinitely.
+    from scripts.research_014_conveyor import (
+        PROJECTION_DEV_WORKFLOW,
+        run_controller,
+    )
+
+    api = _ConveyorAPI(b2_status=("queued", None))
+    result = run_controller(api, ref="main", execute=True)
+
+    assert result["state"] == "waiting_b2"
+    assert [name for name, _ in api.dispatched] == [PROJECTION_DEV_WORKFLOW]
+    assert "dispatch_projection_dev" in result["actions"]
+
+
+def test_the_dev_screen_is_dispatched_once_per_source_revision():
+    from scripts.research_014_conveyor import (
+        DOWNSTREAM_IMPLEMENTATION_SHA,
+        PROJECTION_DEV_WORKFLOW,
+        run_controller,
+    )
+
+    title = f"Research 0.14 Field Projection DEV source={DOWNSTREAM_IMPLEMENTATION_SHA}"
+    api = _ConveyorAPI(
+        runs={PROJECTION_DEV_WORKFLOW: [_run_row(10, title, None)]},
+        b2_status=("queued", None),
+    )
+    run_controller(api, ref="main", execute=True)
+    assert api.dispatched == []
+
+
+def test_a_failed_dev_screen_is_retried_up_to_the_infrastructure_bound():
+    from scripts.research_014_conveyor import (
+        DOWNSTREAM_IMPLEMENTATION_SHA,
+        MAX_INFRA_ATTEMPTS,
+        PROJECTION_DEV_WORKFLOW,
+        advance_projection_dev,
+    )
+
+    title = f"Research 0.14 Field Projection DEV source={DOWNSTREAM_IMPLEMENTATION_SHA}"
+    failures = [_run_row(20 + i, title, "failure") for i in range(MAX_INFRA_ATTEMPTS - 1)]
+    api = _ConveyorAPI(runs={PROJECTION_DEV_WORKFLOW: failures})
+    actions: list[str] = []
+    advance_projection_dev(api, ref="main", execute=True, actions=actions)
+    assert len(api.dispatched) == 1
+
+    exhausted = [_run_row(30 + i, title, "failure") for i in range(MAX_INFRA_ATTEMPTS)]
+    api = _ConveyorAPI(runs={PROJECTION_DEV_WORKFLOW: exhausted})
+    actions = []
+    advance_projection_dev(api, ref="main", execute=True, actions=actions)
+    assert api.dispatched == []
+    assert actions == ["stopped_projection_dev_infrastructure_failure_after_retries"]
+
+
+def test_the_confirmation_arm_is_keyed_on_the_terminal_digest():
+    from scripts.research_014_conveyor import (
+        PROJECTION_WORKFLOW,
+        advance_projection_confirmation,
+    )
+
+    api = _ConveyorAPI()
+    actions: list[str] = []
+    advance_projection_confirmation(
+        api,
+        ref="main",
+        execute=True,
+        actions=actions,
+        terminal_digest="sha256:terminal",
+        source_sha="e" * 40,
+    )
+    assert api.dispatched == [
+        (
+            PROJECTION_WORKFLOW,
+            {"evidence_digest": "sha256:terminal", "source_sha": "e" * 40},
+        )
+    ]
+
+    # A second controller pass over the same terminal evidence must not
+    # re-dispatch; duplicate stage dispatch for one identity is forbidden.
+    title = "Research 0.14 Field Projection sha256:terminal source=" + "e" * 40
+    api = _ConveyorAPI(runs={PROJECTION_WORKFLOW: [_run_row(40, title, "success")]})
+    actions = []
+    advance_projection_confirmation(
+        api,
+        ref="main",
+        execute=True,
+        actions=actions,
+        terminal_digest="sha256:terminal",
+        source_sha="e" * 40,
+    )
+    assert api.dispatched == []
+
+
+def test_the_confirmation_workflow_does_not_compare_a_terminal_digest_to_b2():
+    # The controller now passes the combined terminal digest. Comparing it to a
+    # single stage artifact digest would fail every time, so that equality
+    # assertion must not come back.
+    from pathlib import Path
+
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github"
+        / "workflows"
+        / "research-0.14-field-projection.yml"
+    ).read_text(encoding="utf-8")
+    assert 'matches[0]["digest"] == os.environ["EXPECTED_DIGEST"]' not in workflow
+    assert 'assert run["conclusion"] == "success"' in workflow
+
+
 def test_the_default_harness_path_is_unchanged():
     # Without the new keywords the episode must behave exactly as before: the
     # condition doubles as the routing condition and observations are untouched.

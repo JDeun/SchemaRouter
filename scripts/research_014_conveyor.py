@@ -33,6 +33,14 @@ HELDOUT_WORKFLOW = "research-0.14-heldout-generalization.yml"
 HELDOUT_ARTIFACT_PREFIX = "heldout-generalization-canonical-"
 FINAL_WORKFLOW = "research-0.14-final-answer.yml"
 FINAL_ARTIFACT_PREFIX = "final-answer-canonical-"
+# #506 output-field projection. The development screen has no upstream
+# dependency, so it is advanced before the B2 gate and never waits on the chain.
+# The confirmation arm is appended after terminal evidence so that adding it
+# cannot perturb any stage of the already-frozen DAG.
+PROJECTION_DEV_WORKFLOW = "research-0.14-field-projection-dev.yml"
+PROJECTION_DEV_ARTIFACT_PREFIX = "projection-dev-screen-"
+PROJECTION_WORKFLOW = "research-0.14-field-projection.yml"
+PROJECTION_ARTIFACT_PREFIX = "projection-canonical-"
 TRACKING_ISSUE = 500
 # Exact scientific implementation frozen when the conveyor landed.
 # Workflow-wrapper hotfixes must not alter downstream benchmark semantics.
@@ -345,6 +353,93 @@ def _status_line(label: str, run: StageRun | None) -> str:
     )
 
 
+def advance_projection_dev(
+    api: GitHubAPI,
+    *,
+    ref: str,
+    execute: bool,
+    actions: list[str],
+) -> None:
+    """Advance the #506 development screen.
+
+    It consumes no upstream artifact, so it is deliberately advanced before the
+    B2 gate: queuing it behind the frozen chain would delay development evidence
+    for no scientific reason. Identity is the frozen implementation SHA, so the
+    screen is dispatched exactly once per source revision.
+    """
+    marker = f"source={DOWNSTREAM_IMPLEMENTATION_SHA}"
+    runs = find_marked_runs(api, PROJECTION_DEV_WORKFLOW, marker)
+    if not runs:
+        if execute:
+            api.dispatch(
+                PROJECTION_DEV_WORKFLOW,
+                ref=ref,
+                inputs={"source_sha": DOWNSTREAM_IMPLEMENTATION_SHA},
+            )
+        actions.append("dispatch_projection_dev")
+        return
+
+    latest = runs[0]
+    if not terminal_failure(latest):
+        return
+
+    failed = [run for run in runs if terminal_failure(run)]
+    if len(failed) >= MAX_INFRA_ATTEMPTS:
+        actions.append("stopped_projection_dev_infrastructure_failure_after_retries")
+        return
+
+    if execute:
+        api.dispatch(
+            PROJECTION_DEV_WORKFLOW,
+            ref=ref,
+            inputs={"source_sha": DOWNSTREAM_IMPLEMENTATION_SHA},
+        )
+    actions.append(
+        "recover_dispatch_projection_dev_after_failure:"
+        f"prior_run={latest.id}:attempt={len(failed) + 1}"
+    )
+
+
+def advance_projection_confirmation(
+    api: GitHubAPI,
+    *,
+    ref: str,
+    execute: bool,
+    actions: list[str],
+    terminal_digest: str,
+    source_sha: str,
+) -> None:
+    """Advance the #506 confirmation arm after terminal evidence.
+
+    Appending it here rather than inserting it into the chain is deliberate: the
+    DAG was preregistered before downstream corpus generation, so no existing
+    stage's inputs, ordering, or frozen source may move.
+    """
+    inputs = {"evidence_digest": terminal_digest, "source_sha": source_sha}
+    runs = find_marked_runs(api, PROJECTION_WORKFLOW, terminal_digest)
+    if not runs:
+        if execute:
+            api.dispatch(PROJECTION_WORKFLOW, ref=ref, inputs=inputs)
+        actions.append("dispatch_projection_confirmation")
+        return
+
+    latest = runs[0]
+    if not terminal_failure(latest):
+        return
+
+    failed = [run for run in runs if terminal_failure(run)]
+    if len(failed) >= MAX_INFRA_ATTEMPTS:
+        actions.append("stopped_projection_infrastructure_failure_after_retries")
+        return
+
+    if execute:
+        api.dispatch(PROJECTION_WORKFLOW, ref=ref, inputs=inputs)
+    actions.append(
+        "recover_dispatch_projection_after_failure:"
+        f"prior_run={latest.id}:attempt={len(failed) + 1}"
+    )
+
+
 def run_controller(
     api: GitHubAPI,
     *,
@@ -353,6 +448,10 @@ def run_controller(
     recover_missing_k3: bool = False,
 ) -> dict[str, Any]:
     actions: list[str] = []
+    # Independent of the frozen chain; advanced first so an early return below
+    # cannot starve it.
+    advance_projection_dev(api, ref=ref, execute=execute, actions=actions)
+
     b2_row = api.run(CANONICAL_B2_RUN)
     b2 = _stage_run(b2_row)
 
@@ -676,6 +775,17 @@ def run_controller(
         if execute:
             api.comment_issue(TRACKING_ISSUE, body)
         actions.append("comment_terminal_summary")
+
+    # Appended stage: the frozen DAG above is already terminal at this point, so
+    # dispatching here cannot change any of its inputs or ordering.
+    advance_projection_confirmation(
+        api,
+        ref=ref,
+        execute=execute,
+        actions=actions,
+        terminal_digest=final_digest,
+        source_sha=frozen_source_sha,
+    )
 
     return {
         "state": "terminal",
