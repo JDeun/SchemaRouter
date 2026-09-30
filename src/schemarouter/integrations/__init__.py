@@ -7,7 +7,12 @@ from .langchain import (
 )
 from .langgraph import LangGraphRequestFactory, LangGraphState, to_langgraph_node
 from .laya import LayaDecisionBackend
-from .llamaindex import to_llamaindex_tool, to_llamaindex_tools
+from .llamaindex import (
+    LlamaIndexToolInvoker,
+    to_llamaindex_tool,
+    to_llamaindex_tools,
+    tool_from_llamaindex,
+)
 from .ollama import OllamaDecisionBackend
 from .opentelemetry import OpenTelemetryRunExporter, trace_run_events
 from .system_one import SystemOneDecisionBackend
@@ -20,11 +25,13 @@ __all__ = [
     "OpenTelemetryRunExporter",
     "LangGraphRequestFactory",
     "LangGraphState",
+    "LlamaIndexToolInvoker",
     "LangChainToolInvoker",
     "tool_from_langchain",
     "to_langchain_tool",
     "to_langchain_tools",
     "to_langgraph_node",
+    "tool_from_llamaindex",
     "to_llamaindex_tool",
     "to_llamaindex_tools",
     "trace_run_events",
