@@ -478,6 +478,60 @@ class SchemaRouter:
         )
         return key
 
+    def add_llamaindex_tool(
+        self,
+        tool: Any,
+        *,
+        name: str | None = None,
+        namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
+        read_only: bool | None = None,
+        destructive: bool | None = None,
+        remote: bool = True,
+        replace: bool = False,
+    ) -> str:
+        """Import and bind one LlamaIndex BaseTool-like object."""
+
+        from .integrations.llamaindex import (
+            LlamaIndexToolInvoker,
+            tool_from_llamaindex,
+        )
+
+        spec = tool_from_llamaindex(
+            tool,
+            name=name,
+            namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
+            read_only=read_only,
+            destructive=destructive,
+            remote=remote,
+        )
+        invoker = LlamaIndexToolInvoker(tool)
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(spec.key)
+            except KeyError:
+                key = self.registry.register(spec)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    spec,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(spec)
+
+        self.executor.bind(
+            key,
+            invoker,
+            expected_fingerprint=spec.fingerprint,
+        )
+        return key
+
     async def inspect_url(
         self,
         url: str,
