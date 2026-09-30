@@ -4,6 +4,11 @@ from ..openapi_compatibility import (
     analyze_openapi_compatibility,
 )
 from .base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .graphql import (
+    GraphQLRemoteInvoker,
+    GraphQLSourceAdapter,
+    tool_from_graphql_introspection,
+)
 from .mcp import (
     DefaultMCPClientFactory,
     MCPClientFactory,
@@ -33,6 +38,8 @@ __all__ = [
     "AdapterPluginInfo",
     "AdapterRegistry",
     "DefaultMCPClientFactory",
+    "GraphQLRemoteInvoker",
+    "GraphQLSourceAdapter",
     "MCPClientFactory",
     "MCPRemoteInvoker",
     "OPTIMADERemoteInvoker",
@@ -50,6 +57,7 @@ __all__ = [
     "resolve_openapi_base_url",
     "schema_tool",
     "tool_from_callable",
+    "tool_from_graphql_introspection",
     "tool_from_mcp",
     "tool_from_openapi",
 ]
