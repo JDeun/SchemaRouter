@@ -72,6 +72,9 @@ def select_runtime(results: dict[str, dict[str, float]]) -> str | None:
     Evaluating out of order is the shape that cherry-picking takes, so it is
     refused: a candidate may only have results if every candidate before it in
     the roster already has results and failed.
+
+    A None return means "no qualifier **so far**". It is a verdict only when
+    `roster_exhausted(results)` is also True.
     """
     unknown = sorted(set(results) - set(ROSTER))
     if unknown:
@@ -89,3 +92,14 @@ def select_runtime(results: dict[str, dict[str, float]]) -> str | None:
         if qualifies(results[candidate]):
             return candidate
     return None
+
+
+def roster_exhausted(results: dict[str, dict[str, float]]) -> bool:
+    """Whether every frozen roster candidate has been evaluated.
+
+    `select_runtime` returns None both when no candidate has qualified yet and
+    when the roster is finished with no qualifier. Only the second is a verdict.
+    Declaring "no candidate qualified" — which the preregistration treats as a
+    terminal result about the screening approach — requires this to be True.
+    """
+    return set(results) == set(ROSTER)

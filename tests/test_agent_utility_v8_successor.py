@@ -207,3 +207,29 @@ def test_an_incomplete_roster_is_not_a_verdict():
 
     failing = {"envelope_valid_rate": 0.0, "tool_call_rate": 0.0, "grounded_fact_rate": 0.0}
     assert select_runtime({ROSTER[0]: failing}) is None
+
+
+def test_none_is_only_a_verdict_once_the_roster_is_exhausted():
+    from scripts.qualify_agent_utility_runtime import (
+        ROSTER,
+        roster_exhausted,
+        select_runtime,
+    )
+
+    failing = {"envelope_valid_rate": 0.0, "tool_call_rate": 0.0, "grounded_fact_rate": 0.0}
+
+    partial = {ROSTER[0]: failing}
+    assert select_runtime(partial) is None
+    assert not roster_exhausted(partial), "a prefix is not a verdict"
+
+    complete = {name: failing for name in ROSTER}
+    assert select_runtime(complete) is None
+    assert roster_exhausted(complete), "only this pair may be reported as 'none qualified'"
+
+
+def test_roster_exhausted_ignores_qualification_and_only_asks_about_coverage():
+    from scripts.qualify_agent_utility_runtime import ROSTER, roster_exhausted
+
+    passing = {"envelope_valid_rate": 1.0, "tool_call_rate": 1.0, "grounded_fact_rate": 1.0}
+    assert roster_exhausted({name: passing for name in ROSTER})
+    assert not roster_exhausted({})
