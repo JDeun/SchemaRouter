@@ -311,8 +311,8 @@ def test_an_incomplete_roster_is_not_a_verdict():
     # alone.
     from scripts.qualify_agent_utility_runtime import (
         ROSTER,
-        roster_exhausted,
         _select_runtime_from_rates,
+        roster_exhausted,
     )
 
     failing = {"envelope_valid_rate": 0.0, "tool_call_rate": 0.0, "grounded_fact_rate": 0.0}
@@ -394,9 +394,9 @@ def test_a_genuine_full_roster_failure_still_reports_as_a_verdict():
     # failing every criterion.
     from scripts.qualify_agent_utility_runtime import (
         ROSTER,
+        _select_runtime_from_rates,
         qualification_rates,
         roster_exhausted,
-        _select_runtime_from_rates,
     )
 
     failing_rows = _rows(envelope=0, tool_calls=0, grounded=0, total=40)
