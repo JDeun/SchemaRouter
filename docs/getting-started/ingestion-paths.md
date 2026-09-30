@@ -33,7 +33,7 @@ Use **MCP** when the capability already participates in the MCP ecosystem. The o
 protocol negotiation; SchemaRouter imports the tool schemas and applies its own policy and runtime
 validation.
 
-Use a **custom adapter** when the source follows another structured protocol such as GraphQL, OData,
+Use a **custom adapter** when the source follows another structured protocol such as GraphQL,
 STAC, FHIR, or a domain-specific standard. Adapters compile protocol semantics into canonical
 SchemaRouter contracts rather than adding protocol-specific branches to the planner.
 
