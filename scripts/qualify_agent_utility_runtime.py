@@ -58,3 +58,34 @@ def qualification_rates(rows: list[dict[str, Any]]) -> dict[str, float]:
 def qualifies(rates: dict[str, float]) -> bool:
     """All three criteria must pass. A candidate is not graded on a curve."""
     return all(rates.get(name, 0.0) >= threshold for name, threshold in ELIGIBILITY.items())
+
+
+def select_runtime(results: dict[str, dict[str, float]]) -> str | None:
+    """Return the first roster runtime that qualifies, or None if none did.
+
+    `results` maps a roster entry to its qualification rates. The roster is
+    walked in its frozen order and the first qualifier wins: a later candidate
+    is never compared against an earlier one, because choosing among qualifiers
+    would select the instrument by its outcome — the error this gate exists to
+    prevent.
+
+    Evaluating out of order is the shape that cherry-picking takes, so it is
+    refused: a candidate may only have results if every candidate before it in
+    the roster already has results and failed.
+    """
+    unknown = sorted(set(results) - set(ROSTER))
+    if unknown:
+        raise ValueError(f"not on the frozen roster: {unknown}")
+
+    for index, candidate in enumerate(ROSTER):
+        if candidate not in results:
+            later = [name for name in ROSTER[index + 1:] if name in results]
+            if later:
+                raise ValueError(
+                    f"{candidate!r} has no result but later candidates do ({later}); "
+                    "the roster must be evaluated in order"
+                )
+            return None
+        if qualifies(results[candidate]):
+            return candidate
+    return None

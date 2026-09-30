@@ -156,3 +156,54 @@ def test_a_runtime_that_calls_tools_but_grounds_nothing_is_refused():
     assert rates["envelope_valid_rate"] == 1.0
     assert rates["tool_call_rate"] == 1.0
     assert not qualifies(rates)
+
+
+def test_the_first_qualifier_wins_even_if_a_later_one_scores_higher():
+    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+
+    passing = {"envelope_valid_rate": 0.85, "tool_call_rate": 0.95, "grounded_fact_rate": 0.75}
+    better = {"envelope_valid_rate": 1.0, "tool_call_rate": 1.0, "grounded_fact_rate": 1.0}
+    assert select_runtime({ROSTER[0]: passing, ROSTER[1]: better}) == ROSTER[0]
+
+
+def test_a_failing_candidate_falls_through_to_the_next():
+    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+
+    failing = {"envelope_valid_rate": 1.0, "tool_call_rate": 1.0, "grounded_fact_rate": 0.0}
+    passing = {"envelope_valid_rate": 0.85, "tool_call_rate": 0.95, "grounded_fact_rate": 0.75}
+    assert select_runtime({ROSTER[0]: failing, ROSTER[1]: passing}) == ROSTER[1]
+
+
+def test_no_qualifier_returns_none():
+    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+
+    failing = {"envelope_valid_rate": 0.0, "tool_call_rate": 0.0, "grounded_fact_rate": 0.0}
+    assert select_runtime({name: failing for name in ROSTER}) is None
+
+
+def test_evaluating_out_of_order_is_refused():
+    # Skipping ahead is how cherry-picking looks in practice.
+    import pytest
+
+    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+
+    passing = {"envelope_valid_rate": 0.85, "tool_call_rate": 0.95, "grounded_fact_rate": 0.75}
+    with pytest.raises(ValueError, match="in order"):
+        select_runtime({ROSTER[1]: passing})
+
+
+def test_an_unknown_candidate_is_refused():
+    import pytest
+
+    from scripts.qualify_agent_utility_runtime import select_runtime
+
+    with pytest.raises(ValueError, match="frozen roster"):
+        select_runtime({"some/other-model": {}})
+
+
+def test_an_incomplete_roster_is_not_a_verdict():
+    # Only the first candidate ran and it failed: that is "keep going", not "none qualify".
+    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+
+    failing = {"envelope_valid_rate": 0.0, "tool_call_rate": 0.0, "grounded_fact_rate": 0.0}
+    assert select_runtime({ROSTER[0]: failing}) is None
