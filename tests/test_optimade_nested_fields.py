@@ -5,9 +5,10 @@ import pytest
 
 from schemarouter import (
     EndpointSpec,
+    ExecutionPlan,
     FieldSpec,
-    PlanRequest,
     SchemaRouter,
+    ToolCall,
     ToolSpec,
 )
 
@@ -150,22 +151,22 @@ async def test_optimade_nested_projection_requests_parent_wire_field_only() -> N
             kind="optimade",
             http_client=client,
         )
-        plan = router.plan(
-            PlanRequest(
-                query="score",
-                preferred_tools=["materials.example"],
-            )
+        tool = router.registry.get("materials.example")
+        endpoint = tool.endpoint("search_structures")
+        call = ToolCall(
+            tool=tool.key,
+            endpoint=endpoint.name,
+            fields=["id", "metadata.score"],
+            schema_fingerprint=endpoint.fingerprint,
+            tool_fingerprint=tool.fingerprint,
         )
-        call = next(
-            call
-            for call in plan.calls
-            if call.endpoint == "search_structures"
+        plan = ExecutionPlan(
+            query="score",
+            registry_version=router.registry.version,
+            calls=[call],
         )
-        call.fields = ["id", "metadata.score"]
 
-        results = await router.execute(
-            plan.model_copy(update={"calls": [call]}, deep=True)
-        )
+        results = await router.execute(plan)
 
     assert seen_queries == [
         {
@@ -193,22 +194,22 @@ async def test_optimade_multiple_nested_children_deduplicate_parent_selector() -
             kind="optimade",
             http_client=client,
         )
-        plan = router.plan(
-            PlanRequest(
-                query="metadata",
-                preferred_tools=["materials.example"],
-            )
+        tool = router.registry.get("materials.example")
+        endpoint = tool.endpoint("search_structures")
+        call = ToolCall(
+            tool=tool.key,
+            endpoint=endpoint.name,
+            fields=["metadata.score", "metadata.label"],
+            schema_fingerprint=endpoint.fingerprint,
+            tool_fingerprint=tool.fingerprint,
         )
-        call = next(
-            call
-            for call in plan.calls
-            if call.endpoint == "search_structures"
+        plan = ExecutionPlan(
+            query="metadata",
+            registry_version=router.registry.version,
+            calls=[call],
         )
-        call.fields = ["metadata.score", "metadata.label"]
 
-        results = await router.execute(
-            plan.model_copy(update={"calls": [call]}, deep=True)
-        )
+        results = await router.execute(plan)
 
     assert seen_queries == [
         {
