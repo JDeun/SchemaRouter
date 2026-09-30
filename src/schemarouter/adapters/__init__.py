@@ -9,6 +9,11 @@ from .http_json import (
     build_http_json_invoker,
     prepare_http_json_tool,
 )
+from .graphql import (
+    GraphQLRemoteInvoker,
+    GraphQLSourceAdapter,
+    tool_from_graphql_introspection,
+)
 from .mcp import (
     DefaultMCPClientFactory,
     MCPClientFactory,
@@ -38,6 +43,8 @@ __all__ = [
     "AdapterPluginInfo",
     "AdapterRegistry",
     "DefaultMCPClientFactory",
+    "GraphQLRemoteInvoker",
+    "GraphQLSourceAdapter",
     "HTTPJSONRemoteInvoker",
     "MCPClientFactory",
     "MCPRemoteInvoker",
@@ -58,6 +65,7 @@ __all__ = [
     "resolve_openapi_base_url",
     "schema_tool",
     "tool_from_callable",
+    "tool_from_graphql_introspection",
     "tool_from_mcp",
     "tool_from_openapi",
 ]
