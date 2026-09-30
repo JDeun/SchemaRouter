@@ -2,6 +2,11 @@ name: Research 0.14 Structural K3 Agent Utility
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows:
+      - "Research 0.14 B2 SmolLM3 Full"
+    types:
+      - completed
   push:
     branches:
       - "research/0.14-structural-k3-agent-run"
@@ -26,15 +31,23 @@ env:
   B2_ATTN_IMPLEMENTATION: "sdpa"
   B2_PROGRESS_TRACE: "1"
   CANONICAL_B2_RUN: "36642658406"
+  K3_IMPLEMENTATION_SHA: "8e92f69f0d9cd05336d07244af6b2955a7c29ebe"
 
 jobs:
   authorize:
+    if: >-
+      ${{
+        github.event_name != 'workflow_run' ||
+        github.event.workflow_run.id == 36642658406
+      }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     outputs:
       matrix: "${{ steps.plan.outputs.matrix }}"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.K3_IMPLEMENTATION_SHA }}"
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12.14"
@@ -61,6 +74,7 @@ jobs:
           assert prereg["experiment"] == "structural-fixed3-agent-utility-v5"
           assert prereg["independence"]["canonical_b2_run"] == 36642658406
           assert prereg["independence"]["b2_terminal_required_before_launch"] is True
+          assert os.environ["K3_IMPLEMENTATION_SHA"] == "8e92f69f0d9cd05336d07244af6b2955a7c29ebe"
           assert prereg["frozen_agent_surface"]["expected_episodes"] == 184
           assert prereg["frozen_agent_surface"]["conditions"] == [
               "STRUCT-FIXED-3",
@@ -134,6 +148,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.K3_IMPLEMENTATION_SHA }}"
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12.14"
@@ -185,6 +201,8 @@ jobs:
       TRANSFORMERS_OFFLINE: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.K3_IMPLEMENTATION_SHA }}"
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12.14"
@@ -247,6 +265,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.K3_IMPLEMENTATION_SHA }}"
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12.14"

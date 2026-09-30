@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 from pathlib import Path
 
 import pytest
@@ -99,3 +100,25 @@ def test_expected_episode_contract_is_184() -> None:
     assert len(TASKS) == 23
     assert len(CATALOG_SIZES) == 4
     assert len(aggregator.CONDITIONS) == 2
+
+
+def test_k3_agent_prereg_freezes_terminal_autolaunch_implementation() -> None:
+    prereg = json.loads(
+        (
+            ROOT
+            / "benchmarks"
+            / "agent-utility-v5-structural-fixed3-agent-preregistration.json"
+        ).read_text(encoding="utf-8")
+    )
+    freeze = prereg["execution_freeze"]
+
+    assert prereg["independence"]["canonical_b2_run"] == 36642658406
+    assert freeze["implementation_checkout_sha"] == (
+        "8e92f69f0d9cd05336d07244af6b2955a7c29ebe"
+    )
+    assert freeze["implementation_frozen_before_canonical_b2_terminal"] is True
+    assert freeze["auto_launch_requires_exact_workflow_run_id"] == 36642658406
+    assert freeze["thresholds_changed"] is False
+    assert freeze["candidate_changed"] is False
+    assert freeze["task_surface_changed"] is False
+    assert freeze["model_or_generation_changed"] is False

@@ -91,5 +91,16 @@
     "shortlist_default_change_allowed": false,
     "broad_product_claim_allowed": false
   },
-  "claim_boundary": "Paired downstream agent-utility comparison on the frozen B2 surface only. No product-default or broad held-out generalization claim."
+  "claim_boundary": "Paired downstream agent-utility comparison on the frozen B2 surface only. No product-default or broad held-out generalization claim.",
+  "execution_freeze": {
+    "implementation_checkout_sha": "8e92f69f0d9cd05336d07244af6b2955a7c29ebe",
+    "implementation_frozen_before_canonical_b2_terminal": true,
+    "auto_launch_event": "workflow_run completed for Research 0.14 B2 SmolLM3 Full",
+    "auto_launch_requires_exact_workflow_run_id": 36642658406,
+    "orchestration_change_semantics": "terminal-status trigger and exact implementation checkout only",
+    "thresholds_changed": false,
+    "candidate_changed": false,
+    "task_surface_changed": false,
+    "model_or_generation_changed": false
+  }
 }
