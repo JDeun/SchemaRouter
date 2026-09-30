@@ -3712,7 +3712,9 @@
         "unauthorized_destructive_executions_k3_max": 0,
         "execution_policy_integrity_required": 1,
         "schema_tokens_k3_must_be_less_than_k5": true,
-        "auto_launch_frozen_before_b2_terminal": true
+        "auto_launch_frozen_before_b2_terminal": true,
+        "canonical_b2_success_required": true,
+        "auto_launch_requires_success": true
       }
     },
     {
@@ -3829,7 +3831,12 @@
         "STRUCT-FIXED-5"
       ],
       "result": null,
-      "decision": "auto-launch only after exact canonical B2 run reaches terminal status; B2 outcomes not used for protocol selection"
+      "decision": "do not launch before exact canonical B2 run completes successfully; failed or cancelled B2 must fail closed",
+      "launch_governance": {
+        "exact_canonical_b2_run_required": 36642658406,
+        "canonical_b2_success_required": true,
+        "auto_launch_after_successful_terminal": true
+      }
     }
   ],
   "current_research_conclusion": "0.12.0 product track is closed. 0.14 research now tests the frozen typed capability-retrieval facade: B1 is terminal positive controlled evidence; B2 strong-agent attempt 5 is actively executing under a frozen infra-only recovery rule; #432 and #424 protocols plus authoring-slot scaffolds are frozen while actual corpus content/inference remain sealed until B2 is terminal.",
