@@ -19,7 +19,6 @@ from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
 from .base import AdapterContext, AdapterLoadResult
 from .openapi import same_origin
 
-
 _MAX_DISCOVERY_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 10 * 1024 * 1024
 _NESTED_FIELD_MAX_DEPTH = 8
