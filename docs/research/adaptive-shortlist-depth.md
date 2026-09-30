@@ -1,5 +1,32 @@
 # 0.14 adaptive capability shortlist depth
 
+## Current status — 2026-09-30
+
+The original score-gap adaptive-depth hypothesis is now **closed without a selected adaptive policy**.
+
+The evidence sequence is:
+
+1. **Baseline large-catalog DEV** exposed the real bottleneck: fixed Top-10 required-route Recall fell to 87.14% at 500 endpoints.
+2. **Structural retrieval v2** fixed route-identity ambiguity with conservative tool-identifier evidence, operation-family evidence, and schema-specificity tie-breaking. The fixed candidate `STRUCT-4.5-1.5` passed an independent 240-task confirmation surface with **100% Recall@10 and 100% FullCoverage@10 at 100/250/500 endpoints**.
+3. The unchanged preregistered **score-gap adaptive family** was rerun on that confirmed retriever. No adaptive candidate satisfied the frozen efficiency gates, so adaptive v3 closed without threshold retuning.
+4. The preregistered **fixed K=3 control** showed strong compression and motivated a separate fixed-depth successor rather than being promoted post hoc.
+5. **STRUCT-FIXED-3** then passed a fresh, non-reused 240-task confirmation surface:
+   - Recall: **100.00% / 99.05% / 99.05%** at 100 / 250 / 500 endpoints;
+   - FullCoverage: **100.00% / 98.89% / 98.89%**;
+   - exact mean SmolLM3 tool-schema tokens: **364.27 vs 563.08** for fixed K=5;
+   - mean schema-token reduction vs fixed K=5: **35.31%**.
+6. The remaining gate is **downstream agent utility**: a frozen paired `STRUCT-FIXED-3` vs `STRUCT-FIXED-5` SmolLM3 experiment on the exact B2 surface is preregistered and must not launch until canonical B2 run `36642658406` is terminal.
+
+Product defaults remain unchanged. `structural_retrieval` is still opt-in, and broad #432 held-out/generalization claims remain separate.
+
+Canonical result records:
+
+- `benchmarks/agent-utility-v5-structural-confirmation-result.json`
+- `benchmarks/agent-utility-v5-structural-adaptive-v3-result.json`
+- `benchmarks/agent-utility-v5-structural-fixed3-v4-result.json`
+- `benchmarks/agent-utility-v5-structural-fixed3-agent-preregistration.json`
+
+
 Tracking issue: **#430**
 
 This experiment asks whether SchemaRouter can expose fewer than five candidate capabilities on
