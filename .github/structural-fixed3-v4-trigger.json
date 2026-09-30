@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "experiment": "structural-fixed-depth-k3-v4",
+  "surface": "fresh_confirmation",
+  "candidate": "STRUCT-FIXED-3",
+  "control": "STRUCT-FIXED-5",
+  "confirmation_attempt": 1,
+  "created_date": "2026-09-30",
+  "implementation_main_sha": "4e795c1a24cb85f1b1398518e7f53c0877a55587",
+  "tuning_allowed_after_scoring": false,
+  "b2_outcomes_used": false,
+  "product_default_changed": false,
+  "expected_semantic_tasks": 240,
+  "expected_catalog_sizes": [
+    100,
+    250,
+    500
+  ],
+  "expected_rows": 720,
+  "exact_prior_query_overlap_required": 0,
+  "auxiliary_route_reuse_allowed": false,
+  "canonical_core_routes_shared": true,
+  "note": "One-shot fresh confirmation. If the candidate fails, close v4 without retuning or reusing this surface."
+}
