@@ -44,6 +44,7 @@ from .decisions import (
 from .errors import (
     ApprovalDeniedError,
     BindingDriftError,
+    ContractAmendmentError,
     ExecutionBudgetExceededError,
     ExecutionError,
     ExecutionHookError,
@@ -163,6 +164,7 @@ __all__ = [
     "BeforeExecutionHook",
     "BindingDriftError",
     "ConfiguredSchemaRouter",
+    "ContractAmendmentError",
     "DECISION_BACKEND_ENTRY_POINT_GROUP",
     "DecisionBackendPluginInfo",
     "discover_decision_backend_plugins",
