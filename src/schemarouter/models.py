@@ -291,6 +291,25 @@ class FieldSpec(StrictModel):
             raise ValueError(
                 "field path and result_path must preserve the same array-item wildcard count"
             )
+        if source_wildcards and self.result_path:
+            if len(self.path) != len(self.result_path):
+                raise ValueError(
+                    "array-item field path and result_path must preserve path depth"
+                )
+            source_positions = [
+                index
+                for index, part in enumerate(self.path)
+                if part == ARRAY_ITEM_PATH_SEGMENT
+            ]
+            result_positions = [
+                index
+                for index, part in enumerate(self.result_path)
+                if part == ARRAY_ITEM_PATH_SEGMENT
+            ]
+            if source_positions != result_positions:
+                raise ValueError(
+                    "array-item field path and result_path must preserve wildcard positions"
+                )
         if self.unit is not None:
             if not self.unit.strip():
                 raise ValueError("field unit must be non-empty when provided")
