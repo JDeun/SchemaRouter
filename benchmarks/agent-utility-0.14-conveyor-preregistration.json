@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "cycle": "0.14-end-to-end-agent-utility",
+  "tracking_issue": 500,
+  "status": "preregistered_before_downstream_corpus_generation",
+  "canonical_b2_run": 36642658406,
+  "dag": [
+    "B2_SUCCESS",
+    "PARALLEL:STRUCTURAL_K3_VS_K5+#431_CORRECTIVE",
+    "#432_HELDOUT",
+    "#424_FINAL_ANSWER",
+    "TERMINAL_EVIDENCE"
+  ],
+  "launch_policy": {
+    "b2_must_complete_successfully": true,
+    "k3_native_workflow_run_trigger_is_primary": true,
+    "hourly_controller_may_recover_missing_k3": true,
+    "controller_must_not_race_native_k3_trigger": true,
+    "heldout_waits_for_both_parallel_stages": true,
+    "final_answer_waits_for_successful_heldout_workflow": true
+  },
+  "optional_condition_policy": {
+    "STRUCT-FIXED-3": "Include in #432 iff the preregistered structural K3 downstream primary gate is true.",
+    "SR-5-STATE-AWARE": "Include in #432 iff the preregistered #431 corrective primary gate is true.",
+    "failed_optional_candidates_are_repaired_or_retuned": false
+  },
+  "source_freeze": {
+    "initial_downstream_source": "Exact main SHA used to generate #431 after canonical B2 success.",
+    "heldout_reuses_corrective_generator_source_sha": true,
+    "final_answer_reuses_heldout_generator_source_sha": true,
+    "later_main_changes_may_change_active_frozen_source": false
+  },
+  "idempotency": {
+    "corrective_identity": "canonical B2 artifact digest",
+    "heldout_identity": "ordered SHA-256 of K3 and corrective canonical artifact digests",
+    "final_identity": "heldout canonical artifact digest",
+    "terminal_identity": "ordered SHA-256 of all canonical stage artifact digests",
+    "duplicate_stage_dispatch_for_same_identity_allowed": false
+  },
+  "infrastructure_recovery": {
+    "scientific_negative_gate_is_workflow_failure": false,
+    "workflow_failure_is_treated_as_infrastructure_failure": true,
+    "maximum_attempts": 3,
+    "retry_failed_jobs_only": true,
+    "semantic_changes_during_retry_allowed": false
+  },
+  "corpora": {
+    "431": {
+      "semantic_tasks": 180,
+      "catalogs": [100, 250, 500],
+      "conditions": 5,
+      "content_generated_only_after_b2_success": true
+    },
+    "432": {
+      "semantic_tasks": 780,
+      "retrieval_catalogs": [100, 250, 500, 1000],
+      "downstream_catalogs": [100, 250, 500],
+      "required_conditions": ["FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE"],
+      "content_generated_only_after_parallel_terminal_gates": true
+    },
+    "424": {
+      "semantic_tasks": 144,
+      "catalogs": [100, 250],
+      "conditions": ["FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE"],
+      "heldout_queries_are_additional_forbidden_surface": true
+    }
+  },
+  "research_integrity": {
+    "row_level_b2_outcomes_used_for_design": false,
+    "failed_rows_removed": false,
+    "post_result_threshold_tuning": false,
+    "content_hashes_frozen_before_inference": true,
+    "artifact_digests_verified_between_stages": true,
+    "negative_results_preserved": true
+  }
+}
