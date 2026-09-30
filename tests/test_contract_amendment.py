@@ -334,3 +334,149 @@ def test_restamp_does_not_expose_or_accept_an_invoker():
 
     signature = inspect.signature(router.executor.restamp_binding)
     assert list(signature.parameters) == ["tool_key"]
+
+
+# --- public API -------------------------------------------------------------
+
+
+def _declaring_router():
+    """A router whose tool publishes no output declarations, like most MCP servers."""
+    from schemarouter import EndpointSpec, ParameterSpec, SchemaRouter, ToolSpec
+
+    router = SchemaRouter()
+    key = router.add_tool(
+        ToolSpec(
+            name="remote",
+            provider="external",
+            access_mode="mcp",
+            source_type="measured",
+            endpoints=[
+                EndpointSpec(
+                    name="lookup",
+                    description="Look up a material",
+                    read_only=True,
+                    destructive=False,
+                    parameters=[
+                        ParameterSpec(
+                            name="material_id",
+                            required=True,
+                            json_schema={"type": "string"},
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+    return router, key
+
+
+def test_amending_declares_fields_and_keeps_the_capability_executable():
+    from schemarouter import PlanRequest
+
+    router, key = _bound_router()
+    tool = router.registry.get(key)
+    endpoint = tool.endpoints[0]
+    annotated = [
+        field.model_copy(update={"semantic_id": f"materials.{field.name}"})
+        for field in endpoint.output_fields
+    ]
+    amended = tool.model_copy(
+        update={"endpoints": [endpoint.model_copy(update={"output_fields": annotated})]}
+    )
+
+    assert router.amend_capability(key, amended) == key
+    results = router.invoke(
+        PlanRequest(query="materials band gap", arguments={"material_id": "M1"})
+    )
+    assert results, "the amended capability must still be executable"
+
+
+def test_a_capability_with_no_declarations_can_receive_them():
+    from schemarouter import FieldSpec
+
+    router, key = _declaring_router()
+    tool = router.registry.get(key)
+    endpoint = tool.endpoints[0]
+    assert endpoint.output_fields == []
+
+    amended = tool.model_copy(
+        update={
+            "endpoints": [
+                endpoint.model_copy(
+                    update={
+                        "output_fields": [
+                            FieldSpec(
+                                name="band_gap",
+                                semantic_id="materials.band_gap",
+                                unit="eV",
+                                qualifiers={"method": "measured"},
+                            )
+                        ]
+                    }
+                )
+            ]
+        }
+    )
+    router.amend_capability(key, amended)
+    declared = router.registry.get(key).endpoints[0].output_fields
+    assert [field.name for field in declared] == ["band_gap"]
+    assert declared[0].unit == "eV"
+
+
+def test_a_refused_amendment_changes_nothing():
+    router, key = _bound_router()
+    before = router.registry.get(key)
+    amended = before.model_copy(
+        update={"endpoints": [before.endpoints[0].model_copy(update={"read_only": False})]}
+    )
+
+    with pytest.raises(ContractAmendmentError):
+        router.amend_capability(key, amended)
+
+    assert router.registry.get(key).fingerprint == before.fingerprint
+    assert router.executor.is_binding_ready_for_contract(key, before.fingerprint)
+
+
+def test_amending_an_unregistered_key_is_refused():
+    router, _ = _bound_router()
+    tool = router.registry.get(router.registry.keys()[0])
+    with pytest.raises(KeyError):
+        router.amend_capability("lab.absent", tool)
+
+
+def test_a_plan_built_before_the_amendment_is_still_rejected():
+    # Staleness protection must survive the amendment path, or drift detection
+    # would be weaker for amended capabilities than for any other. There is no
+    # `router.execute(plan)`; a prebuilt call is re-checked with
+    # `executor.validate_call`, which is what the execution path itself uses.
+    from schemarouter import PlanRequest, SchemaDriftError
+
+    router, key = _bound_router()
+    stale_plan = router.plan(
+        PlanRequest(query="materials band gap", arguments={"material_id": "M1"})
+    )
+    assert stale_plan.calls, "the fixture must produce a call to make this test meaningful"
+    stale_call = stale_plan.calls[0]
+    router.executor.validate_call(stale_call)  # valid before the amendment
+
+    tool = router.registry.get(key)
+    endpoint = tool.endpoints[0]
+    amended = tool.model_copy(
+        update={"endpoints": [endpoint.model_copy(update={"description": "annotated"})]}
+    )
+    router.amend_capability(key, amended)
+
+    with pytest.raises(SchemaDriftError):
+        router.executor.validate_call(stale_call)
+
+
+def test_the_amendment_path_is_not_reachable_from_model_facing_code():
+    # A decision backend receives finite option IDs, never a router. Assert the
+    # amendment API never leaked into the decision or planner surfaces.
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1] / "src" / "schemarouter"
+    for name in ("decisions.py", "decision_policy.py", "planner.py", "pairwise.py"):
+        text = (root / name).read_text(encoding="utf-8")
+        assert "amend_capability" not in text, name
+        assert "restamp_binding" not in text, name

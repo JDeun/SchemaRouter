@@ -15,6 +15,7 @@ from .adapters.mcp import MCPClientFactory
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
+from .amendment import validate_amendment
 from .errors import InvocationUnavailableError, ProposalApprovalError, RegistrationError
 from .executor import ExecutionBudgetTracker, RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
@@ -270,6 +271,27 @@ class SchemaRouter:
 
     def add_tool(self, tool: ToolSpec, *, replace: bool = False) -> str:
         return self.registry.register(tool, replace=replace)
+
+    def amend_capability(self, tool_key: str, amended: ToolSpec) -> str:
+        """Declare or annotate the result contract of an already registered capability.
+
+        Trusted local code may add output-field declarations and annotate their
+        meaning: semantic IDs, aliases, paths, units, normalization, qualifiers,
+        identifier flags, provenance and licence. It may not change execution
+        identity or validation shape; see `amendment.validate_amendment`.
+
+        The execution binding is carried across the amendment, so a capability
+        SchemaRouter imported on the application's behalf stays executable. The
+        invoker is never exposed to the caller.
+
+        Annotation can change routing: declaring a semantic ID or unit may make a
+        cross-provider fallback compatible that previously was not.
+        """
+        current = self.registry.get(tool_key)
+        validate_amendment(current, amended)
+        key = self.registry.register(amended, replace=True)
+        self.executor.restamp_binding(key)
+        return key
 
     def register_adapter(
         self,
