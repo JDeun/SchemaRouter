@@ -873,7 +873,7 @@ class URLSchemaLoader:
         expected_fingerprint: str,
         expected_version: int,
     ) -> ToolSpec:
-        """Commit an inspected replacement only if the compared registry snapshot is still current."""
+        """Commit only when the compared registry snapshot is still current."""
 
         key = replace_if_current(
             self.registry,
