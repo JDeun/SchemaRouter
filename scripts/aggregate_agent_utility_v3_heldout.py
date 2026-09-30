@@ -222,6 +222,7 @@ def aggregate(
         "unique_semantic_tasks": len(corpus["tasks"]),
         "conditions": conditions,
         "catalog_sizes": list(DOWNSTREAM_CATALOGS),
+        "generator_source_revision": corpus["generator_source_revision"],
         "tasks_sha256": corpus["tasks_sha256"],
         "freeze_identity_sha256": corpus["freeze_identity_sha256"],
         "retrieval_summary": retrieval["summary"],
