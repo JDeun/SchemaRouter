@@ -126,6 +126,7 @@ nav:
       - Python tools: guides/python-tools.md
       - OpenAPI: guides/openapi.md
       - OpenAPI compatibility: guides/openapi-compatibility.md
+      - OData: guides/odata.md
       - OPTIMADE: guides/optimade.md
       - MCP: guides/mcp.md
       - Human-readable documentation: guides/html-documentation.md
