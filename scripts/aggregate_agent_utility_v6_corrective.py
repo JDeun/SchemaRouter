@@ -141,6 +141,7 @@ def aggregate(input_dir: Path, corpus: dict[str, Any]) -> dict[str, Any]:
         "unique_semantic_tasks": len(corpus["tasks"]),
         "catalog_sizes": list(CATALOGS),
         "conditions": list(CORRECTIVE_CONDITIONS),
+        "generator_source_revision": corpus["generator_source_revision"],
         "tasks_sha256": corpus["tasks_sha256"],
         "freeze_identity_sha256": corpus["freeze_identity_sha256"],
         "overall": overall,
