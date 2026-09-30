@@ -122,11 +122,7 @@ Both arms are driven by the 0.14 conveyor; neither needs a manual dispatch.
     It consumes no upstream artifact, so the conveyor advances it **before the
     B2 gate**: queuing it behind the frozen chain would delay development
     evidence for no scientific reason, and advancing it first keeps every early
-    return in the controller from starving it. Identity is the frozen
-    implementation SHA, so it is dispatched exactly once per source revision.
-
-    Under [research governance](governance.md) this is development evidence: it
-    may inform design and may never be reported as confirmation.
+    return in the controller from starving it.
 
 2. **Confirmation** — the canonical strong agent
    (`HuggingFaceTB/SmolLM3-3B` @ `a07cc9a0`), **appended after the conveyor's
@@ -141,6 +137,41 @@ Both arms are driven by the 0.14 conveyor; neither needs a manual dispatch.
 
     The workflow still verifies that the canonical B2 run succeeded without
     reading B2 outcomes.
+
+### Source freeze
+
+#506 has **its own** frozen implementation revision. It is resolved on first
+dispatch, checked to actually contain the experiment's scripts, and then reused
+verbatim by both arms.
+
+It is never `DOWNSTREAM_IMPLEMENTATION_SHA`. That SHA belongs to the already
+frozen #431/#432/#424 chain and predates every projection script, so a stage
+dispatched against it would check out a tree that cannot run the experiment —
+while unit tests, which use stubs rather than a real checkout, stayed green. Both
+workflows now also refuse such a checkout in a preflight step, and the controller
+refuses to dispatch a revision missing those files.
+
+### Development vs confirmation
+
+Both arms run the **same** frozen corpus, generator, conditions and scorer, so
+the development screen is **diagnostic only**. Once its scoring starts, its
+results may not change:
+
+- conditions;
+- task wording or content;
+- distractor strata;
+- thresholds and promotion gates;
+- the scorer;
+- prompt or harness semantics;
+- row inclusion;
+- the frozen projection source.
+
+Confirmation may differ in exactly one preregistered respect: the runtime. This
+is the same relationship B1 has to B2 — one frozen protocol, a stronger agent.
+
+Wanting a design change out of the screen's results means closing this
+experiment as consumed and preregistering a successor with its own
+query-disjoint surface, not amending this one.
 
 ## Independence
 

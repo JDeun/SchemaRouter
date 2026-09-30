@@ -1,10 +1,16 @@
 name: Research 0.14 Field Projection DEV
 run-name: Research 0.14 Field Projection DEV source=${{ inputs.source_sha }}
 
-# Development screen for #506. It runs on the frozen B1 small agent and produces
-# DEVELOPMENT evidence only: under docs/research/governance.md it may inform
-# design, and it may never be reported as confirmation. The confirmation arm is
-# research-0.14-field-projection.yml, which is gated on #423 B2 being terminal.
+# Development screen for #506, on the frozen B1 small agent.
+#
+# It shares one frozen corpus, generator, condition set and scorer with the
+# confirmation arm, so it is DIAGNOSTIC ONLY: its results may never be reported
+# as confirmation, and may not change conditions, task content, thresholds, the
+# scorer, harness semantics, row inclusion, or the frozen source.
+#
+# source_sha must be a revision that contains the #506 scripts. The conveyor
+# freezes and content-checks it; the preflight step below fails closed if a stage
+# is ever dispatched against a revision that predates the experiment.
 
 on:
   workflow_dispatch:
@@ -46,6 +52,32 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev]"
+      - name: Refuse a source revision that cannot run this experiment
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+
+          required = [
+              "scripts/agent_utility_v7_projection.py",
+              "scripts/agent_utility_v7_dev_agent.py",
+              "scripts/generate_agent_utility_v7_projection_corpus.py",
+              "scripts/validate_agent_utility_v7_projection_corpus.py",
+              "scripts/evaluate_agent_utility_v7_projection.py",
+              "scripts/aggregate_agent_utility_v7_projection.py",
+          ]
+          missing = [path for path in required if not Path(path).is_file()]
+          if missing:
+              print(
+                  "This checkout does not contain the #506 experiment. The stage "
+                  "was dispatched against a source revision that predates it.",
+                  file=sys.stderr,
+              )
+              for path in missing:
+                  print("  missing: " + path, file=sys.stderr)
+              raise SystemExit(1)
+          print("projection experiment present in this checkout")
+          PY
       - name: Lint the experiment surface
         run: |
           ruff check \

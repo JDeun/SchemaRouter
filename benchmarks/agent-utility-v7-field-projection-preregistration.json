@@ -70,8 +70,27 @@
     "fresh_disjoint_surface_required": true,
     "no_post_result_condition_changes": true
   },
+  "dev_confirmation_governance": {
+    "rule": "option_a_shared_frozen_corpus_dev_is_diagnostic_only",
+    "statement": "The development screen and the confirmation arm run the same frozen corpus, generator, conditions and scorer. The screen is therefore diagnostic only. Confirmation may differ from it in exactly one preregistered respect: the runtime/model.",
+    "precedent": "This is the same relationship B1 (#420) has to B2 (#423): one frozen protocol, a stronger agent.",
+    "dev_results_may_not_change": [
+      "conditions",
+      "task wording or content",
+      "distractor strata",
+      "thresholds and promotion gates",
+      "the scorer",
+      "prompt or harness semantics",
+      "row inclusion",
+      "the frozen projection source revision"
+    ],
+    "dev_may_inform_design": false,
+    "if_a_design_change_is_ever_wanted_from_dev_results": "Close this experiment as consumed and preregister a successor with its own query-disjoint surface. Do not amend this one.",
+    "shared_corpus_identity": "both arms generate the corpus from the same frozen projection source revision, so tasks_sha256 must match across the two stages"
+  },
   "staging": {
     "orchestration": "both arms are advanced by the 0.14 conveyor controller; neither requires a manual dispatch",
+    "projection_source_freeze": "#506 has its own frozen implementation revision, resolved and content-checked on first dispatch and reused verbatim afterwards. It is never DOWNSTREAM_IMPLEMENTATION_SHA, which belongs to the #431/#432/#424 chain and predates every projection script.",
     "development_screen": {
       "runtime": "frozen B1 small agent Qwen/Qwen3-0.6B @ c1899de289a04d12100db370d81485cdf75e47ca",
       "authorized": true,
