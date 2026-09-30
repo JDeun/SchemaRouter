@@ -2,8 +2,8 @@
   "schema_version": 1,
   "title": "SchemaRouter Design and Research Evidence Ledger",
   "purpose": "Machine-readable provenance index for reproducibility, follow-up papers, ablation reporting, and research-integrity review.",
-  "scope": "Complete material design and experiment lineage through the terminal V6E open-set membership experiment in the 0.13 routing-quality cycle.",
-  "updated_at": "2026-09-29",
+  "scope": "Complete material design and experiment lineage through the active 0.14 end-to-end agent-utility cycle, including terminal B1, canonical B2 attempt 9, confirmed structural retrieval, confirmed fixed Top-3 compression, and sealed future held-out/final-answer/corrective surfaces.",
+  "updated_at": "2026-09-30",
   "governance": {
     "calibration_and_blind_are_never_tuning_data": true,
     "failed_candidates_are_retained": true,
@@ -3521,7 +3521,7 @@
       "cycle": "0.14-end-to-end-agent-utility",
       "issue": 423,
       "preregistered": true,
-      "status": "attempt5_running_frozen_same_run_infra_recovery",
+      "status": "attempt9_running_canonical_arm64_sdpa",
       "conditions": [
         "FULL",
         "SR-5",
@@ -3530,8 +3530,8 @@
         "ORACLE"
       ],
       "result": null,
-      "decision": "await_attempt5_terminal_then_apply_frozen_same_run_infra_recovery",
-      "interpretation": "Strong non-Qwen replication is actively executing on the frozen 23-task/4-catalog/5-condition surface. Partial task outcomes remain unopened for tuning. Runner-shutdown failures are handled only through the preregistered same-run failed-job recovery rule.",
+      "decision": "await_canonical_attempt9_terminal_without_partial_outcome_tuning",
+      "interpretation": "Strong non-Qwen replication is executing on the exact frozen 23-task/4-catalog/5-condition surface. The validated ARM64+SDPA path removes the prior hosted-x64 OOM/runtime blocker while preserving behavioral identity. Partial task outcomes remain ineligible for tuning.",
       "model": {
         "name": "HuggingFaceTB/SmolLM3-3B",
         "revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
@@ -3546,26 +3546,31 @@
       "expected_episode_count": 460,
       "candidate_set_manifest_sha256": "9bea0645f64ec726abe5983d9a19eefe12afb1ab6cfae65ecd87464f545f0176",
       "task_sha256": "bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c",
-      "canonical_attempt5_workflow_run_id": 36561002246,
-      "resilient_sharding": {
-        "evaluate_job_count": 92,
-        "episodes_per_job": 5,
-        "max_parallel": 6,
-        "evaluate_timeout_minutes": 180
+      "canonical_attempt9_workflow_run_id": 36642658406,
+      "canonical_attempt9_source_sha": "01edb00fe7e8bff803988ce6bce5e05f79801e43",
+      "execution_infrastructure": {
+        "runner": "ubuntu-24.04-arm",
+        "attention_implementation": "sdpa",
+        "max_parallel": 4,
+        "evaluator_timeout_minutes": 90,
+        "model_cache_architecture": "arm64",
+        "progress_trace": true
       },
-      "observed_infrastructure_failures": {
-        "classification": "github_hosted_runner_shutdown",
-        "failed_job_ids": [
-          109382297197,
-          109382297293
-        ],
-        "partial_outcomes_used_for_tuning": false
+      "infrastructure_validation": {
+        "eager_sdpa_behavioral_equivalence_run": 36609690366,
+        "x64_arm64_behavioral_identity_run": 36631665803,
+        "arm64_250_full_smoke_run": 36632395258,
+        "normalized_behavior_sha256": "18c73f3ea2127463d57b4a67ca21b6875bb9f7965dd7be850b38f09b86e3d7a8",
+        "arm64_20_tool_speedup_vs_x64_sdpa_approx": 15.35,
+        "arm64_250_full_completed": true,
+        "partial_validation_rows_used_for_semantic_tuning": false
       },
-      "recovery_rule": {
-        "trigger": "after attempt5 workflow becomes terminal",
-        "action": "rerun failed jobs on the same workflow run only when every failure is infra-only",
-        "max_failed_job_rerun_attempts": 5,
-        "no_model_prompt_k_task_catalog_condition_scoring_changes": true
+      "prior_attempts": {
+        "attempt5_workflow_run_id": 36561002246,
+        "attempt8_workflow_run_id": 36580929852,
+        "duplicate_attempt9_run_id": 36641753066,
+        "canonical_run_id": 36642658406,
+        "prior_partial_outcomes_used_for_tuning": false
       }
     },
     {
@@ -3573,10 +3578,10 @@
       "cycle": "0.14-end-to-end-agent-utility",
       "issue": 424,
       "preregistered": true,
-      "status": "preregistered_144_slot_scaffold_merged_content_and_inference_sealed",
+      "status": "preregistered_144_slot_scaffold_content_and_inference_sealed_validator_hardening_in_progress",
       "result": null,
-      "decision": "content_generation_and_inference_blocked_until_b2_terminal",
-      "interpretation": "The final-answer protocol and deterministic 144-slot identity scaffold are frozen. Task wording, evidence/reference facts, units/tolerances/provenance and answer inference remain sealed until #423 is terminal.",
+      "decision": "content_generation_and_answer_inference_blocked_until_b2_terminal",
+      "interpretation": "The 144-task final-answer protocol remains sealed. Pre-inference validation covers frozen evidence, provenance, numeric tolerances, units, corrective contracts, hash identity, and exact normalized-query disjointness from consumed surfaces.",
       "authoring_scaffold_commit": "465922f8390f23c96a215f4ac4491891339907cb",
       "unique_semantic_tasks": 144,
       "cross_balance": {
@@ -3593,20 +3598,27 @@
       "cycle": "0.14-end-to-end-agent-utility",
       "issue": 431,
       "preregistered": true,
-      "status": "staged_blocked_until_b1_terminal",
+      "status": "typed_state_scaffold_frozen_content_and_scoring_blocked_until_b2_terminal",
       "result": null,
-      "decision": "no_execution_before_420_terminal",
-      "interpretation": "Compare fixed/static candidate exposure with execution-state-aware re-retrieval using only bounded typed observations and current task state; retrieval may change candidate exposure but never execution authority."
+      "decision": "retain typed observable-state scaffold; do not generate or score v6 tasks before B2 terminal",
+      "interpretation": "The corrective successor now has a typed, fail-closed execution-state contract that excludes hidden future labels and free-text observations. Only bounded observable metadata may affect re-retrieval; execution authority remains unchanged.",
+      "scaffold": {
+        "merged_commit": "150190effd559973cc9aa40c2cfebcfd2274942c",
+        "semantic_task_slots": 180,
+        "content_generation_authorized": false,
+        "execution_authorized": false,
+        "b2_terminal_required": true
+      }
     },
     {
       "id": "0.14-large-held-out-generalization",
       "cycle": "0.14-end-to-end-agent-utility",
       "issue": 432,
       "preregistered": true,
-      "status": "preregistered_780_slot_scaffold_merged_content_sealed",
+      "status": "preregistered_780_slot_scaffold_content_sealed_validator_hardening_in_progress",
       "result": null,
       "decision": "content_generation_and_scoring_blocked_until_b2_terminal",
-      "interpretation": "The independent held-out protocol and deterministic 780-slot identity scaffold are frozen without B1/B2 row-outcome tuning. Actual task text, executor fixtures, catalogs and scoring remain sealed until #423 is terminal.",
+      "interpretation": "The independent 780-task held-out design remains sealed. Corpus validators are being hardened before authoring to enforce slot identity, hashes, deterministic fixtures, supported/unsupported contracts, and exact normalized-query disjointness from already consumed 0.14 surfaces.",
       "authoring_scaffold_commit": "76458700d32df8f3d3f4b08b2347bf49944d74fb",
       "unique_semantic_tasks": 780,
       "cross_balance": {
@@ -3622,10 +3634,86 @@
       "cycle": "0.14-end-to-end-agent-utility",
       "issue": 430,
       "preregistered": true,
-      "status": "staged_blocked_until_fixed_k_validation",
-      "result": null,
-      "decision": "no_execution_before_b1_b2_fixed_k_evidence",
-      "interpretation": "Evaluate preregistered per-query adaptive candidate depth only after fixed K baselines; do not derive the adaptive rule from B1 row-level failures."
+      "status": "structural_fixed3_confirmed_downstream_agent_gate_waiting_b2_terminal",
+      "result": {
+        "baseline_adaptive_dev": {
+          "semantic_tasks": 240,
+          "catalog_sizes": [
+            100,
+            250,
+            500
+          ],
+          "fixed10_required_route_recall": {
+            "100": 0.9761904761904762,
+            "250": 0.9666666666666667,
+            "500": 0.8714285714285714
+          },
+          "selected_adaptive_policy": null,
+          "conclusion": "score-gap adaptive family closed without eligible policy"
+        },
+        "miss_taxonomy": {
+          "workflow_run": 36644894275,
+          "overall_misses": 39,
+          "tie_collisions": 14,
+          "below_cutoff": 25,
+          "catalog_500_misses": 27,
+          "catalog_500_tie_collisions": 12,
+          "catalog_500_below_cutoff": 15
+        },
+        "structural_v2_confirmation": {
+          "workflow_run": 36648848734,
+          "candidate": "STRUCT-4.5-1.5",
+          "required_route_recall_at_10": {
+            "100": 1,
+            "250": 1,
+            "500": 1
+          },
+          "all_required_full_coverage_at_10": {
+            "100": 1,
+            "250": 1,
+            "500": 1
+          },
+          "all_supported_strata_recall": 1,
+          "all_languages_recall": 1,
+          "typed_numeric_units_recall": 1
+        },
+        "adaptive_v3": {
+          "workflow_run": 36652143328,
+          "selected_adaptive_policy": null,
+          "conclusion": "unchanged adaptive depth family closed; no policy eligible"
+        },
+        "fixed3_v4_confirmation": {
+          "workflow_run": 36653940042,
+          "required_route_recall": {
+            "100": 1,
+            "250": 0.9904761904761905,
+            "500": 0.9904761904761905
+          },
+          "all_required_full_coverage": {
+            "100": 1,
+            "250": 0.9888888888888889,
+            "500": 0.9888888888888889
+          },
+          "typed_numeric_units_recall": 1,
+          "mean_schema_tokens_k3": 364.26944444444445,
+          "mean_schema_tokens_k5": 563.0819444444444,
+          "schema_token_reduction_vs_k5_fraction": 0.353079160078832,
+          "passed": true
+        }
+      },
+      "decision": "fixed structural retriever and fixed K3 retrieval compression confirmed; run preregistered K3-vs-K5 downstream agent gate only after canonical B2 terminal",
+      "interpretation": "Large-catalog retrieval failure was primarily a structural ranking problem, not an adaptive-depth problem. Structural retrieval generalized on an independent surface; fixed K3 then passed a second fresh confirmation with ~35.3% mean schema-token reduction versus structural K5.",
+      "downstream_agent_gate": {
+        "experiment": "structural-fixed3-agent-utility-v5",
+        "canonical_b2_run_required": 36642658406,
+        "implementation_checkout_sha": "8e92f69f0d9cd05336d07244af6b2955a7c29ebe",
+        "expected_episodes": 184,
+        "paired_task_pass_delta_k3_minus_k5_min": -0.02,
+        "unauthorized_destructive_executions_k3_max": 0,
+        "execution_policy_integrity_required": 1,
+        "schema_tokens_k3_must_be_less_than_k5": true,
+        "auto_launch_frozen_before_b2_terminal": true
+      }
     },
     {
       "id": "0.14-public-topk-retrieval-api",
@@ -3650,6 +3738,98 @@
       "released_in": "0.11.0",
       "frozen_product_baseline": "0.12.0",
       "issue_state": "closed"
+    },
+    {
+      "id": "0.14-structural-retrieval-v2",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 430,
+      "status": "terminal_independent_confirmation_passed",
+      "candidate": "STRUCT-4.5-1.5",
+      "product_default_enabled": false,
+      "development_evidence": {
+        "miss_taxonomy_run": 36644894275,
+        "confirmation_rows_used_for_tuning": false,
+        "b2_outcomes_used": false
+      },
+      "confirmation": {
+        "workflow_run": 36648848734,
+        "artifact_id": 11069272435,
+        "artifact_sha256": "80b3f03751eae8e48e11396714663d7e67bd559b45e30a895ebde2f8df140651",
+        "semantic_task_count": 240,
+        "exact_normalized_dev_query_overlap_count": 0,
+        "recall_at_10": {
+          "100": 1,
+          "250": 1,
+          "500": 1
+        },
+        "full_coverage_at_10": {
+          "100": 1,
+          "250": 1,
+          "500": 1
+        }
+      },
+      "decision": "confirmed_for_opt_in_retrieval_research_not_product_default",
+      "source_file": "benchmarks/agent-utility-v5-structural-confirmation-result.json"
+    },
+    {
+      "id": "0.14-structural-adaptive-depth-v3",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 430,
+      "status": "terminal_no_adaptive_policy_eligible",
+      "workflow_run": 36652143328,
+      "fixed_retriever": "STRUCT-4.5-1.5",
+      "result": {
+        "selected_adaptive_policy": null,
+        "fixed3_worst_catalog_recall": 0.9857142857142858,
+        "fixed3_worst_catalog_full_coverage": 0.9833333333333333,
+        "fixed3_mean_schema_tokens": 362.2027777777778,
+        "fixed5_mean_schema_tokens": 553.0777777777778
+      },
+      "decision": "close unchanged score-gap adaptive family without threshold retuning",
+      "source_file": "benchmarks/agent-utility-v5-structural-adaptive-v3-result.json"
+    },
+    {
+      "id": "0.14-structural-fixed3-v4",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 430,
+      "status": "terminal_fresh_confirmation_passed",
+      "workflow_run": 36653940042,
+      "candidate": "STRUCT-FIXED-3",
+      "result": {
+        "recall": {
+          "100": 1,
+          "250": 0.9904761904761905,
+          "500": 0.9904761904761905
+        },
+        "full_coverage": {
+          "100": 1,
+          "250": 0.9888888888888889,
+          "500": 0.9888888888888889
+        },
+        "typed_numeric_units_recall": 1,
+        "mean_schema_tokens": 364.26944444444445,
+        "control_fixed5_mean_schema_tokens": 563.0819444444444,
+        "schema_token_reduction_vs_fixed5_fraction": 0.353079160078832,
+        "passed": true
+      },
+      "decision": "freeze K3 retrieval candidate; downstream agent utility remains separate terminal-gated experiment",
+      "source_file": "benchmarks/agent-utility-v5-structural-fixed3-v4-result.json"
+    },
+    {
+      "id": "0.14-structural-fixed3-agent-utility-v5",
+      "cycle": "0.14-end-to-end-agent-utility",
+      "issue": 430,
+      "parent_issue": 423,
+      "status": "preregistered_frozen_waiting_canonical_b2_terminal",
+      "canonical_b2_run": 36642658406,
+      "implementation_checkout_sha": "8e92f69f0d9cd05336d07244af6b2955a7c29ebe",
+      "expected_episode_count": 184,
+      "conditions": [
+        "STRUCT-FIXED-3",
+        "STRUCT-FIXED-5"
+      ],
+      "result": null,
+      "decision": "auto-launch only after exact canonical B2 run reaches terminal status; B2 outcomes not used for protocol selection"
     }
   ],
   "current_research_conclusion": "0.12.0 product track is closed. 0.14 research now tests the frozen typed capability-retrieval facade: B1 is terminal positive controlled evidence; B2 strong-agent attempt 5 is actively executing under a frozen infra-only recovery rule; #432 and #424 protocols plus authoring-slot scaffolds are frozen while actual corpus content/inference remain sealed until B2 is terminal.",
@@ -3673,7 +3853,7 @@
       98,
       100
     ],
-    "session_resume_rule": "Read #417, then active #420, then this ledger and the frozen B1 preregistration before changing code. Do not revive terminal 0.13 classifier/veto methods.",
+    "session_resume_rule": "Read #417, then #423 canonical run 36642658406, then #430 structural/fixed3 result files and this ledger. Do not inspect or use partial B2 row outcomes for tuning. After B2 terminal, the frozen structural K3-vs-K5 downstream workflow is the next gate.",
     "completed_work": [
       196,
       204,
@@ -3720,13 +3900,11 @@
       328
     ],
     "active_experiments": [
-      420
+      423
     ],
-    "active_pull_requests": [
-      426
-    ],
+    "active_pull_requests": [],
     "next_blocked_confirmation": 198,
-    "next_research_direction": "Finish #420 B1 v2 canonical aggregate unchanged. Then freeze a materially stronger B2 agent (#423). Use #432 before any population-level non-inferiority/generalization claim. #424 separately measures final-answer factual quality; #430 adaptive K remains post-fixed-K work.",
+    "next_research_direction": "Finish canonical B2 attempt 9 unchanged. Then run the already-frozen structural K3-vs-K5 downstream agent gate. Keep #431/#432/#424 content or scoring sealed until their preregistered terminal dependencies are satisfied.",
     "contingent_experiments": [
       303
     ],
@@ -3734,12 +3912,13 @@
       293
     ],
     "staged_experiments": [
-      423,
       424,
-      430,
+      431,
       432
     ],
-    "infrastructure_in_progress": [],
+    "infrastructure_in_progress": [
+      423
+    ],
     "contingent_pull_requests": [],
     "technical_contingencies": {
       "kev_299_timeout_retry": {
@@ -3758,7 +3937,7 @@
     ],
     "runtime_only_contingency": 318,
     "current_cycle": "0.14-end-to-end-agent-utility",
-    "current_cycle_status": "phase_a_v2_passed_b1_v2_running",
+    "current_cycle_status": "b2_attempt9_running_structural_k3_downstream_frozen_terminal_gated",
     "final_evaluation_issue": 198,
     "final_evaluation_status": "blocked_no_fresh_confirmed_candidate",
     "staged_product_work": [
