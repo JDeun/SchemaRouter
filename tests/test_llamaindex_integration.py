@@ -2,8 +2,18 @@ import pytest
 
 pytest.importorskip("llama_index.core")
 
-from schemarouter import PolicyViolationError, SchemaRouter, SchemaValidationError, schema_tool
-from schemarouter.integrations import to_llamaindex_tool, to_llamaindex_tools
+from schemarouter import (
+    PlanRequest,
+    PolicyViolationError,
+    SchemaRouter,
+    SchemaValidationError,
+    schema_tool,
+)
+from schemarouter.integrations import (
+    to_llamaindex_tool,
+    to_llamaindex_tools,
+    tool_from_llamaindex,
+)
 from schemarouter.integrations.llamaindex import _llamaindex_schema_model
 
 
@@ -94,3 +104,41 @@ def test_llamaindex_tool_cannot_bypass_execution_policy() -> None:
 
     with pytest.raises(PolicyViolationError, match="allow_mutations"):
         tool(value=7)
+
+
+def test_llamaindex_tool_can_be_imported_back_into_schemarouter() -> None:
+    from llama_index.core.tools import FunctionTool
+
+    def search(query: str) -> str:
+        """Search one fixture source."""
+        return f"found:{query}"
+
+    foreign = FunctionTool.from_defaults(fn=search)
+    imported = tool_from_llamaindex(
+        foreign,
+        read_only=True,
+        remote=False,
+        provider="fixture-search",
+    )
+
+    endpoint = imported.endpoint("invoke")
+    assert endpoint.parameters[0].name == "query"
+    assert endpoint.read_only is True
+    assert imported.provider == "fixture-search"
+
+    router = SchemaRouter()
+    key = router.add_llamaindex_tool(
+        foreign,
+        read_only=True,
+        remote=False,
+        provider="fixture-search",
+    )
+    result = router.invoke(
+        PlanRequest(
+            query="search fixture",
+            preferred_tools=[key],
+            arguments={"query": "hello"},
+        )
+    )
+
+    assert result[0].data == "found:hello"

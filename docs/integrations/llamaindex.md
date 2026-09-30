@@ -19,6 +19,27 @@ For repository development:
 pip install -e ".[dev,llamaindex]"
 ```
 
+## Import existing LlamaIndex tools
+
+LlamaIndex `BaseTool` / `FunctionTool`-like objects can also be registered directly:
+
+```python
+router = SchemaRouter()
+key = router.add_llamaindex_tool(
+    llama_tool,
+    provider="scholarly-search",
+    read_only=True,
+    remote=True,
+)
+```
+
+SchemaRouter reads `ToolMetadata.get_parameters_dict()` or the declared `fn_schema` for the
+input contract. For typed `FunctionTool` objects, a declared return annotation is preserved as an
+output JSON Schema when it can be represented safely.
+
+The imported tool remains subject to SchemaRouter policy, fingerprints, validation, fallback,
+health, and observability. Tool metadata does not grant execution authority.
+
 ## Export registered endpoints
 
 Convert one endpoint or a selected catalog:
