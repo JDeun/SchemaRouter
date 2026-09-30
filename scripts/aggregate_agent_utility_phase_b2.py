@@ -21,6 +21,16 @@ from scripts.evaluate_agent_utility_phase_b_smollm3 import _summary  # noqa: E40
 DEPLOYABLE = ("SR-5", "SR-10", "SR-PROGRESSIVE")
 
 
+def _stable_runtime_identity(runtime: dict[str, Any]) -> str:
+    stable = dict(runtime)
+    stable.pop("platform", None)
+    return json.dumps(
+        stable,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
 def _cluster_bootstrap_delta(
     full_rows: list[dict[str, Any]],
     condition_rows: list[dict[str, Any]],
@@ -156,7 +166,7 @@ def aggregate(paths: list[Path]) -> dict[str, Any]:
         raise ValueError("model configuration drift across shards")
 
     runtime_identities = {
-        json.dumps(result["runtime"], sort_keys=True, separators=(",", ":"))
+        _stable_runtime_identity(result["runtime"])
         for result in loaded
     }
     if len(runtime_identities) != 1:
@@ -334,6 +344,12 @@ def aggregate(paths: list[Path]) -> dict[str, Any]:
         },
         "model": loaded[0]["model"],
         "runtime": loaded[0]["runtime"],
+        "runtime_platforms": sorted(
+            {
+                str(result["runtime"].get("platform", ""))
+                for result in loaded
+            }
+        ),
         "episode_count": len(rows),
         "expected_episode_count": 23 * 4 * 5,
         "summary_by_catalog": summary_by_catalog,

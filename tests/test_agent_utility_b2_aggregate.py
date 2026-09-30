@@ -13,11 +13,13 @@ if str(ROOT) not in sys.path:
 from scripts.aggregate_agent_utility_phase_b2 import (  # noqa: E402
     _cluster_bootstrap_delta,
     _retrieval_coverage,
+    _stable_runtime_identity,
     aggregate,
 )
 
 RUNTIME = {
     "platform": "Linux-test",
+    "machine": "aarch64",
     "python": "3.12.14",
     "torch": "2.14.0+cpu",
     "transformers": "4.57.6",
@@ -236,3 +238,22 @@ def test_b2_sharding_plan_covers_exact_460_episode_surface() -> None:
     assert {
         size for size, _, _ in episode_keys
     } == {20, 50, 100, 250}
+
+
+
+def test_b2_runtime_identity_ignores_kernel_string_not_architecture() -> None:
+    first = dict(RUNTIME)
+    second = {
+        **RUNTIME,
+        "platform": "Linux-other-kernel-build",
+    }
+    different_arch = {
+        **second,
+        "machine": "x86_64",
+    }
+
+    assert _stable_runtime_identity(first) == _stable_runtime_identity(second)
+    assert (
+        _stable_runtime_identity(first)
+        != _stable_runtime_identity(different_arch)
+    )
