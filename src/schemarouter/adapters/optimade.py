@@ -814,10 +814,10 @@ class OPTIMADERemoteInvoker:
         projected: dict[str, Any] = {}
         missing: list[str] = []
         for field_name in fields:
+            field_spec = field_specs.get(field_name)
             if field_name in {"id", "type"}:
                 wire_name = field_name
             else:
-                field_spec = field_specs.get(field_name)
                 wire_name = (
                     projection.selector_for(field_spec)
                     if projection is not None and field_spec is not None
