@@ -997,6 +997,54 @@ def build_final_task(slot: dict[str, Any], index: int) -> dict[str, Any]:
                 {"status": "ok", "file_uri": uri, "source_id": source_b},
             ),
         ]
+        if stratum == "corrective_expansion_required":
+            suffix = _pick(
+                language,
+                {
+                    "en": (
+                        f" Then restart runtime {v['runtime_id']} and send a completion "
+                        f"message to {RECIPIENT}."
+                    ),
+                    "ko": (
+                        f" 이어서 런타임 {v['runtime_id']}를 재시작하고 {RECIPIENT}에게 "
+                        "완료 메시지를 보내세요."
+                    ),
+                    "es": (
+                        f" Después reinicia el runtime {v['runtime_id']} y envía un mensaje "
+                        f"de finalización a {RECIPIENT}."
+                    ),
+                    "ja": (
+                        f" 続けてランタイム {v['runtime_id']} を再起動し、{RECIPIENT} に"
+                        "完了メッセージを送信してください。"
+                    ),
+                    "de": (
+                        f" Starte danach die Runtime {v['runtime_id']} neu und sende eine "
+                        f"Abschlussnachricht an {RECIPIENT}."
+                    ),
+                    "mixed": (
+                        f" 이어서 runtime {v['runtime_id']}를 restart하고 {RECIPIENT}에게 "
+                        "completion message를 send하세요."
+                    ),
+                },
+            )
+            query += suffix
+            steps.extend(
+                [
+                    _step(
+                        "runtime.restart",
+                        {"runtime_id": {"eq": v["runtime_id"]}},
+                        {"status": "ok", "runtime_id": v["runtime_id"], "state": "running"},
+                    ),
+                    _step(
+                        "messaging.send",
+                        {
+                            "recipient": {"eq": RECIPIENT},
+                            "message": {"nonempty": True},
+                        },
+                        {"status": "ok", "message_id": f"MSG-F{index:04d}"},
+                    ),
+                ]
+            )
         required_facts = [_fact("file_uri", uri, source_b)]
         tolerances = {}
         accepted_units = {}
