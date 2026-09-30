@@ -143,3 +143,16 @@ def test_an_empty_run_does_not_qualify():
     from scripts.qualify_agent_utility_runtime import qualification_rates, qualifies
 
     assert not qualifies(qualification_rates([]))
+
+
+def test_a_runtime_that_calls_tools_but_grounds_nothing_is_refused():
+    # The criterion that exists for this case must be able to refuse on its own.
+    # _rows(10, 0, 0) cannot prove that: no tool calls means tool_call_rate
+    # refuses it regardless, so weakening grounded_fact_rate leaves it refused
+    # for the wrong reason. This shape isolates the criterion.
+    from scripts.qualify_agent_utility_runtime import qualification_rates, qualifies
+
+    rates = qualification_rates(_rows(envelope=10, tool_calls=10, grounded=0))
+    assert rates["envelope_valid_rate"] == 1.0
+    assert rates["tool_call_rate"] == 1.0
+    assert not qualifies(rates)
