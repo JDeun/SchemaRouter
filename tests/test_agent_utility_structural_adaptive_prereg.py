@@ -76,3 +76,21 @@ def test_structural_adaptive_binds_confirmed_fixed_retriever() -> None:
         new["after_dev"]["structural_confirmation_surface_reuse_allowed"]
         is False
     )
+
+
+def test_structural_adaptive_restores_frozen_evaluator_contract() -> None:
+    old = json.loads(OLD.read_text(encoding="utf-8"))
+    new = json.loads(NEW.read_text(encoding="utf-8"))
+
+    for key in (
+        "unique_semantic_tasks",
+        "task_strata",
+        "languages",
+        "tasks_per_stratum_language_cell",
+        "cells",
+        "each_task_one_language_only",
+    ):
+        assert new["development_surface"][key] == old["development_surface"][key]
+
+    assert new["catalogs"] == old["catalogs"]
+    assert new["metric_populations"] == old["metric_populations"]
