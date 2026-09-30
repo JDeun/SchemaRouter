@@ -125,47 +125,6 @@ class InMemoryRegistry:
             self._version += 1
         return key
 
-    def replace_if_fingerprint(
-        self,
-        tool: ToolSpec,
-        *,
-        expected_fingerprint: str,
-    ) -> str:
-        """Atomically replace one persisted tool if its fingerprint still matches."""
-        validated = _validated_tool_snapshot(tool)
-        document = self._serialize(validated)
-        with self._lock:
-            self._begin_write()
-            try:
-                row = self._connection.execute(
-                    "SELECT document FROM schemarouter_registry_tools WHERE key = ?",
-                    (validated.key,),
-                ).fetchone()
-                if row is None:
-                    raise KeyError(validated.key)
-                current = self._deserialize(validated.key, str(row["document"]))
-                if current.fingerprint != expected_fingerprint:
-                    raise RegistrationError(
-                        f"tool {validated.key!r} changed concurrently; expected "
-                        f"fingerprint {expected_fingerprint!r}, found "
-                        f"{current.fingerprint!r}"
-                    )
-                self._connection.execute(
-                    """
-                    UPDATE schemarouter_registry_tools
-                    SET document = ?
-                    WHERE key = ?
-                    """,
-                    (document, validated.key),
-                )
-                self._bump_version()
-            except Exception:
-                self._connection.rollback()
-                raise
-            else:
-                self._connection.commit()
-        return validated.key
-
     def unregister(self, key: str) -> None:
         with self._lock:
             if key not in self._tools:
@@ -351,6 +310,47 @@ class SQLiteRegistry:
                         """,
                         (document, validated.key),
                     )
+                self._bump_version()
+            except Exception:
+                self._connection.rollback()
+                raise
+            else:
+                self._connection.commit()
+        return validated.key
+
+    def replace_if_fingerprint(
+        self,
+        tool: ToolSpec,
+        *,
+        expected_fingerprint: str,
+    ) -> str:
+        """Atomically replace one persisted tool if its fingerprint still matches."""
+        validated = _validated_tool_snapshot(tool)
+        document = self._serialize(validated)
+        with self._lock:
+            self._begin_write()
+            try:
+                row = self._connection.execute(
+                    "SELECT document FROM schemarouter_registry_tools WHERE key = ?",
+                    (validated.key,),
+                ).fetchone()
+                if row is None:
+                    raise KeyError(validated.key)
+                current = self._deserialize(validated.key, str(row["document"]))
+                if current.fingerprint != expected_fingerprint:
+                    raise RegistrationError(
+                        f"tool {validated.key!r} changed concurrently; expected "
+                        f"fingerprint {expected_fingerprint!r}, found "
+                        f"{current.fingerprint!r}"
+                    )
+                self._connection.execute(
+                    """
+                    UPDATE schemarouter_registry_tools
+                    SET document = ?
+                    WHERE key = ?
+                    """,
+                    (document, validated.key),
+                )
                 self._bump_version()
             except Exception:
                 self._connection.rollback()
