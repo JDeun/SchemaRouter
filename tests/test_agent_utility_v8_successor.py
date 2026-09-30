@@ -77,3 +77,69 @@ def test_validation_accepts_the_generated_corpus():
     summary = validate(build_corpus("a" * 40))
     assert summary["tasks"] == 144
     assert summary["cells"] == 36
+
+
+# --- instrument qualification ----------------------------------------------
+
+
+def _rows(envelope: int, tool_calls: int, grounded: int, total: int = 10) -> list[dict]:
+    rows = []
+    for index in range(total):
+        rows.append(
+            {
+                "final_envelope_valid": index < envelope,
+                "tool_call_count": 1 if index < tool_calls else 0,
+                "required_fact_recall": 1.0 if index < grounded else 0.0,
+            }
+        )
+    return rows
+
+
+def test_the_thresholds_are_the_preregistered_ones():
+    # Frozen by issue #510. A plan may not tune them.
+    from scripts.qualify_agent_utility_runtime import ELIGIBILITY
+
+    assert ELIGIBILITY == {
+        "envelope_valid_rate": 0.80,
+        "tool_call_rate": 0.90,
+        "grounded_fact_rate": 0.70,
+    }
+
+
+def test_the_roster_is_frozen_and_ordered():
+    from scripts.qualify_agent_utility_runtime import ROSTER
+
+    assert ROSTER == (
+        "HuggingFaceTB/SmolLM3-3B",
+        "Qwen/Qwen3-4B",
+        "Qwen/Qwen3-8B",
+    )
+
+
+def test_rates_are_computed_per_episode():
+    from scripts.qualify_agent_utility_runtime import qualification_rates
+
+    rates = qualification_rates(_rows(envelope=8, tool_calls=9, grounded=7))
+    assert rates == {
+        "envelope_valid_rate": 0.8,
+        "tool_call_rate": 0.9,
+        "grounded_fact_rate": 0.7,
+    }
+
+
+def test_all_three_must_pass():
+    from scripts.qualify_agent_utility_runtime import qualification_rates, qualifies
+
+    assert qualifies(qualification_rates(_rows(8, 9, 7)))
+    # The #506 failure mode: envelopes produced, nothing grounded.
+    assert not qualifies(qualification_rates(_rows(10, 0, 0)))
+    # One short on each axis in turn.
+    assert not qualifies(qualification_rates(_rows(7, 9, 7)))
+    assert not qualifies(qualification_rates(_rows(8, 8, 7)))
+    assert not qualifies(qualification_rates(_rows(8, 9, 6)))
+
+
+def test_an_empty_run_does_not_qualify():
+    from scripts.qualify_agent_utility_runtime import qualification_rates, qualifies
+
+    assert not qualifies(qualification_rates([]))
