@@ -248,7 +248,7 @@ def projected_output_schema(
         object_schema: dict[str, Any],
         tree: dict[str, Any],
     ) -> dict[str, Any] | None:
-        if object_schema.get("type") != "object":
+        if "object" not in json_schema_types(object_schema):
             return None
         properties = object_schema.get("properties")
         if not isinstance(properties, dict):

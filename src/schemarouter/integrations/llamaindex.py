@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+import dataclasses
+import inspect
 import re
 from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Literal, cast
+from typing import Any, Literal, cast, get_type_hints
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-from ..models import ToolCall
+from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
 from ..runtime import SchemaRouter
 from ..validation import effective_input_schema
 
@@ -101,6 +103,243 @@ def _sync_await(coroutine_factory):
         "synchronous LlamaIndex tool invocation cannot run inside an active event loop; "
         "use the async tool path instead"
     )
+
+
+def _llamaindex_input_schema(tool: Any) -> dict[str, Any]:
+    metadata = getattr(tool, "metadata", None)
+    getter = getattr(metadata, "get_parameters_dict", None)
+    if callable(getter):
+        try:
+            schema = getter()
+        except Exception:  # noqa: BLE001
+            schema = None
+        if isinstance(schema, dict):
+            return deepcopy(schema)
+
+    fn_schema = getattr(metadata, "fn_schema", None)
+    model_json_schema = getattr(fn_schema, "model_json_schema", None)
+    if callable(model_json_schema):
+        try:
+            schema = model_json_schema()
+        except Exception:  # noqa: BLE001
+            schema = None
+        if isinstance(schema, dict):
+            return deepcopy(schema)
+    return {}
+
+
+def _llamaindex_output_schema(tool: Any) -> dict[str, Any]:
+    try:
+        real_fn = getattr(tool, "real_fn", None)
+    except Exception:  # noqa: BLE001
+        real_fn = None
+    if not callable(real_fn):
+        return {}
+
+    try:
+        hints = get_type_hints(real_fn)
+    except Exception:  # noqa: BLE001
+        hints = {}
+    annotation = hints.get("return", inspect.signature(real_fn).return_annotation)
+    if annotation is inspect.Signature.empty:
+        return {}
+    try:
+        schema = TypeAdapter(annotation).json_schema()
+    except Exception:  # noqa: BLE001
+        return {}
+    return schema if isinstance(schema, dict) else {}
+
+
+def _llama_schema_properties(schema: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        return {}
+    return {
+        str(name): value
+        for name, value in properties.items()
+        if isinstance(value, dict)
+    }
+
+
+def _llama_schema_unit(schema: Any) -> str | None:
+    if not isinstance(schema, dict):
+        return None
+    for key in ("x-ucum-unit", "x-unit", "unit"):
+        value = schema.get(key)
+        if isinstance(value, str) and value.strip() and value.strip() != "inapplicable":
+            return value.strip()
+    return None
+
+
+def _llama_parameters_from_schema(schema: dict[str, Any]) -> list[ParameterSpec]:
+    required_value = schema.get("required")
+    required = set(required_value) if isinstance(required_value, list) else set()
+    return [
+        ParameterSpec(
+            name=name,
+            description=str(spec.get("description") or ""),
+            required=name in required,
+            location="argument",
+            json_schema=spec,
+        )
+        for name, spec in _llama_schema_properties(schema).items()
+    ]
+
+
+def _llama_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
+    fields: list[FieldSpec] = []
+    seen: set[str] = set()
+
+    def visit(
+        value: dict[str, Any],
+        *,
+        prefix: tuple[str, ...],
+        depth: int,
+    ) -> None:
+        if depth >= 8:
+            return
+        raw_type = value.get("type")
+        if raw_type == "array" or (
+            isinstance(raw_type, list) and "array" in raw_type
+        ):
+            return
+        for name, child in _llama_schema_properties(value).items():
+            path = (*prefix, name)
+            field_name = ".".join(path)
+            if field_name not in seen:
+                seen.add(field_name)
+                fields.append(
+                    FieldSpec(
+                        name=field_name,
+                        description=str(child.get("description") or ""),
+                        json_schema=child,
+                        aliases=[name.replace("_", " ")],
+                        path=list(path) if prefix else [],
+                        result_path=[field_name] if prefix else [],
+                        unit=_llama_schema_unit(child),
+                        identifier=(
+                            name in {"id", "uuid", "key"}
+                            or name.endswith("_id")
+                        ),
+                        source_type="llamaindex",
+                    )
+                )
+            visit(child, prefix=path, depth=depth + 1)
+
+    visit(schema, prefix=(), depth=0)
+    return fields
+
+
+def tool_from_llamaindex(
+    tool: Any,
+    *,
+    name: str | None = None,
+    namespace: str | None = None,
+    provider: str | None = None,
+    access_mode: str | None = None,
+    read_only: bool | None = None,
+    destructive: bool | None = None,
+    remote: bool = True,
+) -> ToolSpec:
+    """Compile a LlamaIndex BaseTool-like object into the canonical SchemaRouter contract."""
+
+    metadata = getattr(tool, "metadata", None)
+    metadata_name = None
+    name_getter = getattr(metadata, "get_name", None)
+    if callable(name_getter):
+        try:
+            metadata_name = name_getter()
+        except Exception:  # noqa: BLE001
+            metadata_name = None
+    if metadata_name is None:
+        metadata_name = getattr(metadata, "name", None)
+
+    tool_name = name or metadata_name
+    if not isinstance(tool_name, str) or not tool_name.strip():
+        raise TypeError("LlamaIndex tool must expose a non-empty name or receive name=")
+
+    description = getattr(metadata, "description", "")
+    if not isinstance(description, str):
+        description = str(description)
+
+    input_schema = _llamaindex_input_schema(tool)
+    output_schema = _llamaindex_output_schema(tool)
+    endpoint = EndpointSpec(
+        name="invoke",
+        description=description,
+        parameters=_llama_parameters_from_schema(input_schema),
+        input_schema=input_schema,
+        output_fields=_llama_fields_from_schema(output_schema),
+        output_schema=output_schema,
+        read_only=read_only,
+        destructive=destructive,
+        execution_metadata={
+            "framework": "llamaindex",
+            "foreign_tool_name": tool_name,
+        },
+        metadata={
+            "framework": "llamaindex",
+            "foreign_tool_class": type(tool).__qualname__,
+            "foreign_tool_module": type(tool).__module__,
+        },
+    )
+    return ToolSpec(
+        name=tool_name.strip(),
+        namespace=namespace,
+        description=description,
+        provider=provider,
+        access_mode=access_mode or "llamaindex",
+        remote=remote,
+        endpoints=[endpoint],
+        execution_metadata={"adapter": "llamaindex_tool"},
+        metadata={
+            "adapter": "llamaindex_tool",
+            "foreign_tool_class": type(tool).__qualname__,
+            "foreign_tool_module": type(tool).__module__,
+        },
+    )
+
+
+class LlamaIndexToolInvoker:
+    """Trusted binding for one imported LlamaIndex tool object."""
+
+    def __init__(self, tool: Any) -> None:
+        self.tool = tool
+
+    async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
+        if endpoint != "invoke":
+            raise RuntimeError(f"unknown LlamaIndex tool endpoint: {endpoint!r}")
+
+        acall = getattr(self.tool, "acall", None)
+        if callable(acall):
+            value = acall(**dict(arguments))
+            if inspect.isawaitable(value):
+                value = await value
+        else:
+            call = getattr(self.tool, "call", None)
+            if callable(call):
+                value = call(**dict(arguments))
+            elif callable(self.tool):
+                value = self.tool(**dict(arguments))
+            else:
+                raise TypeError("imported LlamaIndex tool is not callable")
+            if inspect.isawaitable(value):
+                value = await value
+
+        raw_output = getattr(value, "raw_output", None)
+        if raw_output is not None:
+            value = raw_output
+        else:
+            content = getattr(value, "content", None)
+            if content is not None:
+                value = content
+
+        model_dump = getattr(value, "model_dump", None)
+        if callable(model_dump):
+            return model_dump(mode="json", by_alias=True, exclude_none=True)
+        if dataclasses.is_dataclass(value) and not isinstance(value, type):
+            return dataclasses.asdict(value)
+        return value
 
 
 def to_llamaindex_tool(
