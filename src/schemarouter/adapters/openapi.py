@@ -764,16 +764,34 @@ def _nested_response_fields(
     document: dict[str, Any],
     schemas: list[dict[str, Any]],
 ) -> list[FieldSpec]:
-    """Discover declared nested object properties without changing the raw response schema.
-
-    Array-item traversal is intentionally not inferred here. A nested field is exposed only when
-    every traversed segment is an object property. The planner-facing name is the dotted source
-    path, while result_path keeps the projected value under one flat key so existing parent fields
-    can remain available without result-shape collisions.
-    """
+    """Discover declared nested object and record-preserving array-item fields."""
 
     discovered: list[FieldSpec] = []
     seen_names = set(_response_properties(document, schemas))
+
+    def field_name_for(path: tuple[str, ...]) -> str:
+        parts: list[str] = []
+        for part in path:
+            if part == "*":
+                if parts:
+                    parts[-1] += "[]"
+                continue
+            parts.append(part)
+        return ".".join(parts)
+
+    def array_items(schema: dict[str, Any]) -> dict[str, Any] | None:
+        resolved = _resolve_local_ref(document, schema)
+        if not isinstance(resolved, dict):
+            return None
+        raw_type = resolved.get("type")
+        if raw_type == "array" or (
+            isinstance(raw_type, list) and "array" in raw_type
+        ):
+            items = resolved.get("items")
+            if isinstance(items, dict):
+                item_schema = _resolve_local_ref(document, items)
+                return item_schema if isinstance(item_schema, dict) else items
+        return None
 
     def visit(
         schema: dict[str, Any],
@@ -797,6 +815,16 @@ def _nested_response_fields(
         if signature in ancestors:
             return
         next_ancestors = ancestors | {signature}
+
+        items = array_items(resolved)
+        if items is not None:
+            visit(
+                items,
+                prefix=(*prefix, "*"),
+                depth=depth + 1,
+                ancestors=next_ancestors,
+            )
+            return
 
         property_sets = [_schema_properties(document, resolved)]
         property_sets.extend(
@@ -824,39 +852,33 @@ def _nested_response_fields(
         for name, spec in merged.items():
             path = (*prefix, name)
             if prefix:
-                field_name = ".".join(path)
+                field_name = field_name_for(path)
                 if field_name not in seen_names:
                     seen_names.add(field_name)
                     leaf_alias = name.replace("_", " ")
+                    record_preserving = "*" in path
                     discovered.append(
                         FieldSpec(
                             name=field_name,
-                            description=(
-                                spec.get("description", "")
-                                if isinstance(spec, dict)
-                                else ""
-                            ),
-                            json_schema=spec if isinstance(spec, dict) else {},
+                            description=str(spec.get("description") or ""),
+                            json_schema=spec,
                             path=list(path),
-                            result_path=[field_name],
+                            result_path=(
+                                list(path)
+                                if record_preserving
+                                else [field_name]
+                            ),
                             unit=_schema_unit(spec),
                             identifier=(
                                 name in {"id", "uuid", "key"}
                                 or name.endswith("_id")
                             ),
                             aliases=list(
-                                dict.fromkeys(
-                                    [
-                                        name,
-                                        leaf_alias,
-                                    ]
-                                )
+                                dict.fromkeys([name, leaf_alias])
                             ),
                         )
                     )
 
-            # Object-only recursion for phase 1. Arrays intentionally remain opaque until
-            # record-preserving item traversal semantics are implemented.
             if isinstance(spec, dict):
                 visit(
                     spec,
@@ -876,7 +898,6 @@ def _nested_response_fields(
         )
 
     return discovered
-
 
 def _origin(url: str) -> tuple[str, str, int]:
     parsed = urlparse(url)
