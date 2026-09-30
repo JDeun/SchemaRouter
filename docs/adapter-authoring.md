@@ -61,7 +61,9 @@ router.load_adapter_plugins(allowlist={"my_protocol"})
 
 Use `discover_adapter_plugins()` to inspect metadata without importing plugin code. Unknown
 allowlisted names fail before any plugin is loaded. See
-[Third-party adapter plugins](guides/adapter-plugins.md) for the complete trust model.
+[Third-party adapter plugins](guides/adapter-plugins.md) for the complete trust model, and
+[Protocol plugin recipes](guides/protocol-plugin-recipes.md) for STAC, gRPC/Protobuf, WSDL/SOAP,
+and AsyncAPI boundary examples.
 
 ## Adapter responsibilities
 
