@@ -39,5 +39,23 @@ jobs:
         env:
           GH_TOKEN: "${{ github.token }}"
           GITHUB_REPOSITORY: "${{ github.repository }}"
+          EVENT_NAME: "${{ github.event_name }}"
         run: |
-          python scripts/research_014_conveyor.py             --repository "${GITHUB_REPOSITORY}"             --token "${GH_TOKEN}"             --ref main             --execute
+          RECOVERY=()
+          if [ "${EVENT_NAME}" = "schedule" ]; then
+            RECOVERY+=(--recover-missing-k3)
+          fi
+          python scripts/research_014_conveyor.py \
+            --repository "${GITHUB_REPOSITORY}" \
+            --token "${GH_TOKEN}" \
+            --ref main \
+            --execute \
+            "${RECOVERY[@]}" \
+            --state-out artifacts/research-0.14-conveyor-state.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: "research-0.14-conveyor-state-${{ github.run_id }}"
+          path: artifacts/research-0.14-conveyor-state.json
+          if-no-files-found: warn
+          retention-days: 30
