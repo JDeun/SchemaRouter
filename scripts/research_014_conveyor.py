@@ -173,7 +173,12 @@ class GitHubAPI:
         )
 
     def rerun_failed_jobs(self, run_id: int) -> None:
-        self.post(f"/actions/runs/{run_id}/rerun-failed-jobs", {})
+        status, _ = self._request(
+            "POST",
+            f"/actions/runs/{run_id}/rerun-failed-jobs",
+        )
+        if status not in {200, 201, 202, 204}:
+            raise RuntimeError(f"unexpected GitHub rerun status: {status}")
 
     def issue_comments(self, issue_number: int) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
