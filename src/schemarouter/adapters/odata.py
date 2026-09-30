@@ -25,7 +25,6 @@ from ..models import (
 )
 from .base import AdapterContext, AdapterLoadResult
 
-
 _MAX_METADATA_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 16 * 1024 * 1024
 _EDM_NS = "http://docs.oasis-open.org/odata/ns/edm"
