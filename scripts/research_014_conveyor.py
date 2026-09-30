@@ -365,7 +365,7 @@ def run_controller(
             "status": [_status_line("b2", b2)],
         }
     b2_digest = _artifact_digest(b2_artifact)
-    api.ref_sha(ref)  # fail closed if the requested workflow ref is missing
+    _wrapper_sha = api.ref_sha(ref)  # fail closed if workflow ref is missing
     source_sha = DOWNSTREAM_IMPLEMENTATION_SHA
 
     b2_terminal_time = str(b2_row.get("updated_at") or b2.created_at)
