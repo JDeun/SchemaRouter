@@ -213,7 +213,7 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
-          path: artifacts/qualification
+          path: .
       - name: Evaluate frozen SmolLM3 qualification shard
         run: |
           mkdir -p artifacts/qualification-shard
@@ -244,7 +244,7 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
-          path: artifacts/qualification
+          path: .
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
         with:
           pattern: "qualification-smollm3-*-${{ github.run_id }}"
@@ -347,7 +347,7 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
-          path: artifacts/qualification
+          path: .
       - run: |
           mkdir -p artifacts/qualification-shard
           python -u scripts/evaluate_agent_utility_v8_qualification.py             --corpus artifacts/qualification/qualification-corpus.json             --candidate "Qwen/Qwen3-4B"             --task-ids "${{ matrix.task_ids }}"             --out "artifacts/qualification-shard/qwen4-${{ matrix.job_id }}.json"
@@ -377,7 +377,7 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
-          path: artifacts/qualification
+          path: .
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
         with:
           pattern: "qualification-qwen4-*-${{ github.run_id }}"
@@ -479,7 +479,7 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
-          path: artifacts/qualification
+          path: .
       - run: |
           mkdir -p artifacts/qualification-shard
           python -u scripts/evaluate_agent_utility_v8_qualification.py             --corpus artifacts/qualification/qualification-corpus.json             --candidate "Qwen/Qwen3-8B"             --task-ids "${{ matrix.task_ids }}"             --out "artifacts/qualification-shard/qwen8-${{ matrix.job_id }}.json"
@@ -509,7 +509,7 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
-          path: artifacts/qualification
+          path: .
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
         with:
           pattern: "qualification-qwen8-*-${{ github.run_id }}"
@@ -549,7 +549,7 @@ jobs:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
         with:
           name: "qualification-corpus-${{ github.run_id }}"
-          path: artifacts/qualification
+          path: .
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
         with:
           pattern: "qualification-evidence-*-${{ github.run_id }}"
