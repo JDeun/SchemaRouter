@@ -38,7 +38,10 @@ jobs:
     if: >-
       ${{
         github.event_name != 'workflow_run' ||
-        github.event.workflow_run.id == 36642658406
+        (
+          github.event.workflow_run.id == 36642658406 &&
+          github.event.workflow_run.conclusion == 'success'
+        )
       }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -101,7 +104,14 @@ jobs:
               "canonical B2 must be terminal before launch; "
               f"current status={run['status']}"
           )
-          print("canonical B2 terminal status verified; outcomes not inspected")
+          assert run["conclusion"] == "success", (
+              "canonical B2 must complete successfully before launch; "
+              f"conclusion={run['conclusion']}"
+          )
+          print(
+              "canonical B2 successful terminal status verified; "
+              "outcomes not inspected"
+          )
           PY
       - name: Verify frozen structural agent harness
         run: |
