@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "experiment": "structural-fixed-depth-k3-v4",
+  "created_date": "2026-09-30",
+  "status": "preregistered_before_fresh_confirmation_surface_generation",
+  "purpose": "Test whether the independently confirmed structural retriever can use a fixed Top-3 shortlist while preserving retrieval coverage and reducing exact tool-schema context versus fixed Top-5.",
+  "lineage": {
+    "structural_v2_confirmation_run": 36648848734,
+    "adaptive_v3_run": 36652143328,
+    "adaptive_v3_result": "benchmarks/agent-utility-v5-structural-adaptive-v3-result.json"
+  },
+  "fixed_retriever": {
+    "feature_flag": "structural_retrieval",
+    "enabled": true,
+    "candidate_id": "STRUCT-4.5-1.5",
+    "tool_identifier_bonus": 4.5,
+    "operation_family_bonus": 1.5,
+    "schema_specificity_tiebreak": true,
+    "weights_retunable": false
+  },
+  "fixed_depth_candidate": {
+    "id": "STRUCT-FIXED-3",
+    "k": 3,
+    "adaptive": false,
+    "depth_retunable": false
+  },
+  "control": {
+    "id": "STRUCT-FIXED-5",
+    "k": 5
+  },
+  "development_evidence_allowed": {
+    "surface": "original #430 adaptive DEV only",
+    "fixed3_each_catalog_recall_min_observed": 0.9857142857142858,
+    "fixed3_each_catalog_full_coverage_min_observed": 0.9833333333333333,
+    "fixed3_mean_schema_tokens": 362.2027777777778,
+    "fixed5_mean_schema_tokens": 553.0777777777778,
+    "fixed3_schema_token_reduction_vs_fixed5_fraction": 0.3451142093738072,
+    "structural_confirmation_rows_used": false,
+    "b2_outcomes_used": false
+  },
+  "confirmation_surface": {
+    "must_be_fresh": true,
+    "structural_v2_confirmation_reuse_allowed": false,
+    "adaptive_dev_reuse_allowed": false,
+    "semantic_task_count": 240,
+    "strata": 8,
+    "languages": 6,
+    "tasks_per_stratum_language_cell": 5,
+    "catalogs": [
+      100,
+      250,
+      500
+    ],
+    "candidate_fixed_before_generation": true,
+    "tuning_eligible": false,
+    "exact_normalized_overlap_with_prior_dev_and_structural_confirmation_required": 0,
+    "auxiliary_route_identity_reuse_allowed": false,
+    "canonical_core_routes_shared": true
+  },
+  "token_accounting": {
+    "model": "HuggingFaceTB/SmolLM3-3B",
+    "model_revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+    "definition": "exact B2 SmolLM3 chat-template tool-token delta for Top-3 and Top-5 prefixes",
+    "candidate_token_additivity_assumed": false
+  },
+  "confirmation_gates": {
+    "required_route_recall_min_each_catalog": 0.97,
+    "all_required_full_coverage_min_each_catalog": 0.97,
+    "typed_numeric_units_recall_min": 1,
+    "mean_schema_tokens_must_be_less_than_fixed5": true,
+    "mean_candidate_count_must_equal": 3,
+    "p95_candidate_count_max": 3,
+    "no_product_default_change": true
+  },
+  "after_confirmation": {
+    "if_passed": "freeze STRUCT-FIXED-3 retrieval candidate for downstream agent-utility evaluation after B2 is terminal",
+    "if_failed": "close v4; retain fixed structural retriever and fixed K=5 control; do not retune on or reuse the failed confirmation surface",
+    "no_post_confirmation_retuning": true
+  },
+  "downstream_gate": {
+    "b2_terminal_required": true,
+    "task_pass_delta_vs_fixed5_min": -0.02,
+    "unauthorized_destructive_executions_max": 0,
+    "execution_policy_integrity": 1
+  },
+  "product_governance": {
+    "structural_retrieval_default_remains_false": true,
+    "shortlist_default_change_allowed": false,
+    "broad_product_claim_allowed": false
+  },
+  "claim_boundary": "Fresh confirmation of fixed Top-3 retrieval compression only. Downstream agent utility and product-default promotion remain separate gates."
+}
