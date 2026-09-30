@@ -211,3 +211,19 @@ def test_frozen_source_sha_falls_back_to_first_attempt_head() -> None:
         head_sha="e" * 40,
     )
     assert frozen_source_sha(run) == "e" * 40
+
+
+def test_downstream_scientific_source_is_frozen_to_conveyor_merge() -> None:
+    assert DOWNSTREAM_IMPLEMENTATION_SHA == (
+        "30663de8f618bc88a893d9bf6214035a70e8e894"
+    )
+
+
+def test_downstream_failures_use_fresh_wrapper_dispatch_contract() -> None:
+    root = Path(__file__).resolve().parents[1]
+    controller = (root / "scripts" / "research_014_conveyor.py").read_text(
+        encoding="utf-8"
+    )
+    assert "recover_dispatch_corrective_after_failure" in controller
+    assert "recover_dispatch_heldout_after_failure" in controller
+    assert "recover_dispatch_final_after_failure" in controller
