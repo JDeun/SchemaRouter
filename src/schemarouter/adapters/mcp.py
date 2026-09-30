@@ -205,6 +205,16 @@ def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
     discovered: list[FieldSpec] = []
     seen_names = set(_merged_properties(output_schema, output_schema))
 
+    def field_name_for(path: tuple[str, ...]) -> str:
+        parts: list[str] = []
+        for part in path:
+            if part == "*":
+                if parts:
+                    parts[-1] += "[]"
+                continue
+            parts.append(part)
+        return ".".join(parts)
+
     def visit(
         schema: dict[str, Any],
         *,
@@ -225,19 +235,39 @@ def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
             return
         next_ancestors = ancestors | {signature}
 
+        spec_type = resolved.get("type")
+        if spec_type == "array" or (
+            isinstance(spec_type, list) and "array" in spec_type
+        ):
+            items = resolved.get("items")
+            if isinstance(items, dict):
+                item_schema = _resolve_output_schema(output_schema, items)
+                visit(
+                    item_schema,
+                    prefix=(*prefix, "*"),
+                    depth=depth + 1,
+                    ancestors=next_ancestors,
+                )
+            return
+
         for name, spec in _merged_properties(output_schema, resolved).items():
             path = (*prefix, name)
             if prefix:
-                field_name = ".".join(path)
+                field_name = field_name_for(path)
                 if field_name not in seen_names:
                     seen_names.add(field_name)
+                    record_preserving = "*" in path
                     discovered.append(
                         FieldSpec(
                             name=field_name,
                             description=str(spec.get("description") or ""),
                             json_schema=spec,
                             path=list(path),
-                            result_path=[field_name],
+                            result_path=(
+                                list(path)
+                                if record_preserving
+                                else [field_name]
+                            ),
                             unit=_schema_unit(spec),
                             identifier=(
                                 name in {"id", "uuid", "key"}
@@ -252,12 +282,6 @@ def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
                         )
                     )
 
-            # Arrays remain opaque until record-preserving item traversal is defined.
-            spec_type = spec.get("type")
-            if spec_type == "array" or (
-                isinstance(spec_type, list) and "array" in spec_type
-            ):
-                continue
             visit(
                 spec,
                 prefix=path,
@@ -267,7 +291,6 @@ def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
 
     visit(output_schema, prefix=(), depth=0, ancestors=frozenset())
     return discovered
-
 
 def _as_dict(value: Any) -> dict[str, Any]:
     if isinstance(value, dict):
