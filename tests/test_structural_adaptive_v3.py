@@ -74,3 +74,13 @@ def test_structural_adaptive_v3_rejects_dev_hash_drift() -> None:
         assert "task hash drifted" in str(exc)
     else:
         raise AssertionError("DEV hash drift was not rejected")
+
+
+def test_structural_adaptive_v3_exposes_shared_evaluator_catalog_schema() -> None:
+    prereg = json.loads(PREREG.read_text(encoding="utf-8"))
+
+    assert prereg["catalogs"]["endpoint_counts"] == [100, 250, 500]
+    assert prereg["catalogs"]["nested"] is True
+    assert prereg["preregistration_correction"]["policy_thresholds_changed"] is False
+    assert prereg["preregistration_correction"]["policy_logic_changed"] is False
+    assert prereg["preregistration_correction"]["prior_attempts_scored"] is False
