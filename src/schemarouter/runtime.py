@@ -15,7 +15,13 @@ from .adapters.mcp import MCPClientFactory
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
-from .errors import InvocationUnavailableError, ProposalApprovalError, RegistrationError
+from .amendment import validate_amendment
+from .errors import (
+    BindingDriftError,
+    InvocationUnavailableError,
+    ProposalApprovalError,
+    RegistrationError,
+)
 from .executor import ExecutionBudgetTracker, RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
@@ -270,6 +276,62 @@ class SchemaRouter:
 
     def add_tool(self, tool: ToolSpec, *, replace: bool = False) -> str:
         return self.registry.register(tool, replace=replace)
+
+    def amend_capability(self, tool_key: str, amended: ToolSpec) -> str:
+        """Declare or annotate the result contract of an already registered capability.
+
+        Trusted local code may add output-field declarations and annotate their
+        meaning: semantic IDs, aliases, paths, units, normalization, qualifiers,
+        identifier flags, provenance and licence. It may not change execution
+        identity or validation shape; see `amendment.validate_amendment`.
+
+        This is more than cosmetic annotation. Accepted aspects can change what
+        the caller receives and which routes are reachable:
+
+        - `path` / `result_path` on an existing field re-point which value a
+          sanctioned field name resolves to. Projection is the redaction
+          boundary for a field-selecting call, so amending these can move
+          previously unprojected response content into the answer under the
+          same field name.
+        - `unit` and `unit_normalization` change how a numeric value is
+          rescaled before it reaches the caller, on the result path (see
+          `RegistryExecutor._normalize_projected_units` in `executor.py`).
+        - `source_type`, `license`, and `unit` feed evidence availability
+          (`evidence.py`), which the executor enforces as a hard gate. An
+          amendment can unblock an evidence-gated route by declaration alone,
+          with no change to what the underlying source actually returns.
+        - Declaring a semantic ID or unit can also change routing outright: it
+          may make a cross-provider fallback compatible that previously was
+          not.
+
+        Because of this, `amend_capability` is trusted local code, at the same
+        grade as `RegistryExecutor.bind()`. It must never be reachable from a
+        decision backend, remote content, or model output.
+
+        The execution binding is carried across the amendment, so a capability
+        SchemaRouter imported on the application's behalf stays executable. The
+        invoker is never exposed to the caller.
+
+        If the capability was already bound and re-stamping the binding fails
+        — only possible if another writer replaced the registered spec between
+        validation and this call, e.g. a concurrent thread or another process
+        on a shared registry — this raises `BindingDriftError` immediately
+        instead of returning a key whose binding will only be discovered stale
+        at execution time. The amendment itself is still registered; call
+        `RegistryExecutor.bind()` again to recover.
+        """
+        current = self.registry.get(tool_key)
+        validate_amendment(current, amended)
+        was_bound = tool_key in self.executor.bound_keys()
+        key = self.registry.register(amended, replace=True)
+        restamped = self.executor.restamp_binding(key, amended.fingerprint)
+        if was_bound and not restamped:
+            raise BindingDriftError(
+                f"amendment of {key!r} was registered, but its existing binding "
+                "could not be re-stamped because the registered contract changed "
+                "concurrently; the binding is stale until it is bound again"
+            )
+        return key
 
     def register_adapter(
         self,

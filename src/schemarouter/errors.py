@@ -14,6 +14,10 @@ class ProposalApprovalError(RegistrationError):
     """Raised when an inferred schema proposal is not safe to approve."""
 
 
+class ContractAmendmentError(RegistrationError):
+    """Raised when a proposed local contract amendment exceeds what is amendable."""
+
+
 class PlanningError(SchemaRouterError):
     """Raised when a plan cannot be produced."""
 

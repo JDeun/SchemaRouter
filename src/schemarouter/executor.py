@@ -409,6 +409,29 @@ class RegistryExecutor:
         self._invokers[tool_key] = invoker
         self._binding_fingerprints[tool_key] = tool.fingerprint
 
+    def restamp_binding(self, tool_key: str, expected_fingerprint: str) -> bool:
+        """Re-point an existing binding at a fingerprint the caller already validated.
+
+        Used only after trusted local code amends a contract in a way that
+        `amendment.validate_amendment` accepted. The invoker object is neither
+        accepted nor returned, so the caller never handles a live transport.
+
+        `expected_fingerprint` must be the fingerprint of the amendment that was
+        actually validated. The current registry entry is re-read and compared
+        against it rather than trusted outright: if some other writer replaced
+        the registered spec between validation and this call (a concurrent
+        thread, or another process on a shared registry), the fingerprints will
+        no longer match and the binding is left untouched. Re-reading the
+        registry's fingerprint and stamping it unconditionally would let a
+        binding go "ready" for a contract that never passed validation.
+        """
+        if tool_key not in self._invokers:
+            return False
+        if self.registry.get(tool_key).fingerprint != expected_fingerprint:
+            return False
+        self._binding_fingerprints[tool_key] = expected_fingerprint
+        return True
+
     def unbind(self, tool_key: str) -> None:
         self._invokers.pop(tool_key, None)
         self._binding_fingerprints.pop(tool_key, None)

@@ -120,3 +120,30 @@ router = SchemaRouter(registry=MyPersistentRegistry(...))
 
 Custom persistent implementations are responsible for atomic writes, snapshot semantics,
 write-time contract revalidation, and concurrency control.
+
+## What trusted local code may amend
+
+The application is the execution authority, so it may declare and annotate what
+a result *means*. It may not change what is executed or how a response is
+validated.
+
+| Aspect | Amendable |
+| --- | :---: |
+| An output field the source never published | yes |
+| `semantic_id`, `aliases`, `path`, `result_path`, `unit`, `unit_normalization`, `qualifiers`, `identifier`, `source_type`, `license`, field `description` | yes |
+| Endpoint `description`, `operation_aliases` | yes |
+| `output_schema`, and the `json_schema` of an already published field | no |
+| `name`, `method`, `path`, `parameters`, `input_schema`, `read_only`, `destructive`, `server_projection`, `execution_metadata` | no |
+| Tool `name`, `namespace`, `provider`, `access_mode`, `remote`, `source_type`; adding, removing or renaming endpoints | no |
+| Removing a field the source published | no |
+| Endpoint or tool `metadata` | no |
+
+Endpoint `metadata` is frozen even though it looks like free-form annotation:
+`_synthesized_output_schema` reads `endpoint.metadata["output_required"]` to
+build the validation schema whenever a source published no `output_schema`, so
+a metadata-only change can silently change what a response must contain.
+Amendment treats it like any other unlisted aspect, not as annotation.
+
+Amendment does not weaken drift detection. The fingerprint still changes, so a
+remote schema that moves under a bound invoker is still caught, and a plan built
+before the amendment is still rejected.
