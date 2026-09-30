@@ -52,6 +52,7 @@ class CompareAndSwapToolRegistry(ToolRegistry, Protocol):
         tool: ToolSpec,
         *,
         expected_fingerprint: str,
+        expected_version: int,
     ) -> str: ...
 
 
@@ -60,6 +61,7 @@ def replace_if_current(
     tool: ToolSpec,
     *,
     expected_fingerprint: str,
+    expected_version: int,
 ) -> str:
     """Use a registry's atomic CAS capability or fail closed.
 
@@ -74,7 +76,11 @@ def replace_if_current(
             "registry does not support atomic replace-if-fingerprint; "
             "this operation requires CompareAndSwapToolRegistry semantics"
         )
-    return replace(tool, expected_fingerprint=expected_fingerprint)
+    return replace(
+        tool,
+        expected_fingerprint=expected_fingerprint,
+        expected_version=expected_version,
+    )
 
 
 class InMemoryRegistry:
@@ -108,11 +114,17 @@ class InMemoryRegistry:
         tool: ToolSpec,
         *,
         expected_fingerprint: str,
+        expected_version: int,
     ) -> str:
         """Atomically replace one tool only if the caller still owns its snapshot."""
         validated = _validated_tool_snapshot(tool)
         key = validated.key
         with self._lock:
+            if self._version != expected_version:
+                raise RegistrationError(
+                    f"registry changed concurrently; expected version "
+                    f"{expected_version}, found {self._version}"
+                )
             current = self._tools.get(key)
             if current is None:
                 raise KeyError(key)
@@ -323,13 +335,25 @@ class SQLiteRegistry:
         tool: ToolSpec,
         *,
         expected_fingerprint: str,
+        expected_version: int,
     ) -> str:
-        """Atomically replace one persisted tool if its fingerprint still matches."""
+        """Atomically replace one persisted tool if its fingerprint and version match."""
         validated = _validated_tool_snapshot(tool)
         document = self._serialize(validated)
         with self._lock:
             self._begin_write()
             try:
+                version_row = self._connection.execute(
+                    "SELECT value FROM schemarouter_registry_meta WHERE key = 'version'"
+                ).fetchone()
+                if version_row is None:
+                    raise RegistrationError("registry version metadata is missing")
+                current_version = int(version_row["value"])
+                if current_version != expected_version:
+                    raise RegistrationError(
+                        f"registry changed concurrently; expected version "
+                        f"{expected_version}, found {current_version}"
+                    )
                 row = self._connection.execute(
                     "SELECT document FROM schemarouter_registry_tools WHERE key = ?",
                     (validated.key,),
