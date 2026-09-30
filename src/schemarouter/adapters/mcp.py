@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any, Protocol
@@ -209,15 +210,20 @@ def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
         *,
         prefix: tuple[str, ...],
         depth: int,
-        ancestors: frozenset[int],
+        ancestors: frozenset[str],
     ) -> None:
         if depth >= _NESTED_OUTPUT_MAX_DEPTH:
             return
         resolved = _resolve_output_schema(output_schema, schema)
-        marker = id(resolved)
-        if marker in ancestors:
+        signature = json.dumps(
+            resolved,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        )
+        if signature in ancestors:
             return
-        next_ancestors = ancestors | {marker}
+        next_ancestors = ancestors | {signature}
 
         for name, spec in _merged_properties(output_schema, resolved).items():
             path = (*prefix, name)
