@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 
 import httpx
 
+from .._url_safety import safe_provenance_url
 from ..errors import (
     InvocationUnavailableError,
     NonRetryableInvocationError,
@@ -16,6 +17,7 @@ from ..errors import (
 )
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
 from .base import AdapterContext, AdapterLoadResult
+from .openapi import same_origin
 
 
 _MAX_DISCOVERY_BYTES = 5 * 1024 * 1024
@@ -572,7 +574,15 @@ class OpenRPCSourceAdapter:
                 namespace=context.namespace,
             )
 
-            selected_base = context.base_url or _candidate_server_url(parsed)
+            suggested_base = _candidate_server_url(parsed)
+            selected_base = context.base_url
+            if (
+                selected_base is None
+                and suggested_base is not None
+                and same_origin(suggested_base, context.url)
+            ):
+                selected_base = suggested_base
+
             invoker = None
             if selected_base is not None:
                 invoker = OpenRPCRemoteInvoker(
@@ -586,6 +596,7 @@ class OpenRPCSourceAdapter:
                     {
                         "execution_bound": True,
                         "approved_base_url": selected_base,
+                        "requires_explicit_base_url": False,
                     }
                 )
             else:
@@ -598,8 +609,8 @@ class OpenRPCSourceAdapter:
 
             tool.metadata.update(
                 {
-                    "source_url": context.url,
-                    "suggested_base_url": _candidate_server_url(parsed),
+                    "source_url": safe_provenance_url(context.url),
+                    "suggested_base_url": suggested_base,
                 }
             )
             return AdapterLoadResult(tool=tool, invoker=invoker)
