@@ -97,7 +97,8 @@ def _q_paper_search_retrieve(language: str, tag: str, topic: str) -> str:
                 "der von der Suche gelieferten Paper-ID ab."
             ),
             "mixed": (
-                f"{topic} 관련 paper를 search하고, returned paper ID로 selected paper를 retrieve하세요."
+                f"{topic} 관련 paper를 search하고, returned paper ID로 "
+                "selected paper를 retrieve하세요."
             ),
         },
     )
@@ -161,7 +162,8 @@ def _q_material_search_retrieve_export(language: str, tag: str, topic: str) -> s
                 "zurückgegebenen ID ab und exportiere anschließend das erzeugte Artefakt."
             ),
             "mixed": (
-                f"{topic} material search → returned ID로 retrieve → resulting artifact를 export하세요."
+                f"{topic} material search → returned ID로 retrieve → "
+                "resulting artifact를 export하세요."
             ),
         },
     )
@@ -176,12 +178,18 @@ def _q_material_retrieve_export(language: str, tag: str, material_id: str) -> st
                 f"Retrieve material {material_id}, then export the artifact produced by that "
                 "material record."
             ),
-            "ko": f"재료 {material_id}를 조회한 뒤 그 재료 레코드에서 생성된 아티팩트를 내보내세요.",
+            "ko": (
+                f"재료 {material_id}를 조회한 뒤 그 재료 레코드에서 생성된 "
+                "아티팩트를 내보내세요."
+            ),
             "es": (
                 f"Recupera el material {material_id} y exporta el artefacto producido por ese "
                 "registro."
             ),
-            "ja": f"材料 {material_id} を取得し、その材料レコードから生成されたアーティファクトをエクスポートしてください。",
+            "ja": (
+                f"材料 {material_id} を取得し、その材料レコードから生成された"
+                "アーティファクトをエクスポートしてください。"
+            ),
             "de": (
                 f"Rufe Material {material_id} ab und exportiere anschließend das von diesem "
                 "Materialdatensatz erzeugte Artefakt."
@@ -230,7 +238,8 @@ def _q_inventory_create_send(language: str, tag: str, item_name: str) -> str:
         language,
         {
             "en": (
-                f"Create laboratory inventory item {item_name}, then send {RECIPIENT} a confirmation "
+                f"Create laboratory inventory item {item_name}, then send "
+                f"{RECIPIENT} a confirmation "
                 "message that contains the returned item identifier."
             ),
             "ko": (
@@ -395,7 +404,10 @@ def _q_unsupported(language: str, tag: str, kind: str, value: str) -> str:
                     "Usa el servicio registrado de refinamiento por difracción "
                     f"de neutrones para {value}."
                 ),
-                "ja": f"試料 {value} に登録済みの中性子回折リファインメントサービスを使用してください。",
+                "ja": (
+                    f"試料 {value} に登録済みの中性子回折リファインメント"
+                    "サービスを使用してください。"
+                ),
                 "de": (
                     "Nutze den registrierten Neutronenbeugungs-Verfeinerungsdienst "
                     f"für Probe {value}."
@@ -416,7 +428,10 @@ def _q_unsupported(language: str, tag: str, kind: str, value: str) -> str:
                     "Reembolsa el crédito de investigación, pero no se proporciona "
                     "ningún identificador."
                 ),
-                "ja": "研究クレジットを返金してください。ただしクレジット識別子は提供されていません。",
+                "ja": (
+                    "研究クレジットを返金してください。ただしクレジット識別子は"
+                    "提供されていません。"
+                ),
                 "de": "Erstatte den Forschungskredit, aber es ist keine Kredit-ID angegeben.",
                 "mixed": "research credit를 refund해야 하지만 credit ID는 제공되지 않았습니다.",
             },
