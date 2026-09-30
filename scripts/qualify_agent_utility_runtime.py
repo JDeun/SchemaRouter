@@ -41,10 +41,12 @@ def qualification_rates(rows: list[dict[str, Any]]) -> dict[str, float]:
     Each row must carry a `semantic_task_id` and no id may repeat: a gate
     that can be fed the same episode twice is not a gate, and duplicate rows
     would silently inflate a rate.
-    """
-    if not rows:
-        return {name: 0.0 for name in ELIGIBILITY}
 
+    Raises below MINIMUM_EPISODES, including on an empty list. Returning a
+    zero-rate dict for zero episodes would be indistinguishable from a real
+    run in which every episode failed — the two must not be able to
+    masquerade as each other.
+    """
     seen_ids: set[Any] = set()
     for row in rows:
         task_id = row.get("semantic_task_id")
@@ -90,8 +92,27 @@ def qualification_rates(rows: list[dict[str, Any]]) -> dict[str, float]:
 
 
 def qualifies(rates: dict[str, float]) -> bool:
-    """All three criteria must pass. A candidate is not graded on a curve."""
-    return all(rates.get(name, 0.0) >= threshold for name, threshold in ELIGIBILITY.items())
+    """All three criteria must pass. A candidate is not graded on a curve.
+
+    Refuses (raises ValueError) a `rates` that does not carry a real
+    measurement for every criterion — a missing key, or a value that isn't a
+    number (None included). A rate dict that was never measured must not be
+    able to masquerade as a measured failure via a silent `.get(..., 0.0)`
+    default.
+    """
+    missing = sorted(name for name in ELIGIBILITY if name not in rates)
+    if missing:
+        raise ValueError(f"rates is missing required criteria: {missing}")
+
+    non_numeric = sorted(
+        name
+        for name in ELIGIBILITY
+        if isinstance(rates[name], bool) or not isinstance(rates[name], (int, float))
+    )
+    if non_numeric:
+        raise ValueError(f"rates has a non-numeric value for: {non_numeric}")
+
+    return all(rates[name] >= threshold for name, threshold in ELIGIBILITY.items())
 
 
 def select_runtime(results: dict[str, dict[str, float]]) -> str | None:
@@ -106,6 +127,12 @@ def select_runtime(results: dict[str, dict[str, float]]) -> str | None:
     Evaluating out of order is the shape that cherry-picking takes, so it is
     refused: a candidate may only have results if every candidate before it in
     the roster already has results and failed.
+
+    The preregistration governs the act, not just the answer: "later
+    candidates are not run". So it is refused, too, for a later candidate to
+    have results once an earlier one has already qualified — holding those
+    later numbers is the forbidden state even if this function would still
+    return the correct (first) answer despite them.
 
     A None return means "no qualifier **so far**". It is a verdict only when
     `roster_exhausted(results)` is also True.
@@ -124,6 +151,13 @@ def select_runtime(results: dict[str, dict[str, float]]) -> str | None:
                 )
             return None
         if qualifies(results[candidate]):
+            later = [name for name in ROSTER[index + 1:] if name in results]
+            if later:
+                raise ValueError(
+                    f"{candidate!r} qualified but later candidates have results too "
+                    f"({later}); later candidates must not be run once an earlier "
+                    "one qualifies"
+                )
             return candidate
     return None
 

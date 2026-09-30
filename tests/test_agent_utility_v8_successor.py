@@ -168,10 +168,16 @@ def test_all_three_must_pass():
     assert not qualifies(qualification_rates(_rows(32, 36, 24)))
 
 
-def test_an_empty_run_does_not_qualify():
-    from scripts.qualify_agent_utility_runtime import qualification_rates, qualifies
+def test_an_empty_run_is_refused_rather_than_treated_as_zero_rates():
+    # A zero-rate dict for zero episodes would be byte-identical to a real
+    # 24+-episode run in which every episode failed. Those two must not be
+    # able to masquerade as each other, so this raises rather than returning
+    # `{name: 0.0 ...}` (which would make an unexecuted run "not qualify"
+    # the same way a genuine total failure does).
+    from scripts.qualify_agent_utility_runtime import qualification_rates
 
-    assert not qualifies(qualification_rates([]))
+    with pytest.raises(ValueError, match="MINIMUM_EPISODES"):
+        qualification_rates([])
 
 
 def test_a_runtime_that_calls_tools_but_grounds_nothing_is_refused():
@@ -239,12 +245,26 @@ def test_a_well_formed_run_still_qualifies():
     assert qualifies(qualification_rates(rows))
 
 
-def test_the_first_qualifier_wins_even_if_a_later_one_scores_higher():
+def test_the_first_qualifier_wins_when_evaluated_alone():
+    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+
+    passing = {"envelope_valid_rate": 0.85, "tool_call_rate": 0.95, "grounded_fact_rate": 0.75}
+    assert select_runtime({ROSTER[0]: passing}) == ROSTER[0]
+
+
+def test_a_later_candidates_results_after_a_qualifier_are_refused():
+    # The preregistration says "later candidates are not run" — an act, not
+    # just an answer. Holding a later candidate's results once an earlier
+    # one qualified is the forbidden state even though select_runtime would
+    # still return the right (first) answer despite them; #510's own
+    # recorded risk is temptation, which has already materialised the
+    # moment those later numbers exist.
     from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
 
     passing = {"envelope_valid_rate": 0.85, "tool_call_rate": 0.95, "grounded_fact_rate": 0.75}
     better = {"envelope_valid_rate": 1.0, "tool_call_rate": 1.0, "grounded_fact_rate": 1.0}
-    assert select_runtime({ROSTER[0]: passing, ROSTER[1]: better}) == ROSTER[0]
+    with pytest.raises(ValueError, match="later candidates"):
+        select_runtime({ROSTER[0]: passing, ROSTER[1]: better})
 
 
 def test_a_failing_candidate_falls_through_to_the_next():
@@ -320,8 +340,81 @@ def test_none_is_only_a_verdict_once_the_roster_is_exhausted():
 
 
 def test_roster_exhausted_ignores_qualification_and_only_asks_about_coverage():
+    # Deliberately a genuine total-failure shape, not an all-qualifying one:
+    # select_runtime now refuses a results dict in which a later candidate
+    # has results after an earlier one qualified (see
+    # test_a_later_candidates_results_after_a_qualifier_are_refused), so a
+    # test pinning coverage semantics must not depict three simultaneously
+    # qualifying candidates as a normal input.
     from scripts.qualify_agent_utility_runtime import ROSTER, roster_exhausted
 
-    passing = {"envelope_valid_rate": 1.0, "tool_call_rate": 1.0, "grounded_fact_rate": 1.0}
-    assert roster_exhausted({name: passing for name in ROSTER})
+    failing = {"envelope_valid_rate": 0.0, "tool_call_rate": 0.0, "grounded_fact_rate": 0.0}
+    assert roster_exhausted({name: failing for name in ROSTER})
     assert not roster_exhausted({})
+
+
+# --- unmeasured rates must not masquerade as a measured failure ------------
+#
+# roster_exhausted is pure key coverage: set(results) == set(ROSTER). It does
+# not look at the values. Left alone, that means a results dict whose values
+# were never really measured — empty, built from zero episodes, or missing
+# the criteria entirely — would still read as the roster's terminal "no
+# candidate qualified" state, identical to a genuine run in which every
+# candidate failed. The four cases below are the adversarial states a
+# reviewer constructed to show that; qualification_rates and qualifies must
+# refuse the first three, and the fourth (a real run that really failed)
+# must still work exactly as before.
+
+
+def test_a_roster_of_empty_rate_dicts_is_refused():
+    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+
+    with pytest.raises(ValueError, match="missing required criteria"):
+        select_runtime({name: {} for name in ROSTER})
+
+
+def test_a_roster_built_from_zero_episode_runs_is_refused():
+    from scripts.qualify_agent_utility_runtime import ROSTER, qualification_rates
+
+    with pytest.raises(ValueError, match="MINIMUM_EPISODES"):
+        {name: qualification_rates([]) for name in ROSTER}  # noqa: F841
+
+
+def test_a_roster_of_rates_missing_the_measured_criteria_is_refused():
+    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+
+    unmeasured = {"foo": 1.0}
+    with pytest.raises(ValueError, match="missing required criteria"):
+        select_runtime({name: unmeasured for name in ROSTER})
+
+
+def test_a_genuine_full_roster_failure_still_reports_as_a_verdict():
+    # The one state of the four that must keep working: real rows, run
+    # through qualification_rates, for every roster candidate, all of them
+    # failing every criterion.
+    from scripts.qualify_agent_utility_runtime import (
+        ROSTER,
+        qualification_rates,
+        roster_exhausted,
+        select_runtime,
+    )
+
+    failing_rows = _rows(envelope=0, tool_calls=0, grounded=0, total=40)
+    results = {name: qualification_rates(failing_rows) for name in ROSTER}
+    assert select_runtime(results) is None
+    assert roster_exhausted(results)
+
+
+def test_a_none_rate_value_is_refused_rather_than_crashing():
+    # None >= threshold raises TypeError in plain Python; qualifies must
+    # fail closed with the same ValueError as any other unmeasured rate,
+    # not crash with a type error.
+    from scripts.qualify_agent_utility_runtime import qualifies
+
+    rates = {
+        "envelope_valid_rate": None,
+        "tool_call_rate": 0.95,
+        "grounded_fact_rate": 0.75,
+    }
+    with pytest.raises(ValueError, match="non-numeric"):
+        qualifies(rates)
