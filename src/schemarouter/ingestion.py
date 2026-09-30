@@ -13,6 +13,7 @@ import yaml
 from ._url_safety import safe_provenance_url
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
 from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
+from .adapters.openrpc import OpenRPCSourceAdapter
 from .adapters.openapi import (
     OpenAPIRemoteInvoker,
     normalize_same_document_refs,
@@ -792,6 +793,7 @@ def default_adapter_registry() -> AdapterRegistry:
     return AdapterRegistry(
         [
             OpenAPISourceAdapter(),
+            OpenRPCSourceAdapter(),
             OPTIMADESourceAdapter(),
             MCPSourceAdapter(),
         ]
