@@ -22,6 +22,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  PYTHONPATH: "${{ github.workspace }}:${{ github.workspace }}/src"
   HF_HUB_DISABLE_TELEMETRY: "1"
   TOKENIZERS_PARALLELISM: "false"
   HF_HOME: "${{ github.workspace }}/.hf-cache"
@@ -115,7 +116,7 @@ jobs:
           PY
       - name: Verify frozen structural agent harness
         run: |
-          pytest -q tests/test_structural_fixed3_agent_utility.py
+          python -m pytest -q tests/test_structural_fixed3_agent_utility.py
       - id: plan
         name: Export exact 92-job matrix
         run: |
@@ -171,7 +172,18 @@ jobs:
         with:
           path: .hf-cache
           key: "${{ env.B2_CACHE_KEY }}"
-          fail-on-cache-miss: true
+      - name: Populate exact model revision on cache miss
+        if: steps.hf-cache.outputs.cache-hit != 'true'
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+
+          snapshot_download(
+              repo_id=os.environ["B2_MODEL"],
+              revision=os.environ["B2_REVISION"],
+          )
+          PY
       - name: Verify exact cached revision is loadable offline
         env:
           HF_HUB_OFFLINE: "1"

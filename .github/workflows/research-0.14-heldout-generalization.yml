@@ -1,0 +1,300 @@
+name: Research 0.14 Held-out Generalization
+run-name: Research 0.14 Held-out ${{ inputs.evidence_digest }} source=${{ inputs.source_sha }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      evidence_digest:
+        description: Combined canonical K3 + corrective artifact digest
+        required: true
+        type: string
+      source_sha:
+        description: Exact SchemaRouter source revision to freeze for this stage
+        required: true
+        type: string
+      k3_run_id:
+        description: Terminal structural K3 agent workflow run
+        required: true
+        type: string
+      corrective_run_id:
+        description: Terminal corrective workflow run
+        required: true
+        type: string
+      include_struct_fixed3:
+        description: Frozen optional inclusion from K3 preregistered gate
+        required: true
+        type: boolean
+      include_state_aware:
+        description: Frozen optional inclusion from corrective preregistered gate
+        required: true
+        type: boolean
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: research-0.14-heldout-${{ inputs.evidence_digest }}
+  cancel-in-progress: false
+
+env:
+  PYTHONPATH: "${{ github.workspace }}:${{ github.workspace }}/src"
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  TOKENIZERS_PARALLELISM: "false"
+  HF_HOME: "${{ github.workspace }}/.hf-cache"
+  B2_MODEL: "HuggingFaceTB/SmolLM3-3B"
+  B2_REVISION: "a07cc9a04f16550a088caea529712d1d335b0ac1"
+  B2_CACHE_KEY: "b2-smollm3-arm64-a07cc9a04f16550a088caea529712d1d335b0ac1-torch2.14-transformers4.57.6"
+  B2_ATTN_IMPLEMENTATION: "sdpa"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    outputs:
+      matrix: "${{ steps.matrix.outputs.matrix }}"
+      conditions: "${{ steps.matrix.outputs.conditions }}"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ inputs.source_sha }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Verify exact upstream artifacts and optional-condition gates
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          GH_REPOSITORY: "${{ github.repository }}"
+          EVIDENCE_DIGEST: "${{ inputs.evidence_digest }}"
+          K3_RUN_ID: "${{ inputs.k3_run_id }}"
+          CORRECTIVE_RUN_ID: "${{ inputs.corrective_run_id }}"
+          INCLUDE_K3: "${{ inputs.include_struct_fixed3 }}"
+          INCLUDE_CORRECTIVE: "${{ inputs.include_state_aware }}"
+        run: |
+          python - <<'PY'
+          import os
+          from scripts.research_014_conveyor import GitHubAPI, combine_digests
+
+          api = GitHubAPI(os.environ["GH_REPOSITORY"], os.environ["GH_TOKEN"])
+          k3_run = api.run(int(os.environ["K3_RUN_ID"]))
+          corrective_run = api.run(int(os.environ["CORRECTIVE_RUN_ID"]))
+          assert k3_run["status"] == "completed" and k3_run["conclusion"] == "success"
+          assert corrective_run["status"] == "completed" and corrective_run["conclusion"] == "success"
+
+          k3 = api.artifact(int(os.environ["K3_RUN_ID"]), "structural-k3-agent-canonical-")
+          corrective = api.artifact(
+              int(os.environ["CORRECTIVE_RUN_ID"]),
+              "corrective-reretrieval-canonical-",
+          )
+          assert k3 is not None and corrective is not None
+          observed = combine_digests(k3["digest"], corrective["digest"])
+          assert observed == os.environ["EVIDENCE_DIGEST"]
+
+          k3_payload = api.artifact_json(k3, "structural-k3-agent-canonical.json")
+          corrective_payload = api.artifact_json(
+              corrective,
+              "corrective-reretrieval-canonical.json",
+          )
+          k3_gate = bool(k3_payload["primary_gate"]["primary_gate_passed"])
+          corrective_gate = bool(
+              corrective_payload["primary_gate"]["primary_gate_passed"]
+          )
+          assert k3_gate == (os.environ["INCLUDE_K3"].lower() == "true")
+          assert corrective_gate == (
+              os.environ["INCLUDE_CORRECTIVE"].lower() == "true"
+          )
+          print(
+              {
+                  "STRUCT-FIXED-3": k3_gate,
+                  "SR-5-STATE-AWARE": corrective_gate,
+              }
+          )
+          PY
+      - name: Generate fresh held-out corpus after condition freeze
+        run: |
+          mkdir -p artifacts/heldout
+          ARGS=()
+          if [ "${{ inputs.include_struct_fixed3 }}" = "true" ]; then
+            ARGS+=(--include-struct-fixed3)
+          fi
+          if [ "${{ inputs.include_state_aware }}" = "true" ]; then
+            ARGS+=(--include-state-aware)
+          fi
+          python scripts/generate_agent_utility_v3_heldout_corpus.py             --source-revision "${{ inputs.source_sha }}"             "${ARGS[@]}"             --out artifacts/heldout/heldout-corpus.json
+          python scripts/validate_agent_utility_v3_heldout_corpus.py             --corpus artifacts/heldout/heldout-corpus.json
+      - name: Evaluate retrieval-only 100/250/500/1000 surface
+        run: |
+          python scripts/evaluate_agent_utility_v3_heldout_retrieval.py             --corpus artifacts/heldout/heldout-corpus.json             --out artifacts/heldout/heldout-retrieval.json
+      - id: matrix
+        name: Export frozen 234-job downstream matrix
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          data = json.loads(
+              Path("artifacts/heldout/heldout-corpus.json").read_text(encoding="utf-8")
+          )
+          ids = [str(task["semantic_task_id"]) for task in data["tasks"]]
+          chunks = [ids[index:index + 10] for index in range(0, len(ids), 10)]
+          assert len(chunks) == 78
+          include = []
+          for catalog in (100, 250, 500):
+              for index, chunk in enumerate(chunks):
+                  include.append(
+                      {
+                          "job_id": f"c{catalog}-g{index:02d}",
+                          "catalog_size": catalog,
+                          "task_ids": ",".join(chunk),
+                      }
+                  )
+          assert len(include) == 234
+          conditions = ",".join(data["condition_manifest"]["conditions"])
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(
+                  "matrix="
+                  + json.dumps({"include": include}, separators=(",", ":"))
+                  + "\n"
+              )
+              handle.write("conditions=" + conditions + "\n")
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "heldout-corpus-${{ github.run_id }}"
+          path: artifacts/heldout/
+          if-no-files-found: error
+          retention-days: 30
+
+  model-cache:
+    needs: prepare
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ inputs.source_sha }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0" "jinja2==3.1.6"
+      - run: pip install -e .
+      - id: hf-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "${{ env.B2_CACHE_KEY }}"
+      - name: Populate exact model revision on cache miss
+        if: steps.hf-cache.outputs.cache-hit != 'true'
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+
+          snapshot_download(
+              repo_id=os.environ["B2_MODEL"],
+              revision=os.environ["B2_REVISION"],
+          )
+          PY
+
+  evaluate:
+    needs:
+      - prepare
+      - model-cache
+    strategy:
+      fail-fast: false
+      max-parallel: 8
+      matrix: "${{ fromJSON(needs.prepare.outputs.matrix) }}"
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 360
+    env:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ inputs.source_sha }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - run: pip install -e .
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "${{ env.B2_CACHE_KEY }}"
+          fail-on-cache-miss: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          name: "heldout-corpus-${{ github.run_id }}"
+          path: artifacts/heldout
+      - name: Verify exact ARM64 SDPA runtime
+        run: |
+          python - <<'PY'
+          import os
+          import platform
+          import torch
+          import transformers
+
+          assert platform.python_version() == "3.12.14"
+          assert platform.machine() in {"aarch64", "arm64"}
+          assert os.environ["B2_ATTN_IMPLEMENTATION"] == "sdpa"
+          assert torch.__version__ == "2.14.0+cpu"
+          assert transformers.__version__ == "4.57.6"
+          PY
+      - name: Evaluate frozen held-out shard
+        run: |
+          mkdir -p artifacts/heldout-shard
+          python -u scripts/evaluate_agent_utility_v3_heldout.py             --corpus artifacts/heldout/heldout-corpus.json             --catalog-size "${{ matrix.catalog_size }}"             --task-ids "${{ matrix.task_ids }}"             --conditions "${{ needs.prepare.outputs.conditions }}"             --out "artifacts/heldout-shard/${{ matrix.job_id }}.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: "heldout-shard-${{ matrix.job_id }}-${{ github.run_id }}"
+          path: artifacts/heldout-shard/
+          if-no-files-found: warn
+          retention-days: 30
+
+  aggregate:
+    needs: evaluate
+    if: "${{ success() }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ inputs.source_sha }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e .
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          name: "heldout-corpus-${{ github.run_id }}"
+          path: artifacts/heldout
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          pattern: "heldout-shard-*-${{ github.run_id }}"
+          path: artifacts/heldout-shards
+      - name: Aggregate frozen held-out evidence
+        run: |
+          python scripts/aggregate_agent_utility_v3_heldout.py             --input-dir artifacts/heldout-shards             --corpus artifacts/heldout/heldout-corpus.json             --retrieval artifacts/heldout/heldout-retrieval.json             --out artifacts/heldout-generalization-canonical.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "heldout-generalization-canonical-${{ github.run_id }}"
+          path: |
+            artifacts/heldout-generalization-canonical.json
+            artifacts/heldout/heldout-corpus.json
+            artifacts/heldout/heldout-retrieval.json
+            benchmarks/agent-utility-v3-heldout-preregistration.json
+          if-no-files-found: error
+          retention-days: 30
