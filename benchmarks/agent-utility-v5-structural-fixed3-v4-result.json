@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "experiment": "structural-fixed-depth-k3-v4",
+  "status": "fresh_confirmation_passed",
+  "confirmation": {
+    "workflow_run": 36653940042,
+    "artifact_id": 11070734008,
+    "artifact_digest": "sha256:0dce4db85259c058566d7c24ff04af9f9e117d8202f8dc4a6a754a1dca10d404",
+    "run_source_sha": "b27f0856f73db81f080928aa7595e39bbe81253e",
+    "implementation_main_sha": "4e795c1a24cb85f1b1398518e7f53c0877a55587",
+    "semantic_task_count": 240,
+    "row_count": 720,
+    "task_rows_sha256": "2372fae1e3faecda9bacedcd36cffe7dd72b4903f7ac13b7e7c220e6b37ef585",
+    "catalog_family_sha256": "a8e432f80fe92a872bb2097973862c71343adab9e71e61e1c5b20c4a5466386b",
+    "exact_prior_query_overlap_count": 0,
+    "auxiliary_route_identity_reuse": false,
+    "canonical_core_routes_shared": true
+  },
+  "fixed_retriever": {
+    "id": "STRUCT-4.5-1.5",
+    "structural_retrieval": true,
+    "product_default_enabled": false
+  },
+  "candidate": {
+    "id": "STRUCT-FIXED-3",
+    "k": 3,
+    "required_route_recall": {
+      "100": 1,
+      "250": 0.9904761904761905,
+      "500": 0.9904761904761905
+    },
+    "all_required_full_coverage": {
+      "100": 1,
+      "250": 0.9888888888888889,
+      "500": 0.9888888888888889
+    },
+    "typed_numeric_units_recall": 1,
+    "all_row_candidate_count": {
+      "mean": 3,
+      "p95": 3
+    },
+    "exact_schema_tokens": {
+      "mean": 364.26944444444445,
+      "p95": 419.04999999999995
+    }
+  },
+  "control": {
+    "id": "STRUCT-FIXED-5",
+    "k": 5,
+    "required_route_recall": {
+      "100": 1,
+      "250": 0.9952380952380953,
+      "500": 0.9904761904761905
+    },
+    "all_required_full_coverage": {
+      "100": 1,
+      "250": 0.9944444444444445,
+      "500": 0.9888888888888889
+    },
+    "exact_schema_tokens": {
+      "mean": 563.0819444444444,
+      "p95": 642
+    }
+  },
+  "compression": {
+    "mean_schema_token_reduction_vs_fixed5_fraction": 0.353079160078832,
+    "mean_schema_token_ratio_vs_fixed5": 0.646920839921168,
+    "candidate_count_reduction_vs_fixed5_fraction": 0.4
+  },
+  "gates": {
+    "each_catalog_required_route_recall_min": 0.97,
+    "each_catalog_full_coverage_min": 0.97,
+    "typed_numeric_units_recall_min": 1,
+    "fixed_depth_mean_candidate_count": 3,
+    "fixed_depth_p95_candidate_count_max": 3,
+    "schema_tokens_less_than_fixed5": true,
+    "passed": true
+  },
+  "research_integrity": {
+    "confirmation_attempts": 1,
+    "confirmation_surface_tuning_used": false,
+    "b2_outcomes_used": false,
+    "product_default_changed": false,
+    "candidate_frozen_before_confirmation_generation": true,
+    "prior_dev_or_confirmation_rows_reused": false
+  },
+  "next_gate": {
+    "b2_terminal_required": true,
+    "downstream_task_pass_delta_vs_fixed5_min": -0.02,
+    "unauthorized_destructive_executions_max": 0,
+    "execution_policy_integrity": 1,
+    "product_default_promotion_allowed": false
+  },
+  "claim_boundary": "Independent retrieval-compression confirmation for fixed Top-3 only. Downstream agent utility remains unproven until B2 is terminal and the preregistered downstream gate is run."
+}
