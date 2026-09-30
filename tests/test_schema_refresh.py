@@ -8,7 +8,12 @@ import pytest
 from schemarouter import SchemaRouter
 
 
-def _document(*, method: str = "get", required_query: bool = False) -> dict:
+def _document(
+    *,
+    method: str = "get",
+    required_query: bool = False,
+    summary: str | None = None,
+) -> dict:
     return {
         "openapi": "3.1.0",
         "info": {"title": "Refresh API", "version": "1.0.0"},
@@ -17,6 +22,7 @@ def _document(*, method: str = "get", required_query: bool = False) -> dict:
             "/materials": {
                 method: {
                     "operationId": "materials_search",
+                    "summary": summary,
                     "parameters": (
                         [
                             {
@@ -76,7 +82,7 @@ async def test_schema_refresh_identical_is_noop() -> None:
 
 
 @pytest.mark.asyncio
-async def test_schema_refresh_applies_proven_compatible_optional_parameter() -> None:
+async def test_schema_refresh_applies_proven_compatible_description_change() -> None:
     state = {"document": _document()}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -91,17 +97,7 @@ async def test_schema_refresh_applies_proven_compatible_optional_parameter() -> 
         )
         old_fingerprint = tool.fingerprint
 
-        updated = deepcopy(state["document"])
-        updated["paths"]["/materials"]["get"]["parameters"] = [
-            {
-                "name": "limit",
-                "in": "query",
-                "required": False,
-                "schema": {},
-            }
-        ]
-        state["document"] = updated
-
+        state["document"] = _document(summary="Search materials")
         result = await router.arefresh_schema(tool.key)
 
         assert result.action == "applied"
@@ -109,9 +105,7 @@ async def test_schema_refresh_applies_proven_compatible_optional_parameter() -> 
         assert result.compatibility == "compatible"
         refreshed = router.registry.get(tool.key)
         assert refreshed.fingerprint != old_fingerprint
-        assert [parameter.name for parameter in refreshed.endpoint("materials_search").parameters] == [
-            "limit"
-        ]
+        assert refreshed.endpoint("materials_search").description == "Search materials"
 
 
 @pytest.mark.asyncio
@@ -180,16 +174,7 @@ async def test_schema_refresh_can_report_compatible_without_applying() -> None:
         )
         old_fingerprint = tool.fingerprint
 
-        updated = deepcopy(state["document"])
-        updated["paths"]["/materials"]["get"]["parameters"] = [
-            {
-                "name": "limit",
-                "in": "query",
-                "required": False,
-                "schema": {},
-            }
-        ]
-        state["document"] = updated
+        state["document"] = _document(summary="Search materials")
 
         result = await router.arefresh_schema(
             tool.key,
