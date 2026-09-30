@@ -13,7 +13,11 @@ from scripts.generate_agent_utility_v4_final_answer_corpus import (
 from scripts.generate_agent_utility_v6_corrective_corpus import (
     build_corpus as build_corrective,
 )
-from scripts.research_014_conveyor import combine_digests
+from scripts.research_014_conveyor import (
+    StageRun,
+    combine_digests,
+    retry_infrastructure_failure,
+)
 from scripts.validate_agent_utility_v3_heldout_corpus import (
     validate_corpus as validate_heldout,
 )
@@ -107,3 +111,69 @@ def test_conveyor_workflows_encode_expected_stage_contracts() -> None:
     assert "include_state_aware" in heldout
     assert "heldout_run_id" in final
     assert "--forbidden-corpus" in final
+
+
+class _RetryAPI:
+    def __init__(self) -> None:
+        self.rerun_ids: list[int] = []
+
+    def rerun_failed_jobs(self, run_id: int) -> None:
+        self.rerun_ids.append(run_id)
+
+
+def test_infrastructure_retry_preserves_run_and_is_bounded() -> None:
+    api = _RetryAPI()
+    actions: list[str] = []
+    failed = StageRun(
+        id=77,
+        status="completed",
+        conclusion="failure",
+        display_title="fixture",
+        created_at="2026-09-30T00:00:00Z",
+        html_url="",
+        run_attempt=1,
+    )
+    assert retry_infrastructure_failure(
+        api, failed, execute=True, actions=actions, label="fixture"
+    )
+    assert api.rerun_ids == [77]
+    assert actions == ["rerun_failed_fixture:run=77:attempt=2"]
+
+    exhausted = StageRun(
+        id=78,
+        status="completed",
+        conclusion="failure",
+        display_title="fixture",
+        created_at="2026-09-30T00:00:00Z",
+        html_url="",
+        run_attempt=3,
+    )
+    assert not retry_infrastructure_failure(
+        api, exhausted, execute=True, actions=actions, label="fixture"
+    )
+    assert api.rerun_ids == [77]
+
+
+def test_conveyor_contract_avoids_k3_trigger_race_and_has_recovery() -> None:
+    root = Path(__file__).resolve().parents[1]
+    controller = (root / "scripts" / "research_014_conveyor.py").read_text(
+        encoding="utf-8"
+    )
+    workflow = (
+        root / ".github" / "workflows" / "research-0.14-conveyor.yml"
+    ).read_text(encoding="utf-8")
+
+    assert "wait_for_k3_native_trigger" in controller
+    assert "recover_missing_k3" in controller
+    assert "rerun_failed_jobs" in controller
+    assert "--recover-missing-k3" in workflow
+    assert 'EVENT_NAME: "${{ github.event_name }}"' in workflow
+    assert "research-0.14-conveyor-state-" in workflow
+
+
+def test_only_one_downstream_workflow_set_exists() -> None:
+    root = Path(__file__).resolve().parents[1]
+    workflows = root / ".github" / "workflows"
+    assert not (workflows / "research-0.14-corrective.yml").exists()
+    assert not (workflows / "research-0.14-heldout.yml").exists()
+    assert not (root / "scripts" / "research_0_14_conveyor.py").exists()
