@@ -351,3 +351,118 @@ def test_tool_rejects_empty_provider_access_identity(
 
     with pytest.raises(ValueError, match=message):
         ToolSpec(**kwargs)
+
+
+
+def test_inmemory_compare_and_swap_replaces_only_the_snapshot_it_validated() -> None:
+    reg = InMemoryRegistry()
+    original = ToolSpec(
+        name="demo",
+        description="original",
+        endpoints=[EndpointSpec(name="run")],
+    )
+    reg.register(original)
+    expected_version = reg.version
+    expected = reg.get("demo").fingerprint
+    version = reg.version
+
+    amended = original.model_copy(update={"description": "amended"})
+    assert reg.replace_if_fingerprint(
+        amended,
+        expected_fingerprint=expected,
+        expected_version=expected_version,
+    ) == "demo"
+    assert reg.version == version + 1
+    assert reg.get("demo").description == "amended"
+
+
+def test_inmemory_compare_and_swap_refuses_a_lost_update_without_version_bump() -> None:
+    reg = InMemoryRegistry()
+    original = ToolSpec(
+        name="demo",
+        description="original",
+        endpoints=[EndpointSpec(name="run")],
+    )
+    reg.register(original)
+    stale_version = reg.version
+    stale_fingerprint = reg.get("demo").fingerprint
+
+    interloper = original.model_copy(update={"description": "newer writer"})
+    reg.register(interloper, replace=True)
+    version_before_failed_cas = reg.version
+
+    stale_amendment = original.model_copy(update={"description": "stale amendment"})
+    with pytest.raises(RegistrationError, match="changed concurrently"):
+        reg.replace_if_fingerprint(
+            stale_amendment,
+            expected_fingerprint=stale_fingerprint,
+            expected_version=stale_version,
+        )
+
+    assert reg.version == version_before_failed_cas
+    assert reg.get("demo").description == "newer writer"
+
+
+def test_base_registry_protocol_does_not_require_compare_and_swap() -> None:
+    """Existing structural registries stay valid for ordinary planning/registration."""
+
+    from schemarouter import SchemaRouter
+
+    class LegacyRegistry:
+        def __init__(self) -> None:
+            self.inner = InMemoryRegistry()
+
+        @property
+        def version(self) -> int:
+            return self.inner.version
+
+        def register(self, tool: ToolSpec, *, replace: bool = False) -> str:
+            return self.inner.register(tool, replace=replace)
+
+        def get(self, key: str) -> ToolSpec:
+            return self.inner.get(key)
+
+        def tools(self) -> tuple[ToolSpec, ...]:
+            return self.inner.tools()
+
+        def keys(self) -> tuple[str, ...]:
+            return self.inner.keys()
+
+        def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec:
+            return self.inner.endpoint(tool_key, endpoint_name)
+
+    registry = LegacyRegistry()
+    router = SchemaRouter(registry=registry)
+    assert router.add_tool(
+        ToolSpec(name="legacy", endpoints=[EndpointSpec(name="run")])
+    ) == "legacy"
+
+
+
+def test_inmemory_cas_detects_metadata_only_concurrent_write_even_when_fingerprint_matches(
+) -> None:
+    reg = InMemoryRegistry()
+    original = ToolSpec(
+        name="demo",
+        endpoints=[EndpointSpec(name="run")],
+        metadata={"note": "old"},
+    )
+    reg.register(original)
+    expected_version = reg.version
+    expected_fingerprint = reg.get("demo").fingerprint
+
+    interloper = reg.get("demo")
+    interloper.metadata["note"] = "concurrent writer"
+    assert interloper.fingerprint == expected_fingerprint
+    reg.register(interloper, replace=True)
+
+    amendment = original.model_copy(deep=True)
+    amendment.endpoints[0].description = "trusted annotation"
+    with pytest.raises(RegistrationError, match="registry changed concurrently"):
+        reg.replace_if_fingerprint(
+            amendment,
+            expected_fingerprint=expected_fingerprint,
+            expected_version=expected_version,
+        )
+
+    assert reg.get("demo").metadata["note"] == "concurrent writer"

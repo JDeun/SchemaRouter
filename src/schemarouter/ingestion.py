@@ -24,7 +24,7 @@ from .adapters.optimade import OPTIMADESourceAdapter
 from .errors import SchemaSourceError, UnsupportedSchemaSourceError
 from .executor import RegistryExecutor
 from .models import ToolSpec
-from .registry import ToolRegistry
+from .registry import ToolRegistry, replace_if_current
 
 SourceKind = str
 
@@ -939,7 +939,26 @@ class URLSchemaLoader:
         return AdapterLoadResult(tool=tool, invoker=result.invoker)
 
     def _commit(self, result: AdapterLoadResult, *, replace: bool) -> ToolSpec:
-        key = self.registry.register(result.tool, replace=replace)
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(result.tool.key)
+            except KeyError:
+                key = self.registry.register(result.tool)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    result.tool,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(result.tool)
+
         if result.invoker is not None:
-            self.executor.bind(key, result.invoker)
+            self.executor.bind(
+                key,
+                result.invoker,
+                expected_fingerprint=result.tool.fingerprint,
+            )
         return self.registry.get(key)

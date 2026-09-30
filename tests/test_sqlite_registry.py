@@ -291,3 +291,81 @@ def test_sqlite_registry_migrates_legacy_execution_metadata_on_read(tmp_path) ->
     assert tool.execution_metadata["execution_bound"] is True
     assert tool.endpoints[0].execution_metadata["request_body_mode"] == "root_schema"
     assert tool.endpoints[0].execution_metadata["request_body_required"] is True
+
+
+
+def test_sqlite_compare_and_swap_refuses_cross_connection_lost_update(tmp_path) -> None:
+    path = tmp_path / "registry-cas.sqlite3"
+
+    with SQLiteRegistry(path) as first, SQLiteRegistry(path) as second:
+        original = tool("alpha")
+        first.register(original)
+        stale_version = first.version
+        stale_fingerprint = first.get("alpha").fingerprint
+
+        interloper = tool("alpha", field_name="newer")
+        second.register(interloper, replace=True)
+        version_before_failed_cas = first.version
+
+        stale_amendment = tool("alpha", field_name="stale")
+        with pytest.raises(RegistrationError, match="changed concurrently"):
+            first.replace_if_fingerprint(
+                stale_amendment,
+                expected_fingerprint=stale_fingerprint,
+                expected_version=stale_version,
+            )
+
+        assert first.version == version_before_failed_cas
+        assert [
+            field.name for field in first.endpoint("alpha", "get").output_fields
+        ] == ["newer"]
+
+
+def test_sqlite_compare_and_swap_success_bumps_version_once(tmp_path) -> None:
+    path = tmp_path / "registry-cas-success.sqlite3"
+
+    with SQLiteRegistry(path) as registry:
+        original = tool("alpha")
+        registry.register(original)
+        expected_version = registry.version
+        expected = registry.get("alpha").fingerprint
+        version = registry.version
+
+        replacement = tool("alpha", field_name="updated")
+        registry.replace_if_fingerprint(
+            replacement,
+            expected_fingerprint=expected,
+            expected_version=expected_version,
+        )
+
+        assert registry.version == version + 1
+        assert [
+            field.name for field in registry.endpoint("alpha", "get").output_fields
+        ] == ["updated"]
+
+
+
+def test_sqlite_cas_detects_metadata_only_cross_connection_write(tmp_path) -> None:
+    path = tmp_path / "registry-cas-metadata.sqlite3"
+
+    with SQLiteRegistry(path) as first, SQLiteRegistry(path) as second:
+        original = tool("alpha")
+        first.register(original)
+        expected_version = first.version
+        expected_fingerprint = first.get("alpha").fingerprint
+
+        interloper = second.get("alpha")
+        interloper.metadata["owner"] = "concurrent writer"
+        assert interloper.fingerprint == expected_fingerprint
+        second.register(interloper, replace=True)
+
+        amendment = first.get("alpha")
+        amendment.description = "stale writer"
+        with pytest.raises(RegistrationError, match="registry changed concurrently"):
+            first.replace_if_fingerprint(
+                amendment,
+                expected_fingerprint=expected_fingerprint,
+                expected_version=expected_version,
+            )
+
+        assert first.get("alpha").metadata["owner"] == "concurrent writer"
