@@ -252,3 +252,74 @@ def test_leaf_query_can_select_nested_leaf_without_parent_token_leakage() -> Non
     plan = planner.plan(PlanRequest(query="name"))
 
     assert "profile.name" in plan.calls[0].fields
+
+
+def test_nested_field_can_receive_full_trusted_contract_enrichment() -> None:
+    from schemarouter import EndpointSpec, FieldSpec, SchemaRouter, ToolSpec
+
+    tool = tool_from_openapi(
+        "materials",
+        _document(
+            {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "type": "object",
+                        "properties": {
+                            "band_gap": {
+                                "type": "number",
+                                "x-ucum-unit": "eV",
+                            }
+                        },
+                    }
+                },
+            }
+        ),
+    )
+    endpoint = tool.endpoint("get_materials")
+    fields = []
+    for field in endpoint.output_fields:
+        if field.name != "data.band_gap":
+            fields.append(field)
+            continue
+        payload = field.model_dump(mode="python")
+        payload.update(
+            {
+                "semantic_id": "materials.band_gap",
+                "unit_normalization": {
+                    "dimension": "energy",
+                    "canonical_unit": "eV",
+                    "scale": 1.0,
+                    "offset": 0.0,
+                },
+                "qualifiers": {"temperature": "300 K"},
+                "source_type": "materials_api",
+                "license": "CC-BY-4.0",
+            }
+        )
+        fields.append(FieldSpec.model_validate(payload))
+
+    endpoint_payload = endpoint.model_dump(mode="python")
+    endpoint_payload["output_fields"] = fields
+    amended_endpoint = EndpointSpec.model_validate(endpoint_payload)
+
+    tool_payload = tool.model_dump(mode="python")
+    tool_payload["endpoints"] = [amended_endpoint]
+    amended_tool = ToolSpec.model_validate(tool_payload)
+
+    router = SchemaRouter()
+    router.add_tool(tool)
+    router.amend_capability(tool.key, amended_tool)
+
+    enriched = {
+        field.name: field
+        for field in router.registry.get(tool.key).endpoint("get_materials").output_fields
+    }["data.band_gap"]
+
+    assert enriched.semantic_id == "materials.band_gap"
+    assert enriched.unit == "eV"
+    assert enriched.unit_normalization is not None
+    assert enriched.unit_normalization.dimension == "energy"
+    assert enriched.qualifiers == {"temperature": "300 K"}
+    assert enriched.source_type == "materials_api"
+    assert enriched.license == "CC-BY-4.0"
