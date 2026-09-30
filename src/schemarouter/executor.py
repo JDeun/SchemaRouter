@@ -409,6 +409,18 @@ class RegistryExecutor:
         self._invokers[tool_key] = invoker
         self._binding_fingerprints[tool_key] = tool.fingerprint
 
+    def restamp_binding(self, tool_key: str) -> bool:
+        """Re-point an existing binding at the tool's current fingerprint.
+
+        Used only after trusted local code amends a contract in a way that
+        `amendment.validate_amendment` accepted. The invoker object is neither
+        accepted nor returned, so the caller never handles a live transport.
+        """
+        if tool_key not in self._invokers:
+            return False
+        self._binding_fingerprints[tool_key] = self.registry.get(tool_key).fingerprint
+        return True
+
     def unbind(self, tool_key: str) -> None:
         self._invokers.pop(tool_key, None)
         self._binding_fingerprints.pop(tool_key, None)

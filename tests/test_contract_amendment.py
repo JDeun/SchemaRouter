@@ -7,6 +7,7 @@ response is validated. These tests pin that split.
 from __future__ import annotations
 
 import pytest
+from pydantic import BaseModel
 
 from schemarouter import (
     ContractAmendmentError,
@@ -281,3 +282,55 @@ def test_an_unrecognised_future_aspect_fails_closed(monkeypatch):
     )
     with pytest.raises(ContractAmendmentError):
         validate_amendment(current, amended)
+
+
+# --- binding bookkeeping ----------------------------------------------------
+
+
+class _RestampRecord(BaseModel):
+    band_gap: float
+    note: str
+
+
+def _bound_router():
+    from schemarouter import SchemaRouter, schema_tool
+
+    @schema_tool(read_only=True)
+    def materials(material_id: str) -> _RestampRecord:
+        """Return the current materials record."""
+        return _RestampRecord(band_gap=1.1, note="internal")
+
+    router = SchemaRouter()
+    return router, router.add_callable(materials)
+
+
+def test_restamp_points_an_existing_binding_at_the_current_fingerprint():
+    router, key = _bound_router()
+    tool = router.registry.get(key)
+    endpoint = tool.endpoints[0]
+    amended_endpoint = endpoint.model_copy(update={"description": "annotated"})
+    router.add_tool(tool.model_copy(update={"endpoints": [amended_endpoint]}), replace=True)
+
+    assert not router.executor.is_binding_ready_for_contract(
+        key, router.registry.get(key).fingerprint
+    )
+    assert router.executor.restamp_binding(key) is True
+    assert router.executor.is_binding_ready_for_contract(
+        key, router.registry.get(key).fingerprint
+    )
+
+
+def test_restamp_reports_false_when_there_is_no_binding():
+    router, key = _bound_router()
+    router.executor.unbind(key)
+    assert router.executor.restamp_binding(key) is False
+
+
+def test_restamp_does_not_expose_or_accept_an_invoker():
+    router, key = _bound_router()
+    public = [name for name in dir(router.executor) if not name.startswith("_")]
+    assert not [name for name in public if "invoker" in name.lower()]
+    import inspect
+
+    signature = inspect.signature(router.executor.restamp_binding)
+    assert list(signature.parameters) == ["tool_key"]
