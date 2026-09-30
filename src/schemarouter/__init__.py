@@ -1,6 +1,5 @@
 from ._version import __version__
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
-from .adapters.http_json import HTTPJSONRemoteInvoker, prepare_http_json_tool
 from .adapters.mcp import DefaultMCPClientFactory, MCPClientFactory
 from .adapters.optimade import OPTIMADESourceAdapter
 from .adapters.plugins import (
@@ -197,7 +196,6 @@ __all__ = [
     "HealthProbe",
     "HealthProbeSnapshot",
     "HealthStatus",
-    "HTTPJSONRemoteInvoker",
     "ExecutionPlan",
     "FallbackRoute",
     "FallbackScope",
@@ -273,7 +271,6 @@ __all__ = [
     "TraceError",
     "UnsupportedSchemaSourceError",
     "schema_tool",
-    "prepare_http_json_tool",
     "tool_from_callable",
     "analyze_openapi_compatibility",
     "choose_async",
