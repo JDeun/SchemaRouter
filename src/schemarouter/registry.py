@@ -78,11 +78,16 @@ def replace_if_current(
             "registry does not support atomic replace-if-fingerprint; "
             "this operation requires CompareAndSwapToolRegistry semantics"
         )
-    return replace(
+    result = replace(
         tool,
         expected_fingerprint=expected_fingerprint,
         expected_version=expected_version,
     )
+    if not isinstance(result, str):
+        raise RegistrationError(
+            "atomic replace-if-fingerprint returned a non-string tool key"
+        )
+    return result
 
 
 class InMemoryRegistry:
