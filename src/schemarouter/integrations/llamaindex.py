@@ -329,11 +329,14 @@ class LlamaIndexToolInvoker:
         raw_output = getattr(value, "raw_output", None)
         if raw_output is not None:
             value = raw_output
-        elif hasattr(value, "content"):
-            value = value.content
+        else:
+            content = getattr(value, "content", None)
+            if content is not None:
+                value = content
 
-        if hasattr(value, "model_dump"):
-            return value.model_dump(mode="json", by_alias=True, exclude_none=True)
+        model_dump = getattr(value, "model_dump", None)
+        if callable(model_dump):
+            return model_dump(mode="json", by_alias=True, exclude_none=True)
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
             return dataclasses.asdict(value)
         return value
