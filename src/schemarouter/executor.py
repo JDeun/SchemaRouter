@@ -52,6 +52,9 @@ class CallAwareEndpointInvoker(Protocol):
     def invoke_call(self, call: ToolCall) -> Any | Awaitable[Any]: ...
 
 
+BoundEndpointInvoker = EndpointInvoker | CallAwareEndpointInvoker
+
+
 @dataclass
 class ExecutionBudgetTracker:
     budget: ExecutionBudget
@@ -207,7 +210,7 @@ class RegistryExecutor:
         self.approval_callback = approval_callback
         self.hooks = hooks or ExecutionHooks()
         self.unavailable_cooldown_seconds = float(unavailable_cooldown_seconds)
-        self._invokers: dict[str, EndpointInvoker] = {}
+        self._invokers: dict[str, BoundEndpointInvoker] = {}
         self._binding_fingerprints: dict[str, str] = {}
         self._unavailable_until: dict[tuple[str, str, str], float] = {}
 
@@ -407,7 +410,7 @@ class RegistryExecutor:
     def bind(
         self,
         tool_key: str,
-        invoker: EndpointInvoker,
+        invoker: BoundEndpointInvoker,
         *,
         expected_fingerprint: str | None = None,
     ) -> None:
@@ -667,7 +670,7 @@ class RegistryExecutor:
     def _execution_state(
         self,
         call: ToolCall,
-    ) -> tuple[ToolSpec, EndpointSpec, EndpointInvoker]:
+    ) -> tuple[ToolSpec, EndpointSpec, BoundEndpointInvoker]:
         tool, endpoint = self._validated_call_contract(call)
         invoker = self._invokers.get(call.tool)
         if invoker is None:
