@@ -11,6 +11,7 @@ import hashlib
 import json
 import statistics
 import time
+from collections.abc import Callable
 from dataclasses import asdict
 from typing import Any
 
@@ -460,18 +461,35 @@ def run_generated_episode(
     condition: str,
     *,
     system_prompt: str = SYSTEM_PROMPT,
+    candidate_condition: str | None = None,
+    observation_transform: Callable[[dict[str, Any], dict[str, Any]], dict[str, Any]]
+    | None = None,
 ) -> dict[str, Any]:
+    """Run one frozen episode.
+
+    `candidate_condition` separates *which routes the agent can see* from the
+    experiment condition being named. Experiments that vary candidate exposure
+    leave it unset, so the two stay the same string. #506 varies what a tool
+    observation looks like while holding exposure fixed, so it pins exposure here
+    and passes its own condition name through `condition`.
+
+    `observation_transform(observation, step)` rewrites each observation on its
+    way into the agent's context only. The executor's own record, the task state
+    and every completion check keep seeing the untransformed observation, so
+    presentation cannot change ground truth.
+    """
+    routing_condition = candidate_condition or condition
     episode_started = time.perf_counter_ns()
     selection_started = time.perf_counter_ns()
     visible_routes, progressive_stages = condition_initial_routes(
         registry,
         task,
-        condition,
+        routing_condition,
     )
     selection_ms = (time.perf_counter_ns() - selection_started) / 1_000_000
 
-    progressive = condition in {"SR-PROGRESSIVE", "SR-PROGRESSIVE-STATIC"}
-    state_aware = condition == "SR-5-STATE-AWARE"
+    progressive = routing_condition in {"SR-PROGRESSIVE", "SR-PROGRESSIVE-STATIC"}
+    state_aware = routing_condition == "SR-5-STATE-AWARE"
     executor = FrozenCorpusExecutor(registry, task)
     state = empty_state(str(task["query"]))
 
@@ -571,6 +589,7 @@ def run_generated_episode(
         for call_index, call in enumerate(calls):
             route_id = str(call["name"]).replace("__", ".", 1)
             arguments = dict(call["arguments"])
+            step_index = executor.progress
             attempt = executor.execute(
                 route_id,
                 arguments,
@@ -585,7 +604,20 @@ def run_generated_episode(
                     "attempt": asdict(attempt),
                 }
             )
-            observations.append(attempt.observation)
+            if observation_transform is None:
+                visible_observation = attempt.observation
+            else:
+                # Only a step the executor actually consumed has declared
+                # projection metadata; anything else is a generic or error
+                # observation and carries no step contract.
+                source_step = (
+                    executor.steps[step_index] if attempt.advanced_task else {}
+                )
+                visible_observation = observation_transform(
+                    attempt.observation,
+                    source_step,
+                )
+            observations.append(visible_observation)
             had_failure = had_failure or attempt.error is not None or attempt.policy_blocked
             state = update_state(
                 state,
@@ -596,16 +628,21 @@ def run_generated_episode(
                 task_incomplete=not executor.complete,
             )
 
+        tool_message = _tool_response_message(observations)
         turn_rows.append(
             {
                 "turn": turn,
                 "candidate_count": len(visible_routes),
                 **generated,
                 "tool_calls": serialized_calls,
+                # What the agent was actually shown, after any transform. The
+                # attempt records above keep the untransformed observation.
+                "visible_observations": observations,
+                "observation_chars": len(tool_message),
                 "event": "tool_calls",
             }
         )
-        messages.append({"role": "tool", "content": _tool_response_message(observations)})
+        messages.append({"role": "tool", "content": tool_message})
 
         if state_aware and not executor.complete and retrieval_calls < 6:
             expected = executor.next_expected_route
@@ -699,6 +736,7 @@ def run_generated_episode(
         "language": str(task["language"]),
         "supported": bool(task["supported"]),
         "condition": condition,
+        "candidate_condition": routing_condition,
         "passed": passed,
         "task_complete": executor.complete,
         "required_routes": required_routes,
