@@ -1,5 +1,5 @@
 name: Research 0.14 Final Answer
-run-name: Research 0.14 Final Answer ${{ inputs.evidence_digest }}
+run-name: Research 0.14 Final Answer ${{ inputs.evidence_digest }} source=${{ inputs.source_sha }}
 
 on:
   workflow_dispatch:
@@ -26,6 +26,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  PYTHONPATH: "${{ github.workspace }}:${{ github.workspace }}/src"
   HF_HUB_DISABLE_TELEMETRY: "1"
   TOKENIZERS_PARALLELISM: "false"
   HF_HOME: "${{ github.workspace }}/.hf-cache"
