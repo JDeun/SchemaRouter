@@ -246,7 +246,7 @@ def find_marked_run(
     return matches[0] if matches else None
 
 
-def frozen_source_sha(run: StageRun) -> str:
+def source_sha_from_run(run: StageRun) -> str:
     match = re.search(r"(?:^| )source=([0-9a-f]{40})(?:$| )", run.display_title)
     if match is not None:
         return match.group(1)
@@ -429,7 +429,7 @@ def run_controller(
             run for run in corrective_runs if terminal_failure(run)
         ]
         if len(failed_corrective_runs) < MAX_INFRA_ATTEMPTS:
-            retry_source_sha = frozen_source_sha(corrective)
+            retry_source_sha = source_sha_from_run(corrective)
             if execute:
                 api.dispatch(
                     CORRECTIVE_WORKFLOW,
