@@ -422,6 +422,62 @@ class SchemaRouter:
         )
         return key
 
+    def add_langchain_tool(
+        self,
+        tool: Any,
+        *,
+        name: str | None = None,
+        namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
+        read_only: bool | None = None,
+        destructive: bool | None = None,
+        remote: bool = True,
+        replace: bool = False,
+    ) -> str:
+        """Import and bind one LangChain BaseTool-like object.
+
+        SchemaRouter trusts only the tool's declared input/output schemas plus the explicit
+        local authority classification supplied here. Descriptions and foreign metadata do not
+        grant read/write permission.
+        """
+
+        from .integrations.langchain import LangChainToolInvoker, tool_from_langchain
+
+        spec = tool_from_langchain(
+            tool,
+            name=name,
+            namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
+            read_only=read_only,
+            destructive=destructive,
+            remote=remote,
+        )
+        invoker = LangChainToolInvoker(tool)
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(spec.key)
+            except KeyError:
+                key = self.registry.register(spec)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    spec,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(spec)
+
+        self.executor.bind(
+            key,
+            invoker,
+            expected_fingerprint=spec.fingerprint,
+        )
+        return key
+
     async def inspect_url(
         self,
         url: str,
