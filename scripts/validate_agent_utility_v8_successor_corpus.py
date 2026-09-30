@@ -22,6 +22,7 @@ from scripts.agent_utility_prior_query_guard import (  # noqa: E402
     normalize_query,
 )
 from scripts.generate_agent_utility_v8_successor_corpus import (  # noqa: E402
+    _506_projection_queries,
     successor_authoring_slots,
 )
 from scripts.validate_agent_utility_v7_projection_corpus import (  # noqa: E402
@@ -36,15 +37,28 @@ def validate(corpus: dict[str, Any]) -> dict[str, Any]:
     queries = {
         normalize_query(str(task["query"])) for task in corpus["tasks"]
     }
-    for name, prior in known_prior_queries().items():
+    # See generate_agent_utility_v8_successor_corpus._506_projection_queries:
+    # #506 is checked here as a locally built set, not via the guard's
+    # registry, so this validator does not depend on #506 being registered
+    # in known_prior_queries either.
+    forbidden_surfaces = dict(known_prior_queries())
+    forbidden_surfaces["projection"] = _506_projection_queries()
+
+    collisions: dict[str, set[str]] = {}
+    for name, prior in forbidden_surfaces.items():
         overlap = queries & prior
         if overlap:
-            raise SystemExit(
-                f"corpus validation failed: overlaps prior surface {name!r} "
-                f"in {len(overlap)} queries"
-            )
+            collisions[name] = overlap
+    if collisions:
+        details = "; ".join(
+            f"{name!r} ({len(overlap)} shared queries)"
+            for name, overlap in sorted(collisions.items())
+        )
+        raise SystemExit(
+            f"corpus validation failed: overlaps prior surface(s): {details}"
+        )
 
-    summary["disjoint_from"] = sorted(known_prior_queries())
+    summary["disjoint_from"] = sorted(forbidden_surfaces)
     return summary
 
 

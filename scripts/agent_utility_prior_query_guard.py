@@ -22,10 +22,6 @@ from benchmarks.agent_utility_v5_structural_confirmation import (
 from benchmarks.agent_utility_v5_structural_fixed3_confirmation import (
     build_fixed3_confirmation_tasks,
 )
-from scripts.agent_utility_v7_projection import (
-    build_projection_task,
-    projection_authoring_slots,
-)
 
 
 def normalize_query(value: str) -> str:
@@ -58,12 +54,6 @@ def known_prior_queries() -> dict[str, set[str]]:
         "fixed3_confirmation": {
             normalize_query(str(task["query"]))
             for task in build_fixed3_confirmation_tasks()
-        },
-        "projection": {
-            normalize_query(
-                str(build_projection_task(slot, index)["query"])
-            )
-            for index, slot in enumerate(projection_authoring_slots())
         },
     }
     return {

@@ -28,16 +28,50 @@ ROSTER = (
     "Qwen/Qwen3-8B",
 )
 
+# A floor against a rate computed from too few episodes, not a preregistered
+# scientific parameter. A single episode qualifying at 1.0/1.0/1.0 is not
+# evidence about a runtime; this is a gate against that, independent of the
+# ELIGIBILITY thresholds above.
+MINIMUM_EPISODES = 24
+
 
 def qualification_rates(rows: list[dict[str, Any]]) -> dict[str, float]:
-    """Per-episode rates for the three preregistered criteria."""
+    """Per-episode rates for the three preregistered criteria.
+
+    Each row must carry a `semantic_task_id` and no id may repeat: a gate
+    that can be fed the same episode twice is not a gate, and duplicate rows
+    would silently inflate a rate.
+    """
     if not rows:
         return {name: 0.0 for name in ELIGIBILITY}
+
+    seen_ids: set[Any] = set()
+    for row in rows:
+        task_id = row.get("semantic_task_id")
+        if task_id is None:
+            raise ValueError("row is missing semantic_task_id")
+        if task_id in seen_ids:
+            raise ValueError(f"duplicate episode: semantic_task_id={task_id!r}")
+        seen_ids.add(task_id)
+
+    if len(rows) < MINIMUM_EPISODES:
+        raise ValueError(
+            f"only {len(rows)} episodes, below the MINIMUM_EPISODES floor "
+            f"of {MINIMUM_EPISODES}"
+        )
+
+    for row in rows:
+        valid = row.get("final_envelope_valid")
+        if not isinstance(valid, bool):
+            raise ValueError(
+                f"final_envelope_valid must be a bool, got {valid!r} "
+                f"(semantic_task_id={row.get('semantic_task_id')!r})"
+            )
 
     total = float(len(rows))
     return {
         "envelope_valid_rate": sum(
-            1 for row in rows if row.get("final_envelope_valid")
+            1 for row in rows if row["final_envelope_valid"] is True
         )
         / total,
         "tool_call_rate": sum(

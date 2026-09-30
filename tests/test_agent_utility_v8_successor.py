@@ -1,8 +1,14 @@
 """Contracts for the #510 successor screen surface.
 
-The successor exists because #506's screen produced no signal. Its whole value
-depends on being a genuinely different surface, so disjointness is pinned here
-rather than assumed.
+The successor exists because #506's screen produced no signal. Its surface is
+the #506 corpus under a distinct identifier space (`S####` instead of
+`P####`): every task is byte-identical to its #506 counterpart apart from that
+prefix (see test_the_default_prefix_leaves_the_506_corpus_byte_identical).
+"Disjoint" here means no shared *query string* with any prior surface, pinned
+below — it is not a content-independent surface. That is acceptable because
+#506's screen never called a tool, so no observation content from that corpus
+ever reached a model, and nothing in this pipeline trains on prior runs; see
+docs/research/successor-screen.md for the recorded reasoning.
 """
 from __future__ import annotations
 
@@ -19,6 +25,24 @@ from scripts.generate_agent_utility_v8_successor_corpus import (
     successor_authoring_slots,
 )
 from scripts.validate_agent_utility_v8_successor_corpus import validate
+
+
+def test_the_guard_manifest_is_unchanged_by_this_branch():
+    # known_prior_query_manifest()["union_sha256"] is stamped into generated
+    # v3/v4/v6 corpora as prior_query_manifest_sha256 and hard-checked by
+    # their validators. A stored corpus artifact created before this branch
+    # must still validate against main, so this branch must not register a
+    # new surface in the guard (see generate_agent_utility_v8_successor_corpus
+    # for how #506 disjointness is checked without doing that). This pins the
+    # literal value from commit 10d3a0b, the last commit before this branch
+    # touched the guard; it must not drift.
+    from scripts.agent_utility_prior_query_guard import known_prior_query_manifest
+
+    manifest = known_prior_query_manifest()
+    assert manifest["union_sha256"] == (
+        "729124dd6e746d342085b368e76ef5697379259733be595bf660d9bc369951b7"
+    )
+    assert manifest["union_count"] == 1106
 
 
 def test_the_default_prefix_leaves_the_506_corpus_byte_identical():
@@ -82,11 +106,16 @@ def test_validation_accepts_the_generated_corpus():
 # --- instrument qualification ----------------------------------------------
 
 
-def _rows(envelope: int, tool_calls: int, grounded: int, total: int = 10) -> list[dict]:
+def _rows(envelope: int, tool_calls: int, grounded: int, total: int = 40) -> list[dict]:
+    # `total` defaults above MINIMUM_EPISODES so these rates exercise
+    # qualification_rates without tripping the minimum-N floor. The counts
+    # below are all out of a denominator of 10, scaled by 4 here, to keep
+    # the same rates (0.8, 0.9, 0.7, ...) the tests were written against.
     rows = []
     for index in range(total):
         rows.append(
             {
+                "semantic_task_id": f"Q{index:04d}",
                 "final_envelope_valid": index < envelope,
                 "tool_call_count": 1 if index < tool_calls else 0,
                 "required_fact_recall": 1.0 if index < grounded else 0.0,
@@ -119,7 +148,7 @@ def test_the_roster_is_frozen_and_ordered():
 def test_rates_are_computed_per_episode():
     from scripts.qualify_agent_utility_runtime import qualification_rates
 
-    rates = qualification_rates(_rows(envelope=8, tool_calls=9, grounded=7))
+    rates = qualification_rates(_rows(envelope=32, tool_calls=36, grounded=28))
     assert rates == {
         "envelope_valid_rate": 0.8,
         "tool_call_rate": 0.9,
@@ -130,13 +159,13 @@ def test_rates_are_computed_per_episode():
 def test_all_three_must_pass():
     from scripts.qualify_agent_utility_runtime import qualification_rates, qualifies
 
-    assert qualifies(qualification_rates(_rows(8, 9, 7)))
+    assert qualifies(qualification_rates(_rows(32, 36, 28)))
     # The #506 failure mode: envelopes produced, nothing grounded.
-    assert not qualifies(qualification_rates(_rows(10, 0, 0)))
+    assert not qualifies(qualification_rates(_rows(40, 0, 0)))
     # One short on each axis in turn.
-    assert not qualifies(qualification_rates(_rows(7, 9, 7)))
-    assert not qualifies(qualification_rates(_rows(8, 8, 7)))
-    assert not qualifies(qualification_rates(_rows(8, 9, 6)))
+    assert not qualifies(qualification_rates(_rows(28, 36, 28)))
+    assert not qualifies(qualification_rates(_rows(32, 32, 28)))
+    assert not qualifies(qualification_rates(_rows(32, 36, 24)))
 
 
 def test_an_empty_run_does_not_qualify():
@@ -147,15 +176,67 @@ def test_an_empty_run_does_not_qualify():
 
 def test_a_runtime_that_calls_tools_but_grounds_nothing_is_refused():
     # The criterion that exists for this case must be able to refuse on its own.
-    # _rows(10, 0, 0) cannot prove that: no tool calls means tool_call_rate
+    # _rows(40, 0, 0) cannot prove that: no tool calls means tool_call_rate
     # refuses it regardless, so weakening grounded_fact_rate leaves it refused
     # for the wrong reason. This shape isolates the criterion.
     from scripts.qualify_agent_utility_runtime import qualification_rates, qualifies
 
-    rates = qualification_rates(_rows(envelope=10, tool_calls=10, grounded=0))
+    rates = qualification_rates(_rows(envelope=40, tool_calls=40, grounded=0))
     assert rates["envelope_valid_rate"] == 1.0
     assert rates["tool_call_rate"] == 1.0
     assert not qualifies(rates)
+
+
+def test_a_duplicate_episode_is_refused_rather_than_inflating_a_rate():
+    # 7 good + 3 bad refuses (0.7 grounded rate). Appending 20 copies of an
+    # already-counted good row must not be a way to qualify: there is no
+    # episode identity without semantic_task_id, and no dedup without
+    # refusing a repeat outright.
+    from scripts.qualify_agent_utility_runtime import qualification_rates
+
+    rows = _rows(envelope=24, tool_calls=24, grounded=17, total=24)
+    duplicated = rows + [dict(rows[0]) for _ in range(20)]
+    with pytest.raises(ValueError, match="duplicate episode"):
+        qualification_rates(duplicated)
+
+
+def test_a_run_below_the_minimum_episode_floor_is_refused():
+    # A single episode qualifying at 1.0/1.0/1.0 is not evidence about a
+    # runtime.
+    from scripts.qualify_agent_utility_runtime import (
+        MINIMUM_EPISODES,
+        qualification_rates,
+    )
+
+    single = [
+        {
+            "semantic_task_id": "Q0000",
+            "final_envelope_valid": True,
+            "tool_call_count": 1,
+            "required_fact_recall": 1.0,
+        }
+    ]
+    with pytest.raises(ValueError, match="MINIMUM_EPISODES"):
+        qualification_rates(single)
+    assert MINIMUM_EPISODES > len(single)
+
+
+def test_final_envelope_valid_must_be_a_strict_bool():
+    # The string "false" is truthy in Python; reading final_envelope_valid
+    # for truthiness would count it as a valid envelope.
+    from scripts.qualify_agent_utility_runtime import qualification_rates
+
+    rows = _rows(envelope=24, tool_calls=24, grounded=17, total=24)
+    rows[0] = dict(rows[0], final_envelope_valid="false")
+    with pytest.raises(ValueError, match="final_envelope_valid"):
+        qualification_rates(rows)
+
+
+def test_a_well_formed_run_still_qualifies():
+    from scripts.qualify_agent_utility_runtime import qualification_rates, qualifies
+
+    rows = _rows(envelope=24, tool_calls=24, grounded=17, total=24)
+    assert qualifies(qualification_rates(rows))
 
 
 def test_the_first_qualifier_wins_even_if_a_later_one_scores_higher():
@@ -202,11 +283,22 @@ def test_an_unknown_candidate_is_refused():
 
 
 def test_an_incomplete_roster_is_not_a_verdict():
-    # Only the first candidate ran and it failed: that is "keep going", not "none qualify".
-    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+    # Only the first candidate ran and it failed. select_runtime returns None
+    # here for the same reason it returns None once every candidate has
+    # failed: None alone does not distinguish "keep going" from "no
+    # qualifier". roster_exhausted is what pins that distinction, so both
+    # halves must be asserted together, not select_runtime's return value
+    # alone.
+    from scripts.qualify_agent_utility_runtime import (
+        ROSTER,
+        roster_exhausted,
+        select_runtime,
+    )
 
     failing = {"envelope_valid_rate": 0.0, "tool_call_rate": 0.0, "grounded_fact_rate": 0.0}
-    assert select_runtime({ROSTER[0]: failing}) is None
+    partial = {ROSTER[0]: failing}
+    assert select_runtime(partial) is None
+    assert not roster_exhausted(partial)
 
 
 def test_none_is_only_a_verdict_once_the_roster_is_exhausted():

@@ -60,9 +60,12 @@ evaluation workflow is not written yet, so nothing calls it today. Whoever
 writes that workflow must route the selection through `select_runtime` rather
 than reimplementing the comparison, or the ordering guarantee is prose again.
 
-Qualification runs on its own surface, separate from both the #506 corpus and
-this experiment's. Its numbers are evidence about the instrument and are never
-reported as experiment evidence.
+Qualification is meant to run on its own surface, separate from both the #506
+corpus and this experiment's, with its numbers treated as evidence about the
+instrument and never reported as experiment evidence. **That surface does not
+exist yet.** There is no generator, no corpus, and no runner for it — only the
+gate (`scripts/qualify_agent_utility_runtime.py`) that will score whatever
+rows it is eventually given.
 
 ### Recorded trade-off
 
@@ -82,9 +85,24 @@ stay comparable. Only the **runtime** and the **surface** differ.
 ## Query disjointness
 
 Enforced at generation, not left to a test. `build_corpus` raises before writing
-anything if the surface shares a normalised query with any prior surface, and
-the #506 projection corpus is registered in
-`scripts/agent_utility_prior_query_guard.py` so it is one of those surfaces.
+anything if the surface shares a normalised query with any prior surface. The
+#506 projection corpus is checked directly — built locally inside the
+generator rather than registered in `scripts/agent_utility_prior_query_guard.py`.
+Registering it there would change `known_prior_query_manifest()["union_sha256"]`,
+which is stamped into generated v3/v4/v6 corpora and hard-checked by their
+validators; a stored corpus artifact created before this branch must still
+validate against main, so that registration was reverted in favour of the
+local check.
+
+**What "disjoint" means here, recorded plainly:** this surface is the #506
+corpus under a distinct identifier space (`S####` in place of `P####`) —
+every task is byte-identical to its #506 counterpart apart from that prefix.
+Disjointness means no shared *query string*, nothing more; it is not a
+content-independent surface. That is judged acceptable because #506's screen
+never called a tool, so no observation content from that corpus ever reached
+a model, and nothing in this pipeline trains on prior runs. Issue #510's
+letter — "not one query shared" — is met; the surface is not "genuinely
+different" content.
 
 ## Governance
 

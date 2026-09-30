@@ -35,6 +35,7 @@ from scripts.agent_utility_v7_projection import (  # noqa: E402
     PROJECTION_STRATA,
     TASKS_PER_CELL,
     build_projection_task,
+    projection_authoring_slots,
 )
 
 SUCCESSOR_PREFIX = "S"
@@ -58,6 +59,21 @@ def successor_authoring_slots() -> list[dict[str, Any]]:
     return slots
 
 
+def _506_projection_queries() -> set[str]:
+    """The #506 query set, built locally rather than read off the guard.
+
+    Registering #506 in `agent_utility_prior_query_guard.known_prior_queries`
+    would change `known_prior_query_manifest()["union_sha256"]`, which is
+    stamped into generated v3/v4/v6 corpora and hard-checked by their
+    validators. This surface needs the same disjointness guarantee without
+    that blast radius, so it is built here instead.
+    """
+    return {
+        normalize_query(str(build_projection_task(slot, index)["query"]))
+        for index, slot in enumerate(projection_authoring_slots())
+    }
+
+
 def build_corpus(source_revision: str) -> dict[str, Any]:
     slots = successor_authoring_slots()
     tasks = [
@@ -66,13 +82,29 @@ def build_corpus(source_revision: str) -> dict[str, Any]:
     ]
 
     queries = {normalize_query(str(task["query"])) for task in tasks}
-    for name, prior in known_prior_queries().items():
+    forbidden_surfaces = dict(known_prior_queries())
+    forbidden_surfaces["projection"] = _506_projection_queries()
+
+    # Hand-rolled rather than assert_no_prior_query_overlap (#510's named
+    # mechanism): that helper raises ValueError and reports only the first
+    # colliding surface. This is a generation script, not a library call, so
+    # SystemExit is the appropriate failure mode, and every colliding
+    # surface is aggregated below instead of just the first, so a run that
+    # collides on more than one surface does not require a fix/rerun/refix
+    # loop to find out.
+    collisions: dict[str, set[str]] = {}
+    for name, prior in forbidden_surfaces.items():
         overlap = queries & prior
         if overlap:
-            raise SystemExit(
-                f"successor surface overlaps prior surface {name!r}: "
-                f"{len(overlap)} shared queries, e.g. {sorted(overlap)[0]!r}"
-            )
+            collisions[name] = overlap
+    if collisions:
+        details = "; ".join(
+            f"{name!r} ({len(overlap)} shared queries, e.g. {sorted(overlap)[0]!r})"
+            for name, overlap in sorted(collisions.items())
+        )
+        raise SystemExit(
+            f"successor surface overlaps prior surface(s): {details}"
+        )
 
     condition_manifest = {
         "candidate_condition": FIXED_CANDIDATE_CONDITION,
