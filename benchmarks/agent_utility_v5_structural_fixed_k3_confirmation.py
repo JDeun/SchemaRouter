@@ -235,23 +235,44 @@ def _render(
             "ko": "{entity}에는 {term}을 수행하고 sibling action인 {avoid}은 선택하지 마세요.",
             "es": "Para {entity}, ejecuta {term}; no se solicita la acción hermana {avoid}.",
             "ja": "{entity} では {term} を実行し、sibling action の {avoid} は選ばないでください。",
-            "de": "Führe für {entity} {term} aus; die Schwesteraktion {avoid} ist nicht angefordert.",
+            "de": (
+                "Führe für {entity} {term} aus; die Schwesteraktion "
+                "{avoid} ist nicht angefordert."
+            ),
             "mixed": "{entity}에는 {term} 수행. sibling {avoid}은 not requested.",
         },
         "adjacent": {
-            "en": "Fetch the registered measured {term} for {entity}, excluding surrogate or predicted alternatives.",
+            "en": (
+                "Fetch the registered measured {term} for {entity}, "
+                "excluding surrogate or predicted alternatives."
+            ),
             "ko": "{entity}의 등록된 측정 {term}을 가져오고 surrogate나 prediction 대안은 제외해 주세요.",
-            "es": "Obtén {term} medido y registrado para {entity}, excluyendo alternativas estimadas.",
+            "es": (
+                "Obtén {term} medido y registrado para {entity}, "
+                "excluyendo alternativas estimadas."
+            ),
             "ja": "{entity} の登録済み測定 {term} を取得し、surrogate や予測値は除外してください。",
-            "de": "Hole den registrierten Messwert {term} für {entity}; Surrogat- oder Prognosewerte ausschließen.",
+            "de": (
+                "Hole den registrierten Messwert {term} für {entity}; "
+                "Surrogat- oder Prognosewerte ausschließen."
+            ),
             "mixed": "{entity}의 registered measured {term}만 fetch. surrogate/predicted 제외.",
         },
         "multi": {
-            "en": "Begin with {term} for {entity}, then continue to {second} using the observed result.",
+            "en": (
+                "Begin with {term} for {entity}, then continue to "
+                "{second} using the observed result."
+            ),
             "ko": "{entity}에서 먼저 {term}을 수행한 뒤 관측 결과를 이용해 {second}로 이어가 주세요.",
-            "es": "Empieza con {term} para {entity} y continúa con {second} usando el resultado observado.",
+            "es": (
+                "Empieza con {term} para {entity} y continúa con "
+                "{second} usando el resultado observado."
+            ),
             "ja": "{entity} でまず {term} を実行し、その観測結果を使って {second} に進んでください。",
-            "de": "Beginne bei {entity} mit {term} und fahre mit dem beobachteten Ergebnis zu {second} fort.",
+            "de": (
+                "Beginne bei {entity} mit {term} und fahre mit dem "
+                "beobachteten Ergebnis zu {second} fort."
+            ),
             "mixed": "{entity}에서 first {term}, observed result로 then {second}.",
         },
         "unit": {
@@ -265,7 +286,10 @@ def _render(
         "read": {
             "en": "Read {entity} via {term}; no state-changing operation is authorized.",
             "ko": "{entity}를 {term}으로 읽고 상태 변경 작업은 수행하지 마세요.",
-            "es": "Lee {entity} mediante {term}; no se autoriza ninguna operación que cambie estado.",
+            "es": (
+                "Lee {entity} mediante {term}; no se autoriza ninguna "
+                "operación que cambie estado."
+            ),
             "ja": "{entity} を {term} で読み取り、状態変更操作は実行しないでください。",
             "de": "Lies {entity} über {term}; keine zustandsändernde Operation ist autorisiert.",
             "mixed": "{entity}는 {term}으로 read. state-changing operation은 금지.",
