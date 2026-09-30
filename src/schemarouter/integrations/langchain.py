@@ -261,8 +261,9 @@ class LangChainToolInvoker:
             if inspect.isawaitable(value):
                 value = await value
 
-        if hasattr(value, "model_dump"):
-            return value.model_dump(mode="json", by_alias=True, exclude_none=True)
+        model_dump = getattr(value, "model_dump", None)
+        if callable(model_dump):
+            return model_dump(mode="json", by_alias=True, exclude_none=True)
         if dataclasses.is_dataclass(value) and not isinstance(value, type):
             return dataclasses.asdict(value)
         return value
