@@ -774,3 +774,27 @@ def test_the_default_harness_path_is_unchanged():
     assert row["condition"] == "ORACLE"
     assert row["candidate_condition"] == "ORACLE"
     assert "youngs_modulus_at_900k" in "".join(_tool_messages(agent))
+
+
+# --- prior-query guard ------------------------------------------------------
+
+
+def test_the_projection_corpus_is_registered_as_a_prior_surface():
+    # A successor screen can only be proved query-disjoint from #506 if #506's
+    # queries are in the guard's known set.
+    from scripts.agent_utility_prior_query_guard import known_prior_queries
+
+    surfaces = known_prior_queries()
+    assert "projection" in surfaces, sorted(surfaces)
+    assert len(surfaces["projection"]) == 144
+
+
+def test_every_projection_query_appears_in_the_guard():
+    from scripts.agent_utility_prior_query_guard import (
+        known_prior_queries,
+        normalize_query,
+    )
+
+    registered = known_prior_queries()["projection"]
+    for task in _tasks():
+        assert normalize_query(str(task["query"])) in registered
