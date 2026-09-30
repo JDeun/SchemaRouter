@@ -43,6 +43,19 @@ Roster, ordered and frozen:
 2. `Qwen/Qwen3-4B`
 3. `Qwen/Qwen3-8B`
 
+Exact model revisions were frozen before the first qualification episode:
+
+- `HuggingFaceTB/SmolLM3-3B@a07cc9a04f16550a088caea529712d1d335b0ac1`
+- `Qwen/Qwen3-4B@1cfa9a7208912126459214e8b04321603b3df60c`
+- `Qwen/Qwen3-8B@b968826d9c46dd6066d109eabc6255188de91218`
+
+All qualification candidates use CPU bfloat16 on `ubuntu-24.04-arm`,
+Python 3.12.14, PyTorch 2.14.0+cpu and Transformers 4.57.6. SmolLM3 keeps
+the canonical SDPA + `xml_tools` path; Qwen candidates use the same
+OpenAI-function-tool chat-template semantics used by the earlier Qwen
+development agent. These runtime choices are instrument definition, not
+experiment outcomes.
+
 The **first** candidate that qualifies is used; later candidates are not run.
 Choosing among qualifiers would select the instrument by its outcome, which is
 the error this gate exists to prevent.
@@ -114,6 +127,13 @@ corpus, conditions, gate and confirmation arm are untouched.
 
 If no candidate qualifies, that is recorded as a terminal result about the
 screening approach — not as a reason to weaken the thresholds.
+
+The workflow executes candidates strictly in roster order. A later candidate
+may start only after the previous candidate produced complete measured evidence
+and failed the frozen thresholds. An infrastructure failure (cache failure,
+runner OOM, model-load failure, missing shard, or workflow failure) is **not**
+a scientific non-qualification and stops the chain. The final selector refuses
+an incomplete failed prefix.
 
 ## Reproduction
 
