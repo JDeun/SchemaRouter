@@ -432,13 +432,25 @@ def test_aggregate_requires_every_condition():
 # --- conveyor wiring --------------------------------------------------------
 
 
-class _ConveyorAPI:
-    """Minimal stub of the conveyor's GitHub surface."""
+MAIN_SHA = "b" * 40
 
-    def __init__(self, runs=None, b2_status=("queued", None)):
+
+class _ConveyorAPI:
+    """Minimal stub of the conveyor's GitHub surface.
+
+    `present_paths` models a real checkout: the controller must not dispatch a
+    stage against a revision whose tree lacks the experiment's own scripts.
+    """
+
+    def __init__(self, runs=None, b2_status=("queued", None), present_paths=None):
+        from scripts.research_014_conveyor import PROJECTION_REQUIRED_PATHS
+
         self.runs_by_workflow = dict(runs or {})
         self.dispatched: list[tuple[str, dict]] = []
         self._b2_status = b2_status
+        self._present = (
+            set(PROJECTION_REQUIRED_PATHS) if present_paths is None else set(present_paths)
+        )
 
     def workflow_runs(self, workflow_file):
         return self.runs_by_workflow.get(workflow_file, [])
@@ -463,7 +475,11 @@ class _ConveyorAPI:
 
     def ref_sha(self, ref):
         del ref
-        return "b" * 40
+        return MAIN_SHA
+
+    def path_exists(self, path, *, ref):
+        del ref
+        return path in self._present
 
 
 def _run_row(run_id: int, title: str, conclusion: str | None) -> dict:
@@ -492,17 +508,15 @@ def test_the_dev_screen_is_dispatched_even_while_the_chain_waits_on_b2():
 
     assert result["state"] == "waiting_b2"
     assert [name for name, _ in api.dispatched] == [PROJECTION_DEV_WORKFLOW]
-    assert "dispatch_projection_dev" in result["actions"]
+    assert any(
+        action.startswith("dispatch_projection_dev:") for action in result["actions"]
+    )
 
 
 def test_the_dev_screen_is_dispatched_once_per_source_revision():
-    from scripts.research_014_conveyor import (
-        DOWNSTREAM_IMPLEMENTATION_SHA,
-        PROJECTION_DEV_WORKFLOW,
-        run_controller,
-    )
+    from scripts.research_014_conveyor import PROJECTION_DEV_WORKFLOW, run_controller
 
-    title = f"Research 0.14 Field Projection DEV source={DOWNSTREAM_IMPLEMENTATION_SHA}"
+    title = f"Research 0.14 Field Projection DEV source={MAIN_SHA}"
     api = _ConveyorAPI(
         runs={PROJECTION_DEV_WORKFLOW: [_run_row(10, title, None)]},
         b2_status=("queued", None),
@@ -513,13 +527,12 @@ def test_the_dev_screen_is_dispatched_once_per_source_revision():
 
 def test_a_failed_dev_screen_is_retried_up_to_the_infrastructure_bound():
     from scripts.research_014_conveyor import (
-        DOWNSTREAM_IMPLEMENTATION_SHA,
         MAX_INFRA_ATTEMPTS,
         PROJECTION_DEV_WORKFLOW,
         advance_projection_dev,
     )
 
-    title = f"Research 0.14 Field Projection DEV source={DOWNSTREAM_IMPLEMENTATION_SHA}"
+    title = f"Research 0.14 Field Projection DEV source={MAIN_SHA}"
     failures = [_run_row(20 + i, title, "failure") for i in range(MAX_INFRA_ATTEMPTS - 1)]
     api = _ConveyorAPI(runs={PROJECTION_DEV_WORKFLOW: failures})
     actions: list[str] = []
@@ -532,6 +545,138 @@ def test_a_failed_dev_screen_is_retried_up_to_the_infrastructure_bound():
     advance_projection_dev(api, ref="main", execute=True, actions=actions)
     assert api.dispatched == []
     assert actions == ["stopped_projection_dev_infrastructure_failure_after_retries"]
+
+
+# --- source freeze (review #508, blocking finding 1) ------------------------
+
+
+def test_projection_never_reuses_the_frozen_chain_source():
+    """`DOWNSTREAM_IMPLEMENTATION_SHA` predates every projection script.
+
+    Dispatching a projection stage against it checks out a tree that cannot run
+    the experiment. Stub-based tests cannot see that, so the rule is pinned
+    directly: a projection dispatch must never carry that SHA.
+    """
+    from scripts.research_014_conveyor import (
+        DOWNSTREAM_IMPLEMENTATION_SHA,
+        advance_projection_confirmation,
+        advance_projection_dev,
+    )
+
+    for advance in (
+        lambda api, actions: advance_projection_dev(
+            api, ref="main", execute=True, actions=actions
+        ),
+        lambda api, actions: advance_projection_confirmation(
+            api, ref="main", execute=True, actions=actions, terminal_digest="sha256:t"
+        ),
+    ):
+        api = _ConveyorAPI()
+        actions: list[str] = []
+        advance(api, actions)
+        assert api.dispatched
+        for _, inputs in api.dispatched:
+            assert inputs["source_sha"] != DOWNSTREAM_IMPLEMENTATION_SHA
+            assert inputs["source_sha"] == MAIN_SHA
+
+
+def test_a_source_without_the_experiment_files_is_never_dispatched():
+    # The exact failure mode review #508 caught: the stage would check out a
+    # revision that does not contain its own scripts and die at run time.
+    from scripts.research_014_conveyor import (
+        PROJECTION_REQUIRED_PATHS,
+        advance_projection_dev,
+    )
+
+    api = _ConveyorAPI(present_paths=set(PROJECTION_REQUIRED_PATHS[:-1]))
+    actions: list[str] = []
+    advance_projection_dev(api, ref="main", execute=True, actions=actions)
+    assert api.dispatched == []
+    assert actions and actions[0].startswith(
+        "blocked_projection_source_missing_experiment_files:"
+    )
+
+
+def test_the_frozen_projection_source_is_not_moved_by_later_main_commits():
+    from scripts.research_014_conveyor import (
+        PROJECTION_DEV_WORKFLOW,
+        PROJECTION_WORKFLOW,
+        advance_projection_confirmation,
+        frozen_projection_source,
+    )
+
+    first = "f" * 40
+    title = f"Research 0.14 Field Projection DEV source={first}"
+    api = _ConveyorAPI(runs={PROJECTION_DEV_WORKFLOW: [_run_row(50, title, "success")]})
+    actions: list[str] = []
+
+    # main has moved on to MAIN_SHA, but the freeze must hold.
+    assert frozen_projection_source(api, ref="main", actions=actions) == first
+
+    advance_projection_confirmation(
+        api, ref="main", execute=True, actions=actions, terminal_digest="sha256:t"
+    )
+    assert api.dispatched == [
+        (PROJECTION_WORKFLOW, {"evidence_digest": "sha256:t", "source_sha": first})
+    ]
+
+
+def test_both_arms_share_one_projection_source():
+    from scripts.research_014_conveyor import (
+        PROJECTION_DEV_WORKFLOW,
+        advance_projection_confirmation,
+        advance_projection_dev,
+    )
+
+    api = _ConveyorAPI()
+    actions: list[str] = []
+    advance_projection_dev(api, ref="main", execute=True, actions=actions)
+    dev_source = api.dispatched[0][1]["source_sha"]
+
+    # The DEV run now exists and fixes the freeze for confirmation.
+    title = f"Research 0.14 Field Projection DEV source={dev_source}"
+    api.runs_by_workflow[PROJECTION_DEV_WORKFLOW] = [_run_row(60, title, "success")]
+    api.dispatched.clear()
+    advance_projection_confirmation(
+        api, ref="main", execute=True, actions=actions, terminal_digest="sha256:t"
+    )
+    assert api.dispatched[0][1]["source_sha"] == dev_source
+
+
+def test_both_workflows_refuse_a_checkout_without_the_experiment():
+    from pathlib import Path
+
+    workflows = Path(__file__).resolve().parents[1] / ".github" / "workflows"
+    for name in (
+        "research-0.14-field-projection-dev.yml",
+        "research-0.14-field-projection.yml",
+    ):
+        text = (workflows / name).read_text(encoding="utf-8")
+        assert "Refuse a source revision that cannot run this experiment" in text, name
+        assert "scripts/evaluate_agent_utility_v7_projection.py" in text, name
+        assert "raise SystemExit(1)" in text, name
+
+
+# --- governance (review #508, finding 2) ------------------------------------
+
+
+def test_the_preregistration_states_one_unambiguous_dev_rule():
+    import json
+    from pathlib import Path
+
+    prereg = json.loads(
+        (
+            Path(__file__).resolve().parents[1]
+            / "benchmarks"
+            / "agent-utility-v7-field-projection-preregistration.json"
+        ).read_text(encoding="utf-8")
+    )
+    governance = prereg["dev_confirmation_governance"]
+    assert governance["rule"] == "option_a_shared_frozen_corpus_dev_is_diagnostic_only"
+    # Option A and "DEV may drive design changes" cannot both hold.
+    assert governance["dev_may_inform_design"] is False
+    for frozen in ("conditions", "the scorer", "thresholds and promotion gates"):
+        assert frozen in governance["dev_results_may_not_change"]
 
 
 def test_the_confirmation_arm_is_keyed_on_the_terminal_digest():
@@ -548,18 +693,17 @@ def test_the_confirmation_arm_is_keyed_on_the_terminal_digest():
         execute=True,
         actions=actions,
         terminal_digest="sha256:terminal",
-        source_sha="e" * 40,
     )
     assert api.dispatched == [
         (
             PROJECTION_WORKFLOW,
-            {"evidence_digest": "sha256:terminal", "source_sha": "e" * 40},
+            {"evidence_digest": "sha256:terminal", "source_sha": MAIN_SHA},
         )
     ]
 
     # A second controller pass over the same terminal evidence must not
     # re-dispatch; duplicate stage dispatch for one identity is forbidden.
-    title = "Research 0.14 Field Projection sha256:terminal source=" + "e" * 40
+    title = f"Research 0.14 Field Projection sha256:terminal source={MAIN_SHA}"
     api = _ConveyorAPI(runs={PROJECTION_WORKFLOW: [_run_row(40, title, "success")]})
     actions = []
     advance_projection_confirmation(
@@ -568,7 +712,6 @@ def test_the_confirmation_arm_is_keyed_on_the_terminal_digest():
         execute=True,
         actions=actions,
         terminal_digest="sha256:terminal",
-        source_sha="e" * 40,
     )
     assert api.dispatched == []
 

@@ -41,6 +41,19 @@ PROJECTION_DEV_WORKFLOW = "research-0.14-field-projection-dev.yml"
 PROJECTION_DEV_ARTIFACT_PREFIX = "projection-dev-screen-"
 PROJECTION_WORKFLOW = "research-0.14-field-projection.yml"
 PROJECTION_ARTIFACT_PREFIX = "projection-canonical-"
+# #506 needs its own frozen implementation identity. DOWNSTREAM_IMPLEMENTATION_SHA
+# belongs to the already-frozen #431/#432/#424 chain and predates every file
+# below, so dispatching a projection stage against it would check out a tree that
+# cannot run the experiment. The projection source is frozen on first dispatch
+# and then reused, exactly like the other stages recover their frozen source.
+PROJECTION_REQUIRED_PATHS = (
+    "scripts/agent_utility_v7_projection.py",
+    "scripts/agent_utility_v7_dev_agent.py",
+    "scripts/generate_agent_utility_v7_projection_corpus.py",
+    "scripts/validate_agent_utility_v7_projection_corpus.py",
+    "scripts/evaluate_agent_utility_v7_projection.py",
+    "scripts/aggregate_agent_utility_v7_projection.py",
+)
 TRACKING_ISSUE = 500
 # Exact scientific implementation frozen when the conveyor landed.
 # Workflow-wrapper hotfixes must not alter downstream benchmark semantics.
@@ -108,6 +121,27 @@ class GitHubAPI:
     def ref_sha(self, ref: str) -> str:
         data = self.get("/git/ref/heads/" + urllib.parse.quote(ref, safe=""))
         return str(data["object"]["sha"])
+
+    def path_exists(self, path: str, *, ref: str) -> bool:
+        """Whether `path` exists at `ref`.
+
+        A stage workflow checks out an exact frozen revision before running its
+        scripts, so dispatching a stage against a revision that predates those
+        scripts fails at run time while every unit test stays green. This lets
+        the controller refuse that dispatch instead.
+        """
+        try:
+            self.get(
+                "/contents/"
+                + urllib.parse.quote(path)
+                + "?ref="
+                + urllib.parse.quote(ref, safe="")
+            )
+        except RuntimeError as exc:
+            if " 404 " in str(exc):
+                return False
+            raise
+        return True
 
     def run(self, run_id: int) -> dict[str, Any]:
         return dict(self.get(f"/actions/runs/{run_id}"))
@@ -353,6 +387,48 @@ def _status_line(label: str, run: StageRun | None) -> str:
     )
 
 
+def projection_runs_oldest_first(
+    api: GitHubAPI,
+    workflow_file: str,
+) -> list[StageRun]:
+    runs = [_stage_run(row) for row in api.workflow_runs(workflow_file)]
+    runs.sort(key=lambda run: (run.created_at, run.id))
+    return runs
+
+
+def frozen_projection_source(
+    api: GitHubAPI,
+    *,
+    ref: str,
+    actions: list[str],
+) -> str | None:
+    """The exact source revision #506 is frozen to, or None if it cannot be set.
+
+    Once any projection run exists, its recorded source is the freeze and is
+    reused verbatim; later commits to main must not silently move it. Before the
+    first run, main is resolved and checked for the experiment's own files, so a
+    revision that cannot run the experiment is never dispatched.
+    """
+    for workflow in (PROJECTION_DEV_WORKFLOW, PROJECTION_WORKFLOW):
+        existing = projection_runs_oldest_first(api, workflow)
+        if existing:
+            return source_sha_from_run(existing[0])
+
+    candidate = api.ref_sha(ref)
+    missing = [
+        path
+        for path in PROJECTION_REQUIRED_PATHS
+        if not api.path_exists(path, ref=candidate)
+    ]
+    if missing:
+        actions.append(
+            "blocked_projection_source_missing_experiment_files:"
+            f"source={candidate}:missing={len(missing)}"
+        )
+        return None
+    return candidate
+
+
 def advance_projection_dev(
     api: GitHubAPI,
     *,
@@ -364,19 +440,18 @@ def advance_projection_dev(
 
     It consumes no upstream artifact, so it is deliberately advanced before the
     B2 gate: queuing it behind the frozen chain would delay development evidence
-    for no scientific reason. Identity is the frozen implementation SHA, so the
-    screen is dispatched exactly once per source revision.
+    for no scientific reason.
     """
-    marker = f"source={DOWNSTREAM_IMPLEMENTATION_SHA}"
-    runs = find_marked_runs(api, PROJECTION_DEV_WORKFLOW, marker)
+    source_sha = frozen_projection_source(api, ref=ref, actions=actions)
+    if source_sha is None:
+        return
+
+    inputs = {"source_sha": source_sha}
+    runs = find_marked_runs(api, PROJECTION_DEV_WORKFLOW, f"source={source_sha}")
     if not runs:
         if execute:
-            api.dispatch(
-                PROJECTION_DEV_WORKFLOW,
-                ref=ref,
-                inputs={"source_sha": DOWNSTREAM_IMPLEMENTATION_SHA},
-            )
-        actions.append("dispatch_projection_dev")
+            api.dispatch(PROJECTION_DEV_WORKFLOW, ref=ref, inputs=inputs)
+        actions.append(f"dispatch_projection_dev:source={source_sha}")
         return
 
     latest = runs[0]
@@ -389,14 +464,10 @@ def advance_projection_dev(
         return
 
     if execute:
-        api.dispatch(
-            PROJECTION_DEV_WORKFLOW,
-            ref=ref,
-            inputs={"source_sha": DOWNSTREAM_IMPLEMENTATION_SHA},
-        )
+        api.dispatch(PROJECTION_DEV_WORKFLOW, ref=ref, inputs=inputs)
     actions.append(
         "recover_dispatch_projection_dev_after_failure:"
-        f"prior_run={latest.id}:attempt={len(failed) + 1}"
+        f"prior_run={latest.id}:attempt={len(failed) + 1}:source={source_sha}"
     )
 
 
@@ -407,14 +478,20 @@ def advance_projection_confirmation(
     execute: bool,
     actions: list[str],
     terminal_digest: str,
-    source_sha: str,
 ) -> None:
     """Advance the #506 confirmation arm after terminal evidence.
 
     Appending it here rather than inserting it into the chain is deliberate: the
     DAG was preregistered before downstream corpus generation, so no existing
     stage's inputs, ordering, or frozen source may move.
+
+    The source is #506's own frozen revision, never the #431 chain's frozen
+    source, which predates every projection script.
     """
+    source_sha = frozen_projection_source(api, ref=ref, actions=actions)
+    if source_sha is None:
+        return
+
     inputs = {"evidence_digest": terminal_digest, "source_sha": source_sha}
     runs = find_marked_runs(api, PROJECTION_WORKFLOW, terminal_digest)
     if not runs:
@@ -784,7 +861,6 @@ def run_controller(
         execute=execute,
         actions=actions,
         terminal_digest=final_digest,
-        source_sha=frozen_source_sha,
     )
 
     return {

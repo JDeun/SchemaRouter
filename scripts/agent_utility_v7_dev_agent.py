@@ -7,9 +7,13 @@ moved to SmolLM3. Reusing the exact frozen runtime keeps the development screen
 comparable with published B1 context measurements instead of introducing a
 fourth uncharacterised model.
 
-The development screen produces development evidence only. Under
-`docs/research/governance.md` it may inform design, and it may never be reported
-as confirmation.
+The development screen shares one frozen corpus, generator, condition set and
+scorer with the confirmation arm, so it is **diagnostic only**. Its results may
+not change conditions, task content, thresholds, the scorer, harness semantics,
+row inclusion, or the frozen source; confirmation differs from it in exactly one
+preregistered respect, the runtime. Wanting a design change from these results
+means closing this experiment as consumed and preregistering a successor with its
+own query-disjoint surface.
 """
 from __future__ import annotations
 
