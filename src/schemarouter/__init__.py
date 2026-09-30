@@ -1,6 +1,5 @@
 from ._version import __version__
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
-from .adapters.graphql import GraphQLSourceAdapter, tool_from_graphql_introspection
 from .adapters.mcp import DefaultMCPClientFactory, MCPClientFactory
 from .adapters.optimade import OPTIMADESourceAdapter
 from .adapters.plugins import (
@@ -196,7 +195,6 @@ __all__ = [
     "ExecutionHooks",
     "HealthProbe",
     "HealthProbeSnapshot",
-    "GraphQLSourceAdapter",
     "HealthStatus",
     "ExecutionPlan",
     "FallbackRoute",
@@ -274,7 +272,6 @@ __all__ = [
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
-    "tool_from_graphql_introspection",
     "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
