@@ -12,6 +12,9 @@ from schemarouter.planner import (  # noqa: E402
     _STRUCTURAL_OPERATION_FAMILY_BONUS,
     _STRUCTURAL_TOOL_IDENTIFIER_BONUS,
 )
+from scripts.evaluate_agent_utility_v5_adaptive_shortlist import (  # noqa: E402
+    _surface_contract,
+)
 from scripts.rank_agent_utility_v5_structural_adaptive_dev import (  # noqa: E402
     _verify_preregistered_identity,
 )
@@ -84,3 +87,49 @@ def test_structural_adaptive_v3_exposes_shared_evaluator_catalog_schema() -> Non
     assert prereg["preregistration_correction"]["policy_thresholds_changed"] is False
     assert prereg["preregistration_correction"]["policy_logic_changed"] is False
     assert prereg["preregistration_correction"]["prior_attempts_scored"] is False
+
+
+def test_structural_adaptive_v3_surface_contract_uses_frozen_identity() -> None:
+    prereg = json.loads(PREREG.read_text(encoding="utf-8"))
+    all_strata = set(
+        prereg["metric_populations"]["supported_task_strata"]
+    ) | set(
+        prereg["metric_populations"]["unsupported_task_strata"]
+    )
+    rows = [
+        {"language": language}
+        for language in ("en", "ko", "es", "ja", "de", "mixed")
+    ]
+
+    catalogs, task_count, languages, tasks_per_cell = _surface_contract(
+        rows,
+        prereg,
+        all_strata,
+    )
+
+    assert catalogs == [100, 250, 500]
+    assert task_count == 240
+    assert languages == {"en", "ko", "es", "ja", "de", "mixed"}
+    assert tasks_per_cell == 5
+
+
+def test_surface_contract_rejects_implicit_shape_without_frozen_hashes() -> None:
+    prereg = json.loads(PREREG.read_text(encoding="utf-8"))
+    prereg["development_surface"].pop("task_rows_sha256")
+    prereg["development_surface"].pop("catalog_family_sha256")
+    all_strata = set(
+        prereg["metric_populations"]["supported_task_strata"]
+    ) | set(
+        prereg["metric_populations"]["unsupported_task_strata"]
+    )
+
+    try:
+        _surface_contract(
+            [{"language": "en"}],
+            prereg,
+            all_strata,
+        )
+    except ValueError as exc:
+        assert "frozen task/catalog identity" in str(exc)
+    else:
+        raise AssertionError("unfrozen implicit surface was accepted")
