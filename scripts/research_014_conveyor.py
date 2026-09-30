@@ -34,7 +34,7 @@ HELDOUT_ARTIFACT_PREFIX = "heldout-generalization-canonical-"
 FINAL_WORKFLOW = "research-0.14-final-answer.yml"
 FINAL_ARTIFACT_PREFIX = "final-answer-canonical-"
 TRACKING_ISSUE = 500
-
+# Exact scientific implementation frozen when the conveyor landed.\n# Workflow-wrapper hotfixes must not alter downstream benchmark semantics.\nDOWNSTREAM_IMPLEMENTATION_SHA = "30663de8f618bc88a893d9bf6214035a70e8e894"\n
 
 @dataclass(frozen=True)
 class StageRun:
@@ -374,8 +374,7 @@ def run_controller(
             "status": [_status_line("b2", b2)],
         }
     b2_digest = _artifact_digest(b2_artifact)
-    source_sha = api.ref_sha(ref)
-
+    _wrapper_sha = api.ref_sha(ref)  # fail closed if workflow ref is missing\n    source_sha = DOWNSTREAM_IMPLEMENTATION_SHA\n
     b2_terminal_time = str(b2_row.get("updated_at") or b2.created_at)
     k3_runs = find_k3_runs_after(api, not_before=b2_terminal_time)
     k3 = k3_runs[0] if k3_runs else None
@@ -505,21 +504,19 @@ def run_controller(
         _artifact_digest(corrective_artifact),
     )
 
-    heldout = find_marked_run(api, HELDOUT_WORKFLOW, parallel_digest)
+    heldout_inputs = {
+        "evidence_digest": parallel_digest,
+        "source_sha": frozen_source_sha,
+        "k3_run_id": str(k3.id),
+        "corrective_run_id": str(corrective.id),
+        "include_struct_fixed3": str(include_k3).lower(),
+        "include_state_aware": str(include_corrective).lower(),
+    }
+    heldout_runs = find_marked_runs(api, HELDOUT_WORKFLOW, parallel_digest)
+    heldout = heldout_runs[0] if heldout_runs else None
     if heldout is None:
         if execute:
-            api.dispatch(
-                HELDOUT_WORKFLOW,
-                ref=ref,
-                inputs={
-                    "evidence_digest": parallel_digest,
-                    "source_sha": frozen_source_sha,
-                    "k3_run_id": str(k3.id),
-                    "corrective_run_id": str(corrective.id),
-                    "include_struct_fixed3": str(include_k3).lower(),
-                    "include_state_aware": str(include_corrective).lower(),
-                },
-            )
+            api.dispatch(HELDOUT_WORKFLOW, ref=ref, inputs=heldout_inputs)
         actions.append("dispatch_heldout")
         return {
             "state": "heldout_dispatched",
@@ -530,13 +527,17 @@ def run_controller(
             },
         }
     if terminal_failure(heldout):
-        if retry_infrastructure_failure(
-            api,
-            heldout,
-            execute=execute,
-            actions=actions,
-            label="heldout",
-        ):
+        failed_heldout_runs = [
+            run for run in heldout_runs if terminal_failure(run)
+        ]
+        if len(failed_heldout_runs) < MAX_INFRA_ATTEMPTS:
+            if execute:
+                api.dispatch(HELDOUT_WORKFLOW, ref=ref, inputs=heldout_inputs)
+            actions.append(
+                "recover_dispatch_heldout_after_failure:"
+                f"prior_run={heldout.id}:attempt={len(failed_heldout_runs) + 1}:"
+                f"source={frozen_source_sha}"
+            )
             return {
                 "state": "retrying_heldout_infrastructure",
                 "actions": actions,
@@ -571,31 +572,33 @@ def run_controller(
             "held-out generator source SHA drifted from corrective frozen source"
         )
 
-    final = find_marked_run(api, FINAL_WORKFLOW, heldout_digest)
+    final_inputs = {
+        "evidence_digest": heldout_digest,
+        "source_sha": frozen_source_sha,
+        "heldout_run_id": str(heldout.id),
+    }
+    final_runs = find_marked_runs(api, FINAL_WORKFLOW, heldout_digest)
+    final = final_runs[0] if final_runs else None
     if final is None:
         if execute:
-            api.dispatch(
-                FINAL_WORKFLOW,
-                ref=ref,
-                inputs={
-                    "evidence_digest": heldout_digest,
-                    "source_sha": frozen_source_sha,
-                    "heldout_run_id": str(heldout.id),
-                },
-            )
+            api.dispatch(FINAL_WORKFLOW, ref=ref, inputs=final_inputs)
         actions.append("dispatch_final_answer")
         return {
             "state": "final_answer_dispatched",
             "actions": actions,
         }
     if terminal_failure(final):
-        if retry_infrastructure_failure(
-            api,
-            final,
-            execute=execute,
-            actions=actions,
-            label="final",
-        ):
+        failed_final_runs = [
+            run for run in final_runs if terminal_failure(run)
+        ]
+        if len(failed_final_runs) < MAX_INFRA_ATTEMPTS:
+            if execute:
+                api.dispatch(FINAL_WORKFLOW, ref=ref, inputs=final_inputs)
+            actions.append(
+                "recover_dispatch_final_after_failure:"
+                f"prior_run={final.id}:attempt={len(failed_final_runs) + 1}:"
+                f"source={frozen_source_sha}"
+            )
             return {
                 "state": "retrying_final_answer_infrastructure",
                 "actions": actions,
