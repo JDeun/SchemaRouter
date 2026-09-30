@@ -451,19 +451,11 @@ class EndpointSpec(StrictModel):
         paths = [(field.name, field.projection_path) for field in self.output_fields]
         if len({path for _, path in paths}) != len(paths):
             raise ValueError(f"duplicate output field path in endpoint {self.name!r}")
-        for index, (left_name, left_path) in enumerate(paths):
-            for right_name, right_path in paths[index + 1 :]:
-                shorter, longer = (
-                    (left_path, right_path)
-                    if len(left_path) <= len(right_path)
-                    else (right_path, left_path)
-                )
-                if longer[: len(shorter)] == shorter:
-                    raise ValueError(
-                        "overlapping output field paths in endpoint "
-                        f"{self.name!r}: {left_name!r} and {right_name!r}"
-                    )
 
+        # Source paths may overlap (for example "data" and "data.band_gap") as long as their
+        # projected result paths do not. This lets adapters expose nested declared fields while
+        # preserving the existing parent field. Result-path collision checks below remain the
+        # fail-closed boundary for ambiguous projection output.
         result_paths = [
             (field.name, field.result_projection_path)
             for field in self.output_fields
