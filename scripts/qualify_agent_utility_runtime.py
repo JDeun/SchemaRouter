@@ -1,17 +1,20 @@
 """Instrument qualification for the #510 successor screen.
 
-#506's screen produced no signal because its runtime emitted answer envelopes
-without ever calling a tool, grounding its "facts" in the tool's name. Choosing
-a replacement by running candidates and keeping the best would repeat that
-error one level up, so the thresholds and the roster below are frozen by the
-preregistration and the FIRST candidate that qualifies is the one used.
-
-Qualification runs on its own surface. Its numbers are evidence about the
-instrument and are never reported as experiment evidence.
+A runtime may be selected only from provenance-bearing evidence tied to the
+frozen qualification corpus. Bare rate dictionaries remain an internal test
+primitive and are not a valid workflow input.
 """
 from __future__ import annotations
 
 from typing import Any
+
+from scripts.generate_agent_utility_v8_qualification_corpus import (
+    QUALIFICATION_EVIDENCE_CLASS,
+    QUALIFICATION_SURFACE,
+)
+from scripts.validate_agent_utility_v8_qualification_corpus import (
+    validate_qualification_corpus,
+)
 
 # Frozen by issue #510. Do not tune.
 ELIGIBILITY = {
@@ -28,25 +31,11 @@ ROSTER = (
     "Qwen/Qwen3-8B",
 )
 
-# A floor against a rate computed from too few episodes, not a preregistered
-# scientific parameter. A single episode qualifying at 1.0/1.0/1.0 is not
-# evidence about a runtime; this is a gate against that, independent of the
-# ELIGIBILITY thresholds above.
 MINIMUM_EPISODES = 24
 
 
 def qualification_rates(rows: list[dict[str, Any]]) -> dict[str, float]:
-    """Per-episode rates for the three preregistered criteria.
-
-    Each row must carry a `semantic_task_id` and no id may repeat: a gate
-    that can be fed the same episode twice is not a gate, and duplicate rows
-    would silently inflate a rate.
-
-    Raises below MINIMUM_EPISODES, including on an empty list. Returning a
-    zero-rate dict for zero episodes would be indistinguishable from a real
-    run in which every episode failed — the two must not be able to
-    masquerade as each other.
-    """
+    """Compute the three preregistered rates from unique measured episodes."""
     seen_ids: set[Any] = set()
     for row in rows:
         task_id = row.get("semantic_task_id")
@@ -80,26 +69,16 @@ def qualification_rates(rows: list[dict[str, Any]]) -> dict[str, float]:
             1 for row in rows if int(row.get("tool_call_count", 0)) > 0
         )
         / total,
-        # `score_envelope` reports required_fact_recall: the share of the task's
-        # required facts the answer reproduced. Those facts are matched against
-        # the frozen observation evidence, so a non-zero recall is exactly "at
-        # least one observation-grounded fact". There is no separate count field.
         "grounded_fact_rate": sum(
-            1 for row in rows if float(row.get("required_fact_recall", 0.0)) > 0.0
+            1 for row in rows
+            if float(row.get("required_fact_recall", 0.0)) > 0.0
         )
         / total,
     }
 
 
 def qualifies(rates: dict[str, float]) -> bool:
-    """All three criteria must pass. A candidate is not graded on a curve.
-
-    Refuses (raises ValueError) a `rates` that does not carry a real
-    measurement for every criterion — a missing key, or a value that isn't a
-    number (None included). A rate dict that was never measured must not be
-    able to masquerade as a measured failure via a silent `.get(..., 0.0)`
-    default.
-    """
+    """Return whether every frozen eligibility threshold passes."""
     missing = sorted(name for name in ELIGIBILITY if name not in rates)
     if missing:
         raise ValueError(f"rates is missing required criteria: {missing}")
@@ -107,7 +86,8 @@ def qualifies(rates: dict[str, float]) -> bool:
     non_numeric = sorted(
         name
         for name in ELIGIBILITY
-        if isinstance(rates[name], bool) or not isinstance(rates[name], (int, float))
+        if isinstance(rates[name], bool)
+        or not isinstance(rates[name], (int, float))
     )
     if non_numeric:
         raise ValueError(f"rates has a non-numeric value for: {non_numeric}")
@@ -115,28 +95,71 @@ def qualifies(rates: dict[str, float]) -> bool:
     return all(rates[name] >= threshold for name, threshold in ELIGIBILITY.items())
 
 
-def select_runtime(results: dict[str, dict[str, float]]) -> str | None:
-    """Return the first roster runtime that qualifies, or None if none did.
+def validate_qualification_evidence(
+    candidate: str,
+    evidence: dict[str, Any],
+    qualification_corpus: dict[str, Any],
+) -> dict[str, float]:
+    """Validate provenance and return measured qualification rates.
 
-    `results` maps a roster entry to its qualification rates. The roster is
-    walked in its frozen order and the first qualifier wins: a later candidate
-    is never compared against an earlier one, because choosing among qualifiers
-    would select the instrument by its outcome — the error this gate exists to
-    prevent.
-
-    Evaluating out of order is the shape that cherry-picking takes, so it is
-    refused: a candidate may only have results if every candidate before it in
-    the roster already has results and failed.
-
-    The preregistration governs the act, not just the answer: "later
-    candidates are not run". So it is refused, too, for a later candidate to
-    have results once an earlier one has already qualified — holding those
-    later numbers is the forbidden state even if this function would still
-    return the correct (first) answer despite them.
-
-    A None return means "no qualifier **so far**". It is a verdict only when
-    `roster_exhausted(results)` is also True.
+    This is the fail-closed boundary that prevents rows from #506, the
+    successor experiment surface, ad-hoc subsets, or another model/harness
+    from masquerading as qualification evidence.
     """
+    validate_qualification_corpus(qualification_corpus)
+
+    if candidate not in ROSTER:
+        raise ValueError(f"not on the frozen roster: {candidate!r}")
+    if evidence.get("candidate_model") != candidate:
+        raise ValueError("qualification evidence candidate_model mismatch")
+    if evidence.get("evidence_class") != QUALIFICATION_EVIDENCE_CLASS:
+        raise ValueError("qualification evidence_class mismatch")
+    if evidence.get("surface") != QUALIFICATION_SURFACE:
+        raise ValueError("qualification surface mismatch")
+
+    model_revision = evidence.get("model_revision")
+    if not isinstance(model_revision, str) or not model_revision.strip():
+        raise ValueError("qualification evidence requires a pinned model_revision")
+
+    source_revision = evidence.get("source_revision")
+    if source_revision != qualification_corpus.get("source_revision"):
+        raise ValueError("qualification source_revision mismatch")
+    if evidence.get("harness_revision") != source_revision:
+        raise ValueError("qualification harness_revision must equal frozen source_revision")
+
+    if evidence.get("corpus_tasks_sha256") != qualification_corpus.get("tasks_sha256"):
+        raise ValueError("qualification corpus_tasks_sha256 mismatch")
+
+    expected_ids = {
+        str(task["semantic_task_id"])
+        for task in qualification_corpus["tasks"]
+    }
+    rows = evidence.get("rows")
+    if not isinstance(rows, list):
+        raise ValueError("qualification evidence rows must be a list")
+    if len(rows) != qualification_corpus.get("expected_episode_count"):
+        raise ValueError(
+            "qualification episode_count does not match the frozen corpus"
+        )
+
+    row_ids = [str(row.get("semantic_task_id")) for row in rows]
+    if len(set(row_ids)) != len(row_ids):
+        raise ValueError("qualification evidence contains duplicate task ids")
+    if set(row_ids) != expected_ids:
+        missing = sorted(expected_ids - set(row_ids))
+        extra = sorted(set(row_ids) - expected_ids)
+        raise ValueError(
+            f"qualification task-id set mismatch: missing={missing[:3]} "
+            f"extra={extra[:3]}"
+        )
+
+    return qualification_rates(rows)
+
+
+def _select_runtime_from_rates(
+    results: dict[str, dict[str, float]],
+) -> str | None:
+    """Pure ordered-roster selector used after provenance validation."""
     unknown = sorted(set(results) - set(ROSTER))
     if unknown:
         raise ValueError(f"not on the frozen roster: {unknown}")
@@ -146,28 +169,43 @@ def select_runtime(results: dict[str, dict[str, float]]) -> str | None:
             later = [name for name in ROSTER[index + 1:] if name in results]
             if later:
                 raise ValueError(
-                    f"{candidate!r} has no result but later candidates do ({later}); "
-                    "the roster must be evaluated in order"
+                    f"{candidate!r} has no result but later candidates do "
+                    f"({later}); the roster must be evaluated in order"
                 )
             return None
         if qualifies(results[candidate]):
             later = [name for name in ROSTER[index + 1:] if name in results]
             if later:
                 raise ValueError(
-                    f"{candidate!r} qualified but later candidates have results too "
-                    f"({later}); later candidates must not be run once an earlier "
-                    "one qualifies"
+                    f"{candidate!r} qualified but later candidates have results "
+                    f"too ({later}); later candidates must not be run once an "
+                    "earlier one qualifies"
                 )
             return candidate
     return None
 
 
-def roster_exhausted(results: dict[str, dict[str, float]]) -> bool:
-    """Whether every frozen roster candidate has been evaluated.
+def select_runtime(
+    evidence_by_candidate: dict[str, dict[str, Any]],
+    *,
+    qualification_corpus: dict[str, Any],
+) -> str | None:
+    """Select the first qualifying runtime from verified frozen evidence.
 
-    `select_runtime` returns None both when no candidate has qualified yet and
-    when the roster is finished with no qualifier. Only the second is a verdict.
-    Declaring "no candidate qualified" — which the preregistration treats as a
-    terminal result about the screening approach — requires this to be True.
+    Every supplied candidate result is provenance-validated before the ordered
+    roster rule is applied. Workflows must call this function, not the private
+    rate-only helper.
     """
+    rates_by_candidate: dict[str, dict[str, float]] = {}
+    for candidate, evidence in evidence_by_candidate.items():
+        rates_by_candidate[candidate] = validate_qualification_evidence(
+            candidate,
+            evidence,
+            qualification_corpus,
+        )
+    return _select_runtime_from_rates(rates_by_candidate)
+
+
+def roster_exhausted(results: dict[str, Any]) -> bool:
+    """Whether every frozen roster candidate has evidence/results."""
     return set(results) == set(ROSTER)
