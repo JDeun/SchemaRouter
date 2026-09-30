@@ -16,7 +16,7 @@ from scripts.generate_agent_utility_v6_corrective_corpus import (
 from scripts.research_014_conveyor import (
     StageRun,
     combine_digests,
-    frozen_source_sha,
+    source_sha_from_run,
     retry_infrastructure_failure,
 )
 from scripts.validate_agent_utility_v3_heldout_corpus import (
@@ -182,7 +182,7 @@ def test_only_one_downstream_workflow_set_exists() -> None:
     assert not (root / "scripts" / "research_0_14_conveyor.py").exists()
 
 
-def test_frozen_source_sha_prefers_explicit_run_marker() -> None:
+def test_source_sha_from_run_prefers_explicit_run_marker() -> None:
     run = StageRun(
         id=90,
         status="completed",
@@ -196,10 +196,10 @@ def test_frozen_source_sha_prefers_explicit_run_marker() -> None:
         run_attempt=1,
         head_sha="d" * 40,
     )
-    assert frozen_source_sha(run) == "c" * 40
+    assert source_sha_from_run(run) == "c" * 40
 
 
-def test_frozen_source_sha_falls_back_to_first_attempt_head() -> None:
+def test_source_sha_from_run_falls_back_to_first_attempt_head() -> None:
     run = StageRun(
         id=91,
         status="completed",
@@ -210,7 +210,7 @@ def test_frozen_source_sha_falls_back_to_first_attempt_head() -> None:
         run_attempt=1,
         head_sha="e" * 40,
     )
-    assert frozen_source_sha(run) == "e" * 40
+    assert source_sha_from_run(run) == "e" * 40
 
 
 def test_downstream_scientific_source_is_frozen_to_conveyor_merge() -> None:
