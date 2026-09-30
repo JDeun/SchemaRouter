@@ -18,6 +18,7 @@ import urllib.parse
 import urllib.request
 import zipfile
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 CANONICAL_B2_RUN = 36642658406
@@ -41,6 +42,7 @@ class StageRun:
     display_title: str
     created_at: str
     html_url: str
+    run_attempt: int
 
 
 class GitHubAPI:
@@ -170,9 +172,22 @@ class GitHubAPI:
             payload,
         )
 
+    def rerun_failed_jobs(self, run_id: int) -> None:
+        self.post(f"/actions/runs/{run_id}/rerun-failed-jobs", {})
+
     def issue_comments(self, issue_number: int) -> list[dict[str, Any]]:
-        data = self.get(f"/issues/{issue_number}/comments?per_page=100")
-        return [dict(row) for row in data]
+        rows: list[dict[str, Any]] = []
+        page = 1
+        while True:
+            data = self.get(
+                f"/issues/{issue_number}/comments?per_page=100&page={page}"
+            )
+            batch = [dict(row) for row in data]
+            rows.extend(batch)
+            if len(batch) < 100:
+                break
+            page += 1
+        return rows
 
     def comment_issue(self, issue_number: int, body: str) -> None:
         self.post(f"/issues/{issue_number}/comments", {"body": body})
@@ -195,6 +210,7 @@ def _stage_run(row: dict[str, Any]) -> StageRun:
         display_title=str(row.get("display_title") or row.get("name") or ""),
         created_at=str(row.get("created_at") or ""),
         html_url=str(row.get("html_url") or ""),
+        run_attempt=int(row.get("run_attempt") or 1),
     )
 
 
@@ -242,6 +258,28 @@ def terminal_failure(run: StageRun | None) -> bool:
     )
 
 
+MAX_INFRA_ATTEMPTS = 3
+
+
+def retry_infrastructure_failure(
+    api: GitHubAPI,
+    run: StageRun,
+    *,
+    execute: bool,
+    actions: list[str],
+    label: str,
+) -> bool:
+    """Retry workflow infrastructure failures without changing frozen semantics."""
+    if not terminal_failure(run):
+        return False
+    if run.run_attempt >= MAX_INFRA_ATTEMPTS:
+        return False
+    if execute:
+        api.rerun_failed_jobs(run.id)
+    actions.append(f"rerun_failed_{label}:run={run.id}:attempt={run.run_attempt + 1}")
+    return True
+
+
 def _artifact_digest(artifact: dict[str, Any]) -> str:
     digest = artifact.get("digest")
     if not isinstance(digest, str) or not digest.startswith("sha256:"):
@@ -274,6 +312,7 @@ def run_controller(
     *,
     ref: str,
     execute: bool,
+    recover_missing_k3: bool = False,
 ) -> dict[str, Any]:
     actions: list[str] = []
     b2_row = api.run(CANONICAL_B2_RUN)
@@ -304,12 +343,30 @@ def run_controller(
 
     k3 = find_k3_run_after(api, not_before=b2.created_at)
     if k3 is None:
-        if execute:
-            api.dispatch(K3_WORKFLOW, ref=ref)
-        actions.append("dispatch_k3")
+        # The K3 workflow already has its own exact-B2 workflow_run trigger.
+        # Do not race that trigger on the same completion event. Only the
+        # scheduled recovery scan may dispatch a missing K3 run.
+        if recover_missing_k3:
+            if execute:
+                api.dispatch(K3_WORKFLOW, ref=ref)
+            actions.append("recover_dispatch_k3")
+        else:
+            actions.append("wait_for_k3_native_trigger")
     elif terminal_failure(k3):
+        if retry_infrastructure_failure(
+            api,
+            k3,
+            execute=execute,
+            actions=actions,
+            label="k3",
+        ):
+            return {
+                "state": "retrying_k3_infrastructure",
+                "actions": actions,
+                "status": [_status_line("k3", k3)],
+            }
         return {
-            "state": "stopped_k3_infrastructure_failure",
+            "state": "stopped_k3_infrastructure_failure_after_retries",
             "actions": actions,
             "status": [_status_line("k3", k3)],
         }
@@ -327,8 +384,20 @@ def run_controller(
             )
         actions.append("dispatch_corrective")
     elif terminal_failure(corrective):
+        if retry_infrastructure_failure(
+            api,
+            corrective,
+            execute=execute,
+            actions=actions,
+            label="corrective",
+        ):
+            return {
+                "state": "retrying_corrective_infrastructure",
+                "actions": actions,
+                "status": [_status_line("corrective", corrective)],
+            }
         return {
-            "state": "stopped_corrective_infrastructure_failure",
+            "state": "stopped_corrective_infrastructure_failure_after_retries",
             "actions": actions,
             "status": [_status_line("corrective", corrective)],
         }
@@ -368,6 +437,13 @@ def run_controller(
         corrective_artifact,
         "corrective-reretrieval-canonical.json",
     )
+    corrective_corpus = api.artifact_json(
+        corrective_artifact,
+        "corrective-corpus.json",
+    )
+    frozen_source_sha = str(corrective_corpus.get("generator_source_revision") or "")
+    if len(frozen_source_sha) != 40:
+        raise RuntimeError("corrective corpus is missing frozen generator source SHA")
     include_k3 = _gate(k3_payload, ("primary_gate", "primary_gate_passed"))
     include_corrective = _gate(
         corrective_payload,
@@ -386,7 +462,7 @@ def run_controller(
                 ref=ref,
                 inputs={
                     "evidence_digest": parallel_digest,
-                    "source_sha": source_sha,
+                    "source_sha": frozen_source_sha,
                     "k3_run_id": str(k3.id),
                     "corrective_run_id": str(corrective.id),
                     "include_struct_fixed3": str(include_k3).lower(),
@@ -403,8 +479,20 @@ def run_controller(
             },
         }
     if terminal_failure(heldout):
+        if retry_infrastructure_failure(
+            api,
+            heldout,
+            execute=execute,
+            actions=actions,
+            label="heldout",
+        ):
+            return {
+                "state": "retrying_heldout_infrastructure",
+                "actions": actions,
+                "status": [_status_line("heldout", heldout)],
+            }
         return {
-            "state": "stopped_heldout_infrastructure_failure",
+            "state": "stopped_heldout_infrastructure_failure_after_retries",
             "actions": actions,
             "status": [_status_line("heldout", heldout)],
         }
@@ -422,6 +510,15 @@ def run_controller(
             "actions": actions,
         }
     heldout_digest = _artifact_digest(heldout_artifact)
+    heldout_corpus = api.artifact_json(
+        heldout_artifact,
+        "heldout-corpus.json",
+    )
+    heldout_source_sha = str(heldout_corpus.get("generator_source_revision") or "")
+    if heldout_source_sha != frozen_source_sha:
+        raise RuntimeError(
+            "held-out generator source SHA drifted from corrective frozen source"
+        )
 
     final = find_marked_run(api, FINAL_WORKFLOW, heldout_digest)
     if final is None:
@@ -431,7 +528,7 @@ def run_controller(
                 ref=ref,
                 inputs={
                     "evidence_digest": heldout_digest,
-                    "source_sha": source_sha,
+                    "source_sha": frozen_source_sha,
                     "heldout_run_id": str(heldout.id),
                 },
             )
@@ -441,8 +538,20 @@ def run_controller(
             "actions": actions,
         }
     if terminal_failure(final):
+        if retry_infrastructure_failure(
+            api,
+            final,
+            execute=execute,
+            actions=actions,
+            label="final",
+        ):
+            return {
+                "state": "retrying_final_answer_infrastructure",
+                "actions": actions,
+                "status": [_status_line("final", final)],
+            }
         return {
-            "state": "stopped_final_answer_infrastructure_failure",
+            "state": "stopped_final_answer_infrastructure_failure_after_retries",
             "actions": actions,
             "status": [_status_line("final", final)],
         }
@@ -545,6 +654,8 @@ def main() -> None:
     )
     parser.add_argument("--ref", default="main")
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--recover-missing-k3", action="store_true")
+    parser.add_argument("--state-out", type=str, default="")
     args = parser.parse_args()
 
     if not args.repository or not args.token:
@@ -553,7 +664,15 @@ def main() -> None:
         GitHubAPI(args.repository, args.token),
         ref=args.ref,
         execute=args.execute,
+        recover_missing_k3=args.recover_missing_k3,
     )
+    if args.state_out:
+        state_path = Path(args.state_out)
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        state_path.write_text(
+            json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
     print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
 
 
