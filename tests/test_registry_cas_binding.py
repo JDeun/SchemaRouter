@@ -101,6 +101,7 @@ def test_atomic_operations_fail_closed_for_a_legacy_registry() -> None:
             registry,
             _tool(description="amended"),
             expected_fingerprint=original.fingerprint,
+            expected_version=registry.version,
         )
 
     assert registry.get("demo").description == "original"
@@ -115,26 +116,31 @@ def test_amendment_cannot_overwrite_a_writer_that_lands_after_validation() -> No
             tool: ToolSpec,
             *,
             expected_fingerprint: str,
+            expected_version: int,
         ) -> str:
             if not self.raced:
                 self.raced = True
                 current = self.get(tool.key)
-                interloper = current.model_copy(
-                    update={"description": "concurrent writer"}
-                )
+                interloper = current.model_copy(deep=True)
+                interloper.metadata["writer"] = "concurrent"
+                assert interloper.fingerprint == current.fingerprint
                 self.register(interloper, replace=True)
             return super().replace_if_fingerprint(
                 tool,
                 expected_fingerprint=expected_fingerprint,
+                expected_version=expected_version,
             )
 
     registry = RacingRegistry()
     router = SchemaRouter(registry=registry)
     original = _tool(description="original")
     router.add_tool(original)
-    amended = original.model_copy(update={"description": "trusted amendment"})
+    amended_endpoint = original.endpoints[0].model_copy(
+        update={"description": "trusted annotation"}
+    )
+    amended = original.model_copy(update={"endpoints": [amended_endpoint]})
 
-    with pytest.raises(RegistrationError, match="changed concurrently"):
+    with pytest.raises(RegistrationError, match="registry changed concurrently"):
         router.amend_capability("demo", amended)
 
-    assert registry.get("demo").description == "concurrent writer"
+    assert registry.get("demo").metadata["writer"] == "concurrent"
