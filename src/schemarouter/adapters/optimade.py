@@ -672,6 +672,7 @@ class OPTIMADERemoteInvoker:
     """Call-aware OPTIMADE invoker that maps planned fields to response_fields."""
 
     projects_fields = True
+    projects_explicit_paths = True
 
     def __init__(
         self,
