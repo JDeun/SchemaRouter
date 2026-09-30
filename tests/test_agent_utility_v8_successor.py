@@ -190,6 +190,16 @@ def test_an_empty_run_is_refused_rather_than_treated_as_zero_rates():
         qualification_rates([])
 
 
+def test_a_fact_recall_without_any_tool_call_is_not_grounded():
+    from scripts.qualify_agent_utility_runtime import qualification_rates
+
+    rows = _rows(envelope=40, tool_calls=0, grounded=40, total=40)
+    rates = qualification_rates(rows)
+    assert rates["envelope_valid_rate"] == 1.0
+    assert rates["tool_call_rate"] == 0.0
+    assert rates["grounded_fact_rate"] == 0.0
+
+
 def test_a_runtime_that_calls_tools_but_grounds_nothing_is_refused():
     # The criterion that exists for this case must be able to refuse on its own.
     # _rows(40, 0, 0) cannot prove that: no tool calls means tool_call_rate
