@@ -246,78 +246,78 @@ def test_a_well_formed_run_still_qualifies():
 
 
 def test_the_first_qualifier_wins_when_evaluated_alone():
-    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+    from scripts.qualify_agent_utility_runtime import ROSTER, _select_runtime_from_rates
 
     passing = {"envelope_valid_rate": 0.85, "tool_call_rate": 0.95, "grounded_fact_rate": 0.75}
-    assert select_runtime({ROSTER[0]: passing}) == ROSTER[0]
+    assert _select_runtime_from_rates({ROSTER[0]: passing}) == ROSTER[0]
 
 
 def test_a_later_candidates_results_after_a_qualifier_are_refused():
     # The preregistration says "later candidates are not run" — an act, not
     # just an answer. Holding a later candidate's results once an earlier
-    # one qualified is the forbidden state even though select_runtime would
+    # one qualified is the forbidden state even though _select_runtime_from_rates would
     # still return the right (first) answer despite them; #510's own
     # recorded risk is temptation, which has already materialised the
     # moment those later numbers exist.
-    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+    from scripts.qualify_agent_utility_runtime import ROSTER, _select_runtime_from_rates
 
     passing = {"envelope_valid_rate": 0.85, "tool_call_rate": 0.95, "grounded_fact_rate": 0.75}
     better = {"envelope_valid_rate": 1.0, "tool_call_rate": 1.0, "grounded_fact_rate": 1.0}
     with pytest.raises(ValueError, match="later candidates"):
-        select_runtime({ROSTER[0]: passing, ROSTER[1]: better})
+        _select_runtime_from_rates({ROSTER[0]: passing, ROSTER[1]: better})
 
 
 def test_a_failing_candidate_falls_through_to_the_next():
-    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+    from scripts.qualify_agent_utility_runtime import ROSTER, _select_runtime_from_rates
 
     failing = {"envelope_valid_rate": 1.0, "tool_call_rate": 1.0, "grounded_fact_rate": 0.0}
     passing = {"envelope_valid_rate": 0.85, "tool_call_rate": 0.95, "grounded_fact_rate": 0.75}
-    assert select_runtime({ROSTER[0]: failing, ROSTER[1]: passing}) == ROSTER[1]
+    assert _select_runtime_from_rates({ROSTER[0]: failing, ROSTER[1]: passing}) == ROSTER[1]
 
 
 def test_no_qualifier_returns_none():
-    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+    from scripts.qualify_agent_utility_runtime import ROSTER, _select_runtime_from_rates
 
     failing = {"envelope_valid_rate": 0.0, "tool_call_rate": 0.0, "grounded_fact_rate": 0.0}
-    assert select_runtime({name: failing for name in ROSTER}) is None
+    assert _select_runtime_from_rates({name: failing for name in ROSTER}) is None
 
 
 def test_evaluating_out_of_order_is_refused():
     # Skipping ahead is how cherry-picking looks in practice.
     import pytest
 
-    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+    from scripts.qualify_agent_utility_runtime import ROSTER, _select_runtime_from_rates
 
     passing = {"envelope_valid_rate": 0.85, "tool_call_rate": 0.95, "grounded_fact_rate": 0.75}
     with pytest.raises(ValueError, match="in order"):
-        select_runtime({ROSTER[1]: passing})
+        _select_runtime_from_rates({ROSTER[1]: passing})
 
 
 def test_an_unknown_candidate_is_refused():
     import pytest
 
-    from scripts.qualify_agent_utility_runtime import select_runtime
+    from scripts.qualify_agent_utility_runtime import _select_runtime_from_rates
 
     with pytest.raises(ValueError, match="frozen roster"):
-        select_runtime({"some/other-model": {}})
+        _select_runtime_from_rates({"some/other-model": {}})
 
 
 def test_an_incomplete_roster_is_not_a_verdict():
-    # Only the first candidate ran and it failed. select_runtime returns None
+    # Only the first candidate ran and it failed. _select_runtime_from_rates returns None
     # here for the same reason it returns None once every candidate has
     # failed: None alone does not distinguish "keep going" from "no
     # qualifier". roster_exhausted is what pins that distinction, so both
-    # halves must be asserted together, not select_runtime's return value
+    # halves must be asserted together, not _select_runtime_from_rates's return value
     # alone.
     from scripts.qualify_agent_utility_runtime import (
         ROSTER,
         roster_exhausted,
-        select_runtime,
+        _select_runtime_from_rates,
     )
 
     failing = {"envelope_valid_rate": 0.0, "tool_call_rate": 0.0, "grounded_fact_rate": 0.0}
     partial = {ROSTER[0]: failing}
-    assert select_runtime(partial) is None
+    assert _select_runtime_from_rates(partial) is None
     assert not roster_exhausted(partial)
 
 
@@ -325,23 +325,23 @@ def test_none_is_only_a_verdict_once_the_roster_is_exhausted():
     from scripts.qualify_agent_utility_runtime import (
         ROSTER,
         roster_exhausted,
-        select_runtime,
+        _select_runtime_from_rates,
     )
 
     failing = {"envelope_valid_rate": 0.0, "tool_call_rate": 0.0, "grounded_fact_rate": 0.0}
 
     partial = {ROSTER[0]: failing}
-    assert select_runtime(partial) is None
+    assert _select_runtime_from_rates(partial) is None
     assert not roster_exhausted(partial), "a prefix is not a verdict"
 
     complete = {name: failing for name in ROSTER}
-    assert select_runtime(complete) is None
+    assert _select_runtime_from_rates(complete) is None
     assert roster_exhausted(complete), "only this pair may be reported as 'none qualified'"
 
 
 def test_roster_exhausted_ignores_qualification_and_only_asks_about_coverage():
     # Deliberately a genuine total-failure shape, not an all-qualifying one:
-    # select_runtime now refuses a results dict in which a later candidate
+    # _select_runtime_from_rates now refuses a results dict in which a later candidate
     # has results after an earlier one qualified (see
     # test_a_later_candidates_results_after_a_qualifier_are_refused), so a
     # test pinning coverage semantics must not depict three simultaneously
@@ -367,10 +367,10 @@ def test_roster_exhausted_ignores_qualification_and_only_asks_about_coverage():
 
 
 def test_a_roster_of_empty_rate_dicts_is_refused():
-    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+    from scripts.qualify_agent_utility_runtime import ROSTER, _select_runtime_from_rates
 
     with pytest.raises(ValueError, match="missing required criteria"):
-        select_runtime({name: {} for name in ROSTER})
+        _select_runtime_from_rates({name: {} for name in ROSTER})
 
 
 def test_a_roster_built_from_zero_episode_runs_is_refused():
@@ -381,11 +381,11 @@ def test_a_roster_built_from_zero_episode_runs_is_refused():
 
 
 def test_a_roster_of_rates_missing_the_measured_criteria_is_refused():
-    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+    from scripts.qualify_agent_utility_runtime import ROSTER, _select_runtime_from_rates
 
     unmeasured = {"foo": 1.0}
     with pytest.raises(ValueError, match="missing required criteria"):
-        select_runtime({name: unmeasured for name in ROSTER})
+        _select_runtime_from_rates({name: unmeasured for name in ROSTER})
 
 
 def test_a_genuine_full_roster_failure_still_reports_as_a_verdict():
@@ -396,12 +396,12 @@ def test_a_genuine_full_roster_failure_still_reports_as_a_verdict():
         ROSTER,
         qualification_rates,
         roster_exhausted,
-        select_runtime,
+        _select_runtime_from_rates,
     )
 
     failing_rows = _rows(envelope=0, tool_calls=0, grounded=0, total=40)
     results = {name: qualification_rates(failing_rows) for name in ROSTER}
-    assert select_runtime(results) is None
+    assert _select_runtime_from_rates(results) is None
     assert roster_exhausted(results)
 
 
@@ -418,3 +418,123 @@ def test_a_none_rate_value_is_refused_rather_than_crashing():
     }
     with pytest.raises(ValueError, match="non-numeric"):
         qualifies(rates)
+
+
+# --- qualification provenance -----------------------------------------------
+
+
+def _qualification_rows(corpus, *, envelope=36, tool_calls=36, grounded=36):
+    rows = []
+    for index, task in enumerate(corpus["tasks"]):
+        rows.append(
+            {
+                "semantic_task_id": task["semantic_task_id"],
+                "final_envelope_valid": index < envelope,
+                "tool_call_count": 1 if index < tool_calls else 0,
+                "required_fact_recall": 1.0 if index < grounded else 0.0,
+            }
+        )
+    return rows
+
+
+def _qualification_evidence(candidate, corpus, rows=None):
+    from scripts.generate_agent_utility_v8_qualification_corpus import (
+        QUALIFICATION_EVIDENCE_CLASS,
+        QUALIFICATION_SURFACE,
+    )
+
+    return {
+        "candidate_model": candidate,
+        "model_revision": "frozen-model-revision",
+        "source_revision": corpus["source_revision"],
+        "harness_revision": corpus["source_revision"],
+        "corpus_tasks_sha256": corpus["tasks_sha256"],
+        "evidence_class": QUALIFICATION_EVIDENCE_CLASS,
+        "surface": QUALIFICATION_SURFACE,
+        "rows": list(rows if rows is not None else _qualification_rows(corpus)),
+    }
+
+
+def test_qualification_surface_is_balanced_and_separate():
+    from scripts.generate_agent_utility_v8_qualification_corpus import (
+        build_qualification_corpus,
+    )
+    from scripts.validate_agent_utility_v8_qualification_corpus import (
+        validate_qualification_corpus,
+    )
+
+    corpus = build_qualification_corpus("a" * 40)
+    summary = validate_qualification_corpus(corpus)
+    assert summary["tasks"] == 36
+    assert corpus["expected_episode_count"] == 36
+    assert len(
+        {
+            (task["projection_stratum"], task["language"])
+            for task in corpus["tasks"]
+        }
+    ) == 36
+
+
+def test_public_runtime_selection_requires_verified_provenance():
+    from scripts.generate_agent_utility_v8_qualification_corpus import (
+        build_qualification_corpus,
+    )
+    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+
+    corpus = build_qualification_corpus("a" * 40)
+    evidence = _qualification_evidence(ROSTER[0], corpus)
+    assert (
+        select_runtime({ROSTER[0]: evidence}, qualification_corpus=corpus)
+        == ROSTER[0]
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "match"),
+    [
+        ("corpus_tasks_sha256", "wrong", "corpus_tasks_sha256"),
+        ("source_revision", "wrong", "source_revision"),
+        ("harness_revision", "wrong", "harness_revision"),
+        ("model_revision", "", "model_revision"),
+        ("evidence_class", "experiment", "evidence_class"),
+        ("surface", "successor", "surface"),
+    ],
+)
+def test_runtime_selection_refuses_wrong_qualification_provenance(field, value, match):
+    from scripts.generate_agent_utility_v8_qualification_corpus import (
+        build_qualification_corpus,
+    )
+    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+
+    corpus = build_qualification_corpus("a" * 40)
+    evidence = _qualification_evidence(ROSTER[0], corpus)
+    evidence[field] = value
+    with pytest.raises(ValueError, match=match):
+        select_runtime({ROSTER[0]: evidence}, qualification_corpus=corpus)
+
+
+def test_runtime_selection_refuses_a_partial_surface_even_above_minimum_n():
+    from scripts.generate_agent_utility_v8_qualification_corpus import (
+        build_qualification_corpus,
+    )
+    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+
+    corpus = build_qualification_corpus("a" * 40)
+    rows = _qualification_rows(corpus)[:24]
+    evidence = _qualification_evidence(ROSTER[0], corpus, rows)
+    with pytest.raises(ValueError, match="episode_count"):
+        select_runtime({ROSTER[0]: evidence}, qualification_corpus=corpus)
+
+
+def test_runtime_selection_refuses_rows_from_another_surface():
+    from scripts.generate_agent_utility_v8_qualification_corpus import (
+        build_qualification_corpus,
+    )
+    from scripts.qualify_agent_utility_runtime import ROSTER, select_runtime
+
+    corpus = build_qualification_corpus("a" * 40)
+    rows = _qualification_rows(corpus)
+    rows[0] = dict(rows[0], semantic_task_id="P0000")
+    evidence = _qualification_evidence(ROSTER[0], corpus, rows)
+    with pytest.raises(ValueError, match="task-id set mismatch"):
+        select_runtime({ROSTER[0]: evidence}, qualification_corpus=corpus)
