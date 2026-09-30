@@ -77,55 +77,81 @@ Canonical B1-v2 freeze identity:
 - catalog SHA256 values unchanged from the corrected catalog freeze;
 - v2 preflight + exact-pinned smoke are part of canonical workflow `36529108855`.
 
-### #420 Phase B1 — v2 running
+### #420 Phase B1 — terminal
 
-B1 still compares one real tool-calling model across:
-- FULL;
-- SR-3;
-- SR-5;
-- SR-10;
-- SR-PROGRESSIVE;
-- ORACLE.
+Canonical B1 workflow `36529108855` completed all 30 frozen micro-shards and exactly 552 unique
+`(catalog_size, task_id, condition)` episodes.
 
-Before any accepted 552-episode aggregate, a static benchmark audit found three classes of protocol
-problems that were corrected without using condition-level success results:
+| Condition | Task pass | Mean tool-schema tokens | Schema tokens vs FULL |
+| --- | ---: | ---: | ---: |
+| FULL | **68.48%** | 24,269.6 | 100.00% |
+| SR-3 | **82.61%** | 800.6 | 3.30% |
+| **SR-5** | **91.30%** | 1,315.9 | **5.42%** |
+| SR-10 | **81.52%** | 2,476.8 | 10.21% |
+| SR-PROGRESSIVE | **82.61%** | 2,986.9 | 12.31% |
+| ORACLE | **86.96%** | 441.3 | 1.82% |
 
-1. **task contract** — two user-supplied arguments were required by the deterministic executor but
-   not explicit in the query;
-2. **tool-observation causality** — multiple same-turn tool calls could previously advance dependent
-   task state before the model had observed the first result;
-3. **statistical unit** — the same 23 semantic tasks repeat across four catalog sizes, so paired
-   uncertainty is now bootstrapped by `task_id` cluster rather than pretending 92 rows are
-   independent.
+SR-5 preserved 100% required-route retrieval recall on this controlled surface, improved task pass
+by **+22.83pp** versus FULL, and produced **0** unauthorized destructive executions. The
+task-clustered bootstrap interval for SR-5 minus FULL was **+9.78pp to +36.96pp**. This remains
+mechanism/sanity evidence, not population-level non-inferiority.
 
-B1 v2 therefore freezes:
-- task SHA `bc0b78ff2be11b89e6ac54ea0ee336f944f04b3c203fc61da70a46ff48b4e03c`;
-- Exact runtime pins: Python 3.12.14, torch 2.14.0+cpu, transformers 4.57.6, tokenizers 0.22.2, safetensors 0.8.0;
-- the same four catalog identities;
-- one executed tool call per assistant turn;
-- explicit observation before dependent tool calls;
-- exact 552 unique `(catalog_size, task_id, condition)` episode keys;
-- task-clustered paired bootstrap;
-- unchanged Qwen3-0.6B downstream-agent checkpoint, conditions, K values and utility gates.
+### #423 Phase B2 — terminal success
 
-All prior B1 episode sources are excluded:
-`36517371433`, `36520025834`, and `36520831273`.
+The materially stronger SmolLM3-3B replication completed successfully in canonical run
+`36642658406` on the frozen 23-task / 4-catalog / 5-condition / 460-episode protocol.
 
-The canonical v2 workflow is `36529108855` at source `b9eadefd3cd076f026a54bbc55a949f0424f5dab`. It is self-validating:
-**protocol/tests → corrected freeze → Phase-A gate → exact-pinned two-turn smoke → 30 inference shards → exact 552-episode aggregate**.
-No B1 product claim is accepted until that sequence succeeds.
+Canonical provenance:
 
-The -2pp B1 gate is descriptive only: the 23 semantic tasks are the statistical units, with catalog sizes treated as repeated measures. Paired uncertainty uses task-cluster bootstrap. #432 is required before any population-level non-inferiority/generalization claim.
+- source `01edb00fe7e8bff803988ce6bce5e05f79801e43`;
+- model revision `a07cc9a04f16550a088caea529712d1d335b0ac1`;
+- ARM64 + PyTorch SDPA;
+- canonical artifact digest
+  `sha256:edbccbbfb44d58ba936af7af82efe844177edc24dd587e3c52cff1505c37c256`.
 
-### Required replication and answer-quality work
+The earlier duplicate attempt `36641753066` is noncanonical and its partial rows are excluded.
 
-- **#423 B2**: repeat the same frozen utility protocol with a materially stronger tool-calling agent
-  before generalizing B1 beyond a small local model.
-- **#424 final-answer quality**: separately measure factual recall, hallucination, numeric/unit
-  accuracy, provenance and final-answer completeness. Deterministic tool-use success is not treated
-  as a substitute for answer quality.
+### Structural shortlist-depth result — K3 not promoted
 
-The active 0.14 promotion criteria are:
+A separately preregistered strong-agent K3-vs-K5 gate completed in run `36670280971`:
+
+- STRUCT-FIXED-3 task pass: **82.61%**;
+- STRUCT-FIXED-5 task pass: **85.87%**;
+- paired K3-K5 delta: **-3.26pp**;
+- preregistered floor: **-2pp**;
+- bootstrap 95% interval: **[-13.04pp, +3.26pp]**;
+- K3 used fewer tool-schema tokens;
+- execution-policy integrity passed and unauthorized destructive executions were 0.
+
+The task-pass gate failed, so K3 is **not** promoted into #432. No K/weight/threshold retuning is
+permitted from those evaluated rows.
+
+### Active conveyor
+
+The remaining primary 0.14 sequence is gated rather than manually queued:
+
+```text
+#431 execution-state-aware corrective retrieval
+    |
+    | terminal preregistered gate
+    v
+freeze #432 held-out condition manifest
+    |
+    v
+#432 — 780 independent semantic tasks
+    |
+    | terminal success
+    v
+#424 — 144-task final-answer quality
+```
+
+#431 is currently active. #432 and #424 must not be manually launched around the conveyor.
+
+The separate output-field-projection line (#506/#510) remains an independent field-level research
+question. Its runtime qualification is instrument evidence and must not be mixed into the
+capability-retrieval claim hierarchy.
+
+The active 0.14 promotion criteria remain:
 - required-tool-set Recall >= **97%** for the effective candidate budget;
 - task pass rate >= FULL minus **2 percentage points**;
 - tool-schema tokens <= **40%** of FULL;
