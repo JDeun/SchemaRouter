@@ -36,96 +36,32 @@ It is **not** a general agent framework, an LLM provider layer, or a RAG generat
 [Declare a result contract for an MCP server that does not publish one →](docs/guides/mcp.md#declare-a-result-contract-the-server-does-not-publish) ·
 [See the measured agent-utility result →](docs/research/agent-utility-b1-result.md)
 
-## Where SchemaRouter fits in RAG
+## Quickstart
 
-SchemaRouter does not perform final generation. It provides a structured retrieval and execution
-boundary for applications that need live external data from APIs and tools under explicit schemas
-and policy.
+```python
+from pydantic import BaseModel
+from schemarouter import PlanRequest, SchemaRouter, schema_tool
 
-```text
-User query
-    |
-    v
-RAG / Agent / Application
-    |
-    |  "I need elastic modulus + provenance"
-    v
-SchemaRouter
-    |
-    +--> retrieve a registered capability
-    +--> select endpoint + required fields
-    +--> validate parameters / policy / health
-    +--> execute trusted transport
-    +--> validate raw output
-    +--> normalize declared units / project fields
-    |
-    v
-Typed external data
-    |
-    v
-RAG generation / agent reasoning
+
+class Weather(BaseModel):
+    city: str
+    temperature: float
+
+
+@schema_tool(read_only=True)
+def current_weather(city: str) -> Weather:
+    return Weather(city=city, temperature=20.5)
+
+
+router = SchemaRouter()
+router.add_callable(current_weather)
+
+result = router.invoke(
+    PlanRequest(query="city temperature", arguments={"city": "Seoul"})
+)
+
+print(result[0].data)
 ```
-
-For document-centric RAG, a retriever commonly searches chunks or records. SchemaRouter addresses a
-different retrieval surface: **executable capabilities and the structured data they can return**.
-
-[Read the RAG positioning and capability model](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
-
-## Field-first, route-second
-
-SchemaRouter first resolves **what data is required**, then chooses a registered route that can
-provide it.
-
-For example:
-
-```text
-Query: "What is the elastic modulus of this material at 300 K?"
-
-Required field
-  semantic_id: mechanical.elastic_modulus
-  datatype: number
-  unit: optional but declared when applicable
-  qualifiers:
-    temperature: 300 K
-
-Possible routes
-  provider A / REST endpoint
-  provider A / OPTIMADE access
-  provider B / MCP tool
-```
-
-Availability can change the route. It must not silently change the requested data contract.
-
-A field contract can carry:
-
-- JSON datatype / shape;
-- semantic ID and aliases;
-- optional source unit;
-- explicit canonical unit normalization;
-- exact qualifiers such as temperature, pressure, phase, orientation, or method;
-- provenance, license, or source-type evidence;
-- provider/access identity and availability metadata.
-
-Units are optional because many legitimate fields are text, identifiers, booleans, structured
-objects, or dimensionless values. SchemaRouter does not infer scientific equivalence or conversion
-factors from a unit string alone.
-
-## Execution boundary
-
-```text
-LangChain / LangGraph / LlamaIndex / your application
-                         |
-                    SchemaRouter
-                         |
-          OpenAPI / MCP / OPTIMADE / Python
-```
-
-The surrounding framework owns conversation, decomposition, generation, memory, graphs, and agent
-loops. SchemaRouter owns the typed capability and execution boundary.
-
-Optional Laya, Ollama, Jev/System-One, hosted-model, embedding, or pairwise decision backends may
-assist selection over locally registered candidates. They do not become execution authority and
-cannot invent tools, fields, credentials, permissions, or side effects.
 
 ## Retrieve a compact tool set for an agent
 
@@ -164,32 +100,88 @@ read/write/destructive metadata, and schema fingerprints. Retrieval has no side 
 agent still chooses among candidates and execution is still subject to SchemaRouter validation and
 policy.
 
-## Quickstart
+## How it works
 
-```python
-from pydantic import BaseModel
-from schemarouter import PlanRequest, SchemaRouter, schema_tool
+### Where SchemaRouter fits in RAG
 
+SchemaRouter does not perform final generation. It provides a structured retrieval and execution
+boundary for applications that need live external data from APIs and tools under explicit schemas
+and policy.
 
-class Weather(BaseModel):
-    city: str
-    temperature: float
-
-
-@schema_tool(read_only=True)
-def current_weather(city: str) -> Weather:
-    return Weather(city=city, temperature=20.5)
-
-
-router = SchemaRouter()
-router.add_callable(current_weather)
-
-result = router.invoke(
-    PlanRequest(query="city temperature", arguments={"city": "Seoul"})
-)
-
-print(result[0].data)
+```mermaid
+flowchart LR
+    Q["User query"] --> A["RAG / agent / application"]
+    A -- "I need elastic modulus + provenance" --> SR
+    subgraph SR["SchemaRouter"]
+        direction TB
+        R1["Retrieve a registered capability"] --> R2["Select endpoint + required fields"]
+        R2 --> R3["Validate parameters / policy / health"]
+        R3 --> R4["Execute trusted transport"]
+        R4 --> R5["Validate raw output"]
+        R5 --> R6["Normalize declared units / project fields"]
+    end
+    SR --> D["Typed external data"]
+    D --> G["RAG generation / agent reasoning"]
 ```
+
+For document-centric RAG, a retriever commonly searches chunks or records. SchemaRouter addresses a
+different retrieval surface: **executable capabilities and the structured data they can return**.
+
+[Read the RAG positioning and capability model](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
+
+### Field-first, route-second
+
+SchemaRouter first resolves **what data is required**, then chooses a registered route that can
+provide it.
+
+For example:
+
+```text
+Query: "What is the elastic modulus of this material at 300 K?"
+
+Required field
+  semantic_id: mechanical.elastic_modulus
+  datatype: number
+  unit: optional but declared when applicable
+  qualifiers:
+    temperature: 300 K
+
+Possible routes
+  provider A / REST endpoint
+  provider A / OPTIMADE access
+  provider B / MCP tool
+```
+
+Availability can change the route. It must not silently change the requested data contract.
+
+A field contract can carry:
+
+- JSON datatype / shape;
+- semantic ID and aliases;
+- optional source unit;
+- explicit canonical unit normalization;
+- exact qualifiers such as temperature, pressure, phase, orientation, or method;
+- provenance, license, or source-type evidence;
+- provider/access identity and availability metadata.
+
+Units are optional because many legitimate fields are text, identifiers, booleans, structured
+objects, or dimensionless values. SchemaRouter does not infer scientific equivalence or conversion
+factors from a unit string alone.
+
+### Execution boundary
+
+```mermaid
+flowchart TD
+    F["LangChain / LangGraph / LlamaIndex / your application"] --> SR["SchemaRouter"]
+    SR --> T["OpenAPI / MCP / OPTIMADE / Python"]
+```
+
+The surrounding framework owns conversation, decomposition, generation, memory, graphs, and agent
+loops. SchemaRouter owns the typed capability and execution boundary.
+
+Optional Laya, Ollama, Jev/System-One, hosted-model, embedding, or pairwise decision backends may
+assist selection over locally registered candidates. They do not become execution authority and
+cannot invent tools, fields, credentials, permissions, or side effects.
 
 ## Connect capabilities
 
