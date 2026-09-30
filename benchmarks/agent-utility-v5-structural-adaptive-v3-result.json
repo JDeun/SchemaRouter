@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "experiment": "adaptive-structural-shortlist-depth-v3",
+  "status": "development_closed_no_adaptive_policy_eligible",
+  "development": {
+    "workflow_run": 36652143328,
+    "artifact_id": 11071096789,
+    "artifact_digest": "sha256:a214ff544fb245d5834a687d53169cd53d2d8d6c47343f7433e7f15b1838a712",
+    "run_source_sha": "11fc523eb31024f619689199d4e102da5d4e2d13",
+    "semantic_task_count": 240,
+    "row_count": 720,
+    "task_rows_sha256": "7f2e4903642ad6aa6586540c30d2704ef20f7d0ff2c76ad73136aa55bb873534",
+    "catalog_family_sha256": "39a91721ef8d960adf626686b23eb6c87e154fa858a0381ee8027026fb26d677",
+    "ranking_rows_sha256": "bdf553bc92d524230ca873a35c7188d66734e1db43015e647bd485b6e6f658f6"
+  },
+  "fixed_retriever": {
+    "candidate": "STRUCT-4.5-1.5",
+    "independently_confirmed": true,
+    "structural_confirmation_run": 36648848734,
+    "structural_confirmation_result": "benchmarks/agent-utility-v5-structural-confirmation-result.json"
+  },
+  "adaptive_result": {
+    "selected_adaptive_policy": null,
+    "eligible_adaptive_policies": [],
+    "conclusion": "unchanged score-gap adaptive family does not improve efficiency over the confirmed structural retriever under the preregistered gates"
+  },
+  "fixed_controls": {
+    "FIXED-3": {
+      "required_route_recall": {
+        "100": 0.9952380952380953,
+        "250": 0.9952380952380953,
+        "500": 0.9857142857142858,
+        "pooled": 0.9920634920634921
+      },
+      "full_coverage": {
+        "100": 0.9944444444444445,
+        "250": 0.9944444444444445,
+        "500": 0.9833333333333333,
+        "pooled": 0.9907407407407407
+      },
+      "mean_candidate_count": 3,
+      "p95_candidate_count": 3,
+      "mean_schema_tokens": 362.2027777777778
+    },
+    "FIXED-5": {
+      "required_route_recall": {
+        "100": 1,
+        "250": 0.9952380952380953,
+        "500": 0.9952380952380953,
+        "pooled": 0.9968253968253968
+      },
+      "full_coverage": {
+        "100": 1,
+        "250": 0.9944444444444445,
+        "500": 0.9944444444444445,
+        "pooled": 0.9962962962962963
+      },
+      "mean_candidate_count": 5,
+      "p95_candidate_count": 5,
+      "mean_schema_tokens": 553.0777777777778
+    }
+  },
+  "fixed3_dev_observation": {
+    "each_catalog_recall_gate_0_97_passed": true,
+    "each_catalog_full_coverage_gate_0_97_passed": true,
+    "schema_token_reduction_vs_fixed5_fraction": 0.3451142093738072,
+    "interpretation": "diagnostic control result only; motivates a separate fixed-depth successor and is not retroactively selected by adaptive-v3"
+  },
+  "research_integrity": {
+    "structural_confirmation_rows_used_for_v3_tuning": false,
+    "b2_outcomes_used": false,
+    "adaptive_thresholds_retuned_after_scoring": false,
+    "adaptive_v3_closed_per_preregistration": true,
+    "fixed3_requires_fresh_confirmation": true
+  }
+}
