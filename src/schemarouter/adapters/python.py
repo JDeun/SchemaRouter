@@ -34,13 +34,129 @@ def _top_level_object_schema(schema: dict[str, Any]) -> dict[str, Any]:
     return resolved if isinstance(resolved, dict) else schema
 
 
+def _schema_unit(schema: Any) -> str | None:
+    if not isinstance(schema, dict):
+        return None
+    for key in ("x-ucum-unit", "x-unit", "unit"):
+        value = schema.get(key)
+        if isinstance(value, str) and value.strip() and value.strip() != "inapplicable":
+            return value.strip()
+    return None
+
+
+def _resolve_local_ref(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> dict[str, Any]:
+    current = schema
+    seen: set[str] = set()
+    while isinstance(current, dict):
+        ref = current.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/$defs/") or ref in seen:
+            return current
+        seen.add(ref)
+        name = ref.removeprefix("#/$defs/")
+        definitions = document.get("$defs", {})
+        target = definitions.get(name) if isinstance(definitions, dict) else None
+        if not isinstance(target, dict):
+            return current
+        merged = dict(target)
+        merged.update({key: value for key, value in current.items() if key != "$ref"})
+        current = merged
+    return schema
+
+
+_NESTED_RETURN_MAX_DEPTH = 8
+
+
+def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
+    discovered: list[FieldSpec] = []
+    root = _top_level_object_schema(schema)
+    root_properties = root.get("properties")
+    top_names = (
+        set(root_properties)
+        if isinstance(root_properties, dict)
+        else set()
+    )
+
+    def visit(
+        value: dict[str, Any],
+        *,
+        prefix: tuple[str, ...],
+        depth: int,
+        ancestors: frozenset[str],
+    ) -> None:
+        if depth >= _NESTED_RETURN_MAX_DEPTH:
+            return
+        resolved = _resolve_local_ref(schema, value)
+        signature = repr(
+            sorted(
+                (
+                    key,
+                    repr(item),
+                )
+                for key, item in resolved.items()
+            )
+        )
+        if signature in ancestors:
+            return
+        next_ancestors = ancestors | {signature}
+
+        raw_type = resolved.get("type")
+        if raw_type == "array" or (
+            isinstance(raw_type, list) and "array" in raw_type
+        ):
+            return
+
+        properties = resolved.get("properties")
+        if not isinstance(properties, dict):
+            return
+
+        for name, child in properties.items():
+            if not isinstance(child, dict):
+                continue
+            path = (*prefix, str(name))
+            if prefix:
+                field_name = ".".join(path)
+                if field_name not in top_names:
+                    discovered.append(
+                        FieldSpec(
+                            name=field_name,
+                            description=str(child.get("description") or ""),
+                            json_schema=_resolve_local_ref(schema, child),
+                            aliases=list(
+                                dict.fromkeys(
+                                    [str(name), str(name).replace("_", " ")]
+                                )
+                            ),
+                            path=list(path),
+                            result_path=[field_name],
+                            unit=_schema_unit(child),
+                            identifier=(
+                                str(name) in {"id", "uuid", "key"}
+                                or str(name).endswith("_id")
+                            ),
+                            source_type="python",
+                        )
+                    )
+            visit(
+                child,
+                prefix=path,
+                depth=depth + 1,
+                ancestors=next_ancestors,
+            )
+
+    visit(root, prefix=(), depth=0, ancestors=frozenset())
+    return discovered
+
+
 def _fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
     object_schema = _top_level_object_schema(schema)
     properties = object_schema.get("properties", {})
     if not isinstance(properties, dict):
         return []
 
-    return [
+    fields = [
         FieldSpec(
             name=name,
             description=(
@@ -48,12 +164,20 @@ def _fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
                 if isinstance(field_schema, dict)
                 else ""
             ),
-            json_schema=field_schema if isinstance(field_schema, dict) else {},
+            json_schema=(
+                _resolve_local_ref(schema, field_schema)
+                if isinstance(field_schema, dict)
+                else {}
+            ),
+            unit=_schema_unit(field_schema),
             identifier=name in {"id", "uuid", "key"} or name.endswith("_id"),
             aliases=[name.replace("_", " ")],
+            source_type="python",
         )
         for name, field_schema in properties.items()
     ]
+    fields.extend(_nested_fields_from_schema(schema))
+    return fields
 
 
 def tool_from_callable(

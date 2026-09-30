@@ -9,7 +9,6 @@ from ..errors import RegistrationError
 from ..models import EndpointSpec, ToolSpec
 from .openapi import OpenAPIRemoteInvoker
 
-
 _SUPPORTED_PARAMETER_LOCATIONS = {
     "path",
     "query",

@@ -12,7 +12,9 @@ import yaml
 
 from ._url_safety import safe_provenance_url
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .adapters.graphql import GraphQLSourceAdapter
 from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
+from .adapters.odata import ODataSourceAdapter
 from .adapters.openapi import (
     OpenAPIRemoteInvoker,
     normalize_same_document_refs,
@@ -20,6 +22,7 @@ from .adapters.openapi import (
     same_origin,
     tool_from_openapi,
 )
+from .adapters.openrpc import OpenRPCSourceAdapter
 from .adapters.optimade import OPTIMADESourceAdapter
 from .errors import SchemaSourceError, UnsupportedSchemaSourceError
 from .executor import RegistryExecutor
@@ -792,8 +795,11 @@ def default_adapter_registry() -> AdapterRegistry:
     return AdapterRegistry(
         [
             OpenAPISourceAdapter(),
+            OpenRPCSourceAdapter(),
             OPTIMADESourceAdapter(),
+            ODataSourceAdapter(),
             MCPSourceAdapter(),
+            GraphQLSourceAdapter(),
         ]
     )
 
