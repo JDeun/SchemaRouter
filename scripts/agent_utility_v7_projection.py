@@ -190,7 +190,12 @@ def _query(language: str, tag: str, stratum: str, material_id: str) -> str:
     return _tagged(language, tag, _pick(language, bodies))
 
 
-def build_projection_task(slot: dict[str, Any], index: int) -> dict[str, Any]:
+def build_projection_task(
+    slot: dict[str, Any],
+    index: int,
+    *,
+    prefix: str = "P",
+) -> dict[str, Any]:
     """Build one frozen task whose raw records carry competing content.
 
     Each raw observation deliberately contains more than the plan declared. If it
@@ -199,10 +204,10 @@ def build_projection_task(slot: dict[str, Any], index: int) -> dict[str, Any]:
     """
     stratum = str(slot["projection_stratum"])
     language = str(slot["language"])
-    tag = f"P{index:04d}"
-    material_id = f"MAT-P{index:04d}"
-    source_a = f"SRC-P{index:04d}-A"
-    source_b = f"SRC-P{index:04d}-B"
+    tag = f"{prefix}{index:04d}"
+    material_id = f"MAT-{prefix}{index:04d}"
+    source_a = f"SRC-{prefix}{index:04d}-A"
+    source_b = f"SRC-{prefix}{index:04d}-B"
     query = _query(language, tag, stratum, material_id)
 
     if stratum == "qualifier_sibling":
@@ -410,7 +415,7 @@ def build_projection_task(slot: dict[str, Any], index: int) -> dict[str, Any]:
         ]
 
     elif stratum == "multi_step_provenance":
-        artifact = f"ART-P{index:04d}"
+        artifact = f"ART-{prefix}{index:04d}"
         uri = f"file:///tmp/{artifact}.json"
         retrieve_observation = {
             "status": "ok",
