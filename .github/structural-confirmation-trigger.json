@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "successor_issue": 432,
+  "experiment": "adaptive-structural-retrieval-v2-subgroup-robust",
+  "surface": "confirmation",
+  "confirmation_attempt": 1,
+  "created_date": "2026-09-30",
+  "implementation_main_sha": "7ba402f1a564b2b6e0aeebb82942c41ba611f254",
+  "candidate": "STRUCT-4.5-1.5",
+  "structural_retrieval_default_enabled": false,
+  "tuning_allowed_after_scoring": false,
+  "b2_outcomes_used": false,
+  "heldout_432_downstream_rows_used": false,
+  "product_default_enabled": false,
+  "semantic_task_count": 240,
+  "catalog_sizes": [
+    100,
+    250,
+    500
+  ],
+  "authorization": "one_shot_independent_retrieval_confirmation",
+  "failure_policy": "if the fixed candidate fails, close v2 and do not reuse this confirmation surface for successor tuning",
+  "claim_boundary": "retrieval confirmation only; does not establish downstream-agent or broad #432 held-out generalization"
+}
