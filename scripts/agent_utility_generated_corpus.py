@@ -386,12 +386,24 @@ def _q_unsupported(language: str, tag: str, kind: str, value: str) -> str:
         body = _pick(
             language,
             {
-                "en": f"Use the registered neutron-diffraction refinement service for sample {value}.",
+                "en": (
+                    "Use the registered neutron-diffraction refinement service "
+                    f"for sample {value}."
+                ),
                 "ko": f"시료 {value}에 등록된 중성자 회절 정련 서비스를 사용하세요.",
-                "es": f"Usa el servicio registrado de refinamiento por difracción de neutrones para {value}.",
+                "es": (
+                    "Usa el servicio registrado de refinamiento por difracción "
+                    f"de neutrones para {value}."
+                ),
                 "ja": f"試料 {value} に登録済みの中性子回折リファインメントサービスを使用してください。",
-                "de": f"Nutze den registrierten Neutronenbeugungs-Verfeinerungsdienst für Probe {value}.",
-                "mixed": f"sample {value}에 registered neutron-diffraction refinement service를 사용하세요.",
+                "de": (
+                    "Nutze den registrierten Neutronenbeugungs-Verfeinerungsdienst "
+                    f"für Probe {value}."
+                ),
+                "mixed": (
+                    f"sample {value}에 registered neutron-diffraction refinement "
+                    "service를 사용하세요."
+                ),
             },
         )
     elif kind == "insufficient":
@@ -400,7 +412,10 @@ def _q_unsupported(language: str, tag: str, kind: str, value: str) -> str:
             {
                 "en": "Refund the research credit, but no credit identifier is available.",
                 "ko": "연구 크레딧을 환불하세요. 단, 크레딧 식별자는 제공되지 않았습니다.",
-                "es": "Reembolsa el crédito de investigación, pero no se proporciona ningún identificador.",
+                "es": (
+                    "Reembolsa el crédito de investigación, pero no se proporciona "
+                    "ningún identificador."
+                ),
                 "ja": "研究クレジットを返金してください。ただしクレジット識別子は提供されていません。",
                 "de": "Erstatte den Forschungskredit, aber es ist keine Kredit-ID angegeben.",
                 "mixed": "research credit를 refund해야 하지만 credit ID는 제공되지 않았습니다.",
