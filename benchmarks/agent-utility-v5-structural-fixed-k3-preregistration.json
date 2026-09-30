@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "experiment": "structural-fixed-k3-confirmation-v4",
+  "created_date": "2026-09-30",
+  "status": "preregistered_before_fresh_confirmation_generation",
+  "parent_experiment": "adaptive-structural-shortlist-depth-v3",
+  "motivation": {
+    "source_surface": "tuning-eligible structural adaptive v3 DEV only",
+    "source_workflow_run": 36652143328,
+    "adaptive_v3_terminal_result": "no adaptive policy eligible",
+    "fixed_k3_control_observation": {
+      "worst_catalog_required_route_recall": 0.9857142857142858,
+      "worst_catalog_all_required_full_coverage": 0.9833333333333333,
+      "mean_candidate_count": 3,
+      "mean_schema_tokens": 362.2027777777778,
+      "fixed5_mean_schema_tokens": 553.0777777777778
+    },
+    "fixed_k3_was_selection_eligible_in_parent": false,
+    "reason_for_successor": "K=3 control numerically passes the retrieval and efficiency thresholds on DEV, but was not an adaptive candidate; therefore freeze it as a new successor before any fresh confirmation content exists."
+  },
+  "fixed_candidate": {
+    "id": "STRUCT-4.5-1.5-K3",
+    "structural_retrieval": true,
+    "structural_candidate_id": "STRUCT-4.5-1.5",
+    "tool_identifier_bonus": 4.5,
+    "operation_family_bonus": 1.5,
+    "schema_specificity_tiebreak": true,
+    "shortlist_k": 3,
+    "weights_retunable": false,
+    "k_retunable": false
+  },
+  "independence": {
+    "original_adaptive_dev_rows_allowed_for_candidate_motivation": true,
+    "structural_v2_confirmation_rows_allowed_for_scoring": false,
+    "structural_v2_confirmation_rows_allowed_for_tuning": false,
+    "adaptive_v3_dev_rows_allowed_for_tuning_after_preregistration": false,
+    "b1_rows_used": false,
+    "b2_rows_used": false,
+    "heldout_432_rows_used": false,
+    "fresh_confirmation_required": true
+  },
+  "confirmation_surface": {
+    "semantic_task_count": 240,
+    "task_strata": [
+      "clear_single_tool",
+      "sibling_operation_ambiguity",
+      "semantically_adjacent_distractors",
+      "multi_step_first_hop",
+      "typed_numeric_units",
+      "read_write_siblings",
+      "near_domain_unsupported",
+      "out_of_domain"
+    ],
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "tasks_per_stratum_language_cell": 5,
+    "catalogs": [
+      100,
+      250,
+      500
+    ],
+    "each_task_one_language_only": true,
+    "independent_from_original_dev": true,
+    "independent_from_structural_v2_confirmation": true,
+    "exact_normalized_query_overlap_with_prior_surfaces_max": 0,
+    "auxiliary_route_overlap_with_prior_surfaces_allowed": false,
+    "canonical_route_overlap_required": true,
+    "tuning_eligible": false
+  },
+  "controls": {
+    "fixed5": {
+      "id": "STRUCT-4.5-1.5-K5",
+      "shortlist_k": 5,
+      "role": "context-cost control on the same fresh confirmation surface"
+    }
+  },
+  "gates": {
+    "required_route_recall_at_3_min_each_catalog": 0.97,
+    "all_required_full_coverage_at_3_min_each_catalog": 0.97,
+    "typed_numeric_units_recall_at_3_min": 1,
+    "mean_schema_tokens_must_be_less_than_fixed5": true,
+    "candidate_count_must_equal": 3,
+    "no_confirmation_row_removal": true
+  },
+  "after_confirmation": {
+    "if_passed": "freeze K=3 as retrieval candidate; downstream agent-utility promotion still requires B2 terminal and a separately preregistered downstream comparison",
+    "if_failed": "close K=3 successor; do not retune K or structural weights on this confirmation surface",
+    "product_default_change_allowed": false
+  },
+  "claim_boundary": "Fresh independent retrieval-only confirmation of fixed structural K=3. No downstream-agent or broad product claim until separate B2/downstream gates."
+}
