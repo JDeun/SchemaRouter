@@ -7,6 +7,7 @@ inputs as equivalent.
 | --- | --- | --- | --- |
 | Typed Python callable | Automatic | Automatic | Local code |
 | OpenAPI 3.x | Automatic common subset | Same-origin automatic; cross-origin explicit | Remote schema is descriptive |
+| OpenRPC / JSON-RPC | Automatic method/result discovery | Same-origin automatic; cross-origin explicit | Interface schema does not grant side-effect authority |
 | OPTIMADE | `/info` + `/info/<entry_type>` discovery | Automatic read-only HTTP binding | Remote schema is descriptive |
 | MCP Streamable HTTP | Automatic discovery | Automatic transport, policy-gated | Remote annotations are untrusted |
 | Custom `SourceAdapter` | Adapter-defined | Adapter-defined | Must preserve local policy authority |
@@ -19,6 +20,11 @@ Use **Python tools** when you own the implementation and want the lowest-frictio
 Use **OpenAPI** when a service already exposes a machine-readable HTTP contract. SchemaRouter keeps
 schema-fetch credentials separate from runtime credentials and does not let a cross-origin
 `servers` declaration silently grant execution authority.
+
+Use **OpenRPC** when a JSON-RPC 2.0 service publishes a machine-readable OpenRPC document.
+Methods, params, result schemas, and local references are compiled into the same canonical
+SchemaRouter contracts. Remote methods remain side-effect-unclassified until trusted local policy
+classifies them.
 
 Use **OPTIMADE** when querying interoperable materials databases. SchemaRouter discovers each entry
 type and its available properties, creates read-only search/get endpoints, and maps planned output
@@ -43,6 +49,7 @@ The built-in order is:
 
 ```text
 OpenAPI
+  -> OpenRPC
   -> OPTIMADE
   -> MCP
 ```
