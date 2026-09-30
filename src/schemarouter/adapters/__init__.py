@@ -4,6 +4,7 @@ from ..openapi_compatibility import (
     analyze_openapi_compatibility,
 )
 from .base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .odata import ODataRemoteInvoker, ODataSourceAdapter, tool_from_odata_metadata
 from .mcp import (
     DefaultMCPClientFactory,
     MCPClientFactory,
@@ -35,6 +36,8 @@ __all__ = [
     "DefaultMCPClientFactory",
     "MCPClientFactory",
     "MCPRemoteInvoker",
+    "ODataRemoteInvoker",
+    "ODataSourceAdapter",
     "OPTIMADERemoteInvoker",
     "OPTIMADESourceAdapter",
     "OpenAPICompatibilityIssue",
@@ -51,5 +54,6 @@ __all__ = [
     "schema_tool",
     "tool_from_callable",
     "tool_from_mcp",
+    "tool_from_odata_metadata",
     "tool_from_openapi",
 ]
