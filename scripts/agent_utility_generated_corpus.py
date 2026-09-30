@@ -11,9 +11,7 @@ import json
 from typing import Any
 
 from scripts.agent_utility_generated_common import (
-    EXTENDED_CATALOG_SIZES,
     build_extended_registry,
-    catalog_manifest,
     sha256_json,
     static_ranked_routes,
 )
