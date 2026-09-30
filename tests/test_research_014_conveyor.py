@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 
 from scripts.agent_utility_prior_query_guard import queries_from_corpus
-from scripts.aggregate_agent_utility_v4_final_answer import aggregate as aggregate_final
 from scripts.generate_agent_utility_v3_heldout_corpus import (
     build_corpus as build_heldout,
 )
