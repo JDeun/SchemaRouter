@@ -236,16 +236,19 @@ def find_marked_run(
     return matches[0]
 
 
-def find_k3_run_after(api: GitHubAPI, *, not_before: str) -> StageRun | None:
+def find_k3_runs_after(api: GitHubAPI, *, not_before: str) -> list[StageRun]:
     candidates = [
         _stage_run(row)
         for row in api.workflow_runs(K3_WORKFLOW)
         if str(row.get("created_at") or "") >= not_before
     ]
-    if not candidates:
-        return None
     candidates.sort(key=lambda run: (run.created_at, run.id), reverse=True)
-    return candidates[0]
+    return candidates
+
+
+def find_k3_run_after(api: GitHubAPI, *, not_before: str) -> StageRun | None:
+    candidates = find_k3_runs_after(api, not_before=not_before)
+    return candidates[0] if candidates else None
 
 
 def terminal_success(run: StageRun | None) -> bool:
@@ -355,7 +358,8 @@ def run_controller(
     source_sha = api.ref_sha(ref)
 
     b2_terminal_time = str(b2_row.get("updated_at") or b2.created_at)
-    k3 = find_k3_run_after(api, not_before=b2_terminal_time)
+    k3_runs = find_k3_runs_after(api, not_before=b2_terminal_time)
+    k3 = k3_runs[0] if k3_runs else None
     if k3 is None:
         # The K3 workflow already has its own exact-B2 workflow_run trigger.
         # Do not race that trigger on the same completion event. Only the
@@ -368,13 +372,17 @@ def run_controller(
         else:
             actions.append("wait_for_k3_native_trigger")
     elif terminal_failure(k3):
-        if retry_infrastructure_failure(
-            api,
-            k3,
-            execute=execute,
-            actions=actions,
-            label="k3",
-        ):
+        # A rerun of this historical run would reuse its old workflow wrapper.
+        # Use a fresh workflow_dispatch so infrastructure-only fixes on main are
+        # picked up while the frozen K3 implementation SHA remains unchanged.
+        failed_k3_runs = [run for run in k3_runs if terminal_failure(run)]
+        if len(failed_k3_runs) < MAX_INFRA_ATTEMPTS:
+            if execute:
+                api.dispatch(K3_WORKFLOW, ref=ref)
+            actions.append(
+                f"recover_dispatch_k3_after_failure:prior_run={k3.id}:"
+                f"attempt={len(failed_k3_runs) + 1}"
+            )
             return {
                 "state": "retrying_k3_infrastructure",
                 "actions": actions,
