@@ -206,7 +206,7 @@ async def test_openrpc_positional_params_fail_on_ambiguous_optional_gap() -> Non
             tool=tool.key,
             endpoint=endpoint.name,
             arguments={"second": "value"},
-            fields=[],
+            fields=["material_id"],
             schema_fingerprint=endpoint.fingerprint,
             tool_fingerprint=tool.fingerprint,
         )
