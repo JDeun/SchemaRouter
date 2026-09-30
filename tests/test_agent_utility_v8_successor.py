@@ -145,6 +145,16 @@ def test_the_roster_is_frozen_and_ordered():
     )
 
 
+def test_the_roster_model_revisions_are_frozen():
+    from scripts.qualify_agent_utility_runtime import ROSTER_REVISIONS
+
+    assert ROSTER_REVISIONS == {
+        "HuggingFaceTB/SmolLM3-3B": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+        "Qwen/Qwen3-4B": "1cfa9a7208912126459214e8b04321603b3df60c",
+        "Qwen/Qwen3-8B": "b968826d9c46dd6066d109eabc6255188de91218",
+    }
+
+
 def test_rates_are_computed_per_episode():
     from scripts.qualify_agent_utility_runtime import qualification_rates
 
@@ -178,6 +188,16 @@ def test_an_empty_run_is_refused_rather_than_treated_as_zero_rates():
 
     with pytest.raises(ValueError, match="MINIMUM_EPISODES"):
         qualification_rates([])
+
+
+def test_a_fact_recall_without_any_tool_call_is_not_grounded():
+    from scripts.qualify_agent_utility_runtime import qualification_rates
+
+    rows = _rows(envelope=40, tool_calls=0, grounded=40, total=40)
+    rates = qualification_rates(rows)
+    assert rates["envelope_valid_rate"] == 1.0
+    assert rates["tool_call_rate"] == 0.0
+    assert rates["grounded_fact_rate"] == 0.0
 
 
 def test_a_runtime_that_calls_tools_but_grounds_nothing_is_refused():
@@ -442,10 +462,11 @@ def _qualification_evidence(candidate, corpus, rows=None):
         QUALIFICATION_EVIDENCE_CLASS,
         QUALIFICATION_SURFACE,
     )
+    from scripts.qualify_agent_utility_runtime import ROSTER_REVISIONS
 
     return {
         "candidate_model": candidate,
-        "model_revision": "frozen-model-revision",
+        "model_revision": ROSTER_REVISIONS[candidate],
         "source_revision": corpus["source_revision"],
         "harness_revision": corpus["source_revision"],
         "corpus_tasks_sha256": corpus["tasks_sha256"],

@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "experiment": "0.14-output-field-projection-runtime-qualification",
+  "issue": 510,
+  "evidence_class": "instrument_qualification",
+  "purpose": "select a usable downstream runtime for the successor development screen; never projection evidence",
+  "frozen_before_first_candidate_execution": true,
+  "source_freeze": {
+    "policy": "workflow merge/trigger commit SHA",
+    "checkout_exact_source": true,
+    "candidate_evidence_harness_revision_must_equal_source_revision": true
+  },
+  "surface": {
+    "id": "output-field-projection-runtime-qualification-v1",
+    "episodes": 36,
+    "composition": "6 projection strata x 6 languages x 1 repeat",
+    "catalog_size": 100,
+    "candidate_condition": "SR-5",
+    "observation_condition": "RAW-FULL",
+    "query_prefix": "Q",
+    "exact_query_disjoint_from": [
+      "#506 P-prefix projection surface",
+      "#510 S-prefix successor surface"
+    ]
+  },
+  "eligibility": {
+    "envelope_valid_rate_min": 0.8,
+    "tool_call_rate_min": 0.9,
+    "grounded_fact_rate_min": 0.7,
+    "all_required": true
+  },
+  "roster": [
+    {
+      "order": 1,
+      "model": "HuggingFaceTB/SmolLM3-3B",
+      "revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+      "tool_template": "xml_tools",
+      "dtype": "bfloat16",
+      "attention_implementation": "sdpa"
+    },
+    {
+      "order": 2,
+      "model": "Qwen/Qwen3-4B",
+      "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+      "tool_template": "openai_function_tools",
+      "dtype": "bfloat16"
+    },
+    {
+      "order": 3,
+      "model": "Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "tool_template": "openai_function_tools",
+      "dtype": "bfloat16"
+    }
+  ],
+  "runtime": {
+    "runner": "ubuntu-24.04-arm",
+    "python": "3.12.14",
+    "torch": "2.14.0+cpu",
+    "transformers": "4.57.6",
+    "tokenizers": "0.22.2",
+    "safetensors": "0.8.0",
+    "max_new_tokens": 256,
+    "max_turns": 6,
+    "seed": 20260929,
+    "threads": 4,
+    "enable_thinking": false,
+    "device": "cpu"
+  },
+  "sharding": {
+    "tasks_per_shard": 6,
+    "shard_count_per_candidate": 6,
+    "max_parallel": 4
+  },
+  "selection": {
+    "rule": "first qualifying candidate in frozen roster order",
+    "later_candidates_after_qualifier": "must not run",
+    "later_candidate_after_measured_failure": "may run",
+    "infrastructure_failure": "not a scientific nonqualification; stop the chain",
+    "no_candidate_qualified": "terminal only after all three measured candidate evidences are present"
+  },
+  "provenance": {
+    "require_exact_corpus_tasks_sha256": true,
+    "require_exact_source_revision": true,
+    "require_exact_harness_revision": true,
+    "require_exact_model_revision": true,
+    "require_exact_episode_count": 36,
+    "require_exact_task_id_set": true
+  },
+  "governance": {
+    "may_change_projection_conditions": false,
+    "may_change_projection_thresholds": false,
+    "may_change_projection_scorer": false,
+    "may_change_prompt_or_harness_after_candidate_results": false,
+    "qualification_results_reported_as_projection_evidence": false
+  }
+}
