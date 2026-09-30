@@ -9,7 +9,30 @@
     "PARALLEL:STRUCTURAL_K3_VS_K5+#431_CORRECTIVE",
     "#432_HELDOUT",
     "#424_FINAL_ANSWER",
-    "TERMINAL_EVIDENCE"
+    "TERMINAL_EVIDENCE",
+    "APPENDED:#506_PROJECTION_CONFIRMATION"
+  ],
+  "independent_stages": [
+    "#506_PROJECTION_DEV"
+  ],
+  "amendments": [
+    {
+      "date": "2026-09-30",
+      "issue": 506,
+      "change": "Added the output-field projection experiment: an independent development screen advanced before the B2 gate, and a confirmation arm appended after TERMINAL_EVIDENCE.",
+      "reason": "Output-field projection is stated as a core principle but no experiment isolates it. The gap was found while auditing which of the project's claims carry measured evidence.",
+      "explicitly_unchanged": [
+        "every existing stage's inputs, ordering and gates",
+        "the frozen downstream implementation SHA",
+        "corpora for #431, #432 and #424",
+        "optional_condition_policy",
+        "idempotency identities for existing stages",
+        "the terminal evidence digest definition"
+      ],
+      "why_appended_not_inserted": "This DAG was preregistered before downstream corpus generation and is already in flight. Inserting a stage would move an existing stage's inputs or ordering; appending after terminal evidence cannot.",
+      "why_dev_screen_is_independent": "The development screen consumes no upstream artifact. Queuing it behind the frozen chain would delay development evidence for no scientific reason, and advancing it before the B2 gate keeps every early return from starving it.",
+      "evidence_class_separation": "The development screen may inform design and may never be reported as confirmation."
+    }
   ],
   "launch_policy": {
     "b2_must_complete_successfully": true,
@@ -63,6 +86,14 @@
       "catalogs": [100, 250],
       "conditions": ["FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE"],
       "heldout_queries_are_additional_forbidden_surface": true
+    },
+    "506": {
+      "semantic_tasks": 144,
+      "catalogs": [100, 250],
+      "conditions": ["RAW-FULL", "PROJECTED", "PROJECTED+CONTRACT", "ORACLE-MINIMAL"],
+      "candidate_exposure_is_fixed_across_conditions": "SR-5",
+      "varies_observation_presentation_only": true,
+      "content_is_independent_of_b2_outcomes": true
     }
   },
   "research_integrity": {

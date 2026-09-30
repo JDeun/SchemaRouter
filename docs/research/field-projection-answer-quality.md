@@ -112,17 +112,35 @@ does not pass.
 
 ## Staging
 
+Both arms are driven by the 0.14 conveyor; neither needs a manual dispatch.
+
 1. **Development screen** — the frozen B1 small agent
-   (`Qwen/Qwen3-0.6B` @ `c1899de2`), authorized now. Reusing the exact published
-   B1 runtime keeps context measurements comparable instead of introducing a
-   fourth uncharacterised model. Under
-   [research governance](governance.md) this is development evidence: it may
-   inform design and may never be reported as confirmation.
+   (`Qwen/Qwen3-0.6B` @ `c1899de2`). Reusing the exact published B1 runtime keeps
+   context measurements comparable instead of introducing a fourth
+   uncharacterised model.
+
+    It consumes no upstream artifact, so the conveyor advances it **before the
+    B2 gate**: queuing it behind the frozen chain would delay development
+    evidence for no scientific reason, and advancing it first keeps every early
+    return in the controller from starving it. Identity is the frozen
+    implementation SHA, so it is dispatched exactly once per source revision.
+
+    Under [research governance](governance.md) this is development evidence: it
+    may inform design and may never be reported as confirmation.
+
 2. **Confirmation** — the canonical strong agent
-   (`HuggingFaceTB/SmolLM3-3B` @ `a07cc9a0`), gated until **#423 B2 is terminal**.
-   The workflow verifies the canonical B2 run's success and artifact digest
-   without reading B2 outcomes, the same gate
-   [#431](corrective-reretrieval.md) uses.
+   (`HuggingFaceTB/SmolLM3-3B` @ `a07cc9a0`), **appended after the conveyor's
+   terminal-evidence stage** and keyed on the terminal digest.
+
+    Appending rather than inserting is deliberate. The conveyor DAG was
+    preregistered before downstream corpus generation and is already in flight;
+    inserting a stage would move an existing stage's inputs or ordering, while
+    appending after terminal evidence cannot. The amendment, and the list of what
+    it explicitly did not change, is recorded in
+    `benchmarks/agent-utility-0.14-conveyor-preregistration.json`.
+
+    The workflow still verifies that the canonical B2 run succeeded without
+    reading B2 outcomes.
 
 ## Independence
 

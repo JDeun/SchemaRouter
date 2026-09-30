@@ -71,19 +71,24 @@
     "no_post_result_condition_changes": true
   },
   "staging": {
+    "orchestration": "both arms are advanced by the 0.14 conveyor controller; neither requires a manual dispatch",
     "development_screen": {
       "runtime": "frozen B1 small agent Qwen/Qwen3-0.6B @ c1899de289a04d12100db370d81485cdf75e47ca",
       "authorized": true,
       "evidence_class": "development",
       "workflow": ".github/workflows/research-0.14-field-projection-dev.yml",
-      "rationale": "reuses the exact published B1 runtime so context measurements stay comparable instead of introducing a fourth uncharacterised model"
+      "conveyor_position": "independent stage advanced before the B2 gate",
+      "conveyor_identity": "frozen downstream implementation SHA; dispatched exactly once per source revision",
+      "rationale": "reuses the exact published B1 runtime so context measurements stay comparable instead of introducing a fourth uncharacterised model; consumes no upstream artifact, so queuing it behind the frozen chain would delay development evidence for no scientific reason"
     },
     "confirmation": {
       "runtime": "canonical strong agent HuggingFaceTB/SmolLM3-3B @ a07cc9a04f16550a088caea529712d1d335b0ac1",
       "authorized": false,
-      "gate": "blocked until #423 B2 is terminal; the workflow verifies the canonical B2 run success and artifact digest without reading B2 outcomes",
+      "gate": "appended after the conveyor reaches TERMINAL_EVIDENCE, which itself requires #423 B2 success; the workflow verifies the canonical B2 run success without reading B2 outcomes",
       "evidence_class": "confirmation",
-      "workflow": ".github/workflows/research-0.14-field-projection.yml"
+      "workflow": ".github/workflows/research-0.14-field-projection.yml",
+      "conveyor_position": "appended after TERMINAL_EVIDENCE, never inserted into the frozen chain",
+      "conveyor_identity": "terminal evidence digest"
     }
   },
   "metrics": {

@@ -13,14 +13,6 @@ on:
         description: Exact SchemaRouter source revision to freeze for this screen
         required: true
         type: string
-      catalog_size:
-        description: Catalog size to screen
-        required: true
-        default: "100"
-        type: choice
-        options:
-          - "100"
-          - "250"
 
 permissions:
   contents: read
@@ -86,13 +78,19 @@ jobs:
           )
           ids = [str(task["semantic_task_id"]) for task in data["tasks"]]
           chunks = [ids[index:index + 6] for index in range(0, len(ids), 6)]
-          include = [
-              {"job_id": f"p{index:02d}", "task_ids": ",".join(chunk)}
-              for index, chunk in enumerate(chunks)
-          ]
+          include = []
+          for catalog in data["catalog_sizes"]:
+              for index, chunk in enumerate(chunks):
+                  include.append(
+                      {
+                          "job_id": f"c{catalog}-g{index:02d}",
+                          "catalog_size": catalog,
+                          "task_ids": ",".join(chunk),
+                      }
+                  )
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
               handle.write("matrix=" + json.dumps({"include": include}, separators=(",", ":")) + "\n")
-          print(f"shards={len(include)} tasks={len(ids)}")
+          print(f"jobs={len(include)} tasks={len(ids)}")
           PY
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -187,7 +185,7 @@ jobs:
           mkdir -p artifacts/projection-shard
           python -u scripts/evaluate_agent_utility_v7_projection.py \
             --corpus artifacts/projection/projection-corpus.json \
-            --catalog-size "${{ inputs.catalog_size }}" \
+            --catalog-size "${{ matrix.catalog_size }}" \
             --task-ids "${{ matrix.task_ids }}" \
             --runtime dev \
             --out "artifacts/projection-shard/${{ matrix.job_id }}.json"
