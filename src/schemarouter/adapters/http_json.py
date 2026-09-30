@@ -5,9 +5,9 @@ from urllib.parse import urlparse
 
 import httpx
 
+from .openapi import OpenAPIRemoteInvoker
 from ..errors import RegistrationError
 from ..models import EndpointSpec, ToolSpec
-from .openapi import OpenAPIRemoteInvoker
 
 
 _SUPPORTED_PARAMETER_LOCATIONS = {
