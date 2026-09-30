@@ -404,10 +404,31 @@ class RegistryExecutor:
             "no currently bound executable access path exists in the precompiled fallback chain"
         )
 
-    def bind(self, tool_key: str, invoker: EndpointInvoker) -> None:
+    def bind(
+        self,
+        tool_key: str,
+        invoker: EndpointInvoker,
+        *,
+        expected_fingerprint: str | None = None,
+    ) -> None:
+        """Bind an invoker, optionally pinned to the exact contract it was built for.
+
+        Callers that construct an invoker from a particular ToolSpec must pass that
+        spec's fingerprint. If the registry moved before binding, refuse before
+        storing the invoker rather than blessing it for an unrelated contract.
+        """
         tool = self.registry.get(tool_key)
+        if (
+            expected_fingerprint is not None
+            and tool.fingerprint != expected_fingerprint
+        ):
+            raise BindingDriftError(
+                f"cannot bind {tool_key!r}: registry contract changed; expected "
+                f"{expected_fingerprint!r}, found {tool.fingerprint!r}"
+            )
+        fingerprint = expected_fingerprint or tool.fingerprint
         self._invokers[tool_key] = invoker
-        self._binding_fingerprints[tool_key] = tool.fingerprint
+        self._binding_fingerprints[tool_key] = fingerprint
 
     def restamp_binding(self, tool_key: str, expected_fingerprint: str) -> bool:
         """Re-point an existing binding at a fingerprint the caller already validated.
