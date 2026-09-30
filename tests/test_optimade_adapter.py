@@ -154,7 +154,13 @@ async def test_optimade_discovery_planning_and_execution_use_response_fields() -
             http_client=client,
         )
 
-        assert router.adapter_registry.kinds() == ("mcp", "openapi", "optimade")
+        assert router.adapter_registry.kinds() == (
+            "graphql",
+            "mcp",
+            "openapi",
+            "openrpc",
+            "optimade",
+        )
         tool = router.registry.get("materials.example")
         assert tool.metadata["adapter"] == "optimade"
         assert tool.metadata["api_version"] == "1.3.0"

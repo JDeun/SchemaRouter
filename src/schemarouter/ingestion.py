@@ -12,6 +12,7 @@ import yaml
 
 from ._url_safety import safe_provenance_url
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .adapters.graphql import GraphQLSourceAdapter
 from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
 from .adapters.openapi import (
     OpenAPIRemoteInvoker,
@@ -20,6 +21,7 @@ from .adapters.openapi import (
     same_origin,
     tool_from_openapi,
 )
+from .adapters.openrpc import OpenRPCSourceAdapter
 from .adapters.optimade import OPTIMADESourceAdapter
 from .errors import SchemaSourceError, UnsupportedSchemaSourceError
 from .executor import RegistryExecutor
@@ -792,8 +794,10 @@ def default_adapter_registry() -> AdapterRegistry:
     return AdapterRegistry(
         [
             OpenAPISourceAdapter(),
+            OpenRPCSourceAdapter(),
             OPTIMADESourceAdapter(),
             MCPSourceAdapter(),
+            GraphQLSourceAdapter(),
         ]
     )
 
@@ -854,16 +858,6 @@ class URLSchemaLoader:
             openapi_ref_max_bytes=openapi_ref_max_bytes,
             timeout=timeout,
         )
-        return self._commit(result, replace=replace)
-
-    def commit_candidate(
-        self,
-        result: AdapterLoadResult,
-        *,
-        replace: bool = False,
-    ) -> ToolSpec:
-        """Commit a previously inspected adapter result through normal CAS/binding rules."""
-
         return self._commit(result, replace=replace)
 
     def commit_candidate_if_current(

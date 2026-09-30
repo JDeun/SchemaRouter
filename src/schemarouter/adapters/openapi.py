@@ -757,6 +757,127 @@ def _response_properties(
     return merged
 
 
+_NESTED_RESPONSE_FIELD_MAX_DEPTH = 8
+
+
+def _nested_response_fields(
+    document: dict[str, Any],
+    schemas: list[dict[str, Any]],
+) -> list[FieldSpec]:
+    """Discover declared nested object properties without changing the raw response schema.
+
+    Array-item traversal is intentionally not inferred here. A nested field is exposed only when
+    every traversed segment is an object property. The planner-facing name is the dotted source
+    path, while result_path keeps the projected value under one flat key so existing parent fields
+    can remain available without result-shape collisions.
+    """
+
+    discovered: list[FieldSpec] = []
+    seen_names = set(_response_properties(document, schemas))
+
+    def visit(
+        schema: dict[str, Any],
+        *,
+        prefix: tuple[str, ...],
+        depth: int,
+        ancestors: frozenset[str],
+    ) -> None:
+        if depth >= _NESTED_RESPONSE_FIELD_MAX_DEPTH:
+            return
+
+        resolved = _resolve_local_ref(document, schema)
+        if not isinstance(resolved, dict):
+            return
+        signature = json.dumps(
+            resolved,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        )
+        if signature in ancestors:
+            return
+        next_ancestors = ancestors | {signature}
+
+        property_sets = [_schema_properties(document, resolved)]
+        property_sets.extend(
+            _schema_properties(document, branch)
+            for branch in _schema_variant_branches(document, resolved)
+        )
+
+        merged: dict[str, dict[str, Any]] = {}
+        for properties in property_sets:
+            for name, spec in properties.items():
+                existing = merged.get(name)
+                if existing is None or existing == spec:
+                    merged[name] = spec
+                    continue
+                options = (
+                    list(existing["anyOf"])
+                    if set(existing) == {"anyOf"}
+                    and isinstance(existing.get("anyOf"), list)
+                    else [existing]
+                )
+                if spec not in options:
+                    options.append(spec)
+                merged[name] = {"anyOf": options}
+
+        for name, spec in merged.items():
+            path = (*prefix, name)
+            if prefix:
+                field_name = ".".join(path)
+                if field_name not in seen_names:
+                    seen_names.add(field_name)
+                    leaf_alias = name.replace("_", " ")
+                    discovered.append(
+                        FieldSpec(
+                            name=field_name,
+                            description=(
+                                spec.get("description", "")
+                                if isinstance(spec, dict)
+                                else ""
+                            ),
+                            json_schema=spec if isinstance(spec, dict) else {},
+                            path=list(path),
+                            result_path=[field_name],
+                            unit=_schema_unit(spec),
+                            identifier=(
+                                name in {"id", "uuid", "key"}
+                                or name.endswith("_id")
+                            ),
+                            aliases=list(
+                                dict.fromkeys(
+                                    [
+                                        name,
+                                        leaf_alias,
+                                    ]
+                                )
+                            ),
+                        )
+                    )
+
+            # Object-only recursion for phase 1. Arrays intentionally remain opaque until
+            # record-preserving item traversal semantics are implemented.
+            if isinstance(spec, dict):
+                visit(
+                    spec,
+                    prefix=path,
+                    depth=depth + 1,
+                    ancestors=next_ancestors,
+                )
+
+    for schema in schemas:
+        if not isinstance(schema, dict):
+            continue
+        visit(
+            schema,
+            prefix=(),
+            depth=0,
+            ancestors=frozenset(),
+        )
+
+    return discovered
+
+
 def _origin(url: str) -> tuple[str, str, int]:
     parsed = urlparse(url)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
@@ -1075,6 +1196,7 @@ def tool_from_openapi(
                     document, response_schemas
                 ).items()
             ]
+            fields.extend(_nested_response_fields(document, response_schemas))
 
             endpoints.append(
                 EndpointSpec(
@@ -1150,6 +1272,8 @@ def resolve_openapi_base_url(document: dict[str, Any], source_url: str) -> str:
 
 class OpenAPIRemoteInvoker:
     """Minimal trusted HTTP executor for a parsed OpenAPI tool."""
+
+    protocol_label = "OpenAPI"
 
     def __init__(
         self,
@@ -1382,12 +1506,12 @@ class OpenAPIRemoteInvoker:
                 except httpx.HTTPStatusError as exc:
                     if response.status_code not in _TRANSIENT_HTTP_STATUS_CODES:
                         raise NonRetryableInvocationError(
-                            "OpenAPI request failed with non-retryable HTTP status "
+                            f"{self.protocol_label} request failed with non-retryable HTTP status "
                             f"{response.status_code}"
                         ) from exc
                     raise InvocationUnavailableError(
-                        "OpenAPI access path is temporarily unavailable with HTTP status "
-                        f"{response.status_code}"
+                        f"{self.protocol_label} access path is temporarily unavailable "
+                        f"with HTTP status {response.status_code}"
                     ) from exc
 
                 content_length = response.headers.get("content-length")
@@ -1401,7 +1525,7 @@ class OpenAPIRemoteInvoker:
                         and declared_size > self.max_response_bytes
                     ):
                         raise NonRetryableInvocationError(
-                            "OpenAPI response exceeds "
+                            f"{self.protocol_label} response exceeds "
                             f"{self.max_response_bytes} byte safety limit"
                         )
 
@@ -1411,7 +1535,7 @@ class OpenAPIRemoteInvoker:
                     total += len(chunk)
                     if total > self.max_response_bytes:
                         raise NonRetryableInvocationError(
-                            "OpenAPI response exceeds "
+                            f"{self.protocol_label} response exceeds "
                             f"{self.max_response_bytes} byte safety limit"
                         )
                     chunks.append(chunk)
@@ -1421,7 +1545,7 @@ class OpenAPIRemoteInvoker:
                 encoding = response.encoding or "utf-8"
         except (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError) as exc:
             raise InvocationUnavailableError(
-                "OpenAPI access path is temporarily unavailable"
+                f"{self.protocol_label} access path is temporarily unavailable"
             ) from exc
         finally:
             if owns_client:
@@ -1438,6 +1562,6 @@ class OpenAPIRemoteInvoker:
                 return json.loads(content)
             except json.JSONDecodeError as exc:
                 raise NonRetryableInvocationError(
-                    "OpenAPI response declared JSON but could not be decoded"
+                    f"{self.protocol_label} response declared JSON but could not be decoded"
                 ) from exc
         return {"text": content.decode(encoding, errors="replace")}

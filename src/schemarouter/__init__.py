@@ -133,8 +133,6 @@ from .schema_diff import (
     SchemaChangeSeverity,
     SchemaCompatibility,
     SchemaDiffReport,
-    SchemaRefreshAction,
-    SchemaRefreshResult,
     compare_endpoint_specs,
     compare_tool_specs,
 )
@@ -253,8 +251,6 @@ __all__ = [
     "SchemaChangeSeverity",
     "SchemaCompatibility",
     "SchemaDiffReport",
-    "SchemaRefreshAction",
-    "SchemaRefreshResult",
     "SchemaPlanner",
     "SchemaProposal",
     "SchemaRouter",

@@ -424,6 +424,177 @@ class SchemaRouter:
         )
         return key
 
+    def add_langchain_tool(
+        self,
+        tool: Any,
+        *,
+        name: str | None = None,
+        namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
+        read_only: bool | None = None,
+        destructive: bool | None = None,
+        remote: bool = True,
+        replace: bool = False,
+    ) -> str:
+        """Import and bind one LangChain BaseTool-like object.
+
+        SchemaRouter trusts only the tool's declared input/output schemas plus the explicit
+        local authority classification supplied here. Descriptions and foreign metadata do not
+        grant read/write permission.
+        """
+
+        from .integrations.langchain import LangChainToolInvoker, tool_from_langchain
+
+        spec = tool_from_langchain(
+            tool,
+            name=name,
+            namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
+            read_only=read_only,
+            destructive=destructive,
+            remote=remote,
+        )
+        invoker = LangChainToolInvoker(tool)
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(spec.key)
+            except KeyError:
+                key = self.registry.register(spec)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    spec,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(spec)
+
+        self.executor.bind(
+            key,
+            invoker,
+            expected_fingerprint=spec.fingerprint,
+        )
+        return key
+
+    def add_llamaindex_tool(
+        self,
+        tool: Any,
+        *,
+        name: str | None = None,
+        namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
+        read_only: bool | None = None,
+        destructive: bool | None = None,
+        remote: bool = True,
+        replace: bool = False,
+    ) -> str:
+        """Import and bind one LlamaIndex BaseTool-like object."""
+
+        from .integrations.llamaindex import (
+            LlamaIndexToolInvoker,
+            tool_from_llamaindex,
+        )
+
+        spec = tool_from_llamaindex(
+            tool,
+            name=name,
+            namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
+            read_only=read_only,
+            destructive=destructive,
+            remote=remote,
+        )
+        invoker = LlamaIndexToolInvoker(tool)
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(spec.key)
+            except KeyError:
+                key = self.registry.register(spec)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    spec,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(spec)
+
+        self.executor.bind(
+            key,
+            invoker,
+            expected_fingerprint=spec.fingerprint,
+        )
+        return key
+
+    def add_http_tool(
+        self,
+        tool: ToolSpec,
+        *,
+        base_url: str,
+        provider: str | None = None,
+        access_mode: str | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        timeout: float = 20.0,
+        max_response_bytes: int = 10 * 1024 * 1024,
+        replace: bool = False,
+    ) -> str:
+        """Register and bind a trusted declarative HTTP/JSON ToolSpec.
+
+        The supplied ToolSpec is the machine-readable manifest. Authentication remains only in
+        trusted_headers and is never copied into model-visible schema metadata.
+        """
+
+        from .adapters.http_json import (
+            build_http_json_invoker,
+            prepare_http_json_tool,
+        )
+
+        prepared = prepare_http_json_tool(
+            tool,
+            base_url=base_url,
+            provider=provider,
+            access_mode=access_mode,
+        )
+        invoker = build_http_json_invoker(
+            prepared,
+            base_url=base_url,
+            trusted_headers=trusted_headers,
+            timeout=timeout,
+            max_response_bytes=max_response_bytes,
+            http_client=self.loader.http_client,
+        )
+
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(prepared.key)
+            except KeyError:
+                key = self.registry.register(prepared)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    prepared,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(prepared)
+
+        self.executor.bind(
+            key,
+            invoker,
+            expected_fingerprint=prepared.fingerprint,
+        )
+        return key
+
     async def inspect_url(
         self,
         url: str,
@@ -622,12 +793,7 @@ class SchemaRouter:
         mcp_client_factory: MCPClientFactory | None = None,
         timeout: float = 20.0,
     ) -> SchemaRefreshResult:
-        """Reinspect one registered remote schema and apply only proven-compatible drift.
-
-        Breaking and security-semantic changes are reported but never applied by this method.
-        Callers must provide trusted authentication material again; credentials are intentionally
-        not persisted in the registry.
-        """
+        """Reinspect a registered remote schema and apply only proven-compatible drift."""
 
         expected_version = self.registry.version
         try:
@@ -638,7 +804,8 @@ class SchemaRouter:
         adapter = current.execution_metadata.get("adapter")
         if not isinstance(adapter, str):
             adapter = current.metadata.get("adapter")
-        if adapter not in {"openapi", "mcp", "optimade"}:
+        refreshable = {"openapi", "mcp", "optimade", "graphql", "openrpc", "odata"}
+        if adapter not in refreshable:
             raise SchemaSourceError(
                 f"tool {tool_key!r} does not have a refreshable structured-source adapter"
             )
@@ -650,13 +817,25 @@ class SchemaRouter:
         openapi_ref_max_documents = 8
         openapi_ref_max_bytes = 10 * 1024 * 1024
 
-        if adapter == "openapi":
-            raw_source = current.metadata.get("source_url")
+        if adapter == "optimade":
+            raw_source = current.execution_metadata.get("versioned_base_url")
+            if not isinstance(raw_source, str) or not raw_source:
+                raw_source = current.metadata.get("versioned_base_url")
             if isinstance(raw_source, str) and raw_source:
                 source_url = raw_source
+        else:
+            raw_source = current.metadata.get("source_url")
+            if not isinstance(raw_source, str) or not raw_source:
+                raw_source = current.execution_metadata.get("source_url")
+            if isinstance(raw_source, str) and raw_source:
+                source_url = raw_source
+
+        if adapter in {"openapi", "openrpc"}:
             approved_base = current.execution_metadata.get("approved_base_url")
             if isinstance(approved_base, str) and approved_base:
                 base_url = approved_base
+
+        if adapter == "openapi":
             openapi_external_refs = bool(
                 current.metadata.get("external_refs_enabled", False)
             )
@@ -679,14 +858,6 @@ class SchemaRouter:
                     and byte_limit > 0
                 ):
                     openapi_ref_max_bytes = byte_limit
-        elif adapter == "mcp":
-            raw_source = current.execution_metadata.get("source_url")
-            if isinstance(raw_source, str) and raw_source:
-                source_url = raw_source
-        else:
-            raw_source = current.execution_metadata.get("versioned_base_url")
-            if isinstance(raw_source, str) and raw_source:
-                source_url = raw_source
 
         if source_url is None:
             raise SchemaSourceError(
