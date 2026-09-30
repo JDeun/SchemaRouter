@@ -75,6 +75,12 @@ def test_014_ledger_freezes_k3_downstream_until_b2_terminal() -> None:
     assert result["canonical_b2_run"] == 36642658406
     assert result["expected_episode_count"] == 184
     assert result["result"] is None
+    assert result["launch_governance"][
+        "canonical_b2_success_required"
+    ] is True
+    assert result["launch_governance"][
+        "auto_launch_after_successful_terminal"
+    ] is True
 
 
 def test_014_ledger_keeps_future_surfaces_sealed() -> None:
