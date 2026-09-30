@@ -16,7 +16,6 @@ from ..errors import (
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
 from .base import AdapterContext, AdapterLoadResult
 
-
 _MAX_INTROSPECTION_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 10 * 1024 * 1024
 _MAX_TYPE_DEPTH = 8
