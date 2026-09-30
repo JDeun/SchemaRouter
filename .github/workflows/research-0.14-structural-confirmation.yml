@@ -1,0 +1,129 @@
+name: Research 0.14 Structural Retrieval Confirmation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "research/0.14-structural-confirmation-run"
+    paths:
+      - ".github/structural-confirmation-trigger.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-0.14-structural-confirmation
+  cancel-in-progress: false
+
+jobs:
+  confirm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Verify one-shot authorization
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          trigger = json.loads(
+              Path(".github/structural-confirmation-trigger.json")
+              .read_text(encoding="utf-8")
+          )
+          assert trigger["issue"] == 430
+          assert trigger["surface"] == "confirmation"
+          assert trigger["candidate"] == "STRUCT-4.5-1.5"
+          assert trigger["confirmation_attempt"] == 1
+          assert trigger["tuning_allowed_after_scoring"] is False
+          assert trigger["b2_outcomes_used"] is False
+          assert trigger["product_default_enabled"] is False
+          PY
+      - name: Verify confirmation contracts before generation
+        run: |
+          pytest -q tests/test_agent_utility_structural_confirmation.py
+      - name: Freeze independent confirmation content
+        run: |
+          mkdir -p artifacts/structural-confirmation
+          python scripts/generate_agent_utility_v5_structural_confirmation.py \
+            --out-dir artifacts/structural-confirmation/freeze
+      - name: Verify freeze before scoring
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(
+              Path(
+                  "artifacts/structural-confirmation/freeze/"
+                  "freeze-manifest.json"
+              ).read_text(encoding="utf-8")
+          )
+          assert manifest["status"] == "frozen_before_scoring"
+          assert manifest["semantic_task_count"] == 240
+          assert manifest["cell_count"] == 48
+          assert manifest["exact_normalized_dev_query_overlap_count"] == 0
+          assert manifest["confirmation_rows_inspected_before_freeze"] is False
+          assert manifest["confirmation_metrics_used_for_tuning"] is False
+          assert set(manifest["catalogs"]) == {"100", "250", "500"}
+          assert all(
+              item["shared_dev_route_count"] == 30
+              for item in manifest["catalogs"].values()
+          )
+          print(json.dumps(manifest, sort_keys=True))
+          PY
+      - name: Score fixed v2 candidate exactly once
+        run: |
+          python scripts/evaluate_agent_utility_v5_structural_confirmation.py \
+            --freeze-dir artifacts/structural-confirmation/freeze \
+            --out artifacts/structural-confirmation/result.json
+      - name: Verify confirmation result boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(
+              Path(
+                  "artifacts/structural-confirmation/result.json"
+              ).read_text(encoding="utf-8")
+          )
+          assert result["surface"] == "confirmation"
+          assert result["fixed_candidate"]["id"] == "STRUCT-4.5-1.5"
+          assert result["confirmation_surface_tuning_used"] is False
+          assert result["product_default_enabled"] is False
+          assert set(result["candidate"]["per_catalog"]) == {
+              "100",
+              "250",
+              "500",
+          }
+          print(
+              json.dumps(
+                  {
+                      "confirmation_passed": result[
+                          "confirmation_passed"
+                      ],
+                      "candidate_per_catalog": result[
+                          "candidate"
+                      ]["per_catalog"],
+                      "baseline_per_catalog": result[
+                          "baseline"
+                      ]["per_catalog"],
+                  },
+                  sort_keys=True,
+              )
+          )
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: "structural-confirmation-${{ github.run_id }}"
+          path: artifacts/structural-confirmation/
+          if-no-files-found: warn
+          retention-days: 30
