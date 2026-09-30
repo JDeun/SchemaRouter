@@ -12,6 +12,7 @@ from typing import Any
 
 from scripts.agent_utility_generated_common import (
     build_extended_registry,
+    sha256_json,
     static_ranked_routes,
 )
 
