@@ -70,32 +70,31 @@
         "min_k": 3,
         "max_k": 10,
         "threshold": 0.05,
-        "rule": "return the smallest i in 3..9 with normalized adjacent gap_i >= threshold; otherwise 10"
+        "rule": "return the smallest i in evaluated_positions with gap_i >= threshold; otherwise max_k"
       },
       {
         "id": "REL-GAP-010",
         "min_k": 3,
         "max_k": 10,
         "threshold": 0.1,
-        "rule": "return the smallest i in 3..9 with normalized adjacent gap_i >= threshold; otherwise 10"
+        "rule": "return the smallest i in evaluated_positions with gap_i >= threshold; otherwise max_k"
       },
       {
         "id": "REL-GAP-020",
         "min_k": 3,
         "max_k": 10,
         "threshold": 0.2,
-        "rule": "return the smallest i in 3..9 with normalized adjacent gap_i >= threshold; otherwise 10"
+        "rule": "return the smallest i in evaluated_positions with gap_i >= threshold; otherwise max_k"
       },
       {
         "id": "MAX-GAP-010",
         "min_k": 3,
         "max_k": 10,
         "threshold": 0.1,
-        "rule": "choose the largest normalized adjacent gap in positions 3..9, ties toward smaller i, if >= threshold; otherwise 10"
+        "rule": "choose i with the largest gap_i, breaking ties toward smaller i, only if that maximum >= threshold; otherwise max_k"
       }
     ],
-    "learned_policy_allowed": false,
-    "policy_family_changed_from_adaptive_v1": false
+    "learned_policy_allowed": false
   },
   "score_semantics": {
     "absolute_score_thresholds_allowed": false,
@@ -204,5 +203,12 @@
     "bits_over_random_used_as_inference_signal": false,
     "fixed_k_definition": "BoR_any = log2(P_obs_any_required / mean(P_rand_any_required)); P_rand_any_required = 1 - C(N-R,K)/C(N,K) for each supported row with catalog size N and R required routes",
     "adaptive_policy_bor_reported_as_post_selection_diagnostic": true
+  },
+  "preregistration_correction": {
+    "stage": "before_any_structural_adaptive_dev_scoring",
+    "change": "restore candidate_policies block byte-for-semantic-field content from adaptive v1",
+    "thresholds_changed": false,
+    "policy_logic_changed": false,
+    "reason": "remove abbreviated rule prose so the reuse contract is exact"
   }
 }
