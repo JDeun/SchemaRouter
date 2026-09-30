@@ -6,7 +6,7 @@ to embed in larger ecosystems.
 
 This document tracks framework-level maturity rather than research metrics.
 
-> **0.11.0 maturity note:** the typed registry, bounded Top-K capability retrieval, planning,
+> **0.12.0 maturity note:** the typed registry, bounded Top-K capability retrieval, planning,
 > execution, validation, policy, health, projection, persistence, inspection, and integration
 > surfaces are beta product capabilities. Retrieval returns registered capability contracts and
 > never grants execution authority. The active 0.14 agent-utility research evaluates downstream

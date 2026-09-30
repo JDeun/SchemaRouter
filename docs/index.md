@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.11.0</span>
+<span class="sr-kicker">SchemaRouter 0.12.0</span>
 
 # Put a typed execution boundary between agents and tools
 
@@ -170,19 +170,24 @@ flow and never becomes executable automatically.
 
 ## Current release
 
-Version `0.11.0` promotes first-class **bounded Top-K capability retrieval** to the public product
-surface while preserving the existing typed planning/execution boundary. Applications can expose a
-compact registered candidate set to an external agent through `retrieve` / `aretrieve`, or require
-current local binding readiness through `retrieve_executable` / `aretrieve_executable`.
+Version `0.11.0` promoted first-class **bounded Top-K capability retrieval** to the public product
+surface. Applications can expose a compact registered candidate set to an external agent through
+`retrieve` / `aretrieve`, or require current local binding readiness through `retrieve_executable`
+/ `aretrieve_executable`.
+
+Version `0.12.0` closes that product cycle: the architecture and public API boundary are now the
+frozen **stable core**. Research may improve ranking, index implementations, shortlist defaults and
+re-retrieval behind that boundary, but a benchmark improvement alone is not a reason to redesign
+the public facade.
 
 Retrieval remains side-effect free and non-authoritative: the surrounding agent chooses among
 registered candidates, while SchemaRouter still owns schema validation, policy and execution
 authority. Ongoing 0.14 agent-utility research is reported separately and is not required for the
 stable package to function.
 
-[Read the 0.11.0 release notes →](releases/0.11.0.md) ·
-[Read the routing research status →](research/routing-status.md) ·
-[Read the prior-art roadmap →](research/prior-art-roadmap.md)
+[Read the 0.12.0 release notes →](releases/0.12.0.md) ·
+[Read the stable-core contract →](stable-core.md) ·
+[Read the routing research status →](research/routing-status.md)
 
 ## Go deeper
 
