@@ -43,7 +43,22 @@ Roster, ordered and frozen:
 2. `Qwen/Qwen3-4B`
 3. `Qwen/Qwen3-8B`
 
-The **first** candidate that qualifies is used. Later candidates are not run.
+The **first** candidate that qualifies is used; later candidates are not run.
+Choosing among qualifiers would select the instrument by its outcome, which is
+the error this gate exists to prevent.
+
+`select_runtime` in `scripts/qualify_agent_utility_runtime.py` encodes that
+rule: it walks the roster in its frozen order, returns the first qualifier even
+when a later candidate scores higher, and refuses results that were produced out
+of order. It returns `None` both when no candidate has qualified yet and when
+the roster is finished without one — only the second is a verdict, which is why
+`roster_exhausted` has to be consulted before reporting that no candidate
+qualified.
+
+**The rule is enforced only where that function is used.** The screen's
+evaluation workflow is not written yet, so nothing calls it today. Whoever
+writes that workflow must route the selection through `select_runtime` rather
+than reimplementing the comparison, or the ordering guarantee is prose again.
 
 Qualification runs on its own surface, separate from both the #506 corpus and
 this experiment's. Its numbers are evidence about the instrument and are never
