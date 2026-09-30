@@ -154,9 +154,10 @@ candidates = router.retrieve("등록된 job을 취소해줘", k=3)
 
 이 profile은 보수적인 tool-identifier/operation-family evidence와 schema-specificity tie-break를
 추가합니다. 실행 권한은 바뀌지 않으며 product default도 아닙니다. Fixed Top-3 retrieval
-confirmation은 통과했지만 strong-agent downstream utility와 더 넓은 held-out gate는 아직 진행
-중이므로, 다음 release에서 상태가 명시적으로 바뀌기 전까지는 opt-in research-backed candidate로
-취급해야 합니다.
+confirmation은 통과했지만, 이후 preregistered strong-agent K3-vs-K5 downstream gate에서
+task-pass 비열등성 기준(-2pp)을 통과하지 못했습니다. 따라서 Top-3는 held-out benchmark에
+승격되지 않았습니다. 다음 release에서 상태가 명시적으로 바뀌기 전까지 structural retrieval은
+opt-in research surface로 취급해야 합니다.
 
 후보에는 full effective input/output JSON Schema와 등록된 parameter/output field,
 semantic ID, optional unit·qualifier, provider/access identity, read/write/destructive metadata,
@@ -248,9 +249,11 @@ substrate**로 평가하는 방향으로 바뀌었습니다.
 Canonical B1 Qwen3-0.6B agent benchmark도 이제 종료됐습니다. SR-5는 FULL의 **68.48%** 대비
 **91.30%** task pass를 기록했고, tool-schema token은 FULL의 **5.42%**만 사용했으며
 unauthorized destructive execution은 **0**이었습니다. 다만 이는 controlled mechanism
-evidence이며 넓은 production claim은 아닙니다. 더 강한 SmolLM3-3B 재현 실험 #423은 현재
-진행 중이고, 더 큰 held-out agent utility #432와 final-answer quality #424도 일반화 전에
-별도 gate로 남아 있습니다.
+evidence이며 넓은 production claim은 아닙니다. 더 강한 SmolLM3-3B B2 replication (#423)도 terminal success입니다. 별도의 structural
+K3-vs-K5 최적화는 preregistered task-pass promotion gate를 통과하지 못해 K3가 held-out
+benchmark에 승격되지 않았습니다. 현재는 execution-state-aware corrective retrieval (#431)이
+진행 중이며, 이후 780-task held-out benchmark (#432)와 final-answer quality (#424)가 자동
+conveyor의 후속 confirmation stage로 남아 있습니다.
 
 기존 0.11–0.13 open-set classifier/veto 실험은 실패한 기록이 아니라 중요한 negative evidence로
 보존합니다. 0.11.0에서 실험적 learned router를 unconditional production default로 승격하지
@@ -261,6 +264,7 @@ evidence이며 넓은 production claim은 아닙니다. 더 강한 SmolLM3-3B �
 - [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
 - [선행연구 로드맵](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [전체 실험 인덱스](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
+- [0.14 논문 evidence checkpoint](https://jdeun.github.io/SchemaRouter/research/0.14-paper-evidence-checkpoint/)
 - [0.12.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.12.0/)
 - [Changelog](CHANGELOG.md)
 
