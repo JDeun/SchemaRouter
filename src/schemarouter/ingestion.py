@@ -12,6 +12,7 @@ import yaml
 
 from ._url_safety import safe_provenance_url
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .adapters.graphql import GraphQLSourceAdapter
 from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
 from .adapters.odata import ODataSourceAdapter
 from .adapters.openapi import (
@@ -796,6 +797,7 @@ def default_adapter_registry() -> AdapterRegistry:
             OPTIMADESourceAdapter(),
             ODataSourceAdapter(),
             MCPSourceAdapter(),
+            GraphQLSourceAdapter(),
         ]
     )
 

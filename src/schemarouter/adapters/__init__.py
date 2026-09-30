@@ -4,6 +4,16 @@ from ..openapi_compatibility import (
     analyze_openapi_compatibility,
 )
 from .base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .graphql import (
+    GraphQLRemoteInvoker,
+    GraphQLSourceAdapter,
+    tool_from_graphql_introspection,
+)
+from .http_json import (
+    HTTPJSONRemoteInvoker,
+    build_http_json_invoker,
+    prepare_http_json_tool,
+)
 from .mcp import (
     DefaultMCPClientFactory,
     MCPClientFactory,
@@ -34,6 +44,9 @@ __all__ = [
     "AdapterPluginInfo",
     "AdapterRegistry",
     "DefaultMCPClientFactory",
+    "HTTPJSONRemoteInvoker",
+    "GraphQLRemoteInvoker",
+    "GraphQLSourceAdapter",
     "MCPClientFactory",
     "MCPRemoteInvoker",
     "ODataRemoteInvoker",
@@ -46,13 +59,16 @@ __all__ = [
     "PythonCallableInvoker",
     "SourceAdapter",
     "analyze_openapi_compatibility",
+    "build_http_json_invoker",
     "callable_options",
     "discover_adapter_plugins",
     "inspect_mcp_url",
     "load_adapter_plugins",
+    "prepare_http_json_tool",
     "resolve_openapi_base_url",
     "schema_tool",
     "tool_from_callable",
+    "tool_from_graphql_introspection",
     "tool_from_mcp",
     "tool_from_odata_metadata",
     "tool_from_openapi",
