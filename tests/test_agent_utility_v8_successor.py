@@ -324,8 +324,8 @@ def test_an_incomplete_roster_is_not_a_verdict():
 def test_none_is_only_a_verdict_once_the_roster_is_exhausted():
     from scripts.qualify_agent_utility_runtime import (
         ROSTER,
-        roster_exhausted,
         _select_runtime_from_rates,
+        roster_exhausted,
     )
 
     failing = {"envelope_valid_rate": 0.0, "tool_call_rate": 0.0, "grounded_fact_rate": 0.0}
