@@ -6,7 +6,7 @@ from typing import Any
 from jsonschema import exceptions, validators
 
 from .errors import SchemaValidationError
-from .models import EndpointSpec
+from .models import ARRAY_ITEM_PATH_SEGMENT, EndpointSpec
 
 
 def _synthesized_input_schema(endpoint: EndpointSpec) -> dict[str, Any]:
@@ -77,7 +77,15 @@ def field_value_schema(endpoint: EndpointSpec, field_name: str) -> dict[str, Any
         schema = schema["items"]
 
     for part in field.projection_path:
-        if schema.get("type") != "object":
+        if part == ARRAY_ITEM_PATH_SEGMENT:
+            if "array" not in json_schema_types(schema):
+                return {}
+            items = schema.get("items")
+            if not isinstance(items, dict):
+                return {}
+            schema = items
+            continue
+        if "object" not in json_schema_types(schema):
             return {}
         properties = schema.get("properties")
         if not isinstance(properties, dict):
@@ -244,13 +252,34 @@ def projected_output_schema(
             else:
                 return schema
 
-    def narrow_object(
-        object_schema: dict[str, Any],
+    def narrow_node(
+        current_schema: dict[str, Any],
         tree: dict[str, Any],
     ) -> dict[str, Any] | None:
-        if "object" not in json_schema_types(object_schema):
+        if ARRAY_ITEM_PATH_SEGMENT in tree:
+            if set(tree) != {ARRAY_ITEM_PATH_SEGMENT}:
+                return None
+            if "array" not in json_schema_types(current_schema):
+                return None
+            items = current_schema.get("items")
+            if not isinstance(items, dict):
+                return None
+            subtree = tree[ARRAY_ITEM_PATH_SEGMENT]
+            if subtree is None:
+                narrowed_items = deepcopy(items)
+            elif isinstance(subtree, dict) and subtree:
+                narrowed_items = narrow_node(items, subtree)
+                if narrowed_items is None:
+                    return None
+            else:
+                return None
+            narrowed = deepcopy(current_schema)
+            narrowed["items"] = narrowed_items
+            return narrowed
+
+        if "object" not in json_schema_types(current_schema):
             return None
-        properties = object_schema.get("properties")
+        properties = current_schema.get("properties")
         if not isinstance(properties, dict):
             return None
         if any(name not in properties for name in tree):
@@ -266,15 +295,15 @@ def projected_output_schema(
                 continue
             if not isinstance(subtree, dict) or not subtree:
                 return None
-            narrowed_child = narrow_object(property_schema, subtree)
+            narrowed_child = narrow_node(property_schema, subtree)
             if narrowed_child is None:
                 return None
             narrowed_properties[name] = narrowed_child
 
-        narrowed = deepcopy(object_schema)
+        narrowed = deepcopy(current_schema)
         narrowed["properties"] = narrowed_properties
 
-        required = object_schema.get("required")
+        required = current_schema.get("required")
         if isinstance(required, list):
             narrowed_required = [
                 name
@@ -287,12 +316,12 @@ def projected_output_schema(
                 narrowed.pop("required", None)
         return narrowed
 
-    narrowed = narrow_object(schema, selection_tree)
+    narrowed = narrow_node(schema, selection_tree)
     if narrowed is not None:
         return narrowed
 
-    if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
-        narrowed_items = narrow_object(schema["items"], selection_tree)
+    if "array" in json_schema_types(schema) and isinstance(schema.get("items"), dict):
+        narrowed_items = narrow_node(schema["items"], selection_tree)
         if narrowed_items is not None:
             schema["items"] = narrowed_items
             return schema
