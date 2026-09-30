@@ -17,11 +17,11 @@
 <p align="center">
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg"></a>
-  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.11.0"></a>
+  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.12.0"></a>
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-> **Stable release: 0.11.0** · `pip install schemarouter` · Beta / pre-1.0
+> **Stable release: 0.12.0** · `pip install schemarouter` · Beta / pre-1.0
 
 SchemaRouter sits between a RAG/agent application and its structured external capabilities. It
 normalizes OpenAPI, MCP, OPTIMADE, Python, and plugin-defined tools into a typed capability catalog,
@@ -141,6 +141,19 @@ for candidate in candidates.candidates:
 Use `retrieve_executable(..., k=5)` when candidates must also have a currently ready local
 execution binding. Async counterparts are `aretrieve` and `aretrieve_executable`.
 
+Current `main` also includes an **experimental, default-off** structural retrieval profile:
+
+```python
+router = SchemaRouter(structural_retrieval=True)
+candidates = router.retrieve("cancel this registered job", k=3)
+```
+
+This profile adds conservative tool-identifier and operation-family evidence plus a schema-specificity
+tie-break. It does **not** change execution authority, and it is not the product default. Independent
+retrieval confirmation has passed for a fixed Top-3 shortlist, but downstream strong-agent utility
+and broader held-out gates remain in progress. Treat it as an opt-in research-backed candidate until
+a later release explicitly changes that status.
+
 The returned candidates retain the full effective input/output JSON Schemas plus registered
 parameters/output fields, semantic IDs, optional units and qualifiers, provider/access identity,
 read/write/destructive metadata, and schema fingerprints. Retrieval has no side effect and does not grant execution authority; the surrounding
@@ -188,7 +201,7 @@ Framework bridges are available for LangChain, LangGraph, and LlamaIndex. OpenTe
 Third-party bounded decision backends can be published through the
 `schemarouter.decision_backends` entry-point group.
 
-## What works in 0.11.0
+## What works in 0.12.0
 
 The released package provides a working beta implementation of the core architecture:
 
@@ -210,7 +223,7 @@ So **the architecture works today** for declared capabilities and supported rout
 
 ## Current research direction: compact capability retrieval for agents
 
-The stable 0.11.0 execution boundary is unchanged. The active research question has shifted from
+The stable 0.12.0 execution boundary is unchanged. The active research question has shifted from
 making SchemaRouter itself the final open-set classifier to evaluating it as a **typed capability
 retrieval substrate** for a downstream LLM agent.
 
@@ -224,25 +237,25 @@ registered capability catalog
   -> execution
 ```
 
-Why this matters: on the corrected frozen 0.14 Phase-A benchmark, Top-1 required-route recall is
-**68.97%**, while Top-5 preserves **100%** of required capabilities. At 250 registered endpoints,
-Top-5 exposes only **2.38%** of the FULL serialized schema context on average.
+Why this matters: on the corrected frozen 0.14 Phase-A benchmark, Top-1 required-route recall was
+**68.97%**, while Top-5 preserved **100%** of required capabilities. At 250 registered endpoints,
+Top-5 exposed only **2.38%** of the FULL serialized schema context on average.
 
-Those are retrieval results, not a completed production claim. The active #420 B1 experiment is
-measuring whether the same real tool-calling agent maintains or improves deterministic task success
-while consuming less tool context under FULL vs SR-3/SR-5/SR-10/progressive conditions. A separate
-strong-agent replication (#423) and final-answer quality benchmark (#424) are required before
-generalizing the result.
+The canonical B1 Qwen3-0.6B agent benchmark is now terminal: SR-5 achieved **91.30%** task pass
+versus **68.48%** for FULL while using **5.42%** of FULL tool-schema tokens, with **0**
+unauthorized destructive executions. This remains controlled mechanism evidence rather than a broad
+production claim. The stronger SmolLM3-3B replication (#423) is still running, and broader held-out
+agent-utility (#432) plus final-answer quality (#424) remain separate gates before generalization.
 
 The earlier 0.11–0.13 open-set classifier/veto experiments remain valuable negative evidence. No
-experimental learned router is promoted as an unconditional production default in 0.11.0.
+experimental learned router or structural retrieval profile is promoted as an unconditional production default in 0.12.0.
 
 See:
 
 - [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
 - [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [Complete experiment index](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
-- [0.11.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.11.0/)
+- [0.12.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.12.0/)
 - [Changelog](CHANGELOG.md)
 
 ## Inspect the registry and runs
