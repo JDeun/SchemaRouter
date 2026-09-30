@@ -120,6 +120,7 @@ nav:
       - Registry and schema identity: concepts/registry.md
       - Execution and trust boundaries: concepts/execution.md
       - Adapter ecosystem: concepts/adapters.md
+      - Protocol ingestion decisions: concepts/protocol-ingestion-decisions.md
       - Decision backends: concepts/decision-backends.md
   - Connect:
       - Python tools: guides/python-tools.md
