@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from schemarouter import (
     AdapterContext,
     AdapterLoadResult,
@@ -67,6 +69,7 @@ class NestedContractAdapter:
         return AdapterLoadResult(tool=tool)
 
 
+@pytest.mark.asyncio
 async def test_custom_adapter_nested_field_contract_is_preserved() -> None:
     router = SchemaRouter()
     router.register_adapter(NestedContractAdapter())
