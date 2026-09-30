@@ -34,7 +34,10 @@ HELDOUT_ARTIFACT_PREFIX = "heldout-generalization-canonical-"
 FINAL_WORKFLOW = "research-0.14-final-answer.yml"
 FINAL_ARTIFACT_PREFIX = "final-answer-canonical-"
 TRACKING_ISSUE = 500
-# Exact scientific implementation frozen when the conveyor landed.\n# Workflow-wrapper hotfixes must not alter downstream benchmark semantics.\nDOWNSTREAM_IMPLEMENTATION_SHA = "30663de8f618bc88a893d9bf6214035a70e8e894"\n
+# Exact scientific implementation frozen when the conveyor landed.
+# Workflow-wrapper hotfixes must not alter downstream benchmark semantics.
+DOWNSTREAM_IMPLEMENTATION_SHA = "30663de8f618bc88a893d9bf6214035a70e8e894"
+
 
 @dataclass(frozen=True)
 class StageRun:
@@ -374,7 +377,9 @@ def run_controller(
             "status": [_status_line("b2", b2)],
         }
     b2_digest = _artifact_digest(b2_artifact)
-    _wrapper_sha = api.ref_sha(ref)  # fail closed if workflow ref is missing\n    source_sha = DOWNSTREAM_IMPLEMENTATION_SHA\n
+    _wrapper_sha = api.ref_sha(ref)  # fail closed if workflow ref is missing
+    source_sha = DOWNSTREAM_IMPLEMENTATION_SHA
+
     b2_terminal_time = str(b2_row.get("updated_at") or b2.created_at)
     k3_runs = find_k3_runs_after(api, not_before=b2_terminal_time)
     k3 = k3_runs[0] if k3_runs else None
