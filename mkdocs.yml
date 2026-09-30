@@ -172,6 +172,7 @@ nav:
       - Prior-art roadmap: research/prior-art-roadmap.md
       - Adaptive shortlist depth: research/adaptive-shortlist-depth.md
       - Corrective re-retrieval: research/corrective-reretrieval.md
+      - Output-field projection: research/field-projection-answer-quality.md
       - Routing research status: research/routing-status.md
       - Complete experiment index: research/experiment-index.md
       - Design and experiment history: research/design-and-experiment-history.md
