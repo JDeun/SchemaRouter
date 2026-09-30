@@ -118,7 +118,7 @@ async def test_declarative_http_tool_executes_crossref_style_get() -> None:
         plan.calls[0].fields = ["message.DOI"]
         results = await router.execute(plan)
 
-    assert seen_urls == ["https://api.crossref.test/v1/works/10.1234%2Ftest"]
+    assert seen_urls == ["https://api.crossref.test/v1/works/10%2E1234%2Ftest"]
     assert results[0].data == {"message.DOI": "10.1234/test"}
 
 
