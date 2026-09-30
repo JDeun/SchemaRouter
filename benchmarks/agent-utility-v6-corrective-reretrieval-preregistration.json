@@ -48,7 +48,54 @@
       "SchemaRouter rank position"
     ],
     "free_text_tool_output_injected_into_retrieval": false,
-    "execution_authority_unchanged": true
+    "execution_authority_unchanged": true,
+    "field_types": {
+      "original_query": "string; immutable episode input",
+      "executed_registered_route_ids": "ordered unique list[string], cumulative in execution order",
+      "observation_field_names": "sorted unique list[string], cumulative",
+      "observation_semantic_ids": "sorted unique list[string], cumulative from registered endpoint output metadata only",
+      "observation_value_types": "sorted unique list[string] using null/boolean/integer/number/string/array/object labels",
+      "observation_units": "sorted unique list[string], cumulative from registered endpoint output metadata only",
+      "observation_dimensions": "sorted unique list[string], cumulative from registered endpoint output metadata only",
+      "observation_qualifiers": "sorted unique list[string] serialized as canonical key=value atoms from registered field metadata only",
+      "stable_observed_identifiers": "sorted unique list[string], cumulative; values only from scalar observed fields ending in _id or registered fields with identifier=true or semantic_id ending in .id/.identifier",
+      "last_execution_status": "one of not_run/ok/error/blocked/executed; initial state is not_run",
+      "last_error_class": "null or normalized error class before the first ':' separator",
+      "task_incomplete_boolean": "boolean from deterministic executor completion state"
+    },
+    "update_semantics": {
+      "cumulative_fields": [
+        "executed_registered_route_ids",
+        "observation_field_names",
+        "observation_semantic_ids",
+        "observation_value_types",
+        "observation_units",
+        "observation_dimensions",
+        "observation_qualifiers",
+        "stable_observed_identifiers"
+      ],
+      "last_turn_fields": [
+        "last_execution_status",
+        "last_error_class",
+        "task_incomplete_boolean"
+      ],
+      "failed_turns_may_update": [
+        "executed_registered_route_ids",
+        "observation_field_names",
+        "observation_value_types",
+        "last_execution_status",
+        "last_error_class",
+        "task_incomplete_boolean"
+      ],
+      "raw_observation_values_retained_only_for_stable_identifiers": true
+    },
+    "retrieval_rendering": {
+      "prefix": "original user query unchanged",
+      "suffix_marker": "[EXECUTION_STATE]",
+      "suffix_payload": "canonical sorted-key JSON of all allowed state fields except original_query",
+      "original_query_duplicated_in_suffix": false,
+      "free_text_observation_in_suffix": false
+    }
   },
   "surface": {
     "unique_semantic_tasks": 180,
