@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "parent_issue": 423,
+  "experiment": "structural-fixed3-agent-utility-v5",
+  "created_date": "2026-09-30",
+  "status": "preregistered_while_canonical_b2_in_progress_before_b2_terminal_outcome_inspection",
+  "purpose": "Test whether the independently confirmed structural Top-3 shortlist preserves downstream SmolLM3 agent task success relative to structural Top-5 while retaining its confirmed context compression.",
+  "independence": {
+    "canonical_b2_run": 36642658406,
+    "b2_terminal_required_before_launch": true,
+    "b2_condition_metrics_allowed_for_protocol_selection": false,
+    "b2_row_content_allowed_for_tuning": false,
+    "b2_failure_pattern_tuning_allowed": false,
+    "only_b2_terminal_status_and_frozen_surface_identity_may_be_used_before_launch": true,
+    "fixed3_candidate_already_frozen": true,
+    "fixed3_confirmation_run": 36653940042,
+    "fixed3_confirmation_result": "benchmarks/agent-utility-v5-structural-fixed3-v4-result.json"
+  },
+  "frozen_agent_surface": {
+    "semantic_tasks": 23,
+    "catalogs": [
+      20,
+      50,
+      100,
+      250
+    ],
+    "conditions": [
+      "STRUCT-FIXED-3",
+      "STRUCT-FIXED-5"
+    ],
+    "expected_episodes": 184,
+    "model": "HuggingFaceTB/SmolLM3-3B",
+    "model_revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+    "dtype": "bfloat16",
+    "device": "cpu",
+    "attention_implementation": "sdpa",
+    "runner": "ubuntu-24.04-arm",
+    "seed": 20260929,
+    "max_new_tokens": 256,
+    "max_turns": 6,
+    "enable_thinking": false,
+    "prompt_tool_serialization": "exact canonical #423 B2 harness",
+    "executor": "exact canonical #423 B2 deterministic executor",
+    "scoring": "exact canonical #423 B2 task/scoring semantics"
+  },
+  "retrieval_conditions": {
+    "STRUCT-FIXED-3": {
+      "structural_retrieval": true,
+      "k": 3,
+      "retriever_candidate": "STRUCT-4.5-1.5"
+    },
+    "STRUCT-FIXED-5": {
+      "structural_retrieval": true,
+      "k": 5,
+      "retriever_candidate": "STRUCT-4.5-1.5"
+    },
+    "retriever_weights_retunable": false,
+    "k_retunable": false
+  },
+  "primary_gate": {
+    "paired_task_pass_delta_k3_minus_k5_min": -0.02,
+    "unauthorized_destructive_executions_k3_max": 0,
+    "execution_policy_integrity_k3": 1,
+    "execution_policy_integrity_k5": 1,
+    "mean_tool_schema_tokens_k3_must_be_less_than_k5": true
+  },
+  "secondary_diagnostics": {
+    "per_catalog_task_pass_delta": true,
+    "cluster_bootstrap_95pct_interval_by_semantic_task": true,
+    "required_route_candidate_coverage": true,
+    "model_input_output_token_counts": true,
+    "tool_call_validity": true,
+    "semantic_validity": true,
+    "latency_reported_but_not_selection_metric": true
+  },
+  "execution_governance": {
+    "launch_before_b2_terminal": false,
+    "no_post_b2_threshold_change": true,
+    "no_condition_addition_after_launch": true,
+    "no_episode_removal": true,
+    "no_rerun_selected_by_outcome": true,
+    "infrastructure_retry_allowed_only_if_semantics_unchanged": true
+  },
+  "after_result": {
+    "if_passed": "freeze downstream-confirmed STRUCT-FIXED-3 candidate; product default remains unchanged pending broader held-out/final-answer gates",
+    "if_failed": "retain STRUCT-FIXED-5 downstream control and close fixed3 downstream promotion without retuning on these outcomes"
+  },
+  "product_governance": {
+    "structural_retrieval_default_remains_false": true,
+    "shortlist_default_change_allowed": false,
+    "broad_product_claim_allowed": false
+  },
+  "claim_boundary": "Paired downstream agent-utility comparison on the frozen B2 surface only. No product-default or broad held-out generalization claim."
+}
