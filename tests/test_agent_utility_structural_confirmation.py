@@ -10,10 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from benchmarks.agent_utility_v5_catalog import (  # noqa: E402
-    build_registry as build_dev_registry,
-    build_tasks as build_dev_tasks,
-)
+from benchmarks import agent_utility_v5_catalog as dev_catalog  # noqa: E402
 from benchmarks.agent_utility_v5_structural_confirmation import (  # noqa: E402
     CONFIRMATION_CATALOG_SIZES,
     CONFIRMATION_LANGUAGES,
@@ -94,15 +91,15 @@ def test_confirmation_queries_have_no_exact_dev_overlap() -> None:
     }
     dev = {
         " ".join(task["query"].casefold().split())
-        for task in build_dev_tasks()
+        for task in dev_catalog.build_tasks()
     }
 
     assert confirmation.isdisjoint(dev)
 
 
 def test_confirmation_catalogs_are_nested_and_auxiliary_ids_are_fresh() -> None:
-    dev_routes = _routes(build_dev_registry(500))
-    canonical = _routes(build_dev_registry(100))
+    dev_routes = _routes(dev_catalog.build_registry(500))
+    canonical = _routes(dev_catalog.build_registry(100))
     prior: set[str] | None = None
 
     for size in CONFIRMATION_CATALOG_SIZES:
