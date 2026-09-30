@@ -1,0 +1,43 @@
+name: Research 0.14 Conveyor
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_run:
+    workflows:
+      - Research 0.14 B2 SmolLM3 Full
+      - Research 0.14 Structural K3 Agent Utility
+      - Research 0.14 Corrective Re-retrieval
+      - Research 0.14 Held-out Generalization
+      - Research 0.14 Final Answer
+    types:
+      - completed
+
+permissions:
+  contents: read
+  actions: write
+  issues: write
+
+concurrency:
+  group: research-0.14-conveyor
+  cancel-in-progress: false
+
+jobs:
+  advance:
+    if: "${{ github.repository == 'JDeun/SchemaRouter' }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - name: Advance only preregistered ready stages
+        env:
+          GH_TOKEN: "${{ github.token }}"
+          GITHUB_REPOSITORY: "${{ github.repository }}"
+        run: |
+          python scripts/research_014_conveyor.py             --repository "${GITHUB_REPOSITORY}"             --token "${GH_TOKEN}"             --ref main             --execute
