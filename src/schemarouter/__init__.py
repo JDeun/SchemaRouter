@@ -1,7 +1,6 @@
 from ._version import __version__
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
 from .adapters.mcp import DefaultMCPClientFactory, MCPClientFactory
-from .adapters.openrpc import OpenRPCSourceAdapter, tool_from_openrpc
 from .adapters.optimade import OPTIMADESourceAdapter
 from .adapters.plugins import (
     ADAPTER_ENTRY_POINT_GROUP,
@@ -222,7 +221,6 @@ __all__ = [
     "NonRetryableInvocationError",
     "OpenAPICompatibilityIssue",
     "OpenAPICompatibilityReport",
-    "OpenRPCSourceAdapter",
     "PairwiseDecisionBackend",
     "PairwiseScoreCallable",
     "ParameterSpec",
@@ -274,7 +272,6 @@ __all__ = [
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
-    "tool_from_openrpc",
     "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
