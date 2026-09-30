@@ -298,13 +298,12 @@ The current order is now governed by #417/#500:
 3. freeze the #432 held-out condition manifest from the preregistered boolean gates;
 4. execute #432, then #424 only through the gated conveyor.
 
-Historical execution notes below remain provenance, not the current launch order.
+The older pre-terminal 0.14 launch plan is superseded by this gated conveyor. Historical
+run/protocol provenance remains in Git history, the experiment ledger, and terminal issue comments.
 
-2. freeze and execute #423 with a materially stronger downstream agent;
-3. execute #424 only after its separate answer-bearing benchmark is frozen;
-4. keep #384/#395/#397/#399/#401/#404/#406/#408/#409/#412/#415 as terminal 0.13 controls;
-5. revisit open-set/conformal methods only if a future retrieval/safety question requires them, never as a post-hoc repair of consumed DEV;
-6. maintain #392 as the prior-art bridge between executable-schema retrieval and the active 0.14 agent-utility work.
+Maintain #392 as the prior-art bridge between executable-schema retrieval and the active 0.14
+agent-utility work. Revisit open-set/conformal methods only for a newly preregistered question, never
+as a post-hoc repair of consumed DEV.
 
 Historical 0.13 order was:
 
