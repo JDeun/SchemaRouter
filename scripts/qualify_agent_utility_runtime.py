@@ -78,8 +78,10 @@ def qualification_rates(rows: list[dict[str, Any]]) -> dict[str, float]:
         )
         / total,
         "grounded_fact_rate": sum(
-            1 for row in rows
-            if float(row.get("required_fact_recall", 0.0)) > 0.0
+            1
+            for row in rows
+            if int(row.get("tool_call_count", 0)) > 0
+            and float(row.get("required_fact_recall", 0.0)) > 0.0
         )
         / total,
     }
