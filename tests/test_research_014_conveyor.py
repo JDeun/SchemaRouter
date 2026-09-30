@@ -14,6 +14,7 @@ from scripts.generate_agent_utility_v6_corrective_corpus import (
     build_corpus as build_corrective,
 )
 from scripts.research_014_conveyor import (
+    DOWNSTREAM_IMPLEMENTATION_SHA,
     StageRun,
     combine_digests,
     source_sha_from_run,
