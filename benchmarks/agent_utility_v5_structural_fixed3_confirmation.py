@@ -185,7 +185,10 @@ def _render(
                 "Fetch the registered measured {term} for {entity}, "
                 "not any surrogate prediction."
             ),
-            "ko": "{entity}의 registered measured {term}을 가져오고 surrogate prediction은 제외하세요.",
+            "ko": (
+                "{entity}의 registered measured {term}을 가져오고 "
+                "surrogate prediction은 제외하세요."
+            ),
             "es": "Obtén {term} medido y registrado para {entity}, no una predicción sustituta.",
             "ja": "{entity} の登録済み実測 {term} を取得し、代替予測は使わないでください。",
             "de": "Liefere den registrierten Messwert {term} für {entity}, keine Ersatzprognose.",
