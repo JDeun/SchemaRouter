@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "universal_modes": [
+    "openapi",
+    "mcp",
+    "optimade",
+    "python_callable",
+    "source_adapter",
+    "langchain_tool",
+    "llamaindex_tool",
+    "http_json",
+    "documentation_proposal"
+  ],
+  "required_contract": [
+    "input_schema",
+    "parameters",
+    "output_schema",
+    "output_fields",
+    "provider",
+    "access_mode",
+    "execution_authority",
+    "secret_boundary"
+  ],
+  "services": [
+    {
+      "id": "materials_project",
+      "domain": "materials_science",
+      "provider": "materials-project",
+      "primary_mode": "openapi",
+      "access_modes": [
+        "openapi",
+        "optimade",
+        "python_callable"
+      ],
+      "same_provider_fallback": true,
+      "notes": "Official API schema, OPTIMADE federation route, and mp-api/Python SDK can coexist as distinct access modes."
+    },
+    {
+      "id": "duckduckgo",
+      "domain": "web_search",
+      "provider": "duckduckgo",
+      "primary_mode": "langchain_tool",
+      "access_modes": [
+        "langchain_tool",
+        "python_callable"
+      ],
+      "same_provider_fallback": true,
+      "notes": "Existing agent-tool or Python wrapper path; no service-specific SchemaRouter core adapter required."
+    },
+    {
+      "id": "tavily",
+      "domain": "web_search",
+      "provider": "tavily",
+      "primary_mode": "http_json",
+      "access_modes": [
+        "http_json",
+        "langchain_tool",
+        "python_callable"
+      ],
+      "same_provider_fallback": true,
+      "notes": "Direct REST, existing agent-tool, and SDK/callable paths may coexist."
+    },
+    {
+      "id": "brave_search",
+      "domain": "web_search",
+      "provider": "brave",
+      "primary_mode": "http_json",
+      "access_modes": [
+        "http_json",
+        "python_callable",
+        "source_adapter"
+      ],
+      "same_provider_fallback": true,
+      "notes": "Direct JSON REST path uses trusted subscription headers outside model-visible contracts."
+    },
+    {
+      "id": "yahoo_finance",
+      "domain": "finance",
+      "provider": "yahoo-finance",
+      "primary_mode": "python_callable",
+      "access_modes": [
+        "python_callable",
+        "langchain_tool"
+      ],
+      "same_provider_fallback": true,
+      "notes": "Python SDK/wrapper is canonical when no authoritative machine-readable service schema is available."
+    },
+    {
+      "id": "arxiv",
+      "domain": "scholarly_search",
+      "provider": "arxiv",
+      "primary_mode": "langchain_tool",
+      "access_modes": [
+        "langchain_tool",
+        "python_callable",
+        "source_adapter"
+      ],
+      "same_provider_fallback": true,
+      "notes": "Atom/XML transport can be normalized by an existing tool, Python wrapper, or explicit adapter."
+    },
+    {
+      "id": "crossref",
+      "domain": "scholarly_metadata",
+      "provider": "crossref",
+      "primary_mode": "openapi",
+      "access_modes": [
+        "openapi",
+        "http_json"
+      ],
+      "same_provider_fallback": true,
+      "notes": "Swagger/OpenAPI discovery is preferred; declarative REST remains a deterministic fallback."
+    },
+    {
+      "id": "github_rest",
+      "domain": "developer_platform",
+      "provider": "github",
+      "primary_mode": "openapi",
+      "access_modes": [
+        "openapi",
+        "http_json",
+        "source_adapter"
+      ],
+      "same_provider_fallback": true,
+      "notes": "Representative non-science SaaS/API domain with both machine-readable and explicit REST paths."
+    }
+  ]
+}
