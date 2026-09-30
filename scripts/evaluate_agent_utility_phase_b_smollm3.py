@@ -170,6 +170,7 @@ def _runtime_identity() -> dict[str, str]:
 
     return {
         "platform": platform.platform(),
+        "machine": platform.machine(),
         "python": platform.python_version(),
         "jinja2": jinja2.__version__,
         "torch": torch.__version__,
