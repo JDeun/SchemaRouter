@@ -35,11 +35,11 @@ afterthought.
 
 Different providers and access modes can expose the same concept under different names:
 
-```text
-elastic modulus
-  -> provider A / REST       -> elastic_modulus
-  -> provider B / OPTIMADE   -> _b_elasticity
-  -> provider C / Python     -> youngs_modulus
+```mermaid
+flowchart LR
+    N["elastic modulus"] --> A["provider A / REST"] --> FA["elastic_modulus"]
+    N --> B["provider B / OPTIMADE"] --> FB["_b_elasticity"]
+    N --> C["provider C / Python"] --> FC["youngs_modulus"]
 ```
 
 Local `FieldSpec` contracts declare known semantic equivalence. Prefer one canonical local
@@ -110,13 +110,13 @@ bounded multi-call plan when the caller explicitly allows more than one call wit
 
 For example:
 
-```text
-query need
-  -> band_gap
-       -> Materials Project / OpenAPI
-       -> Materials Project / OPTIMADE
-  -> abstract
-       -> arXiv / API
+```mermaid
+flowchart LR
+    Q["query need"] --> BG["band_gap"]
+    Q --> AB["abstract"]
+    BG --> M1["Materials Project / OpenAPI"]
+    BG --> M2["Materials Project / OPTIMADE"]
+    AB --> AX["arXiv / API"]
 ```
 
 With `max_calls=2`, multi-call planning prefers **complementary semantic field coverage** over
@@ -200,17 +200,11 @@ payload.
 
 The requested field surface remains stable while access paths can change:
 
-```text
-need: elastic modulus
-
-provider A / REST
-  healthy -> eligible for planning
-
-provider B / OPTIMADE
-  known unavailable -> excluded from the current planner candidate surface
-
-provider C / API
-  fallback -> use only if it can provide elastic modulus
+```mermaid
+flowchart LR
+    N["need: elastic modulus"] -- healthy --> A["provider A / REST<br>eligible for planning"]
+    N -. known unavailable .-> B["provider B / OPTIMADE<br>excluded from the current planner candidate surface"]
+    N -- fallback --> C["provider C / API<br>use only if it can provide elastic modulus"]
 ```
 
 Fallback does not broaden the requested fields merely because the preferred route failed.

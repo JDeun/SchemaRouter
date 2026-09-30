@@ -18,18 +18,13 @@ does not decide when to call tools, does not execute tools, does not manage memo
 construct arbitrary multi-step plans. It is closer to a replaceable classifier/ranker behind one
 bounded decision point in SchemaRouter.
 
-```text
-orchestrator
-    |
-SchemaRouter planner
-    |
-finite candidate set
-    |
-optional DecisionBackend
-    |
-validated candidate ID(s)
-    |
-SchemaRouter plan + policy + execution
+```mermaid
+flowchart TD
+    O["orchestrator"] --> P["SchemaRouter planner"]
+    P --> C["finite candidate set"]
+    C --> DB["optional DecisionBackend"]
+    DB --> V["validated candidate ID(s)"]
+    V --> E["SchemaRouter plan + policy + execution"]
 ```
 
 ## Opt in

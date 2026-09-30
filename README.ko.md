@@ -36,33 +36,91 @@ SchemaRouter 자체는 범용 에이전트 프레임워크도, LLM 공급자 계
 [outputSchema를 공개하지 않는 MCP 서버에 결과 계약 선언하기 →](docs/guides/mcp.md#declare-a-result-contract-the-server-does-not-publish) ·
 [측정된 agent-utility 결과 보기 →](docs/research/agent-utility-b1-result.md)
 
-## RAG에서 SchemaRouter의 위치
+## 빠른 시작
+
+```python
+from pydantic import BaseModel
+from schemarouter import PlanRequest, SchemaRouter, schema_tool
+
+
+class Weather(BaseModel):
+    city: str
+    temperature: float
+
+
+@schema_tool(read_only=True)
+def current_weather(city: str) -> Weather:
+    return Weather(city=city, temperature=20.5)
+
+
+router = SchemaRouter()
+router.add_callable(current_weather)
+
+result = router.invoke(
+    PlanRequest(query="city temperature", arguments={"city": "Seoul"})
+)
+
+print(result[0].data)
+```
+
+## 에이전트에 넘길 도구 후보만 추리기
+
+SchemaRouter는 계획도 실행도 하지 않고 등록된 capability의 **Top-K 후보만** 돌려줄 수 있습니다.
+
+```python
+candidates = router.retrieve(
+    "MAT-7의 현재 Young's modulus",
+    k=5,
+)
+
+for candidate in candidates.candidates:
+    print(candidate.route_id, candidate.output_fields)
+```
+
+로컬 실행 바인딩까지 지금 준비된 후보만 필요하면 `retrieve_executable(..., k=5)`을 씁니다.
+비동기 API는 `aretrieve`, `aretrieve_executable`입니다.
+
+현재 `main`에는 **실험 단계이고 기본값이 꺼져 있는** structural retrieval 프로파일도 들어
+있습니다.
+
+```python
+router = SchemaRouter(structural_retrieval=True)
+candidates = router.retrieve("등록된 job을 취소해줘", k=3)
+```
+
+이 프로파일은 보수적인 도구 식별자·연산 계열 근거와 스키마 구체성 기반 동점 처리를 더합니다.
+실행 권한은 달라지지 않고, 제품 기본값도 아닙니다. 고정된 Top-3 후보군에 대한 독립 검색 확인은
+통과했지만, 사전 등록한 강한 에이전트 K3-vs-K5 하위 게이트는 task-pass -2pp 승격 기준을 넘지
+못했습니다. 그래서 Top-3는 held-out 벤치마크로 승격하지 않았습니다. 이후 릴리스가 이 상태를
+바꾸기 전까지 structural retrieval은 선택형 연구 영역으로 다뤄야 합니다.
+
+후보에는 완전한 유효 입출력 JSON Schema와 등록된 파라미터·출력 필드, semantic ID, 선택적 단위와
+측정 조건, 제공자·접근 경로 식별 정보, 읽기/쓰기/파괴적 동작 메타데이터, 스키마 fingerprint가
+그대로 남습니다.
+검색 자체는 부수 효과가 없고 실행 권한도 주지 않습니다. 후보 중에서 고르는 일은 상위 에이전트가
+하고, 실제 실행은 여전히 SchemaRouter의 검증과 정책을 통과해야 합니다.
+
+## 작동 방식
+
+### RAG에서 SchemaRouter의 위치
 
 SchemaRouter는 최종 생성을 맡지 않습니다. 명시적인 스키마와 정책 아래 API와 도구에서 실시간
 외부 데이터를 받아야 하는 애플리케이션에 검색·실행 경계를 제공합니다.
 
-```text
-사용자 질문
-    |
-    v
-RAG / Agent / Application
-    |
-    |  "탄성계수와 출처가 필요함"
-    v
-SchemaRouter
-    |
-    +--> 등록된 capability retrieval
-    +--> endpoint + 필요한 field 선택
-    +--> parameter / policy / health 검증
-    +--> trusted transport 실행
-    +--> raw output 검증
-    +--> 선언된 unit normalization / field projection
-    |
-    v
-Typed external data
-    |
-    v
-RAG generation / agent reasoning
+```mermaid
+flowchart LR
+    Q["사용자 질문"] --> A["RAG / 에이전트 / 애플리케이션"]
+    A -- "탄성계수와 출처가 필요함" --> SR
+    subgraph SR["SchemaRouter"]
+        direction TB
+        R1["등록된 capability 검색"] --> R2["엔드포인트와 필요한 필드 선택"]
+        R2 --> R3["파라미터 / 정책 / 상태 검증"]
+        R3 --> R4["신뢰된 transport로 실행"]
+        R4 --> R5["원본 출력 검증"]
+        R5 --> R6["선언된 단위 정규화 / 필드 추림"]
+    end
+    SR --> D["타입이 지정된 외부 데이터"]
+    D --> G["RAG 생성 / 에이전트 추론"]
 ```
 
 문서 중심 RAG의 retriever가 문서 조각이나 레코드를 찾는다면, SchemaRouter가 다루는 검색 대상은
@@ -70,7 +128,7 @@ RAG generation / agent reasoning
 
 [RAG에서의 위치와 capability 모델](https://jdeun.github.io/SchemaRouter/concepts/capability-catalog/)
 
-## Field-first, route-second
+### Field-first, route-second
 
 SchemaRouter는 **어떤 데이터가 필요한지**를 먼저 풀고, 그다음 그 데이터를 실제로 줄 수 있는
 등록된 경로를 고릅니다.
@@ -110,14 +168,12 @@ SchemaRouter는 **어떤 데이터가 필요한지**를 먼저 풀고, 그다음
 것이 정상입니다. 또 SchemaRouter는 단위 문자열만 보고 과학적 동등성이나 변환 계수를 추론하지
 않습니다.
 
-## 실행 경계
+### 실행 경계
 
-```text
-LangChain / LangGraph / LlamaIndex / 자체 애플리케이션
-                         |
-                    SchemaRouter
-                         |
-          OpenAPI / MCP / OPTIMADE / Python
+```mermaid
+flowchart TD
+    F["LangChain / LangGraph / LlamaIndex / 자체 애플리케이션"] --> SR["SchemaRouter"]
+    SR --> T["OpenAPI / MCP / OPTIMADE / Python"]
 ```
 
 상위 프레임워크가 대화, 질의 분해, 생성, 메모리, 그래프, 에이전트 루프를 맡고, SchemaRouter는
@@ -126,70 +182,6 @@ LangChain / LangGraph / LlamaIndex / 자체 애플리케이션
 Laya, Ollama, Jev/System-One, 호스팅 모델, 임베딩, pairwise 결정 백엔드는 이미 등록된 후보를
 고르는 일을 도울 수 있습니다. 다만 실행 권한을 갖지는 못하고, 도구·필드·자격 증명·권한·부수
 효과를 새로 만들어낼 수도 없습니다.
-
-## 에이전트에 넘길 도구 후보만 추리기
-
-SchemaRouter는 계획도 실행도 하지 않고 등록된 capability의 **Top-K 후보만** 돌려줄 수 있습니다.
-
-```python
-candidates = router.retrieve(
-    "MAT-7의 현재 Young's modulus",
-    k=5,
-)
-
-for candidate in candidates.candidates:
-    print(candidate.route_id, candidate.output_fields)
-```
-
-로컬 실행 바인딩까지 지금 준비된 후보만 필요하면 `retrieve_executable(..., k=5)`을 씁니다.
-비동기 API는 `aretrieve`, `aretrieve_executable`입니다.
-
-현재 `main`에는 **실험 단계이고 기본값이 꺼져 있는** structural retrieval 프로파일도 들어
-있습니다.
-
-```python
-router = SchemaRouter(structural_retrieval=True)
-candidates = router.retrieve("등록된 job을 취소해줘", k=3)
-```
-
-이 프로파일은 보수적인 도구 식별자·연산 계열 근거와 스키마 구체성 기반 동점 처리를 더합니다.
-실행 권한은 달라지지 않고, 제품 기본값도 아닙니다. 고정된 Top-3 후보군에 대한 독립 검색 확인은
-통과했지만, 사전 등록한 강한 에이전트 K3-vs-K5 하위 게이트는 task-pass -2pp 승격 기준을 넘지
-못했습니다. 그래서 Top-3는 held-out 벤치마크로 승격하지 않았습니다. 이후 릴리스가 이 상태를
-바꾸기 전까지 structural retrieval은 선택형 연구 영역으로 다뤄야 합니다.
-
-후보에는 완전한 유효 입출력 JSON Schema와 등록된 파라미터·출력 필드, semantic ID, 선택적 단위와
-측정 조건, 제공자·접근 경로 식별 정보, 읽기/쓰기/파괴적 동작 메타데이터, 스키마 fingerprint가
-그대로 남습니다.
-검색 자체는 부수 효과가 없고 실행 권한도 주지 않습니다. 후보 중에서 고르는 일은 상위 에이전트가
-하고, 실제 실행은 여전히 SchemaRouter의 검증과 정책을 통과해야 합니다.
-
-## 빠른 시작
-
-```python
-from pydantic import BaseModel
-from schemarouter import PlanRequest, SchemaRouter, schema_tool
-
-
-class Weather(BaseModel):
-    city: str
-    temperature: float
-
-
-@schema_tool(read_only=True)
-def current_weather(city: str) -> Weather:
-    return Weather(city=city, temperature=20.5)
-
-
-router = SchemaRouter()
-router.add_callable(current_weather)
-
-result = router.invoke(
-    PlanRequest(query="city temperature", arguments={"city": "Seoul"})
-)
-
-print(result[0].data)
-```
 
 ## capability 연결
 

@@ -50,12 +50,10 @@ pip install schemarouter
 
 ## Where it fits
 
-```text
-LangChain / LangGraph / LlamaIndex / your orchestrator
-                         |
-                    SchemaRouter
-                         |
-          OpenAPI / MCP / OPTIMADE / Python
+```mermaid
+flowchart TD
+    F["LangChain / LangGraph / LlamaIndex / your orchestrator"] --> SR["SchemaRouter"]
+    SR --> T["OpenAPI / MCP / OPTIMADE / Python"]
 ```
 
 SchemaRouter does not replace an agent or RAG pipeline and does not perform final generation. It

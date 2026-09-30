@@ -8,28 +8,20 @@ retrieval side of a RAG or agent system when the external information must be ob
 structured, executable sources such as OpenAPI endpoints, MCP tools, OPTIMADE services, or typed
 Python callables.
 
-```text
-User query
-    |
-    v
-RAG / Agent / Application
-    |
-    | declares a data need
-    v
-SchemaRouter
-    |
-    +--> registered capability retrieval
-    +--> endpoint + field selection
-    +--> policy / health / parameter validation
-    +--> trusted execution
-    +--> raw-output validation
-    +--> declared normalization / projection
-    |
-    v
-Typed external data
-    |
-    v
-Generation / reasoning in the surrounding system
+```mermaid
+flowchart LR
+    Q["User query"] --> A["RAG / agent / application"]
+    A -- "declares a data need" --> SR
+    subgraph SR["SchemaRouter"]
+        direction TB
+        R1["Registered capability retrieval"] --> R2["Endpoint + field selection"]
+        R2 --> R3["Policy / health / parameter validation"]
+        R3 --> R4["Trusted execution"]
+        R4 --> R5["Raw-output validation"]
+        R5 --> R6["Declared normalization / projection"]
+    end
+    SR --> D["Typed external data"]
+    D --> G["Generation / reasoning in the surrounding system"]
 ```
 
 For document-centric RAG, the external source may be a corpus of passages or records and the
@@ -121,11 +113,11 @@ semantic field = elastic_modulus
 
 and only then choose a registered route that can provide it:
 
-```text
-elastic_modulus
-  -> provider A / REST
-  -> provider A / OPTIMADE
-  -> provider B / MCP
+```mermaid
+flowchart LR
+    F["elastic_modulus"] --> A1["provider A / REST"]
+    F --> A2["provider A / OPTIMADE"]
+    F --> B1["provider B / MCP"]
 ```
 
 Availability or policy may change the route. It must not silently change the required field.
@@ -198,13 +190,10 @@ local registered facts.
 SchemaRouter owns the capability retrieval and execution boundary. It does not own the full agent
 loop.
 
-```text
-LangChain / LangGraph / LlamaIndex / application
-                    |
-               SchemaRouter
- typed capability retrieval + validation
-                    |
- OpenAPI / MCP / OPTIMADE / Python / plugins
+```mermaid
+flowchart TD
+    F["LangChain / LangGraph / LlamaIndex / application"] --> SR["SchemaRouter<br>typed capability retrieval + validation"]
+    SR --> T["OpenAPI / MCP / OPTIMADE / Python / plugins"]
 ```
 
 The layer above owns conversation, decomposition, memory, graph orchestration and answer generation.

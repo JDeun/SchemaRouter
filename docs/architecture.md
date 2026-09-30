@@ -34,21 +34,29 @@ See [Structured retrieval and execution for RAG and agents](concepts/capability-
 
 ## Core flow
 
-```text
-request
-  -> QueryAnalyzer
-  -> semantic data need
-  -> required logical fields
-  -> candidate provider / access path / endpoint
-  -> parameter + field plan + bounded fallbacks
-  -> schema/tool fingerprints
-  -> availability + execution policy
-  -> JSON Schema input validation
-  -> server-side field projection when explicitly supported
-  -> trusted invoker
-  -> JSON Schema output validation
-  -> final local field projection
-  -> minimal ToolResult
+```mermaid
+flowchart LR
+    subgraph P["Plan"]
+        direction TB
+        A1["request"] --> A2["QueryAnalyzer"]
+        A2 --> A3["semantic data need"]
+        A3 --> A4["required logical fields"]
+        A4 --> A5["candidate provider / access path / endpoint"]
+        A5 --> A6["parameter + field plan + bounded fallbacks"]
+    end
+    subgraph C["Check"]
+        direction TB
+        B1["schema/tool fingerprints"] --> B2["availability + execution policy"]
+        B2 --> B3["JSON Schema input validation"]
+    end
+    subgraph E["Execute"]
+        direction TB
+        C1["server-side field projection when explicitly supported"] --> C2["trusted invoker"]
+        C2 --> C3["JSON Schema output validation"]
+        C3 --> C4["final local field projection"]
+        C4 --> C5["minimal ToolResult"]
+    end
+    P --> C --> E
 ```
 
 ## Module boundaries
