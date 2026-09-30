@@ -217,3 +217,26 @@ async def test_openrpc_positional_params_fail_on_ambiguous_optional_gap() -> Non
             await router.executor.execute_call(call)
 
     assert seen["post"] is False
+
+
+@pytest.mark.asyncio
+async def test_openrpc_cross_origin_server_requires_explicit_base_url() -> None:
+    document = openrpc_document()
+    document["servers"] = [{"url": "https://other.example/rpc"}]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "GET":
+            return httpx.Response(200, json=document, request=request)
+        raise AssertionError("cross-origin server must not be called automatically")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://rpc.example/openrpc.json",
+            kind="openrpc",
+            http_client=client,
+        )
+
+    tool = router.registry.get("materials_rpc")
+    assert tool.execution_metadata["execution_bound"] is False
+    assert tool.execution_metadata["requires_explicit_base_url"] is True
+    assert tool.metadata["suggested_base_url"] == "https://other.example/rpc"
