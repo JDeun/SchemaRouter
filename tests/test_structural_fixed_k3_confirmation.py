@@ -4,6 +4,7 @@ import json
 import sys
 from collections import Counter
 from pathlib import Path
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -38,7 +39,7 @@ def _normalize(value: str) -> str:
     return " ".join(value.casefold().split())
 
 
-def _routes(registry: object) -> set[str]:
+def _routes(registry: Any) -> set[str]:
     return {
         f"{tool.key}.{endpoint.name}"
         for tool in registry.tools()
