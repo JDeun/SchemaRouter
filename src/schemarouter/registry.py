@@ -35,13 +35,6 @@ class ToolRegistry(Protocol):
 
     def register(self, tool: ToolSpec, *, replace: bool = False) -> str: ...
 
-    def replace_if_fingerprint(
-        self,
-        tool: ToolSpec,
-        *,
-        expected_fingerprint: str,
-    ) -> str: ...
-
     def get(self, key: str) -> ToolSpec: ...
 
     def tools(self) -> tuple[ToolSpec, ...]: ...
@@ -49,6 +42,39 @@ class ToolRegistry(Protocol):
     def keys(self) -> tuple[str, ...]: ...
 
     def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec: ...
+
+
+class CompareAndSwapToolRegistry(ToolRegistry, Protocol):
+    """Optional registry capability for atomic replace-if-current semantics."""
+
+    def replace_if_fingerprint(
+        self,
+        tool: ToolSpec,
+        *,
+        expected_fingerprint: str,
+    ) -> str: ...
+
+
+def replace_if_current(
+    registry: ToolRegistry,
+    tool: ToolSpec,
+    *,
+    expected_fingerprint: str,
+) -> str:
+    """Use a registry's atomic CAS capability or fail closed.
+
+    The base ToolRegistry protocol remains backward compatible for planning and
+    ordinary registration. Operations that require lost-update protection must
+    opt into this stronger capability instead of silently falling back to a
+    non-atomic read-then-write sequence.
+    """
+    replace = getattr(registry, "replace_if_fingerprint", None)
+    if not callable(replace):
+        raise RegistrationError(
+            "registry does not support atomic replace-if-fingerprint; "
+            "this operation requires CompareAndSwapToolRegistry semantics"
+        )
+    return replace(tool, expected_fingerprint=expected_fingerprint)
 
 
 class InMemoryRegistry:
