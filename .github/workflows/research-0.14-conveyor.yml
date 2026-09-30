@@ -2,6 +2,14 @@ name: Research 0.14 Conveyor
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/research-0.14-conveyor.yml"
+      - ".github/workflows/research-0.14-structural-k3-agent.yml"
+      - "scripts/research_014_conveyor.py"
+      - "benchmarks/agent-utility-0.14-conveyor-preregistration.json"
   schedule:
     - cron: "17 * * * *"
   workflow_run:
