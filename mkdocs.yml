@@ -129,6 +129,7 @@ nav:
       - GraphQL: guides/graphql.md
       - OPTIMADE: guides/optimade.md
       - MCP: guides/mcp.md
+      - Declarative HTTP/JSON: guides/http-json.md
       - Human-readable documentation: guides/html-documentation.md
       - Third-party adapter plugins: guides/adapter-plugins.md
       - Recipes:

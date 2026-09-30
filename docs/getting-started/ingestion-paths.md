@@ -10,6 +10,7 @@ inputs as equivalent.
 | GraphQL introspection | Automatic query/mutation discovery | Same-endpoint automatic | Query narrows to read-only; mutations remain policy-gated |
 | OPTIMADE | `/info` + `/info/<entry_type>` discovery | Automatic read-only HTTP binding | Remote schema is descriptive |
 | MCP Streamable HTTP | Automatic discovery | Automatic transport, policy-gated | Remote annotations are untrusted |
+| Declarative HTTP/JSON | Trusted local ToolSpec | Automatic fixed-origin HTTP binding | Local manifest; secrets stay runtime-only |
 | Custom `SourceAdapter` | Adapter-defined | Adapter-defined | Must preserve local policy authority |
 | Human-readable docs | Model-assisted proposal | Explicit approval required | Inferred, evidence-grounded |
 
@@ -58,3 +59,11 @@ invoker. Additional adapters can be registered without changing the core loader.
 
 A normal HTML documentation page is not silently converted into an executable tool. Use
 `inspect_url()` for that path.
+
+## Declarative HTTP/JSON
+
+When an API has a precise trusted contract but no discoverable OpenAPI/MCP/OPTIMADE schema, use a
+locally declared `ToolSpec` and bind it with `router.add_http_tool(...)`. This preserves the
+normal parameter, field, validation, policy, provenance, and secret-separation boundaries without
+inventing a second REST-specific schema language.
+
