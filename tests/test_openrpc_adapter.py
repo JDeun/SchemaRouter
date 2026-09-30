@@ -198,6 +198,7 @@ async def test_openrpc_positional_params_fail_on_ambiguous_optional_gap() -> Non
             kind="openrpc",
             base_url="https://rpc.example/rpc",
             http_client=client,
+            policy=ExecutionPolicy(allow_unclassified_remote=True),
         )
         tool = router.registry.get("materials_rpc")
         endpoint = tool.endpoint("materials.get")
