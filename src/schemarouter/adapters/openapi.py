@@ -1510,8 +1510,8 @@ class OpenAPIRemoteInvoker:
                             f"{response.status_code}"
                         ) from exc
                     raise InvocationUnavailableError(
-                        f"{self.protocol_label} access path is temporarily unavailable with HTTP status "
-                        f"{response.status_code}"
+                        f"{self.protocol_label} access path is temporarily unavailable "
+                        f"with HTTP status {response.status_code}"
                     ) from exc
 
                 content_length = response.headers.get("content-length")
