@@ -118,3 +118,27 @@ def test_a_better_scoring_destructive_route_still_wins():
 @pytest.mark.parametrize("structural", [False, True])
 def test_both_profiles_agree_on_this(structural):
     assert _route_ids(_router(structural), UNMATCHED)[0] == "zz_reports.read_logs"
+
+
+def test_safety_outranks_structural_specificity(monkeypatch):
+    """The guarantee must not depend on specificity happening to tie.
+
+    The first version of this fix placed the safety terms AFTER `-specificity`, so it
+    only held when specificity tied. It passed locally, where these two routes score
+    the same specificity, and failed on CI's minimum-dependencies job, where they did
+    not. Forcing them apart pins the ordering without depending on an environment.
+    """
+    router = _router(structural=True)
+    destructive_wins = {
+        "aa_admin.drop_database": 1.0,
+        "zz_reports.read_logs": 0.0,
+    }
+    monkeypatch.setattr(
+        router.planner,
+        "_structural_specificity_by_route",
+        lambda: destructive_wins,
+    )
+    ids = _route_ids(router, UNMATCHED)
+    assert ids[0] == "zz_reports.read_logs", (
+        "specificity가 파괴적 경로를 앞세워도 안전성 항이 이겨야 한다"
+    )
