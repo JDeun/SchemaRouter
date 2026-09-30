@@ -188,3 +188,28 @@ def test_smollm3_qualification_reuses_the_exact_canonical_b2_runtime_revision():
 
     assert MODEL_NAME == ROSTER[0]
     assert MODEL_REVISION == ROSTER_REVISIONS[ROSTER[0]]
+
+
+def test_selector_reports_recomputed_rates_not_untrusted_evidence_summary(tmp_path) -> None:
+    corpus = build_qualification_corpus("a" * 40)
+    shard_dir = tmp_path / "first"
+    shard_dir.mkdir()
+    _write_shards(shard_dir, corpus, ROSTER[0], passing=True)
+    evidence = aggregate(corpus, candidate=ROSTER[0], shard_dir=shard_dir)
+    evidence["rates"] = {
+        "envelope_valid_rate": 0.0,
+        "tool_call_rate": 0.0,
+        "grounded_fact_rate": 0.0,
+    }
+
+    evidence_dir = tmp_path / "evidence"
+    evidence_dir.mkdir()
+    _write_evidence(evidence_dir, evidence, 0)
+
+    result = select(corpus, evidence_dir=evidence_dir)
+    assert result["selected_runtime"] == ROSTER[0]
+    assert result["rates_by_candidate"][ROSTER[0]] == {
+        "envelope_valid_rate": 1.0,
+        "tool_call_rate": 1.0,
+        "grounded_fact_rate": 1.0,
+    }
