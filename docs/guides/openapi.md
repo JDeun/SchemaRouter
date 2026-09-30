@@ -274,6 +274,29 @@ The current bounded resolver fails closed for:
 Dynamic JSON Schema scope is excluded because rewriting it statically as an ordinary
 anchor could change validation semantics.
 
+## Nested response-field discovery
+
+OpenAPI response objects can expose useful fields below an envelope. SchemaRouter preserves the
+existing top-level field and also exposes declared nested **object** properties with a deterministic
+dotted field identity.
+
+For example, a response schema shaped like:
+
+```text
+data
+  band_gap
+  density
+```
+
+exposes `data`, `data.band_gap`, and `data.density`. The nested fields retain their declared
+JSON Schema, description, unit metadata, and source path. Their projected result key is the dotted
+field name, so selecting a nested field does not collide with selecting its parent object.
+
+Recursive local references are bounded and cycle-safe. This first delivery intentionally does not
+descend through arrays of objects: a schema such as `data[].band_gap` keeps `data` as the
+planner-visible field until record-preserving array-item projection semantics are implemented.
+SchemaRouter never guesses array wildcard behavior from payloads.
+
 ## Current common subset
 
 Supported paths include:
