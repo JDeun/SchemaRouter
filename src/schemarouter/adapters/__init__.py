@@ -4,7 +4,6 @@ from ..openapi_compatibility import (
     analyze_openapi_compatibility,
 )
 from .base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
-from .odata import ODataRemoteInvoker, ODataSourceAdapter, tool_from_odata_metadata
 from .mcp import (
     DefaultMCPClientFactory,
     MCPClientFactory,
@@ -12,6 +11,7 @@ from .mcp import (
     inspect_mcp_url,
     tool_from_mcp,
 )
+from .odata import ODataRemoteInvoker, ODataSourceAdapter, tool_from_odata_metadata
 from .openapi import OpenAPIRemoteInvoker, resolve_openapi_base_url, tool_from_openapi
 from .optimade import OPTIMADERemoteInvoker, OPTIMADESourceAdapter
 from .plugins import (
