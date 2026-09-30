@@ -439,7 +439,7 @@ def test_base_registry_protocol_does_not_require_compare_and_swap() -> None:
 
 
 
-def test_inmemory_cas_detects_metadata_only_concurrent_write_even_when_fingerprint_matches(\n    ) -> None:\n    reg = InMemoryRegistry()
+def test_inmemory_cas_detects_metadata_only_concurrent_write_even_when_fingerprint_matches(\n) -> None:\n    reg = InMemoryRegistry()
     original = ToolSpec(
         name="demo",
         endpoints=[EndpointSpec(name="run")],
