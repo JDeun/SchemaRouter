@@ -2,11 +2,13 @@
 
 SchemaRouter treats external protocols as **compilers into one canonical execution model**.
 
-```text
-OpenAPI ─┐
-OPTIMADE ├─> AdapterRegistry ─> ToolSpec / EndpointSpec ─> Planner ─> Executor
-MCP ─────┤
-Custom ──┘
+```mermaid
+flowchart LR
+    O1["OpenAPI"] --> AR["AdapterRegistry"]
+    O2["OPTIMADE"] --> AR
+    O3["MCP"] --> AR
+    O4["Custom"] --> AR
+    AR --> TS["ToolSpec / EndpointSpec"] --> PL["Planner"] --> EX["Executor"]
 ```
 
 The planner does not need an `if optimade` or `if graphql` branch. Protocol-specific discovery,

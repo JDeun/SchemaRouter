@@ -32,11 +32,11 @@ The proposal contains:
 Every accepted endpoint, parameter, and field must carry an evidence quote that appears in the
 fetched document.
 
-```text
-model proposal
- -> exact quote present?
-    -> yes: candidate survives
-    -> no: candidate is rejected
+```mermaid
+flowchart LR
+    P["model proposal"] --> Q{"exact quote present?"}
+    Q -- yes --> S["candidate survives"]
+    Q -- no --> R["candidate is rejected"]
 ```
 
 Scripts, styles, noscript content, and SVG are removed before the model sees the document text.
