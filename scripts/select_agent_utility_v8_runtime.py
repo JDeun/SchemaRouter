@@ -15,6 +15,7 @@ from scripts.qualify_agent_utility_runtime import (  # noqa: E402
     ROSTER,
     roster_exhausted,
     select_runtime,
+    validate_qualification_evidence,
 )
 from scripts.validate_agent_utility_v8_qualification_corpus import (  # noqa: E402
     validate_qualification_corpus,
@@ -37,6 +38,14 @@ def select(
             raise ValueError(f"duplicate candidate evidence: {candidate}")
         evidence_by_candidate[candidate] = evidence
 
+    validated_rates = {
+        candidate: validate_qualification_evidence(
+            candidate,
+            evidence,
+            corpus,
+        )
+        for candidate, evidence in evidence_by_candidate.items()
+    }
     selected = select_runtime(
         evidence_by_candidate,
         qualification_corpus=corpus,
@@ -62,9 +71,9 @@ def select(
         "roster_exhausted": exhausted,
         "terminal": selected is not None or exhausted,
         "rates_by_candidate": {
-            name: evidence_by_candidate[name].get("rates")
+            name: validated_rates[name]
             for name in ROSTER
-            if name in evidence_by_candidate
+            if name in validated_rates
         },
     }
 
