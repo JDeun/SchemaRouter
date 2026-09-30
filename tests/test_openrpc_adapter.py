@@ -7,6 +7,7 @@ import pytest
 
 from schemarouter import (
     ExecutionPlan,
+    ExecutionPolicy,
     SchemaRouter,
     ToolCall,
 )
@@ -125,6 +126,7 @@ async def test_openrpc_url_discovery_and_jsonrpc_execution() -> None:
             kind="openrpc",
             trusted_headers={"Authorization": f"Bearer {token}"},
             http_client=client,
+            policy=ExecutionPolicy(allow_unclassified_remote=True),
         )
         tool = router.registry.get("materials_rpc")
         endpoint = tool.endpoint("materials.get")
