@@ -99,7 +99,11 @@ def test_confirmation_queries_have_no_exact_dev_overlap() -> None:
 
 def test_confirmation_catalogs_are_nested_and_auxiliary_ids_are_fresh() -> None:
     dev_routes = _routes(dev_catalog.build_registry(500))
-    canonical = _routes(dev_catalog.build_registry(100))
+    canonical = {
+        f"{tool.key}.{endpoint.name}"
+        for tool in dev_catalog._core_tools()  # noqa: SLF001
+        for endpoint in tool.endpoints
+    }
     prior: set[str] | None = None
 
     for size in CONFIRMATION_CATALOG_SIZES:
