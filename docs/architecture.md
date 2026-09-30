@@ -84,13 +84,13 @@ and result projection explicit contracts.
 ### 2. The research harness flattened endpoint identity
 
 The research artifact conventionally used one search endpoint per tool. Production OpenAPI and MCP
-servers expose many operations. `ToolSpec` therefore owns multiple first-class `EndpointSpec`
+servers expose many operations, so `ToolSpec` owns multiple first-class `EndpointSpec`
 objects.
 
 ### 3. Candidate indexing must not change planner recall
 
 Large registries should not require scoring every endpoint on every request, but approximate
-prefilters can silently remove valid tools. SchemaRouter therefore indexes every input that can
+prefilters can silently remove valid tools. SchemaRouter indexes every input that can
 produce a positive deterministic score under the current scorer and still runs the unchanged
 scoring function on the resulting candidates. The index is cached by registry version and can be
 disabled for exhaustive parity checks.
@@ -103,7 +103,7 @@ that surface. This reduces upstream bytes/latency and keeps unrelated values out
 context.
 
 The research results also showed that over-aggressive projection can remove answer-critical
-information. The boundary is therefore explicit:
+information, so the boundary is explicit:
 
 - clear query-to-field match -> select the matched fields plus required identifiers;
 - explicit server projection support -> push only those planned fields into the upstream request;
@@ -143,7 +143,7 @@ other sensitive runtime headers cannot be supplied through tool arguments.
 by the runtime invoker. OpenAPI document redirects are followed manually and only within the
 original origin, preventing schema-fetch credentials from crossing origins. Cross-document
 `$ref` retrieval is disabled by default; when explicitly enabled, it reuses schema headers only for
-same-origin referenced documents and remains bounded by redirect/depth/document/byte limits.
+same-origin referenced documents and stays within redirect/depth/document/byte limits.
 
 ### 9. OpenAPI documents can point at another host
 
@@ -157,7 +157,7 @@ path.
 ### 10. Declared parameter names are not enough
 
 The executor validates the actual argument object against JSON Schema immediately before
-invocation. Type, enum, range, required-property, pattern, and other supported constraints therefore
+invocation. Type, enum, range, required-property, pattern, and other supported constraints
 cannot be bypassed by manually constructing a `ToolCall`.
 
 Raw structured tool output is validated before projection, so field projection cannot hide an
@@ -184,7 +184,7 @@ and field must cite an exact quote found in the fetched document. Script/style c
 before model analysis.
 
 `approve_proposal()` is a separate authority transition with grounding thresholds, explicit API
-base URL, and mutation opt-in. Runtime execution policy remains an independent second gate.
+base URL, and mutation opt-in. Runtime execution policy is an independent second gate.
 
 ### 13. Protocol diversity must not leak into the planner
 
@@ -199,7 +199,7 @@ transport time. The executor still owns schema, policy, retry, and binding-drift
 `DecisionBackend` receives a finite set of locally generated option IDs. Unknown IDs, duplicate
 selections, out-of-range/non-finite scores, and malformed results fail closed. Jev / TypeSafe System
 One is an optional provider adapter; low-confidence valid choices may abstain and deterministic
-fallback remains locally controlled.
+fallback stays locally controlled.
 
 Decision providers never construct `ToolCall` objects and never receive execution credentials or
 authority. For bounded field selection, providers receive only declared non-identifier output
@@ -218,7 +218,7 @@ JSON/text decoding.
 
 ### 16. Unsupported OpenAPI semantics must be visible
 
-OpenAPI parsing success does not imply perfect semantic fidelity. Imported OpenAPI tools therefore
+OpenAPI parsing success does not imply perfect semantic fidelity, so imported OpenAPI tools
 carry a machine-readable compatibility report that marks partial or unsupported constructs. Same-
 origin cross-document references can be explicitly bundled under bounded limits; unresolved external
 references, `$id` rebasing, non-JSON-Pointer anchors, composition, cookie parameters, non-JSON
@@ -238,13 +238,13 @@ decisions.
 
 ### 19. Execution budgets must account for retries
 
-One logical call may produce multiple real invoker attempts. Budgets therefore count logical calls,
+One logical call may produce multiple real invoker attempts, so budgets count logical calls,
 total attempts, remote attempts, wall-clock execution, per-tool quotas, and application-defined cost
 units separately. Retries consume attempt/remote/cost budget before invocation.
 
 ### 20. Observability must not weaken payload privacy
 
-The OpenTelemetry integration consumes typed RunEvents but intentionally exports only structural
+The OpenTelemetry integration consumes typed RunEvents but exports only structural
 attributes. Argument/result values, RunConfig metadata, tags, and exception messages are omitted.
 
 ### 21. Installed adapter plugins are executable code
@@ -271,14 +271,14 @@ fail closed.
 
 The trace database preserves the privacy level of the source event stream: default redacted events
 remain structural, while an explicit `include_payloads=True` choice persists payload-bearing data
-and therefore creates an application-managed sensitive-data store.
+and creates an application-managed sensitive-data store.
 
 ### 24. Schema drift needs explanation without compatibility bypass
 
 Exact fingerprints remain the execution boundary, but a bare mismatch is operationally opaque.
 `compare_endpoint_specs()` and `compare_tool_specs()` therefore classify trusted snapshot changes
-as identical, compatible, breaking, or security-review changes. The classifier is deliberately
-conservative for JSON Schema.
+as identical, compatible, breaking, or security-review changes. The classifier is conservative
+for JSON Schema.
 
 Compatibility reports are diagnostic only. They never permit a stale `ToolCall` or invoker binding
 to execute without replanning/rebinding against the current fingerprint.
@@ -304,10 +304,10 @@ private model reasoning.
 ### 27. Descriptive metadata must not become hidden execution authority
 
 Adversarial review found that adapter/runtime behavior can accidentally depend on values stored in
-ordinary `metadata`, while fingerprints intentionally exclude that bag. If execution or policy
+ordinary `metadata`, while fingerprints exclude that bag. If execution or policy
 reads such a value, the runtime meaning can change without producing schema/binding drift.
 
-SchemaRouter therefore separates:
+SchemaRouter separates:
 
 - ordinary `metadata`: descriptive/inspection data only;
 - `EndpointSpec.execution_metadata`: fingerprinted endpoint runtime semantics;
@@ -339,7 +339,7 @@ One logical provider can expose multiple transport/access contracts, and a reque
 semantically compatible alternative provider. Availability fallback is useful, but open-ended
 runtime search would reintroduce agent/workflow semantics and can silently change provenance.
 
-SchemaRouter therefore treats provider redundancy as a bounded execution contract:
+SchemaRouter treats provider redundancy as a bounded execution contract:
 
 - `ToolSpec.provider` identifies the logical information provider;
 - `ToolSpec.access_mode` identifies one access path;
@@ -359,7 +359,7 @@ asking a model to guess.
 ### 30. Availability memory must recover instead of becoming a permanent blacklist
 
 Passive transport failures can make a route temporarily unattractive, but one outage must not
-permanently remove a capability. SchemaRouter therefore uses bounded cooldown state: after timeout,
+permanently remove a capability, so SchemaRouter uses bounded cooldown state: after timeout,
 connection failure, HTTP 429, or transient 5xx exhaustion, an access path can be skipped for a
 finite interval and automatically becomes eligible again when the cooldown expires.
 
@@ -372,7 +372,7 @@ data retrieval into an implicit probe.
 ### 31. Upstream field projection must be explicit, not guessed
 
 Local result projection alone protects LLM context, but it does not reduce provider bandwidth or
-latency if the upstream API still returns a full record. `ServerProjectionSpec` therefore makes
+latency if the upstream API still returns a full record. `ServerProjectionSpec` makes
 server-side field selection a fingerprinted endpoint contract.
 
 A trusted adapter may map planned logical fields to a declared query selector such as
@@ -414,7 +414,7 @@ performs raw-output validation and final local projection.
     approval callbacks, execution hooks, invocations, and retry backoff are bounded by the remaining
     wall-clock budget. Synchronous trusted callbacks are checked immediately after returning.
 24. Adapter plugins are never auto-imported from discovery alone.
-25. OpenTelemetry export omits payload values and exception messages by design.
+25. OpenTelemetry export omits payload values and exception messages.
 26. OpenAPI compatibility limitations are surfaced explicitly rather than silently guessed.
 27. Candidate indexing may reduce scorer work but must preserve exhaustive deterministic planner recall.
 28. Execution hooks receive detached snapshots and cannot transform calls or results.

@@ -89,7 +89,7 @@ For direct `StateGraph` integration, see [LangGraph](langgraph.md).
 ## Packaging
 
 The bridge currently stays in the main distribution behind the `langchain` extra. A separate
-`langchain-schemarouter` package is intentionally deferred until an independent release cadence,
+`langchain-schemarouter` package is deferred until an independent release cadence,
 material dependency pressure, or an upstream ecosystem requirement justifies the split.
 
 See [Compatibility testing](../compatibility.md) for the supported range and maintenance policy.

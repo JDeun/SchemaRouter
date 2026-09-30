@@ -1,6 +1,6 @@
 # Human-readable documentation
 
-A human-readable API page is weaker evidence than OpenAPI or MCP. SchemaRouter therefore treats it
+A human-readable API page is weaker evidence than OpenAPI or MCP, so SchemaRouter treats it
 as a **proposal source**, not an executable schema source.
 
 ## Inspect a documentation page

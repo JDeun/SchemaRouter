@@ -168,7 +168,7 @@ async for event in trace_run_events(
     ...
 ```
 
-The exporter intentionally omits payload values, RunConfig metadata, tags, and exception messages
+The exporter omits payload values, RunConfig metadata, tags, and exception messages
 even when `include_payloads=True`. See [OpenTelemetry](../integrations/opentelemetry.md).
 
 
@@ -195,7 +195,7 @@ Replay reads historical events only and never re-executes tools. See
 
 ## Schema planning vs execution-ready planning
 
-`SchemaRouter.plan()` and `aplan()` remain schema-oriented. They answer which registered
+`SchemaRouter.plan()` and `aplan()` are schema-oriented. They answer which registered
 contracts can satisfy the request while respecting the configured access-health predicate, but they
 do not require a trusted invoker to be bound at that moment. This is useful for inspection,
 authoring, and pre-binding planning workflows.
@@ -213,7 +213,7 @@ results = router.invoke(request)
 have a trusted invoker bound to the current tool fingerprint. `invoke`, `ainvoke`, `stream`,
 `astream`, batches, and typed event streams use this execution-ready planning path automatically.
 
-Therefore a schema-valid but currently unbound preferred route can remain visible in
+A schema-valid but currently unbound preferred route can still show up in
 `router.plan()`, while the live execution path chooses another healthy, bound route that can
 provide the same requested fields.
 

@@ -90,7 +90,7 @@ Use `--json` on any inspection command for machine-readable output.
 
 ## What the CLI does not do
 
-Inspection is deliberately separate from execution.
+Inspection is separate from execution.
 
 - it does not call a registered API;
 - it does not approve proposals;
@@ -213,7 +213,7 @@ The dashboard contains capability counts, adapter/source provenance, endpoint me
 side-effect classification, schema fingerprints, persisted binding state, recent run summaries, and
 error counts. The capability table is filterable in the browser.
 
-It is deliberately a static export:
+It is a static export:
 
 - no server dependency;
 - no external JavaScript;
@@ -265,7 +265,7 @@ python examples/inspection_dashboard.py \
   --output /tmp/schemarouter-dashboard.html
 ```
 
-The architecture remains:
+The architecture is:
 
 ```text
 SQLiteRegistry / SQLiteRunTraceStore       live SchemaRouter

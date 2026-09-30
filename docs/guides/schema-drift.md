@@ -25,7 +25,7 @@ Compatibility values are:
 - `security_review` — side-effect or destructive semantics changed and local authority must be
   reviewed.
 
-The implementation is deliberately conservative. Arbitrary JSON Schema compatibility is difficult
+The implementation is conservative. Arbitrary JSON Schema compatibility is difficult
 to prove, so unknown schema changes are classified as breaking instead of guessed safe.
 
 ## Compare complete tools
@@ -80,7 +80,7 @@ transition; the application must re-import/review/rebind under trusted local pol
 
 ## Important: compatible does not mean executable
 
-This remains invalid:
+This is still invalid:
 
 ```text
 old plan fingerprint

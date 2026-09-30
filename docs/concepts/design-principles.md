@@ -1,7 +1,7 @@
 # Design principles
 
-SchemaRouter is built around a narrow idea: **the user's data need is primary; tools, providers,
-and transports are replaceable implementation paths beneath that need.**
+SchemaRouter is built around a narrow idea: the user's data need is primary; tools, providers,
+and transports are replaceable implementation paths beneath that need.
 
 This page collects the principles that should guide new runtime features, adapters, and integrations.
 
@@ -31,7 +31,7 @@ Materials Project
   -> Python client
 ```
 
-SchemaRouter therefore separates:
+SchemaRouter separates:
 
 - `provider`: who owns or supplies the information;
 - `access_mode`: how this contract reaches it;
@@ -123,10 +123,10 @@ validation.
 
 ## 9. Models may assist selection, not create authority
 
-Optional hosted or local decision backends operate over finite locally registered candidates. They
+Optional hosted or local decision backends operate over finite, locally registered candidates. They
 cannot invent tools, schemas, credentials, health state, mutation authority, or new execution loops.
 
-SchemaRouter is therefore a bounded planning/execution layer, not another agent framework.
+SchemaRouter is a bounded planning/execution layer, not another agent framework.
 
 ## 10. Fail closed where equivalence cannot be proven
 

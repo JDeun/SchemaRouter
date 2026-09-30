@@ -154,7 +154,7 @@ receiving a permanent SchemaRouter core class by default.
 
 ## Promotion workflow for a new model
 
-Compatibility and model promotion are deliberately separate:
+Compatibility and model promotion stay separate:
 
 1. pin repository/runtime/model revisions; observed registry revisions are discovery provenance only;
 2. connect through System One, plugin, or callable without changing planning authority;

@@ -1,7 +1,7 @@
 # Consumer acceptance validation
 
 SchemaRouter keeps a small end-to-end acceptance suite in
-`scripts/consumer_acceptance.py`. It is deliberately separate from the unit and adapter contract
+`scripts/consumer_acceptance.py`. It is separate from the unit and adapter contract
 tests: the script uses only the public package surface and is designed to run against an installed
 wheel or sdist as if it were a downstream application.
 
@@ -41,10 +41,10 @@ LlamaIndex runnable examples. It then exercises the installed inspection CLI aga
 registry/trace artifacts created by the end-to-end example, validates the emitted JSON, and exports
 a dashboard through the installed console script. This catches packaging-metadata,
 optional-dependency, and CLI-entry-point regressions that editable installs cannot detect. Laya
-remains in its dedicated CPU integration job because its PyTorch dependency is intentionally handled
+stays in its dedicated CPU integration job because its PyTorch dependency is handled
 separately.
 
-Public OpenAPI and OPTIMADE compatibility smokes remain separate because they depend on external
+Public OpenAPI and OPTIMADE compatibility smokes stay separate because they depend on external
 services. Those checks install the current source tree non-editably, run `pip check`, call the
-public services, and retain machine-readable artifacts. They are intentionally not treated as
+public services, and retain machine-readable artifacts. They are not treated as
 deterministic package acceptance gates.

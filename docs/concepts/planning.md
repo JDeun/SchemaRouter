@@ -64,7 +64,7 @@ coverage, `uncovered` remains explicit and the plan includes an `uncovered seman
 requirements` warning.
 
 For explicit multi-call plans, a bounded decision backend may prioritize candidates but does not
-delete the deterministic schema-recalled pool. Final call selection remains constrained by
+delete the deterministic schema-recalled pool. Final call selection is constrained by
 complementary semantic-field coverage and the existing `max_calls` authority boundary. This prevents
 two redundant access paths for the same field from consuming all call slots while another required
 field still has an available route.
@@ -147,7 +147,7 @@ Each fallback is a complete `ToolCall` compiled against its own schema and tool 
 Same-provider access paths are ordered before candidates from another provider. Field aliases are
 used to prove semantic compatibility when access paths expose different field names.
 
-Fallback is not model-driven replanning and remains disabled by default. See
+Fallback is not model-driven replanning and is disabled by default. See
 [Provider-aware fallback](../guides/provider-fallback.md).
 
 
@@ -180,7 +180,7 @@ evidence that the registry does not declare.
 
 ### Per-field evidence requirements
 
-Global `PlanRequest.evidence` intentionally applies to the whole selected answer surface. For a
+Global `PlanRequest.evidence` applies to the whole selected answer surface. For a
 heterogeneous request, callers can instead attach evidence to one semantic field without imposing it
 on unrelated fields:
 
@@ -242,5 +242,5 @@ provider A -> {"formula": "Si"}
 provider B -> {"chemical_formula": "Si"}
 ```
 
-The value `"Si"` is not transformed. Ambiguous alias relationships remain unbound, required
-parameters remain missing, and planning warnings identify the ambiguous input key.
+The value `"Si"` is not transformed. Ambiguous alias relationships stay unbound, required
+parameters stay missing, and planning warnings identify the ambiguous input key.

@@ -3,7 +3,7 @@
 SchemaRouter can use any provider that is compatible with the typed System One decision
 contract through a single bounded backend.
 
-This integration is intentionally **model-neutral**. Hosted Jev, self-hosted decision models,
+This integration is model-neutral. Hosted Jev, self-hosted decision models,
 and future compatible runtimes can share the same SchemaRouter adapter when they expose the
 compatible System One client contract.
 
@@ -61,7 +61,7 @@ SchemaRouter still:
 - constructs and validates the execution plan locally;
 - retains policy, schema, fingerprint, and execution authority.
 
-A provider therefore cannot create a tool, endpoint, field, argument, or permission.
+A provider cannot create a tool, endpoint, field, argument, or permission.
 
 ## Direct Laya vs System One wire compatibility
 

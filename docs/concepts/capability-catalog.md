@@ -154,10 +154,10 @@ qualifiers:
   phase: alpha
 ```
 
-This matters because two providers exposing a field named `elastic_modulus` are not automatically
+Two providers exposing a field named `elastic_modulus` are not automatically
 interchangeable.
 
-Automatic cross-provider fallback remains conservative:
+Automatic cross-provider fallback is conservative:
 
 ```text
 same semantic field

@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all **88** machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all 88 machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [Prior-art roadmap](prior-art-roadmap.md) — cross-session literature/work-item map and experiment-order guardrail;
@@ -52,21 +52,21 @@ The corrected frozen benchmark contains 23 tasks across 20 / 50 / 100 / 250 endp
 
 | Metric | Result |
 | --- | ---: |
-| Required-route Recall@1 | **65.52–68.97% by catalog** |
-| Recall@3 | **96.55%** |
-| Recall@5 | **100%** |
-| Recall@10 | **100%** |
-| All-required task coverage@5 | **100%** |
-| MRR | **0.80172–0.81897 by catalog** |
+| Required-route Recall@1 | 65.52–68.97% by catalog |
+| Recall@3 | 96.55% |
+| Recall@5 | 100% |
+| Recall@10 | 100% |
+| All-required task coverage@5 | 100% |
+| MRR | 0.80172–0.81897 by catalog |
 
 Mean Top-5 serialized schema context relative to FULL:
 
 | Catalog | Top-5 / FULL |
 | --- | ---: |
-| 20 endpoints | **26.69%** |
-| 50 endpoints | **11.44%** |
-| 100 endpoints | **5.872%** |
-| 250 endpoints | **2.383%** |
+| 20 endpoints | 26.69% |
+| 50 endpoints | 11.44% |
+| 100 endpoints | 5.872% |
+| 250 endpoints | 2.383% |
 
 This is the decisive reason the research objective changed. A Top-1-only score makes multi-tool
 retrieval look artificially poor, while a compact Top-K set preserves every required capability on
@@ -84,15 +84,15 @@ Canonical B1 workflow `36529108855` completed all 30 frozen micro-shards and exa
 
 | Condition | Task pass | Mean tool-schema tokens | Schema tokens vs FULL |
 | --- | ---: | ---: | ---: |
-| FULL | **68.48%** | 24,269.6 | 100.00% |
-| SR-3 | **82.61%** | 800.6 | 3.30% |
-| **SR-5** | **91.30%** | 1,315.9 | **5.42%** |
-| SR-10 | **81.52%** | 2,476.8 | 10.21% |
-| SR-PROGRESSIVE | **82.61%** | 2,986.9 | 12.31% |
-| ORACLE | **86.96%** | 441.3 | 1.82% |
+| FULL | 68.48% | 24,269.6 | 100.00% |
+| SR-3 | 82.61% | 800.6 | 3.30% |
+| **SR-5** | 91.30% | 1,315.9 | **5.42%** |
+| SR-10 | 81.52% | 2,476.8 | 10.21% |
+| SR-PROGRESSIVE | 82.61% | 2,986.9 | 12.31% |
+| ORACLE | 86.96% | 441.3 | 1.82% |
 
 SR-5 preserved 100% required-route retrieval recall on this controlled surface, improved task pass
-by **+22.83pp** versus FULL, and produced **0** unauthorized destructive executions. The
+by +22.83pp versus FULL, and produced 0 unauthorized destructive executions. The
 task-clustered bootstrap interval for SR-5 minus FULL was **+9.78pp to +36.96pp**. This remains
 mechanism/sanity evidence, not population-level non-inferiority.
 
@@ -115,10 +115,10 @@ The earlier duplicate attempt `36641753066` is noncanonical and its partial rows
 
 A separately preregistered strong-agent K3-vs-K5 gate completed in run `36670280971`:
 
-- STRUCT-FIXED-3 task pass: **82.61%**;
-- STRUCT-FIXED-5 task pass: **85.87%**;
-- paired K3-K5 delta: **-3.26pp**;
-- preregistered floor: **-2pp**;
+- STRUCT-FIXED-3 task pass: 82.61%;
+- STRUCT-FIXED-5 task pass: 85.87%;
+- paired K3-K5 delta: -3.26pp;
+- preregistered floor: -2pp;
 - bootstrap 95% interval: **[-13.04pp, +3.26pp]**;
 - K3 used fewer tool-schema tokens;
 - execution-policy integrity passed and unauthorized destructive executions were 0.
@@ -152,14 +152,14 @@ question. Its runtime qualification is instrument evidence and must not be mixed
 capability-retrieval claim hierarchy.
 
 The active 0.14 promotion criteria remain:
-- required-tool-set Recall >= **97%** for the effective candidate budget;
+- required-tool-set Recall >= 97% for the effective candidate budget;
 - task pass rate >= FULL minus **2 percentage points**;
-- tool-schema tokens <= **40%** of FULL;
+- tool-schema tokens <= 40% of FULL;
 - total input tokens < FULL;
-- unauthorized destructive executions = **0**.
+- unauthorized destructive executions = 0.
 
 
-This page is intentionally conservative: development-set success is not presented as production
+This page is conservative: development-set success is not presented as production
 validation, and consumed fresh-confirmation corpora are never reused for tuning.
 
 ## Historical 0.11–0.13 operation-routing target
@@ -189,15 +189,15 @@ The strongest executable development candidate in the closed 0.11 architecture-s
 | Frozen zero-overlap fresh confirmation | 84.81% | 90.45% | 100% | 8.49% | 278.37 ms |
 
 The second row is decisive. The unchanged candidate failed independent request-surface shift, so it
-was **not promoted**. Calibration and blind-final evidence were intentionally left unconsumed.
+was **not promoted**. Calibration and blind-final evidence were left unconsumed.
 
-The closed cycle therefore does **not** claim that SchemaRouter has validated the 85/97/100/1 +
+So the closed cycle does **not** claim that SchemaRouter has validated the 85/97/100/1 +
 250 ms production target under independent surface shift.
 
 ## What the experiments indicate
 
 The frozen BGE-M3 registered-route ranker reaches about **88.45% raw top-1** on canonical DEV. Late
-experiments therefore suggest that closed-set ranking is no longer the main blocker.
+experiments suggest that closed-set ranking is no longer the main blocker.
 
 The harder problem is open-set **capability membership**:
 
@@ -212,10 +212,10 @@ were all insufficient to establish the full independent target.
 
 The #259 BGE-M3 reference profile remains useful for safety-oriented comparison:
 
-- supported exact: **83.77%**;
-- near-domain unsupported rejection: **98.96%**;
-- false-route: **0.93%**;
-- planner p95: approximately **134.95 ms**.
+- supported exact: 83.77%;
+- near-domain unsupported rejection: 98.96%;
+- false-route: 0.93%;
+- planner p95: approximately 134.95 ms.
 
 It is not a production-target pass because supported exact routing remains below 85%.
 
@@ -232,13 +232,13 @@ The learned synthetic veto, however, was far too conservative:
 
 | Surface | Exact | Near reject | OOD | False-route | Correct raw-winner retention | p95 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Canonical DEV (1,800) | **5.03%** | **100%** | **100%** | **0%** | **5.69%** | **196.93 ms** |
-| Registration holdout (228) | **2.08%** | **100%** | **100%** | **0%** | **2.46%** | **192.85 ms** |
+| Canonical DEV (1,800) | 5.03% | 100% | 100% | 0% | 5.69% | 196.93 ms |
+| Registration holdout (228) | 2.08% | 100% | 100% | 0% | 2.46% | 192.85 ms |
 
 The registration holdout contained previously unseen native/OpenAPI/MCP tool identities, opaque
 endpoint names, empty operation aliases and variable endpoint counts.
 
-This candidate is therefore **terminally rejected** under its preregistered stopping rule. It may not
+This candidate is **terminally rejected** under its preregistered stopping rule. It may not
 be repaired using canonical/holdout labels.
 
 The useful result is architectural rather than a promoted quality method: provider-neutral typed
@@ -264,13 +264,13 @@ DEV result:
 
 | Metric | Result |
 | --- | ---: |
-| Supported exact | **97.22%** |
-| Raw supported tool accuracy | **99.54%** |
-| Near-domain unsupported rejection | **70.37%** |
-| OOD rejection | **95.83%** |
-| False-route | **25.99%** |
-| p95 | **179.53 ms** |
-| Authority / execution errors | **0 / 0** |
+| Supported exact | 97.22% |
+| Raw supported tool accuracy | 99.54% |
+| Near-domain unsupported rejection | 70.37% |
+| OOD rejection | 95.83% |
+| False-route | 25.99% |
+| p95 | 179.53 ms |
+| Authority / execution errors | 0 / 0 |
 
 The result shows that typed query-side filtering can preserve supported routing and runtime very
 well, but a high-precision lexical frame does not cover enough natural-language operation intent to
@@ -286,15 +286,15 @@ signal without route-specific retraining.
 
 | Experiment | Supported exact | Near reject | OOD | False-route | Raw exact | Raw tool | p95 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| #349 flat semantic action ontology | **44.91%** | **56.48%** | **100%** | **32.64%** | 77.31% | 94.44% | 197.55 ms |
-| #354 hierarchical capability ontology | **30.42%** | **68.65%** | **88.89%** | **26.85%** | **85.42%** | **100%** | 164.33 ms |
+| #349 flat semantic action ontology | 44.91% | 56.48% | 100% | 32.64% | 77.31% | 94.44% | 197.55 ms |
+| #354 hierarchical capability ontology | 30.42% | 68.65% | 88.89% | 26.85% | 85.42% | 100% | 164.33 ms |
 
 Both candidates were terminally rejected on their newly frozen DEV surfaces; neither confirmation
 corpus was opened.
 
 The strongest architectural lesson comes from #354: the raw BGE ranker already met the supported
 exact target and selected the correct tool for every supported DEV request, but hard semantic
-ontology filtering destroyed that good signal. The ontology is therefore useful as a structured
+ontology filtering destroyed that good signal. The ontology is useful as a structured
 representation of registered capability semantics, **not as a noisy positive selector with endpoint
 removal authority**.
 
@@ -308,17 +308,17 @@ DEV result:
 
 | Metric | Result |
 | --- | ---: |
-| Supported exact | **96.05%** |
-| Raw supported exact | **96.05%** |
-| Raw supported tool accuracy | **99.56%** |
-| Raw-correct winners vetoed | **0 / 0%** |
-| Near-domain unsupported rejection | **26.59%** |
-| OOD rejection | **84.72%** |
-| False-route | **60.49%** |
-| Veto precision | **99.22%** |
-| Veto recall | **39.51%** |
-| p95 | **236.02 ms** |
-| Authority / execution errors | **0 / 0** |
+| Supported exact | 96.05% |
+| Raw supported exact | 96.05% |
+| Raw supported tool accuracy | 99.56% |
+| Raw-correct winners vetoed | 0 / 0% |
+| Near-domain unsupported rejection | 26.59% |
+| OOD rejection | 84.72% |
+| False-route | 60.49% |
+| Veto precision | 99.22% |
+| Veto recall | 39.51% |
+| p95 | 236.02 ms |
+| Authority / execution errors | 0 / 0 |
 
 This is a useful authority result but not a quality pass. Negative-only ontology evidence can preserve
 supported routing when it is not allowed to choose another endpoint, but requiring exact same-leaf
@@ -337,17 +337,17 @@ DEV result:
 
 | Metric | Result |
 | --- | ---: |
-| Supported exact | **86.40%** |
-| Raw supported exact | **94.30%** |
-| Raw supported tool accuracy | **99.56%** |
-| Near-domain unsupported rejection | **54.76%** |
-| OOD rejection | **97.22%** |
-| False-route | **35.80%** |
-| Veto precision | **91.23%** |
-| Veto recall | **64.20%** |
-| Raw-correct winners vetoed | **18 / 8.37%** |
-| p95 | **249.73 ms** |
-| Positive route switches / authority / execution errors | **0 / 0 / 0** |
+| Supported exact | 86.40% |
+| Raw supported exact | 94.30% |
+| Raw supported tool accuracy | 99.56% |
+| Near-domain unsupported rejection | 54.76% |
+| OOD rejection | 97.22% |
+| False-route | 35.80% |
+| Veto precision | 91.23% |
+| Veto recall | 64.20% |
+| Raw-correct winners vetoed | 18 / 8.37% |
+| p95 | 249.73 ms |
+| Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
 Set-level consensus materially improved recall over #358 (39.51% -> 64.20%), but still missed the
 97% near-domain target and began rejecting correct supported winners. This closes further rule
@@ -373,18 +373,18 @@ DEV result:
 
 | Metric | Result |
 | --- | ---: |
-| Supported exact | **93.42%** |
-| Raw supported exact | **93.86%** |
-| Raw supported tool accuracy | **99.12%** |
-| Near-domain unsupported rejection | **1.59%** |
-| OOD rejection | **2.78%** |
-| False-route | **98.15%** |
-| Veto precision | **85.71%** |
-| Veto recall | **1.85%** |
-| Raw-correct winners vetoed | **1 / 0.47%** |
-| External classifier p95 | **93.15 ms** |
-| End-to-end p95 | **274.52 ms** |
-| Positive route switches / authority / execution errors | **0 / 0 / 0** |
+| Supported exact | 93.42% |
+| Raw supported exact | 93.86% |
+| Raw supported tool accuracy | 99.12% |
+| Near-domain unsupported rejection | 1.59% |
+| OOD rejection | 2.78% |
+| False-route | 98.15% |
+| Veto precision | 85.71% |
+| Veto recall | 1.85% |
+| Raw-correct winners vetoed | 1 / 0.47% |
+| External classifier p95 | 93.15 ms |
+| End-to-end p95 | 274.52 ms |
+| Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
 The architecture remained authority-safe, but the generic OUTSIDE catch-all almost never won
 multiclass normalization against concrete supported capability labels. The exact formulation is
@@ -405,17 +405,17 @@ DEV result:
 
 | Metric | Result |
 | --- | ---: |
-| Supported exact | **0%** |
-| Raw supported exact | **92.54%** |
-| Raw supported tool accuracy | **99.56%** |
-| Near-domain unsupported rejection | **100%** |
-| OOD rejection | **100%** |
-| False-route | **0%** |
-| Entailment / not-entailment decisions | **0 / 552** |
-| Raw-correct winners vetoed | **211 / 100%** |
-| NLI p95 | **56.16 ms** |
-| End-to-end p95 | **254.55 ms** |
-| Positive route switches / authority / execution errors | **0 / 0 / 0** |
+| Supported exact | 0% |
+| Raw supported exact | 92.54% |
+| Raw supported tool accuracy | 99.56% |
+| Near-domain unsupported rejection | 100% |
+| OOD rejection | 100% |
+| False-route | 0% |
+| Entailment / not-entailment decisions | 0 / 552 |
+| Raw-correct winners vetoed | 211 / 100% |
+| NLI p95 | 56.16 ms |
+| End-to-end p95 | 254.55 ms |
+| Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
 The single disjunctive hypothesis collapsed to `not_entailment` for every DEV request, including
 all supported requests. The exact formulation is terminal, and its separately frozen confirmation
@@ -437,18 +437,18 @@ DEV result:
 
 | Metric | Result |
 | --- | ---: |
-| Supported exact | **45.61%** |
-| Raw supported exact | **96.49%** |
-| Raw supported tool accuracy | **100%** |
-| Near-domain unsupported rejection | **71.03%** |
-| OOD rejection | **95.83%** |
-| False-route | **23.46%** |
-| Veto precision | **66.85%** |
-| Veto recall | **76.54%** |
-| Raw-correct winners vetoed | **116 / 52.73%** |
-| NLI batch p95 | **79.53 ms** |
-| End-to-end p95 | **278.09 ms** |
-| Positive route switches / authority / execution errors | **0 / 0 / 0** |
+| Supported exact | 45.61% |
+| Raw supported exact | 96.49% |
+| Raw supported tool accuracy | 100% |
+| Near-domain unsupported rejection | 71.03% |
+| OOD rejection | 95.83% |
+| False-route | 23.46% |
+| Veto precision | 66.85% |
+| Veto recall | 76.54% |
+| Raw-correct winners vetoed | 116 / 52.73% |
+| NLI batch p95 | 79.53 ms |
+| End-to-end p95 | 278.09 ms |
+| Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
 Per-capability decomposition was more informative than one aggregate set hypothesis, but binary
 argmax still over-vetoed supported requests: more than half of raw-correct winners were rejected.
@@ -468,18 +468,18 @@ DEV result:
 
 | Metric | Result |
 | --- | ---: |
-| Supported exact | **67.54%** |
-| Raw supported exact | **95.18%** |
-| Raw supported tool accuracy | **98.25%** |
-| Near-domain unsupported rejection | **55.95%** |
-| OOD rejection | **95.83%** |
-| False-route | **35.19%** |
-| Veto precision | **75.54%** |
-| Veto recall | **64.81%** |
-| Raw-correct winners vetoed | **63 / 29.03%** |
-| NLI batch p95 | **387.87 ms** |
-| End-to-end p95 | **539.92 ms** |
-| Positive route switches / authority / execution errors | **0 / 0 / 0** |
+| Supported exact | 67.54% |
+| Raw supported exact | 95.18% |
+| Raw supported tool accuracy | 98.25% |
+| Near-domain unsupported rejection | 55.95% |
+| OOD rejection | 95.83% |
+| False-route | 35.19% |
+| Veto precision | 75.54% |
+| Veto recall | 64.81% |
+| Raw-correct winners vetoed | 63 / 29.03% |
+| NLI batch p95 | 387.87 ms |
+| End-to-end p95 | 539.92 ms |
+| Positive route switches / authority / execution errors | 0 / 0 / 0 |
 
 The exact formulation is terminal and its frozen confirmation corpus remains **unscored**. Together
 with #371, #374 and #377, this closes the current Horizon NLI semantic-decomposition family.
@@ -513,18 +513,18 @@ Standing production-oriented gates for this sequence are:
 
 | Metric | Gate |
 | --- | ---: |
-| Supported exact route accuracy | >= **85%** |
-| Near-domain unsupported rejection | >= **97%** |
-| OOD rejection | **100%** |
-| False-route rate | <= **1%** |
-| Query p95 | <= **250 ms** |
-| Authority violations / route switches / execution errors | **0 / 0 / 0** |
+| Supported exact route accuracy | >= 85% |
+| Near-domain unsupported rejection | >= 97% |
+| OOD rejection | 100% |
+| False-route rate | <= 1% |
+| Query p95 | <= 250 ms |
+| Authority violations / route switches / execution errors | 0 / 0 / 0 |
 
 ### V6A — schema-derived spherical ADB (#384)
 
 Positive-only schema-derived spherical regions catastrophically failed to transfer from synthetic
-schema surfaces to natural user requests. Raw BGE supported exact remained **91.67%**, but the gate
-rejected every supported DEV request and all **209** raw-correct winners. Near-domain and OOD
+schema surfaces to natural user requests. Raw BGE supported exact remained 91.67%, but the gate
+rejected every supported DEV request and all 209 raw-correct winners. Near-domain and OOD
 rejection were both 100% only because every query lay outside every learned region.
 
 **Decision:** terminal. Confirmation remains unopened.
@@ -537,12 +537,12 @@ synthetic-to-natural surface shift remained: every DEV query still fell outside 
 
 | Metric | Result |
 | --- | ---: |
-| Raw supported exact | **97.37%** |
-| Raw supported tool accuracy | **97.81%** |
-| Gated supported exact | **0%** |
-| Near-domain / OOD rejection | **100% / 100%** |
-| Raw-correct winners vetoed | **222 / 100%** |
-| p95 | **139.91 ms** |
+| Raw supported exact | 97.37% |
+| Raw supported tool accuracy | 97.81% |
+| Gated supported exact | 0% |
+| Near-domain / OOD rejection | 100% / 100% |
+| Raw-correct winners vetoed | 222 / 100% |
+| p95 | 139.91 ms |
 
 **Decision:** terminal. The complement-negative evidence remains reusable; the ellipsoid
 formulation does not. Confirmation remains unopened.
@@ -554,13 +554,13 @@ catastrophic supported vetoes.
 
 | Metric | Result |
 | --- | ---: |
-| Supported exact | **93.86%** |
-| Raw supported tool accuracy | **100%** |
-| Near-domain rejection | **39.29%** |
-| OOD rejection | **56.94%** |
-| False-route | **56.79%** |
-| Raw-correct winner veto | **0%** |
-| p95 | **152.15 ms** |
+| Supported exact | 93.86% |
+| Raw supported tool accuracy | 100% |
+| Near-domain rejection | 39.29% |
+| OOD rejection | 56.94% |
+| False-route | 56.79% |
+| Raw-correct winner veto | 0% |
+| p95 | 152.15 ms |
 
 The result established that relative evidence is safer for supported traffic, but one Gaussian per
 class collapses multimodal operation structure.
@@ -574,14 +574,14 @@ one tied diagonal covariance and a fixed zero log-likelihood-ratio boundary.
 
 | Metric | Result |
 | --- | ---: |
-| Supported exact | **89.91%** |
-| Raw supported tool accuracy | **95.61%** |
-| Near-domain rejection | **39.68%** |
-| OOD rejection | **5.56%** |
-| False-route | **67.90%** |
-| Veto precision / recall | **96.30% / 32.10%** |
-| Raw-correct winner veto | **0%** |
-| p95 | **250.49 ms** |
+| Supported exact | 89.91% |
+| Raw supported tool accuracy | 95.61% |
+| Near-domain rejection | 39.68% |
+| OOD rejection | 5.56% |
+| False-route | 67.90% |
+| Veto precision / recall | 96.30% / 32.10% |
+| Raw-correct winner veto | 0% |
+| p95 | 250.49 ms |
 
 Component structure preserved supported winners but did not fix the core synthetic-to-natural
 membership problem. Natural unsupported/OOD queries were often still more likely under the
@@ -597,16 +597,16 @@ complement negatives, and the pre-existing #279 16-anchor generic background ban
 
 | Metric | Result |
 | --- | ---: |
-| Supported exact | **83.33%** |
-| Raw supported exact | **84.21%** |
-| Raw supported tool accuracy | **94.30%** |
-| Near-domain rejection | **60.71%** |
-| OOD rejection | **54.17%** |
-| False-route | **40.74%** |
-| Veto precision / recall | **95.05% / 59.26%** |
-| Raw-correct winner veto | **1.04%** |
-| Background / complement vetoes | **6 / 196** |
-| p95 | **176.50 ms** |
+| Supported exact | 83.33% |
+| Raw supported exact | 84.21% |
+| Raw supported tool accuracy | 94.30% |
+| Near-domain rejection | 60.71% |
+| OOD rejection | 54.17% |
+| False-route | 40.74% |
+| Veto precision / recall | 95.05% / 59.26% |
+| Raw-correct winner veto | 1.04% |
+| Background / complement vetoes | 6 / 196 |
+| p95 | 176.50 ms |
 
 This is the strongest unsupported recall of the V6C–V6E density/local-geometry sequence while
 remaining inside the latency target, but it still misses every open-set quality gate and slightly
@@ -627,7 +627,7 @@ V6A–V6E rule out a progressively broader family of straightforward schema-synt
   positive/complement manifolds;
 - generic background anchors are insufficient as a natural OOD support model.
 
-Therefore the next experiment must introduce a **materially different semantic representation or
+The next experiment must introduce a **materially different semantic representation or
 membership signal**. It must not be a post-hoc sweep over V6E k, distance thresholds, margins,
 neighbor weights, background anchors, or schema/complement wording. All V6A–V6E confirmation
 surfaces remain unopened.
@@ -639,24 +639,24 @@ The first 0.13 open-set sequence is now terminal with **no active frozen child e
 
 | Experiment | Tested signal | Supported exact | Near reject | OOD | False-route | p95 | Result |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| #404 | naturalistic MiniLM scope + 18-way operation probes | **75.44%** | **59.52%** | **95.83%** | **32.41%** | **297.36 ms** | terminal |
-| #406 | Tool-Embed-0.6B positive selector | **78.07%** | — | — | — | **287.42 ms** | terminal; BGE 86.84% on same surface |
-| #408 | multilingual relative cross-encoder membership | **79.39%** | **19.84%** | **59.72%** | **71.30%** | **2992.17 ms** | terminal |
-| #409 | frozen GTE multilingual positive selector | **71.49%** | — | — | — | **100.14 ms** | terminal; BGE 88.16% on same surface |
-| #412 | multilingual-E5 + fixed alpha=0.01 split conformal | **10.09%** | **99.21%** | **100%** | **0.62%** | **244.24 ms** | terminal |
+| #404 | naturalistic MiniLM scope + 18-way operation probes | 75.44% | 59.52% | 95.83% | 32.41% | 297.36 ms | terminal |
+| #406 | Tool-Embed-0.6B positive selector | 78.07% | — | — | — | 287.42 ms | terminal; BGE 86.84% on same surface |
+| #408 | multilingual relative cross-encoder membership | 79.39% | 19.84% | 59.72% | 71.30% | 2992.17 ms | terminal |
+| #409 | frozen GTE multilingual positive selector | 71.49% | — | — | — | 100.14 ms | terminal; BGE 88.16% on same surface |
+| #412 | multilingual-E5 + fixed alpha=0.01 split conformal | 10.09% | 99.21% | 100% | 0.62% | 244.24 ms | terminal |
 
 The key contrast is #412: it is the first method in this sequence to satisfy near-domain rejection,
 OOD rejection, false-route, authority and runtime gates simultaneously, but it vetoed **158 of 181**
 raw-correct BGE winners. The safety calibration worked; the underlying scalar catalog-membership
 score did not separate supported traffic strongly enough.
 
-The retained research conclusion is therefore:
+The retained research conclusion is:
 
 > The unresolved bottleneck is a **surface-invariant executable-capability membership
 > representation**, not another threshold or calibration rule over a weak score.
 
 No terminal DEV rows may be used to tune a successor, and all confirmation surfaces above remain
-unopened. The canonical continuation point is issue **#388**, then issue **#382**, the
+unopened. The canonical continuation point is issue #388, then issue #382, the
 machine-readable prior-art registry, and the experiment ledger.
 
 
@@ -665,10 +665,10 @@ machine-readable prior-art registry, and the experiment ledger.
 
 The following items are preregistered/staged and **must not** be selected from B1 row-level errors:
 
-- **#428** — first-class public typed Top-K retrieval API;
-- **#430** — adaptive per-query shortlist depth after fixed-K validation;
-- **#431** — execution-state-aware corrective capability re-retrieval;
-- **#432** — materially larger independent multilingual held-out benchmark with explicit
+- #428 — first-class public typed Top-K retrieval API;
+- #430 — adaptive per-query shortlist depth after fixed-K validation;
+- #431 — execution-state-aware corrective capability re-retrieval;
+- #432 — materially larger independent multilingual held-out benchmark with explicit
   sample-size/precision planning.
 
 These are successors to the fixed controlled baseline, not repairs to consumed B1 rows.

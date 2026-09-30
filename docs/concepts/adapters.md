@@ -69,5 +69,5 @@ OPTIMADE (90)
 MCP (80)
 ```
 
-Third-party adapters choose a priority deliberately. Explicit `kind="..."` bypasses priority and
+Third-party adapters choose their own priority. Explicit `kind="..."` bypasses priority and
 selects that adapter directly.

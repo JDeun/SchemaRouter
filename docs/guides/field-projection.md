@@ -88,5 +88,5 @@ This keeps transport/schema representation separate from the bounded decision su
 ## Current scope
 
 Explicit paths currently traverse nested JSON objects. Array-element projection and wildcard/JSONPath
-semantics are intentionally not inferred. Those require a separate typed contract rather than
+semantics are not inferred. Those require a separate typed contract rather than
 special string syntax.

@@ -2,7 +2,7 @@
 
 SchemaRouter research must remain resumable from repository state alone.
 
-Canonical tracker: GitHub issue **#200**.
+Canonical tracker: GitHub issue #200.
 
 ## Work-item hierarchy
 

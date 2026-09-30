@@ -1,6 +1,6 @@
 # OpenAPI compatibility report
 
-SchemaRouter imports a deliberately bounded OpenAPI subset. Unsupported semantics should be visible,
+SchemaRouter imports a bounded OpenAPI subset. Unsupported semantics should be visible,
 not silently reinterpreted.
 
 Every imported OpenAPI `ToolSpec` now contains a machine-readable report at:
@@ -48,19 +48,19 @@ The current analyzer reports, among other cases:
 - operation security requirements.
 
 Some constructs are marked `partial` because the full JSON Schema is retained for runtime
-validation even when planner-side interpretation is intentionally bounded. For `allOf`,
+validation even when planner-side interpretation is bounded. For `allOf`,
 SchemaRouter now flattens object properties and required fields when safely derivable, but does not
 claim complete support for every JSON Schema composition interaction.
 
 ## Why this is separate from parsing
 
 A parser can successfully create a `ToolSpec` while still losing semantics that matter to a
-caller. Compatibility reporting therefore answers a different question:
+caller. Compatibility reporting answers a different question:
 
 > "What did SchemaRouter understand faithfully, and what requires explicit application review?"
 
 When bounded external-ref resolution succeeds, those references are rewritten into local bundle
-pointers before this report is produced and therefore no longer appear as `external_ref` issues.
+pointers before this report is produced, so they no longer appear as `external_ref` issues.
 
 Do not treat a `partial` report as an error automatically. Instead, inspect the reported
 constructs and decide whether they affect the operations your application intends to expose.

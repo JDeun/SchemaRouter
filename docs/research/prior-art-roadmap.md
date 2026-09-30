@@ -2,7 +2,7 @@
 
 This page is the human-readable companion to
 [`benchmarks/research-prior-art-registry.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-prior-art-registry.json)
-and GitHub issue **#388**.
+and GitHub issue #388.
 
 Its purpose is continuity: a new research session should be able to reconstruct what literature has
 already been checked, which SchemaRouter hypotheses it motivated, which experiments are terminal,
@@ -12,7 +12,7 @@ and what should be tried next without relying on chat memory.
 
 Before creating a new routing experiment:
 
-1. read issue **#388**;
+1. read issue #388;
 2. read `benchmarks/research-prior-art-registry.json`;
 3. read `benchmarks/research-experiment-ledger.json`;
 4. read [Routing research status](routing-status.md);
@@ -23,13 +23,13 @@ Before creating a new routing experiment:
 
 | Workstream | Work item | State | Current SchemaRouter use |
 | --- | ---: | --- | --- |
-| Adaptive/open decision boundaries | #384 | **terminal** | V6A positive-only spherical ADB rejected every DEV request |
-| Hard-negative OOS generation | #389 / #395 | **terminal** | V6B separated synthetic evidence but rejected every natural DEV query |
-| Energy/density/open-space scoring | #390 / #397 / #399 / #401 | **terminal / no active successor** | V6C/V6D/V6E terminal; do not retune consumed geometry |
-| Selective/conformal abstention | #391 / #412 | **terminal tested formulation** | E5 conformal safety passed open-set gates but destroyed supported recall |
-| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | **active primary direction** | Phase A/B1 are terminal; B2 strong-agent replication is terminal success; #431 is the active gate before #432/#424 |
+| Adaptive/open decision boundaries | #384 | terminal | V6A positive-only spherical ADB rejected every DEV request |
+| Hard-negative OOS generation | #389 / #395 | terminal | V6B separated synthetic evidence but rejected every natural DEV query |
+| Energy/density/open-space scoring | #390 / #397 / #399 / #401 | terminal / no active successor | V6C/V6D/V6E terminal; do not retune consumed geometry |
+| Selective/conformal abstention | #391 / #412 | terminal tested formulation | E5 conformal safety passed open-set gates but destroyed supported recall |
+| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | active primary direction | Phase A/B1 are terminal; B2 strong-agent replication is terminal success; #431 is the active gate before #432/#424 |
 
-Active research parent: **#417**. Historical 0.13 prior-art parent: **#388**.
+Active research parent: #417. Historical 0.13 prior-art parent: #388.
 
 ## 0. Active 0.14 research question: typed capability retrieval for agents
 
@@ -65,12 +65,12 @@ Relevant current work:
 - #424 — gated final-answer factual-quality benchmark.
 
 Phase A already establishes the retrieval-side premise on the corrected frozen benchmark:
-- Recall@1 **68.97%**;
-- Recall@3 **96.55%**;
+- Recall@1 68.97%;
+- Recall@3 96.55%;
 - Recall@5 / Recall@10 **100% / 100%**;
-- at 250 endpoints, Top-5 exposes only **2.38%** of FULL serialized schema context on average.
+- at 250 endpoints, Top-5 exposes only 2.38% of FULL serialized schema context on average.
 
-The corresponding evaluation hierarchy is therefore:
+The corresponding evaluation hierarchy is:
 1. **Recall@K / required-tool-set coverage** — did retrieval preserve what the agent needs?
 2. **downstream deterministic task success** — can the same agent complete the task?
 3. **context/token/latency/cost** — is the candidate reduction operationally useful?
@@ -78,7 +78,7 @@ The corresponding evaluation hierarchy is therefore:
 5. **execution safety** — can policy prevent unauthorized destructive actions regardless of rank?
 6. **final-answer quality** — does context reduction preserve factual completeness, units and provenance?
 
-Top-1 exact remains diagnostic. It is not treated as a proxy for all six outcomes.
+Top-1 exact is diagnostic. It is not treated as a proxy for all six outcomes.
 
 Independent literature supporting this framing includes:
 - ToolRet, Findings ACL 2025;
@@ -104,24 +104,24 @@ SchemaRouter difference:
 
 - intents are not a fixed human-labeled taxonomy;
 - capabilities appear dynamically from OpenAPI/MCP/ToolSpec registration;
-- therefore positive evidence must be compiled from schema at registration time;
+- so positive evidence must be compiled from schema at registration time;
 - route authority must remain registry-backed and must not be invented by the boundary model.
 
 Terminal canonical experiment:
 
-- **#384**
+- #384
 - branch: `research/0.13-schema-adb-baseline`
 - protocol: V6A
-- raw BGE supported exact: **91.67%**
-- ADB supported exact: **0%**
+- raw BGE supported exact: 91.67%
+- ADB supported exact: 0%
 - near-domain / OOD rejection: **100% / 100%**
-- all **209** raw-correct supported winners were vetoed;
+- all 209 raw-correct supported winners were vetoed;
 - all 552 DEV queries fell outside every spherical boundary;
 - confirmation remains unopened.
 
 The positive-only spherical formulation is terminal. It must not be repaired by rescaling the radius or rewriting the positive views from failed DEV evidence.
 
-Duplicate/superseded research artifacts are explicitly recorded in the machine-readable registry.
+Duplicate/superseded research artifacts are recorded in the machine-readable registry.
 
 ## 2. Hard-negative OOS
 
@@ -161,13 +161,13 @@ hard-negative OOS examples
 The generator must remain registry-independent. It must not use benchmark route names or failed DEV
 rows to write special negatives.
 
-Work item: **#389**. The concrete experiment **#395 / V6B** is terminal. It combined registry-derived same-resource hard negatives with a low-rank anisotropic ellipsoid boundary while keeping raw BGE-M3 as the only positive route authority.
+Work item: #389. The concrete experiment **#395 / V6B** is terminal. It combined registry-derived same-resource hard negatives with a low-rank anisotropic ellipsoid boundary while keeping raw BGE-M3 as the only positive route authority.
 
-V6B DEV preserved perfect unsupported rejection but rejected **all supported requests** after every natural query fell outside the learned ellipsoids. Raw BGE supported exact remained **97.37%**. Its confirmation remains unopened. The hard-negative evidence bank remains reusable as schema-derived supervision; the exact ellipsoid formulation does not.
+V6B DEV preserved perfect unsupported rejection but rejected **all supported requests** after every natural query fell outside the learned ellipsoids. Raw BGE supported exact remained 97.37%. Its confirmation remains unopened. The hard-negative evidence bank remains reusable as schema-derived supervision; the exact ellipsoid formulation does not.
 
 ## 3. Energy, density, and open-space scoring
 
-Work item: **#390**.
+Work item: #390.
 
 The question is whether membership can be represented as a scalar or density-like property of the
 registered capability space instead of a semantic `OUTSIDE` class.
@@ -181,7 +181,7 @@ This family includes comparisons such as:
 - open-space risk;
 - spherical or ellipsoidal class regions.
 
-It is deliberately separated from positive route selection:
+It is separated from positive route selection:
 
 ```text
 BGE registered-route retrieval
@@ -198,15 +198,15 @@ silently recycled.
 
 Current 0.13 sequence:
 
-- **#397 / V6C — terminal tied-Gaussian density ratio.** Supported exact **93.86%**, near rejection **39.29%**, OOD rejection **56.94%**, false-route **56.79%**, zero raw-correct vetoes.
-- **#399 / V6D — terminal component Gaussian-mixture ratio.** Supported exact **89.91%**, near rejection **39.68%**, OOD rejection **5.56%**, false-route **67.90%**, zero raw-correct vetoes, p95 **250.49 ms**.
-- **#401 / V6E — terminal non-parametric local membership.** Fixed k=3 cosine-neighborhood comparison reached supported exact **83.33%**, near rejection **60.71%**, OOD rejection **54.17%**, false-route **40.74%**, and p95 **176.50 ms**. Complement neighborhoods were informative but positive/complement manifolds still overlapped; confirmation remains unopened.
+- **#397 / V6C — terminal tied-Gaussian density ratio.** Supported exact 93.86%, near rejection 39.29%, OOD rejection 56.94%, false-route 56.79%, zero raw-correct vetoes.
+- **#399 / V6D — terminal component Gaussian-mixture ratio.** Supported exact 89.91%, near rejection 39.68%, OOD rejection 5.56%, false-route 67.90%, zero raw-correct vetoes, p95 250.49 ms.
+- **#401 / V6E — terminal non-parametric local membership.** Fixed k=3 cosine-neighborhood comparison reached supported exact 83.33%, near rejection 60.71%, OOD rejection 54.17%, false-route 40.74%, and p95 176.50 ms. Complement neighborhoods were informative but positive/complement manifolds still overlapped; confirmation remains unopened.
 
-V6C showed that relative evidence can preserve supported routes but one Gaussian per class collapses multimodal structure. V6D showed that preserving endpoint-level Gaussian modes still does not solve the synthetic-to-natural membership gap. V6E removed the Gaussian assumption and improved unsupported recall, but remained far below the rejection targets and slightly damaged supported routing. The next experiment therefore must change the semantic signal or representation itself rather than tuning another distance threshold, neighborhood size, or Gaussian parameter from consumed DEV.
+V6C showed that relative evidence can preserve supported routes but one Gaussian per class collapses multimodal structure. V6D showed that preserving endpoint-level Gaussian modes still does not solve the synthetic-to-natural membership gap. V6E removed the Gaussian assumption and improved unsupported recall, but remained far below the rejection targets and slightly damaged supported routing. The next experiment must change the semantic signal or representation itself rather than tuning another distance threshold, neighborhood size, or Gaussian parameter from consumed DEV.
 
 ## 4. Selective prediction and conformal abstention
 
-Work item: **#391**.
+Work item: #391.
 
 References currently tracked:
 
@@ -223,7 +223,7 @@ The protected #198 calibration/blind surfaces must not be consumed merely to res
 
 ## 5. Tool retrieval and executable-schema retrieval
 
-Work item: **#392**.
+Work item: #392.
 
 Primary references:
 
@@ -234,7 +234,7 @@ Primary references:
   Generation*, KnowLLM 2025:
   https://aclanthology.org/2025.knowllm-1.7/
 
-SchemaRouter's closest RAG analogy remains:
+SchemaRouter's closest RAG analogy is:
 
 | RAG | SchemaRouter |
 | --- | --- |
@@ -257,11 +257,11 @@ The next preregistered screens changed the semantic evidence source rather than 
 
 | Experiment | Role | Supported exact | Near reject | OOD | False-route | p95 | Decision |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| #404 naturalistic MiniLM probes | veto-only membership | **75.44%** | **59.52%** | **95.83%** | **32.41%** | **297.36 ms** | terminal |
-| #406 Tool-Embed-0.6B | positive selector | **78.07%** | — | — | — | **287.42 ms** | terminal; same-surface BGE 86.84% |
-| #408 mMARCO cross-encoder | veto-only membership | **79.39%** | **19.84%** | **59.72%** | **71.30%** | **2992.17 ms** | terminal |
-| #409 GTE multilingual | positive selector | **71.49%** | — | — | — | **100.14 ms** | terminal; same-surface BGE 88.16% |
-| #412 E5 split conformal | veto-only membership | **10.09%** | **99.21%** | **100%** | **0.62%** | **244.24 ms** | terminal |
+| #404 naturalistic MiniLM probes | veto-only membership | 75.44% | 59.52% | 95.83% | 32.41% | 297.36 ms | terminal |
+| #406 Tool-Embed-0.6B | positive selector | 78.07% | — | — | — | 287.42 ms | terminal; same-surface BGE 86.84% |
+| #408 mMARCO cross-encoder | veto-only membership | 79.39% | 19.84% | 59.72% | 71.30% | 2992.17 ms | terminal |
+| #409 GTE multilingual | positive selector | 71.49% | — | — | — | 100.14 ms | terminal; same-surface BGE 88.16% |
+| #412 E5 split conformal | veto-only membership | 10.09% | 99.21% | 100% | 0.62% | 244.24 ms | terminal |
 
 All associated confirmation surfaces remain unopened.
 
@@ -311,10 +311,10 @@ Historical 0.13 order was:
 2. retain **#395 / V6B** as the terminal hard-negative ellipsoid reference; its confirmation stays unopened;
 3. retain **#397 / V6C** and **#399 / V6D** as terminal relative-density controls; both confirmations stay unopened;
 4. retain **#401 / V6E** as the terminal non-parametric local-neighborhood reference; its confirmation stays unopened;
-5. retain **#404**, **#406**, **#408**, **#409**, and **#412** as terminal post-V6E controls; all confirmations stay unopened;
+5. retain #404, #406, #408, #409, and #412 as terminal post-V6E controls; all confirmations stay unopened;
 6. before opening a successor, search prior art and repository history for a materially different membership representation or decision structure;
-7. revisit selective/conformal safety from **#391** only after a substantially more discriminative semantic membership score exists;
-8. continuously maintain tool-retrieval architectural alignment in **#392** without giving retrieval models execution authority.
+7. revisit selective/conformal safety from #391 only after a substantially more discriminative semantic membership score exists;
+8. continuously maintain tool-retrieval architectural alignment in #392 without giving retrieval models execution authority.
 
 This order is not a claim that later methods are superior. It is the governance sequence that avoids
 mixing hypotheses and reusing evidence.
@@ -338,7 +338,7 @@ These are staged before any accepted B1 aggregate and must not be derived from B
 ### Statistical scope correction before B1 aggregate
 
 B1's four catalog-size rows per semantic task are repeated measures, not independent samples.
-Therefore the canonical paired bootstrap resamples **task_id clusters**, keeping the four
+So the canonical paired bootstrap resamples **task_id clusters**, keeping the four
 catalog-size deltas together. The -2pp gate remains a descriptive engineering threshold in B1.
 A population-level non-inferiority/generalization claim requires #432 with an independently frozen,
 materially larger task population and preregistered precision/sample-size analysis.
@@ -358,7 +358,7 @@ Before any accepted aggregate, B1 v2 corrected hidden user-argument requirements
 tool-observation causality barrier: only one tool call may execute per assistant turn and dependent
 calls require the previous observation.
 
-The v2 preflight re-ran Phase A and retained Recall@3 **96.55%**, Recall@5/@10 **100%**, and
+The v2 preflight re-ran Phase A and retained Recall@3 96.55%, Recall@5/@10 100%, and
 mean Top-5 schema context **2.383% of FULL** at 250 endpoints.
 
 Paired uncertainty uses task-cluster bootstrap because catalog sizes are repeated measures of the

@@ -21,7 +21,7 @@
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-> **Stable release: 0.12.0** · `pip install schemarouter` · Beta / pre-1.0
+> **Stable release: 0.12.0** · Beta / pre-1.0
 
 Agents get harder to steer as their tool catalog grows, and tool responses often contain far more
 than the request needs. SchemaRouter works out **which declared data fields are needed**, exposes a
@@ -33,13 +33,13 @@ validation rules so one value cannot silently stand in for another.
 
 It is **not** a general agent framework, an LLM provider layer, or a RAG generator.
 
-[Declare a result contract for an MCP server that does not publish one →](docs/guides/mcp.md) ·
+[Declare a result contract for an MCP server that does not publish one →](docs/guides/mcp.md#declare-a-result-contract-the-server-does-not-publish) ·
 [See the measured agent-utility result →](docs/research/agent-utility-b1-result.md)
 
 ## Where SchemaRouter fits in RAG
 
-SchemaRouter does not perform final generation. It provides a **structured retrieval and execution
-boundary** for applications that need live external data from APIs and tools under explicit schemas
+SchemaRouter does not perform final generation. It provides a structured retrieval and execution
+boundary for applications that need live external data from APIs and tools under explicit schemas
 and policy.
 
 ```text
@@ -154,14 +154,14 @@ candidates = router.retrieve("cancel this registered job", k=3)
 This profile adds conservative tool-identifier and operation-family evidence plus a schema-specificity
 tie-break. It does **not** change execution authority, and it is not the product default. Independent
 retrieval confirmation passed for a fixed Top-3 shortlist, but the preregistered strong-agent
-K3-vs-K5 downstream gate later failed its -2pp task-pass promotion floor. Top-3 is therefore **not**
+K3-vs-K5 downstream gate later failed its -2pp task-pass promotion floor. So Top-3 is **not**
 promoted into the held-out benchmark. Treat structural retrieval as an opt-in research surface until
-a later release explicitly changes that status.
+a later release changes that status.
 
 The returned candidates retain the full effective input/output JSON Schemas plus registered
 parameters/output fields, semantic IDs, optional units and qualifiers, provider/access identity,
 read/write/destructive metadata, and schema fingerprints. Retrieval has no side effect and does not grant execution authority; the surrounding
-agent still chooses among candidates and execution remains subject to SchemaRouter validation and
+agent still chooses among candidates and execution is still subject to SchemaRouter validation and
 policy.
 
 ## Quickstart
@@ -195,11 +195,11 @@ print(result[0].data)
 
 | Source | Use when | Entry point |
 | --- | --- | --- |
-| **Python** | capability is local and typed | `router.add_callable(...)` |
-| **OpenAPI** | HTTP API publishes a machine-readable contract | `SchemaRouter.from_url(..., kind="openapi")` |
-| **MCP** | capabilities are exposed through MCP | `SchemaRouter.from_url(..., kind="mcp")` |
-| **OPTIMADE** | materials data is exposed through OPTIMADE | `SchemaRouter.from_url(..., kind="optimade")` |
-| **Human-readable docs** | no machine-readable contract exists | inspect → proposal → explicit approval |
+| Python | capability is local and typed | `router.add_callable(...)` |
+| OpenAPI | HTTP API publishes a machine-readable contract | `SchemaRouter.from_url(..., kind="openapi")` |
+| MCP | capabilities are exposed through MCP | `SchemaRouter.from_url(..., kind="mcp")` |
+| OPTIMADE | materials data is exposed through OPTIMADE | `SchemaRouter.from_url(..., kind="optimade")` |
+| Human-readable docs | no machine-readable contract exists | inspect → proposal → explicit approval |
 
 Framework bridges are available for LangChain, LangGraph, and LlamaIndex. OpenTelemetry is optional.
 Third-party bounded decision backends can be published through the
@@ -242,19 +242,19 @@ registered capability catalog
 ```
 
 Why this matters: on the corrected frozen 0.14 Phase-A benchmark, Top-1 required-route recall was
-**68.97%**, while Top-5 preserved **100%** of required capabilities. At 250 registered endpoints,
-Top-5 exposed only **2.38%** of the FULL serialized schema context on average.
+68.97%, while Top-5 preserved 100% of required capabilities. At 250 registered endpoints,
+Top-5 exposed only 2.38% of the FULL serialized schema context on average.
 
-The canonical B1 Qwen3-0.6B agent benchmark is terminal: SR-5 achieved **91.30%** task pass
-versus **68.48%** for FULL while using **5.42%** of FULL tool-schema tokens, with **0**
-unauthorized destructive executions. This remains controlled mechanism evidence rather than a broad
+The canonical B1 Qwen3-0.6B agent benchmark is terminal: SR-5 achieved 91.30% task pass
+versus 68.48% for FULL while using 5.42% of FULL tool-schema tokens, with 0
+unauthorized destructive executions. This is controlled mechanism evidence rather than a broad
 production claim. The materially stronger SmolLM3-3B B2 replication (#423) is also terminal
 success. A separate structural K3-vs-K5 optimization failed its preregistered task-pass promotion
 gate, so K3 is not carried into the held-out benchmark. Execution-state-aware corrective retrieval
 (#431) is the active gate; the 780-task held-out benchmark (#432) and final-answer quality benchmark
-(#424) remain downstream confirmation stages.
+(#424) are downstream confirmation stages.
 
-The earlier 0.11–0.13 open-set classifier/veto experiments remain valuable negative evidence. No
+The earlier 0.11–0.13 open-set classifier/veto experiments are still valuable negative evidence. No
 experimental learned router or structural retrieval profile is promoted as an unconditional production default in 0.12.0.
 
 See:
@@ -299,7 +299,7 @@ schemarouter dashboard \
 
 ## Scope
 
-SchemaRouter intentionally does not implement another chat abstraction, prompt framework,
+SchemaRouter does not implement another chat abstraction, prompt framework,
 model-provider layer, conversation memory, checkpoint store, or graph runtime.
 
 > **Natural-language request → typed capability plan → validated external data → surrounding RAG/agent**

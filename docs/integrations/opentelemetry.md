@@ -35,7 +35,7 @@ Tool errors mark the tool span as `ERROR`; run errors mark the run span as `ERRO
 
 ## Privacy boundary
 
-The exporter is intentionally stricter than `RunConfig(include_payloads=True)`.
+The exporter is stricter than `RunConfig(include_payloads=True)`.
 
 It exports structural attributes only, such as:
 

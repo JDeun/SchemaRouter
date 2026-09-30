@@ -2,7 +2,7 @@
 
 SchemaRouter supports installed third-party source adapters through Python entry points.
 
-Plugin loading is deliberately **opt-in** because importing an installed entry point executes local
+Plugin loading is **opt-in** because importing an installed entry point executes local
 Python code.
 
 ## Package an adapter
@@ -65,7 +65,7 @@ An empty allowlist is rejected. Unknown requested names fail before any plugin i
 Treat adapter plugins like any other installed application dependency. They execute with the Python
 process's privileges once explicitly loaded.
 
-SchemaRouter therefore does not:
+SchemaRouter does not:
 
 - auto-import every plugin it discovers;
 - accept a wildcard/implicit allow-all mode;

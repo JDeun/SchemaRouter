@@ -1,6 +1,6 @@
 # Choose an ingestion path
 
-Use the most authoritative schema source available. SchemaRouter intentionally does **not** treat all
+Use the most authoritative schema source available. SchemaRouter does **not** treat all
 inputs as equivalent.
 
 | Source | Registration | Execution binding | Trust level |

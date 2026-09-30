@@ -185,7 +185,7 @@ header simple object, explode=true:
   -> X-Meta: role=admin,active=true
 ```
 
-SchemaRouter deliberately fails closed for parameter serialization modes it does not yet emit
+SchemaRouter fails closed for parameter serialization modes it does not yet emit
 exactly, including non-default styles such as `matrix`, `label`, `spaceDelimited`,
 `pipeDelimited`, and `deepObject`. Query parameters with `allowReserved: true` are also
 rejected rather than silently changing reserved-character semantics.
@@ -262,7 +262,7 @@ scope:
 - `$id` and `$anchor` are removed from the final runtime bundle after rewriting so validation
   does not trigger a second external-resolution path.
 
-The current bounded resolver intentionally fails closed for:
+The current bounded resolver fails closed for:
 
 - cross-origin referenced documents or cross-origin `$id` base URIs;
 - `$id` values with fragments;
@@ -271,7 +271,7 @@ The current bounded resolver intentionally fails closed for:
 - depth/document/byte limit exhaustion;
 - unstructured referenced content.
 
-Dynamic JSON Schema scope is deliberately excluded because statically rewriting it as an ordinary
+Dynamic JSON Schema scope is excluded because rewriting it statically as an ordinary
 anchor could change validation semantics.
 
 ## Current common subset
@@ -298,7 +298,7 @@ Supported paths include:
 - runtime origin confinement.
 
 Dynamic JSON Schema references/anchors and automatic planner-side schema-variant selection remain
-follow-up work. Variant request bodies stay intentionally unflattened even though they are
+follow-up work. Variant request bodies stay unflattened even though they are
 executable as one typed root body. Response variant
 fields may be selected for projection, but a field that is absent from the actual validated
 response variant is simply absent from the projected result. Unsupported constructs should not be
