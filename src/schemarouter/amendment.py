@@ -45,11 +45,12 @@ AMENDABLE_FIELD_ASPECTS = frozenset(
 
 def _json_dump(
     model: ToolSpec | EndpointSpec | FieldSpec,
-    **kwargs: object,
+    *,
+    exclude: set[str] | None = None,
 ) -> dict[str, object]:
     """Serialize amendment input through the persisted-contract JSON boundary."""
     try:
-        return model.model_dump(mode="json", **kwargs)
+        return model.model_dump(mode="json", exclude=exclude)
     except PydanticSerializationError as exc:
         raise ContractAmendmentError(
             f"invalid amendment shape for {type(model).__name__}: "
