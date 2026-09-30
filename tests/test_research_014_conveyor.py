@@ -16,6 +16,7 @@ from scripts.generate_agent_utility_v6_corrective_corpus import (
 from scripts.research_014_conveyor import (
     StageRun,
     combine_digests,
+    frozen_source_sha,
     retry_infrastructure_failure,
 )
 from scripts.validate_agent_utility_v3_heldout_corpus import (
@@ -132,6 +133,7 @@ def test_infrastructure_retry_preserves_run_and_is_bounded() -> None:
         created_at="2026-09-30T00:00:00Z",
         html_url="",
         run_attempt=1,
+        head_sha="a" * 40,
     )
     assert retry_infrastructure_failure(
         api, failed, execute=True, actions=actions, label="fixture"
@@ -147,6 +149,7 @@ def test_infrastructure_retry_preserves_run_and_is_bounded() -> None:
         created_at="2026-09-30T00:00:00Z",
         html_url="",
         run_attempt=3,
+        head_sha="b" * 40,
     )
     assert not retry_infrastructure_failure(
         api, exhausted, execute=True, actions=actions, label="fixture"
@@ -177,3 +180,34 @@ def test_only_one_downstream_workflow_set_exists() -> None:
     assert not (workflows / "research-0.14-corrective.yml").exists()
     assert not (workflows / "research-0.14-heldout.yml").exists()
     assert not (root / "scripts" / "research_0_14_conveyor.py").exists()
+
+
+def test_frozen_source_sha_prefers_explicit_run_marker() -> None:
+    run = StageRun(
+        id=90,
+        status="completed",
+        conclusion="failure",
+        display_title=(
+            "Research 0.14 Corrective sha256:fixture "
+            "source=" + "c" * 40
+        ),
+        created_at="2026-09-30T00:00:00Z",
+        html_url="",
+        run_attempt=1,
+        head_sha="d" * 40,
+    )
+    assert frozen_source_sha(run) == "c" * 40
+
+
+def test_frozen_source_sha_falls_back_to_first_attempt_head() -> None:
+    run = StageRun(
+        id=91,
+        status="completed",
+        conclusion="failure",
+        display_title="Research 0.14 Corrective sha256:fixture",
+        created_at="2026-09-30T00:00:00Z",
+        html_url="",
+        run_attempt=1,
+        head_sha="e" * 40,
+    )
+    assert frozen_source_sha(run) == "e" * 40
