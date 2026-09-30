@@ -68,7 +68,9 @@ def replace_if_current(
     The base ToolRegistry protocol remains backward compatible for planning and
     ordinary registration. Operations that require lost-update protection must
     opt into this stronger capability instead of silently falling back to a
-    non-atomic read-then-write sequence.
+    non-atomic read-then-write sequence. The caller supplies both the exact
+    tool fingerprint and the registry version captured before its snapshot read,
+    so metadata-only or unrelated concurrent writes also fail closed.
     """
     replace = getattr(registry, "replace_if_fingerprint", None)
     if not callable(replace):
@@ -93,7 +95,8 @@ class InMemoryRegistry:
 
     @property
     def version(self) -> int:
-        return self._version
+        with self._lock:
+            return self._version
 
     @staticmethod
     def _snapshot(tool: ToolSpec) -> ToolSpec:
