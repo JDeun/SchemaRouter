@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from typing import Any, Protocol
@@ -117,6 +118,157 @@ def _properties(schema: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     return props if isinstance(props, dict) else {}
 
 
+_NESTED_OUTPUT_MAX_DEPTH = 8
+
+
+def _local_ref_target(document: dict[str, Any], ref: str) -> dict[str, Any] | None:
+    if not ref.startswith("#/"):
+        return None
+    node: Any = document
+    try:
+        for part in ref[2:].split("/"):
+            part = part.replace("~1", "/").replace("~0", "~")
+            node = node[part]
+    except (KeyError, TypeError):
+        return None
+    return node if isinstance(node, dict) else None
+
+
+def _resolve_output_schema(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> dict[str, Any]:
+    current = schema
+    seen: set[str] = set()
+    while isinstance(current, dict):
+        ref = current.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/") or ref in seen:
+            return current
+        seen.add(ref)
+        target = _local_ref_target(document, ref)
+        if target is None:
+            return current
+        merged = dict(target)
+        merged.update({key: value for key, value in current.items() if key != "$ref"})
+        current = merged
+    return schema
+
+
+def _schema_branches(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> list[dict[str, Any]]:
+    branches: list[dict[str, Any]] = []
+    for keyword in ("allOf", "oneOf", "anyOf"):
+        raw = schema.get(keyword)
+        if not isinstance(raw, list):
+            continue
+        for item in raw:
+            if isinstance(item, dict):
+                branches.append(_resolve_output_schema(document, item))
+    return branches
+
+
+def _merged_properties(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    resolved = _resolve_output_schema(document, schema)
+    property_sets = [_properties(resolved)]
+    property_sets.extend(
+        _properties(branch)
+        for branch in _schema_branches(document, resolved)
+    )
+
+    merged: dict[str, dict[str, Any]] = {}
+    for properties in property_sets:
+        for name, spec in properties.items():
+            if not isinstance(spec, dict):
+                continue
+            existing = merged.get(name)
+            if existing is None or existing == spec:
+                merged[name] = spec
+                continue
+            options = (
+                list(existing["anyOf"])
+                if set(existing) == {"anyOf"}
+                and isinstance(existing.get("anyOf"), list)
+                else [existing]
+            )
+            if spec not in options:
+                options.append(spec)
+            merged[name] = {"anyOf": options}
+    return merged
+
+
+def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
+    discovered: list[FieldSpec] = []
+    seen_names = set(_merged_properties(output_schema, output_schema))
+
+    def visit(
+        schema: dict[str, Any],
+        *,
+        prefix: tuple[str, ...],
+        depth: int,
+        ancestors: frozenset[str],
+    ) -> None:
+        if depth >= _NESTED_OUTPUT_MAX_DEPTH:
+            return
+        resolved = _resolve_output_schema(output_schema, schema)
+        signature = json.dumps(
+            resolved,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        )
+        if signature in ancestors:
+            return
+        next_ancestors = ancestors | {signature}
+
+        for name, spec in _merged_properties(output_schema, resolved).items():
+            path = (*prefix, name)
+            if prefix:
+                field_name = ".".join(path)
+                if field_name not in seen_names:
+                    seen_names.add(field_name)
+                    discovered.append(
+                        FieldSpec(
+                            name=field_name,
+                            description=str(spec.get("description") or ""),
+                            json_schema=spec,
+                            path=list(path),
+                            result_path=[field_name],
+                            unit=_schema_unit(spec),
+                            identifier=(
+                                name in {"id", "uuid", "key"}
+                                or name.endswith("_id")
+                            ),
+                            aliases=list(
+                                dict.fromkeys(
+                                    [name, name.replace("_", " ")]
+                                )
+                            ),
+                            source_type="mcp",
+                        )
+                    )
+
+            # Arrays remain opaque until record-preserving item traversal is defined.
+            spec_type = spec.get("type")
+            if spec_type == "array" or (
+                isinstance(spec_type, list) and "array" in spec_type
+            ):
+                continue
+            visit(
+                spec,
+                prefix=path,
+                depth=depth + 1,
+                ancestors=next_ancestors,
+            )
+
+    visit(output_schema, prefix=(), depth=0, ancestors=frozenset())
+    return discovered
+
+
 def _as_dict(value: Any) -> dict[str, Any]:
     if isinstance(value, dict):
         return value
@@ -174,9 +326,11 @@ def tool_from_mcp(
                 unit=_schema_unit(spec),
                 identifier=name in {"id", "uuid", "key"} or name.endswith("_id"),
                 aliases=[name.replace("_", " ")],
+                source_type="mcp",
             )
-            for name, spec in _properties(output_schema).items()
+            for name, spec in _merged_properties(output_schema, output_schema).items()
         ]
+        fields.extend(_nested_output_fields(output_schema))
         metadata = {
             "title": item.get("title"),
             "annotations": item.get("annotations"),
