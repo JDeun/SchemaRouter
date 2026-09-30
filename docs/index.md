@@ -9,17 +9,17 @@
 
 # Put a typed execution boundary between agents and tools
 
-SchemaRouter parses registered APIs and tools into a typed capability catalog, compiles a natural-
-language request into the **smallest declared data-field plan it can justify**, chooses a trusted
-provider/access path that can supply those fields, and validates policy, schema identity, arguments,
-availability, datatype/unit contracts, and raw output before execution is accepted.
+Agents get harder to steer as you connect more tools, and each tool can return far more than the
+request needs. SchemaRouter decides which **declared data fields** are needed, exposes a bounded set
+of registered tools that can supply them, and keeps only declared fields before the result reaches
+the model.
 
 ```bash
 pip install schemarouter
 ```
 
 [Get started](getting-started/installation.md){ .md-button .md-button--primary }
-[OpenAPI guide](guides/openapi.md){ .md-button }
+[Declare an MCP result contract](guides/mcp.md){ .md-button }
 [GitHub](https://github.com/JDeun/SchemaRouter){ .md-button }
 
 </div>
@@ -58,11 +58,9 @@ LangChain / LangGraph / LlamaIndex / your orchestrator
           OpenAPI / MCP / OPTIMADE / Python
 ```
 
-**RAG means Retrieval-Augmented Generation:** generation is augmented with information retrieved
-from external sources. SchemaRouter does not replace that full pipeline or perform the final
-generation step. It provides a structured retrieval/execution boundary for RAG and agent systems
-when the external source is an API, MCP server, OPTIMADE service, or typed callable rather than a
-document corpus.
+SchemaRouter does not replace an agent or RAG pipeline and does not perform final generation. It
+provides a structured retrieval/execution boundary when the external source is an API, MCP server,
+OPTIMADE service, or typed callable rather than a document corpus.
 
 Its registry is a logical capability graph/index, while the registered schema remains execution
 authority.
