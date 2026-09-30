@@ -1,0 +1,158 @@
+name: Research 0.14 Structural Fixed K3 Confirmation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "research/0.14-structural-fixed-k3-confirmation-run"
+    paths:
+      - ".github/structural-fixed-k3-confirmation-trigger.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-0.14-structural-fixed-k3-confirmation
+  cancel-in-progress: false
+
+env:
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  TOKENIZERS_PARALLELISM: "false"
+  HF_HOME: "${{ github.workspace }}/.hf-cache"
+  CONFIRM_TOKENIZER: "HuggingFaceTB/SmolLM3-3B"
+  CONFIRM_TOKENIZER_REVISION: "a07cc9a04f16550a088caea529712d1d335b0ac1"
+
+jobs:
+  confirm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "jinja2==3.1.6"
+      - run: pip install -e ".[dev]"
+      - id: tokenizer-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "fixed-k3-smollm3-tokenizer-a07cc9a04f16550a088caea529712d1d335b0ac1"
+      - name: Populate exact tokenizer revision on cache miss
+        if: steps.tokenizer-cache.outputs.cache-hit != 'true'
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+
+          snapshot_download(
+              repo_id=os.environ["CONFIRM_TOKENIZER"],
+              revision=os.environ["CONFIRM_TOKENIZER_REVISION"],
+              allow_patterns=[
+                  "config.json",
+                  "tokenizer*",
+                  "special_tokens_map.json",
+                  "*.jinja",
+                  "*.model",
+              ],
+          )
+          PY
+      - name: Verify fixed K3 confirmation contracts
+        run: |
+          pytest -q tests/test_structural_fixed_k3_confirmation.py
+      - name: Verify one-shot authorization
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          trigger = json.loads(
+              Path(".github/structural-fixed-k3-confirmation-trigger.json")
+              .read_text(encoding="utf-8")
+          )
+          assert trigger["experiment"] == "structural-fixed-k3-confirmation-v4"
+          assert trigger["authorization"] == "one_shot_fresh_confirmation"
+          assert trigger["shortlist_k"] == 3
+          assert trigger["confirmation_attempt"] == 1
+          assert trigger["prior_confirmation_rows_used"] is False
+          assert trigger["b2_outcomes_used"] is False
+          PY
+      - name: Freeze fresh confirmation before scoring
+        run: |
+          python scripts/generate_agent_utility_v5_structural_fixed_k3_confirmation.py \
+            --out-dir artifacts/fixed-k3-confirmation/freeze
+      - name: Verify frozen independence before scoring
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(
+              Path("artifacts/fixed-k3-confirmation/freeze/freeze-manifest.json")
+              .read_text(encoding="utf-8")
+          )
+          assert manifest["status"] == "frozen_before_scoring"
+          assert manifest["semantic_task_count"] == 240
+          assert manifest["cell_count"] == 48
+          assert manifest["exact_normalized_prior_query_overlap_count"] == 0
+          assert set(manifest["catalogs"]) == {"100", "250", "500"}
+          assert all(
+              value["shared_prior_route_count"] == 30
+              and value["shared_prior_routes_are_canonical_only"] is True
+              for value in manifest["catalogs"].values()
+          )
+          assert manifest["confirmation_metrics_used_for_tuning"] is False
+          print(json.dumps(manifest, sort_keys=True))
+          PY
+      - name: Score fixed K3 and K5 control once
+        env:
+          HF_HUB_OFFLINE: "1"
+          TRANSFORMERS_OFFLINE: "1"
+        run: |
+          python scripts/evaluate_agent_utility_v5_structural_fixed_k3_confirmation.py \
+            --freeze-dir artifacts/fixed-k3-confirmation/freeze \
+            --out artifacts/fixed-k3-confirmation/result.json \
+            --local-files-only
+      - name: Validate result integrity without requiring a positive result
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          result = json.loads(
+              Path("artifacts/fixed-k3-confirmation/result.json")
+              .read_text(encoding="utf-8")
+          )
+          assert result["surface"] == "fresh_confirmation"
+          assert result["row_count"] == 720
+          assert result["fixed_candidate"]["shortlist_k"] == 3
+          assert result["research_integrity"][
+              "confirmation_surface_tuning_used"
+          ] is False
+          assert result["research_integrity"][
+              "prior_structural_confirmation_rows_used"
+          ] is False
+          assert result["research_integrity"]["b2_outcomes_used"] is False
+          print(
+              json.dumps(
+                  {
+                      "passed": result["gates"]["passed"],
+                      "per_catalog": result["per_catalog"],
+                      "typed_numeric_units_k3": result[
+                          "typed_numeric_units_k3"
+                      ],
+                      "context_cost": result["context_cost"],
+                  },
+                  sort_keys=True,
+              )
+          )
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: "structural-fixed-k3-confirmation-${{ github.run_id }}"
+          path: artifacts/fixed-k3-confirmation/
+          if-no-files-found: warn
+          retention-days: 30
