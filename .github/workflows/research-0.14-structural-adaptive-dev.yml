@@ -1,0 +1,183 @@
+name: Research 0.14 Structural Adaptive DEV
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "research/0.14-structural-adaptive-dev-run"
+    paths:
+      - ".github/structural-adaptive-dev-trigger.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-0.14-structural-adaptive-dev
+  cancel-in-progress: true
+
+env:
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  TOKENIZERS_PARALLELISM: "false"
+  HF_HOME: "${{ github.workspace }}/.hf-cache"
+  ADAPTIVE_TOKENIZER: "HuggingFaceTB/SmolLM3-3B"
+  ADAPTIVE_TOKENIZER_REVISION: "a07cc9a04f16550a088caea529712d1d335b0ac1"
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "jinja2==3.1.6"
+      - run: pip install -e ".[dev]"
+      - id: tokenizer-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "adaptive-smollm3-tokenizer-a07cc9a04f16550a088caea529712d1d335b0ac1"
+      - name: Populate exact tokenizer revision on cache miss
+        if: steps.tokenizer-cache.outputs.cache-hit != 'true'
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+
+          snapshot_download(
+              repo_id=os.environ["ADAPTIVE_TOKENIZER"],
+              revision=os.environ["ADAPTIVE_TOKENIZER_REVISION"],
+              allow_patterns=[
+                  "config.json",
+                  "tokenizer*",
+                  "special_tokens_map.json",
+                  "*.jinja",
+                  "*.model",
+              ],
+          )
+          PY
+
+      - name: Verify structural adaptive preregistration
+        run: |
+          pytest -q tests/test_agent_utility_structural_adaptive_prereg.py
+
+      - name: Regenerate exact original adaptive DEV surface
+        run: |
+          mkdir -p artifacts/structural-adaptive-dev
+          python scripts/generate_agent_utility_v5_adaptive_dev.py \
+            --out-dir artifacts/structural-adaptive-dev/freeze
+
+      - name: Require exact original DEV hashes before scoring
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          prereg = json.loads(
+              Path(
+                  "benchmarks/"
+                  "agent-utility-v5-structural-adaptive-depth-"
+                  "preregistration.json"
+              ).read_text(encoding="utf-8")
+          )
+          freeze = json.loads(
+              Path(
+                  "artifacts/structural-adaptive-dev/freeze/"
+                  "freeze-manifest.json"
+              ).read_text(encoding="utf-8")
+          )
+          surface = prereg["development_surface"]
+          assert freeze["task_rows_sha256"] == surface["task_rows_sha256"]
+          assert (
+              freeze["catalog_family_sha256"]
+              == surface["catalog_family_sha256"]
+          )
+          for size in ("100", "250", "500"):
+              assert (
+                  freeze["catalogs"][size]["sha256"]
+                  == surface["catalog_sha256"][size]
+              )
+          print(
+              json.dumps(
+                  {
+                      "task_rows_sha256": freeze["task_rows_sha256"],
+                      "catalog_family_sha256": freeze[
+                          "catalog_family_sha256"
+                      ],
+                  },
+                  sort_keys=True,
+              )
+          )
+          PY
+
+      - name: Rank with independently confirmed structural retriever
+        env:
+          HF_HUB_OFFLINE: "1"
+          TRANSFORMERS_OFFLINE: "1"
+        run: |
+          python scripts/rank_agent_utility_v5_structural_adaptive_dev.py \
+            --freeze-dir artifacts/structural-adaptive-dev/freeze \
+            --out artifacts/structural-adaptive-dev/rankings.jsonl \
+            --manifest-out artifacts/structural-adaptive-dev/ranking-manifest.json \
+            --local-files-only
+
+      - name: Evaluate unchanged adaptive policy family
+        run: |
+          python scripts/evaluate_agent_utility_v5_adaptive_shortlist.py \
+            --input artifacts/structural-adaptive-dev/rankings.jsonl \
+            --prereg benchmarks/agent-utility-v5-structural-adaptive-depth-preregistration.json \
+            --out artifacts/structural-adaptive-dev/result.json
+
+      - name: Verify DEV-only result boundary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(
+              Path(
+                  "artifacts/structural-adaptive-dev/"
+                  "ranking-manifest.json"
+              ).read_text(encoding="utf-8")
+          )
+          result = json.loads(
+              Path(
+                  "artifacts/structural-adaptive-dev/result.json"
+              ).read_text(encoding="utf-8")
+          )
+
+          assert manifest["row_count"] == 720
+          assert manifest["fixed_retriever"]["candidate_id"] == (
+              "STRUCT-4.5-1.5"
+          )
+          assert manifest["structural_confirmation_rows_used"] is False
+          assert manifest["b2_outcomes_used"] is False
+          assert result["row_count"] == 720
+          assert result["surface"] == "development"
+          assert result["claim_boundary"].startswith(
+              "DEV policy selection only"
+          )
+          print(
+              json.dumps(
+                  {
+                      "selected_adaptive_policy": result[
+                          "selected_adaptive_policy"
+                      ],
+                      "eligible_adaptive_policies": result[
+                          "eligible_adaptive_policies"
+                      ],
+                  },
+                  sort_keys=True,
+              )
+          )
+          PY
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "structural-adaptive-dev-${{ github.run_id }}"
+          path: artifacts/structural-adaptive-dev/
+          if-no-files-found: error
+          retention-days: 90
