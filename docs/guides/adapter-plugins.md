@@ -74,3 +74,10 @@ SchemaRouter does not:
 
 After loading, the adapter still uses the same registry, policy, schema validation, and binding-drift
 boundaries as built-in adapters.
+
+## Protocol-specific recipes
+
+For STAC, gRPC/Protobuf, SOAP/WSDL, and bounded AsyncAPI request/reply cases, see
+[Protocol plugin recipes](protocol-plugin-recipes.md). The recipes explain when to prefer OpenAPI
+or typed Python wrappers, when a SourceAdapter plugin adds real value, and which streaming/event
+lifecycles must stay outside the ordinary ToolCall abstraction.

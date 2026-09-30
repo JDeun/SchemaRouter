@@ -133,6 +133,7 @@ nav:
       - Declarative HTTP/JSON: guides/http-json.md
       - Human-readable documentation: guides/html-documentation.md
       - Third-party adapter plugins: guides/adapter-plugins.md
+      - Protocol plugin recipes: guides/protocol-plugin-recipes.md
       - Recipes:
           - OpenAPI agent boundary: recipes/openapi-agent.md
           - MCP agent boundary: recipes/mcp-agent.md
