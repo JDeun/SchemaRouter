@@ -1,0 +1,568 @@
+name: Research 0.14 Runtime Qualification
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact SchemaRouter source revision to freeze
+        required: true
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/research-510-runtime-qualification-trigger.json"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: research-510-runtime-qualification-${{ github.event_name == 'workflow_dispatch' && inputs.source_sha || github.sha }}
+  cancel-in-progress: false
+
+env:
+  SOURCE_SHA: "${{ github.event_name == 'workflow_dispatch' && inputs.source_sha || github.sha }}"
+  PYTHONPATH: "${{ github.workspace }}:${{ github.workspace }}/src"
+  HF_HUB_DISABLE_TELEMETRY: "1"
+  TOKENIZERS_PARALLELISM: "false"
+  HF_HOME: "${{ github.workspace }}/.hf-cache"
+  B2_ATTN_IMPLEMENTATION: "sdpa"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      matrix: "${{ steps.matrix.outputs.matrix }}"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.SOURCE_SHA }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: pip install -e ".[dev]"
+      - name: Verify frozen qualification implementation and preregistration
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          required = [
+              "scripts/generate_agent_utility_v8_qualification_corpus.py",
+              "scripts/validate_agent_utility_v8_qualification_corpus.py",
+              "scripts/evaluate_agent_utility_v8_qualification.py",
+              "scripts/aggregate_agent_utility_v8_qualification.py",
+              "scripts/select_agent_utility_v8_runtime.py",
+              "scripts/qualify_agent_utility_runtime.py",
+              "benchmarks/agent-utility-v8-runtime-qualification-preregistration.json",
+          ]
+          missing = [path for path in required if not Path(path).is_file()]
+          if missing:
+              raise SystemExit("missing qualification files: " + ", ".join(missing))
+
+          prereg = json.loads(
+              Path(
+                  "benchmarks/"
+                  "agent-utility-v8-runtime-qualification-preregistration.json"
+              ).read_text(encoding="utf-8")
+          )
+          assert prereg["issue"] == 510
+          assert prereg["frozen_before_first_candidate_execution"] is True
+          assert prereg["surface"]["episodes"] == 36
+          assert prereg["selection"]["rule"] == (
+              "first qualifying candidate in frozen roster order"
+          )
+
+          from scripts.qualify_agent_utility_runtime import ROSTER, ROSTER_REVISIONS
+
+          assert [row["model"] for row in prereg["roster"]] == list(ROSTER)
+          assert {
+              row["model"]: row["revision"] for row in prereg["roster"]
+          } == ROSTER_REVISIONS
+          assert len(os.environ["SOURCE_SHA"]) == 40
+          print("qualification preregistration verified before candidate execution")
+          PY
+      - name: Lint and test qualification surface
+        run: |
+          ruff check             scripts/generate_agent_utility_v8_qualification_corpus.py             scripts/validate_agent_utility_v8_qualification_corpus.py             scripts/evaluate_agent_utility_v8_qualification.py             scripts/aggregate_agent_utility_v8_qualification.py             scripts/select_agent_utility_v8_runtime.py             scripts/qualify_agent_utility_runtime.py             tests/test_agent_utility_v8_successor.py             tests/test_agent_utility_v8_qualification_runtime.py
+          python -m pytest -q             tests/test_agent_utility_v8_successor.py             tests/test_agent_utility_v8_qualification_runtime.py
+      - name: Generate and validate frozen qualification corpus
+        run: |
+          mkdir -p artifacts/qualification
+          python scripts/generate_agent_utility_v8_qualification_corpus.py             --source-revision "${SOURCE_SHA}"             --out artifacts/qualification/qualification-corpus.json
+          python scripts/validate_agent_utility_v8_qualification_corpus.py             --corpus artifacts/qualification/qualification-corpus.json
+      - id: matrix
+        name: Export six frozen shards
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          corpus = json.loads(
+              Path("artifacts/qualification/qualification-corpus.json")
+              .read_text(encoding="utf-8")
+          )
+          ids = [str(task["semantic_task_id"]) for task in corpus["tasks"]]
+          assert len(ids) == 36
+          chunks = [ids[index:index + 6] for index in range(0, len(ids), 6)]
+          assert len(chunks) == 6 and all(len(chunk) == 6 for chunk in chunks)
+          include = [
+              {
+                  "job_id": f"g{index:02d}",
+                  "task_ids": ",".join(chunk),
+              }
+              for index, chunk in enumerate(chunks)
+          ]
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write(
+                  "matrix="
+                  + json.dumps({"include": include}, separators=(",", ":"))
+                  + "\n"
+              )
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "qualification-corpus-${{ github.run_id }}"
+          path: |
+            artifacts/qualification/qualification-corpus.json
+            benchmarks/agent-utility-v8-runtime-qualification-preregistration.json
+          if-no-files-found: error
+          retention-days: 30
+
+  cache-smollm3:
+    needs: prepare
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    env:
+      QUAL_MODEL: "HuggingFaceTB/SmolLM3-3B"
+      QUAL_REV: "a07cc9a04f16550a088caea529712d1d335b0ac1"
+      QUAL_CACHE_KEY: "qual-smollm3-a07cc9a04f16550a088caea529712d1d335b0ac1-torch2.14"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.SOURCE_SHA }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - id: hf-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "${{ env.QUAL_CACHE_KEY }}"
+      - name: Populate exact candidate revision
+        if: steps.hf-cache.outputs.cache-hit != 'true'
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+          snapshot_download(
+              repo_id=os.environ["QUAL_MODEL"],
+              revision=os.environ["QUAL_REV"],
+          )
+          PY
+      - name: Verify cached revision offline
+        env:
+          HF_HUB_OFFLINE: "1"
+          TRANSFORMERS_OFFLINE: "1"
+        run: |
+          python - <<'PY'
+          import os
+          from transformers import AutoConfig, AutoTokenizer
+          for loader in (AutoConfig, AutoTokenizer):
+              loader.from_pretrained(
+                  os.environ["QUAL_MODEL"],
+                  revision=os.environ["QUAL_REV"],
+                  local_files_only=True,
+                  trust_remote_code=False,
+              )
+          PY
+
+  evaluate-smollm3:
+    needs: [prepare, cache-smollm3]
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: "${{ fromJSON(needs.prepare.outputs.matrix) }}"
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 180
+    env:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      QUAL_CACHE_KEY: "qual-smollm3-a07cc9a04f16550a088caea529712d1d335b0ac1-torch2.14"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.SOURCE_SHA }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0" "jinja2==3.1.6"
+      - run: pip install -e .
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "${{ env.QUAL_CACHE_KEY }}"
+          fail-on-cache-miss: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          name: "qualification-corpus-${{ github.run_id }}"
+          path: artifacts/qualification
+      - name: Evaluate frozen SmolLM3 qualification shard
+        run: |
+          mkdir -p artifacts/qualification-shard
+          python -u scripts/evaluate_agent_utility_v8_qualification.py             --corpus artifacts/qualification/qualification-corpus.json             --candidate "HuggingFaceTB/SmolLM3-3B"             --task-ids "${{ matrix.task_ids }}"             --out "artifacts/qualification-shard/smollm3-${{ matrix.job_id }}.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: "qualification-smollm3-${{ matrix.job_id }}-${{ github.run_id }}"
+          path: artifacts/qualification-shard/
+          if-no-files-found: warn
+          retention-days: 30
+
+  aggregate-smollm3:
+    needs: evaluate-smollm3
+    if: "${{ success() }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      qualified: "${{ steps.decision.outputs.qualified }}"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.SOURCE_SHA }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: pip install -e .
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          name: "qualification-corpus-${{ github.run_id }}"
+          path: artifacts/qualification
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          pattern: "qualification-smollm3-*-${{ github.run_id }}"
+          path: artifacts/smollm3-shards
+      - name: Aggregate SmolLM3 evidence
+        run: |
+          python scripts/aggregate_agent_utility_v8_qualification.py             --corpus artifacts/qualification/qualification-corpus.json             --candidate "HuggingFaceTB/SmolLM3-3B"             --input-dir artifacts/smollm3-shards             --out artifacts/smollm3-evidence.json
+      - id: decision
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          data = json.loads(Path("artifacts/smollm3-evidence.json").read_text())
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write("qualified=" + str(bool(data["qualified"])).lower() + "\n")
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "qualification-evidence-smollm3-${{ github.run_id }}"
+          path: artifacts/smollm3-evidence.json
+          if-no-files-found: error
+          retention-days: 30
+
+  cache-qwen4:
+    needs: aggregate-smollm3
+    if: "${{ needs.aggregate-smollm3.result == 'success' && needs.aggregate-smollm3.outputs.qualified != 'true' }}"
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 60
+    env:
+      QUAL_MODEL: "Qwen/Qwen3-4B"
+      QUAL_REV: "1cfa9a7208912126459214e8b04321603b3df60c"
+      QUAL_CACHE_KEY: "qual-qwen3-4b-1cfa9a7208912126459214e8b04321603b3df60c-torch2.14"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.SOURCE_SHA }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - id: hf-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "${{ env.QUAL_CACHE_KEY }}"
+      - name: Populate exact candidate revision
+        if: steps.hf-cache.outputs.cache-hit != 'true'
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+          snapshot_download(repo_id=os.environ["QUAL_MODEL"], revision=os.environ["QUAL_REV"])
+          PY
+      - name: Verify cached revision offline
+        env:
+          HF_HUB_OFFLINE: "1"
+          TRANSFORMERS_OFFLINE: "1"
+        run: |
+          python - <<'PY'
+          import os
+          from transformers import AutoConfig, AutoTokenizer
+          for loader in (AutoConfig, AutoTokenizer):
+              loader.from_pretrained(
+                  os.environ["QUAL_MODEL"],
+                  revision=os.environ["QUAL_REV"],
+                  local_files_only=True,
+                  trust_remote_code=False,
+              )
+          PY
+
+  evaluate-qwen4:
+    needs: [prepare, aggregate-smollm3, cache-qwen4]
+    if: "${{ needs.aggregate-smollm3.result == 'success' && needs.aggregate-smollm3.outputs.qualified != 'true' && needs.cache-qwen4.result == 'success' }}"
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: "${{ fromJSON(needs.prepare.outputs.matrix) }}"
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 240
+    env:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      QUAL_CACHE_KEY: "qual-qwen3-4b-1cfa9a7208912126459214e8b04321603b3df60c-torch2.14"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.SOURCE_SHA }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - run: pip install -e .
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "${{ env.QUAL_CACHE_KEY }}"
+          fail-on-cache-miss: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          name: "qualification-corpus-${{ github.run_id }}"
+          path: artifacts/qualification
+      - run: |
+          mkdir -p artifacts/qualification-shard
+          python -u scripts/evaluate_agent_utility_v8_qualification.py             --corpus artifacts/qualification/qualification-corpus.json             --candidate "Qwen/Qwen3-4B"             --task-ids "${{ matrix.task_ids }}"             --out "artifacts/qualification-shard/qwen4-${{ matrix.job_id }}.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: "qualification-qwen4-${{ matrix.job_id }}-${{ github.run_id }}"
+          path: artifacts/qualification-shard/
+          if-no-files-found: warn
+          retention-days: 30
+
+  aggregate-qwen4:
+    needs: [aggregate-smollm3, evaluate-qwen4]
+    if: "${{ needs.aggregate-smollm3.result == 'success' && needs.aggregate-smollm3.outputs.qualified != 'true' && needs.evaluate-qwen4.result == 'success' }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      qualified: "${{ steps.decision.outputs.qualified }}"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.SOURCE_SHA }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: pip install -e .
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          name: "qualification-corpus-${{ github.run_id }}"
+          path: artifacts/qualification
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          pattern: "qualification-qwen4-*-${{ github.run_id }}"
+          path: artifacts/qwen4-shards
+      - run: |
+          python scripts/aggregate_agent_utility_v8_qualification.py             --corpus artifacts/qualification/qualification-corpus.json             --candidate "Qwen/Qwen3-4B"             --input-dir artifacts/qwen4-shards             --out artifacts/qwen4-evidence.json
+      - id: decision
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          data = json.loads(Path("artifacts/qwen4-evidence.json").read_text())
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write("qualified=" + str(bool(data["qualified"])).lower() + "\n")
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "qualification-evidence-qwen4-${{ github.run_id }}"
+          path: artifacts/qwen4-evidence.json
+          if-no-files-found: error
+          retention-days: 30
+
+  cache-qwen8:
+    needs: [aggregate-smollm3, aggregate-qwen4]
+    if: "${{ needs.aggregate-smollm3.result == 'success' && needs.aggregate-smollm3.outputs.qualified != 'true' && needs.aggregate-qwen4.result == 'success' && needs.aggregate-qwen4.outputs.qualified != 'true' }}"
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    env:
+      QUAL_MODEL: "Qwen/Qwen3-8B"
+      QUAL_REV: "b968826d9c46dd6066d109eabc6255188de91218"
+      QUAL_CACHE_KEY: "qual-qwen3-8b-b968826d9c46dd6066d109eabc6255188de91218-torch2.14"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.SOURCE_SHA }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - id: hf-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "${{ env.QUAL_CACHE_KEY }}"
+      - name: Populate exact candidate revision
+        if: steps.hf-cache.outputs.cache-hit != 'true'
+        run: |
+          python - <<'PY'
+          import os
+          from huggingface_hub import snapshot_download
+          snapshot_download(repo_id=os.environ["QUAL_MODEL"], revision=os.environ["QUAL_REV"])
+          PY
+      - name: Verify cached revision offline
+        env:
+          HF_HUB_OFFLINE: "1"
+          TRANSFORMERS_OFFLINE: "1"
+        run: |
+          python - <<'PY'
+          import os
+          from transformers import AutoConfig, AutoTokenizer
+          for loader in (AutoConfig, AutoTokenizer):
+              loader.from_pretrained(
+                  os.environ["QUAL_MODEL"],
+                  revision=os.environ["QUAL_REV"],
+                  local_files_only=True,
+                  trust_remote_code=False,
+              )
+          PY
+
+  evaluate-qwen8:
+    needs: [prepare, aggregate-smollm3, aggregate-qwen4, cache-qwen8]
+    if: "${{ needs.aggregate-smollm3.result == 'success' && needs.aggregate-smollm3.outputs.qualified != 'true' && needs.aggregate-qwen4.result == 'success' && needs.aggregate-qwen4.outputs.qualified != 'true' && needs.cache-qwen8.result == 'success' }}"
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix: "${{ fromJSON(needs.prepare.outputs.matrix) }}"
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 300
+    env:
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      QUAL_CACHE_KEY: "qual-qwen3-8b-b968826d9c46dd6066d109eabc6255188de91218-torch2.14"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.SOURCE_SHA }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
+      - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
+      - run: pip install -e .
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .hf-cache
+          key: "${{ env.QUAL_CACHE_KEY }}"
+          fail-on-cache-miss: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          name: "qualification-corpus-${{ github.run_id }}"
+          path: artifacts/qualification
+      - run: |
+          mkdir -p artifacts/qualification-shard
+          python -u scripts/evaluate_agent_utility_v8_qualification.py             --corpus artifacts/qualification/qualification-corpus.json             --candidate "Qwen/Qwen3-8B"             --task-ids "${{ matrix.task_ids }}"             --out "artifacts/qualification-shard/qwen8-${{ matrix.job_id }}.json"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: "qualification-qwen8-${{ matrix.job_id }}-${{ github.run_id }}"
+          path: artifacts/qualification-shard/
+          if-no-files-found: warn
+          retention-days: 30
+
+  aggregate-qwen8:
+    needs: [aggregate-smollm3, aggregate-qwen4, evaluate-qwen8]
+    if: "${{ needs.aggregate-smollm3.result == 'success' && needs.aggregate-smollm3.outputs.qualified != 'true' && needs.aggregate-qwen4.result == 'success' && needs.aggregate-qwen4.outputs.qualified != 'true' && needs.evaluate-qwen8.result == 'success' }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      qualified: "${{ steps.decision.outputs.qualified }}"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.SOURCE_SHA }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: pip install -e .
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          name: "qualification-corpus-${{ github.run_id }}"
+          path: artifacts/qualification
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          pattern: "qualification-qwen8-*-${{ github.run_id }}"
+          path: artifacts/qwen8-shards
+      - run: |
+          python scripts/aggregate_agent_utility_v8_qualification.py             --corpus artifacts/qualification/qualification-corpus.json             --candidate "Qwen/Qwen3-8B"             --input-dir artifacts/qwen8-shards             --out artifacts/qwen8-evidence.json
+      - id: decision
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          data = json.loads(Path("artifacts/qwen8-evidence.json").read_text())
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
+              handle.write("qualified=" + str(bool(data["qualified"])).lower() + "\n")
+          PY
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "qualification-evidence-qwen8-${{ github.run_id }}"
+          path: artifacts/qwen8-evidence.json
+          if-no-files-found: error
+          retention-days: 30
+
+  select:
+    needs: [prepare, aggregate-smollm3, aggregate-qwen4, aggregate-qwen8]
+    if: "${{ always() && needs.prepare.result == 'success' && needs.aggregate-smollm3.result == 'success' }}"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: "${{ env.SOURCE_SHA }}"
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12.14"
+      - run: pip install -e .
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          name: "qualification-corpus-${{ github.run_id }}"
+          path: artifacts/qualification
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          pattern: "qualification-evidence-*-${{ github.run_id }}"
+          path: artifacts/evidence
+      - name: Apply frozen ordered selector
+        run: |
+          python scripts/select_agent_utility_v8_runtime.py             --corpus artifacts/qualification/qualification-corpus.json             --evidence-dir artifacts/evidence             --out artifacts/qualification-selection.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: "qualification-selection-${{ github.run_id }}"
+          path: |
+            artifacts/qualification-selection.json
+            artifacts/qualification/qualification-corpus.json
+            benchmarks/agent-utility-v8-runtime-qualification-preregistration.json
+          if-no-files-found: error
+          retention-days: 30
