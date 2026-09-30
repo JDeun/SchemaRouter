@@ -177,3 +177,14 @@ def test_workflow_launch_is_armed_only_by_the_explicit_trigger_file():
     assert '.github/research-510-runtime-qualification-trigger.json' in workflow
     assert 'paths:' in workflow
     assert "research-0.14-runtime-qualification-trigger.json" in workflow
+
+
+
+def test_smollm3_qualification_reuses_the_exact_canonical_b2_runtime_revision():
+    from scripts.evaluate_agent_utility_phase_b_smollm3 import (
+        MODEL_NAME,
+        MODEL_REVISION,
+    )
+
+    assert MODEL_NAME == ROSTER[0]
+    assert MODEL_REVISION == ROSTER_REVISIONS[ROSTER[0]]
