@@ -31,6 +31,14 @@ ROSTER = (
     "Qwen/Qwen3-8B",
 )
 
+# Frozen before the first qualification episode. These are model-repository
+# commits, not moving branch names.
+ROSTER_REVISIONS = {
+    "HuggingFaceTB/SmolLM3-3B": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+    "Qwen/Qwen3-4B": "1cfa9a7208912126459214e8b04321603b3df60c",
+    "Qwen/Qwen3-8B": "b968826d9c46dd6066d109eabc6255188de91218",
+}
+
 MINIMUM_EPISODES = 24
 
 
@@ -118,8 +126,12 @@ def validate_qualification_evidence(
         raise ValueError("qualification surface mismatch")
 
     model_revision = evidence.get("model_revision")
-    if not isinstance(model_revision, str) or not model_revision.strip():
-        raise ValueError("qualification evidence requires a pinned model_revision")
+    expected_model_revision = ROSTER_REVISIONS[candidate]
+    if model_revision != expected_model_revision:
+        raise ValueError(
+            "qualification model_revision mismatch: "
+            f"expected {expected_model_revision!r}, got {model_revision!r}"
+        )
 
     source_revision = evidence.get("source_revision")
     if source_revision != qualification_corpus.get("source_revision"):
