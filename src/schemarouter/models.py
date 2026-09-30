@@ -7,6 +7,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+ARRAY_ITEM_PATH_SEGMENT = "*"
+
 _REMOTE_ADAPTERS = {"mcp", "openapi", "optimade", "html_proposal"}
 _OPENAPI_ENDPOINT_RUNTIME_KEYS = {
     "request_body_discriminator",
@@ -113,7 +115,15 @@ def _schema_at_projection_path(
     if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
         schema = schema["items"]
     for part in path:
-        if schema.get("type") != "object":
+        if part == ARRAY_ITEM_PATH_SEGMENT:
+            if "array" not in _schema_types(schema):
+                return {}
+            items = schema.get("items")
+            if not isinstance(items, dict):
+                return {}
+            schema = items
+            continue
+        if "object" not in _schema_types(schema):
             return {}
         properties = schema.get("properties")
         if not isinstance(properties, dict):
@@ -271,6 +281,16 @@ class FieldSpec(StrictModel):
             raise ValueError("field path requires non-empty string segments")
         if any(not isinstance(part, str) or not part for part in self.result_path):
             raise ValueError("field result_path requires non-empty string segments")
+        source_wildcards = self.path.count(ARRAY_ITEM_PATH_SEGMENT)
+        result_wildcards = (
+            self.result_path.count(ARRAY_ITEM_PATH_SEGMENT)
+            if self.result_path
+            else source_wildcards
+        )
+        if source_wildcards != result_wildcards:
+            raise ValueError(
+                "field path and result_path must preserve the same array-item wildcard count"
+            )
         if self.unit is not None:
             if not self.unit.strip():
                 raise ValueError("field unit must be non-empty when provided")
