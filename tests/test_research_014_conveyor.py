@@ -17,8 +17,8 @@ from scripts.research_014_conveyor import (
     DOWNSTREAM_IMPLEMENTATION_SHA,
     StageRun,
     combine_digests,
-    source_sha_from_run,
     retry_infrastructure_failure,
+    source_sha_from_run,
 )
 from scripts.validate_agent_utility_v3_heldout_corpus import (
     validate_corpus as validate_heldout,
