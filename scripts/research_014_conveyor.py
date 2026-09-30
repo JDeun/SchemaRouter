@@ -1,0 +1,561 @@
+"""Research 0.14 gated experiment conveyor.
+
+This controller is intentionally outcome-blind except for preregistered aggregate
+gate booleans. It never consumes row-level failures to alter benchmark semantics.
+It scans GitHub Actions state, dispatches only a ready downstream stage, and
+fails closed when required provenance is absent.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import io
+import json
+import os
+import urllib.error
+import urllib.parse
+import urllib.request
+import zipfile
+from dataclasses import dataclass
+from typing import Any
+
+CANONICAL_B2_RUN = 36642658406
+B2_ARTIFACT_PREFIX = "b2-smollm3-canonical-"
+K3_WORKFLOW = "research-0.14-structural-k3-agent.yml"
+K3_ARTIFACT_PREFIX = "structural-k3-agent-canonical-"
+CORRECTIVE_WORKFLOW = "research-0.14-corrective-reretrieval.yml"
+CORRECTIVE_ARTIFACT_PREFIX = "corrective-reretrieval-canonical-"
+HELDOUT_WORKFLOW = "research-0.14-heldout-generalization.yml"
+HELDOUT_ARTIFACT_PREFIX = "heldout-generalization-canonical-"
+FINAL_WORKFLOW = "research-0.14-final-answer.yml"
+FINAL_ARTIFACT_PREFIX = "final-answer-canonical-"
+TRACKING_ISSUE = 500
+
+
+@dataclass(frozen=True)
+class StageRun:
+    id: int
+    status: str
+    conclusion: str | None
+    display_title: str
+    created_at: str
+    html_url: str
+
+
+class GitHubAPI:
+    def __init__(self, repository: str, token: str) -> None:
+        self.repository = repository
+        self.base = f"https://api.github.com/repos/{repository}"
+        self.token = token
+
+    def _request(
+        self,
+        method: str,
+        path: str,
+        payload: dict[str, Any] | None = None,
+    ) -> tuple[int, bytes]:
+        url = path if path.startswith("https://") else self.base + path
+        body = None
+        if payload is not None:
+            body = json.dumps(payload).encode("utf-8")
+        request = urllib.request.Request(
+            url,
+            data=body,
+            method=method,
+            headers={
+                "Accept": "application/vnd.github+json",
+                "Authorization": "Bearer " + self.token,
+                "X-GitHub-Api-Version": "2022-11-28",
+                "User-Agent": "schemarouter-research-0.14-conveyor",
+                **({"Content-Type": "application/json"} if body is not None else {}),
+            },
+        )
+        try:
+            with urllib.request.urlopen(request) as response:
+                return response.status, response.read()
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise RuntimeError(
+                f"GitHub API {method} {url} failed: {exc.code} {detail}"
+            ) from exc
+
+    def get(self, path: str) -> Any:
+        _, content = self._request("GET", path)
+        return json.loads(content.decode("utf-8"))
+
+    def post(self, path: str, payload: dict[str, Any]) -> None:
+        status, _ = self._request("POST", path, payload)
+        if status not in {200, 201, 202, 204}:
+            raise RuntimeError(f"unexpected GitHub POST status: {status}")
+
+    def ref_sha(self, ref: str) -> str:
+        data = self.get("/git/ref/heads/" + urllib.parse.quote(ref, safe=""))
+        return str(data["object"]["sha"])
+
+    def run(self, run_id: int) -> dict[str, Any]:
+        return dict(self.get(f"/actions/runs/{run_id}"))
+
+    def workflow_runs(self, workflow_file: str) -> list[dict[str, Any]]:
+        data = self.get(
+            "/actions/workflows/"
+            + urllib.parse.quote(workflow_file, safe="")
+            + "/runs?per_page=100"
+        )
+        return [dict(row) for row in data.get("workflow_runs", [])]
+
+    def artifacts(self, run_id: int) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        page = 1
+        while True:
+            data = self.get(
+                f"/actions/runs/{run_id}/artifacts?per_page=100&page={page}"
+            )
+            batch = [dict(row) for row in data.get("artifacts", [])]
+            rows.extend(batch)
+            if len(batch) < 100:
+                break
+            page += 1
+        return rows
+
+    def artifact(self, run_id: int, prefix: str) -> dict[str, Any] | None:
+        matches = [
+            artifact
+            for artifact in self.artifacts(run_id)
+            if str(artifact.get("name", "")).startswith(prefix)
+            and not bool(artifact.get("expired"))
+        ]
+        if not matches:
+            return None
+        matches.sort(key=lambda row: int(row["id"]), reverse=True)
+        return matches[0]
+
+    def artifact_json(
+        self,
+        artifact: dict[str, Any],
+        canonical_filename: str,
+    ) -> dict[str, Any]:
+        _, payload = self._request(
+            "GET",
+            f"/actions/artifacts/{int(artifact['id'])}/zip",
+        )
+        with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+            names = archive.namelist()
+            exact = [name for name in names if name.endswith(canonical_filename)]
+            if len(exact) != 1:
+                raise RuntimeError(
+                    f"artifact {artifact['id']} expected one {canonical_filename}, "
+                    f"found {exact!r}"
+                )
+            with archive.open(exact[0]) as handle:
+                data = json.load(handle)
+        if not isinstance(data, dict):
+            raise RuntimeError("canonical artifact JSON root must be an object")
+        return data
+
+    def dispatch(
+        self,
+        workflow_file: str,
+        *,
+        ref: str,
+        inputs: dict[str, str] | None = None,
+    ) -> None:
+        payload: dict[str, Any] = {"ref": ref}
+        if inputs:
+            payload["inputs"] = inputs
+        self.post(
+            "/actions/workflows/"
+            + urllib.parse.quote(workflow_file, safe="")
+            + "/dispatches",
+            payload,
+        )
+
+    def issue_comments(self, issue_number: int) -> list[dict[str, Any]]:
+        data = self.get(f"/issues/{issue_number}/comments?per_page=100")
+        return [dict(row) for row in data]
+
+    def comment_issue(self, issue_number: int, body: str) -> None:
+        self.post(f"/issues/{issue_number}/comments", {"body": body})
+
+
+def combine_digests(*values: str) -> str:
+    canonical = "\n".join(values).encode("utf-8")
+    return "sha256:" + hashlib.sha256(canonical).hexdigest()
+
+
+def _stage_run(row: dict[str, Any]) -> StageRun:
+    return StageRun(
+        id=int(row["id"]),
+        status=str(row["status"]),
+        conclusion=(
+            str(row["conclusion"])
+            if row.get("conclusion") is not None
+            else None
+        ),
+        display_title=str(row.get("display_title") or row.get("name") or ""),
+        created_at=str(row.get("created_at") or ""),
+        html_url=str(row.get("html_url") or ""),
+    )
+
+
+def find_marked_run(
+    api: GitHubAPI,
+    workflow_file: str,
+    marker: str,
+) -> StageRun | None:
+    matches = [
+        _stage_run(row)
+        for row in api.workflow_runs(workflow_file)
+        if marker in str(row.get("display_title") or "")
+    ]
+    if not matches:
+        return None
+    matches.sort(key=lambda run: (run.created_at, run.id), reverse=True)
+    return matches[0]
+
+
+def find_k3_run_after(api: GitHubAPI, *, not_before: str) -> StageRun | None:
+    candidates = [
+        _stage_run(row)
+        for row in api.workflow_runs(K3_WORKFLOW)
+        if str(row.get("created_at") or "") >= not_before
+    ]
+    if not candidates:
+        return None
+    candidates.sort(key=lambda run: (run.created_at, run.id), reverse=True)
+    return candidates[0]
+
+
+def terminal_success(run: StageRun | None) -> bool:
+    return bool(
+        run is not None
+        and run.status == "completed"
+        and run.conclusion == "success"
+    )
+
+
+def terminal_failure(run: StageRun | None) -> bool:
+    return bool(
+        run is not None
+        and run.status == "completed"
+        and run.conclusion not in {None, "success"}
+    )
+
+
+def _artifact_digest(artifact: dict[str, Any]) -> str:
+    digest = artifact.get("digest")
+    if not isinstance(digest, str) or not digest.startswith("sha256:"):
+        raise RuntimeError("required artifact is missing a SHA-256 digest")
+    return digest
+
+
+def _gate(payload: dict[str, Any], path: tuple[str, ...]) -> bool:
+    value: Any = payload
+    for key in path:
+        if not isinstance(value, dict) or key not in value:
+            raise RuntimeError("missing machine-readable gate: " + ".".join(path))
+        value = value[key]
+    if not isinstance(value, bool):
+        raise RuntimeError("machine-readable gate is not boolean: " + ".".join(path))
+    return value
+
+
+def _status_line(label: str, run: StageRun | None) -> str:
+    if run is None:
+        return f"{label}=absent"
+    return (
+        f"{label}=run:{run.id} status:{run.status} "
+        f"conclusion:{run.conclusion}"
+    )
+
+
+def run_controller(
+    api: GitHubAPI,
+    *,
+    ref: str,
+    execute: bool,
+) -> dict[str, Any]:
+    actions: list[str] = []
+    b2_row = api.run(CANONICAL_B2_RUN)
+    b2 = _stage_run(b2_row)
+
+    if b2.status != "completed":
+        return {
+            "state": "waiting_b2",
+            "actions": actions,
+            "status": [_status_line("b2", b2)],
+        }
+    if b2.conclusion != "success":
+        return {
+            "state": "stopped_b2_not_success",
+            "actions": actions,
+            "status": [_status_line("b2", b2)],
+        }
+
+    b2_artifact = api.artifact(CANONICAL_B2_RUN, B2_ARTIFACT_PREFIX)
+    if b2_artifact is None:
+        return {
+            "state": "waiting_b2_canonical_artifact",
+            "actions": actions,
+            "status": [_status_line("b2", b2)],
+        }
+    b2_digest = _artifact_digest(b2_artifact)
+    source_sha = api.ref_sha(ref)
+
+    k3 = find_k3_run_after(api, not_before=b2.created_at)
+    if k3 is None:
+        if execute:
+            api.dispatch(K3_WORKFLOW, ref=ref)
+        actions.append("dispatch_k3")
+    elif terminal_failure(k3):
+        return {
+            "state": "stopped_k3_infrastructure_failure",
+            "actions": actions,
+            "status": [_status_line("k3", k3)],
+        }
+
+    corrective = find_marked_run(api, CORRECTIVE_WORKFLOW, b2_digest)
+    if corrective is None:
+        if execute:
+            api.dispatch(
+                CORRECTIVE_WORKFLOW,
+                ref=ref,
+                inputs={
+                    "evidence_digest": b2_digest,
+                    "source_sha": source_sha,
+                },
+            )
+        actions.append("dispatch_corrective")
+    elif terminal_failure(corrective):
+        return {
+            "state": "stopped_corrective_infrastructure_failure",
+            "actions": actions,
+            "status": [_status_line("corrective", corrective)],
+        }
+
+    if k3 is None or corrective is None or not (
+        terminal_success(k3) and terminal_success(corrective)
+    ):
+        return {
+            "state": "waiting_parallel_downstream",
+            "actions": actions,
+            "status": [
+                _status_line("k3", k3),
+                _status_line("corrective", corrective),
+            ],
+        }
+
+    k3_artifact = api.artifact(k3.id, K3_ARTIFACT_PREFIX)
+    corrective_artifact = api.artifact(
+        corrective.id,
+        CORRECTIVE_ARTIFACT_PREFIX,
+    )
+    if k3_artifact is None or corrective_artifact is None:
+        return {
+            "state": "waiting_parallel_canonical_artifacts",
+            "actions": actions,
+            "status": [
+                _status_line("k3", k3),
+                _status_line("corrective", corrective),
+            ],
+        }
+
+    k3_payload = api.artifact_json(
+        k3_artifact,
+        "structural-k3-agent-canonical.json",
+    )
+    corrective_payload = api.artifact_json(
+        corrective_artifact,
+        "corrective-reretrieval-canonical.json",
+    )
+    include_k3 = _gate(k3_payload, ("primary_gate", "primary_gate_passed"))
+    include_corrective = _gate(
+        corrective_payload,
+        ("primary_gate", "primary_gate_passed"),
+    )
+    parallel_digest = combine_digests(
+        _artifact_digest(k3_artifact),
+        _artifact_digest(corrective_artifact),
+    )
+
+    heldout = find_marked_run(api, HELDOUT_WORKFLOW, parallel_digest)
+    if heldout is None:
+        if execute:
+            api.dispatch(
+                HELDOUT_WORKFLOW,
+                ref=ref,
+                inputs={
+                    "evidence_digest": parallel_digest,
+                    "source_sha": source_sha,
+                    "k3_run_id": str(k3.id),
+                    "corrective_run_id": str(corrective.id),
+                    "include_struct_fixed3": str(include_k3).lower(),
+                    "include_state_aware": str(include_corrective).lower(),
+                },
+            )
+        actions.append("dispatch_heldout")
+        return {
+            "state": "heldout_dispatched",
+            "actions": actions,
+            "optional_conditions": {
+                "STRUCT-FIXED-3": include_k3,
+                "SR-5-STATE-AWARE": include_corrective,
+            },
+        }
+    if terminal_failure(heldout):
+        return {
+            "state": "stopped_heldout_infrastructure_failure",
+            "actions": actions,
+            "status": [_status_line("heldout", heldout)],
+        }
+    if not terminal_success(heldout):
+        return {
+            "state": "waiting_heldout",
+            "actions": actions,
+            "status": [_status_line("heldout", heldout)],
+        }
+
+    heldout_artifact = api.artifact(heldout.id, HELDOUT_ARTIFACT_PREFIX)
+    if heldout_artifact is None:
+        return {
+            "state": "waiting_heldout_canonical_artifact",
+            "actions": actions,
+        }
+    heldout_digest = _artifact_digest(heldout_artifact)
+
+    final = find_marked_run(api, FINAL_WORKFLOW, heldout_digest)
+    if final is None:
+        if execute:
+            api.dispatch(
+                FINAL_WORKFLOW,
+                ref=ref,
+                inputs={
+                    "evidence_digest": heldout_digest,
+                    "source_sha": source_sha,
+                    "heldout_run_id": str(heldout.id),
+                },
+            )
+        actions.append("dispatch_final_answer")
+        return {
+            "state": "final_answer_dispatched",
+            "actions": actions,
+        }
+    if terminal_failure(final):
+        return {
+            "state": "stopped_final_answer_infrastructure_failure",
+            "actions": actions,
+            "status": [_status_line("final", final)],
+        }
+    if not terminal_success(final):
+        return {
+            "state": "waiting_final_answer",
+            "actions": actions,
+            "status": [_status_line("final", final)],
+        }
+
+    final_artifact = api.artifact(final.id, FINAL_ARTIFACT_PREFIX)
+    if final_artifact is None:
+        return {
+            "state": "waiting_final_canonical_artifact",
+            "actions": actions,
+        }
+
+    heldout_payload = api.artifact_json(
+        heldout_artifact,
+        "heldout-generalization-canonical.json",
+    )
+    final_payload = api.artifact_json(
+        final_artifact,
+        "final-answer-canonical.json",
+    )
+    final_digest = combine_digests(
+        b2_digest,
+        _artifact_digest(k3_artifact),
+        _artifact_digest(corrective_artifact),
+        heldout_digest,
+        _artifact_digest(final_artifact),
+    )
+    marker = f"<!-- research-0.14-conveyor-terminal:{final_digest} -->"
+    comments = api.issue_comments(TRACKING_ISSUE)
+    already_commented = any(
+        marker in str(comment.get("body") or "")
+        for comment in comments
+    )
+
+    if not already_commented:
+        body = "\n".join(
+            [
+                marker,
+                "## Research 0.14 conveyor reached terminal state",
+                "",
+                f"- B2 canonical run: `{CANONICAL_B2_RUN}`",
+                f"- Structural K3 agent run: `{k3.id}`",
+                f"- Corrective re-retrieval run: `{corrective.id}`",
+                f"- Held-out generalization run: `{heldout.id}`",
+                f"- Final-answer run: `{final.id}`",
+                f"- STRUCT-FIXED-3 promoted into held-out: `{include_k3}`",
+                f"- State-aware corrective promoted into held-out: `{include_corrective}`",
+                "- Held-out broad-claim gate: "
+                + f"`{bool(heldout_payload.get('broad_claim_gate', {}).get('passed'))}`",
+                "- Final-answer any deployable condition gate: "
+                + f"`{bool(final_payload.get('any_deployable_condition_passed'))}`",
+                f"- Terminal evidence digest: `{final_digest}`",
+                "",
+                "This comment records terminal machine-readable gates only. "
+                "No failed rows were used for semantic retuning.",
+            ]
+        )
+        if execute:
+            api.comment_issue(TRACKING_ISSUE, body)
+        actions.append("comment_terminal_summary")
+
+    return {
+        "state": "terminal",
+        "actions": actions,
+        "runs": {
+            "b2": b2.id,
+            "k3": k3.id,
+            "corrective": corrective.id,
+            "heldout": heldout.id,
+            "final": final.id,
+        },
+        "terminal_evidence_digest": final_digest,
+        "optional_conditions": {
+            "STRUCT-FIXED-3": include_k3,
+            "SR-5-STATE-AWARE": include_corrective,
+        },
+        "heldout_broad_claim_gate": bool(
+            heldout_payload.get("broad_claim_gate", {}).get("passed")
+        ),
+        "final_answer_any_deployable_gate": bool(
+            final_payload.get("any_deployable_condition_passed")
+        ),
+    }
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--repository",
+        default=os.environ.get("GITHUB_REPOSITORY", ""),
+    )
+    parser.add_argument(
+        "--token",
+        default=os.environ.get("GH_TOKEN", ""),
+    )
+    parser.add_argument("--ref", default="main")
+    parser.add_argument("--execute", action="store_true")
+    args = parser.parse_args()
+
+    if not args.repository or not args.token:
+        raise SystemExit("repository and token are required")
+    result = run_controller(
+        GitHubAPI(args.repository, args.token),
+        ref=args.ref,
+        execute=args.execute,
+    )
+    print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()
