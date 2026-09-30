@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "experiment": "adaptive-structural-shortlist-depth-v3",
+  "created_date": "2026-09-30",
+  "status": "preregistered_before_structural_adaptive_dev_scoring",
+  "purpose": "Re-test bounded adaptive shortlist depth after independently confirming the fixed structural retriever, without changing the original adaptive policy family.",
+  "lineage": {
+    "adaptive_v1": "adaptive-capability-shortlist-depth-v1",
+    "structural_v1": "adaptive-structural-retrieval-v1",
+    "structural_v2": "adaptive-structural-retrieval-v2-subgroup-robust",
+    "structural_confirmation_run": 36648848734,
+    "structural_confirmation_result": "benchmarks/agent-utility-v5-structural-confirmation-result.json"
+  },
+  "fixed_retriever": {
+    "feature_flag": "structural_retrieval",
+    "enabled": true,
+    "candidate_id": "STRUCT-4.5-1.5",
+    "tool_identifier_bonus": 4.5,
+    "operation_family_bonus": 1.5,
+    "schema_specificity_tiebreak": true,
+    "weights_retunable": false,
+    "candidate_index_behavior": "core structural retrieval behavior exactly as independently confirmed"
+  },
+  "independence": {
+    "b1_row_content_allowed": false,
+    "b2_row_content_allowed": false,
+    "b2_outcomes_used_for_policy_selection": false,
+    "structural_confirmation_rows_allowed_for_adaptive_tuning": false,
+    "old_adaptive_failure_threshold_retuning_allowed": false,
+    "old_adaptive_policy_family_reused_unchanged": true,
+    "heldout_432_rows_allowed": false
+  },
+  "development_surface": {
+    "source": "exact original #430 adaptive DEV surface",
+    "semantic_task_count": 240,
+    "task_rows_sha256": "7f2e4903642ad6aa6586540c30d2704ef20f7d0ff2c76ad73136aa55bb873534",
+    "catalog_family_sha256": "39a91721ef8d960adf626686b23eb6c87e154fa858a0381ee8027026fb26d677",
+    "catalog_sha256": {
+      "100": "0c713f6211890fe5d725e2817cfc412fce24a7e7e0213cbd2e59d36e94d81a34",
+      "250": "66738e87a236af6090c61ba8806df7766c8fba16ea7e914194f0452100f1cb4a",
+      "500": "432f6daf82073f31c6cc92ab861b23173c8873558459082ba08c3beb076d05f6"
+    },
+    "catalogs": [
+      100,
+      250,
+      500
+    ],
+    "tuning_eligible": true,
+    "confirmation_data_used": false
+  },
+  "candidate_policies": {
+    "controls": [
+      {
+        "id": "FIXED-3",
+        "k": 3
+      },
+      {
+        "id": "FIXED-5",
+        "k": 5
+      },
+      {
+        "id": "FIXED-10",
+        "k": 10
+      }
+    ],
+    "adaptive": [
+      {
+        "id": "REL-GAP-005",
+        "min_k": 3,
+        "max_k": 10,
+        "threshold": 0.05,
+        "rule": "return the smallest i in 3..9 with normalized adjacent gap_i >= threshold; otherwise 10"
+      },
+      {
+        "id": "REL-GAP-010",
+        "min_k": 3,
+        "max_k": 10,
+        "threshold": 0.1,
+        "rule": "return the smallest i in 3..9 with normalized adjacent gap_i >= threshold; otherwise 10"
+      },
+      {
+        "id": "REL-GAP-020",
+        "min_k": 3,
+        "max_k": 10,
+        "threshold": 0.2,
+        "rule": "return the smallest i in 3..9 with normalized adjacent gap_i >= threshold; otherwise 10"
+      },
+      {
+        "id": "MAX-GAP-010",
+        "min_k": 3,
+        "max_k": 10,
+        "threshold": 0.1,
+        "rule": "choose the largest normalized adjacent gap in positions 3..9, ties toward smaller i, if >= threshold; otherwise 10"
+      }
+    ],
+    "learned_policy_allowed": false,
+    "policy_family_changed_from_adaptive_v1": false
+  },
+  "score_semantics": {
+    "formula": "gap_i = (score_i - score_{i+1}) / max(score_1 - score_10, 1e-9)",
+    "evaluated_positions": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "zero_spread_rule": "return 10",
+    "absolute_score_thresholds_allowed": false
+  },
+  "token_accounting": {
+    "model": "HuggingFaceTB/SmolLM3-3B",
+    "model_revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+    "definition": "exact B2 SmolLM3 chat-template tool-token delta for each Top-K prefix",
+    "candidate_token_additivity_assumed": false
+  },
+  "dev_eligibility": {
+    "required_tool_set_recall_min_each_catalog": 0.97,
+    "all_required_full_coverage_min_each_catalog": 0.97,
+    "mean_candidate_count_max_exclusive": 5,
+    "p95_candidate_count_max": 10,
+    "mean_tool_schema_tokens_must_be_less_than_fixed5": true,
+    "unauthorized_destructive_execution_claim": false
+  },
+  "dev_selection": [
+    "eligible adaptive policies only",
+    "lowest mean exposed candidate count",
+    "highest worst-catalog required-route Recall",
+    "highest worst-catalog FullCoverage",
+    "highest pooled required-route Recall",
+    "lowest mean tool-schema tokens",
+    "lowest p95 retrieval latency",
+    "lexicographically smallest policy id"
+  ],
+  "after_dev": {
+    "if_no_policy_eligible": "close adaptive-depth v3; keep fixed structural retriever and do not alter thresholds post hoc",
+    "if_one_or_more_eligible": "select exactly one policy by the preregistered order, freeze it, then generate a fresh adaptive-depth confirmation surface",
+    "structural_confirmation_surface_reuse_allowed": false,
+    "fresh_confirmation_required": true,
+    "confirmation_task_count": 240,
+    "no_post_selection_retuning": true
+  },
+  "downstream_gate": {
+    "b2_terminal_required": true,
+    "task_pass_delta_vs_fixed5_min": -0.02,
+    "unauthorized_destructive_executions_max": 0,
+    "execution_policy_integrity": 1
+  },
+  "product_governance": {
+    "structural_retrieval_default_remains_false": true,
+    "adaptive_policy_default_promotion_allowed": false,
+    "broad_product_claim_allowed": false
+  },
+  "claim_boundary": "DEV re-evaluation of the unchanged adaptive-depth policy family over the independently confirmed fixed structural retriever. No adaptive generalization or downstream-agent claim until fresh confirmation/downstream gates pass."
+}
