@@ -32,8 +32,30 @@
     "heldout_432_rows_allowed": false
   },
   "development_surface": {
+    "unique_semantic_tasks": 240,
+    "task_strata": [
+      "clear_single_tool",
+      "sibling_operation_ambiguity",
+      "semantically_adjacent_distractors",
+      "multi_step_first_hop",
+      "typed_numeric_units",
+      "read_write_siblings",
+      "near_domain_unsupported",
+      "out_of_domain"
+    ],
+    "languages": [
+      "en",
+      "ko",
+      "es",
+      "ja",
+      "de",
+      "mixed"
+    ],
+    "tasks_per_stratum_language_cell": 5,
+    "cells": 48,
+    "each_task_one_language_only": true,
+    "tuning_eligible": true,
     "source": "exact original #430 adaptive DEV surface",
-    "semantic_task_count": 240,
     "task_rows_sha256": "7f2e4903642ad6aa6586540c30d2704ef20f7d0ff2c76ad73136aa55bb873534",
     "catalog_family_sha256": "39a91721ef8d960adf626686b23eb6c87e154fa858a0381ee8027026fb26d677",
     "catalog_sha256": {
@@ -41,12 +63,6 @@
       "250": "66738e87a236af6090c61ba8806df7766c8fba16ea7e914194f0452100f1cb4a",
       "500": "432f6daf82073f31c6cc92ab861b23173c8873558459082ba08c3beb076d05f6"
     },
-    "catalogs": [
-      100,
-      250,
-      500
-    ],
-    "tuning_eligible": true,
     "confirmation_data_used": false
   },
   "candidate_policies": {
@@ -209,6 +225,18 @@
     "change": "restore candidate_policies block byte-for-semantic-field content from adaptive v1",
     "thresholds_changed": false,
     "policy_logic_changed": false,
-    "reason": "remove abbreviated rule prose so the reuse contract is exact"
+    "reason": "remove abbreviated rule prose so the reuse contract is exact",
+    "evaluator_contract_metadata_restored": true,
+    "evaluator_contract_change_semantic": false
+  },
+  "catalogs": {
+    "endpoint_counts": [
+      100,
+      250,
+      500
+    ],
+    "nested": true,
+    "top10_ranked_list_required": true,
+    "exact_hashes_required_before_scoring": true
   }
 }
