@@ -72,7 +72,12 @@ _NESTED_RETURN_MAX_DEPTH = 8
 def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
     discovered: list[FieldSpec] = []
     root = _top_level_object_schema(schema)
-    top_names = set(root.get("properties", {})) if isinstance(root.get("properties"), dict) else set()
+    root_properties = root.get("properties")
+    top_names = (
+        set(root_properties)
+        if isinstance(root_properties, dict)
+        else set()
+    )
 
     def visit(
         value: dict[str, Any],
