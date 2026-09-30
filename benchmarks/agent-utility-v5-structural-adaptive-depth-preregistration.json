@@ -98,7 +98,12 @@
     "policy_family_changed_from_adaptive_v1": false
   },
   "score_semantics": {
+    "absolute_score_thresholds_allowed": false,
+    "rationale": "Structural CapabilityCandidate.score remains a deterministic ranking score, not a calibrated probability.",
+    "adaptive_signal": "positive-affine-invariant adjacent score gap normalized by the already-ranked Top-10 score range",
     "formula": "gap_i = (score_i - score_{i+1}) / max(score_1 - score_10, 1e-9)",
+    "invariance": "unchanged under score' = a*score+b for any a>0",
+    "zero_spread_rule": "if score_1 - score_10 <= 1e-9, return max_k",
     "evaluated_positions": [
       3,
       4,
@@ -107,9 +112,7 @@
       7,
       8,
       9
-    ],
-    "zero_spread_rule": "return 10",
-    "absolute_score_thresholds_allowed": false
+    ]
   },
   "token_accounting": {
     "model": "HuggingFaceTB/SmolLM3-3B",
@@ -117,24 +120,39 @@
     "definition": "exact B2 SmolLM3 chat-template tool-token delta for each Top-K prefix",
     "candidate_token_additivity_assumed": false
   },
-  "dev_eligibility": {
-    "required_tool_set_recall_min_each_catalog": 0.97,
-    "all_required_full_coverage_min_each_catalog": 0.97,
-    "mean_candidate_count_max_exclusive": 5,
-    "p95_candidate_count_max": 10,
-    "mean_tool_schema_tokens_must_be_less_than_fixed5": true,
-    "unauthorized_destructive_execution_claim": false
+  "dev_selection": {
+    "eligibility": [
+      "required-tool-set Recall >= 0.97 in each catalog size",
+      "all-required FullCoverage >= 0.97 in each catalog size",
+      "mean exposed candidate count < 5.0 across all rows",
+      "p95 exposed candidate count <= 10 across all rows",
+      "mean tool-schema tokens < FIXED-5 across all rows"
+    ],
+    "selection_order": [
+      "lowest mean exposed candidate count",
+      "highest worst-catalog required-tool-set Recall",
+      "highest worst-catalog all-required FullCoverage",
+      "highest pooled required-tool-set Recall",
+      "lowest mean tool-schema tokens",
+      "lowest p95 retrieval latency",
+      "lexicographically smallest policy id"
+    ],
+    "select_exactly_one_policy": true,
+    "no_post_selection_retuning": true,
+    "eligibility_thresholds": {
+      "required_tool_set_recall_min": 0.97,
+      "all_required_full_coverage_min": 0.97,
+      "mean_candidate_count_max_exclusive": 5,
+      "p95_candidate_count_max": 10,
+      "mean_schema_tokens_must_be_less_than_fixed5": true,
+      "coverage_must_pass_each_catalog": true,
+      "catalog_sizes": [
+        100,
+        250,
+        500
+      ]
+    }
   },
-  "dev_selection": [
-    "eligible adaptive policies only",
-    "lowest mean exposed candidate count",
-    "highest worst-catalog required-route Recall",
-    "highest worst-catalog FullCoverage",
-    "highest pooled required-route Recall",
-    "lowest mean tool-schema tokens",
-    "lowest p95 retrieval latency",
-    "lexicographically smallest policy id"
-  ],
   "after_dev": {
     "if_no_policy_eligible": "close adaptive-depth v3; keep fixed structural retriever and do not alter thresholds post hoc",
     "if_one_or_more_eligible": "select exactly one policy by the preregistered order, freeze it, then generate a fresh adaptive-depth confirmation surface",
@@ -154,5 +172,37 @@
     "adaptive_policy_default_promotion_allowed": false,
     "broad_product_claim_allowed": false
   },
-  "claim_boundary": "DEV re-evaluation of the unchanged adaptive-depth policy family over the independently confirmed fixed structural retriever. No adaptive generalization or downstream-agent claim until fresh confirmation/downstream gates pass."
+  "claim_boundary": "DEV re-evaluation of the unchanged adaptive-depth policy family over the independently confirmed fixed structural retriever. No adaptive generalization or downstream-agent claim until fresh confirmation/downstream gates pass.",
+  "metric_populations": {
+    "supported_task_strata": [
+      "clear_single_tool",
+      "sibling_operation_ambiguity",
+      "semantically_adjacent_distractors",
+      "multi_step_first_hop",
+      "typed_numeric_units",
+      "read_write_siblings"
+    ],
+    "unsupported_task_strata": [
+      "near_domain_unsupported",
+      "out_of_domain"
+    ],
+    "required_tool_recall_population": "supported rows only; denominator is required-route instances",
+    "all_required_full_coverage_population": "supported rows only",
+    "candidate_count_and_schema_token_population": "all rows",
+    "unsupported_rows": "report candidate-depth and token diagnostics separately; do not treat empty required-route sets as successful coverage",
+    "retrieval_abstention_claim_allowed": false
+  },
+  "catalog_robustness": {
+    "coverage_gate_unit": "each catalog size independently",
+    "pooled_coverage_reported_as": "diagnostic and tie-break only",
+    "worst_catalog_metrics_required": true,
+    "task_catalog_repeats_are_not_treated_as_independent_semantic_tasks": true
+  },
+  "chance_corrected_diagnostics": {
+    "fixed_k_bits_over_random_reported": true,
+    "adaptive_policy_selection_uses_bits_over_random": false,
+    "bits_over_random_used_as_inference_signal": false,
+    "fixed_k_definition": "BoR_any = log2(P_obs_any_required / mean(P_rand_any_required)); P_rand_any_required = 1 - C(N-R,K)/C(N,K) for each supported row with catalog size N and R required routes",
+    "adaptive_policy_bor_reported_as_post_selection_diagnostic": true
+  }
 }
