@@ -18,6 +18,8 @@ and anything unrecognised counts as frozen.
 """
 from __future__ import annotations
 
+from pydantic_core import PydanticSerializationError
+
 from .errors import ContractAmendmentError
 from .models import EndpointSpec, FieldSpec, ToolSpec
 
@@ -41,10 +43,24 @@ AMENDABLE_FIELD_ASPECTS = frozenset(
 )
 
 
+def _json_dump(
+    model: ToolSpec | EndpointSpec | FieldSpec,
+    **kwargs: object,
+) -> dict[str, object]:
+    """Serialize amendment input through the persisted-contract JSON boundary."""
+    try:
+        return model.model_dump(mode="json", **kwargs)
+    except PydanticSerializationError as exc:
+        raise ContractAmendmentError(
+            f"invalid amendment shape for {type(model).__name__}: "
+            f"contract data is not JSON-serializable ({exc})"
+        ) from exc
+
+
 def _aspects(model: EndpointSpec | FieldSpec) -> dict[str, object]:
     # `metadata` is deliberately included: it is frozen for amendment, unlike
     # the fingerprint definitions in models.py, which exclude it by design.
-    return model.model_dump(mode="json")
+    return _json_dump(model)
 
 
 def _check_field(
@@ -123,8 +139,8 @@ def validate_amendment(current: ToolSpec, amended: ToolSpec) -> None:
 
     # `metadata` is included on purpose: it is frozen for amendment (see module
     # docstring), unlike `ToolSpec.fingerprint`, which excludes it by design.
-    current_tool = current.model_dump(mode="json", exclude={"endpoints"})
-    amended_tool = amended.model_dump(mode="json", exclude={"endpoints"})
+    current_tool = _json_dump(current, exclude={"endpoints"})
+    amended_tool = _json_dump(amended, exclude={"endpoints"})
     for aspect in sorted(set(current_tool) | set(amended_tool)):
         if current_tool.get(aspect) != amended_tool.get(aspect):
             reason = (
@@ -134,6 +150,15 @@ def validate_amendment(current: ToolSpec, amended: ToolSpec) -> None:
             )
             violations.append(f"  {aspect} changed ({reason})")
 
+    for label, endpoints in (("current", current.endpoints), ("amended", amended.endpoints)):
+        for endpoint in endpoints:
+            if not isinstance(endpoint, EndpointSpec):
+                raise ContractAmendmentError(
+                    f"invalid amendment for {current.key!r}: {label} endpoints "
+                    f"must contain EndpointSpec instances, got "
+                    f"{type(endpoint).__name__!r} — model_copy(update=...) does not "
+                    "validate; construct EndpointSpec explicitly"
+                )
     current_endpoints = {endpoint.name: endpoint for endpoint in current.endpoints}
     amended_endpoints = {endpoint.name: endpoint for endpoint in amended.endpoints}
     if set(current_endpoints) != set(amended_endpoints):
