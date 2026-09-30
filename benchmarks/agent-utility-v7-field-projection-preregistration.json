@@ -97,7 +97,7 @@
       "evidence_class": "development",
       "workflow": ".github/workflows/research-0.14-field-projection-dev.yml",
       "conveyor_position": "independent stage advanced before the B2 gate",
-      "conveyor_identity": "frozen downstream implementation SHA; dispatched exactly once per source revision",
+      "conveyor_identity": "frozen projection implementation SHA, which is #506's own and never DOWNSTREAM_IMPLEMENTATION_SHA; dispatched exactly once per source revision",
       "rationale": "reuses the exact published B1 runtime so context measurements stay comparable instead of introducing a fourth uncharacterised model; consumes no upstream artifact, so queuing it behind the frozen chain would delay development evidence for no scientific reason"
     },
     "confirmation": {

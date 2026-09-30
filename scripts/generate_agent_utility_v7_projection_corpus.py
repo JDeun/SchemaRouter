@@ -45,7 +45,11 @@ def build_corpus(source_revision: str) -> dict[str, Any]:
         "schema_version": 1,
         "experiment": "0.14-output-field-projection",
         "issue": 506,
-        "surface": "development",
+        # Both arms regenerate this same frozen corpus from the same frozen
+        # source, so the corpus itself belongs to neither. Labelling it
+        # "development" would stamp that on the confirmation artifact too.
+        # Which arm produced a result lives in the run's evidence_class.
+        "surface": "shared_frozen_projection",
         "source_revision": source_revision,
         "authoring_slots_sha256": sha256_json(slots),
         "catalog_manifest": catalog_manifest(CATALOG_SIZES),
