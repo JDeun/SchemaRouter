@@ -462,7 +462,6 @@ def _qualification_evidence(candidate, corpus, rows=None):
         QUALIFICATION_EVIDENCE_CLASS,
         QUALIFICATION_SURFACE,
     )
-
     from scripts.qualify_agent_utility_runtime import ROSTER_REVISIONS
 
     return {
