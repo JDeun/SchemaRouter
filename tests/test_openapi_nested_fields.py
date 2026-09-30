@@ -164,3 +164,91 @@ def test_endpoint_allows_overlapping_source_paths_with_disjoint_results() -> Non
 
     assert endpoint.output_fields[1].projection_path == ("data", "band_gap")
     assert endpoint.output_fields[1].result_projection_path == ("data.band_gap",)
+
+
+def test_nested_field_unit_and_type_contract_are_preserved() -> None:
+    tool = tool_from_openapi(
+        "materials",
+        _document(
+            {
+                "type": "object",
+                "properties": {
+                    "data": {
+                        "type": "object",
+                        "properties": {
+                            "band_gap": {
+                                "type": "number",
+                                "description": "Electronic band gap",
+                                "x-ucum-unit": "eV",
+                            }
+                        },
+                    }
+                },
+            }
+        ),
+    )
+
+    field = {
+        item.name: item
+        for item in tool.endpoint("get_materials").output_fields
+    }["data.band_gap"]
+
+    assert field.json_schema["type"] == "number"
+    assert field.unit == "eV"
+    assert field.path == ["data", "band_gap"]
+
+
+def test_parent_query_does_not_implicitly_select_nested_leaf() -> None:
+    from schemarouter import InMemoryRegistry, PlanRequest, SchemaPlanner
+
+    tool = tool_from_openapi(
+        "materials",
+        _document(
+            {
+                "type": "object",
+                "properties": {
+                    "profile": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                        },
+                    }
+                },
+            }
+        ),
+    )
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    planner = SchemaPlanner(registry)
+
+    plan = planner.plan(PlanRequest(query="profile"))
+
+    assert plan.calls[0].fields == ["profile"]
+
+
+def test_leaf_query_can_select_nested_leaf_without_parent_token_leakage() -> None:
+    from schemarouter import InMemoryRegistry, PlanRequest, SchemaPlanner
+
+    tool = tool_from_openapi(
+        "materials",
+        _document(
+            {
+                "type": "object",
+                "properties": {
+                    "profile": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                        },
+                    }
+                },
+            }
+        ),
+    )
+    registry = InMemoryRegistry()
+    registry.register(tool)
+    planner = SchemaPlanner(registry)
+
+    plan = planner.plan(PlanRequest(query="name"))
+
+    assert "profile.name" in plan.calls[0].fields
