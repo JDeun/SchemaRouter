@@ -10,7 +10,6 @@ from pathlib import Path
 from scripts.agent_utility_generated_common import (
     CORRECTIVE_CONDITIONS,
     catalog_manifest,
-    sha256_json,
 )
 from scripts.agent_utility_generated_corpus import (
     build_corrective_task,
