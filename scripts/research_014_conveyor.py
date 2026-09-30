@@ -18,6 +18,7 @@ import urllib.parse
 import urllib.request
 import zipfile
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -303,6 +304,13 @@ def _gate(payload: dict[str, Any], path: tuple[str, ...]) -> bool:
     return value
 
 
+def _age_seconds(value: str) -> float:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return max(0.0, (datetime.now(timezone.utc) - parsed).total_seconds())
+
+
 def _status_line(label: str, run: StageRun | None) -> str:
     if run is None:
         return f"{label}=absent"
@@ -346,12 +354,14 @@ def run_controller(
     b2_digest = _artifact_digest(b2_artifact)
     source_sha = api.ref_sha(ref)
 
-    k3 = find_k3_run_after(api, not_before=b2.created_at)
+    b2_terminal_time = str(b2_row.get("updated_at") or b2.created_at)
+    k3 = find_k3_run_after(api, not_before=b2_terminal_time)
     if k3 is None:
         # The K3 workflow already has its own exact-B2 workflow_run trigger.
         # Do not race that trigger on the same completion event. Only the
         # scheduled recovery scan may dispatch a missing K3 run.
-        if recover_missing_k3:
+        recovery_ready = _age_seconds(b2_terminal_time) >= 600.0
+        if recover_missing_k3 and recovery_ready:
             if execute:
                 api.dispatch(K3_WORKFLOW, ref=ref)
             actions.append("recover_dispatch_k3")
