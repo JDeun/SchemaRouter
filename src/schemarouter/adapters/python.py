@@ -79,6 +79,16 @@ def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
         else set()
     )
 
+    def field_name_for(path: tuple[str, ...]) -> str:
+        parts: list[str] = []
+        for part in path:
+            if part == "*":
+                if parts:
+                    parts[-1] += "[]"
+                continue
+            parts.append(part)
+        return ".".join(parts)
+
     def visit(
         value: dict[str, Any],
         *,
@@ -106,6 +116,14 @@ def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
         if raw_type == "array" or (
             isinstance(raw_type, list) and "array" in raw_type
         ):
+            items = resolved.get("items")
+            if isinstance(items, dict):
+                visit(
+                    _resolve_local_ref(schema, items),
+                    prefix=(*prefix, "*"),
+                    depth=depth + 1,
+                    ancestors=next_ancestors,
+                )
             return
 
         properties = resolved.get("properties")
@@ -117,8 +135,9 @@ def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
                 continue
             path = (*prefix, str(name))
             if prefix:
-                field_name = ".".join(path)
+                field_name = field_name_for(path)
                 if field_name not in top_names:
+                    record_preserving = "*" in path
                     discovered.append(
                         FieldSpec(
                             name=field_name,
@@ -130,7 +149,11 @@ def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
                                 )
                             ),
                             path=list(path),
-                            result_path=[field_name],
+                            result_path=(
+                                list(path)
+                                if record_preserving
+                                else [field_name]
+                            ),
                             unit=_schema_unit(child),
                             identifier=(
                                 str(name) in {"id", "uuid", "key"}
@@ -148,7 +171,6 @@ def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
 
     visit(root, prefix=(), depth=0, ancestors=frozenset())
     return discovered
-
 
 def _fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
     object_schema = _top_level_object_schema(schema)
