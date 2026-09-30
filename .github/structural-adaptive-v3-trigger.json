@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "experiment": "adaptive-structural-shortlist-depth-v3",
+  "authorization": "one_shot_development_surface",
+  "created_date": "2026-09-30",
+  "implementation_sha": "e8eafa468ade95eca00a2ae0d301caf25a4f24cf",
+  "attempt": 4,
+  "retries_of": [
+    36650492557,
+    36650903468,
+    36651659256
+  ],
+  "prior_attempts_policy_results_generated": false,
+  "prior_attempts_used_for_tuning": false,
+  "retry_reason": "attempt 1 import collection failure; attempts 2-3 prereg schema compatibility failures before policy result generation; PR #487 merged fail-closed successor-surface adapter",
+  "fixed_retriever": {
+    "candidate_id": "STRUCT-4.5-1.5",
+    "structural_retrieval": true,
+    "weights_retunable": false
+  },
+  "development_surface": {
+    "semantic_task_count": 240,
+    "catalog_sizes": [
+      100,
+      250,
+      500
+    ],
+    "expected_rows": 720,
+    "task_rows_sha256": "7f2e4903642ad6aa6586540c30d2704ef20f7d0ff2c76ad73136aa55bb873534",
+    "catalog_family_sha256": "39a91721ef8d960adf626686b23eb6c87e154fa858a0381ee8027026fb26d677"
+  },
+  "policy_family": "unchanged adaptive v1 FIXED-3/5/10 + REL-GAP-005/010/020 + MAX-GAP-010",
+  "structural_confirmation_rows_used": false,
+  "b2_outcomes_used": false,
+  "heldout_432_rows_used": false,
+  "no_post_selection_retuning": true
+}
