@@ -13,6 +13,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -44,6 +45,7 @@ class StageRun:
     created_at: str
     html_url: str
     run_attempt: int
+    head_sha: str
 
 
 class GitHubAPI:
@@ -217,7 +219,22 @@ def _stage_run(row: dict[str, Any]) -> StageRun:
         created_at=str(row.get("created_at") or ""),
         html_url=str(row.get("html_url") or ""),
         run_attempt=int(row.get("run_attempt") or 1),
+        head_sha=str(row.get("head_sha") or ""),
     )
+
+
+def find_marked_runs(
+    api: GitHubAPI,
+    workflow_file: str,
+    marker: str,
+) -> list[StageRun]:
+    matches = [
+        _stage_run(row)
+        for row in api.workflow_runs(workflow_file)
+        if marker in str(row.get("display_title") or "")
+    ]
+    matches.sort(key=lambda run: (run.created_at, run.id), reverse=True)
+    return matches
 
 
 def find_marked_run(
@@ -225,15 +242,17 @@ def find_marked_run(
     workflow_file: str,
     marker: str,
 ) -> StageRun | None:
-    matches = [
-        _stage_run(row)
-        for row in api.workflow_runs(workflow_file)
-        if marker in str(row.get("display_title") or "")
-    ]
-    if not matches:
-        return None
-    matches.sort(key=lambda run: (run.created_at, run.id), reverse=True)
-    return matches[0]
+    matches = find_marked_runs(api, workflow_file, marker)
+    return matches[0] if matches else None
+
+
+def frozen_source_sha(run: StageRun) -> str:
+    match = re.search(r"(?:^| )source=([0-9a-f]{40})(?:$| )", run.display_title)
+    if match is not None:
+        return match.group(1)
+    if re.fullmatch(r"[0-9a-f]{40}", run.head_sha):
+        return run.head_sha
+    raise RuntimeError(f"unable to recover frozen source SHA from run {run.id}")
 
 
 def find_k3_runs_after(api: GitHubAPI, *, not_before: str) -> list[StageRun]:
@@ -393,7 +412,8 @@ def run_controller(
                 "status": [_status_line("k3", k3)],
             }
 
-    corrective = find_marked_run(api, CORRECTIVE_WORKFLOW, b2_digest)
+    corrective_runs = find_marked_runs(api, CORRECTIVE_WORKFLOW, b2_digest)
+    corrective = corrective_runs[0] if corrective_runs else None
     if corrective is None:
         if execute:
             api.dispatch(
@@ -406,23 +426,32 @@ def run_controller(
             )
         actions.append("dispatch_corrective")
     elif terminal_failure(corrective):
-        if retry_infrastructure_failure(
-            api,
-            corrective,
-            execute=execute,
-            actions=actions,
-            label="corrective",
-        ):
+        failed_corrective_runs = [
+            run for run in corrective_runs if terminal_failure(run)
+        ]
+        if len(failed_corrective_runs) < MAX_INFRA_ATTEMPTS:
+            retry_source_sha = frozen_source_sha(corrective)
+            if execute:
+                api.dispatch(
+                    CORRECTIVE_WORKFLOW,
+                    ref=ref,
+                    inputs={
+                        "evidence_digest": b2_digest,
+                        "source_sha": retry_source_sha,
+                    },
+                )
+            actions.append(
+                "recover_dispatch_corrective_after_failure:"
+                f"prior_run={corrective.id}:attempt={len(failed_corrective_runs) + 1}:"
+                f"source={retry_source_sha}"
+            )
+            corrective = None
+        else:
             return {
-                "state": "retrying_corrective_infrastructure",
+                "state": "stopped_corrective_infrastructure_failure_after_retries",
                 "actions": actions,
                 "status": [_status_line("corrective", corrective)],
             }
-        return {
-            "state": "stopped_corrective_infrastructure_failure_after_retries",
-            "actions": actions,
-            "status": [_status_line("corrective", corrective)],
-        }
 
     if k3 is None or corrective is None or not (
         terminal_success(k3) and terminal_success(corrective)
