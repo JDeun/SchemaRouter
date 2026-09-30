@@ -375,24 +375,23 @@ def run_controller(
         # A rerun of this historical run would reuse its old workflow wrapper.
         # Use a fresh workflow_dispatch so infrastructure-only fixes on main are
         # picked up while the frozen K3 implementation SHA remains unchanged.
+        # Continue this controller pass so #431 can still launch in parallel.
         failed_k3_runs = [run for run in k3_runs if terminal_failure(run)]
         if len(failed_k3_runs) < MAX_INFRA_ATTEMPTS:
+            failed_k3 = k3
             if execute:
                 api.dispatch(K3_WORKFLOW, ref=ref)
             actions.append(
-                f"recover_dispatch_k3_after_failure:prior_run={k3.id}:"
+                f"recover_dispatch_k3_after_failure:prior_run={failed_k3.id}:"
                 f"attempt={len(failed_k3_runs) + 1}"
             )
+            k3 = None
+        else:
             return {
-                "state": "retrying_k3_infrastructure",
+                "state": "stopped_k3_infrastructure_failure_after_retries",
                 "actions": actions,
                 "status": [_status_line("k3", k3)],
             }
-        return {
-            "state": "stopped_k3_infrastructure_failure_after_retries",
-            "actions": actions,
-            "status": [_status_line("k3", k3)],
-        }
 
     corrective = find_marked_run(api, CORRECTIVE_WORKFLOW, b2_digest)
     if corrective is None:
