@@ -128,6 +128,7 @@ nav:
       - OPTIMADE: guides/optimade.md
       - MCP: guides/mcp.md
       - Declarative HTTP/JSON: guides/http-json.md
+      - Universal ingestion matrix: guides/universal-ingestion.md
       - Human-readable documentation: guides/html-documentation.md
       - Third-party adapter plugins: guides/adapter-plugins.md
       - Recipes:
