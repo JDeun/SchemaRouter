@@ -127,6 +127,7 @@ nav:
       - OpenAPI: guides/openapi.md
       - OpenAPI compatibility: guides/openapi-compatibility.md
       - GraphQL: guides/graphql.md
+      - OData: guides/odata.md
       - OPTIMADE: guides/optimade.md
       - MCP: guides/mcp.md
       - Declarative HTTP/JSON: guides/http-json.md
