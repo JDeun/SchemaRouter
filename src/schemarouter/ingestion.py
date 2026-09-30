@@ -837,6 +837,54 @@ class URLSchemaLoader:
         openapi_ref_max_bytes: int = _DEFAULT_OPENAPI_REF_MAX_BYTES,
         timeout: float = 20.0,
     ) -> ToolSpec:
+        result = await self.inspect(
+            url,
+            kind=kind,
+            name=name,
+            namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
+            base_url=base_url,
+            schema_headers=schema_headers,
+            trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
+            openapi_external_refs=openapi_external_refs,
+            openapi_ref_max_depth=openapi_ref_max_depth,
+            openapi_ref_max_documents=openapi_ref_max_documents,
+            openapi_ref_max_bytes=openapi_ref_max_bytes,
+            timeout=timeout,
+        )
+        return self._commit(result, replace=replace)
+
+    def commit_candidate(
+        self,
+        result: AdapterLoadResult,
+        *,
+        replace: bool = False,
+    ) -> ToolSpec:
+        """Commit a previously inspected adapter result through normal CAS/binding rules."""
+
+        return self._commit(result, replace=replace)
+
+    async def inspect(
+        self,
+        url: str,
+        *,
+        kind: SourceKind = "auto",
+        name: str | None = None,
+        namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
+        base_url: str | None = None,
+        schema_headers: dict[str, str] | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: Any | None = None,
+        openapi_external_refs: bool = False,
+        openapi_ref_max_depth: int = _DEFAULT_OPENAPI_REF_MAX_DEPTH,
+        openapi_ref_max_documents: int = _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS,
+        openapi_ref_max_bytes: int = _DEFAULT_OPENAPI_REF_MAX_BYTES,
+        timeout: float = 20.0,
+    ) -> AdapterLoadResult:
         _validate_url(url)
         if not isinstance(openapi_external_refs, bool):
             raise SchemaSourceError("openapi_external_refs must be a boolean")
@@ -899,7 +947,7 @@ class URLSchemaLoader:
                 context,
                 adapter_kind=adapter.kind,
             )
-            return self._commit(result, replace=replace)
+            return result
 
         for adapter in self.adapters.ordered():
             try:
@@ -913,7 +961,7 @@ class URLSchemaLoader:
                     context,
                     adapter_kind=adapter.kind,
                 )
-                return self._commit(result, replace=replace)
+                return result
 
         detail = "; ".join(diagnostics) or "no registered adapter recognized the source"
         raise UnsupportedSchemaSourceError(
