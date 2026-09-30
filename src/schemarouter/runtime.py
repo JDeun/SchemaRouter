@@ -280,17 +280,37 @@ class SchemaRouter:
         identifier flags, provenance and licence. It may not change execution
         identity or validation shape; see `amendment.validate_amendment`.
 
+        This is more than cosmetic annotation. Accepted aspects can change what
+        the caller receives and which routes are reachable:
+
+        - `path` / `result_path` on an existing field re-point which value a
+          sanctioned field name resolves to. Projection is the redaction
+          boundary for a field-selecting call, so amending these can move
+          previously unprojected response content into the answer under the
+          same field name.
+        - `unit` and `unit_normalization` change how a numeric value is
+          rescaled before it reaches the caller (see `executor.py` call
+          validation).
+        - `source_type`, `license`, and `unit` feed evidence availability
+          (`evidence.py`), which the executor enforces as a hard gate. An
+          amendment can unblock an evidence-gated route by declaration alone,
+          with no change to what the underlying source actually returns.
+        - Declaring a semantic ID or unit can also change routing outright: it
+          may make a cross-provider fallback compatible that previously was
+          not.
+
+        Because of this, `amend_capability` is trusted local code, at the same
+        grade as `RegistryExecutor.bind()`. It must never be reachable from a
+        decision backend, remote content, or model output.
+
         The execution binding is carried across the amendment, so a capability
         SchemaRouter imported on the application's behalf stays executable. The
         invoker is never exposed to the caller.
-
-        Annotation can change routing: declaring a semantic ID or unit may make a
-        cross-provider fallback compatible that previously was not.
         """
         current = self.registry.get(tool_key)
         validate_amendment(current, amended)
         key = self.registry.register(amended, replace=True)
-        self.executor.restamp_binding(key)
+        self.executor.restamp_binding(key, amended.fingerprint)
         return key
 
     def register_adapter(

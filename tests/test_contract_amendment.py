@@ -310,20 +310,46 @@ def test_restamp_points_an_existing_binding_at_the_current_fingerprint():
     endpoint = tool.endpoints[0]
     amended_endpoint = endpoint.model_copy(update={"description": "annotated"})
     router.add_tool(tool.model_copy(update={"endpoints": [amended_endpoint]}), replace=True)
+    current_fingerprint = router.registry.get(key).fingerprint
 
-    assert not router.executor.is_binding_ready_for_contract(
-        key, router.registry.get(key).fingerprint
-    )
-    assert router.executor.restamp_binding(key) is True
-    assert router.executor.is_binding_ready_for_contract(
-        key, router.registry.get(key).fingerprint
-    )
+    assert not router.executor.is_binding_ready_for_contract(key, current_fingerprint)
+    assert router.executor.restamp_binding(key, current_fingerprint) is True
+    assert router.executor.is_binding_ready_for_contract(key, current_fingerprint)
 
 
 def test_restamp_reports_false_when_there_is_no_binding():
     router, key = _bound_router()
+    fingerprint = router.registry.get(key).fingerprint
     router.executor.unbind(key)
-    assert router.executor.restamp_binding(key) is False
+    assert router.executor.restamp_binding(key, fingerprint) is False
+
+
+def test_restamp_refuses_a_fingerprint_that_no_longer_matches_the_registry():
+    # Guards against the window between "validate_amendment accepted this
+    # spec" and "restamp_binding stamps it": if another writer lands on the
+    # same key in that window (a concurrent thread, or another process on a
+    # shared SQLiteRegistry), restamp must not mark the binding ready for a
+    # contract that was never validated. It compares against the fingerprint
+    # the caller actually validated, not whatever the registry currently
+    # holds.
+    router, key = _bound_router()
+    tool = router.registry.get(key)
+    endpoint = tool.endpoints[0]
+    validated_amendment = tool.model_copy(
+        update={"endpoints": [endpoint.model_copy(update={"description": "annotated"})]}
+    )
+    # Simulate the interleaving: some other writer registers a *different*
+    # spec on this key before restamp_binding runs for the amendment that was
+    # actually validated.
+    interloper = tool.model_copy(
+        update={"endpoints": [endpoint.model_copy(update={"description": "unrelated write"})]}
+    )
+    router.registry.register(interloper, replace=True)
+
+    assert router.executor.restamp_binding(key, validated_amendment.fingerprint) is False
+    assert not router.executor.is_binding_ready_for_contract(
+        key, router.registry.get(key).fingerprint
+    )
 
 
 def test_restamp_does_not_expose_or_accept_an_invoker():
@@ -333,7 +359,7 @@ def test_restamp_does_not_expose_or_accept_an_invoker():
     import inspect
 
     signature = inspect.signature(router.executor.restamp_binding)
-    assert list(signature.parameters) == ["tool_key"]
+    assert list(signature.parameters) == ["tool_key", "expected_fingerprint"]
 
 
 # --- public API -------------------------------------------------------------
@@ -471,8 +497,14 @@ def test_a_plan_built_before_the_amendment_is_still_rejected():
 
 
 def test_the_amendment_path_is_not_reachable_from_model_facing_code():
-    # A decision backend receives finite option IDs, never a router. Assert the
-    # amendment API never leaked into the decision or planner surfaces.
+    # This is a lint against future wiring, not a security proof: it only
+    # greps four named files for the two symbol names, so it cannot catch a
+    # leak introduced through indirection (re-export, dynamic dispatch, a new
+    # decision-adjacent module) and no change in runtime.py, executor.py, or
+    # integrations/ can turn it red. Its job is to fail fast and loudly the
+    # day someone imports `amend_capability` or `restamp_binding` into one of
+    # these four surfaces, which a decision backend receives finite option IDs
+    # from and never a router.
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[1] / "src" / "schemarouter"
