@@ -153,8 +153,9 @@ candidates = router.retrieve("cancel this registered job", k=3)
 
 This profile adds conservative tool-identifier and operation-family evidence plus a schema-specificity
 tie-break. It does **not** change execution authority, and it is not the product default. Independent
-retrieval confirmation has passed for a fixed Top-3 shortlist, but downstream strong-agent utility
-and broader held-out gates remain in progress. Treat it as an opt-in research-backed candidate until
+retrieval confirmation passed for a fixed Top-3 shortlist, but the preregistered strong-agent
+K3-vs-K5 downstream gate later failed its -2pp task-pass promotion floor. Top-3 is therefore **not**
+promoted into the held-out benchmark. Treat structural retrieval as an opt-in research surface until
 a later release explicitly changes that status.
 
 The returned candidates retain the full effective input/output JSON Schemas plus registered
@@ -244,11 +245,14 @@ Why this matters: on the corrected frozen 0.14 Phase-A benchmark, Top-1 required
 **68.97%**, while Top-5 preserved **100%** of required capabilities. At 250 registered endpoints,
 Top-5 exposed only **2.38%** of the FULL serialized schema context on average.
 
-The canonical B1 Qwen3-0.6B agent benchmark is now terminal: SR-5 achieved **91.30%** task pass
+The canonical B1 Qwen3-0.6B agent benchmark is terminal: SR-5 achieved **91.30%** task pass
 versus **68.48%** for FULL while using **5.42%** of FULL tool-schema tokens, with **0**
 unauthorized destructive executions. This remains controlled mechanism evidence rather than a broad
-production claim. The stronger SmolLM3-3B replication (#423) is still running, and broader held-out
-agent-utility (#432) plus final-answer quality (#424) remain separate gates before generalization.
+production claim. The materially stronger SmolLM3-3B B2 replication (#423) is also terminal
+success. A separate structural K3-vs-K5 optimization failed its preregistered task-pass promotion
+gate, so K3 is not carried into the held-out benchmark. Execution-state-aware corrective retrieval
+(#431) is the active gate; the 780-task held-out benchmark (#432) and final-answer quality benchmark
+(#424) remain downstream confirmation stages.
 
 The earlier 0.11–0.13 open-set classifier/veto experiments remain valuable negative evidence. No
 experimental learned router or structural retrieval profile is promoted as an unconditional production default in 0.12.0.
@@ -258,6 +262,7 @@ See:
 - [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
 - [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [Complete experiment index](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
+- [0.14 paper-evidence checkpoint](https://jdeun.github.io/SchemaRouter/research/0.14-paper-evidence-checkpoint/)
 - [0.12.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.12.0/)
 - [Changelog](CHANGELOG.md)
 

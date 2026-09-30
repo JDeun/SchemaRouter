@@ -85,8 +85,10 @@ The held-out agent comparison freezes:
 - SR-PROGRESSIVE;
 - ORACLE.
 
-An adaptive #430 condition is excluded unless it is independently promoted and frozen
-before the held-out corpus is generated.
+No adaptive #430 policy was promoted. A later separately preregistered structural K3
+candidate also failed its strong-agent K3-vs-K5 task-pass promotion gate, so K3 is not carried into
+the held-out condition manifest. #431 state-aware corrective retrieval remains the active optional
+condition gate before the manifest is frozen.
 
 SchemaRouter ranking scores/positions remain hidden from the downstream agent.
 Visible candidates are sorted lexicographically by registered route ID.
@@ -173,10 +175,10 @@ The scaffold does **not** generate or contain:
 - catalogs or candidate sets;
 - scores or labels.
 
-The generator is `scripts/generate_agent_utility_v3_heldout_authoring_plan.py`. Its
-`content_generation_authorized` flag remains false and the actual held-out corpus stays sealed
-until #423 is terminal. This allows the cross-balance and unique task identities to be tested
-without introducing B2-result-dependent authoring.
+The generator is `scripts/generate_agent_utility_v3_heldout_authoring_plan.py`. B2 is
+now terminal; however actual held-out content/inference remains controlled by the #500 conveyor.
+The manifest is frozen only after the preregistered structural-K gate and #431 corrective gate are
+terminal. The structural K3 gate is already terminal negative; #431 remains active.
 
 
 ## Corpus identity validation

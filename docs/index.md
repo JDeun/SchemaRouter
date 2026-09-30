@@ -187,6 +187,25 @@ stable package to function.
 [Read the stable-core contract →](stable-core.md) ·
 [Read the routing research status →](research/routing-status.md)
 
+## Current research checkpoint
+
+The stable `0.12.0` public API remains unchanged while the 0.14 research cycle evaluates the
+retrieval boundary more rigorously.
+
+- **B1** is terminal: SR-5 reached **91.30%** task pass vs **68.48%** for FULL while using
+  **5.42%** of FULL tool-schema tokens on the controlled Qwen3-0.6B surface.
+- **B2** is terminal success on the frozen SmolLM3-3B replication protocol.
+- A separate **structural K3-vs-K5** downstream gate failed its preregistered -2pp task-pass
+  promotion floor, so K3 is not promoted into the large held-out benchmark.
+- **#431 corrective re-retrieval** is the active gate. The 780-task **#432 held-out** benchmark and
+  **#424 final-answer quality** benchmark remain downstream confirmation stages.
+
+These results are kept separate from the stable product contract and from any broad production
+claim.
+
+[Research status →](research/routing-status.md) ·
+[0.14 evidence checkpoint →](research/0.14-paper-evidence-checkpoint.md)
+
 ## Go deeper
 
 <div class="grid cards" markdown>

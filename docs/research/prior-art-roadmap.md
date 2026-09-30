@@ -27,7 +27,7 @@ Before creating a new routing experiment:
 | Hard-negative OOS generation | #389 / #395 | **terminal** | V6B separated synthetic evidence but rejected every natural DEV query |
 | Energy/density/open-space scoring | #390 / #397 / #399 / #401 | **terminal / no active successor** | V6C/V6D/V6E terminal; do not retune consumed geometry |
 | Selective/conformal abstention | #391 / #412 | **terminal tested formulation** | E5 conformal safety passed open-set gates but destroyed supported recall |
-| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | **active primary direction** | Phase A passed at Recall@5=100%; B1 downstream-agent A/B is running |
+| Tool/executable-schema retrieval / agent utility | #392 / #417 / #418 / #420 | **active primary direction** | Phase A/B1 are terminal; B2 strong-agent replication is terminal success; #431 is the active gate before #432/#424 |
 
 Active research parent: **#417**. Historical 0.13 prior-art parent: **#388**.
 
@@ -57,10 +57,12 @@ result evaluation and optional candidate expansion
 
 Relevant current work:
 - #417 — active research parent;
-- #418 — FULL vs Top-K vs progressive utility protocol;
-- #420 — B1 local downstream-agent A/B, running;
-- #423 — stronger-agent B2 replication protocol;
-- #424 — final-answer factual-quality protocol.
+- #418 — FULL vs Top-K vs progressive utility protocol, terminal;
+- #420 — B1 local downstream-agent A/B, terminal;
+- #423 — stronger-agent B2 replication, terminal success;
+- #431 — active execution-state-aware corrective retrieval;
+- #432 — gated 780-task held-out generalization benchmark;
+- #424 — gated final-answer factual-quality benchmark.
 
 Phase A already establishes the retrieval-side premise on the corrected frozen benchmark:
 - Recall@1 **68.97%**;
@@ -289,14 +291,19 @@ The following rules apply across all workstreams:
 
 ## Execution order
 
-The current order is now governed by #417:
+The current order is now governed by #417/#500:
 
-1. complete the frozen #420 B1 aggregate without changing task/catalog/model/prompt/K semantics;
-2. freeze and execute #423 with a materially stronger downstream agent;
-3. execute #424 only after its separate answer-bearing benchmark is frozen;
-4. keep #384/#395/#397/#399/#401/#404/#406/#408/#409/#412/#415 as terminal 0.13 controls;
-5. revisit open-set/conformal methods only if a future retrieval/safety question requires them, never as a post-hoc repair of consumed DEV;
-6. maintain #392 as the prior-art bridge between executable-schema retrieval and the active 0.14 agent-utility work.
+1. B1 and B2 are terminal and preserved as frozen evidence;
+2. complete #431 without changing its frozen task/state/model/scoring semantics;
+3. freeze the #432 held-out condition manifest from the preregistered boolean gates;
+4. execute #432, then #424 only through the gated conveyor.
+
+The older pre-terminal 0.14 launch plan is superseded by this gated conveyor. Historical
+run/protocol provenance remains in Git history, the experiment ledger, and terminal issue comments.
+
+Maintain #392 as the prior-art bridge between executable-schema retrieval and the active 0.14
+agent-utility work. Revisit open-set/conformal methods only for a newly preregistered question, never
+as a post-hoc repair of consumed DEV.
 
 Historical 0.13 order was:
 
