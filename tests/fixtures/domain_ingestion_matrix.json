@@ -9,7 +9,10 @@
     "langchain_tool",
     "llamaindex_tool",
     "http_json",
-    "documentation_proposal"
+    "documentation_proposal",
+    "graphql",
+    "odata",
+    "openrpc"
   ],
   "required_contract": [
     "input_schema",
@@ -122,6 +125,43 @@
       ],
       "same_provider_fallback": true,
       "notes": "Representative non-science SaaS/API domain with both machine-readable and explicit REST paths."
+    },
+    {
+      "id": "github_graphql",
+      "domain": "developer_platform",
+      "provider": "github",
+      "primary_mode": "graphql",
+      "access_modes": [
+        "graphql",
+        "openapi",
+        "http_json"
+      ],
+      "same_provider_fallback": true,
+      "notes": "GitHub exposes both GraphQL and REST; GraphQL selection sets exercise native field projection."
+    },
+    {
+      "id": "microsoft_graph_odata",
+      "domain": "enterprise_productivity",
+      "provider": "microsoft-graph",
+      "primary_mode": "odata",
+      "access_modes": [
+        "odata",
+        "http_json"
+      ],
+      "same_provider_fallback": true,
+      "notes": "Representative enterprise OData-shaped service; CSDL/entity projection remains domain-neutral."
+    },
+    {
+      "id": "generic_openrpc_service",
+      "domain": "rpc_platform",
+      "provider": "openrpc-fixture",
+      "primary_mode": "openrpc",
+      "access_modes": [
+        "openrpc",
+        "http_json"
+      ],
+      "same_provider_fallback": true,
+      "notes": "Representative JSON-RPC/OpenRPC capability surface compiled into the same canonical contracts."
     }
   ]
 }
