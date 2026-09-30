@@ -847,7 +847,6 @@ def _nested_response_fields(
                             aliases=list(
                                 dict.fromkeys(
                                     [
-                                        field_name.replace("_", " "),
                                         name,
                                         leaf_alias,
                                     ]
