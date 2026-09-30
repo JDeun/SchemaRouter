@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "issue": 430,
+  "experiment": "structural-fixed-k3-confirmation-v4",
+  "authorization": "one_shot_fresh_confirmation",
+  "created_date": "2026-09-30",
+  "implementation_sha": "feec1418bde2ae7f871be7d6edfa9a885e237608",
+  "confirmation_attempt": 1,
+  "fixed_candidate": {
+    "id": "STRUCT-4.5-1.5-K3",
+    "shortlist_k": 3,
+    "structural_retrieval": true,
+    "weights_retunable": false,
+    "k_retunable": false
+  },
+  "expected_surface": {
+    "semantic_task_count": 240,
+    "catalog_sizes": [
+      100,
+      250,
+      500
+    ],
+    "expected_rows": 720,
+    "exact_prior_query_overlap_max": 0,
+    "shared_prior_routes": "canonical_30_only"
+  },
+  "prior_confirmation_rows_used": false,
+  "b2_outcomes_used": false,
+  "tuning_after_confirmation_allowed": false,
+  "negative_result_is_terminal": true
+}
