@@ -24,6 +24,9 @@ def test_domain_ingestion_matrix_covers_required_real_world_services() -> None:
         "arxiv",
         "crossref",
         "github_rest",
+        "github_graphql",
+        "microsoft_graph_odata",
+        "generic_openrpc_service",
     } <= set(services)
 
 
@@ -38,6 +41,8 @@ def test_domain_ingestion_matrix_spans_multiple_domains() -> None:
         "scholarly_search",
         "scholarly_metadata",
         "developer_platform",
+        "enterprise_productivity",
+        "rpc_platform",
     } <= domains
 
 
@@ -118,3 +123,31 @@ def test_matrix_requires_common_canonical_contract_boundaries() -> None:
         "execution_authority",
         "secret_boundary",
     }
+
+
+def test_protocol_specific_modes_are_represented_in_real_world_matrix() -> None:
+    matrix = _matrix()
+    services = {item["id"]: item for item in matrix["services"]}
+
+    assert services["github_graphql"]["primary_mode"] == "graphql"
+    assert services["microsoft_graph_odata"]["primary_mode"] == "odata"
+    assert services["generic_openrpc_service"]["primary_mode"] == "openrpc"
+
+
+def test_universal_modes_cover_first_class_and_generic_ingestion_paths() -> None:
+    matrix = _matrix()
+
+    assert {
+        "openapi",
+        "mcp",
+        "optimade",
+        "python_callable",
+        "langchain_tool",
+        "llamaindex_tool",
+        "http_json",
+        "graphql",
+        "odata",
+        "openrpc",
+        "source_adapter",
+        "documentation_proposal",
+    } <= set(matrix["universal_modes"])
