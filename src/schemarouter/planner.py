@@ -869,7 +869,7 @@ class SchemaPlanner:
     def _candidate_sort_key(
         self,
         candidate: _Candidate,
-    ) -> tuple[float, float, bool, str, str]:
+    ) -> tuple[float, bool, bool, float, bool, str, str]:
         specificity = 0.0
         if self.structural_retrieval:
             route_id = (
@@ -879,8 +879,23 @@ class SchemaPlanner:
                 route_id,
                 0.0,
             )
+        # Safety outranks every tie-break except relevance. Without these two terms an
+        # unmatched query falls through to `tool.key`, so a destructive endpoint whose
+        # tool sorts early becomes rank 1 of the discovery surface an agent reads.
+        # Execution still refuses it, but offering it first is the wrong default.
+        #
+        # They sit directly after `-score` and BEFORE `-specificity`. Specificity is a
+        # structural signal about the schema, not about what was asked: when the query
+        # matched nothing, letting it decide the leader can still put a destructive
+        # route on top. Placed after specificity these terms only applied when
+        # specificity happened to tie, which made the guarantee depend on the catalog.
+        #
+        # Relevance still wins: a query that genuinely asks to drop a database scores
+        # higher on that route, and `-score` comes first.
         return (
             -candidate.score,
+            bool(candidate.endpoint.destructive),
+            not bool(candidate.endpoint.read_only),
             -specificity,
             candidate.endpoint.server_projection is None,
             candidate.tool.key,
