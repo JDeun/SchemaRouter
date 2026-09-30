@@ -116,8 +116,13 @@ A first-class protocol adapter is justified only when it adds machine-readable s
 transport behavior that the generic modes cannot preserve cleanly, such as GraphQL selection sets,
 OData `$select`, gRPC descriptors, or streaming/event lifecycles.
 
-## Remaining protocol evaluation
+## Protocol status
 
-GraphQL, OData, STAC, JSON-RPC, gRPC/Protobuf, SOAP/WSDL, and AsyncAPI are tracked separately.
+GraphQL, OData, and OpenRPC/JSON-RPC now have first-class ingestion paths because each contributes
+machine-readable capability semantics or native server-side projection that generic HTTP would
+otherwise lose.
+
+STAC, gRPC/Protobuf, SOAP/WSDL, and AsyncAPI remain under the protocol-plugin evaluation track.
 They should not be added merely to lengthen a compatibility list. Each must demonstrate concrete
-schema-discovery, field-projection, or execution-lifecycle value over the generic paths.
+schema-discovery, field-projection, or execution-lifecycle value over the generic paths before
+promotion into core.
