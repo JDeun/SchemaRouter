@@ -1273,6 +1273,8 @@ def resolve_openapi_base_url(document: dict[str, Any], source_url: str) -> str:
 class OpenAPIRemoteInvoker:
     """Minimal trusted HTTP executor for a parsed OpenAPI tool."""
 
+    protocol_label = "OpenAPI"
+
     def __init__(
         self,
         tool: ToolSpec,
@@ -1504,11 +1506,11 @@ class OpenAPIRemoteInvoker:
                 except httpx.HTTPStatusError as exc:
                     if response.status_code not in _TRANSIENT_HTTP_STATUS_CODES:
                         raise NonRetryableInvocationError(
-                            "OpenAPI request failed with non-retryable HTTP status "
+                            f"{self.protocol_label} request failed with non-retryable HTTP status "
                             f"{response.status_code}"
                         ) from exc
                     raise InvocationUnavailableError(
-                        "OpenAPI access path is temporarily unavailable with HTTP status "
+                        f"{self.protocol_label} access path is temporarily unavailable with HTTP status "
                         f"{response.status_code}"
                     ) from exc
 
@@ -1523,7 +1525,7 @@ class OpenAPIRemoteInvoker:
                         and declared_size > self.max_response_bytes
                     ):
                         raise NonRetryableInvocationError(
-                            "OpenAPI response exceeds "
+                            f"{self.protocol_label} response exceeds "
                             f"{self.max_response_bytes} byte safety limit"
                         )
 
@@ -1533,7 +1535,7 @@ class OpenAPIRemoteInvoker:
                     total += len(chunk)
                     if total > self.max_response_bytes:
                         raise NonRetryableInvocationError(
-                            "OpenAPI response exceeds "
+                            f"{self.protocol_label} response exceeds "
                             f"{self.max_response_bytes} byte safety limit"
                         )
                     chunks.append(chunk)
@@ -1543,7 +1545,7 @@ class OpenAPIRemoteInvoker:
                 encoding = response.encoding or "utf-8"
         except (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError) as exc:
             raise InvocationUnavailableError(
-                "OpenAPI access path is temporarily unavailable"
+                f"{self.protocol_label} access path is temporarily unavailable"
             ) from exc
         finally:
             if owns_client:
@@ -1560,6 +1562,6 @@ class OpenAPIRemoteInvoker:
                 return json.loads(content)
             except json.JSONDecodeError as exc:
                 raise NonRetryableInvocationError(
-                    "OpenAPI response declared JSON but could not be decoded"
+                    f"{self.protocol_label} response declared JSON but could not be decoded"
                 ) from exc
         return {"text": content.decode(encoding, errors="replace")}
