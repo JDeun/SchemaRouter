@@ -17,11 +17,11 @@
 <p align="center">
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg"></a>
-  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.11.0"></a>
+  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.12.0"></a>
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-> **현재 안정판: 0.11.0** · `pip install schemarouter` · Beta / pre-1.0
+> **현재 안정판: 0.12.0** · `pip install schemarouter` · Beta / pre-1.0
 
 SchemaRouter는 RAG/Agent 애플리케이션과 외부의 구조화된 capability 사이에 위치합니다.
 OpenAPI, MCP, OPTIMADE, Python, plugin tool을 하나의 typed capability catalog로 정규화하고,
@@ -142,6 +142,19 @@ for candidate in candidates.candidates:
 현재 로컬 실행 binding까지 준비된 route만 필요하면 `retrieve_executable(..., k=5)`을 사용합니다.
 비동기 API는 `aretrieve`, `aretrieve_executable`입니다.
 
+현재 `main`에는 **experimental·default-off** structural retrieval profile도 포함되어 있습니다.
+
+```python
+router = SchemaRouter(structural_retrieval=True)
+candidates = router.retrieve("등록된 job을 취소해줘", k=3)
+```
+
+이 profile은 보수적인 tool-identifier/operation-family evidence와 schema-specificity tie-break를
+추가합니다. 실행 권한은 바뀌지 않으며 product default도 아닙니다. Fixed Top-3 retrieval
+confirmation은 통과했지만 strong-agent downstream utility와 더 넓은 held-out gate는 아직 진행
+중이므로, 다음 release에서 상태가 명시적으로 바뀌기 전까지는 opt-in research-backed candidate로
+취급해야 합니다.
+
 후보에는 full effective input/output JSON Schema와 등록된 parameter/output field,
 semantic ID, optional unit·qualifier, provider/access identity, read/write/destructive metadata,
 schema fingerprint가 유지됩니다.
@@ -189,7 +202,7 @@ LangChain, LangGraph, LlamaIndex bridge와 선택형 OpenTelemetry export를 제
 비표준 decision runtime은 `schemarouter.decision_backends` entry-point plugin으로 연결할 수
 있습니다.
 
-## 0.11.0에서 실제로 작동하는 것
+## 0.12.0에서 실제로 작동하는 것
 
 현재 배포 버전은 core architecture가 실제 동작하는 beta 구현입니다.
 
@@ -211,7 +224,7 @@ LangChain, LangGraph, LlamaIndex bridge와 선택형 OpenTelemetry export를 제
 
 ## 현재 연구 방향: Agent를 위한 compact capability retrieval
 
-안정판 0.11.0의 실행 경계는 그대로입니다. 다만 현재 연구 질문은 SchemaRouter 자체가 최종
+안정판 0.12.0의 실행 경계는 그대로입니다. 다만 현재 연구 질문은 SchemaRouter 자체가 최종
 open-set classifier가 되는 것에서, downstream LLM Agent를 위한 **typed capability retrieval
 substrate**로 평가하는 방향으로 바뀌었습니다.
 
@@ -229,21 +242,23 @@ substrate**로 평가하는 방향으로 바뀌었습니다.
 **68.97%**였지만 Top-5에서는 필요한 capability를 **100%** 보존했기 때문입니다. 등록 endpoint가
 250개일 때 Top-5가 노출하는 serialized schema context는 FULL의 평균 **2.38%**에 불과했습니다.
 
-다만 이는 retrieval 결과이지 최종 production claim은 아닙니다. 현재 #420 B1에서 동일한 실제
-tool-calling agent를 FULL과 SR-3/SR-5/SR-10/progressive 조건에 놓고 deterministic task success와
-tool context/token 효율을 함께 측정하고 있습니다. 이후 더 강한 agent로 재현하는 #423과 최종
-응답의 사실성·단위·provenance·hallucination을 별도로 보는 #424가 필요합니다.
+Canonical B1 Qwen3-0.6B agent benchmark도 이제 종료됐습니다. SR-5는 FULL의 **68.48%** 대비
+**91.30%** task pass를 기록했고, tool-schema token은 FULL의 **5.42%**만 사용했으며
+unauthorized destructive execution은 **0**이었습니다. 다만 이는 controlled mechanism
+evidence이며 넓은 production claim은 아닙니다. 더 강한 SmolLM3-3B 재현 실험 #423은 현재
+진행 중이고, 더 큰 held-out agent utility #432와 final-answer quality #424도 일반화 전에
+별도 gate로 남아 있습니다.
 
 기존 0.11–0.13 open-set classifier/veto 실험은 실패한 기록이 아니라 중요한 negative evidence로
 보존합니다. 0.11.0에서 실험적 learned router를 unconditional production default로 승격하지
-않는다는 점도 변하지 않습니다.
+않는다는 점도 변하지 않으며 structural retrieval도 0.12.0의 unconditional default가 아닙니다.
 
 자세한 내용:
 
 - [Routing research status](https://jdeun.github.io/SchemaRouter/research/routing-status/)
 - [선행연구 로드맵](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [전체 실험 인덱스](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
-- [0.11.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.11.0/)
+- [0.12.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.12.0/)
 - [Changelog](CHANGELOG.md)
 
 ## Registry와 run 확인
