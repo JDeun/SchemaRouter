@@ -135,3 +135,45 @@ def test_selector_refuses_an_incomplete_failed_prefix(tmp_path) -> None:
 
     with pytest.raises(ValueError, match="incomplete roster prefix"):
         select(corpus, evidence_dir=evidence_dir)
+
+
+
+def test_workflow_keeps_candidates_strictly_sequential_and_revision_pinned():
+    from pathlib import Path
+
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github"
+        / "workflows"
+        / "research-0.14-runtime-qualification.yml"
+    ).read_text(encoding="utf-8")
+
+    assert 'QUAL_REV: "a07cc9a04f16550a088caea529712d1d335b0ac1"' in workflow
+    assert 'QUAL_REV: "1cfa9a7208912126459214e8b04321603b3df60c"' in workflow
+    assert 'QUAL_REV: "b968826d9c46dd6066d109eabc6255188de91218"' in workflow
+
+    assert (
+        "needs.aggregate-smollm3.outputs.qualified != 'true'"
+        in workflow
+    )
+    assert (
+        "needs.aggregate-qwen4.outputs.qualified != 'true'"
+        in workflow
+    )
+    assert "B2_ATTN_IMPLEMENTATION: \"sdpa\"" in workflow
+    assert 'ref: "${{ env.SOURCE_SHA }}"' in workflow
+
+
+def test_workflow_launch_is_armed_only_by_the_explicit_trigger_file():
+    from pathlib import Path
+
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github"
+        / "workflows"
+        / "research-0.14-runtime-qualification.yml"
+    ).read_text(encoding="utf-8")
+
+    assert '.github/research-510-runtime-qualification-trigger.json' in workflow
+    assert 'paths:' in workflow
+    assert "research-0.14-runtime-qualification-trigger.json" in workflow
