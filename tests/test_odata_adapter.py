@@ -154,3 +154,56 @@ def test_odata_metadata_rejects_dtd_entities() -> None:
 
     with pytest.raises(Exception, match="DTD/entity"):
         tool_from_odata_metadata("bad", malicious)
+
+
+@pytest.mark.asyncio
+async def test_odata_schema_and_runtime_headers_are_separated() -> None:
+    seen_metadata_auth: list[str | None] = []
+    seen_runtime_auth: list[str | None] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/odata/$metadata":
+            seen_metadata_auth.append(request.headers.get("authorization"))
+            return httpx.Response(200, content=METADATA, request=request)
+        if request.url.path == "/odata/Products":
+            seen_runtime_auth.append(request.headers.get("authorization"))
+            return httpx.Response(
+                200,
+                json={"value": [{"ID": 1}]},
+                request=request,
+            )
+        raise AssertionError(f"unexpected request: {request.url}")
+
+    schema_token = "Bearer schema-secret"
+    runtime_token = "Bearer runtime-secret"
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://odata.example/odata",
+            kind="odata",
+            schema_headers={"Authorization": schema_token},
+            trusted_headers={"Authorization": runtime_token},
+            http_client=client,
+        )
+        tool = router.registry.get("odata.example")
+        endpoint = tool.endpoint("list_products")
+        call = ToolCall(
+            tool=tool.key,
+            endpoint=endpoint.name,
+            arguments={"top": 1},
+            fields=["ID"],
+            schema_fingerprint=endpoint.fingerprint,
+            tool_fingerprint=tool.fingerprint,
+        )
+        plan = ExecutionPlan(
+            query="one product",
+            registry_version=router.registry.version,
+            calls=[call],
+        )
+        await router.execute(plan)
+
+    assert seen_metadata_auth == [schema_token]
+    assert seen_runtime_auth == [runtime_token]
+    serialized = repr(router.registry.get("odata.example").model_dump(mode="json"))
+    assert "schema-secret" not in serialized
+    assert "runtime-secret" not in serialized
