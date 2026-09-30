@@ -7,6 +7,7 @@ inputs as equivalent.
 | --- | --- | --- | --- |
 | Typed Python callable | Automatic | Automatic | Local code |
 | OpenAPI 3.x | Automatic common subset | Same-origin automatic; cross-origin explicit | Remote schema is descriptive |
+| GraphQL introspection | Automatic query/mutation discovery | Same-endpoint automatic | Query narrows to read-only; mutations remain policy-gated |
 | OPTIMADE | `/info` + `/info/<entry_type>` discovery | Automatic read-only HTTP binding | Remote schema is descriptive |
 | MCP Streamable HTTP | Automatic discovery | Automatic transport, policy-gated | Remote annotations are untrusted |
 | Custom `SourceAdapter` | Adapter-defined | Adapter-defined | Must preserve local policy authority |
@@ -19,6 +20,10 @@ Use **Python tools** when you own the implementation and want the lowest-frictio
 Use **OpenAPI** when a service already exposes a machine-readable HTTP contract. SchemaRouter keeps
 schema-fetch credentials separate from runtime credentials and does not let a cross-origin
 `servers` declaration silently grant execution authority.
+
+Use **GraphQL** when introspection is available and native field-selection semantics matter.
+SchemaRouter maps root fields and arguments into canonical contracts and turns selected output
+fields into GraphQL selection sets. Mutations remain denied unless trusted local policy grants them.
 
 Use **OPTIMADE** when querying interoperable materials databases. SchemaRouter discovers each entry
 type and its available properties, creates read-only search/get endpoints, and maps planned output
@@ -45,6 +50,7 @@ The built-in order is:
 OpenAPI
   -> OPTIMADE
   -> MCP
+  -> GraphQL
 ```
 
 The first adapter that recognizes the source returns a canonical `ToolSpec` and optional trusted
