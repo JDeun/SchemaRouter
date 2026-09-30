@@ -1,97 +1,96 @@
 # OData
 
-SchemaRouter can ingest an OData v4 service through its machine-readable `$metadata` CSDL document
-and compile entity sets into the canonical capability model.
+SchemaRouter can ingest OData v4 CSDL metadata and compile entity sets into canonical typed
+capabilities.
 
-## Register an OData service
+## Register a service
+
+Pass either the service root or its `$metadata` URL:
 
 ```python
 router = await SchemaRouter.from_url(
-    "https://services.example/odata",
+    "https://service.example/odata",
     kind="odata",
 )
 ```
 
-You may also pass the metadata URL directly:
+SchemaRouter fetches the CSDL metadata and imports entity types, complex types, entity keys, and
+entity sets.
 
-```python
-router = await SchemaRouter.from_url(
-    "https://services.example/odata/$metadata",
-    kind="odata",
-)
-```
+## Entity sets become read endpoints
 
-The adapter imports:
+An entity set such as `Products` becomes a read-only endpoint such as `list_products`.
 
-- entity sets as read-only endpoints;
-- entity and complex-type properties as typed `FieldSpec` values;
-- CSDL keys as identifier fields;
-- common EDM scalar types as JSON Schema;
-- `$filter`, `$orderby`, `$top`, and `$skip` as typed query arguments;
-- nested complex properties as planner-visible dotted paths.
+Standard bounded query controls are exposed as typed parameters:
 
-## Native server projection with `$select`
+- `filter` -> `$filter`
+- `orderby` -> `$orderby`
+- `top` -> `$top`
+- `skip` -> `$skip`
 
-If a plan selects:
+Write operations/actions are not granted automatically.
+
+## Native field projection
+
+OData's `$select` is used as server-side projection. If a plan asks for:
 
 ```text
 ID
 Address.City
 ```
 
-SchemaRouter sends:
+the transport sends:
 
 ```text
 $select=ID,Address/City
 ```
 
-and then projects the returned records into the canonical result shape:
+and SchemaRouter preserves record alignment while projecting each object in the returned
+`value[]` collection.
 
-```json
-[
-  {
-    "ID": 1,
-    "Address.City": "Suwon"
-  }
-]
-```
+Complex properties use planner-visible dotted identities while provider selectors use OData slash
+notation.
 
-This keeps SchemaRouter's dotted internal field identity separate from OData's wire-level path
-syntax.
+## Type and unit contracts
 
-## Authority and scope
+Common `Edm.*` primitives are mapped to JSON Schema, including strings/UUIDs, booleans, integer
+families, decimal/floating-point numbers, dates/date-times, and collections. Entity keys become
+identifier fields and complex types become nested object schemas.
 
-The initial built-in adapter exposes **entity-set reads only**. OData actions and mutations are not
-silently imported as executable write authority.
+Structured CSDL measure annotations are preserved when declared. In particular,
+`Org.OData.Measures.V1.Unit` and `Org.OData.Measures.V1.ISOCurrency` values become
+`FieldSpec.unit`.
 
-That is deliberate: `$metadata` describes interface shape, but execution authority remains a
-trusted local decision.
+SchemaRouter does not infer physical dimensions or conversion factors from those labels. Trusted
+local enrichment remains responsible for normalization contracts.
 
-## Authentication
+## Credentials and security
 
-Metadata-fetch and runtime credentials remain separate:
+Schema-fetch and runtime credentials stay separate:
 
 ```python
 router = await SchemaRouter.from_url(
-    "https://services.example/odata",
+    "https://service.example/odata",
     kind="odata",
-    schema_headers={"Authorization": f"Bearer {metadata_token}"},
-    trusted_headers={"Authorization": f"Bearer {runtime_token}"},
+    schema_headers={"Authorization": schema_token},
+    trusted_headers={"Authorization": runtime_token},
 )
 ```
 
-Secrets are never copied into planner-visible fields or arguments.
+Neither credential set enters planner-visible contracts.
 
-## Safety boundaries
-
-- only HTTP(S) service roots are accepted;
+Additional boundaries:
+- entity-set reads are explicitly read-only;
+- actions/writes are not auto-enabled;
 - redirects are not followed automatically;
-- metadata and response bodies are size-bounded;
-- DTD/entity declarations in CSDL XML are rejected;
-- nested complex traversal is depth-bounded;
-- list/collection item traversal remains conservative;
-- ordinary SchemaRouter input/output validation still runs;
-- writes/actions require a separate explicit capability contract before execution.
+- metadata and result sizes are bounded;
+- DTD/entity declarations are rejected before XML parsing;
+- ordinary SchemaRouter validation, fingerprints, health, fallback, and drift rules remain active.
 
-Functions, actions, navigation expansion, and richer OData query semantics can be added
-incrementally without changing the canonical `ToolSpec` model.
+## Scope
+
+The initial first-class adapter covers entity-set reads, complex properties, paging/query controls,
+structured unit annotations, and `$select`.
+
+Functions/actions and richer OData query semantics can be added incrementally without changing the
+canonical planner model.
