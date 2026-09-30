@@ -111,6 +111,8 @@ def test_conveyor_workflows_encode_expected_stage_contracts() -> None:
     assert "include_state_aware" in heldout
     assert "heldout_run_id" in final
     assert "--forbidden-corpus" in final
+    for workflow in (corrective, heldout, final):
+        assert 'PYTHONPATH: "${{ github.workspace }}:${{ github.workspace }}/src"' in workflow
 
 
 class _RetryAPI:
@@ -165,6 +167,10 @@ def test_conveyor_contract_avoids_k3_trigger_race_and_has_recovery() -> None:
 
     assert "wait_for_k3_native_trigger" in controller
     assert "recover_missing_k3" in controller
+    assert "DOWNSTREAM_IMPLEMENTATION_SHA" in controller
+    assert "redispatch_corrective_infrastructure" in controller
+    assert "redispatch_heldout_infrastructure" in controller
+    assert "redispatch_final_answer_infrastructure" in controller
     assert "rerun_failed_jobs" in controller
     assert "--recover-missing-k3" in workflow
     assert 'EVENT_NAME: "${{ github.event_name }}"' in workflow
