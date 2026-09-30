@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<p align="center"><strong>Typed capability routing and execution for RAG and LLM agent systems.</strong></p>
+<p align="center"><strong>Your agent has too many tools, and each one returns too much. Put a typed boundary in between.</strong></p>
 
 <p align="center">
   <a href="README.md">English</a> ·
@@ -23,21 +23,24 @@
 
 > **Stable release: 0.12.0** · `pip install schemarouter` · Beta / pre-1.0
 
-SchemaRouter sits between a RAG/agent application and its structured external capabilities. It
-normalizes OpenAPI, MCP, OPTIMADE, Python, and plugin-defined tools into a typed capability catalog,
-selects a bounded executable route for the requested data, and validates the contract again before
-and after execution.
+Agents get harder to steer as their tool catalog grows, and tool responses often contain far more
+than the request needs. SchemaRouter works out **which declared data fields are needed**, exposes a
+bounded set of registered tools that can supply them, and keeps only declared output fields before
+the result reaches the model. Typed contracts can carry units, qualifiers, provenance, and
+validation rules so one value cannot silently stand in for another.
+
+`pip install schemarouter`
 
 It is **not** a general agent framework, an LLM provider layer, or a RAG generator.
 
+[Declare a result contract for an MCP server that does not publish one →](docs/guides/mcp.md) ·
+[See the measured agent-utility result →](docs/research/agent-utility-b1-result.md)
+
 ## Where SchemaRouter fits in RAG
 
-**Retrieval-Augmented Generation (RAG)** augments generation with information retrieved from
-external, non-parametric sources.
-
-SchemaRouter does not perform the final generation step. Its role is narrower: it can provide the
-**structured retrieval and execution layer** that lets a RAG or agent system obtain live external
-data from APIs and tools under explicit schemas and policy.
+SchemaRouter does not perform final generation. It provides a **structured retrieval and execution
+boundary** for applications that need live external data from APIs and tools under explicit schemas
+and policy.
 
 ```text
 User query

@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<p align="center"><strong>RAG와 LLM Agent를 위한 typed capability routing·execution layer</strong></p>
+<p align="center"><strong>Agent에 연결된 도구는 너무 많고, 각 도구는 필요한 것보다 너무 많이 반환합니다. 그 사이에 typed boundary를 둡니다.</strong></p>
 
 <p align="center">
   <a href="README.md">English</a> ·
@@ -23,21 +23,24 @@
 
 > **현재 안정판: 0.12.0** · `pip install schemarouter` · Beta / pre-1.0
 
-SchemaRouter는 RAG/Agent 애플리케이션과 외부의 구조화된 capability 사이에 위치합니다.
-OpenAPI, MCP, OPTIMADE, Python, plugin tool을 하나의 typed capability catalog로 정규화하고,
-질문에 필요한 데이터를 제공할 수 있는 제한된 실행 경로를 선택한 뒤 실행 전후에 계약을 다시
-검증합니다.
+Agent가 사용할 수 있는 도구가 많아질수록 선택은 어려워지고, 도구의 응답에는 질문에 필요하지
+않은 데이터까지 함께 들어오는 경우가 많습니다. SchemaRouter는 요청에 **어떤 선언된 data field가
+필요한지** 먼저 정하고, 그 데이터를 제공할 수 있는 등록 도구만 제한적으로 노출하며, 모델에
+전달되기 전에는 선언된 output field만 남깁니다. Typed contract에는 unit, qualifier, provenance,
+validation rule을 담을 수 있어 서로 다른 의미의 값이 조용히 대체되는 것을 막습니다.
+
+`pip install schemarouter`
 
 SchemaRouter 자체가 범용 Agent framework나 LLM provider layer, 또는 최종 답변을 생성하는
 RAG generator는 아닙니다.
 
+[outputSchema를 제공하지 않는 MCP server에 result contract 선언하기 →](docs/guides/mcp.md) ·
+[실측 agent-utility 결과 보기 →](docs/research/agent-utility-b1-result.md)
+
 ## RAG에서 SchemaRouter의 위치
 
-**RAG(Retrieval-Augmented Generation, 검색 증강 생성)**는 외부의 비파라메트릭 정보원을
-retrieval하고, 그 결과를 이용해 generation을 증강하는 구조입니다.
-
-SchemaRouter는 generation을 담당하지 않습니다. 대신 RAG/Agent가 API·MCP·도구에서 최신의
-구조화된 외부 데이터를 가져올 때 사용할 수 있는 **retrieval + execution 계층**을 담당합니다.
+SchemaRouter는 최종 generation을 담당하지 않습니다. 대신 RAG/Agent가 API·MCP·도구에서
+구조화된 외부 데이터를 가져올 때 사용할 수 있는 **retrieval + execution boundary**를 제공합니다.
 
 ```text
 사용자 질문
