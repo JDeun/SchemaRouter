@@ -47,7 +47,13 @@ def _router(structural: bool = False) -> SchemaRouter:
                     description="Permanently drop a database",
                     read_only=False,
                     destructive=True,
-                    parameters=[ParameterSpec(name="name", required=True, json_schema={"type": "string"})],
+                    parameters=[
+                        ParameterSpec(
+                            name="name",
+                            required=True,
+                            json_schema={"type": "string"},
+                        )
+                    ],
                 )
             ],
         )
@@ -65,7 +71,13 @@ def _router(structural: bool = False) -> SchemaRouter:
                     description="Read application logs",
                     read_only=True,
                     destructive=False,
-                    parameters=[ParameterSpec(name="query", required=True, json_schema={"type": "string"})],
+                    parameters=[
+                        ParameterSpec(
+                            name="query",
+                            required=True,
+                            json_schema={"type": "string"},
+                        )
+                    ],
                 )
             ],
         )
