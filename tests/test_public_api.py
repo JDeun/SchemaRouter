@@ -25,6 +25,7 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "ApprovalDeniedError",
         "BindingDriftError",
         "ConfiguredSchemaRouter",
+        "ContractAmendmentError",
         "CallableDecisionBackend",
         "DECISION_BACKEND_ENTRY_POINT_GROUP",
         "DecisionBackend",
