@@ -7,6 +7,18 @@ repo_url: https://github.com/JDeun/SchemaRouter
 repo_name: JDeun/SchemaRouter
 edit_uri: edit/main/docs/
 
+# A page that is written but never added to `nav` builds cleanly and is then
+# unreachable on the published site. MkDocs reports that at INFO level, so
+# `--strict` does not catch it. Promoting it to a warning makes the existing
+# strict docs gate fail instead, which is how 0.12.0 and seven research pages
+# were able to go missing from the site while CI stayed green.
+validation:
+  nav:
+    omitted_files: warn
+
+not_in_nav: |
+  assets/brand/README.md
+
 extra:
   social:
     - icon: fontawesome/brands/github
@@ -154,10 +166,30 @@ nav:
       - Compatibility testing: compatibility.md
       - Adapter authoring: adapter-authoring.md
       - Security model: security/threat-model.md
+  - Research:
+      - Routing research status: research/routing-status.md
+      - Complete experiment index: research/experiment-index.md
+      - Design and experiment history: research/design-and-experiment-history.md
+      - Agent utility:
+          - B1 local-agent result: research/agent-utility-b1-result.md
+          - Large held-out generalization: research/large-heldout-agent-utility.md
+          - Final-answer quality: research/final-answer-quality.md
+          - Typed retrieval representation ablation: research/typed-capability-retrieval-ablation.md
+          - Intent-manual development result: research/intent-manual-dev-result.md
+          - Adaptive shortlist depth: research/adaptive-shortlist-depth.md
+          - Corrective re-retrieval: research/corrective-reretrieval.md
+          - Output-field projection: research/field-projection-answer-quality.md
+      - Evidence and protocol:
+          - Paper evidence package: research/paper-evidence-package.md
+          - Research governance: research/governance.md
+          - Research freeze protocol: research/operation-routing-freeze-protocol.md
+          - Terminal 0.11 report: research/operation-routing-v4-terminal-report.md
+      - Prior-art roadmap: research/prior-art-roadmap.md
   - Project:
       - Stable core contract: stable-core.md
       - Versioning: versioning.md
       - Release notes:
+          - 0.12.0: releases/0.12.0.md
           - 0.11.0: releases/0.11.0.md
           - 0.10.0: releases/0.10.0.md
           - 0.9.0: releases/0.9.0.md
@@ -169,15 +201,6 @@ nav:
           - 0.3.0: releases/0.3.0.md
           - 0.3.0a1: releases/0.3.0a1.md
           - 0.2.0a1: releases/0.2.0a1.md
-      - Prior-art roadmap: research/prior-art-roadmap.md
-      - Adaptive shortlist depth: research/adaptive-shortlist-depth.md
-      - Corrective re-retrieval: research/corrective-reretrieval.md
-      - Output-field projection: research/field-projection-answer-quality.md
-      - Routing research status: research/routing-status.md
-      - Complete experiment index: research/experiment-index.md
-      - Design and experiment history: research/design-and-experiment-history.md
-      - Terminal 0.11 report: research/operation-routing-v4-terminal-report.md
-      - Research freeze protocol: research/operation-routing-freeze-protocol.md
       - Release checklist: release-checklist.md
       - Contributing: contributing.md
       - Changelog: changelog.md
