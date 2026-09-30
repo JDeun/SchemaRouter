@@ -8,6 +8,13 @@ The core is designed around one principle:
 
 > model output and remote schemas may describe capabilities, but only trusted local code grants execution authority.
 
+That authority runs in both directions. Trusted local code may also *declare*
+the result contract of a capability SchemaRouter imported on its behalf — output
+fields, semantic IDs, units, normalization and measurement qualifiers — without
+losing the execution binding and without handling an invoker. It may not change
+execution identity or validation shape. See
+[Registry and schema identity](concepts/registry.md#what-trusted-local-code-may-amend).
+
 ## Capability retrieval in a RAG/agent stack
 
 RAG stands for **Retrieval-Augmented Generation**: generation is conditioned on information

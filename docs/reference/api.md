@@ -116,3 +116,7 @@ The top-level `schemarouter` package exposes the stable public surface intended 
 ## load_decision_backend_plugin
 
 ::: schemarouter.load_decision_backend_plugin
+
+## ContractAmendmentError
+
+::: schemarouter.ContractAmendmentError

@@ -127,6 +127,21 @@ Non-None hook returns are rejected. Hook exceptions fail closed, and after-hook 
 classified as retryable tool failures, preventing an observability/middleware outage from repeating
 an already successful invocation.
 
+### Trusted contract amendment
+
+`SchemaRouter.amend_capability()` is trusted local code at the same grade as
+binding an invoker. It is not reachable from remote content, model output, or a
+decision backend.
+
+It can only declare or annotate result semantics. Execution identity and
+validation shape are refused, so an amendment cannot redirect a call, widen the
+input surface, reclassify a destructive operation as read-only, or relax the
+validation of a response the source declared. A refused amendment registers
+nothing and leaves the binding untouched.
+
+Fingerprints still change on amendment, so stale-binding and stale-plan
+protection are unchanged.
+
 ### Third-party adapter plugins
 
 Installed entry points are local executable code. SchemaRouter can inspect plugin metadata without

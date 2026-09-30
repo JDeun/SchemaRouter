@@ -289,8 +289,8 @@ class SchemaRouter:
           previously unprojected response content into the answer under the
           same field name.
         - `unit` and `unit_normalization` change how a numeric value is
-          rescaled before it reaches the caller (see `executor.py` call
-          validation).
+          rescaled before it reaches the caller, on the result path (see
+          `RegistryExecutor._normalize_projected_units` in `executor.py`).
         - `source_type`, `license`, and `unit` feed evidence availability
           (`evidence.py`), which the executor enforces as a hard gate. An
           amendment can unblock an evidence-gated route by declaration alone,

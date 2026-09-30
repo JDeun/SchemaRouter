@@ -313,3 +313,16 @@ The bound applies even when a server omits or lies about `Content-Length`.
 When constructing `OpenAPIRemoteInvoker` manually, trusted local code may choose a smaller or
 larger positive integer through `max_response_bytes`. Keep the limit appropriate for the endpoint
 contract; a high limit weakens protection against unexpectedly large remote responses.
+
+## Declare what a sparse document omits
+
+A published OpenAPI document may describe a response as a bare object. You can
+declare the fields you rely on, together with their semantic IDs and units,
+without editing the upstream document:
+
+```python
+router.amend_capability(key, amended)
+```
+
+See [Declare a result contract the server does not publish](mcp.md#declare-a-result-contract-the-server-does-not-publish)
+for the full example and the rules on what may and may not be amended.
