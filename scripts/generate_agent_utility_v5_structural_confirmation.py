@@ -14,10 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from benchmarks.agent_utility_v5_catalog import (  # noqa: E402
-    build_registry as build_dev_registry,
-    build_tasks as build_dev_tasks,
-)
+from benchmarks import agent_utility_v5_catalog as dev_catalog  # noqa: E402
 from benchmarks.agent_utility_v5_structural_confirmation import (  # noqa: E402
     CONFIRMATION_CATALOG_SIZES,
     CONFIRMATION_LANGUAGES,
@@ -149,7 +146,7 @@ def _validate_tasks(
 
     dev_queries = {
         _normalize_query(str(task["query"]))
-        for task in build_dev_tasks()
+        for task in dev_catalog.build_tasks()
     }
     overlap = sorted(set(queries) & dev_queries)
     if overlap:
@@ -181,9 +178,9 @@ def freeze_confirmation(
         encoding="utf-8",
     )
 
-    dev_500 = build_dev_registry(500)
+    dev_500 = dev_catalog.build_registry(500)
     dev_routes = _route_ids(dev_500)
-    dev_core_routes = _route_ids(build_dev_registry(100))
+    dev_core_routes = _route_ids(dev_catalog.build_registry(100))
 
     manifest: dict[str, Any] = {
         "schema_version": 1,
