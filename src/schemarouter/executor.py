@@ -835,16 +835,7 @@ class RegistryExecutor:
                 adapter_projected = (
                     call_aware
                     and bool(getattr(invoker, "projects_fields", False))
-                    and (
-                        not has_explicit_paths
-                        or bool(
-                            getattr(
-                                invoker,
-                                "projects_explicit_paths",
-                                False,
-                            )
-                        )
-                    )
+                    and not has_explicit_paths
                 )
                 projected = (
                     value
