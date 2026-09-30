@@ -23,6 +23,9 @@ fallback, fingerprint, health, drift, and observability boundaries.
 | Python callable | typed SDK/client wrapper | mp-api, yfinance, arXiv Python client |
 | LangChain tool import | existing BaseTool / StructuredTool | search, scholarly, finance, SaaS tools |
 | LlamaIndex tool import | existing BaseTool / FunctionTool | agent/retrieval ecosystem tools |
+| GraphQL | introspection schema + selection sets | GitHub GraphQL and other typed GraphQL APIs |
+| OData | CSDL / `$metadata` + `$select` | enterprise/entity APIs |
+| OpenRPC | OpenRPC document / JSON-RPC 2.0 | typed RPC services |
 | Declarative HTTP/JSON | trusted REST contract without a discoverable schema | Brave Search, Tavily, bespoke SaaS APIs |
 | SourceAdapter plugin | protocol/provider needs custom discovery or transport | organization-specific adapters |
 | Documentation proposal | only human-readable docs exist | grounded proposal followed by explicit approval |
@@ -45,6 +48,9 @@ The machine-readable source for this table is
 | arXiv | scholarly search | LangChain tool | Python wrapper, plugin |
 | Crossref | scholarly metadata | OpenAPI | HTTP/JSON |
 | GitHub REST | developer platform | OpenAPI | HTTP/JSON, plugin |
+| GitHub GraphQL | developer platform | GraphQL | OpenAPI/HTTP fallback through same provider |
+| Microsoft Graph OData | enterprise productivity | OData | HTTP/JSON |
+| Generic OpenRPC service | RPC platform | OpenRPC | HTTP/JSON |
 
 This matrix is intentionally heterogeneous. Passing only materials-science fixtures is not enough to
 claim that SchemaRouter's ingestion layer is domain-neutral.
