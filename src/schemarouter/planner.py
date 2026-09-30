@@ -869,7 +869,7 @@ class SchemaPlanner:
     def _candidate_sort_key(
         self,
         candidate: _Candidate,
-    ) -> tuple[float, float, bool, str, str]:
+    ) -> tuple[float, float, bool, bool, bool, str, str]:
         specificity = 0.0
         if self.structural_retrieval:
             route_id = (
@@ -879,9 +879,18 @@ class SchemaPlanner:
                 route_id,
                 0.0,
             )
+        # Safety before alphabet. Among candidates the scorer could not separate,
+        # prefer the route that cannot break anything. Without these two terms an
+        # unmatched query falls straight through to `tool.key`, so a destructive
+        # endpoint whose tool sorts early becomes rank 1 of the discovery surface an
+        # agent reads. Execution still refuses it, but offering it first is the wrong
+        # default. Both terms sit AFTER `-score`, so a query that genuinely asks for
+        # the destructive route still gets it first.
         return (
             -candidate.score,
             -specificity,
+            bool(candidate.endpoint.destructive),
+            not bool(candidate.endpoint.read_only),
             candidate.endpoint.server_projection is None,
             candidate.tool.key,
             candidate.endpoint.name,
