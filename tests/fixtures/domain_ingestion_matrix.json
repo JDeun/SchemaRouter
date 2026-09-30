@@ -121,10 +121,11 @@
       "access_modes": [
         "openapi",
         "http_json",
-        "source_adapter"
+        "source_adapter",
+        "graphql"
       ],
       "same_provider_fallback": true,
-      "notes": "Representative non-science SaaS/API domain with both machine-readable and explicit REST paths."
+      "notes": "Representative non-science developer platform with OpenAPI/REST, GraphQL, and plugin paths."
     },
     {
       "id": "github_graphql",
@@ -162,6 +163,32 @@
       ],
       "same_provider_fallback": true,
       "notes": "Representative JSON-RPC/OpenRPC capability surface compiled into the same canonical contracts."
+    },
+    {
+      "id": "odata_business",
+      "domain": "business_data",
+      "provider": "odata-business",
+      "primary_mode": "odata",
+      "access_modes": [
+        "odata",
+        "http_json",
+        "source_adapter"
+      ],
+      "same_provider_fallback": true,
+      "notes": "Representative enterprise/business OData service: CSDL discovery and $select projection, with generic REST/plugin fallback."
+    },
+    {
+      "id": "openrpc_service",
+      "domain": "rpc_api",
+      "provider": "openrpc-service",
+      "primary_mode": "openrpc",
+      "access_modes": [
+        "openrpc",
+        "http_json",
+        "source_adapter"
+      ],
+      "same_provider_fallback": true,
+      "notes": "Representative JSON-RPC 2.0 service with OpenRPC discovery; plain JSON-RPC without OpenRPC remains declarative/plugin."
     }
   ]
 }
