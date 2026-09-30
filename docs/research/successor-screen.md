@@ -1,13 +1,13 @@
 # 0.14 successor development screen for output-field projection
 
-Tracking issue: **#510**
+Tracking issue: #510
 
 ## Why this exists
 
 The [output-field projection](field-projection-answer-quality.md) development
 screen produced a null result: every factual metric was 0.0000 in every
 condition, the comparator included. The cause was not the hypothesis. From the
-shard rows, `tool_call_count = 0` and mean `turns = 1.21` — the frozen B1 agent
+shard rows, `tool_call_count = 0` and mean `turns = 1.21`. The frozen B1 agent
 skipped tool use and fabricated an answer envelope from the tool's own name.
 
 Narrowing further: B1 reached 68–91% task pass on that same runtime and harness
@@ -17,7 +17,7 @@ additionally demands a structured answer envelope. So:
 > Qwen3-0.6B can do tool-calling **or** a structured answer envelope, not both.
 
 Relaxing the prompt and re-running the same corpus is what #506's Option A
-governance forbids — `prompt or harness semantics` is on its frozen list. The
+governance forbids: `prompt or harness semantics` is on its frozen list. The
 sanctioned path is this one: close the screen as consumed and preregister a
 successor with its own query-disjoint surface.
 
@@ -25,7 +25,7 @@ successor with its own query-disjoint surface.
 
 The instrument is chosen by a gate frozen **before** any candidate runs, because
 running the roster and keeping the best performer would be choosing the
-instrument by its outcome — the same error one level up.
+instrument by its outcome, which is the same error one level up.
 
 | Criterion | Threshold |
 | --- | ---: |
@@ -34,7 +34,7 @@ instrument by its outcome — the same error one level up.
 | episodes whose answer contains at least one observation-grounded fact | ≥ 70% |
 
 The third criterion catches a runtime that calls tools and still grounds
-nothing — envelopes present, tool calls present, but nothing in the answer
+nothing: it emits envelopes and calls tools, but nothing in the answer
 traces back to an observation.
 
 Roster, ordered and frozen:
@@ -75,7 +75,7 @@ projection-stratum/language pair (36 episodes total), fixed to `SR-5` and
 `RAW-FULL`. It shares no exact query string with #506 or the successor screen.
 Its artifact is instrument evidence only; it is never projection evidence.
 
-The candidate/evaluation workflow is still intentionally absent. When it is
+The candidate/evaluation workflow is still absent. When it is
 added it must generate and validate this corpus first, record the candidate
 model revision and frozen harness/source revision, then pass the resulting
 evidence object through `select_runtime`. A workflow that feeds ad-hoc rows or
@@ -84,7 +84,7 @@ reimplements the rate comparison is invalid by construction.
 ### Recorded trade-off
 
 `SmolLM3-3B` is also the confirmation arm's runtime, so the screen and the
-confirmation differ only by surface. Accepted deliberately: B2's canonical run
+confirmation differ only by surface. This trade-off is accepted: B2's canonical run
 already shows this model performs the tool-calling task, making it the candidate
 most likely to qualify first, and a screen that cannot qualify is worth nothing.
 The screen's surface is query-disjoint, so it does not consume the confirmation
@@ -100,7 +100,7 @@ stay comparable. Only the **runtime** and the **surface** differ.
 
 Enforced at generation, not left to a test. `build_corpus` raises before writing
 anything if the surface shares a normalised query with any prior surface. The
-#506 projection corpus is checked directly — built locally inside the
+#506 projection corpus is checked directly, built locally inside the
 generator rather than registered in `scripts/agent_utility_prior_query_guard.py`.
 Registering it there would change `known_prior_query_manifest()["union_sha256"]`,
 which is stamped into generated v3/v4/v6 corpora and hard-checked by their
@@ -115,7 +115,7 @@ Disjointness means no shared *query string*, nothing more; it is not a
 content-independent surface. That is judged acceptable because #506's screen
 never called a tool, so no observation content from that corpus ever reached
 a model, and nothing in this pipeline trains on prior runs. Issue #510's
-letter — "not one query shared" — is met; the surface is not "genuinely
+letter ("not one query shared") is met; the surface is not "genuinely
 different" content.
 
 ## Governance
@@ -126,7 +126,7 @@ thresholds, the scorer, prompt or harness semantics, or row inclusion. #506's
 corpus, conditions, gate and confirmation arm are untouched.
 
 If no candidate qualifies, that is recorded as a terminal result about the
-screening approach — not as a reason to weaken the thresholds.
+screening approach. It is not a reason to weaken the thresholds.
 
 The workflow executes candidates strictly in roster order. A later candidate
 may start only after the previous candidate produced complete measured evidence

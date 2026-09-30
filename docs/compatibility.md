@@ -54,7 +54,7 @@ Every pull request runs the blocking `CI` workflow with:
 - strict MkDocs build.
 
 A separate `Python Preview` workflow runs Python 3.15 RC on pull requests and `main` pushes.
-It is intentionally outside the blocking `CI` workflow and has a bounded runtime. Failures remain
+It runs outside the blocking `CI` workflow and has a bounded runtime. Failures remain
 visible as forward-compatibility signals but cannot stall release publication.
 
 The top-level Release workflow consumes a successful current-`main` `CI` result before it
@@ -112,7 +112,7 @@ bridge through the installed stable package rather than the source checkout.
 External-service failures are compatibility signals, not pull-request blockers, because third-party
 availability is outside SchemaRouter's control.
 
-Live decision-model benchmarking is intentionally excluded from required CI. Run Jev explicitly
+Live decision-model benchmarking is excluded from required CI. Run Jev explicitly
 with `TYPESAFE_API_KEY` and `--jev`, run local Laya with `--laya`, or run a trusted local Ollama
 model with `--ollama-model <installed-model>`.
 
@@ -142,7 +142,7 @@ The non-blocking public OpenAPI, OPTIMADE, published-PyPI, and published-integra
 jobs emit one
 machine-readable JSON artifact per smoke job. Reports include a schema version, UTC generation time, SchemaRouter version,
 adapter/source identity, runtime environment, success/failure state, and bounded success details.
-On failure, only the exception type is recorded; exception messages are intentionally omitted.
+On failure, only the exception type is recorded; exception messages are omitted.
 
 GitHub Actions retains these artifacts for 30 days. This makes compatibility drift inspectable
 without turning live third-party availability into a release-blocking gate. The raw JSON remains the

@@ -1,12 +1,12 @@
 # 0.14 output-field projection and final-answer quality
 
-Tracking issue: **#506**
+Tracking issue: #506
 
 ## The question
 
 > Holding the query, the candidate exposure, the selected route and the raw tool
 > response fixed, does returning **only the planned declared output fields**
-> change the final answer's factual quality — and how much agent context does it
+> change the final answer's factual quality, and how much agent context does it
 > remove?
 
 ## Why this is a separate experiment
@@ -22,10 +22,10 @@ No existing experiment measures it.
 
 | Experiment | What it varies |
 | --- | --- |
-| [B1 (#420)](agent-utility-b1-result.md) | how many **tools** the agent can see |
-| [#434](typed-capability-retrieval-ablation.md) | how a capability is **represented for retrieval** |
-| [#424](final-answer-quality.md) | answer quality under **catalog-level** context reduction |
-| **#506** | **what an executed tool hands back** |
+| [B1 (#420)](agent-utility-b1-result.md) | how many tools the agent can see |
+| [#434](typed-capability-retrieval-ablation.md) | how a capability is represented for retrieval |
+| [#424](final-answer-quality.md) | answer quality under catalog-level context reduction |
+| #506 | what an executed tool hands back |
 
 Choosing fewer tools is a commoditized idea. Descending to the field level is
 the part of this design that is not shared with an ordinary Top-K tool router,
@@ -49,7 +49,7 @@ the task state and every completion check keep seeing the untransformed
 observation, so presentation cannot move ground truth. That property is pinned by
 test rather than asserted here.
 
-`ORACLE-MINIMAL` is deliberate: B1 found that `ORACLE` did **not** dominate
+`ORACLE-MINIMAL` earns its place: B1 found that `ORACLE` did **not** dominate
 `SR-5`, so over-minimizing is a live hypothesis, not a strawman.
 
 ## Corpus
@@ -128,7 +128,7 @@ Both arms are driven by the 0.14 conveyor; neither needs a manual dispatch.
    (`HuggingFaceTB/SmolLM3-3B` @ `a07cc9a0`), **appended after the conveyor's
    terminal-evidence stage** and keyed on the terminal digest.
 
-    Appending rather than inserting is deliberate. The conveyor DAG was
+    Appending rather than inserting matters here. The conveyor DAG was
     preregistered before downstream corpus generation and is already in flight;
     inserting a stage would move an existing stage's inputs or ordering, while
     appending after terminal evidence cannot. The amendment, and the list of what
@@ -167,7 +167,7 @@ results may not change:
 - the frozen projection source.
 
 Confirmation may differ in exactly one preregistered respect: the runtime. This
-is the same relationship B1 has to B2 — one frozen protocol, a stronger agent.
+is the same relationship B1 has to B2: one frozen protocol, a stronger agent.
 
 Wanting a design change out of the screen's results means closing this
 experiment as consumed and preregistering a successor with its own

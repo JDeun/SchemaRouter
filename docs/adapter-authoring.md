@@ -341,7 +341,7 @@ ParameterSpec(
 A request argument `{"formula": "Si"}` may then compile to
 `{"chemical_formula": "Si"}` for that endpoint.
 
-Alias routing is deliberately narrow:
+Alias routing is narrow:
 
 - exact parameter names always win;
 - aliases only rename keys and copy values unchanged;

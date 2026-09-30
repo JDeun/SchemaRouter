@@ -32,8 +32,8 @@ Canonical DEV: 1,800 rows, SHA
 
 | Evidence | Exact | Near reject | OOD | False-route | p95 |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| #324/#325 executable DEV | **85.07%** | **99.31%** | **100%** | **0.62%** | **176.94 ms** |
-| #326/#327 frozen fresh | **84.81%** | **90.45%** | **100%** | **8.49%** | **278.37 ms** |
+| #324/#325 executable DEV | 85.07% | 99.31% | 100% | 0.62% | 176.94 ms |
+| #326/#327 frozen fresh | 84.81% | 90.45% | 100% | 8.49% | 278.37 ms |
 
 The fresh run is the promotion decision. It failed both the supported-exact floor, the near-domain
 rejection floor, the false-route ceiling, and the p95 target. The fresh corpus is permanently
@@ -56,12 +56,12 @@ The cycle tested multiple structurally distinct families rather than repeatedly 
 - registry-self-calibrated endpoint alias envelopes;
 - threshold-free BGE/GTE top-1 consensus.
 
-The final three post-fresh experiments were deliberately derived from canonical tuning DEV and
+The final three post-fresh experiments were derived from canonical tuning DEV and
 trusted registry/model invariants only. None used #270/#287/#326 rows for repair.
 
 ## Final technical finding
 
-BGE-M3 raw registered-route top-1 reaches about **88.45%**, so closed-set route ranking is not the
+BGE-M3 raw registered-route top-1 reaches about 88.45%, so closed-set route ranking is not the
 dominant late-stage blocker.
 
 The unresolved problem is **capability membership under open-set surface shift**:
@@ -77,10 +77,10 @@ on an independent request surface.
 
 The #259 robust BGE-M3 profile remains the most useful conservative reference:
 
-- supported exact: **83.77%**;
-- near-domain rejection: **98.96%**;
-- false-route: **0.93%**;
-- planner p95: **~134.95 ms**.
+- supported exact: 83.77%;
+- near-domain rejection: 98.96%;
+- false-route: 0.93%;
+- planner p95: ~134.95 ms.
 
 It is **not** renamed or promoted as a production-target profile because it misses the 85% supported
 exact requirement.

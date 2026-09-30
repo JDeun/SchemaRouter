@@ -1,6 +1,6 @@
 # 0.14 execution-state-aware corrective re-retrieval
 
-Tracking issue: **#431**
+Tracking issue: #431
 
 This experiment asks whether a multi-step agent can recover missing next-step capabilities by
 re-retrieving from **observable typed execution state**, rather than only widening the candidate
@@ -19,7 +19,7 @@ This protocol is independently motivated by two 2026 results:
   (Findings ACL 2026), which replaces one-shot matching with iterative retrieval queries for
   compositional tool use.
 
-SchemaRouter's experiment is intentionally narrower: it permits only observable typed execution
+SchemaRouter's experiment is narrower: it permits only observable typed execution
 state, never hidden future routes, oracle task graphs, or retrieval-derived execution authority.
 
 ## Frozen state contract

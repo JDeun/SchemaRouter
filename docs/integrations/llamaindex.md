@@ -42,8 +42,8 @@ CI runs this example together with the integration contract tests.
 
 ## Execution boundary
 
-The adapter is intentionally thin. LlamaIndex remains responsible for agent/workflow orchestration;
-SchemaRouter remains responsible for registered schema identity, policy, validation, binding checks,
+The adapter is thin. LlamaIndex is responsible for agent/workflow orchestration;
+SchemaRouter is responsible for registered schema identity, policy, validation, binding checks,
 and endpoint execution.
 
 The bridge does not grant LlamaIndex metadata authority over SchemaRouter execution policy.

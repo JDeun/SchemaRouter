@@ -1,9 +1,9 @@
 # 0.14 large held-out agent-utility benchmark
 
-Tracking issue: **#432**
+Tracking issue: #432
 
 This benchmark is the generalization layer after the controlled B1/B2 experiments.
-It is intentionally frozen without using B1/B2 row-level outcomes.
+It is frozen without using B1/B2 row-level outcomes.
 
 ## Why a new surface is required
 
@@ -106,13 +106,13 @@ normal-approximate 95% half-width is:
 1.96 / sqrt(n)
 ```
 
-At `n = 780`, that worst-case half-width is about **7.02pp**.
+At `n = 780`, that worst-case half-width is about 7.02pp.
 
 A worst-case design guaranteed to have a 2pp half-width would require about
 **9,604 independent semantic tasks**, which is not a practical downstream-agent
 benchmark at the planned catalog/condition matrix.
 
-Therefore:
+So:
 
 - -2pp remains an engineering threshold;
 - the preregistered task-cluster CI is reported without reinterpretation;
@@ -158,7 +158,7 @@ promote the engineering threshold into a statistical theorem.
 
 ## Pre-B2-terminal authoring scaffold
 
-A deterministic scaffold may be prepared before B2 is terminal, but it is deliberately limited to
+A deterministic scaffold may be prepared before B2 is terminal, but it is limited to
 **authoring slots**. It freezes only:
 
 - 780 unique `semantic_task_id` values;
@@ -186,7 +186,7 @@ terminal. The structural K3 gate is already terminal negative; #431 remains acti
 Before any generated corpus can be frozen or scored, run
 `scripts/validate_agent_utility_corpus_identity.py` against the authored rows.
 
-The validator is deliberately narrower than the later semantic scorer. It enforces only
+The validator is narrower than the later semantic scorer. It enforces only
 pre-scoring integrity that must not depend on benchmark outcomes:
 
 - every preregistered authoring slot appears exactly once;
@@ -217,4 +217,4 @@ sets, and hashes are frozen before held-out inference.
 
 This benchmark measures retrieval, tool use, execution state, efficiency and safety.
 It does not by itself establish final-answer factuality, unit correctness or provenance
-quality. Those claims remain scoped to **#424**.
+quality. Those claims remain scoped to #424.

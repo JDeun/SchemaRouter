@@ -1,6 +1,6 @@
 # Framework maturity matrix
 
-SchemaRouter is intentionally narrower than LangChain. The goal is not to reproduce a general
+SchemaRouter is narrower than LangChain by design. The goal is not to reproduce a general
 agent framework; it is to make schema-aware tool planning and execution production-grade and easy
 to embed in larger ecosystems.
 

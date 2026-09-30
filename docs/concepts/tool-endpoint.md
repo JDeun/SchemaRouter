@@ -1,6 +1,6 @@
 # Tool and endpoint contracts
 
-The schema model is deliberately explicit.
+The schema model is explicit.
 
 ```text
 ToolSpec

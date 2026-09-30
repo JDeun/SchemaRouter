@@ -1,8 +1,8 @@
 # 0.14 final-answer quality benchmark
 
-Tracking issue: **#424**
+Tracking issue: #424
 
-This benchmark is intentionally separate from deterministic task completion.
+This benchmark is kept separate from deterministic task completion.
 
 B1/B2 answer the question:
 
@@ -91,7 +91,7 @@ Conditions:
 Before any generated corpus can be frozen or scored, run
 `scripts/validate_agent_utility_corpus_identity.py` against the authored rows.
 
-The validator is deliberately narrower than the later semantic scorer. It enforces only
+The validator is narrower than the later semantic scorer. It enforces only
 pre-scoring integrity that must not depend on benchmark outcomes:
 
 - every preregistered authoring slot appears exactly once;

@@ -1,6 +1,6 @@
 # Execution and trust boundaries
 
-Execution is deliberately stricter than planning.
+Execution is stricter than planning.
 
 ## Execution pipeline
 
@@ -21,7 +21,7 @@ ToolCall
 
 ## Plans are not permissions
 
-A plan can describe a mutation without being allowed to perform it. Local `ExecutionPolicy` remains
+A plan can describe a mutation without being allowed to perform it. Local `ExecutionPolicy` is
 the authority for side effects.
 
 Remote OpenAPI descriptions, MCP annotations, and model output cannot raise policy permissions.
@@ -47,7 +47,7 @@ Schema and documentation redirects are limited to their original origin.
 Input is validated immediately before invocation. Raw structured output is validated immediately
 after invocation and **before** response-field projection.
 
-Projection therefore cannot hide an invalid unrequested field in an otherwise malformed response.
+So projection cannot hide an invalid unrequested field in an otherwise malformed response.
 
 ## Error categories
 

@@ -43,7 +43,7 @@ Neither surface turns the cloud model into an agent runtime. Tool execution, pol
 fingerprints, and authority remain local to SchemaRouter.
 
 For a supported OpenAPI discriminated request body, the catalog contains one `body` parameter with
-the original composed schema. A hosted model can therefore return:
+the original composed schema. A hosted model can return:
 
 ```json
 {

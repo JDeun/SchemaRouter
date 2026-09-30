@@ -26,7 +26,7 @@ For non-sensitive correctness bugs, normal GitHub issues are appropriate.
 OpenAPI documents, MCP metadata, human-readable documentation, and LLM-produced analyses are not
 execution authority.
 
-SchemaRouter therefore:
+SchemaRouter:
 
 - projects model output back onto the registered schema;
 - rejects undeclared tools, endpoints, parameters, and fields;
@@ -51,8 +51,8 @@ gateway behavior belongs behind an application-supplied `MCPClientFactory`.
 
 ### Network destinations and SSRF
 
-SchemaRouter intentionally supports localhost and private-network MCP/OpenAPI endpoints because local
-developer tools are a primary use case. Therefore it does not globally deny private or link-local
+SchemaRouter supports localhost and private-network MCP/OpenAPI endpoints because local
+developer tools are a primary use case, so it does not globally deny private or link-local
 addresses.
 
 `SchemaRouter.from_url()` and `inspect_url()` must be treated as network-capable APIs.
@@ -87,7 +87,7 @@ Run-event arguments and result payloads are redacted by default.
 sensitive information to the direct event consumer. Enable payload tracing only when the destination
 is trusted and appropriate retention controls exist.
 
-The optional OpenTelemetry exporter is intentionally stricter: it exports structural attributes but
+The optional OpenTelemetry exporter is stricter: it exports structural attributes but
 does not export argument values, result payloads, RunConfig metadata, tags, or exception messages,
 even when the underlying event stream opted into payloads.
 
@@ -99,7 +99,7 @@ does not encrypt the SQLite trace database.
 
 ### Approval, budgets, and retries
 
-Local execution policy remains the first side-effect gate. Applications can additionally require a
+Local execution policy is the first side-effect gate. Applications can additionally require a
 trusted sync/async approval callback for non-read-only or all calls. Missing callbacks, negative
 decisions, and callback failures deny execution.
 
@@ -171,7 +171,7 @@ trust decision rather than as model output.
 
 Shared benchmark configuration is passed explicitly from a selected environment variable. Reports
 record plugin identity, distribution/version, the configuration environment-variable name, and
-configuration keys only; configuration values are intentionally not persisted.
+configuration keys only; configuration values are not persisted.
 
 ### Human-readable documentation
 

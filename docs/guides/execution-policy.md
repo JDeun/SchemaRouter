@@ -6,7 +6,7 @@ Planning may identify a relevant mutation. That does not mean the mutation is au
 
 ## Default behavior
 
-The default policy is intentionally conservative for remote capabilities:
+The default policy is conservative for remote capabilities:
 
 - normal local/manual contracts can execute;
 - known OpenAPI mutations are blocked unless enabled;
@@ -143,13 +143,13 @@ Semantics are deterministic:
 - synchronous approval/hooks cannot be preempted, but elapsed time is checked immediately after
   they return.
 
-Batch APIs treat each input invocation as its own run and therefore its own budget.
+Batch APIs treat each input invocation as its own run, with its own budget.
 
 Budgets are local enforcement, not billing. Cost units are application-defined weights.
 
 ## Retry interaction
 
-Read-only retries remain the default. If a call is retried, each retry consumes attempt, remote, and
+Read-only retries are the default. If a call is retried, each retry consumes attempt, remote, and
 cost budgets before the network/tool invocation occurs.
 
 A budget refusal is not retried.
@@ -159,7 +159,7 @@ A budget refusal is not retried.
 A remote server controls its own descriptions and annotations. Allowing those fields to set local
 execution authority would let the capability provider authorize itself.
 
-SchemaRouter therefore keeps ordinary remote metadata descriptive and local policy authoritative.
+SchemaRouter keeps ordinary remote metadata descriptive and local policy authoritative.
 The local/remote classification used by policy is the fingerprinted `ToolSpec.remote` contract,
 not a model-visible metadata flag. Built-in remote adapters set that field locally during import.
 

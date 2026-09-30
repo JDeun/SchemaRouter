@@ -17,7 +17,7 @@ The ownership boundary is explicit:
 | Optional decision backend | one bounded selection over finite locally authorized candidates |
 | Capability source | OpenAPI, MCP, OPTIMADE, Python callable, approved adapter/plugin |
 
-A decision backend such as Laya, Ollama, or Jev is therefore not a nested agent. It cannot decide
+A decision backend such as Laya, Ollama, or Jev is not a nested agent. It cannot decide
 to start another tool loop, invent a capability, or grant execution authority.
 
 ## The compilation model
@@ -54,12 +54,12 @@ difference between:
 - different required parameters;
 - different output schemas.
 
-SchemaRouter therefore makes `EndpointSpec` first-class instead of assuming one endpoint per tool.
+SchemaRouter makes `EndpointSpec` first-class instead of assuming one endpoint per tool.
 
 ## Why response fields matter
 
 Fetching every field can waste provider bandwidth, increase latency, pollute downstream model
-context with irrelevant values, and consume unnecessary prompt tokens. SchemaRouter therefore uses
+context with irrelevant values, and consume unnecessary prompt tokens. SchemaRouter uses
 **field-first, route-second** planning: determine the logical fields first, then choose a route that
 can provide them.
 
@@ -85,7 +85,7 @@ Plans are not execution authority. Between planning and execution:
 - a model may have proposed an invalid value;
 - a bound transport may no longer match the registered contract.
 
-The executor therefore recomputes required arguments, checks fingerprints, applies policy, validates
+The executor recomputes required arguments, checks fingerprints, applies policy, validates
 input, invokes the trusted transport, validates raw output, and only then projects fields.
 
 ## Non-goals

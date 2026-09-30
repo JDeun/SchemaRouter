@@ -72,12 +72,12 @@ dimensionless score or ratio      -> number, unit=None
 physical quantity                 -> number/array, unit="..." when declared
 ```
 
-Therefore OpenAPI, MCP, OPTIMADE, Python, documentation-derived adapters, or any approved plugin
+OpenAPI, MCP, OPTIMADE, Python, documentation-derived adapters, or any approved plugin
 can expose unitless fields. The source type does not decide whether a unit exists; the field
 contract does.
 
 If a caller explicitly sets global `EvidenceRequirements(units=True)`, every selected answer
-field must satisfy that evidence requirement. That is intentionally strict and is different from
+field must satisfy that evidence requirement. That is strict, and different from
 saying unitless fields are invalid.
 
 For mixed requests, evidence can be scoped to a semantic field instead:
@@ -383,7 +383,7 @@ Automatic provider fallback requires exact qualifier equality after semantic/typ
 300 K field is therefore not silently substituted with a 500 K field, and a qualified field is not
 silently substituted with an unqualified field.
 
-Qualifier values are deliberately opaque and case-sensitive. SchemaRouter does not infer that
+Qualifier values are opaque and case-sensitive. SchemaRouter does not infer that
 `300 K` equals `26.85 degC`, normalize phase names, parse crystallographic notation, or derive a
 measurement condition from natural language. If multiple provider representations are known to mean
 the same condition, trusted adapter/application code should canonicalize them before registration.

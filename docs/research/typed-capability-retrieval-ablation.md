@@ -1,6 +1,6 @@
 # 0.14 typed capability retrieval representation ablation
 
-Tracking issue: **#434**
+Tracking issue: #434
 
 This successor experiment isolates a question that the current B1 agent-utility run does not answer:
 
