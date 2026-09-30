@@ -31,7 +31,7 @@ from .models import CapabilityRetrieval, ExecutionPlan, PlanRequest, ToolResult,
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
-from .registry import InMemoryRegistry, ToolRegistry
+from .registry import InMemoryRegistry, ToolRegistry, replace_if_current
 from .runs import RunConfig, RunEvent
 from .traces import RunTraceStore
 
@@ -320,10 +320,16 @@ class SchemaRouter:
         at execution time. The amendment itself is still registered; call
         `RegistryExecutor.bind()` again to recover.
         """
+        expected_version = self.registry.version
         current = self.registry.get(tool_key)
         validate_amendment(current, amended)
         was_bound = tool_key in self.executor.bound_keys()
-        key = self.registry.register(amended, replace=True)
+        key = replace_if_current(
+            self.registry,
+            amended,
+            expected_fingerprint=current.fingerprint,
+            expected_version=expected_version,
+        )
         restamped = self.executor.restamp_binding(key, amended.fingerprint)
         if was_bound and not restamped:
             raise BindingDriftError(
@@ -394,8 +400,26 @@ class SchemaRouter:
             ),
         )
         invoker = PythonCallableInvoker(function)
-        key = self.registry.register(tool, replace=replace)
-        self.executor.bind(key, invoker)
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(tool.key)
+            except KeyError:
+                key = self.registry.register(tool)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    tool,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(tool)
+        self.executor.bind(
+            key,
+            invoker,
+            expected_fingerprint=tool.fingerprint,
+        )
         return key
 
     async def inspect_url(
@@ -422,6 +446,7 @@ class SchemaRouter:
         trusted_headers: dict[str, str] | None = None,
         timeout: float = 20.0,
     ) -> None:
+        expected_version = self.registry.version
         tool = self.registry.get(tool_key)
         if tool.execution_metadata.get("adapter") != "openapi":
             raise RegistrationError(
@@ -451,8 +476,17 @@ class SchemaRouter:
                 "requires_explicit_base_url": False,
             }
         )
-        self.registry.register(updated, replace=True)
-        self.executor.bind(tool_key, invoker)
+        replace_if_current(
+            self.registry,
+            updated,
+            expected_fingerprint=tool.fingerprint,
+            expected_version=expected_version,
+        )
+        self.executor.bind(
+            tool_key,
+            invoker,
+            expected_fingerprint=updated.fingerprint,
+        )
 
     def approve_proposal(
         self,
@@ -515,8 +549,26 @@ class SchemaRouter:
             )
         except ValueError as exc:
             raise ProposalApprovalError("invalid proposal execution binding") from exc
-        key = self.registry.register(tool, replace=replace)
-        self.executor.bind(key, invoker)
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(tool.key)
+            except KeyError:
+                key = self.registry.register(tool)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    tool,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(tool)
+        self.executor.bind(
+            key,
+            invoker,
+            expected_fingerprint=tool.fingerprint,
+        )
         return key
 
     async def add_url(

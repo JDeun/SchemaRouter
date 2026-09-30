@@ -44,16 +44,64 @@ class ToolRegistry(Protocol):
     def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec: ...
 
 
+class CompareAndSwapToolRegistry(ToolRegistry, Protocol):
+    """Optional registry capability for atomic replace-if-current semantics."""
+
+    def replace_if_fingerprint(
+        self,
+        tool: ToolSpec,
+        *,
+        expected_fingerprint: str,
+        expected_version: int,
+    ) -> str: ...
+
+
+def replace_if_current(
+    registry: ToolRegistry,
+    tool: ToolSpec,
+    *,
+    expected_fingerprint: str,
+    expected_version: int,
+) -> str:
+    """Use a registry's atomic CAS capability or fail closed.
+
+    The base ToolRegistry protocol remains backward compatible for planning and
+    ordinary registration. Operations that require lost-update protection must
+    opt into this stronger capability instead of silently falling back to a
+    non-atomic read-then-write sequence. The caller supplies both the exact
+    tool fingerprint and the registry version captured before its snapshot read,
+    so metadata-only or unrelated concurrent writes also fail closed.
+    """
+    replace = getattr(registry, "replace_if_fingerprint", None)
+    if not callable(replace):
+        raise RegistrationError(
+            "registry does not support atomic replace-if-fingerprint; "
+            "this operation requires CompareAndSwapToolRegistry semantics"
+        )
+    result = replace(
+        tool,
+        expected_fingerprint=expected_fingerprint,
+        expected_version=expected_version,
+    )
+    if not isinstance(result, str):
+        raise RegistrationError(
+            "atomic replace-if-fingerprint returned a non-string tool key"
+        )
+    return result
+
+
 class InMemoryRegistry:
     """Versioned, collision-safe in-memory tool catalog with snapshot reads."""
 
     def __init__(self) -> None:
         self._tools: dict[str, ToolSpec] = {}
         self._version = 0
+        self._lock = RLock()
 
     @property
     def version(self) -> int:
-        return self._version
+        with self._lock:
+            return self._version
 
     @staticmethod
     def _snapshot(tool: ToolSpec) -> ToolSpec:
@@ -62,26 +110,59 @@ class InMemoryRegistry:
     def register(self, tool: ToolSpec, *, replace: bool = False) -> str:
         validated = _validated_tool_snapshot(tool)
         key = validated.key
-        if key in self._tools and not replace:
-            raise RegistrationError(f"tool {key!r} is already registered")
-        self._tools[key] = self._snapshot(validated)
-        self._version += 1
+        with self._lock:
+            if key in self._tools and not replace:
+                raise RegistrationError(f"tool {key!r} is already registered")
+            self._tools[key] = self._snapshot(validated)
+            self._version += 1
+        return key
+
+    def replace_if_fingerprint(
+        self,
+        tool: ToolSpec,
+        *,
+        expected_fingerprint: str,
+        expected_version: int,
+    ) -> str:
+        """Atomically replace one tool only if the caller still owns its snapshot."""
+        validated = _validated_tool_snapshot(tool)
+        key = validated.key
+        with self._lock:
+            if self._version != expected_version:
+                raise RegistrationError(
+                    f"registry changed concurrently; expected version "
+                    f"{expected_version}, found {self._version}"
+                )
+            current = self._tools.get(key)
+            if current is None:
+                raise KeyError(key)
+            if current.fingerprint != expected_fingerprint:
+                raise RegistrationError(
+                    f"tool {key!r} changed concurrently; expected fingerprint "
+                    f"{expected_fingerprint!r}, found {current.fingerprint!r}"
+                )
+            self._tools[key] = self._snapshot(validated)
+            self._version += 1
         return key
 
     def unregister(self, key: str) -> None:
-        if key not in self._tools:
-            raise KeyError(key)
-        del self._tools[key]
-        self._version += 1
+        with self._lock:
+            if key not in self._tools:
+                raise KeyError(key)
+            del self._tools[key]
+            self._version += 1
 
     def get(self, key: str) -> ToolSpec:
-        return self._snapshot(self._tools[key])
+        with self._lock:
+            return self._snapshot(self._tools[key])
 
     def tools(self) -> tuple[ToolSpec, ...]:
-        return tuple(self._snapshot(tool) for tool in self._tools.values())
+        with self._lock:
+            return tuple(self._snapshot(tool) for tool in self._tools.values())
 
     def keys(self) -> tuple[str, ...]:
-        return tuple(self._tools)
+        with self._lock:
+            return tuple(self._tools)
 
     def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec:
         return self.get(tool_key).endpoint(endpoint_name)
@@ -91,14 +172,17 @@ class InMemoryRegistry:
         staged_keys = [tool.key for tool in staged]
         if len(staged_keys) != len(set(staged_keys)):
             raise RegistrationError("duplicate tool keys in batch")
-        if not replace:
-            collisions = sorted(set(staged_keys) & set(self._tools))
-            if collisions:
-                raise RegistrationError(f"tools already registered: {', '.join(collisions)}")
-        for tool in staged:
-            self._tools[tool.key] = self._snapshot(tool)
-        if staged:
-            self._version += 1
+        with self._lock:
+            if not replace:
+                collisions = sorted(set(staged_keys) & set(self._tools))
+                if collisions:
+                    raise RegistrationError(
+                        f"tools already registered: {', '.join(collisions)}"
+                    )
+            for tool in staged:
+                self._tools[tool.key] = self._snapshot(tool)
+            if staged:
+                self._version += 1
 
 
 class SQLiteRegistry:
@@ -246,6 +330,59 @@ class SQLiteRegistry:
                         """,
                         (document, validated.key),
                     )
+                self._bump_version()
+            except Exception:
+                self._connection.rollback()
+                raise
+            else:
+                self._connection.commit()
+        return validated.key
+
+    def replace_if_fingerprint(
+        self,
+        tool: ToolSpec,
+        *,
+        expected_fingerprint: str,
+        expected_version: int,
+    ) -> str:
+        """Atomically replace one persisted tool if its fingerprint and version match."""
+        validated = _validated_tool_snapshot(tool)
+        document = self._serialize(validated)
+        with self._lock:
+            self._begin_write()
+            try:
+                version_row = self._connection.execute(
+                    "SELECT value FROM schemarouter_registry_meta WHERE key = 'version'"
+                ).fetchone()
+                if version_row is None:
+                    raise RegistrationError("registry version metadata is missing")
+                current_version = int(version_row["value"])
+                if current_version != expected_version:
+                    raise RegistrationError(
+                        f"registry changed concurrently; expected version "
+                        f"{expected_version}, found {current_version}"
+                    )
+                row = self._connection.execute(
+                    "SELECT document FROM schemarouter_registry_tools WHERE key = ?",
+                    (validated.key,),
+                ).fetchone()
+                if row is None:
+                    raise KeyError(validated.key)
+                current = self._deserialize(validated.key, str(row["document"]))
+                if current.fingerprint != expected_fingerprint:
+                    raise RegistrationError(
+                        f"tool {validated.key!r} changed concurrently; expected "
+                        f"fingerprint {expected_fingerprint!r}, found "
+                        f"{current.fingerprint!r}"
+                    )
+                self._connection.execute(
+                    """
+                    UPDATE schemarouter_registry_tools
+                    SET document = ?
+                    WHERE key = ?
+                    """,
+                    (document, validated.key),
+                )
                 self._bump_version()
             except Exception:
                 self._connection.rollback()
