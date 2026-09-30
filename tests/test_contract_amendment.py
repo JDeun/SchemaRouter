@@ -754,3 +754,21 @@ def test_amending_one_endpoint_of_several_preserves_the_others():
     assert [endpoint.name for endpoint in result.endpoints] == ["lookup", "history"]
     assert [field.name for field in result.endpoint("lookup").output_fields] == ["band_gap"]
     assert result.endpoint("history").description == "Historical record"
+
+
+def test_non_json_metadata_is_normalized_to_contract_amendment_error():
+    current = _tool()
+    endpoint = _endpoint(current)
+    malformed = endpoint.model_copy(update={"metadata": {"bad": object()}})
+    amended = _with_endpoint(current, malformed)
+
+    with pytest.raises(ContractAmendmentError, match="not JSON-serializable"):
+        validate_amendment(current, amended)
+
+
+def test_a_dict_in_endpoints_is_normalized_to_contract_amendment_error():
+    current = _tool()
+    amended = current.model_copy(update={"endpoints": [{"name": "current"}]})
+
+    with pytest.raises(ContractAmendmentError, match="EndpointSpec"):
+        validate_amendment(current, amended)
