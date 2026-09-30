@@ -61,11 +61,13 @@ async def _bounded_get(
     *,
     headers: dict[str, str] | None,
     max_bytes: int,
+    params: dict[str, str] | None = None,
 ) -> httpx.Response:
     async with client.stream(
         "GET",
         url,
         headers=headers,
+        params=params,
         follow_redirects=False,
     ) as response:
         if response.is_redirect:
@@ -168,6 +170,33 @@ def _key_names(entity_type: ET.Element) -> set[str]:
     return result
 
 
+def _property_unit(prop: ET.Element) -> str | None:
+    for annotation in prop.findall(f"{{{_EDM_NS}}}Annotation"):
+        term = annotation.get("Term")
+        if term not in {
+            "Org.OData.Measures.V1.Unit",
+            "Org.OData.Measures.V1.ISOCurrency",
+        }:
+            continue
+        value = annotation.get("String")
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
+def _property_description(prop: ET.Element) -> str:
+    for annotation in prop.findall(f"{{{_EDM_NS}}}Annotation"):
+        if annotation.get("Term") not in {
+            "Org.OData.Core.V1.Description",
+            "Org.OData.Core.V1.LongDescription",
+        }:
+            continue
+        value = annotation.get("String")
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
 def _object_schema(
     type_name: str,
     types: dict[str, ET.Element],
@@ -225,48 +254,86 @@ def _field_specs(
 ) -> tuple[list[FieldSpec], dict[str, str]]:
     entity_type = types[entity_type_name]
     keys = _key_names(entity_type)
-    schema = _object_schema(entity_type_name, types)
     fields: list[FieldSpec] = []
-    field_map: dict[str, str] = {}
+    field_map: dict[str, str] = []
 
-    def visit(
-        value: dict[str, Any],
+    def visit_type(
+        type_name: str,
         *,
         prefix: tuple[str, ...],
         depth: int,
+        ancestors: frozenset[str],
     ) -> None:
-        if depth >= 8:
+        if depth >= 8 or type_name in ancestors:
             return
-        raw_type = value.get("type")
-        if raw_type == "array" or (
-            isinstance(raw_type, list) and "array" in raw_type
-        ):
-            return
-        properties = value.get("properties")
-        if not isinstance(properties, dict):
+        node = types.get(type_name)
+        if node is None:
             return
 
-        for name, child in properties.items():
-            if not isinstance(name, str) or not isinstance(child, dict):
+        for prop in node.findall(f"{{{_EDM_NS}}}Property"):
+            name = prop.get("Name")
+            prop_type = prop.get("Type")
+            if not name or not prop_type:
                 continue
+
             path = (*prefix, name)
             field_name = ".".join(path)
             selector = "/".join(path)
+            nullable = prop.get("Nullable", "true").lower() != "false"
+            collection = _COLLECTION_RE.match(prop_type)
+            inner_type = collection.group(1) if collection else prop_type
+
+            if inner_type in types:
+                child_schema = _object_schema(
+                    inner_type,
+                    types,
+                    depth=depth + 1,
+                    ancestors=ancestors | {type_name},
+                )
+                json_schema = (
+                    {"type": "array", "items": child_schema}
+                    if collection
+                    else child_schema
+                )
+                if (
+                    nullable
+                    and not collection
+                    and json_schema.get("type") == "object"
+                ):
+                    json_schema = dict(json_schema)
+                    json_schema["type"] = ["object", "null"]
+            else:
+                json_schema = _edm_schema(prop_type, nullable=nullable)
+
             fields.append(
                 FieldSpec(
                     name=field_name,
-                    json_schema=child,
+                    description=_property_description(prop),
+                    json_schema=json_schema,
                     aliases=[name.replace("_", " ")],
                     path=list(path) if prefix else [],
                     result_path=[field_name] if prefix else [],
+                    unit=_property_unit(prop),
                     identifier=name in keys and not prefix,
                     source_type="odata",
                 )
             )
             field_map[field_name] = selector
-            visit(child, prefix=path, depth=depth + 1)
 
-    visit(schema, prefix=(), depth=0)
+            if inner_type in types and collection is None:
+                visit_type(
+                    inner_type,
+                    prefix=path,
+                    depth=depth + 1,
+                    ancestors=ancestors | {type_name},
+                )
+
+    visit_type(
+        entity_type_name,
+        prefix=(),
+        depth=0,
+        ancestors=frozenset(),
+    )
     return fields, field_map
 
 
@@ -416,6 +483,7 @@ class ODataRemoteInvoker:
                     url,
                     headers=self.trusted_headers,
                     max_bytes=self.max_response_bytes,
+                    params=query,
                 )
             except httpx.TimeoutException as exc:
                 raise InvocationUnavailableError("OData request timed out") from exc
