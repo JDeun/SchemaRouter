@@ -451,14 +451,34 @@ class EndpointSpec(StrictModel):
         paths = [(field.name, field.projection_path) for field in self.output_fields]
         if len({path for _, path in paths}) != len(paths):
             raise ValueError(f"duplicate output field path in endpoint {self.name!r}")
-        for index, (left_name, left_path) in enumerate(paths):
-            for right_name, right_path in paths[index + 1 :]:
-                shorter, longer = (
+
+        # Source paths may overlap (for example "data" and "data.band_gap") as long as their
+        # projected result paths do not. This lets adapters expose nested declared fields while
+        # preserving the existing parent field. Result-path collision checks below remain the
+        # fail-closed boundary for ambiguous projection output.
+        # Preserve the historical validation error when overlapping source paths would also
+        # collide in the projected result. Source-path overlap is allowed only when adapters
+        # explicitly remap the result paths to disjoint keys.
+        projection_entries = [
+            (field.name, field.projection_path, field.result_projection_path)
+            for field in self.output_fields
+        ]
+        for index, (left_name, left_path, left_result) in enumerate(projection_entries):
+            for right_name, right_path, right_result in projection_entries[index + 1 :]:
+                source_shorter, source_longer = (
                     (left_path, right_path)
                     if len(left_path) <= len(right_path)
                     else (right_path, left_path)
                 )
-                if longer[: len(shorter)] == shorter:
+                result_shorter, result_longer = (
+                    (left_result, right_result)
+                    if len(left_result) <= len(right_result)
+                    else (right_result, left_result)
+                )
+                if (
+                    source_longer[: len(source_shorter)] == source_shorter
+                    and result_longer[: len(result_shorter)] == result_shorter
+                ):
                     raise ValueError(
                         "overlapping output field paths in endpoint "
                         f"{self.name!r}: {left_name!r} and {right_name!r}"
