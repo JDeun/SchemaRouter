@@ -21,7 +21,9 @@ METADATA = b"""<?xml version="1.0" encoding="utf-8"?>
         <Key><PropertyRef Name="ID" /></Key>
         <Property Name="ID" Type="Edm.Int32" Nullable="false" />
         <Property Name="Name" Type="Edm.String" Nullable="false" />
-        <Property Name="Price" Type="Edm.Decimal" />
+        <Property Name="Price" Type="Edm.Decimal">
+          <Annotation Term="Org.OData.Measures.V1.ISOCurrency" String="USD" />
+        </Property>
         <Property Name="Address" Type="Demo.Address" />
       </EntityType>
       <EntityContainer Name="Container">
@@ -46,6 +48,7 @@ def test_odata_metadata_compiles_entity_fields_and_complex_paths() -> None:
         fields
     )
     assert fields["ID"].identifier is True
+    assert fields["Price"].unit == "USD"
     assert fields["Address.City"].path == ["Address", "City"]
     assert fields["Address.City"].result_path == ["Address.City"]
     assert endpoint.server_projection.field_map["Address.City"] == "Address/City"
