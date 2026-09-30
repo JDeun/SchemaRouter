@@ -180,7 +180,11 @@ def freeze_confirmation(
 
     dev_500 = dev_catalog.build_registry(500)
     dev_routes = _route_ids(dev_500)
-    dev_core_routes = _route_ids(dev_catalog.build_registry(100))
+    dev_core_routes = {
+        f"{tool.key}.{endpoint.name}"
+        for tool in dev_catalog._core_tools()  # noqa: SLF001
+        for endpoint in tool.endpoints
+    }
 
     manifest: dict[str, Any] = {
         "schema_version": 1,
