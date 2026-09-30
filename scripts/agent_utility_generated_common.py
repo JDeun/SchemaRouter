@@ -679,11 +679,16 @@ def run_generated_episode(
     unique_candidates = {
         route_id for candidates in candidate_history for route_id in candidates
     }
-    initial_missing = bool(set(required_routes).difference(candidate_history[0]))
-    recovered = initial_missing and any(
-        route_id in candidates
+    initially_missing_routes = set(required_routes).difference(candidate_history[0])
+    initial_missing = bool(initially_missing_routes)
+    later_candidates = {
+        route_id
         for candidates in candidate_history[1:]
-        for route_id in required_routes
+        for route_id in candidates
+    }
+    recovered = (
+        initial_missing
+        and initially_missing_routes.issubset(later_candidates)
     )
 
     return {
