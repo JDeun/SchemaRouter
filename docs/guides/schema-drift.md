@@ -104,7 +104,9 @@ schema snapshot.
 ## Reinspect a registered provider
 
 For URL-backed OpenAPI, MCP, OPTIMADE, GraphQL, OData, and OpenRPC tools, SchemaRouter can
-reinspect the provider without committing the candidate first:
+reinspect the provider without committing the candidate first. MCP tools registered through
+`add_mcp_stdio()` or `add_mcp_client_factory()` are also refreshable while their exact
+process-local trusted binding remains current:
 
 ```python
 result = await router.arefresh_schema("materials")
@@ -128,8 +130,12 @@ result = await router.arefresh_schema(
 )
 ```
 
-Schema and runtime authentication material is intentionally not persisted. If the provider requires
-headers, pass trusted `schema_headers` / `trusted_headers` again during refresh.
+Schema and runtime authentication material is intentionally not persisted. If a URL-backed provider
+requires headers, pass trusted `schema_headers` / `trusted_headers` again during refresh. For
+stdio and transport-neutral MCP registrations, refresh reuses only the current fingerprint-matched
+process-local `MCPBoundInvoker` factory; the factory, credentials, subprocess configuration, and
+transport state are never copied into `ToolSpec` or watcher snapshots. If that trusted binding is
+missing or stale, refresh fails closed instead of fabricating source provenance.
 
 The apply step uses the exact registry version and tool fingerprint that were compared. If another
 writer mutates the registry while remote inspection is in progress, the compare-and-swap fails
@@ -198,9 +204,9 @@ await router.stop_schema_watcher()
 Intervals are per tool. The watcher serializes overlapping watch cycles and bounds refresh
 concurrency, so one slow provider does not create unbounded duplicate refresh writes.
 
-Conditional HTTP requests using `ETag` / `Last-Modified` remain an optimization opportunity;
-correctness does not depend on them because every fetched candidate is still fingerprinted and
-compared before replacement.
+Where supported, conditional HTTP requests using `ETag` / `Last-Modified` are an optimization
+only; correctness does not depend on them because every fetched candidate is still fingerprinted
+and compared before replacement.
 
 ## Security-semantic drift
 

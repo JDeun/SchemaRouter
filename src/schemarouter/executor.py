@@ -435,6 +435,20 @@ class RegistryExecutor:
         self._invokers[tool_key] = invoker
         self._binding_fingerprints[tool_key] = fingerprint
 
+    def _bound_invoker_for_contract(
+        self,
+        tool_key: str,
+        tool_fingerprint: str,
+    ) -> BoundEndpointInvoker | None:
+        """Return trusted process-local binding only when it matches one exact contract.
+
+        This is an internal lifecycle hook for operations such as transport-native schema
+        refresh. It deliberately does not expose invokers through SchemaRouter's public API.
+        """
+        if self.binding_status_for_contract(tool_key, tool_fingerprint) != "ready":
+            return None
+        return self._invokers.get(tool_key)
+
     def restamp_binding(self, tool_key: str, expected_fingerprint: str) -> bool:
         """Re-point an existing binding at a fingerprint the caller already validated.
 

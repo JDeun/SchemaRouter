@@ -131,6 +131,28 @@ moving secrets into SchemaRouter's planning contract.
 This follows the MCP SDK's transport layering: HTTP authentication belongs on the caller-owned HTTP
 client passed to the Streamable HTTP transport.
 
+## Schema refresh and watching
+
+All first-class MCP transports use the same conservative schema-drift boundary. Streamable HTTP
+registrations are reinspected through their persisted safe URL provenance. Stdio and
+transport-neutral registrations have no URL by design, so SchemaRouter reuses the current
+fingerprint-matched process-local bound factory:
+
+```python
+router.register_schema_watch(tool.key, interval_seconds=300)
+await router.start_schema_watcher()
+```
+
+An identical MCP tool list is a no-op. Proven-compatible drift can be applied through the existing
+compare-and-swap replacement path and is rebound to the same trusted transport factory under the
+new exact fingerprint. Breaking or security-semantic drift remains pending review and does not
+replace the accepted contract or binding.
+
+The live factory, credentials, environment values, subprocess configuration, sockets, and other
+transport state are never persisted into `ToolSpec` or watcher snapshots. If the process-local
+binding is missing or stale, refresh fails closed; SchemaRouter does not invent an HTTP URL or
+reconstruct trusted transport state from model-visible metadata.
+
 ## Execution
 
 The bound invoker calls `call_tool()`. Structured content is preferred because it can be validated

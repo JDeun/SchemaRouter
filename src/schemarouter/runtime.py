@@ -1110,60 +1110,110 @@ class SchemaRouter:
                 ):
                     openapi_ref_max_bytes = byte_limit
 
-        if source_url is None:
-            raise SchemaSourceError(
-                f"tool {tool_key!r} is missing persisted source provenance for refresh"
+        use_bound_mcp_transport = adapter == "mcp" and source_url is None
+        use_http_validators = False
+        schema_validators: dict[str, str] = {}
+        candidate: Any | None = None
+        candidate_invoker: BoundEndpointInvoker | None = None
+
+        if use_bound_mcp_transport:
+            bound = self.executor._bound_invoker_for_contract(
+                tool_key,
+                current.fingerprint,
+            )
+            if not isinstance(bound, MCPBoundInvoker):
+                raise SchemaSourceError(
+                    f"tool {tool_key!r} has no current trusted MCP transport binding "
+                    "available for schema refresh"
+                )
+
+            raw_transport = current.execution_metadata.get("transport")
+            transport = (
+                raw_transport
+                if isinstance(raw_transport, str) and raw_transport
+                else "custom"
+            )
+            raw_transport_fingerprint = current.execution_metadata.get(
+                "transport_fingerprint"
+            )
+            transport_fingerprint = (
+                raw_transport_fingerprint
+                if isinstance(raw_transport_fingerprint, str)
+                and raw_transport_fingerprint
+                else None
             )
 
-        use_http_validators = adapter in {"openapi", "openrpc", "odata"}
-        if adapter == "openapi" and openapi_external_refs:
-            use_http_validators = False
-
-        schema_validators = (
-            self.loader.schema_http_validators_for(tool_key, current)
-            if use_http_validators
-            else {}
-        )
-        try:
-            candidate = await self.loader.inspect(
-                source_url,
-                kind=adapter,
-                name=current.name,
+            candidate_tool = await inspect_mcp_client_factory(
+                bound.factory,
+                server_name=current.name,
                 namespace=current.namespace,
-                provider=current.provider,
-                access_mode=current.access_mode,
-                base_url=base_url,
-                schema_headers=schema_headers,
-                schema_validators=schema_validators,
-                trusted_headers=trusted_headers,
-                mcp_client_factory=mcp_client_factory,
-                openapi_external_refs=openapi_external_refs,
-                openapi_ref_max_depth=openapi_ref_max_depth,
-                openapi_ref_max_documents=openapi_ref_max_documents,
-                openapi_ref_max_bytes=openapi_ref_max_bytes,
+                timeout=timeout,
+                transport=transport,
+                transport_fingerprint=transport_fingerprint,
+            )
+            candidate_tool.provider = current.provider
+            candidate_tool.access_mode = current.access_mode
+            candidate_invoker = MCPBoundInvoker(
+                bound.factory,
                 timeout=timeout,
             )
-        except SchemaNotModifiedError as exc:
-            self.loader.remember_schema_http_validators(
-                tool_key,
-                exc.validators or schema_validators,
-            )
-            return SchemaRefreshResult(
-                tool_key=tool_key,
-                action="unchanged",
-                applied=False,
-                report=compare_tool_specs(current, current),
-            )
+        else:
+            if source_url is None:
+                raise SchemaSourceError(
+                    f"tool {tool_key!r} is missing persisted source provenance for refresh"
+                )
 
-        if candidate.tool.key != tool_key:
+            use_http_validators = adapter in {"openapi", "openrpc", "odata"}
+            if adapter == "openapi" and openapi_external_refs:
+                use_http_validators = False
+
+            schema_validators = (
+                self.loader.schema_http_validators_for(tool_key, current)
+                if use_http_validators
+                else {}
+            )
+            try:
+                candidate = await self.loader.inspect(
+                    source_url,
+                    kind=adapter,
+                    name=current.name,
+                    namespace=current.namespace,
+                    provider=current.provider,
+                    access_mode=current.access_mode,
+                    base_url=base_url,
+                    schema_headers=schema_headers,
+                    schema_validators=schema_validators,
+                    trusted_headers=trusted_headers,
+                    mcp_client_factory=mcp_client_factory,
+                    openapi_external_refs=openapi_external_refs,
+                    openapi_ref_max_depth=openapi_ref_max_depth,
+                    openapi_ref_max_documents=openapi_ref_max_documents,
+                    openapi_ref_max_bytes=openapi_ref_max_bytes,
+                    timeout=timeout,
+                )
+            except SchemaNotModifiedError as exc:
+                self.loader.remember_schema_http_validators(
+                    tool_key,
+                    exc.validators or schema_validators,
+                )
+                return SchemaRefreshResult(
+                    tool_key=tool_key,
+                    action="unchanged",
+                    applied=False,
+                    report=compare_tool_specs(current, current),
+                )
+            candidate_tool = candidate.tool
+            candidate_invoker = candidate.invoker
+
+        if candidate_tool.key != tool_key:
             raise SchemaSourceError(
                 "refreshed schema changed the registered tool key unexpectedly"
             )
 
-        report = compare_tool_specs(current, candidate.tool)
+        report = compare_tool_specs(current, candidate_tool)
         if report.compatibility == "identical":
-            if use_http_validators:
-                self.loader.remember_tool_schema_http_validators(candidate.tool)
+            if not use_bound_mcp_transport and use_http_validators:
+                self.loader.remember_tool_schema_http_validators(candidate_tool)
             return SchemaRefreshResult(
                 tool_key=tool_key,
                 action="unchanged",
@@ -1172,11 +1222,25 @@ class SchemaRouter:
             )
 
         if report.compatibility == "compatible" and apply_compatible:
-            self.loader.commit_candidate_if_current(
-                candidate,
-                expected_fingerprint=current.fingerprint,
-                expected_version=expected_version,
-            )
+            if candidate is not None:
+                self.loader.commit_candidate_if_current(
+                    candidate,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    candidate_tool,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+                if candidate_invoker is not None:
+                    self.executor.bind(
+                        key,
+                        candidate_invoker,
+                        expected_fingerprint=candidate_tool.fingerprint,
+                    )
             return SchemaRefreshResult(
                 tool_key=tool_key,
                 action="applied",
