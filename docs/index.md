@@ -23,6 +23,7 @@ pip install schemarouter
 
 [Get started](getting-started/installation.md){ .md-button .md-button--primary }
 [Example gallery](getting-started/examples.md){ .md-button }
+[Verify trust & release evidence](project/trust-and-evidence.md){ .md-button }
 [Declare an MCP result contract](guides/mcp.md#declare-a-result-contract-the-server-does-not-publish){ .md-button }
 [GitHub](https://github.com/JDeun/SchemaRouter){ .md-button }
 
@@ -236,5 +237,12 @@ claim.
     Maturity, compatibility policy, security boundaries, and API reference.
 
     [Architecture →](architecture.md)
+
+-   **Trust & evidence**
+
+    Release digests, SBOM/attestation path, CI/security controls, hardening history, and research
+    claim boundaries.
+
+    [Verify public evidence →](project/trust-and-evidence.md)
 
 </div>
