@@ -45,8 +45,23 @@ async def run_smoke(url: str) -> dict[str, object]:
     assert results[0].data["numAPIs"] > 0
 
     return {
+        "evidence_kind": "live_public_provider",
+        "provider": "APIs.guru",
+        "discovery_success": True,
+        "tool_count": len(tools),
+        "endpoint_count": sum(len(candidate.endpoints) for candidate in tools),
+        "execution_bound": router.executor.is_binding_ready_for_contract(
+            tool.key,
+            tool.fingerprint,
+        ),
+        "execution_success": True,
+        "safe_endpoint": call.endpoint,
+        "returned_shape": "object",
+        "auth_required": endpoint.auth_required,
+        "known_quirks": [
+            "Public provider availability is external infrastructure state."
+        ],
         "tool": tool.key,
-        "endpoint": call.endpoint,
         "numAPIs": results[0].data["numAPIs"],
     }
 
@@ -57,9 +72,13 @@ async def main() -> None:
     args = parser.parse_args()
     url = os.environ.get("SCHEMAROUTER_LIVE_OPENAPI_URL", DEFAULT_OPENAPI_URL)
     report = new_report(adapter="openapi", source=url)
+    report["details"] = {
+        "evidence_kind": "live_public_provider",
+        "provider": "APIs.guru",
+    }
 
     try:
-        report["details"] = await run_smoke(url)
+        report["details"].update(await run_smoke(url))
         report["status"] = "success"
     except Exception as exc:
         report["status"] = "failure"
