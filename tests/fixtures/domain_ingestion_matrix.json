@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
   "universal_modes": [
+    "manual_tool_spec",
     "openapi",
     "mcp",
     "optimade",
