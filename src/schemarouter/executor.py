@@ -7,7 +7,7 @@ import time
 from collections.abc import AsyncIterator, Awaitable
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from .errors import (
     ApprovalDeniedError,
@@ -790,7 +790,10 @@ class RegistryExecutor:
                 if call_aware:
                     value = invoke_call(call)
                 else:
-                    value = invoker(call.endpoint, dict(call.arguments))
+                    value = cast(EndpointInvoker, invoker)(
+                        call.endpoint,
+                        dict(call.arguments),
+                    )
                 if inspect.isawaitable(value):
                     value = await tracker.wait_awaitable(
                         value,
