@@ -3,17 +3,57 @@
   "canonical_root": "docs",
   "translation_root": "docs_ko",
   "translations": [
-    {"path": "index.md", "source_blob": "d143839a16a2488544864a059e9a10c297d9c813"},
-    {"path": "getting-started/installation.md", "source_blob": "2a188ec5c82064ae86e860a317feef3c7b01f2dd"},
-    {"path": "getting-started/quickstart.md", "source_blob": "376d174b205e0682202f0f237d00cb03299d04d8"},
-    {"path": "getting-started/examples.md", "source_blob": "7a942bda525e77bb875ec280eda5afb57bf6e142"},
-    {"path": "concepts/schema-router.md", "source_blob": "d798d4b5342ddc7c6e1603fa9373568b3bb02f7d"},
-    {"path": "concepts/capability-catalog.md", "source_blob": "d85caca43c29755fcdd752e70f12dfb5fd266408"},
-    {"path": "concepts/field-first-execution.md", "source_blob": "ed612ae41668e6ae76d5981fd932f78ac65b8e56"},
-    {"path": "guides/openapi.md", "source_blob": "15186ffa7e1a532d95297e2d3af4a487ae6407fe"},
-    {"path": "guides/mcp.md", "source_blob": "99f219725e3f865dc93532e2bde4d3b460a24440"},
-    {"path": "guides/python-tools.md", "source_blob": "ae00ccbd3ced7cf0513cebbfaa6bd79e59ad9f0e"},
-    {"path": "guides/inspection.md", "source_blob": "573bee5ed0a75cc532255e96bb9ca0e9c0af64ab"},
-    {"path": "project/trust-and-evidence.md", "source_blob": "d8e33166f3deadeebdd94f03654e7003ef6d15af"}
+    {
+      "path": "index.md",
+      "source_blob": "d11423fc4175fe84ca8073f08d7a81081daa61ab"
+    },
+    {
+      "path": "getting-started/installation.md",
+      "source_blob": "9601d5a70d7801c7549a5eb731d935eb323dd5cc"
+    },
+    {
+      "path": "getting-started/quickstart.md",
+      "source_blob": "376d174b205e0682202f0f237d00cb03299d04d8"
+    },
+    {
+      "path": "getting-started/examples.md",
+      "source_blob": "7a942bda525e77bb875ec280eda5afb57bf6e142"
+    },
+    {
+      "path": "concepts/schema-router.md",
+      "source_blob": "d798d4b5342ddc7c6e1603fa9373568b3bb02f7d"
+    },
+    {
+      "path": "concepts/capability-catalog.md",
+      "source_blob": "d85caca43c29755fcdd752e70f12dfb5fd266408"
+    },
+    {
+      "path": "concepts/field-first-execution.md",
+      "source_blob": "ed612ae41668e6ae76d5981fd932f78ac65b8e56"
+    },
+    {
+      "path": "guides/openapi.md",
+      "source_blob": "15186ffa7e1a532d95297e2d3af4a487ae6407fe"
+    },
+    {
+      "path": "guides/mcp.md",
+      "source_blob": "99f219725e3f865dc93532e2bde4d3b460a24440"
+    },
+    {
+      "path": "guides/python-tools.md",
+      "source_blob": "ae00ccbd3ced7cf0513cebbfaa6bd79e59ad9f0e"
+    },
+    {
+      "path": "guides/inspection.md",
+      "source_blob": "573bee5ed0a75cc532255e96bb9ca0e9c0af64ab"
+    },
+    {
+      "path": "project/trust-and-evidence.md",
+      "source_blob": "45c3d6f41e40adf1a488ca29bdc970c22ebabced"
+    },
+    {
+      "path": "releases/0.14.0.md",
+      "source_blob": "474a2b2be67309a5220fb9014bfbeda9ad5ea894"
+    }
   ]
 }
