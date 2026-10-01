@@ -11,8 +11,8 @@ from schemarouter import (
     EndpointSpec,
     InMemoryRegistry,
     RegistrationError,
-    SQLiteRegistry,
     SchemaRouter,
+    SQLiteRegistry,
     ToolSpec,
 )
 
