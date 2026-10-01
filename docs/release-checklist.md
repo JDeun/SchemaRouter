@@ -18,6 +18,8 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Package wheel and sdist build successfully.
 - [ ] Wheel and sdist both install and run the quickstart in clean environments.
 - [ ] Package metadata can be inspected without errors.
+- [ ] The public trust/evidence page names the intended stable release and is updated with the
+  published artifact digests, SBOM, and any changed verification limitations before promotion.
 - [ ] README, PyPI summary/keywords, docs home, and release notes use consistent positioning and
   stable-version language.
 - [ ] The [discoverability checklist](project/discoverability.md#release-discoverability-checklist)
