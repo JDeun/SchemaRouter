@@ -3,9 +3,10 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import tomllib
 from dataclasses import dataclass
 from pathlib import Path
+
+import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -128,8 +129,14 @@ def sync(facts: Facts) -> None:
     )
     _replace(
         "docs/getting-started/installation.md",
-        r"The published release tag and package metadata identify `\d+\.\d+\.\d+` as the current non-prerelease",
-        f"The published release tag and package metadata identify `{version}` as the current non-prerelease",
+        (
+            r"The published release tag and package metadata identify "
+            r"`\d+\.\d+\.\d+` as the current non-prerelease"
+        ),
+        (
+            f"The published release tag and package metadata identify `{version}` "
+            "as the current non-prerelease"
+        ),
     )
     _replace(
         "docs_ko/getting-started/installation.md",
