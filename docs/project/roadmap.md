@@ -69,6 +69,8 @@ Current coordination:
 - [#584 — external adopters/case studies/independent validation](https://github.com/JDeun/SchemaRouter/issues/584)
 - [Adoption scorecard](adoption-scorecard.md)
 - [Discoverability and positioning](discoverability.md)
+- [Developer launch playbook](launch-playbook.md)
+- [Launch and outreach log](launch-log.md)
 
 Stars are a lagging signal. Prefer reproducible examples, downstream integrations, external
 reproductions, and repeat usage over vanity promotion.
