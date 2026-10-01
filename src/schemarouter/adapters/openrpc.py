@@ -613,7 +613,10 @@ class OpenRPCSourceAdapter:
                 )
                 if response.status_code == 304:
                     raise SchemaNotModifiedError(validators=validators)
-                document = response.json()
+                try:
+                    document = response.json()
+                except json.JSONDecodeError:
+                    return None
             except SchemaNotModifiedError:
                 raise
             except Exception as exc:  # noqa: BLE001
