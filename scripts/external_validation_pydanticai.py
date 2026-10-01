@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import statistics
 import time
 from collections.abc import Sequence
@@ -248,11 +249,80 @@ def _register_retrieval_mirror(
 
 
 class SchemaRouterToolSearchStrategy:
-    """PydanticAI ToolSearch strategy backed by SchemaRouter retrieval only."""
+    """PydanticAI ToolSearch strategy backed by SchemaRouter retrieval only.
+
+    SchemaRouter's raw lexical score is recall-oriented: a generic token in a
+    description can make an otherwise unsupported route score above zero. The
+    integration therefore applies an explicit disclosure gate. A candidate is
+    revealable only when SchemaRouter matched an output field, the caller
+    explicitly preferred it, or a matched tool token belongs to the registered
+    tool identifier itself rather than only to free-form description text.
+    """
+
+    _IDENTIFIER_TOKEN_RE = re.compile(r"[a-z0-9]+")
 
     def __init__(self, router: SchemaRouter, *, max_results: int = 3) -> None:
         self.router = router
         self.max_results = max_results
+
+    @classmethod
+    def _identifier_tokens(cls, value: str) -> set[str]:
+        return set(cls._IDENTIFIER_TOKEN_RE.findall(value.casefold()))
+
+    @classmethod
+    def _disclosure_signal(cls, candidate: Any) -> str | None:
+        if candidate.matched_fields:
+            return "matched_field"
+
+        identifier_tokens = cls._identifier_tokens(candidate.tool)
+        for component in candidate.score_components:
+            if component.kind in {"preferred_tool", "preferred_endpoint"}:
+                return component.kind
+            if (
+                component.kind == "tool_token"
+                and component.matched.casefold() in identifier_tokens
+            ):
+                return "tool_identifier_token"
+        return None
+
+    def search_with_evidence(
+        self,
+        query: str,
+        tools: Sequence[ToolDefinition],
+    ) -> tuple[list[str], list[dict[str, Any]]]:
+        if not query.strip():
+            return [], []
+
+        allowed = {tool.name for tool in tools}
+        retrieval = self.router.retrieve(
+            query,
+            k=min(max(self.max_results, 1), max(len(tools), 1)),
+        )
+
+        selected: list[str] = []
+        evidence: list[dict[str, Any]] = []
+        for candidate in retrieval.candidates:
+            signal = self._disclosure_signal(candidate)
+            evidence.append(
+                {
+                    "tool": candidate.tool,
+                    "score": candidate.score,
+                    "matched_fields": list(candidate.matched_fields),
+                    "signal": signal,
+                    "score_components": [
+                        component.model_dump(mode="json")
+                        for component in candidate.score_components
+                    ],
+                }
+            )
+            if signal is None:
+                continue
+            if candidate.tool not in allowed or candidate.tool in selected:
+                continue
+            selected.append(candidate.tool)
+            if len(selected) >= self.max_results:
+                break
+        return selected, evidence
 
     def __call__(
         self,
@@ -262,24 +332,7 @@ class SchemaRouterToolSearchStrategy:
     ) -> list[str]:
         del ctx
         query = " ".join(part.strip() for part in queries if part.strip()).strip()
-        if not query:
-            return []
-
-        allowed = {tool.name for tool in tools}
-        retrieval = self.router.retrieve(
-            query,
-            k=min(max(self.max_results, 1), max(len(tools), 1)),
-        )
-
-        selected: list[str] = []
-        for candidate in retrieval.candidates:
-            if candidate.score <= 0:
-                continue
-            if candidate.tool not in allowed or candidate.tool in selected:
-                continue
-            selected.append(candidate.tool)
-            if len(selected) >= self.max_results:
-                break
+        selected, _ = self.search_with_evidence(query, tools)
         return selected
 
 
@@ -332,7 +385,7 @@ def evaluate() -> dict[str, Any]:
     by_name = {tool.name: tool for tool in tools}
     for query, required_tool in CASES:
         started = time.perf_counter()
-        selected = strategy(None, [query], tools)
+        selected, candidate_evidence = strategy.search_with_evidence(query, tools)
         elapsed_ms = (time.perf_counter() - started) * 1000.0
         latencies_ms.append(elapsed_ms)
 
@@ -351,6 +404,7 @@ def evaluate() -> dict[str, Any]:
                 "query": query,
                 "required_tool": required_tool,
                 "selected_tools": selected,
+                "candidate_evidence": candidate_evidence,
                 "retrieval_task_success": success,
                 "revealed_schema_bytes": _serialized_tool_bytes(selected_defs),
                 "routing_latency_ms": round(elapsed_ms, 6),
@@ -384,6 +438,9 @@ def evaluate() -> dict[str, Any]:
             "schemarouter_role": "retrieval-only mirror and bounded name selection",
             "pydanticai_role": "tool disclosure, lifecycle, validation, and execution",
             "execution_through_schemarouter": False,
+            "disclosure_gate": (
+                "matched output field, explicit preference, or tool-identifier token match"
+            ),
         },
         "catalog": {
             "deferred_tool_count": len(tools),
@@ -410,6 +467,11 @@ def evaluate() -> dict[str, Any]:
             (
                 "Output semantic field hints are trusted evaluation metadata declared "
                 "locally for SchemaRouter retrieval; they are not inferred from PydanticAI."
+            ),
+            (
+                "Raw SchemaRouter lexical scores are recall-oriented and are not used as an "
+                "abstention threshold. This integration adds a conservative disclosure gate "
+                "based on matched fields, explicit preferences, or tool-identifier tokens."
             ),
             (
                 "retrieval_task_success_rate measures shortlist correctness only, "
