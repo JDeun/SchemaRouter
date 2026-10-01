@@ -15,8 +15,10 @@ A developer should understand this in under two minutes:
 The primary call to action is:
 
 ```bash
-pip install schemarouter
+pip install "schemarouter==0.14.0"
 ```
+
+The unpinned `pip install schemarouter` path also resolves to the current stable release; the pinned form is used in launch material so a reproduced launch demo does not silently change later.
 
 Repository: <https://github.com/JDeun/SchemaRouter>
 
@@ -30,7 +32,7 @@ Safe public claims should map to a reproducible artifact.
 
 ### Stable product
 
-- stable release: `0.13.0`, Beta / pre-1.0;
+- stable release: `0.14.0`, Beta / pre-1.0;
 - Python 3.10-3.14 are release-blocking CI targets;
 - supports typed ingestion/execution paths across MCP, OpenAPI, OPTIMADE, GraphQL, OData,
   OpenRPC/JSON-RPC, Python/SDK bindings, LangChain/LangGraph, and LlamaIndex;
@@ -363,7 +365,7 @@ Draft:
 > showed a strong result for the bounded SchemaRouter condition, while another structural K3-vs-K5
 > promotion test failed and remains published as a negative result.
 >
-> Stable release: 0.13.0
+> Stable release: 0.14.0
 > GitHub: https://github.com/JDeun/SchemaRouter
 > Verification/evidence: https://jdeun.github.io/SchemaRouter/project/trust-and-evidence/
 >
@@ -427,7 +429,7 @@ Do not publish everywhere at once.
 Already available:
 
 - public adoption scorecard;
-- stable 0.13.0 release;
+- stable 0.14.0 release;
 - runnable examples;
 - trust/evidence page;
 - contributor roadmap and issue templates.
