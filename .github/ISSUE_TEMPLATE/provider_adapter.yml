@@ -1,0 +1,54 @@
+name: Provider / schema adapter
+description: Propose a new structured capability source or protocol adapter
+title: "[Adapter] "
+labels:
+  - enhancement
+body:
+  - type: input
+    id: provider
+    attributes:
+      label: Provider or protocol
+      placeholder: "Name and canonical documentation URL"
+    validations:
+      required: true
+  - type: textarea
+    id: schema
+    attributes:
+      label: Authoritative schema surface
+      description: Describe the structured source of endpoints, parameters, output fields, datatypes, units, and qualifiers.
+    validations:
+      required: true
+  - type: textarea
+    id: execution
+    attributes:
+      label: Execution binding
+      description: Explain how trusted local code invokes the capability and where credentials stay.
+    validations:
+      required: true
+  - type: dropdown
+    id: discovery
+    attributes:
+      label: Discovery behavior
+      options:
+        - Passive bounded schema read
+        - Active protocol/session handshake
+        - Explicit kind only; no auto-discovery
+        - Unknown / needs design review
+    validations:
+      required: true
+  - type: textarea
+    id: projection
+    attributes:
+      label: Field projection and nested result shape
+      description: Explain whether the source can declare and preserve nested/array field paths without flattening record alignment.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Adapter contract checks
+      options:
+        - label: Remote metadata will not grant read/write/destructive authority.
+          required: true
+        - label: Credentials will not be persisted in ToolSpec metadata, fingerprints, or model-visible arguments.
+          required: true
+        - label: Unsupported schema constructs will be preserved or rejected explicitly rather than guessed.
+          required: true
