@@ -17,6 +17,7 @@ fallback, fingerprint, health, drift, and observability boundaries.
 
 | Mode | Best source | Typical examples |
 | --- | --- | --- |
+| Manual ToolSpec | already-known trusted capability contract | internal tools, generated contracts, tests |
 | OpenAPI | REST API with machine-readable operation schemas | Crossref, Materials Project, GitHub-style APIs |
 | MCP | MCP server tool catalog | local/remote MCP tools |
 | OPTIMADE | materials provider implementing OPTIMADE | Materials Project, NOMAD, Materials Cloud |
@@ -32,6 +33,10 @@ fallback, fingerprint, health, drift, and observability boundaries.
 
 The preferred order is the richest authoritative machine-readable contract first. A service-specific
 SchemaRouter adapter should be the exception, not the default.
+
+A fully known contract can also be registered directly with `router.add_tool(...)`. This is the
+lowest-level canonical ingestion path and is useful when another compiler/generator already emits
+a complete `ToolSpec`.
 
 ## Broad-domain acceptance matrix
 
