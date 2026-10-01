@@ -629,9 +629,9 @@ class ODataSourceAdapter:
                 tool.metadata,
                 validators,
                 source_identity_digest=structured_source_identity_digest_for(
-                tool,
-                self.refresh,
-            ),
+                    tool,
+                    self.refresh,
+                ),
             )
             invoker = ODataRemoteInvoker(
                 tool,
