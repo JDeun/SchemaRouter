@@ -10,7 +10,7 @@ from compatibility_report import new_report, write_report
 
 from schemarouter import ExecutionPlan, SchemaRouter, ToolCall
 
-DEFAULT_URL = "https://countries.trevorblades.com/"
+DEFAULT_URL = "https://rickandmortyapi.com/graphql"
 
 
 async def run_smoke(url: str) -> dict[str, object]:
@@ -21,21 +21,21 @@ async def run_smoke(url: str) -> dict[str, object]:
     tools = router.registry.tools()
     assert len(tools) == 1
     tool = tools[0]
-    endpoint = tool.endpoint("country")
+    endpoint = tool.endpoint("location")
     assert endpoint.read_only is True
 
     available_fields = {field.name for field in endpoint.output_fields}
     fields = [
         field
-        for field in ("code", "name", "capital")
+        for field in ("id", "name", "type", "dimension")
         if field in available_fields
     ]
-    assert {"code", "name"} <= set(fields)
+    assert {"id", "name"} <= set(fields)
 
     call = ToolCall(
         tool=tool.key,
         endpoint=endpoint.name,
-        arguments={"code": "KR"},
+        arguments={"id": "1"},
         fields=fields,
         schema_fingerprint=endpoint.fingerprint,
         tool_fingerprint=tool.fingerprint,
@@ -52,16 +52,19 @@ async def run_smoke(url: str) -> dict[str, object]:
 
     assert len(results) == 1
     assert isinstance(results[0].data, dict)
-    assert results[0].data.get("code") == "KR"
+    assert str(results[0].data.get("id")) == "1"
     assert isinstance(results[0].data.get("name"), str)
 
     return {
         "evidence_kind": "live_public_provider",
-        "provider": "Countries GraphQL API",
+        "provider": "Rick and Morty GraphQL API",
         "discovery_success": True,
         "tool_count": len(tools),
         "endpoint_count": len(tool.endpoints),
-        "execution_bound": bool(tool.metadata.get("execution_bound")),
+        "execution_bound": router.executor.is_binding_ready_for_contract(
+            tool.key,
+            tool.fingerprint,
+        ),
         "execution_success": True,
         "safe_endpoint": endpoint.name,
         "returned_shape": "object",
@@ -81,9 +84,13 @@ async def main() -> None:
     args = parser.parse_args()
     url = os.environ.get("SCHEMAROUTER_LIVE_GRAPHQL_URL", DEFAULT_URL)
     report = new_report(adapter="graphql", source=url)
+    report["details"] = {
+        "evidence_kind": "live_public_provider",
+        "provider": "Rick and Morty GraphQL API",
+    }
 
     try:
-        report["details"] = await run_smoke(url)
+        report["details"].update(await run_smoke(url))
         report["status"] = "success"
     except Exception as exc:
         report["status"] = "failure"
