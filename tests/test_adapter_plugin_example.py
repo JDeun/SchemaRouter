@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import importlib.metadata
 import sys
-from importlib import metadata
 from pathlib import Path
 
 import pytest
@@ -16,10 +16,10 @@ PLUGIN_MODULE = "schemarouter_demo_adapter"
 PLUGIN_ENTRY_POINT = "demo_static"
 
 
-def _example_entry_points() -> metadata.EntryPoints:
-    return metadata.EntryPoints(
+def _example_entry_points() -> importlib.importlib.metadata.EntryPoints:
+    return importlib.importlib.metadata.EntryPoints(
         [
-            metadata.EntryPoint(
+            importlib.metadata.EntryPoint(
                 name=PLUGIN_ENTRY_POINT,
                 value=f"{PLUGIN_MODULE}:DemoStaticAdapter",
                 group=plugins.ADAPTER_ENTRY_POINT_GROUP,
