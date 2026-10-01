@@ -17,11 +17,11 @@
 <p align="center">
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg"></a>
-  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.12.0"></a>
+  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.13.0"></a>
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-> **현재 안정판: 0.12.0** · Beta / pre-1.0
+> **현재 안정판: 0.13.0** · Beta / pre-1.0
 
 에이전트가 쓸 수 있는 도구가 늘어날수록 방향을 잡기 어려워지고, 도구 응답에는 질문에 필요하지
 않은 데이터까지 섞여 옵니다. SchemaRouter는 요청에 **어떤 선언된 데이터 필드가 필요한지** 먼저
@@ -217,13 +217,13 @@ Laya, Ollama, Jev/System-One, 호스팅 모델, 임베딩, pairwise 결정 백�
 LangChain, LangGraph, LlamaIndex 브리지와 선택형 OpenTelemetry 내보내기를 제공합니다. 표준이
 아닌 결정 런타임은 `schemarouter.decision_backends` entry-point 플러그인으로 연결할 수 있습니다.
 
-## 0.12.0에서 실제로 작동하는 것
+## 0.13.0에서 실제로 작동하는 것
 
 지금 배포된 패키지는 핵심 아키텍처가 실제로 도는 베타 구현입니다.
 
 - 타입이 붙은 Tool / Endpoint / Parameter / Field 레지스트리 계약
 - `retrieve` / `aretrieve`와 실행 준비 확인 변형을 통한 first-class bounded Top-K capability 검색
-- Python, OpenAPI, MCP, OPTIMADE 수집 경로
+- 직접 ToolSpec/Python/SDK binding과 OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC, declarative HTTP/JSON, LangChain/LlamaIndex tool 수집 경로
 - field-first 계획 수립과 bounded 다중 제공자 필드 커버리지
 - 입력과 원본 출력의 JSON Schema 검증
 - 스키마 fingerprint와 바인딩 드리프트 차단
@@ -235,12 +235,12 @@ LangChain, LangGraph, LlamaIndex 브리지와 선택형 OpenTelemetry 내보내�
 - LangChain, LangGraph, LlamaIndex, Jev/System-One, Laya, Ollama, OpenTelemetry 연동 지점
 
 그래서 등록된 capability와 지원되는 라우팅 상황에서는 **지금도 아키텍처가 동작합니다**.
-현재 `main`에는 여기에 명시적 SDK/client binding, LangChain/LlamaIndex tool 역방향 수집, GraphQL, OData, OpenRPC, declarative HTTP/JSON, MCP stdio/custom transport, record-preserving nested array field가 추가되어 있습니다. 이 신규 surface는 배포된 0.12.0 wheel이 아니라 다음 릴리스 대상입니다.
+0.13.0에는 신뢰된 contract amendment, 안전한 provider schema refresh/watch, HTTP validator 최적화, MCP stdio/custom transport refresh, record-preserving nested array-item field projection도 함께 포함됩니다.
 
 
 ## 현재 연구 방향: 에이전트를 위한 압축된 capability 검색
 
-안정판 0.12.0의 실행 경계는 그대로입니다. 바뀐 것은 연구 질문입니다. SchemaRouter 자체를 최종
+0.12.0에서 확립한 stable-core 실행 경계는 0.13.0에서도 그대로입니다. 바뀐 것은 연구 질문입니다. SchemaRouter 자체를 최종
 open-set 분류기로 만드는 쪽에서, 하위 LLM 에이전트에 **타입이 붙은 capability를 공급하는 검색
 기반**으로 평가하는 쪽으로 옮겼습니다.
 
@@ -267,7 +267,7 @@ structural K3-vs-K5 최적화는 사전 등록한 task-pass 승격 게이트를 
 780-task held-out 벤치마크(#432)와 최종 답변 품질(#424)이 자동 컨베이어의 후속 확인 단계로
 이어집니다.
 
-앞선 0.11–0.13 open-set 분류기·veto 실험은 여전히 값진 부정적 증거입니다. 0.12.0에서는 실험적
+앞선 0.11–0.13 open-set 분류기·veto 실험은 여전히 값진 부정적 증거입니다. 0.13.0에서는 실험적
 learned router도, structural retrieval 프로필도 무조건적인 운영 기본값으로 올리지 않습니다.
 
 자세한 내용:
@@ -276,7 +276,7 @@ learned router도, structural retrieval 프로필도 무조건적인 운영 기�
 - [선행연구 로드맵](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [전체 실험 인덱스](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
 - [0.14 논문 근거 체크포인트](https://jdeun.github.io/SchemaRouter/research/0.14-paper-evidence-checkpoint/)
-- [0.12.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.12.0/)
+- [0.13.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.13.0/)
 - [변경 이력](CHANGELOG.md)
 
 ## 레지스트리와 실행 기록 확인

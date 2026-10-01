@@ -7,6 +7,60 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+## 0.13.0 - 2026-10-01
+
+### Added
+
+- expanded first-class capability ingestion beyond the 0.12 stable-core sources with GraphQL
+  introspection, OData CSDL/`$select`, OpenRPC/JSON-RPC, declarative HTTP/JSON capabilities,
+  inbound LangChain/LlamaIndex tools, explicit `ToolSpec` + trusted SDK/client binding, MCP
+  stdio subprocesses, and transport-neutral MCP client factories;
+- aligned structured output-field discovery across OpenAPI, MCP, OPTIMADE, Python callables and
+  adapter plugins, including record-preserving nested array-item paths rather than flattening
+  records out of their parent structure;
+- added trusted local capability amendments for declaring missing result contracts without
+  allowing imported execution identity or remote authority to be silently rewritten;
+- added conservative one-shot provider schema refresh plus a periodic bounded-concurrency watcher
+  with pending-review quarantine for breaking/security drift;
+- added ETag/Last-Modified conditional refresh for safe single-document HTTP schema surfaces,
+  preserving full-fetch correctness when validators are absent or insufficient.
+
+### Changed
+
+- broadened the documented universal-ingestion model around one typed Provider / Access path /
+  Tool / Endpoint / Parameter / Field contract while keeping orchestration outside SchemaRouter;
+- made registry replacement and invoker binding fail closed under concurrent schema changes through
+  compare-and-swap registry updates and exact-fingerprint binding checks;
+- kept unreleased source identity distinct from the published 0.12.0 artifact with the documented
+  PEP 440 development-version lifecycle before this release was cut.
+
+### Fixed
+
+- completed the interaction between MCP stdio/custom transports and schema watching: URL-less MCP
+  registrations now reinspect only through their current fingerprint-matched process-local trusted
+  binding, never through fabricated source provenance;
+- prevented malformed trusted contract amendments, stale refresh writes, HTTP-validator cache
+  updates, and nested-array projection edge cases from weakening schema/binding drift boundaries;
+- refreshed product documentation that still described implemented HTTP validators and array-item
+  projection as future work.
+
+### Compatibility
+
+- no intentional breaking public API change is introduced relative to 0.12.0;
+- the 0.12 stable-core retrieval/planning/execution authority boundary remains unchanged;
+- all new protocol, SDK-binding, refresh/watch and field-contract surfaces are additive and keep
+  credentials, live transports and execution authority outside model-visible schemas;
+- active 0.14 retrieval/agent-utility experiments remain independent of this product release.
+
+### Release integrity
+
+- protected CI covers Python 3.10-3.14, Windows, minimum dependencies, typing, branch coverage,
+  wheel/sdist clean-install acceptance, optional framework/MCP integrations, dependency auditing,
+  CodeQL and Python preview;
+- the automated release pipeline publishes only from the exact green `main` SHA, creates the
+  matching annotated tag, emits provenance attestations and an SPDX SBOM, publishes through PyPI
+  OIDC, and verifies public artifact digests and exact-version installs after publication.
+
 ## 0.12.0 - 2026-09-29
 
 ### Added
