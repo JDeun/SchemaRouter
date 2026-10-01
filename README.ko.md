@@ -12,6 +12,7 @@
   <a href="README.ko.md">한국어</a> ·
   <a href="https://jdeun.github.io/SchemaRouter/">Docs</a> ·
   <a href="examples/README.md">Examples</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="https://github.com/JDeun/SchemaRouter/releases/latest">Latest release</a>
 </p>
 
