@@ -3,7 +3,6 @@ from __future__ import annotations
 from mcp.server.mcpserver import MCPServer
 from pydantic import BaseModel
 
-
 mcp = MCPServer("SchemaRouterStdioServer")
 
 
