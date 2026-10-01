@@ -106,6 +106,12 @@ The experiment should import/compile the discovered schema surface for ranking a
 mcp-agent as the orchestrator. If tool schema conversion loses information, record that as a
 limitation rather than silently filling it in.
 
+The maintainer-owned E0 evaluation for this path is tracked in
+[#646](https://github.com/JDeun/SchemaRouter/issues/646) and documented in
+[mcp-agent catalog validation](external-validation-mcp-agent.md). It uses mcp-agent's real
+`MCPApp`/Agent stdio lifecycle and native `tool_filter` surface, but remains E0 until someone
+outside this repository reviews, reproduces, or adopts it publicly.
+
 ### smolagents
 
 smolagents can use MCP and other tool sources. A bounded collection experiment can test whether a
@@ -214,6 +220,7 @@ For each contact/evaluation, record only public or permissioned information:
 | --- | --- | --- | --- | --- | --- |
 | PydanticAI | [#644](https://github.com/JDeun/SchemaRouter/issues/644) | E0 | maintainer-owned deterministic evaluation | [validation page](external-validation-pydanticai.md) | external review/evaluation still required |
 | OpenAI Agents SDK | [#645](https://github.com/JDeun/SchemaRouter/issues/645) | E0 | maintainer-owned local-MCP filter evaluation | [validation page](external-validation-openai-agents.md) | external review/evaluation still required |
+| mcp-agent | [#646](https://github.com/JDeun/SchemaRouter/issues/646) | E0 | maintainer-owned native-lifecycle catalog evaluation | [validation page](external-validation-mcp-agent.md) | external review/evaluation still required |
 | _other candidates_ | — | E0 | candidate set prepared | this page | external outreach/evaluation not yet performed |
 
 Do not publish private email addresses, private conversations, or unpublished organization names.
