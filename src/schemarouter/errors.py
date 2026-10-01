@@ -83,6 +83,23 @@ class SchemaSourceError(SchemaRouterError):
     """Raised when a remote schema source cannot be loaded safely."""
 
 
+class AdapterProbeError(SchemaSourceError):
+    """Sanitized structured-source probe failure from one adapter."""
+
+    def __init__(
+        self,
+        adapter_kind: str,
+        category: str,
+        message: str,
+        *,
+        status_code: int | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.adapter_kind = adapter_kind
+        self.category = category
+        self.status_code = status_code
+
+
 class SchemaNotModifiedError(SchemaSourceError):
     """Raised when a conditional schema fetch returns HTTP 304 Not Modified."""
 
@@ -97,3 +114,12 @@ class SchemaNotModifiedError(SchemaSourceError):
 
 class UnsupportedSchemaSourceError(SchemaSourceError):
     """Raised when no registered structured-source adapter accepts a URL."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        diagnostics: tuple[object, ...] = (),
+    ) -> None:
+        super().__init__(message)
+        self.diagnostics = diagnostics
