@@ -195,7 +195,9 @@ SDK or weakly described REST surface.
 | Python | capability is local and typed | `router.add_callable(...)` |
 | ToolSpec + SDK/client | transport is trusted but not safely introspectable | `router.add_bound_tool(...)` |
 | OpenAPI | HTTP API publishes OpenAPI/Swagger | `SchemaRouter.from_url(..., kind="openapi")` |
-| MCP | capabilities are exposed through MCP | `SchemaRouter.from_url(..., kind="mcp")` |
+| MCP Streamable HTTP | server is reachable by MCP over HTTP | `SchemaRouter.from_url(..., kind="mcp")` |
+| MCP stdio | local MCP server is a trusted subprocess | `router.add_mcp_stdio(...)` |
+| MCP custom transport | application already owns an MCP client lifecycle | `router.add_mcp_client_factory(...)` |
 | OPTIMADE | materials data is exposed through OPTIMADE | `SchemaRouter.from_url(..., kind="optimade")` |
 | GraphQL | introspection + native selection sets are available | `SchemaRouter.from_url(..., kind="graphql")` |
 | OData | CSDL/`$metadata` + `$select` are available | `SchemaRouter.from_url(..., kind="odata")` |
