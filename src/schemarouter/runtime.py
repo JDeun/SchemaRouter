@@ -21,6 +21,7 @@ from .errors import (
     InvocationUnavailableError,
     ProposalApprovalError,
     RegistrationError,
+    SchemaSourceError,
 )
 from .executor import ExecutionBudgetTracker, RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
@@ -33,6 +34,7 @@ from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
 from .registry import InMemoryRegistry, ToolRegistry, replace_if_current
 from .runs import RunConfig, RunEvent
+from .schema_diff import SchemaRefreshResult, compare_tool_specs
 from .traces import RunTraceStore
 
 _T = TypeVar("_T")
@@ -532,6 +534,67 @@ class SchemaRouter:
         )
         return key
 
+    def add_http_tool(
+        self,
+        tool: ToolSpec,
+        *,
+        base_url: str,
+        provider: str | None = None,
+        access_mode: str | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        timeout: float = 20.0,
+        max_response_bytes: int = 10 * 1024 * 1024,
+        replace: bool = False,
+    ) -> str:
+        """Register and bind a trusted declarative HTTP/JSON ToolSpec.
+
+        The supplied ToolSpec is the machine-readable manifest. Authentication remains only in
+        trusted_headers and is never copied into model-visible schema metadata.
+        """
+
+        from .adapters.http_json import (
+            build_http_json_invoker,
+            prepare_http_json_tool,
+        )
+
+        prepared = prepare_http_json_tool(
+            tool,
+            base_url=base_url,
+            provider=provider,
+            access_mode=access_mode,
+        )
+        invoker = build_http_json_invoker(
+            prepared,
+            base_url=base_url,
+            trusted_headers=trusted_headers,
+            timeout=timeout,
+            max_response_bytes=max_response_bytes,
+            http_client=self.loader.http_client,
+        )
+
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(prepared.key)
+            except KeyError:
+                key = self.registry.register(prepared)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    prepared,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(prepared)
+
+        self.executor.bind(
+            key,
+            invoker,
+            expected_fingerprint=prepared.fingerprint,
+        )
+        return key
+
     async def inspect_url(
         self,
         url: str,
@@ -718,6 +781,166 @@ class SchemaRouter:
             openapi_ref_max_documents=openapi_ref_max_documents,
             openapi_ref_max_bytes=openapi_ref_max_bytes,
             timeout=timeout,
+        )
+
+    async def arefresh_schema(
+        self,
+        tool_key: str,
+        *,
+        apply_compatible: bool = True,
+        schema_headers: dict[str, str] | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: MCPClientFactory | None = None,
+        timeout: float = 20.0,
+    ) -> SchemaRefreshResult:
+        """Reinspect a registered remote schema and apply only proven-compatible drift."""
+
+        expected_version = self.registry.version
+        try:
+            current = self.registry.get(tool_key)
+        except KeyError as exc:
+            raise RegistrationError(f"unknown tool: {tool_key}") from exc
+
+        adapter = current.execution_metadata.get("adapter")
+        if not isinstance(adapter, str):
+            adapter = current.metadata.get("adapter")
+        refreshable = {"openapi", "mcp", "optimade", "graphql", "openrpc", "odata"}
+        if adapter not in refreshable:
+            raise SchemaSourceError(
+                f"tool {tool_key!r} does not have a refreshable structured-source adapter"
+            )
+
+        source_url: str | None = None
+        base_url: str | None = None
+        openapi_external_refs = False
+        openapi_ref_max_depth = 3
+        openapi_ref_max_documents = 8
+        openapi_ref_max_bytes = 10 * 1024 * 1024
+
+        if adapter == "optimade":
+            raw_source = current.execution_metadata.get("versioned_base_url")
+            if not isinstance(raw_source, str) or not raw_source:
+                raw_source = current.metadata.get("versioned_base_url")
+            if isinstance(raw_source, str) and raw_source:
+                source_url = raw_source
+        else:
+            raw_source = current.metadata.get("source_url")
+            if not isinstance(raw_source, str) or not raw_source:
+                raw_source = current.execution_metadata.get("source_url")
+            if isinstance(raw_source, str) and raw_source:
+                source_url = raw_source
+
+        if adapter in {"openapi", "openrpc"}:
+            approved_base = current.execution_metadata.get("approved_base_url")
+            if isinstance(approved_base, str) and approved_base:
+                base_url = approved_base
+
+        if adapter == "openapi":
+            openapi_external_refs = bool(
+                current.metadata.get("external_refs_enabled", False)
+            )
+            limits = current.metadata.get("external_ref_limits")
+            if isinstance(limits, dict):
+                depth = limits.get("max_depth")
+                documents = limits.get("max_documents")
+                byte_limit = limits.get("max_bytes")
+                if isinstance(depth, int) and not isinstance(depth, bool) and depth > 0:
+                    openapi_ref_max_depth = depth
+                if (
+                    isinstance(documents, int)
+                    and not isinstance(documents, bool)
+                    and documents > 0
+                ):
+                    openapi_ref_max_documents = documents
+                if (
+                    isinstance(byte_limit, int)
+                    and not isinstance(byte_limit, bool)
+                    and byte_limit > 0
+                ):
+                    openapi_ref_max_bytes = byte_limit
+
+        if source_url is None:
+            raise SchemaSourceError(
+                f"tool {tool_key!r} is missing persisted source provenance for refresh"
+            )
+
+        candidate = await self.loader.inspect(
+            source_url,
+            kind=adapter,
+            name=current.name,
+            namespace=current.namespace,
+            provider=current.provider,
+            access_mode=current.access_mode,
+            base_url=base_url,
+            schema_headers=schema_headers,
+            trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
+            openapi_external_refs=openapi_external_refs,
+            openapi_ref_max_depth=openapi_ref_max_depth,
+            openapi_ref_max_documents=openapi_ref_max_documents,
+            openapi_ref_max_bytes=openapi_ref_max_bytes,
+            timeout=timeout,
+        )
+        if candidate.tool.key != tool_key:
+            raise SchemaSourceError(
+                "refreshed schema changed the registered tool key unexpectedly"
+            )
+
+        report = compare_tool_specs(current, candidate.tool)
+        if report.compatibility == "identical":
+            return SchemaRefreshResult(
+                tool_key=tool_key,
+                action="unchanged",
+                applied=False,
+                report=report,
+            )
+
+        if report.compatibility == "compatible" and apply_compatible:
+            self.loader.commit_candidate_if_current(
+                candidate,
+                expected_fingerprint=current.fingerprint,
+                expected_version=expected_version,
+            )
+            return SchemaRefreshResult(
+                tool_key=tool_key,
+                action="applied",
+                applied=True,
+                report=report,
+            )
+
+        action = (
+            "report_only"
+            if report.compatibility == "compatible"
+            else "pending_review"
+        )
+        return SchemaRefreshResult(
+            tool_key=tool_key,
+            action=action,
+            applied=False,
+            report=report,
+        )
+
+    def refresh_schema(
+        self,
+        tool_key: str,
+        *,
+        apply_compatible: bool = True,
+        schema_headers: dict[str, str] | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: MCPClientFactory | None = None,
+        timeout: float = 20.0,
+    ) -> SchemaRefreshResult:
+        """Synchronous wrapper for :meth:`arefresh_schema`."""
+
+        return _run_sync(
+            lambda: self.arefresh_schema(
+                tool_key,
+                apply_compatible=apply_compatible,
+                schema_headers=schema_headers,
+                trusted_headers=trusted_headers,
+                mcp_client_factory=mcp_client_factory,
+                timeout=timeout,
+            )
         )
 
     def plan(self, request: PlanRequest | str) -> ExecutionPlan:
