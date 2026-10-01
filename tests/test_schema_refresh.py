@@ -420,3 +420,41 @@ async def test_schema_refresh_openrpc_preserves_approved_base_url() -> None:
     assert result.action == "unchanged"
     assert result.compatibility == "identical"
     assert seen_gets == 2
+
+
+@pytest.mark.asyncio
+async def test_schema_refresh_watcher_keeps_breaking_drift_pending() -> None:
+    state = {"document": _document()}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=state["document"], request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        tool = await router.add_url(
+            "https://example.test/openapi.json",
+            kind="openapi",
+            name="materials",
+        )
+        original_fingerprint = tool.fingerprint
+
+        router.register_schema_watch(
+            tool.key,
+            interval_seconds=60,
+            refresh_timeout_seconds=2,
+        )
+        state["document"] = _document(required_query=True)
+
+        snapshots = await router.check_schema_watches_once()
+
+    assert snapshots[0].tool_key == tool.key
+    assert snapshots[0].status == "pending_review"
+    assert snapshots[0].last_compatibility == "breaking"
+    assert router.registry.get(tool.key).fingerprint == original_fingerprint
+
+
+def test_schema_refresh_watcher_requires_registered_tool() -> None:
+    router = SchemaRouter()
+
+    with pytest.raises(KeyError):
+        router.register_schema_watch("missing")
