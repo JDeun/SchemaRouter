@@ -35,6 +35,7 @@ from .proposals import DocumentationModelCallable, SchemaProposal, inspect_docum
 from .registry import InMemoryRegistry, ToolRegistry, replace_if_current
 from .runs import RunConfig, RunEvent
 from .schema_diff import SchemaRefreshResult, compare_tool_specs
+from .schema_watch import SchemaRefreshWatcher, SchemaWatchSnapshot
 from .traces import RunTraceStore
 
 _T = TypeVar("_T")
@@ -138,6 +139,7 @@ class SchemaRouter:
             http_client=http_client,
             adapters=adapter_registry,
         )
+        self.schema_watcher = SchemaRefreshWatcher(self.arefresh_schema)
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -214,6 +216,60 @@ class SchemaRouter:
 
     async def stop_health_monitor(self) -> None:
         await self.health_monitor.stop()
+
+    def register_schema_watch(
+        self,
+        tool_key: str,
+        *,
+        interval_seconds: float = 300.0,
+        apply_compatible: bool = True,
+        refresh_timeout_seconds: float = 30.0,
+        schema_headers: dict[str, str] | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: MCPClientFactory | None = None,
+    ) -> None:
+        """Register trusted local periodic refresh configuration for one provider schema."""
+
+        self.registry.get(tool_key)
+        self.schema_watcher.register(
+            tool_key,
+            interval_seconds=interval_seconds,
+            apply_compatible=apply_compatible,
+            refresh_timeout_seconds=refresh_timeout_seconds,
+            schema_headers=schema_headers,
+            trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
+        )
+
+    def unregister_schema_watch(self, tool_key: str) -> None:
+        self.schema_watcher.unregister(tool_key)
+
+    def schema_watch_snapshots(self) -> tuple[SchemaWatchSnapshot, ...]:
+        return self.schema_watcher.snapshots()
+
+    async def check_schema_watches_once(
+        self,
+        *,
+        max_concurrency: int | None = None,
+    ) -> tuple[SchemaWatchSnapshot, ...]:
+        return await self.schema_watcher.run_once(
+            force=True,
+            max_concurrency=max_concurrency,
+        )
+
+    async def start_schema_watcher(
+        self,
+        *,
+        max_concurrency: int = 4,
+        idle_sleep_seconds: float = 30.0,
+    ) -> None:
+        await self.schema_watcher.start(
+            max_concurrency=max_concurrency,
+            idle_sleep_seconds=idle_sleep_seconds,
+        )
+
+    async def stop_schema_watcher(self) -> None:
+        await self.schema_watcher.stop()
 
     def with_config(
         self,
