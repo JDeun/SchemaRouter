@@ -21,12 +21,12 @@
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/JDeun/SchemaRouter/actions/workflows/codeql.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/security.yml"><img alt="Security Audit" src="https://github.com/JDeun/SchemaRouter/actions/workflows/security.yml/badge.svg"></a>
-  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.13.0"></a>
+  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.14.0"></a>
   <a href="https://pypi.org/project/schemarouter/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/schemarouter"></a>
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-> **현재 안정판: 0.13.0** · Beta / pre-1.0
+> **현재 안정판: 0.14.0** · Beta / pre-1.0
 
 SchemaRouter는 MCP, OpenAPI, Python, 프레임워크 도구를 하나의 **타입 기반 검색·실행 경계**로
 묶어 주는 LLM/RAG용 라이브러리입니다.
@@ -46,7 +46,7 @@ capability만 후보로 좁힙니다. 호출 전에는 인자·정책·fingerpri
 
 ## 안정성 및 검증
 
-SchemaRouter `0.13.0`은 **Beta / pre-1.0**입니다. Python 3.10–3.14는 릴리스 차단 CI 대상이며,
+SchemaRouter `0.14.0`은 **Beta / pre-1.0**입니다. Python 3.10–3.14는 릴리스 차단 CI 대상이며,
 Python 3.15는 비차단 preview로 검증합니다.
 
 검색 결과나 plan만으로는 tool을 실행할 수 없습니다. 실제 호출 직전에 schema/tool fingerprint,
@@ -261,7 +261,7 @@ Laya, Ollama, Jev/System-One, 호스팅 모델, 임베딩, pairwise 결정 백�
 LangChain, LangGraph, LlamaIndex 브리지와 선택형 OpenTelemetry 내보내기를 제공합니다. 표준이
 아닌 결정 런타임은 `schemarouter.decision_backends` entry-point 플러그인으로 연결할 수 있습니다.
 
-## 0.13.0에서 실제로 작동하는 것
+## 0.14.0에서 실제로 작동하는 것
 
 지금 배포된 패키지는 핵심 아키텍처가 실제로 도는 베타 구현입니다.
 
@@ -279,12 +279,12 @@ LangChain, LangGraph, LlamaIndex 브리지와 선택형 OpenTelemetry 내보내�
 - LangChain, LangGraph, LlamaIndex, Jev/System-One, Laya, Ollama, OpenTelemetry 연동 지점
 
 그래서 등록된 capability와 지원되는 라우팅 상황에서는 **지금도 아키텍처가 동작합니다**.
-0.13.0에는 신뢰된 contract amendment, 안전한 provider schema refresh/watch, HTTP validator 최적화, MCP stdio/custom transport refresh, record-preserving nested array-item field projection도 함께 포함됩니다.
+0.14.0에는 source probe, startup rebinding, storage migration, 명시적인 schema-drift review, 통합 shutdown, Capability Explorer와 0.13에서 추가된 field/schema lifecycle 기능이 함께 포함됩니다.
 
 
 ## 현재 연구 방향: 에이전트를 위한 압축된 capability 검색
 
-0.12.0에서 확립한 stable-core 실행 경계는 0.13.0에서도 그대로입니다. 바뀐 것은 연구 질문입니다. SchemaRouter 자체를 최종
+0.12.0에서 확립한 stable-core 실행 경계는 0.14.0에서도 그대로입니다. 바뀐 것은 연구 질문입니다. SchemaRouter 자체를 최종
 open-set 분류기로 만드는 쪽에서, 하위 LLM 에이전트에 **타입이 붙은 capability를 공급하는 검색
 기반**으로 평가하는 쪽으로 옮겼습니다.
 
@@ -320,7 +320,7 @@ learned router도, structural retrieval 프로필도 무조건적인 운영 기�
 - [선행연구 로드맵](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [전체 실험 인덱스](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
 - [0.14 논문 근거 체크포인트](https://jdeun.github.io/SchemaRouter/research/0.14-paper-evidence-checkpoint/)
-- [0.13.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/releases/0.13.0/)
+- [0.14.0 릴리스 노트](https://jdeun.github.io/SchemaRouter/ko/releases/0.14.0/)
 - [변경 이력](CHANGELOG.md)
 
 ## 레지스트리와 실행 기록 확인
