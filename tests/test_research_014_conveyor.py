@@ -258,7 +258,7 @@ def test_stale_queued_wrapper_recovery_preserves_scientific_source_contract() ->
     assert source_sha_from_run(queued) == "c" * 40
 
 
-def test_active_downstream_workflows_use_explicit_cache_publish_and_eviction_recovery() -> None:
+def test_downstream_workflows_recover_model_cache_eviction() -> None:
     root = Path(__file__).resolve().parents[1]
     workflow_names = (
         "research-0.14-corrective-reretrieval.yml",
