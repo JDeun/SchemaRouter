@@ -71,7 +71,7 @@ Preferences guide ranking; they do not bypass schema validation or execution pol
 ## Keep output projection recall-first
 
 When a downstream answer depends on context that is difficult to predict, do not optimize field count
-at the expense of recall. SchemaRouter intentionally falls back to declared fields when output intent
+at the expense of recall. SchemaRouter falls back to declared fields when output intent
 is ambiguous.
 
 ## Scaling boundary

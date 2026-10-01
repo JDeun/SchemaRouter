@@ -19,6 +19,34 @@ pip install -e ".[dev,langchain]"
 
 The core package does not depend on LangChain.
 
+## Import existing LangChain tools
+
+Existing LangChain `BaseTool` / `StructuredTool` objects can be compiled into SchemaRouter's
+canonical capability model and bound to the normal execution pipeline:
+
+```python
+from langchain_community.tools import DuckDuckGoSearchRun
+from schemarouter import SchemaRouter
+
+router = SchemaRouter()
+key = router.add_langchain_tool(
+    DuckDuckGoSearchRun(),
+    provider="duckduckgo",
+    read_only=True,
+    remote=True,
+)
+```
+
+The importer reads the tool's declared input schema and, when available, its declared output schema.
+Structured result lists keep their record shape: a declared `results: list[{title, url}]` can expose
+`results[].title` and `results[].url` rather than collapsing the values into unrelated arrays.
+It does **not** infer read/write authority from the tool description. `read_only`, `destructive`,
+`remote`, `provider`, and `access_mode` remain trusted local classification.
+
+This makes existing LangChain ecosystem tools usable as SchemaRouter capabilities without creating a
+service-specific SchemaRouter adapter for every provider. Examples include web search, scholarly
+search, finance, databases, and SaaS tools already represented as LangChain tools.
+
 ## Export registered endpoints
 
 ```python
@@ -89,7 +117,7 @@ For direct `StateGraph` integration, see [LangGraph](langgraph.md).
 ## Packaging
 
 The bridge currently stays in the main distribution behind the `langchain` extra. A separate
-`langchain-schemarouter` package is intentionally deferred until an independent release cadence,
+`langchain-schemarouter` package is deferred until an independent release cadence,
 material dependency pressure, or an upstream ecosystem requirement justifies the split.
 
 See [Compatibility testing](../compatibility.md) for the supported range and maintenance policy.

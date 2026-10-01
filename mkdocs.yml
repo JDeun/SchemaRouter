@@ -96,7 +96,11 @@ markdown_extensions:
   - pymdownx.snippets:
       base_path: .
       check_paths: true
-  - pymdownx.superfences
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true
 
@@ -116,15 +120,22 @@ nav:
       - Registry and schema identity: concepts/registry.md
       - Execution and trust boundaries: concepts/execution.md
       - Adapter ecosystem: concepts/adapters.md
+      - Protocol ingestion decisions: concepts/protocol-ingestion-decisions.md
       - Decision backends: concepts/decision-backends.md
   - Connect:
       - Python tools: guides/python-tools.md
       - OpenAPI: guides/openapi.md
       - OpenAPI compatibility: guides/openapi-compatibility.md
+      - OpenRPC / JSON-RPC: guides/openrpc.md
+      - OData: guides/odata.md
+      - GraphQL: guides/graphql.md
       - OPTIMADE: guides/optimade.md
       - MCP: guides/mcp.md
+      - Declarative HTTP/JSON: guides/http-json.md
+      - Universal ingestion matrix: guides/universal-ingestion.md
       - Human-readable documentation: guides/html-documentation.md
       - Third-party adapter plugins: guides/adapter-plugins.md
+      - Protocol plugin recipes: guides/protocol-plugin-recipes.md
       - Recipes:
           - OpenAPI agent boundary: recipes/openapi-agent.md
           - MCP agent boundary: recipes/mcp-agent.md
@@ -181,6 +192,7 @@ nav:
           - Output-field projection: research/field-projection-answer-quality.md
           - Successor screen: research/successor-screen.md
       - Evidence and protocol:
+          - 0.14 paper evidence checkpoint: research/0.14-paper-evidence-checkpoint.md
           - Paper evidence package: research/paper-evidence-package.md
           - Research governance: research/governance.md
           - Research freeze protocol: research/operation-routing-freeze-protocol.md

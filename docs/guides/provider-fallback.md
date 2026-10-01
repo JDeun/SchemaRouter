@@ -138,7 +138,7 @@ specific answer field, a fallback is accepted only when the alternative exposes 
 field/alias surface. If SchemaRouter cannot prove that compatibility, it does not silently
 substitute the route.
 
-This is intentionally conservative. Provider-specific semantic mappings can be added by the local
+This is conservative. Provider-specific semantic mappings can be added by the local
 adapter or application rather than inferred from model output.
 
 ## When runtime fallback occurs
@@ -208,7 +208,7 @@ background monitor.
 
 ## Same provider first, then another provider
 
-A plan may therefore encode:
+A plan may encode:
 
 ```text
 Materials Project / native API
@@ -341,8 +341,8 @@ the state makes cleanup/misconfiguration visible instead of presenting it as a h
 
 ## Prefer executable routes before fallback
 
-Fallback remains a runtime safety net for failures that appear after planning. Live execution should
-not deliberately choose a route that is already known to be locally unbound.
+Fallback is a runtime safety net for failures that appear after planning. Live execution should
+not choose a route that is already known to be locally unbound.
 
 For that reason, SchemaRouter execution-facing APIs plan with both:
 

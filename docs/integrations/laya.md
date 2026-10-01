@@ -67,12 +67,12 @@ backend = LayaDecisionBackend(
 ```
 
 Common Laya checkpoint names include `english`, `multilingual`, and
-`typed-decisions`. SchemaRouter intentionally does not select the benchmark-specific
+`typed-decisions`. SchemaRouter does not select the benchmark-specific
 `typed-decisions` checkpoint automatically.
 
 `device` is an explicit performance control. Use `cpu`, `cuda`, or `mps` when the runtime
 should request a specific device. On Apple Silicon, `mps` uses PyTorch's Metal Performance
-Shaders backend and therefore executes through Apple's Metal stack. It is not an MLX-native path;
+Shaders backend, executing through Apple's Metal stack. It is not an MLX-native path;
 the current Laya runtime uses float32 on MPS, so memory use and latency can differ materially from
 CUDA. If Laya falls back to another device, SchemaRouter records both
 `requested_device` and, when the loaded agent exposes it, `actual_device` in non-authoritative
@@ -139,11 +139,11 @@ The adapter preserves the same bounded-decision invariants as the Jev and Ollama
 - Hugging Face tokens stay in trusted local router configuration;
 - provider metadata cannot grant execution authority;
 - SchemaRouter revalidates the final decision locally;
-- deterministic fallback policy remains owned by SchemaRouter.
+- deterministic fallback policy is owned by SchemaRouter.
 
 ## Current scope and limitations
 
-The SchemaRouter adapter deliberately maps only Laya's single-select `choice` primitive to the
+The SchemaRouter adapter maps only Laya's single-select `choice` primitive to the
 generic `DecisionBackend` contract. A request with `max_selections > 1` fails closed so the
 planner can apply its configured deterministic/error fallback rather than silently treating a
 multi-select surface as single-select. Laya also exposes score/probability-oriented primitives, but

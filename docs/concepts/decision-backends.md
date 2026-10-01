@@ -18,18 +18,13 @@ does not decide when to call tools, does not execute tools, does not manage memo
 construct arbitrary multi-step plans. It is closer to a replaceable classifier/ranker behind one
 bounded decision point in SchemaRouter.
 
-```text
-orchestrator
-    |
-SchemaRouter planner
-    |
-finite candidate set
-    |
-optional DecisionBackend
-    |
-validated candidate ID(s)
-    |
-SchemaRouter plan + policy + execution
+```mermaid
+flowchart TD
+    O["orchestrator"] --> P["SchemaRouter planner"]
+    P --> C["finite candidate set"]
+    C --> DB["optional DecisionBackend"]
+    DB --> V["validated candidate ID(s)"]
+    V --> E["SchemaRouter plan + policy + execution"]
 ```
 
 ## Opt in
@@ -101,7 +96,7 @@ remote embedding API, or domain encoder.
 ### Bounded capability-fit / no-route gate
 
 Semantic recall improves recall but, by itself, may force an in-catalog candidate for an
-out-of-domain query. `SchemaPlanner` therefore also supports an optional
+out-of-domain query. `SchemaPlanner` also supports an optional
 `candidate_fit_backend` after lexical/semantic recall and before final candidate selection:
 
 ```python
@@ -120,7 +115,7 @@ planner = SchemaPlanner(
 
 The fit backend receives only the already-authorized bounded candidate set. A concrete selection
 means only “at least one offered capability plausibly fits”; SchemaRouter keeps the complete
-candidate set for the normal downstream ranker. The fit backend therefore cannot choose the final
+candidate set for the normal downstream ranker. The fit backend cannot choose the final
 route or create execution authority.
 
 Explicit abstention suppresses all candidate routes and produces a no-route plan. Backend exceptions
@@ -156,12 +151,12 @@ planner = SchemaPlanner(
 )
 ```
 
-The operation-fit surface is intentionally narrower than the broad capability-fit surface. It sees
+The operation-fit surface is narrower than the broad capability-fit surface. It sees
 only sibling endpoints in the currently leading tool domain and receives endpoint operation names,
 trusted `EndpointSpec.operation_aliases`, endpoint descriptions, operation class, and optional HTTP
 method. Tool descriptions, tool-name labels, and answer-field labels are omitted from the embedding
 text so domain or field similarity alone cannot turn an unsupported action into a supported one. The
-leading tool identity remains available only as local request metadata; it is not part of the default
+leading tool identity is available only as local request metadata; it is not part of the default
 embedding option text.
 
 Operation aliases are explicit application-owned routing vocabulary, for example
@@ -198,7 +193,7 @@ planner = SchemaPlanner(
 )
 ```
 
-This stage is deliberately narrower than normal candidate selection. It receives only endpoints
+This stage is narrower than normal candidate selection. It receives only endpoints
 belonging to the already-leading tool domain and may move one of those siblings to the front. It
 cannot switch to another tool, add or remove candidates, create arguments or fields, or grant
 execution authority. Backend failure or abstention preserves the existing candidate order.
@@ -221,7 +216,7 @@ finite registered endpoint catalog to the bounded decision backend even though e
 schema score is zero. The backend still receives only local option IDs and cannot invent a tool or
 endpoint.
 
-The default remains `False`. If the backend errors or abstains after this catalog expansion,
+The default is `False`. If the backend errors or abstains after this catalog expansion,
 SchemaRouter returns no call rather than selecting an arbitrary endpoint: there was no deterministic
 candidate to fall back to. A decision backend that returns a concrete option still selects that
 registered route, so out-of-domain suppression should use calibrated confidence plus
@@ -230,12 +225,12 @@ in production, especially for multilingual, out-of-domain, or adversarial reques
 
 Candidate abstention is independently configurable with
 `candidate_abstention="inherit" | "deterministic" | "no_route" | "error"`. The default
-`"inherit"` preserves historical behavior by following `fallback`: existing
-`fallback="deterministic"` and `fallback="error"` configurations therefore keep their prior
+`"inherit"` preserves historical behavior by following `fallback`, so existing
+`fallback="deterministic"` and `fallback="error"` configurations keep their prior
 abstention semantics. `"no_route"` suppresses the candidate
 route when the bounded backend explicitly abstains, which is useful for confidence-gated
-out-of-domain handling. Provider exceptions and malformed output remain governed by `fallback`;
-choosing `"no_route"` therefore does not silently convert provider outages into no-route results.
+out-of-domain handling. Provider exceptions and malformed output are still governed by `fallback`,
+so choosing `"no_route"` does not silently convert provider outages into no-route results.
 
 ## Bounded field selection
 
@@ -332,7 +327,7 @@ The optional backends serve different deployment goals:
 | Ollama | Reuse a general local LLM that is already deployed for other application tasks | Autoregressive generation is heavier and slower than a purpose-built decision model |
 | Jev / TypeSafe | Hosted purpose-built bounded decisions without local model operations | External service/network dependency |
 
-Ollama is therefore **not required** when Laya or a deterministic backend meets the workload. It
+Ollama is **not required** when Laya or a deterministic backend meets the workload. It
 remains useful as a broad compatibility path for teams that already operate local instruction
 models, for side-by-side benchmark evidence, and as a fallback when a task benefits from a general
 language model rather than a specialized System-One decision model.
@@ -384,7 +379,7 @@ that trusted client explicitly. This keeps vendor SDKs and credentials outside S
 The same fail-closed contract still applies: unknown IDs, duplicate IDs, or selections beyond
 `max_selections` are rejected before they can affect planning.
 
-There are intentionally no first-class OpenAI/Gemini/Anthropic SDK dependencies in core. The stable
+There are no first-class OpenAI/Gemini/Anthropic SDK dependencies in core. The stable
 integration surface is the provider-neutral callable contract.
 
 ## Local embedding similarity
@@ -410,7 +405,7 @@ semantic-router encoders, remote embedding APIs, or custom domain encoders witho
 those packages to SchemaRouter's core dependency graph.
 
 The default option-text formatter does not pass `DecisionOption.metadata` to the embedder. A
-custom `option_text` callback is trusted application code and may intentionally choose a different
+custom `option_text` callback is trusted application code and may choose a different
 data boundary. A zero-norm vector, NaN/Infinity, dimension mismatch, wrong batch size, or malformed
 vector fails closed. `min_similarity` can
 abstain on weak matches; `min_margin` can abstain when the selection boundary is ambiguous.
@@ -443,7 +438,7 @@ The default formatter forwards only the option label and description, never
 `DecisionOption.metadata`. Wrong batch size, malformed values, NaN/Infinity, or scores outside
 `[0, 1]` fail closed. Async scorers are supported through the normal async planning path.
 
-SchemaRouter intentionally does not depend on Transformers, Torch, a particular reranker, or a
+SchemaRouter does not depend on Transformers, Torch, a particular reranker, or a
 hosted ranking API. Applications own the scoring model and any score calibration. If a model emits
 unbounded logits, convert them to a calibrated or otherwise explicitly defined `[0, 1]` confidence
 before returning them to this backend. Thresholds remain model- and workload-specific and should be

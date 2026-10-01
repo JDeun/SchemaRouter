@@ -83,8 +83,8 @@ The result is returned as a partial LangGraph state update:
 }
 ```
 
-Results are JSON-serialized by default so they remain friendly to checkpointing and persistence.
-Set `serialize_results=False` when an in-process graph intentionally wants typed `ToolResult`
+Results are JSON-serialized by default so they stay friendly to checkpointing and persistence.
+Set `serialize_results=False` when an in-process graph wants typed `ToolResult`
 objects.
 
 ## Adapt an application-specific state
@@ -123,8 +123,8 @@ LangGraph StateGraph
  -> partial graph-state update
 ```
 
-LangGraph remains responsible for graph control flow, checkpointing, memory, runtime context, and
-human-in-the-loop orchestration. SchemaRouter remains responsible for schema-aware tool planning
+LangGraph is responsible for graph control flow, checkpointing, memory, runtime context, and
+human-in-the-loop orchestration. SchemaRouter is responsible for schema-aware tool planning
 and validated execution.
 
 The LangGraph `RunnableConfig` and SchemaRouter `RunConfig` are intentionally not conflated.

@@ -1,6 +1,6 @@
 # Human-readable documentation
 
-A human-readable API page is weaker evidence than OpenAPI or MCP. SchemaRouter therefore treats it
+A human-readable API page is weaker evidence than OpenAPI or MCP, so SchemaRouter treats it
 as a **proposal source**, not an executable schema source.
 
 ## Inspect a documentation page
@@ -32,11 +32,11 @@ The proposal contains:
 Every accepted endpoint, parameter, and field must carry an evidence quote that appears in the
 fetched document.
 
-```text
-model proposal
- -> exact quote present?
-    -> yes: candidate survives
-    -> no: candidate is rejected
+```mermaid
+flowchart LR
+    P["model proposal"] --> Q{"exact quote present?"}
+    Q -- yes --> S["candidate survives"]
+    Q -- no --> R["candidate is rejected"]
 ```
 
 Scripts, styles, noscript content, and SVG are removed before the model sees the document text.

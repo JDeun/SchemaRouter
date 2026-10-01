@@ -12,7 +12,9 @@ import yaml
 
 from ._url_safety import safe_provenance_url
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .adapters.graphql import GraphQLSourceAdapter
 from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
+from .adapters.odata import ODataSourceAdapter
 from .adapters.openapi import (
     OpenAPIRemoteInvoker,
     normalize_same_document_refs,
@@ -20,6 +22,7 @@ from .adapters.openapi import (
     same_origin,
     tool_from_openapi,
 )
+from .adapters.openrpc import OpenRPCSourceAdapter
 from .adapters.optimade import OPTIMADESourceAdapter
 from .errors import SchemaSourceError, UnsupportedSchemaSourceError
 from .executor import RegistryExecutor
@@ -792,8 +795,11 @@ def default_adapter_registry() -> AdapterRegistry:
     return AdapterRegistry(
         [
             OpenAPISourceAdapter(),
+            OpenRPCSourceAdapter(),
             OPTIMADESourceAdapter(),
+            ODataSourceAdapter(),
             MCPSourceAdapter(),
+            GraphQLSourceAdapter(),
         ]
     )
 
@@ -837,6 +843,67 @@ class URLSchemaLoader:
         openapi_ref_max_bytes: int = _DEFAULT_OPENAPI_REF_MAX_BYTES,
         timeout: float = 20.0,
     ) -> ToolSpec:
+        result = await self.inspect(
+            url,
+            kind=kind,
+            name=name,
+            namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
+            base_url=base_url,
+            schema_headers=schema_headers,
+            trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
+            openapi_external_refs=openapi_external_refs,
+            openapi_ref_max_depth=openapi_ref_max_depth,
+            openapi_ref_max_documents=openapi_ref_max_documents,
+            openapi_ref_max_bytes=openapi_ref_max_bytes,
+            timeout=timeout,
+        )
+        return self._commit(result, replace=replace)
+
+    def commit_candidate_if_current(
+        self,
+        result: AdapterLoadResult,
+        *,
+        expected_fingerprint: str,
+        expected_version: int,
+    ) -> ToolSpec:
+        """Commit only when the compared registry snapshot is still current."""
+
+        key = replace_if_current(
+            self.registry,
+            result.tool,
+            expected_fingerprint=expected_fingerprint,
+            expected_version=expected_version,
+        )
+        if result.invoker is not None:
+            self.executor.bind(
+                key,
+                result.invoker,
+                expected_fingerprint=result.tool.fingerprint,
+            )
+        return self.registry.get(key)
+
+    async def inspect(
+        self,
+        url: str,
+        *,
+        kind: SourceKind = "auto",
+        name: str | None = None,
+        namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
+        base_url: str | None = None,
+        schema_headers: dict[str, str] | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: Any | None = None,
+        openapi_external_refs: bool = False,
+        openapi_ref_max_depth: int = _DEFAULT_OPENAPI_REF_MAX_DEPTH,
+        openapi_ref_max_documents: int = _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS,
+        openapi_ref_max_bytes: int = _DEFAULT_OPENAPI_REF_MAX_BYTES,
+        timeout: float = 20.0,
+    ) -> AdapterLoadResult:
         _validate_url(url)
         if not isinstance(openapi_external_refs, bool):
             raise SchemaSourceError("openapi_external_refs must be a boolean")
@@ -899,7 +966,7 @@ class URLSchemaLoader:
                 context,
                 adapter_kind=adapter.kind,
             )
-            return self._commit(result, replace=replace)
+            return result
 
         for adapter in self.adapters.ordered():
             try:
@@ -913,7 +980,7 @@ class URLSchemaLoader:
                     context,
                     adapter_kind=adapter.kind,
                 )
-                return self._commit(result, replace=replace)
+                return result
 
         detail = "; ".join(diagnostics) or "no registered adapter recognized the source"
         raise UnsupportedSchemaSourceError(

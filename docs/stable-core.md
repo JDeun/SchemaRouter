@@ -10,20 +10,14 @@ instead of repeatedly redefining that boundary.
 
 ## Frozen product boundary
 
-```text
-Python / OpenAPI / MCP / OPTIMADE / adapter plugins
-                         |
-                 typed registry
-                         |
-          bounded capability retrieval
-                         |
-            agent / application
-                         |
-              planning/calls
-                         |
-       validation + local execution policy
-                         |
-                bound execution
+```mermaid
+flowchart TD
+    S["Python / OpenAPI / MCP / OPTIMADE / adapter plugins"] --> R["typed registry"]
+    R --> B["bounded capability retrieval"]
+    B --> A["agent / application"]
+    A --> P["planning/calls"]
+    P --> V["validation + local execution policy"]
+    V --> E["bound execution"]
 ```
 
 The following distinctions are part of the product contract.

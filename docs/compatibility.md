@@ -17,9 +17,12 @@ claim that every historical version inside the range is exhaustively tested.
 | Jev / TypeSafe | `typesafe-sdk>=0.7,<1` | Dedicated adversarial contract tests on Python 3.12 | Optional `schemarouter[jev]` extra; no live API call in required CI |
 | Laya | `laya>=0.3.6,<1` | Dedicated adversarial adapter tests plus optional-extra install on Python 3.12 | Optional `schemarouter[laya]` extra; required CI does not download model weights |
 | Ollama decision backend | Ollama structured-output HTTP API | Mock-transport adversarial tests in the core suite | No SDK dependency; live model benchmark is explicit and non-blocking |
-| MCP | `mcp>=2,<3` | Real Streamable HTTP integration against a local server | Optional `schemarouter[mcp]` extra |
+| MCP | `mcp>=2,<3` | Real Streamable HTTP integration + real local stdio subprocess discovery/execution + transport-boundary tests | Optional `schemarouter[mcp]` extra |
 | OpenTelemetry | `opentelemetry-api/sdk>=1.44,<2` | In-memory span hierarchy, error status, and privacy tests | Optional `schemarouter[otel]` extra; core has no OTel dependency |
 | OpenAPI | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OpenAPI SDK dependency |
+| GraphQL | Built-in adapter | Deterministic introspection/selection-set fixtures | No GraphQL SDK dependency |
+| OData | Built-in adapter | Deterministic CSDL/$select fixtures | No OData SDK dependency |
+| OpenRPC / JSON-RPC | Built-in adapter | Deterministic schema/RPC transport fixtures | No OpenRPC SDK dependency |
 | OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |
 | Published PyPI package | Latest stable wheel + sdist | Scheduled/manual external smoke | Installs from PyPI in a fresh runner, runs `pip check`, and executes a public API scenario outside the checkout |
 | Published lightweight extras | Latest stable `mcp` + `jev` + `otel` extras | Scheduled/manual external smoke | Installs only those three extras from PyPI and validates their SDK integration surface without relying on framework transitive dependencies |
@@ -50,11 +53,13 @@ Every pull request runs the blocking `CI` workflow with:
 - Laya adapter adversarial tests with the official package installed but no model-weight download;
 - Ollama bounded-decision adversarial tests using a local mock HTTP transport;
 - real MCP Streamable HTTP integration using the official SDK and a local HTTP server;
+- real MCP stdio subprocess discovery/execution plus transport-neutral client-factory contract tests;
+- deterministic GraphQL, OData, and OpenRPC protocol-adapter tests;
 - OpenTelemetry integration tests using the SDK in-memory exporter;
 - strict MkDocs build.
 
 A separate `Python Preview` workflow runs Python 3.15 RC on pull requests and `main` pushes.
-It is intentionally outside the blocking `CI` workflow and has a bounded runtime. Failures remain
+It runs outside the blocking `CI` workflow and has a bounded runtime. Failures remain
 visible as forward-compatibility signals but cannot stall release publication.
 
 The top-level Release workflow consumes a successful current-`main` `CI` result before it
@@ -112,7 +117,7 @@ bridge through the installed stable package rather than the source checkout.
 External-service failures are compatibility signals, not pull-request blockers, because third-party
 availability is outside SchemaRouter's control.
 
-Live decision-model benchmarking is intentionally excluded from required CI. Run Jev explicitly
+Live decision-model benchmarking is excluded from required CI. Run Jev explicitly
 with `TYPESAFE_API_KEY` and `--jev`, run local Laya with `--laya`, or run a trusted local Ollama
 model with `--ollama-model <installed-model>`.
 
@@ -142,7 +147,7 @@ The non-blocking public OpenAPI, OPTIMADE, published-PyPI, and published-integra
 jobs emit one
 machine-readable JSON artifact per smoke job. Reports include a schema version, UTC generation time, SchemaRouter version,
 adapter/source identity, runtime environment, success/failure state, and bounded success details.
-On failure, only the exception type is recorded; exception messages are intentionally omitted.
+On failure, only the exception type is recorded; exception messages are omitted.
 
 GitHub Actions retains these artifacts for 30 days. This makes compatibility drift inspectable
 without turning live third-party availability into a release-blocking gate. The raw JSON remains the

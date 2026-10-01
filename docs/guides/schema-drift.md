@@ -25,7 +25,7 @@ Compatibility values are:
 - `security_review` — side-effect or destructive semantics changed and local authority must be
   reviewed.
 
-The implementation is deliberately conservative. Arbitrary JSON Schema compatibility is difficult
+The implementation is conservative. Arbitrary JSON Schema compatibility is difficult
 to prove, so unknown schema changes are classified as breaking instead of guessed safe.
 
 ## Compare complete tools
@@ -65,6 +65,107 @@ used by the Python API. It does not register, bind, or invoke tools. The underly
 connection uses the normal registry implementation, so this is an execution-safe inspection path
 rather than a claim of filesystem-level read-only access.
 
+## Reinspect a registered provider
+
+For URL-backed OpenAPI, MCP, OPTIMADE, GraphQL, OData, and OpenRPC tools, SchemaRouter can
+reinspect the provider without committing the candidate first:
+
+```python
+result = await router.arefresh_schema("materials")
+
+print(result.action)
+print(result.report.compatibility)
+```
+
+The one-shot refresh path is conservative:
+
+- `identical` -> no registry write;
+- `compatible` -> applied atomically by default;
+- `breaking` / `security_review` -> reported as `pending_review` and left unapplied.
+
+Use `apply_compatible=False` to make even compatible changes report-only.
+
+```python
+result = await router.arefresh_schema(
+    "materials",
+    apply_compatible=False,
+)
+```
+
+Schema and runtime authentication material is intentionally not persisted. If the provider requires
+headers, pass trusted `schema_headers` / `trusted_headers` again during refresh.
+
+The apply step uses the exact registry version and tool fingerprint that were compared. If another
+writer mutates the registry while remote inspection is in progress, the compare-and-swap fails
+instead of applying a candidate against an unseen newer snapshot.
+
+## Periodic schema watcher
+
+Register a refresh policy per remote tool and start the optional watcher:
+
+```python
+router.register_schema_watch(
+    "materials",
+    interval_seconds=300,
+    apply_compatible=True,
+    schema_headers={"Authorization": f"Bearer {schema_token}"},
+    trusted_headers={"Authorization": f"Bearer {runtime_token}"},
+)
+
+await router.start_schema_watcher(max_concurrency=4)
+```
+
+Each due check reuses the one-shot refresh boundary above. The watcher never bypasses
+`compare_tool_specs()`, fingerprint checks, or compare-and-swap replacement.
+
+The default policy is:
+
+- identical -> record `unchanged`;
+- proven-compatible -> atomically apply when `apply_compatible=True`;
+- compatible with `apply_compatible=False` -> `report_only`;
+- breaking/security drift -> keep the current registry contract and record `pending_review`;
+- transport/schema errors -> record `error` and retry on the next interval;
+- removed/unrefreshable capability -> record `stale`.
+
+Inspect the live state without exposing credentials:
+
+```python
+for watch in router.schema_watch_snapshots():
+    print(
+        watch.tool,
+        watch.status,
+        watch.last_compatibility,
+        watch.pending_change_count,
+    )
+
+pending = router.schema_watch_pending_review("materials")
+if pending is not None:
+    for change in pending.report.changes:
+        print(change.severity, change.path, change.kind)
+```
+
+`router.inspect()` also reports watcher state. Header values, client factories, and other trusted
+transport state never appear in snapshots.
+
+Run all registered checks once on demand:
+
+```python
+await router.check_schema_watches_once()
+```
+
+Stop the background task cleanly:
+
+```python
+await router.stop_schema_watcher()
+```
+
+Intervals are per tool. The watcher serializes overlapping watch cycles and bounds refresh
+concurrency, so one slow provider does not create unbounded duplicate refresh writes.
+
+Conditional HTTP requests using `ETag` / `Last-Modified` remain an optimization opportunity;
+correctness does not depend on them because every fetched candidate is still fingerprinted and
+compared before replacement.
+
 ## Security-semantic drift
 
 Changes such as:
@@ -80,7 +181,7 @@ transition; the application must re-import/review/rebind under trusted local pol
 
 ## Important: compatible does not mean executable
 
-This remains invalid:
+This is still invalid:
 
 ```text
 old plan fingerprint

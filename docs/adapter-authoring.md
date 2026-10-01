@@ -145,6 +145,43 @@ projection, but the full input/output schema should remain available for runtime
 
 Unsupported constructs should be preserved as metadata or rejected explicitly rather than guessed.
 
+### Field-contract conformance
+
+Every adapter that exposes planner-visible fields should preserve the same `FieldSpec` contract,
+even when its wire protocol differs.
+
+For each declared field, preserve what the source actually provides:
+
+- `json_schema` for datatype/shape;
+- `description` and conservative aliases;
+- `path` for the validated provider/source location;
+- `result_path` when the downstream projection key differs;
+- `unit` only when the source contract explicitly declares one;
+- `identifier` only when the source identity semantics are known;
+- `source_type` when the adapter can state it reliably.
+
+Nested object fields may be exposed as additional planner-visible fields only when the adapter can
+project them without corrupting record alignment. Parent fields may remain available at the same
+time, so nested fields should use disjoint `result_path` values.
+
+Array-item traversal uses an explicit `"*"` path segment only when the authoritative source schema
+declares an array item schema. For example, `["results", "*", "title"]` is exposed as
+`results[].title`. The same wildcard should normally appear in `result_path` so several selected
+item fields merge back into the original record structure by array index. Root arrays are traversed
+implicitly and do not start with `"*"`.
+
+Never add wildcard fields by inspecting example payloads alone. The array/item contract must come
+from structured schema metadata or trusted local adapter code.
+
+Semantic IDs, unit-normalization dimensions/conversions, qualifiers, licences, and provenance are
+trusted contracts. Import them only from an authoritative structured source or attach them through
+trusted local enrichment such as `amend_capability()`. Never derive them from arbitrary remote
+descriptions or from a model.
+
+Third-party adapters are responsible for this fidelity. SchemaRouter validates the returned
+`ToolSpec`, but it does not silently crawl or rewrite a plugin's private payload schema after the
+adapter returns it.
+
 ## Custom registries
 
 Applications can provide any structural implementation of `ToolRegistry`:
@@ -177,6 +214,11 @@ New adapters should test:
 - credential separation;
 - mutation/destructive policy;
 - selected-field propagation when the protocol supports server-side projection;
+- nested object path/result-path fidelity when nested fields are exposed;
+- source-unit preservation without inferred conversion factors;
+- parent-field queries not implicitly selecting every nested descendant;
+- array-item wildcard paths preserving source record alignment and never being inferred from payload examples;
+- trusted enrichment of semantic IDs, normalization/dimension, qualifiers, source type and licence;
 - transport-specific origin/redirect behavior where relevant.
 
 
@@ -341,7 +383,7 @@ ParameterSpec(
 A request argument `{"formula": "Si"}` may then compile to
 `{"chemical_formula": "Si"}` for that endpoint.
 
-Alias routing is deliberately narrow:
+Alias routing is narrow:
 
 - exact parameter names always win;
 - aliases only rename keys and copy values unchanged;

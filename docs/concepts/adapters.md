@@ -2,11 +2,16 @@
 
 SchemaRouter treats external protocols as **compilers into one canonical execution model**.
 
-```text
-OpenAPI ─┐
-OPTIMADE ├─> AdapterRegistry ─> ToolSpec / EndpointSpec ─> Planner ─> Executor
-MCP ─────┤
-Custom ──┘
+```mermaid
+flowchart LR
+    O1["OpenAPI"] --> AR["AdapterRegistry"]
+    O2["OPTIMADE"] --> AR
+    O3["MCP"] --> AR
+    O4["GraphQL"] --> AR
+    O5["OData"] --> AR
+    O6["OpenRPC"] --> AR
+    O7["Custom"] --> AR
+    AR --> TS["ToolSpec / EndpointSpec"] --> PL["Planner"] --> EX["Executor"]
 ```
 
 The planner does not need an `if optimade` or `if graphql` branch. Protocol-specific discovery,
@@ -61,13 +66,20 @@ before invoking it.
 
 ## Auto discovery
 
-Built-ins are currently ordered:
+Built-ins are ordered deterministically by adapter priority. Current main includes:
 
 ```text
-OpenAPI (100)
-OPTIMADE (90)
-MCP (80)
+OpenAPI
+OpenRPC
+OData
+OPTIMADE
+MCP (URL/Streamable HTTP discovery)
+GraphQL
 ```
 
-Third-party adapters choose a priority deliberately. Explicit `kind="..."` bypasses priority and
+MCP stdio and caller-owned MCP transports are registered through dedicated runtime APIs rather than
+URL auto-discovery. Python/SDK bindings and inbound LangChain/LlamaIndex tools likewise bypass URL
+adapter probing and compile directly into the same canonical contracts.
+
+Third-party adapters choose their own priority. Explicit `kind="..."` bypasses priority and
 selects that adapter directly.

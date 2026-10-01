@@ -25,9 +25,9 @@ then use a small **fixed** shortlist.
    achieved:
    - required-route Recall: **100.00% / 99.05% / 99.05%**;
    - all-required FullCoverage: **100.00% / 98.89% / 98.89%**;
-   - typed numeric/unit Recall: **100%**;
-   - mean exact SmolLM3 tool-schema tokens: **364.27**, versus **563.08** for fixed K=5;
-   - mean schema-token reduction versus fixed K=5: **35.31%**.
+   - typed numeric/unit Recall: 100%;
+   - mean exact SmolLM3 tool-schema tokens: 364.27, versus 563.08 for fixed K=5;
+   - mean schema-token reduction versus fixed K=5: 35.31%.
 6. The remaining gate is downstream agent utility. The paired
    `STRUCT-FIXED-3` vs `STRUCT-FIXED-5` SmolLM3 experiment is already preregistered on the exact
    canonical B2 surface and may launch only after canonical B2 run `36642658406` completes
@@ -49,7 +49,7 @@ The sections below preserve the original adaptive-depth preregistration rational
 rules. They should be read as the protocol that produced the terminal negative adaptive result,
 not as the current recommended candidate.
 
-Tracking issue: **#430**
+Tracking issue: #430
 
 This experiment asks whether SchemaRouter can expose fewer than five candidate capabilities on
 average without sacrificing the retrieval coverage and downstream utility established by the
@@ -61,7 +61,7 @@ B1/B2 evaluate fixed shortlist depths. They are not tuning data for adaptive dep
 
 No B1/B2 task rows, failures, scores, or per-task outcomes may be used to select an adaptive rule.
 
-The adaptive experiment therefore uses its own development and confirmation surfaces.
+The adaptive experiment uses its own development and confirmation surfaces.
 
 ## Score semantics
 
@@ -127,7 +127,7 @@ Language rendering policy:
 - surrounding request grammar is written in the assigned language;
 - canonical scientific/tooling terms such as `Raman peak`, units, and registered
   operation nouns may remain in English where that is normal technical usage;
-- this surface therefore tests adaptive shortlist depth under multilingual request
+- so this surface tests adaptive shortlist depth under multilingual request
   framing, not standalone translation quality;
 - no cross-language translations of the same DEV task are used as repeated rows.
 

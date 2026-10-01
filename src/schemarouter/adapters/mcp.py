@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import asyncio
+import hashlib
+import json
 from collections.abc import Mapping
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Protocol
 from urllib.parse import urlparse
 
@@ -38,6 +43,151 @@ class MCPClientFactory(Protocol):
         headers: Mapping[str, str] | None = None,
         timeout: float = 20.0,
     ) -> AbstractAsyncContextManager[Any]: ...
+
+
+class MCPBoundClientFactory(Protocol):
+    """Trusted transport-neutral MCP client lifecycle already bound to its transport."""
+
+    def __call__(
+        self,
+        *,
+        timeout: float = 20.0,
+    ) -> AbstractAsyncContextManager[Any]: ...
+
+
+def _validate_stdio_text(value: str, *, label: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{label} must be a non-empty string")
+    if "\x00" in value or "\r" in value or "\n" in value:
+        raise ValueError(f"{label} must not contain NUL or newline characters")
+    return value
+
+
+@dataclass(frozen=True)
+class MCPStdioConfig:
+    """Trusted local subprocess configuration for an MCP stdio server."""
+
+    command: str
+    args: tuple[str, ...] = ()
+    env: Mapping[str, str] | None = None
+    cwd: str | None = None
+    allowed_commands: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        command = _validate_stdio_text(self.command, label="MCP stdio command")
+        args = tuple(
+            _validate_stdio_text(value, label="MCP stdio argument")
+            for value in self.args
+        )
+        object.__setattr__(self, "command", command)
+        object.__setattr__(self, "args", args)
+
+        if self.cwd is not None:
+            object.__setattr__(
+                self,
+                "cwd",
+                _validate_stdio_text(self.cwd, label="MCP stdio cwd"),
+            )
+
+        if self.env is not None:
+            clean_env: dict[str, str] = {}
+            for key, value in self.env.items():
+                clean_key = _validate_stdio_text(
+                    key,
+                    label="MCP stdio environment key",
+                )
+                clean_value = _validate_stdio_text(
+                    value,
+                    label=f"MCP stdio environment value for {clean_key!r}",
+                )
+                clean_env[clean_key] = clean_value
+            object.__setattr__(self, "env", clean_env)
+
+        allowed = tuple(
+            _validate_stdio_text(value, label="MCP stdio allowed command")
+            for value in self.allowed_commands
+        )
+        object.__setattr__(self, "allowed_commands", allowed)
+        if allowed and command not in allowed:
+            raise ValueError(
+                f"MCP stdio command {command!r} is not in the trusted allowlist"
+            )
+
+    @property
+    def transport_fingerprint(self) -> str:
+        payload = {
+            "transport": "stdio",
+            "command": self.command,
+            "args": list(self.args),
+            "cwd": self.cwd,
+            "env_keys": sorted((self.env or {}).keys()),
+        }
+        encoded = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
+
+class MCPStdioClientFactory:
+    """Build an official MCP v2 client over a trusted local stdio subprocess."""
+
+    def __init__(self, config: MCPStdioConfig) -> None:
+        self.config = config
+
+    @asynccontextmanager
+    async def __call__(self, *, timeout: float = 20.0):
+        try:
+            from mcp import Client, StdioServerParameters
+        except ImportError as exc:
+            raise SchemaSourceError(
+                'MCP support requires the optional dependency: pip install "schemarouter[mcp]"'
+            ) from exc
+
+        params = StdioServerParameters(
+            command=self.config.command,
+            args=list(self.config.args),
+            env=dict(self.config.env) if self.config.env is not None else None,
+            cwd=Path(self.config.cwd) if self.config.cwd is not None else None,
+        )
+        try:
+            from anyio import fail_after
+
+            with fail_after(timeout):
+                async with Client(
+                    params,
+                    read_timeout_seconds=timeout,
+                ) as client:
+                    yield client
+        except TimeoutError as exc:
+            raise InvocationUnavailableError(
+                "MCP stdio lifecycle exceeded the configured timeout"
+            ) from exc
+
+
+class _BoundHTTPMCPClientFactory:
+    def __init__(
+        self,
+        url: str,
+        *,
+        headers: Mapping[str, str] | None,
+        client_factory: MCPClientFactory,
+    ) -> None:
+        self.url = url
+        self.headers = headers
+        self.client_factory = client_factory
+
+    def __call__(
+        self,
+        *,
+        timeout: float = 20.0,
+    ) -> AbstractAsyncContextManager[Any]:
+        return self.client_factory(
+            self.url,
+            headers=self.headers,
+            timeout=timeout,
+        )
 
 
 def _validated_trusted_headers(
@@ -117,6 +267,185 @@ def _properties(schema: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
     return props if isinstance(props, dict) else {}
 
 
+_NESTED_OUTPUT_MAX_DEPTH = 8
+
+
+def _local_ref_target(document: dict[str, Any], ref: str) -> dict[str, Any] | None:
+    if not ref.startswith("#/"):
+        return None
+    node: Any = document
+    try:
+        for part in ref[2:].split("/"):
+            part = part.replace("~1", "/").replace("~0", "~")
+            node = node[part]
+    except (KeyError, TypeError):
+        return None
+    return node if isinstance(node, dict) else None
+
+
+def _resolve_output_schema(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> dict[str, Any]:
+    current = schema
+    seen: set[str] = set()
+    while isinstance(current, dict):
+        ref = current.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/") or ref in seen:
+            return current
+        seen.add(ref)
+        target = _local_ref_target(document, ref)
+        if target is None:
+            return current
+        merged = dict(target)
+        merged.update({key: value for key, value in current.items() if key != "$ref"})
+        current = merged
+    return schema
+
+
+def _schema_branches(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> list[dict[str, Any]]:
+    branches: list[dict[str, Any]] = []
+    for keyword in ("allOf", "oneOf", "anyOf"):
+        raw = schema.get(keyword)
+        if not isinstance(raw, list):
+            continue
+        for item in raw:
+            if isinstance(item, dict):
+                branches.append(_resolve_output_schema(document, item))
+    return branches
+
+
+def _merged_properties(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    resolved = _resolve_output_schema(document, schema)
+    property_sets = [_properties(resolved)]
+    property_sets.extend(
+        _properties(branch)
+        for branch in _schema_branches(document, resolved)
+    )
+
+    merged: dict[str, dict[str, Any]] = {}
+    for properties in property_sets:
+        for name, spec in properties.items():
+            if not isinstance(spec, dict):
+                continue
+            existing = merged.get(name)
+            if existing is None or existing == spec:
+                merged[name] = spec
+                continue
+            options = (
+                list(existing["anyOf"])
+                if set(existing) == {"anyOf"}
+                and isinstance(existing.get("anyOf"), list)
+                else [existing]
+            )
+            if spec not in options:
+                options.append(spec)
+            merged[name] = {"anyOf": options}
+    return merged
+
+
+def _mcp_field_name_from_path(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if not parts:
+                raise ValueError("array wildcard cannot be the first named field segment")
+            parts[-1] = parts[-1] + "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
+def _mcp_schema_is_array(schema: dict[str, Any]) -> bool:
+    raw_type = schema.get("type")
+    return raw_type == "array" or (
+        isinstance(raw_type, list) and "array" in raw_type
+    )
+
+
+def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
+    discovered: list[FieldSpec] = []
+    seen_names = set(_merged_properties(output_schema, output_schema))
+
+    def visit(
+        schema: dict[str, Any],
+        *,
+        prefix: tuple[str, ...],
+        depth: int,
+        ancestors: frozenset[str],
+    ) -> None:
+        if depth >= _NESTED_OUTPUT_MAX_DEPTH:
+            return
+        resolved = _resolve_output_schema(output_schema, schema)
+        signature = json.dumps(
+            resolved,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        )
+        if signature in ancestors:
+            return
+        next_ancestors = ancestors | {signature}
+
+        if _mcp_schema_is_array(resolved):
+            items = resolved.get("items")
+            if isinstance(items, dict):
+                visit(
+                    items,
+                    prefix=(*prefix, "*") if prefix else prefix,
+                    depth=depth + 1,
+                    ancestors=next_ancestors,
+                )
+            return
+
+        for name, spec in _merged_properties(output_schema, resolved).items():
+            path = (*prefix, name)
+            field_name = _mcp_field_name_from_path(path)
+            if field_name not in seen_names:
+                seen_names.add(field_name)
+                resolved_spec = _resolve_output_schema(output_schema, spec)
+                discovered.append(
+                    FieldSpec(
+                        name=field_name,
+                        description=str(resolved_spec.get("description") or ""),
+                        json_schema=resolved_spec,
+                        path=list(path),
+                        result_path=(
+                            list(path)
+                            if "*" in path
+                            else [field_name]
+                        ),
+                        unit=_schema_unit(resolved_spec),
+                        identifier=(
+                            name in {"id", "uuid", "key"}
+                            or name.endswith("_id")
+                        ),
+                        aliases=list(
+                            dict.fromkeys(
+                                [name, name.replace("_", " ")]
+                            )
+                        ),
+                        source_type="mcp",
+                    )
+                )
+
+            visit(
+                spec,
+                prefix=path,
+                depth=depth + 1,
+                ancestors=next_ancestors,
+            )
+
+    visit(output_schema, prefix=(), depth=0, ancestors=frozenset())
+    return discovered
+
+
 def _as_dict(value: Any) -> dict[str, Any]:
     if isinstance(value, dict):
         return value
@@ -174,9 +503,11 @@ def tool_from_mcp(
                 unit=_schema_unit(spec),
                 identifier=name in {"id", "uuid", "key"} or name.endswith("_id"),
                 aliases=[name.replace("_", " ")],
+                source_type="mcp",
             )
-            for name, spec in _properties(output_schema).items()
+            for name, spec in _merged_properties(output_schema, output_schema).items()
         ]
+        fields.extend(_nested_output_fields(output_schema))
         metadata = {
             "title": item.get("title"),
             "annotations": item.get("annotations"),
@@ -205,23 +536,20 @@ def tool_from_mcp(
     )
 
 
-async def inspect_mcp_url(
-    url: str,
+async def inspect_mcp_client_factory(
+    factory: MCPBoundClientFactory,
     *,
     server_name: str | None = None,
     namespace: str | None = None,
-    trusted_headers: Mapping[str, str] | None = None,
     timeout: float = 20.0,
-    client_factory: MCPClientFactory | None = None,
+    transport: str = "custom",
+    transport_fingerprint: str | None = None,
 ) -> ToolSpec:
-    """Connect to a Streamable HTTP MCP URL and import all advertised tools."""
-    _validate_mcp_url(url)
-    factory = client_factory or _DEFAULT_CLIENT_FACTORY
-    headers = _validated_trusted_headers(trusted_headers)
+    """Inspect an MCP server through an already-bound trusted transport factory."""
 
     raw_tools: list[dict[str, Any]] = []
     try:
-        async with factory(url, headers=headers, timeout=timeout) as client:
+        async with factory(timeout=timeout) as client:
             cursor: str | None = None
             while True:
                 page = await client.list_tools(cursor=cursor)
@@ -236,56 +564,72 @@ async def inspect_mcp_url(
     except SchemaSourceError:
         raise
     except Exception as exc:  # noqa: BLE001
-        raise SchemaSourceError(f"failed to inspect MCP server at {url!r}") from exc
+        raise SchemaSourceError(
+            f"failed to inspect MCP server over {transport!r} transport"
+        ) from exc
 
     name = server_name or discovered_name or "mcp_server"
     tool = tool_from_mcp(name, raw_tools, namespace=namespace)
+    tool.remote = True
     tool.execution_metadata.update(
         {
-            "source_url": url,
+            "transport": transport,
             "protocol_version": protocol_version,
-            "authenticated_transport": bool(headers),
+            "transport_fingerprint": transport_fingerprint,
         }
     )
     tool.metadata.update(
         {
-            "source_url": url,
+            "transport": transport,
             "protocol_version": protocol_version,
-            "authenticated_transport": bool(headers),
+            "transport_fingerprint": transport_fingerprint,
+            "remote_metadata_untrusted": True,
         }
     )
     return tool
 
 
-class MCPRemoteInvoker:
-    """Trusted runtime adapter for a remote MCP server.
+async def inspect_mcp_stdio(
+    config: MCPStdioConfig,
+    *,
+    server_name: str | None = None,
+    namespace: str | None = None,
+    timeout: float = 20.0,
+) -> ToolSpec:
+    """Spawn a trusted local MCP stdio server and import all advertised tools."""
 
-    Authentication material is kept only in this local transport object. It is never copied into
-    ToolSpec metadata, planner state, or model-visible arguments.
-    """
+    return await inspect_mcp_client_factory(
+        MCPStdioClientFactory(config),
+        server_name=server_name,
+        namespace=namespace,
+        timeout=timeout,
+        transport="stdio",
+        transport_fingerprint=config.transport_fingerprint,
+    )
+
+
+class MCPBoundInvoker:
+    """Transport-neutral trusted MCP runtime binding."""
 
     def __init__(
         self,
-        url: str,
+        factory: MCPBoundClientFactory,
         *,
-        trusted_headers: Mapping[str, str] | None = None,
         timeout: float = 20.0,
-        client_factory: MCPClientFactory | None = None,
     ) -> None:
-        _validate_mcp_url(url)
-        self.url = url
-        self._trusted_headers = _validated_trusted_headers(trusted_headers)
+        self.factory = factory
         self.timeout = timeout
-        self.client_factory = client_factory or _DEFAULT_CLIENT_FACTORY
 
     async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
+        async def invoke_bound() -> Any:
+            async with self.factory(timeout=self.timeout) as client:
+                return await client.call_tool(endpoint, arguments)
+
         try:
-            async with self.client_factory(
-                self.url,
-                headers=self._trusted_headers,
+            result = await asyncio.wait_for(
+                invoke_bound(),
                 timeout=self.timeout,
-            ) as client:
-                result = await client.call_tool(endpoint, arguments)
+            )
         except (TimeoutError, ConnectionError, OSError) as exc:
             raise InvocationUnavailableError(
                 "MCP access path is temporarily unavailable"
@@ -307,3 +651,81 @@ class MCPRemoteInvoker:
             else str(block)
             for block in content
         ]
+
+
+async def inspect_mcp_url(
+    url: str,
+    *,
+    server_name: str | None = None,
+    namespace: str | None = None,
+    trusted_headers: Mapping[str, str] | None = None,
+    timeout: float = 20.0,
+    client_factory: MCPClientFactory | None = None,
+) -> ToolSpec:
+    """Connect to a Streamable HTTP MCP URL and import all advertised tools."""
+    _validate_mcp_url(url)
+    factory = client_factory or _DEFAULT_CLIENT_FACTORY
+    headers = _validated_trusted_headers(trusted_headers)
+    bound_factory = _BoundHTTPMCPClientFactory(
+        url,
+        headers=headers,
+        client_factory=factory,
+    )
+    transport_fingerprint = hashlib.sha256(
+        json.dumps(
+            {
+                "transport": "streamable_http",
+                "url": url,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    tool = await inspect_mcp_client_factory(
+        bound_factory,
+        server_name=server_name,
+        namespace=namespace,
+        timeout=timeout,
+        transport="streamable_http",
+        transport_fingerprint=transport_fingerprint,
+    )
+    tool.execution_metadata.update(
+        {
+            "source_url": url,
+            "authenticated_transport": bool(headers),
+        }
+    )
+    tool.metadata.update(
+        {
+            "source_url": url,
+            "authenticated_transport": bool(headers),
+        }
+    )
+    return tool
+
+
+class MCPRemoteInvoker(MCPBoundInvoker):
+    """Backward-compatible Streamable HTTP MCP runtime binding."""
+
+    def __init__(
+        self,
+        url: str,
+        *,
+        trusted_headers: Mapping[str, str] | None = None,
+        timeout: float = 20.0,
+        client_factory: MCPClientFactory | None = None,
+    ) -> None:
+        _validate_mcp_url(url)
+        headers = _validated_trusted_headers(trusted_headers)
+        factory = client_factory or _DEFAULT_CLIENT_FACTORY
+        super().__init__(
+            _BoundHTTPMCPClientFactory(
+                url,
+                headers=headers,
+                client_factory=factory,
+            ),
+            timeout=timeout,
+        )
+        self.url = url
+        self._trusted_headers = headers
+        self.client_factory = factory

@@ -48,7 +48,7 @@ made invalid after construction is rejected atomically rather than snapshotted o
 
 ## Schema fingerprints
 
-Fingerprinting excludes arbitrary descriptive `metadata`, but it intentionally includes the
+Fingerprinting excludes arbitrary descriptive `metadata`, but it includes the
 declared planner/execution contract: endpoint descriptions, aliases, parameters, fields,
 side-effect classification, evidence metadata, JSON Schemas, `ToolSpec.remote`, and explicit
 `execution_metadata`.
@@ -99,7 +99,7 @@ therefore does not import or execute arbitrary Python objects. Corrupt or key-mi
 fail closed with `RegistrationError`.
 
 The persistent registry stores **schema/catalog state only**. Trusted invokers, HTTP clients,
-credentials, approval callbacks, and execution policy are intentionally not serialized. After a
+credentials, approval callbacks, and execution policy are not serialized. After a
 process restart, the application must re-establish the trusted execution bindings:
 
 ```python

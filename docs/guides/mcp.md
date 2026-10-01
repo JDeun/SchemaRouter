@@ -1,6 +1,8 @@
 # MCP
 
-SchemaRouter uses the official MCP Python SDK for Streamable HTTP discovery and execution.
+SchemaRouter uses the official MCP Python SDK while keeping the **MCP protocol** separate from
+its transport. Built-in paths cover Streamable HTTP, local stdio subprocess servers, and caller-owned
+transport-neutral client factories.
 
 ## Install
 
@@ -32,6 +34,61 @@ router = await SchemaRouter.from_url(
 
 Discovery performs protocol negotiation, paginates `list_tools()`, and imports each advertised
 `inputSchema` and `outputSchema`.
+
+## Local stdio servers
+
+CLI-distributed MCP servers can be registered without inventing an HTTP URL:
+
+```python
+import os
+import sys
+
+tool = await router.add_mcp_stdio(
+    sys.executable,
+    args=["/opt/my_server.py"],
+    env={"API_TOKEN": os.environ["API_TOKEN"]},
+    allowed_commands=[sys.executable],
+    provider="my-provider",
+)
+```
+
+`command`, `args`, `cwd`, and `env` are trusted local configuration. They are never
+model-selectable arguments and are not copied into the canonical `ToolSpec`.
+
+The stdio subprocess is spawned with the MCP SDK's `StdioServerParameters`; SchemaRouter never
+uses `shell=True` and never accepts a shell command string. `allowed_commands` is an optional
+explicit executable allowlist. Environment values may contain secrets; only environment **keys**
+participate in the non-secret transport fingerprint.
+
+The imported MCP tool is still marked remote/untrusted for execution-policy purposes. This is
+intentional: a local subprocess can expose arbitrary side effects, so unclassified MCP operations
+remain fail-closed unless trusted local policy permits them.
+
+## Transport-neutral client factories
+
+Applications may already own an MCP transport lifecycle: an in-process server, enterprise tunnel,
+custom transport, or another SDK-supported transport. Register it directly without a fake URL:
+
+```python
+tool = await router.add_mcp_client_factory(
+    my_bound_factory,
+    name="enterprise-mcp",
+    transport="enterprise-tunnel",
+    transport_fingerprint="corp-mcp-v3",
+)
+```
+
+The bound factory has this shape:
+
+```python
+@asynccontextmanager
+async def my_bound_factory(*, timeout: float = 20.0):
+    async with my_mcp_client() as client:
+        yield client
+```
+
+The factory owns credentials and transport state. SchemaRouter only sees the connected MCP client
+for `list_tools()` and `call_tool()`.
 
 ## Authenticated Streamable HTTP
 
@@ -81,7 +138,7 @@ against the advertised output schema before projection.
 
 ## Why MCP annotations do not grant permission
 
-Tool annotations arrive from a remote server and are therefore descriptive metadata, not trusted
+Tool annotations arrive from a remote server, so they are descriptive metadata, not trusted
 local authority.
 
 By default, remote MCP operations are treated as unclassified for side effects. Trusted application
@@ -102,10 +159,10 @@ ExecutionPolicy(
 
 ## Integration coverage
 
-Repository CI starts a real Streamable HTTP MCP server using the official SDK and verifies:
+Repository CI starts real Streamable HTTP **and stdio** MCP servers using the official SDK and verifies:
 
 ```text
-HTTP server
+HTTP or stdio server
  -> discovery
  -> input/output schema import
  -> planning
@@ -122,6 +179,11 @@ Separate transport tests verify credential isolation and unsafe-header rejection
 into a text block. SchemaRouter derives output fields only from a declared
 `outputSchema`, so such an endpoint arrives with none, and there is nothing to
 project or normalize.
+
+Declared output arrays are traversed only from the published `outputSchema`. A shape such as
+`results: array<object{title,url}>` exposes `results[].title` and `results[].url`; the internal
+`"*"` path segment preserves record alignment during projection. No array-item fields are inferred
+from example tool responses.
 
 Trusted local code can declare that contract itself:
 
@@ -163,20 +225,20 @@ router.amend_capability(key, amended)
 The capability stays executable; the invoker is never exposed to your code.
 
 You may declare fields the server did not publish and annotate what existing
-ones mean. You may not change execution identity — path, method, parameters,
-read-only or destructive classification — or the validation shape of a field the
+ones mean. You may not change execution identity (path, method, parameters,
+read-only or destructive classification) or the validation shape of a field the
 server did publish. Anything else raises `ContractAmendmentError` and changes
 nothing.
 
 **This is not inert annotation.** Accepted amendments can change what the
 caller receives and which routes are reachable:
 
-- **Routing.** Declaring a semantic ID or unit may make a cross-provider
+- Routing: declaring a semantic ID or unit may make a cross-provider
   fallback compatible that previously was not. That is the point of
-  provider-neutral field naming, but it is a real effect worth knowing.
-- **Values.** A declared `unit_normalization` rescales the numeric value on
-  the result path before the caller sees it — `item * scale + offset`.
-- **Projection boundary.** `path` / `result_path` on an existing field
+  provider-neutral field naming.
+- Values: a declared `unit_normalization` rescales the numeric value on
+  the result path before the caller sees it: `item * scale + offset`.
+- Projection boundary: `path` / `result_path` on an existing field
   re-point which value a sanctioned field name returns. Projection is the
   redaction boundary for a field-selecting call, so amending these can move
   previously unprojected response content into the answer under the same
@@ -184,21 +246,21 @@ caller receives and which routes are reachable:
   `{"public": {"band_gap": 1.1}}` to returning
   `{"internal": {"unreleased_band_gap": 9.9}}` if the amended `path` points
   there.
-- **Evidence gates.** `source_type`, `license`, and `unit` feed evidence
+- Evidence gates: `source_type`, `license`, and `unit` feed evidence
   availability, which the executor enforces as a hard gate. An amendment can
   unblock an evidence-gated route by declaration alone, with no change to
   what the underlying source actually returns.
-- **Access health.** Access-availability cooldowns (`mark_access_unavailable`)
+- Access health: access-availability cooldowns (`mark_access_unavailable`)
   are keyed by tool fingerprint. An amendment changes the fingerprint, so it
   clears any active cooldown for the capability. `add_tool(..., replace=True)`
   also clears cooldowns this way, but leaves the capability unexecutable until
   it is rebound; amendment is the operation that clears a cooldown while
   keeping the capability executable through the re-stamped binding.
-- **Framework bridge tools must be rebuilt.** `to_langchain_tool` /
+- Framework bridge tools must be rebuilt: `to_langchain_tool` /
   `to_langchain_tools` and the LlamaIndex bridge capture the tool/endpoint
   fingerprint and output field list when the bridge tool is built. Every
   bridge tool built before an amendment raises `SchemaDriftError` on every
-  call afterward — correct fail-closed behaviour, but it means you must
+  call afterward. That is correct fail-closed behaviour, but it means you must
   rebuild bridge tools from the amended router, not just re-amend the
   capability. `to_langgraph_node` is unaffected, since it calls
   `router.invoke()` per invocation instead of capturing fingerprints upfront.

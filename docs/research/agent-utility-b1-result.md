@@ -1,15 +1,15 @@
 # 0.14 B1 canonical local-agent result
 
-Tracking issue: **#420**  
-Parent research cycle: **#417**  
-Canonical workflow: **36529108855**  
+Tracking issue: #420  
+Parent research cycle: #417  
+Canonical workflow: 36529108855  
 Canonical source: `b9eadefd3cd076f026a54bbc55a949f0424f5dab`
 
 ## Status
 
 B1 is terminal.
 
-The canonical run completed all 30 frozen micro-shards and aggregated exactly **552**
+The canonical run completed all 30 frozen micro-shards and aggregated exactly 552
 unique `(catalog_size, task_id, condition)` episodes.
 
 The canonical aggregate is identified by:
@@ -57,7 +57,7 @@ non-inferiority claim.
 | ORACLE | 86.96% | 100.00% | 441.3 | 1.82% | diagnostic |
 
 For the fixed small Qwen agent, SR-5 improved deterministic task pass by
-**+22.83 percentage points** relative to FULL while exposing only **5.42%** of
+**+22.83 percentage points** relative to FULL while exposing only 5.42% of
 FULL tool-schema tokens.
 
 The task-clustered paired bootstrap interval for the SR-5 minus FULL task-pass
@@ -116,4 +116,4 @@ B1 alone does not support:
 - claims about final-answer factuality, unit correctness or provenance;
 - production-grade generalization.
 
-Those require **#423**, **#432**, and **#424** respectively.
+Those require #423, #432, and #424 respectively.

@@ -185,7 +185,7 @@ header simple object, explode=true:
   -> X-Meta: role=admin,active=true
 ```
 
-SchemaRouter deliberately fails closed for parameter serialization modes it does not yet emit
+SchemaRouter fails closed for parameter serialization modes it does not yet emit
 exactly, including non-default styles such as `matrix`, `label`, `spaceDelimited`,
 `pipeDelimited`, and `deepObject`. Query parameters with `allowReserved: true` are also
 rejected rather than silently changing reserved-character semantics.
@@ -262,7 +262,7 @@ scope:
 - `$id` and `$anchor` are removed from the final runtime bundle after rewriting so validation
   does not trigger a second external-resolution path.
 
-The current bounded resolver intentionally fails closed for:
+The current bounded resolver fails closed for:
 
 - cross-origin referenced documents or cross-origin `$id` base URIs;
 - `$id` values with fragments;
@@ -271,8 +271,49 @@ The current bounded resolver intentionally fails closed for:
 - depth/document/byte limit exhaustion;
 - unstructured referenced content.
 
-Dynamic JSON Schema scope is deliberately excluded because statically rewriting it as an ordinary
+Dynamic JSON Schema scope is excluded because rewriting it statically as an ordinary
 anchor could change validation semantics.
+
+## Nested response-field discovery
+
+OpenAPI response objects can expose useful fields below an envelope. SchemaRouter preserves the
+existing top-level field and also exposes declared nested **object** properties with a deterministic
+dotted field identity.
+
+For example, a response schema shaped like:
+
+```text
+data
+  band_gap
+  density
+```
+
+exposes `data`, `data.band_gap`, and `data.density`. The nested fields retain their declared
+JSON Schema, description, unit metadata, and source path. Their projected result key is the dotted
+field name, so selecting a nested field does not collide with selecting its parent object.
+
+Recursive local references are bounded and cycle-safe. Declared arrays of objects also expose
+record-preserving item fields. For example, `data[].band_gap` uses the source/result path
+`["data", "*", "band_gap"]`. The `*` segment means “for each declared array item”; SchemaRouter
+never infers wildcard fields from observed payloads.
+
+Selecting several item fields preserves each source record:
+
+```text
+data[].band_gap + data[].density
+    -> data:
+         - {band_gap: ..., density: ...}
+         - {band_gap: ..., density: ...}
+```
+
+Root response arrays remain implicit: a response shaped as `[{id, score}, ...]` exposes `id` and
+`score`, not synthetic root names such as `[].id`.
+
+Nested discovery also preserves the existing typed-contract split. Provider-declared JSON Schema,
+description, and source unit metadata are imported when available. Semantic IDs, qualifiers,
+canonical-unit normalization, source type, and licence may be attached afterward through trusted
+`amend_capability()`. Conversion factors and semantic provenance are never inferred from unit
+strings or arbitrary remote documentation.
 
 ## Current common subset
 
@@ -298,7 +339,7 @@ Supported paths include:
 - runtime origin confinement.
 
 Dynamic JSON Schema references/anchors and automatic planner-side schema-variant selection remain
-follow-up work. Variant request bodies stay intentionally unflattened even though they are
+follow-up work. Variant request bodies stay unflattened even though they are
 executable as one typed root body. Response variant
 fields may be selected for projection, but a field that is absent from the actual validated
 response variant is simply absent from the projected result. Unsupported constructs should not be

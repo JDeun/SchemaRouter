@@ -1,7 +1,7 @@
 # 0.14 intent-manual DEV result
 
-Tracking issue: **#434**  
-Canonical DEV workflow: **36547832179**  
+Tracking issue: #434  
+Canonical DEV workflow: 36547832179  
 Canonical source: `9cf85e3c45491886a5f01a190e8e8e04f24898a7`
 
 ## Status
@@ -58,9 +58,9 @@ All deltas are relative to RAW-SPEC under the same BM25 implementation.
 
 | Candidate | Recall@5 Δ | FullCoverage@5 Δ | Recall@10 Δ | Max p95 ratio | Max index ratio | DEV promotion |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| TYPED-MULTIFIELD | +1.538pp | **+2.000pp** | 0.000pp | **1.873×** | 1.469× | No |
-| INTENT-MANUAL | +1.154pp | +1.500pp | **-1.538pp** | **1.707×** | 1.328× | No |
-| TYPED+INTENT | +1.154pp | +1.500pp | **-0.769pp** | **5.887×** | 2.787× | No |
+| TYPED-MULTIFIELD | +1.538pp | **+2.000pp** | 0.000pp | 1.873× | 1.469× | No |
+| INTENT-MANUAL | +1.154pp | +1.500pp | -1.538pp | 1.707× | 1.328× | No |
+| TYPED+INTENT | +1.154pp | +1.500pp | -0.769pp | 5.887× | 2.787× | No |
 
 Frozen requirements:
 
@@ -73,13 +73,13 @@ Frozen requirements:
 ### TYPED-MULTIFIELD
 
 This condition produced a real quality signal: FullCoverage@5 improved exactly
-**+2.0pp**, and Recall@10 was unchanged. It nevertheless fails the unchanged
-latency guardrail at **1.873×** RAW-SPEC.
++2.0pp, and Recall@10 was unchanged. It nevertheless fails the unchanged
+latency guardrail at 1.873× RAW-SPEC.
 
 The gain is not uniform. Its largest DEV benefit is concentrated in
-three-step composition, where mean FullCoverage@5 improves by about **+35pp**.
-It loses about **10pp** on destructive/non-destructive sibling tasks and about
-**5pp** on read/write sibling tasks.
+three-step composition, where mean FullCoverage@5 improves by about +35pp.
+It loses about 10pp on destructive/non-destructive sibling tasks and about
+5pp on read/write sibling tasks.
 
 This is useful representation evidence, but not enough to promote the multi-field
 RRF path as a default.
@@ -87,11 +87,11 @@ RRF path as a default.
 ### INTENT-MANUAL
 
 The deterministic capability-conditioned manual improves three-step composition
-FullCoverage@5 by about **+15pp**, but the global gains are smaller than the
+FullCoverage@5 by about +15pp, but the global gains are smaller than the
 preregistered +2pp threshold.
 
-It also lowers Recall@10 by about **1.54pp** and exceeds the latency ratio gate.
-Therefore metadata-only deterministic intent expansion is not promoted.
+It also lowers Recall@10 by about 1.54pp and exceeds the latency ratio gate.
+Metadata-only deterministic intent expansion is not promoted.
 
 At 1000 endpoints, the intent manual does show a scaling signal:
 
@@ -127,11 +127,11 @@ Retain:
 4. the exact generator and evaluation artifacts for a future independently
    preregistered successor, if one is warranted.
 
-The main 0.14 evidence sequence therefore returns to:
+So the main 0.14 evidence sequence returns to:
 
-- **#423** strong-agent B2 replication;
-- **#432** large independent held-out generalization;
-- **#424** final-answer factuality / units / provenance.
+- #423 strong-agent B2 replication;
+- #432 large independent held-out generalization;
+- #424 final-answer factuality / units / provenance.
 
 This result does not modify the released 0.11.0 product default and is not retrofitted
 into B1.

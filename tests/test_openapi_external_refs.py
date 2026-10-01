@@ -129,7 +129,11 @@ async def test_opt_in_resolves_same_origin_nested_external_refs_and_preserves_va
     tool = router.registry.get("external_refs_api")
     endpoint = tool.endpoint("get_user")
 
-    assert [field.name for field in endpoint.output_fields] == ["id", "profile"]
+    assert [field.name for field in endpoint.output_fields] == [
+        "id",
+        "profile",
+        "profile.name",
+    ]
     assert tool.metadata["external_refs_enabled"] is True
     assert tool.metadata["external_ref_documents_resolved"] == 2
     assert tool.metadata["external_ref_bytes_fetched"] > 0
@@ -407,7 +411,11 @@ async def test_external_ref_supports_same_origin_schema_id_rebasing() -> None:
     tool = router.registry.get("external_refs_api")
     endpoint = tool.endpoint("get_user")
 
-    assert [field.name for field in endpoint.output_fields] == ["id", "profile"]
+    assert [field.name for field in endpoint.output_fields] == [
+        "id",
+        "profile",
+        "profile.name",
+    ]
     assert "$id" not in json.dumps(endpoint.output_schema)
     assert "$anchor" not in json.dumps(endpoint.output_schema)
 

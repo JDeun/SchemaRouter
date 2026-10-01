@@ -116,4 +116,4 @@ with SQLiteRunTraceStore("traces.sqlite3") as store:
 
 Run traces are an observability/audit mechanism, not a checkpoint system for resuming agent control
 flow. LangGraph or another orchestration layer should continue to own workflow checkpoints and
-memory. SchemaRouter trace replay is deliberately non-executing.
+memory. SchemaRouter trace replay stays non-executing.

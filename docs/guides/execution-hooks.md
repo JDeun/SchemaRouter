@@ -51,7 +51,7 @@ plan
  -> ToolResult
 ```
 
-A before hook therefore cannot bypass schema validation, execution policy, approval, or binding
+A before hook cannot bypass schema validation, execution policy, approval, or binding
 checks. Because a hook may await, SchemaRouter refreshes executable state after all before hooks
 finish.
 
@@ -70,9 +70,8 @@ An after hook additionally receives the final projected `ToolResult`.
 Mutating those objects does not mutate the executable call, registry schema, or result returned to
 the caller.
 
-Hooks must return `None`. Any other return value raises `ExecutionHookError`. This deliberately
-avoids an implicit transformation API that could alter arguments, fields, schemas, or execution
-authority.
+Hooks must return `None`. Any other return value raises `ExecutionHookError`. This avoids an
+implicit transformation API that could alter arguments, fields, schemas, or execution authority.
 
 ## Failure behavior
 
@@ -83,7 +82,7 @@ Hook failures are fail-closed.
 - Hook failures are never treated as retryable tool failures.
 - In particular, an after-hook failure does **not** repeat a successful read-only invocation.
 
-A hook can deliberately veto execution by raising an exception. SchemaRouter wraps ordinary hook
+A hook can veto execution by raising an exception. SchemaRouter wraps ordinary hook
 exceptions in `ExecutionHookError`. Elapsed-budget expiration remains an
 `ExecutionBudgetExceededError` and is not rewritten as a hook failure.
 

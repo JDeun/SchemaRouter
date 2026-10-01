@@ -242,6 +242,121 @@ def _field_from_property(name: str, spec: dict[str, Any]) -> FieldSpec:
     )
 
 
+_NESTED_PROPERTY_MAX_DEPTH = 8
+
+
+def _schema_type_includes(schema: dict[str, Any], expected: str) -> bool:
+    raw = schema.get("type")
+    if isinstance(raw, str):
+        return raw == expected
+    return isinstance(raw, list) and expected in raw
+
+
+def _optimade_field_name_from_path(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if not parts:
+                raise ValueError("array wildcard cannot be the first named field segment")
+            parts[-1] = parts[-1] + "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
+def _nested_property_fields(
+    parent_name: str,
+    spec: dict[str, Any],
+) -> list[FieldSpec]:
+    """Expose nested dictionary and list-item children under one top-level wire property."""
+
+    discovered: list[FieldSpec] = []
+
+    def visit(
+        schema: dict[str, Any],
+        *,
+        path: tuple[str, ...],
+        depth: int,
+    ) -> None:
+        if depth >= _NESTED_PROPERTY_MAX_DEPTH:
+            return
+        normalized = _property_schema(schema)
+
+        if _schema_type_includes(normalized, "array"):
+            normalized_items = normalized.get("items")
+            raw_items = schema.get("items")
+            item_schema = (
+                raw_items
+                if isinstance(raw_items, dict)
+                else normalized_items
+            )
+            if isinstance(item_schema, dict):
+                visit(
+                    item_schema,
+                    path=(*path, "*"),
+                    depth=depth + 1,
+                )
+            return
+
+        properties = normalized.get("properties")
+        if not isinstance(properties, dict):
+            return
+
+        raw_properties = schema.get("properties")
+        if not isinstance(raw_properties, dict):
+            raw_properties = {}
+
+        for child_name, child_schema in properties.items():
+            if not isinstance(child_schema, dict):
+                continue
+            child_path = (*path, str(child_name))
+            field_name = _optimade_field_name_from_path(child_path)
+            raw_child = raw_properties.get(child_name, child_schema)
+            if not isinstance(raw_child, dict):
+                raw_child = child_schema
+            description = str(
+                raw_child.get("description")
+                or raw_child.get("title")
+                or child_schema.get("description")
+                or child_schema.get("title")
+                or ""
+            )
+            unit = raw_child.get("x-optimade-unit") or raw_child.get("unit")
+            discovered.append(
+                FieldSpec(
+                    name=field_name,
+                    description=description,
+                    json_schema=child_schema,
+                    aliases=list(
+                        dict.fromkeys(
+                            [str(child_name), str(child_name).replace("_", " ")]
+                        )
+                    ),
+                    path=list(child_path),
+                    result_path=(
+                        list(child_path)
+                        if "*" in child_path
+                        else [field_name]
+                    ),
+                    unit=(
+                        str(unit)
+                        if unit not in {None, "inapplicable"}
+                        else None
+                    ),
+                    identifier=False,
+                    source_type="optimade",
+                )
+            )
+            visit(
+                raw_child,
+                path=child_path,
+                depth=depth + 1,
+            )
+
+    visit(spec, path=(parent_name,), depth=0)
+    return discovered
+
+
 def _output_schema(fields: list[FieldSpec], *, many: bool) -> dict[str, Any]:
     properties = {field.name: deepcopy(field.json_schema) for field in fields}
     item = {
@@ -343,7 +458,7 @@ def _tool_from_discovery(
         else:
             json_fields = [str(field) for field in properties]
 
-        fields = [
+        identity_fields = [
             FieldSpec(
                 name="id",
                 description="OPTIMADE entry identifier.",
@@ -360,6 +475,9 @@ def _tool_from_discovery(
                 source_type="optimade",
             ),
         ]
+        fields = list(identity_fields)
+        raw_fields = list(identity_fields)
+        projection_map: dict[str, str] = {}
         seen = {"id", "type"}
         for field_name in json_fields:
             if field_name in seen:
@@ -367,8 +485,17 @@ def _tool_from_discovery(
             raw_spec = properties.get(field_name)
             if not isinstance(raw_spec, dict):
                 continue
-            fields.append(_field_from_property(field_name, raw_spec))
+            top_level = _field_from_property(field_name, raw_spec)
+            fields.append(top_level)
+            raw_fields.append(top_level)
             seen.add(field_name)
+
+            for nested in _nested_property_fields(field_name, raw_spec):
+                if nested.name in seen:
+                    continue
+                fields.append(nested)
+                projection_map[nested.name] = field_name
+                seen.add(nested.name)
 
         token = _endpoint_token(entry_type)
         description = str(info.get("description") or f"OPTIMADE {entry_type} entries")
@@ -380,13 +507,14 @@ def _tool_from_discovery(
                     description=f"Search {description}",
                     parameters=_search_parameters(),
                     output_fields=fields,
-                    output_schema=_output_schema(fields, many=True),
+                    output_schema=_output_schema(raw_fields, many=True),
                     method="GET",
                     path=f"/{safe_entry_type}",
                     read_only=True,
                     destructive=False,
                     server_projection=ServerProjectionSpec(
                         parameter="response_fields",
+                        field_map=projection_map,
                     ),
                     execution_metadata={
                         "entry_type": entry_type,
@@ -413,13 +541,14 @@ def _tool_from_discovery(
                         )
                     ],
                     output_fields=fields,
-                    output_schema=_output_schema(fields, many=False),
+                    output_schema=_output_schema(raw_fields, many=False),
                     method="GET",
                     path=f"/{safe_entry_type}/{{id}}",
                     read_only=True,
                     destructive=False,
                     server_projection=ServerProjectionSpec(
                         parameter="response_fields",
+                        field_map=projection_map,
                     ),
                     execution_metadata={
                         "entry_type": entry_type,
@@ -609,15 +738,17 @@ class OPTIMADERemoteInvoker:
         }
         field_specs = {field.name: field for field in endpoint.output_fields}
         projection = endpoint.server_projection
-        selected_wire_fields = [
-            (
-                projection.selector_for(field_specs[field_name])
-                if projection is not None and field_name in field_specs
-                else field_name
+        selected_wire_fields = list(
+            dict.fromkeys(
+                (
+                    projection.selector_for(field_specs[field_name])
+                    if projection is not None and field_name in field_specs
+                    else field_name
+                )
+                for field_name in call.fields
+                if field_name not in {"id", "type"}
             )
-            for field_name in call.fields
-            if field_name not in {"id", "type"}
-        ]
+        )
         if selected_wire_fields:
             query["response_fields"] = ",".join(selected_wire_fields)
         if mode == "search":
@@ -718,10 +849,10 @@ class OPTIMADERemoteInvoker:
         projected: dict[str, Any] = {}
         missing: list[str] = []
         for field_name in fields:
+            field_spec = field_specs.get(field_name)
             if field_name in {"id", "type"}:
                 wire_name = field_name
             else:
-                field_spec = field_specs.get(field_name)
                 wire_name = (
                     projection.selector_for(field_spec)
                     if projection is not None and field_spec is not None
@@ -730,7 +861,19 @@ class OPTIMADERemoteInvoker:
             if wire_name not in raw:
                 missing.append(field_name)
                 continue
-            projected[field_name] = raw[wire_name]
+
+            if (
+                field_spec is not None
+                and len(field_spec.projection_path) > 1
+                and field_spec.projection_path[0] == wire_name
+            ):
+                # Return the owning source object here. The generic executor validates that
+                # server-projected source shape, then applies FieldSpec.path/result_path exactly
+                # once. This preserves raw-schema validation and avoids adapter/core double
+                # projection for nested OPTIMADE fields.
+                projected[wire_name] = raw[wire_name]
+            else:
+                projected[field_name] = raw[wire_name]
 
         if missing:
             raise NonRetryableInvocationError(

@@ -37,9 +37,9 @@ Agreement is reported only when value, unit, and qualifiers agree. Different con
 
 Document identity currently prefers DOI, then PMID, PMCID, and arXiv identifiers. DOI URLs and `doi:` prefixes are normalized before comparison.
 
-Material and chemical identity is intentionally stricter than retrieval matching. A formula such as `SiO2` or `C2H6O` may be useful for finding candidate providers, but it is not sufficient to prove that two returned records describe the same structure or compound. Material records require an explicit material/structure identity such as `material_id`, `structure_id`, `structure_hash`, or `crystal_id`; chemical records use structural identifiers such as InChIKey, InChI, canonical/isomeric SMILES, or CID. Formula-only records remain separate entities.
+Material and chemical identity is stricter than retrieval matching. A formula such as `SiO2` or `C2H6O` may be useful for finding candidate providers, but it is not sufficient to prove that two returned records describe the same structure or compound. Material records require an explicit material/structure identity such as `material_id`, `structure_id`, `structure_hash`, or `crystal_id`; chemical records use structural identifiers such as InChIKey, InChI, canonical/isomeric SMILES, or CID. Formula-only records remain separate entities.
 
-SchemaRouter deliberately does **not** merge records solely because titles or names look similar. Applications may perform a separate fuzzy entity-resolution step, but an uncertain match should not become a trusted canonical identity automatically.
+SchemaRouter does **not** merge records solely because titles or names look similar. Applications may perform a separate fuzzy entity-resolution step, but an uncertain match should not become a trusted canonical identity automatically.
 
 ## Example
 

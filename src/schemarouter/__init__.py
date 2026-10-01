@@ -1,6 +1,12 @@
 from ._version import __version__
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
-from .adapters.mcp import DefaultMCPClientFactory, MCPClientFactory
+from .adapters.mcp import (
+    DefaultMCPClientFactory,
+    MCPBoundClientFactory,
+    MCPClientFactory,
+    MCPStdioConfig,
+)
+from .adapters.odata import ODataSourceAdapter, tool_from_odata_metadata
 from .adapters.optimade import OPTIMADESourceAdapter
 from .adapters.plugins import (
     ADAPTER_ENTRY_POINT_GROUP,
@@ -214,11 +220,14 @@ __all__ = [
     "ToolInspection",
     "TraceInspection",
     "KeywordAnalyzer",
+    "MCPBoundClientFactory",
     "MCPClientFactory",
+    "MCPStdioConfig",
     "ModelAnalysisError",
     "ModelCallable",
     "ModelQueryAnalyzer",
     "NonRetryableInvocationError",
+    "ODataSourceAdapter",
     "OpenAPICompatibilityIssue",
     "OpenAPICompatibilityReport",
     "PairwiseDecisionBackend",
@@ -272,6 +281,7 @@ __all__ = [
     "UnsupportedSchemaSourceError",
     "schema_tool",
     "tool_from_callable",
+    "tool_from_odata_metadata",
     "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",

@@ -1,7 +1,7 @@
 # Jev / TypeSafe System One
 
 SchemaRouter provides an optional bounded-decision adapter for TypeSafe System One models such as
-Jev. The adapter is deliberately outside the core dependency graph and is **off by default**.
+Jev. The adapter sits outside the core dependency graph and is **off by default**.
 
 Jev does not author a SchemaRouter execution plan and does not act as an agent/orchestrator. It
 receives a finite set of option IDs and returns one of those IDs. It never owns tool execution,
@@ -82,7 +82,7 @@ The provider receives:
 - locally generated option IDs;
 - option labels and descriptions.
 
-The adapter intentionally does **not** forward `DecisionOption.metadata`. Runtime credentials,
+The adapter does **not** forward `DecisionOption.metadata`. Runtime credentials,
 transport credentials, invokers, and execution policy are never added to the model state.
 
 Set `include_context=False` when even bounded request context should remain local.
@@ -107,11 +107,11 @@ failure must stop planning.
 
 ## Current scope
 
-The Jev adapter currently asks one TypeSafe `choice` question and therefore returns at most one
+The Jev adapter currently asks one TypeSafe `choice` question, so it returns at most one
 candidate per decision call. `DecisionRequest.max_selections` remains an upper bound; the provider
 does not attempt multi-select ranking.
 
-This is intentional for the first provider integration. Multi-selection should use a dedicated
+Multi-selection should use a dedicated
 bounded contract rather than synthesizing additional choices from untrusted free-form output.
 
 ## Benchmarking

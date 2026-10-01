@@ -96,3 +96,40 @@ async def test_real_streamable_http_mcp_discovery_and_execution() -> None:
             process.stdout.close()
         if process.stderr is not None:
             process.stderr.close()
+
+
+@pytest.mark.asyncio
+async def test_real_stdio_mcp_discovery_and_execution() -> None:
+    server = Path(__file__).parent / "fixtures" / "mcp_stdio_server.py"
+    router = SchemaRouter(
+        policy=ExecutionPolicy(allow_unclassified_remote=True)
+    )
+
+    tool = await router.add_mcp_stdio(
+        sys.executable,
+        args=[str(server)],
+        allowed_commands=[sys.executable],
+        name="stdio-fixture",
+    )
+
+    assert tool.metadata["adapter"] == "mcp"
+    assert tool.metadata["transport"] == "stdio"
+    assert tool.metadata["protocol_version"]
+    assert tool.execution_metadata["transport"] == "stdio"
+    assert tool.remote is True
+    assert tool.access_mode == "mcp_stdio"
+    assert sys.executable not in repr(tool.model_dump(mode="json"))
+    assert str(server) not in repr(tool.model_dump(mode="json"))
+    assert [endpoint.name for endpoint in tool.endpoints] == ["add"]
+
+    plan = router.plan(
+        PlanRequest(
+            query="add result",
+            preferred_tools=[tool.key],
+            arguments={"a": 7, "b": 8},
+        )
+    )
+    assert plan.executable
+
+    results = await router.execute(plan)
+    assert results[0].data == {"result": 15}

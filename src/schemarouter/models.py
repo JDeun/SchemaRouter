@@ -105,15 +105,58 @@ def _schema_type_shape_compatible(
     return True
 
 
+def _resolve_local_schema_ref(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> dict[str, Any]:
+    """Resolve only local JSON Schema refs against the endpoint's own schema document."""
+
+    current = schema
+    seen: set[str] = set()
+    while isinstance(current, dict):
+        ref = current.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/") or ref in seen:
+            return current
+        seen.add(ref)
+
+        node: Any = document
+        try:
+            for raw in ref[2:].split("/"):
+                part = raw.replace("~1", "/").replace("~0", "~")
+                node = node[part]
+        except (KeyError, TypeError):
+            return current
+        if not isinstance(node, dict):
+            return current
+
+        merged = dict(node)
+        merged.update({key: value for key, value in current.items() if key != "$ref"})
+        current = merged
+    return schema
+
+
 def _schema_at_projection_path(
     output_schema: dict[str, Any],
     path: tuple[str, ...],
 ) -> dict[str, Any]:
-    schema = output_schema
-    if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
-        schema = schema["items"]
+    document = output_schema
+    schema = _resolve_local_schema_ref(document, output_schema)
+    if "array" in _schema_types(schema) and isinstance(schema.get("items"), dict):
+        # Root collection endpoints historically address fields relative to each record.
+        schema = _resolve_local_schema_ref(document, schema["items"])
+
     for part in path:
-        if schema.get("type") != "object":
+        schema = _resolve_local_schema_ref(document, schema)
+        if part == "*":
+            if "array" not in _schema_types(schema):
+                return {}
+            items = schema.get("items")
+            if not isinstance(items, dict):
+                return {}
+            schema = _resolve_local_schema_ref(document, items)
+            continue
+
+        if "object" not in _schema_types(schema):
             return {}
         properties = schema.get("properties")
         if not isinstance(properties, dict):
@@ -121,7 +164,7 @@ def _schema_at_projection_path(
         child = properties.get(part)
         if not isinstance(child, dict):
             return {}
-        schema = child
+        schema = _resolve_local_schema_ref(document, child)
     return schema
 
 
@@ -271,6 +314,33 @@ class FieldSpec(StrictModel):
             raise ValueError("field path requires non-empty string segments")
         if any(not isinstance(part, str) or not part for part in self.result_path):
             raise ValueError("field result_path requires non-empty string segments")
+        source_wildcards = [
+            index
+            for index, part in enumerate(self.path)
+            if part == "*"
+        ]
+        result_wildcards = [
+            index
+            for index, part in enumerate(self.result_path)
+            if part == "*"
+        ]
+        if source_wildcards:
+            if source_wildcards[0] == 0:
+                raise ValueError("array wildcard must not begin a field path")
+            if source_wildcards[-1] == len(self.path) - 1:
+                raise ValueError("array wildcard must not end a field path")
+            if not self.result_path:
+                raise ValueError(
+                    "array-item field paths require an explicit result_path"
+                )
+            if result_wildcards and result_wildcards[0] == 0:
+                raise ValueError("array wildcard must not begin a result path")
+            if result_wildcards and result_wildcards[-1] == len(self.result_path) - 1:
+                raise ValueError("array wildcard must not end a result path")
+            if source_wildcards != result_wildcards:
+                raise ValueError(
+                    "array-item source/result paths must preserve wildcard positions"
+                )
         if self.unit is not None:
             if not self.unit.strip():
                 raise ValueError("field unit must be non-empty when provided")
@@ -451,14 +521,41 @@ class EndpointSpec(StrictModel):
         paths = [(field.name, field.projection_path) for field in self.output_fields]
         if len({path for _, path in paths}) != len(paths):
             raise ValueError(f"duplicate output field path in endpoint {self.name!r}")
-        for index, (left_name, left_path) in enumerate(paths):
-            for right_name, right_path in paths[index + 1 :]:
-                shorter, longer = (
+
+        # Source paths may overlap (for example "data" and "data.band_gap") as long as their
+        # projected result paths do not. This lets adapters expose nested declared fields while
+        # preserving the existing parent field. Result-path collision checks below remain the
+        # fail-closed boundary for ambiguous projection output.
+        # Preserve the historical validation error when overlapping source paths would also
+        # collide in the projected result. Source-path overlap is allowed only when adapters
+        # explicitly remap the result paths to disjoint keys.
+        projection_entries = [
+            (field.name, field.projection_path, field.result_projection_path)
+            for field in self.output_fields
+        ]
+        for index, (left_name, left_path, left_result) in enumerate(projection_entries):
+            for right_name, right_path, right_result in projection_entries[index + 1 :]:
+                source_shorter, source_longer = (
                     (left_path, right_path)
                     if len(left_path) <= len(right_path)
                     else (right_path, left_path)
                 )
-                if longer[: len(shorter)] == shorter:
+                result_shorter, result_longer = (
+                    (left_result, right_result)
+                    if len(left_result) <= len(right_result)
+                    else (right_result, left_result)
+                )
+                source_overlaps = (
+                    source_longer[: len(source_shorter)] == source_shorter
+                )
+                result_overlaps = (
+                    result_longer[: len(result_shorter)] == result_shorter
+                )
+                wildcard_mergeable = (
+                    "*" in source_longer
+                    and "*" in result_longer
+                )
+                if source_overlaps and result_overlaps and not wildcard_mergeable:
                     raise ValueError(
                         "overlapping output field paths in endpoint "
                         f"{self.name!r}: {left_name!r} and {right_name!r}"
@@ -477,7 +574,10 @@ class EndpointSpec(StrictModel):
                     if len(left_path) <= len(right_path)
                     else (right_path, left_path)
                 )
-                if longer[: len(shorter)] == shorter:
+                if (
+                    longer[: len(shorter)] == shorter
+                    and "*" not in longer
+                ):
                     raise ValueError(
                         "overlapping output result paths in endpoint "
                         f"{self.name!r}: {left_name!r} and {right_name!r}"

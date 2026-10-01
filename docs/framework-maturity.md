@@ -1,6 +1,6 @@
 # Framework maturity matrix
 
-SchemaRouter is intentionally narrower than LangChain. The goal is not to reproduce a general
+SchemaRouter is narrower than LangChain by design. The goal is not to reproduce a general
 agent framework; it is to make schema-aware tool planning and execution production-grade and easy
 to embed in larger ecosystems.
 
@@ -28,7 +28,8 @@ This document tracks framework-level maturity rather than research metrics.
 | Structured-source adapter registry | Implemented with explicit entry-point plugins | Expand certified third-party adapters |
 | OpenAPI ingestion | Common subset + operation-over-path parameter overrides + default path/query/header serialization + flattened object bodies + generic typed JSON root bodies + discriminator-aware tagged oneOf bodies + schema-less body reporting + spec-ignored header filtering + collision-safe generated operation names + multi-2xx JSON/no-content response validation + local refs + opt-in bounded same-origin cross-document refs + static same-origin $id/$anchor resolution + OpenAPI 3.0 nullable normalization + allOf object flattening + oneOf/anyOf response-field discovery + compatibility report | Keep dynamic refs, non-default parameter styles, and automatic variant selection fail-closed; expand only behind typed contracts |
 | OPTIMADE ingestion and execution | Implemented in v0.2 | Add provider federation / index meta-database traversal |
-| MCP ingestion and execution | Implemented with authenticated/custom transport boundary | Expand OAuth/gateway examples |
+| MCP ingestion and execution | Implemented with Streamable HTTP, trusted stdio subprocesses, and caller-owned transport-neutral client factories | Expand OAuth/gateway examples |
+| GraphQL / OData / OpenRPC ingestion | Implemented on current main with native selection/projection or RPC semantics | Extend only where protocol semantics are deterministic |
 | Human-readable API documentation | Grounded proposal flow | Add multi-page/browser discovery |
 | Runtime policy | Category defaults + ordered operation-scoped allow/deny/approval rules + execution budgets | Add external organization policy adapters only behind the trusted local boundary |
 | Runtime JSON Schema validation / projection | Full raw validation + explicit nested object projection paths + trusted server-side field selectors | Add typed array-element projection only if needed |
@@ -82,8 +83,10 @@ They are intended for serving layers, UI generation, testing, and framework inte
 ### 3. Tool authoring must be cheap
 
 Python callables can be registered directly through `add_callable()` and optionally annotated with
-`@schema_tool`. OpenAPI, OPTIMADE, and MCP are built-in structured ingestion paths, while
-`AdapterRegistry` keeps additional protocols out of the core planner.
+`@schema_tool`. Explicit ToolSpec + trusted invoker binding covers opaque SDKs. OpenAPI, OPTIMADE,
+MCP, GraphQL, OData, and OpenRPC are built-in structured paths, while `AdapterRegistry` keeps
+additional protocol logic out of the core planner. Existing LangChain/LlamaIndex tools can also be
+imported into the canonical capability model.
 
 ### 4. Integrations should be optional
 

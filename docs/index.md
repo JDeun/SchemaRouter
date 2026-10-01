@@ -19,7 +19,7 @@ pip install schemarouter
 ```
 
 [Get started](getting-started/installation.md){ .md-button .md-button--primary }
-[Declare an MCP result contract](guides/mcp.md){ .md-button }
+[Declare an MCP result contract](guides/mcp.md#declare-a-result-contract-the-server-does-not-publish){ .md-button }
 [GitHub](https://github.com/JDeun/SchemaRouter){ .md-button }
 
 </div>
@@ -50,24 +50,22 @@ pip install schemarouter
 
 ## Where it fits
 
-```text
-LangChain / LangGraph / LlamaIndex / your orchestrator
-                         |
-                    SchemaRouter
-                         |
-          OpenAPI / MCP / OPTIMADE / Python
+```mermaid
+flowchart TD
+    F["LangChain / LangGraph / LlamaIndex / your orchestrator"] --> SR["SchemaRouter"]
+    SR --> T["OpenAPI / MCP / OPTIMADE / Python"]
 ```
 
 SchemaRouter does not replace an agent or RAG pipeline and does not perform final generation. It
 provides a structured retrieval/execution boundary when the external source is an API, MCP server,
 OPTIMADE service, or typed callable rather than a document corpus.
 
-Its registry is a logical capability graph/index, while the registered schema remains execution
+Its registry is a logical capability graph/index, while the registered schema is execution
 authority.
 
 [Read the RAG positioning and capability model →](concepts/capability-catalog.md)
 
-SchemaRouter is deliberately narrower than an agent framework. The orchestrator owns conversation,
+SchemaRouter is narrower than an agent framework. The orchestrator owns conversation,
 graphs, model invocation strategy, memory, checkpoints, and agent loops. SchemaRouter owns the
 **tool-schema execution boundary**.
 
@@ -85,7 +83,7 @@ SchemaRouter does not require a second local model stack.
 
 One request can require a union of semantic fields from different providers. SchemaRouter resolves
 that field set first, then selects complementary validated routes within the explicit `max_calls`
-bound—for example, Materials Project for `band_gap` and arXiv for `abstract`.
+bound: for example, Materials Project for `band_gap` and arXiv for `abstract`.
 
 [Read the field-first execution model →](concepts/field-first-execution.md) ·
 [Read the design principles →](concepts/design-principles.md)
@@ -158,10 +156,10 @@ flow and never becomes executable automatically.
 - input and raw output are validated with JSON Schema;
 - stale schema fingerprints and invoker bindings fail closed;
 - remote metadata and model output cannot grant mutation or destructive authority;
-- credentials remain outside model-visible planner arguments;
+- credentials stay outside model-visible planner arguments;
 - retries, wall-clock time, remote calls, response size, and optional cost units can be bounded;
 - OpenAPI compatibility gaps are reported instead of silently guessed;
-- event payloads remain redacted unless explicitly enabled;
+- event payloads are redacted unless explicitly enabled;
 - temporary access failures use finite cooldowns and optional trusted health probes rather than
   permanent blacklists;
 - provider/access fallback never broadens the logical field need compiled from the query.
@@ -178,7 +176,7 @@ frozen **stable core**. Research may improve ranking, index implementations, sho
 re-retrieval behind that boundary, but a benchmark improvement alone is not a reason to redesign
 the public facade.
 
-Retrieval remains side-effect free and non-authoritative: the surrounding agent chooses among
+Retrieval is side-effect free and non-authoritative: the surrounding agent chooses among
 registered candidates, while SchemaRouter still owns schema validation, policy and execution
 authority. Ongoing 0.14 agent-utility research is reported separately and is not required for the
 stable package to function.
@@ -186,6 +184,25 @@ stable package to function.
 [Read the 0.12.0 release notes →](releases/0.12.0.md) ·
 [Read the stable-core contract →](stable-core.md) ·
 [Read the routing research status →](research/routing-status.md)
+
+## Current research checkpoint
+
+The stable `0.12.0` public API is unchanged while the 0.14 research cycle evaluates the
+retrieval boundary more rigorously.
+
+- **B1** is terminal: SR-5 reached 91.30% task pass vs 68.48% for FULL while using
+  5.42% of FULL tool-schema tokens on the controlled Qwen3-0.6B surface.
+- **B2** is terminal success on the frozen SmolLM3-3B replication protocol.
+- A separate **structural K3-vs-K5** downstream gate failed its preregistered -2pp task-pass
+  promotion floor, so K3 is not promoted into the large held-out benchmark.
+- **#431 corrective re-retrieval** is the active gate. The 780-task **#432 held-out** benchmark and
+  **#424 final-answer quality** benchmark are downstream confirmation stages.
+
+These results are kept separate from the stable product contract and from any broad production
+claim.
+
+[Research status →](research/routing-status.md) ·
+[0.14 evidence checkpoint →](research/0.14-paper-evidence-checkpoint.md)
 
 ## Go deeper
 

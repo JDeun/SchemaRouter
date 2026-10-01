@@ -1,7 +1,7 @@
 # Design principles
 
-SchemaRouter is built around a narrow idea: **the user's data need is primary; tools, providers,
-and transports are replaceable implementation paths beneath that need.**
+SchemaRouter is built around a narrow idea: the user's data need is primary; tools, providers,
+and transports are replaceable implementation paths beneath that need.
 
 This page collects the principles that should guide new runtime features, adapters, and integrations.
 
@@ -24,14 +24,14 @@ returns. Provider selection comes after the required data surface is identified.
 
 One organization can expose the same underlying information through several access paths.
 
-```text
-Materials Project
-  -> native REST / OpenAPI
-  -> OPTIMADE
-  -> Python client
+```mermaid
+flowchart LR
+    MP["Materials Project"] --> R1["native REST / OpenAPI"]
+    MP --> R2["OPTIMADE"]
+    MP --> R3["Python client"]
 ```
 
-SchemaRouter therefore separates:
+SchemaRouter separates:
 
 - `provider`: who owns or supplies the information;
 - `access_mode`: how this contract reaches it;
@@ -69,15 +69,13 @@ The source type does not decide whether a unit exists. The field semantics do.
 
 A query can require a union of fields that no single endpoint provides.
 
-```text
-need: band_gap + paper abstract
-
-band_gap
-  -> Materials Project / OpenAPI
-  -> Materials Project / OPTIMADE
-
-paper abstract
-  -> arXiv / API
+```mermaid
+flowchart LR
+    N["need: band_gap + paper abstract"] --> BG["band_gap"]
+    N --> PA["paper abstract"]
+    BG --> M1["Materials Project / OpenAPI"]
+    BG --> M2["Materials Project / OPTIMADE"]
+    PA --> AX["arXiv / API"]
 ```
 
 When the application explicitly permits multiple calls with `PlanRequest.max_calls > 1`,
@@ -95,11 +93,11 @@ unavailable, unbound, or stale.
 Effective field availability is derived from the currently trusted routes capable of satisfying that
 field contract.
 
-```text
-elastic_modulus
-  -> provider A / OpenAPI   unavailable
-  -> provider A / OPTIMADE  healthy
-  -> provider B / API       healthy
+```mermaid
+flowchart LR
+    F["elastic_modulus"] -. unavailable .-> A1["provider A / OpenAPI"]
+    F -- healthy --> A2["provider A / OPTIMADE"]
+    F -- healthy --> B1["provider B / API"]
 ```
 
 Temporary failures use finite cooldowns and optional trusted read-only health probes. One failure
@@ -123,10 +121,10 @@ validation.
 
 ## 9. Models may assist selection, not create authority
 
-Optional hosted or local decision backends operate over finite locally registered candidates. They
+Optional hosted or local decision backends operate over finite, locally registered candidates. They
 cannot invent tools, schemas, credentials, health state, mutation authority, or new execution loops.
 
-SchemaRouter is therefore a bounded planning/execution layer, not another agent framework.
+SchemaRouter is a bounded planning/execution layer, not another agent framework.
 
 ## 10. Fail closed where equivalence cannot be proven
 
