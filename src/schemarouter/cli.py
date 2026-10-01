@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from .dashboard import write_dashboard
-from .errors import SchemaSourceError, UnsupportedSchemaSourceError
+from .errors import AdapterProbeError, SchemaSourceError, UnsupportedSchemaSourceError
 from .ingestion import SourceProbeResult, default_adapter_registry
 from .inspection import (
     RegistryInspection,
@@ -181,6 +181,24 @@ def _render_schema_diff(
     return "\n".join(lines)
 
 
+def _render_probe_diagnostics(diagnostics: Sequence[Any]) -> list[str]:
+    lines: list[str] = []
+    for diagnostic in diagnostics:
+        adapter = getattr(diagnostic, "adapter_kind", "unknown")
+        activity = getattr(diagnostic, "activity", None) or "unknown"
+        status = getattr(diagnostic, "status", "unknown")
+        error_type = getattr(diagnostic, "error_type", None)
+        status_code = getattr(diagnostic, "status_code", None)
+        suffix: list[str] = []
+        if status_code is not None:
+            suffix.append(f"HTTP {status_code}")
+        if error_type:
+            suffix.append(str(error_type))
+        detail = f" ({', '.join(suffix)})" if suffix else ""
+        lines.append(f"  - {adapter} [{activity}]: {status}{detail}")
+    return lines
+
+
 def _render_source_probe(probe: SourceProbeResult) -> str:
     lines = [
         f"Structured source: {probe.source_url}",
@@ -196,6 +214,9 @@ def _render_source_probe(probe: SourceProbeResult) -> str:
         lines.extend(f"  - {warning}" for warning in probe.warnings)
     else:
         lines.append("warnings: none")
+    if probe.diagnostics:
+        lines.append("probe diagnostics:")
+        lines.extend(_render_probe_diagnostics(probe.diagnostics))
     return "\n".join(lines)
 
 
@@ -495,19 +516,93 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         output = _run(args)
+    except AdapterProbeError as exc:
+        if args.command == "source":
+            diagnostic = {
+                "adapter_kind": exc.adapter_kind,
+                "status": exc.category,
+                "status_code": exc.status_code,
+                "error_type": (
+                    type(exc.__cause__).__name__
+                    if exc.__cause__ is not None
+                    else type(exc).__name__
+                ),
+                "message": str(exc),
+            }
+            if getattr(args, "json", False):
+                parser.exit(
+                    2,
+                    _json_dump(
+                        {
+                            "recognized": False,
+                            "error": "source_probe_failed",
+                            "diagnostics": [diagnostic],
+                        }
+                    )
+                    + "\n",
+                )
+            suffix = (
+                f" HTTP {exc.status_code}"
+                if exc.status_code is not None
+                else ""
+            )
+            parser.exit(
+                2,
+                (
+                    f"schemarouter: {exc.adapter_kind} probe failed "
+                    f"[{exc.category}{suffix}]: {exc}\n"
+                ),
+            )
+        parser.exit(2, f"schemarouter: {type(exc).__name__}: {exc}\n")
     except UnsupportedSchemaSourceError as exc:
         if args.command == "source":
             supported = ", ".join(default_adapter_registry().kinds())
+            diagnostics = list(getattr(exc, "diagnostics", ()))
+            if getattr(args, "json", False):
+                payload_diagnostics = [
+                    (
+                        diagnostic.model_dump(mode="json")
+                        if hasattr(diagnostic, "model_dump")
+                        else {"status": "protocol_error"}
+                    )
+                    for diagnostic in diagnostics
+                ]
+                parser.exit(
+                    2,
+                    _json_dump(
+                        {
+                            "recognized": False,
+                            "error": "unsupported_source",
+                            "supported_source_kinds": list(
+                                default_adapter_registry().kinds()
+                            ),
+                            "diagnostics": payload_diagnostics,
+                        }
+                    )
+                    + "\n",
+                )
+
+            diagnostic_lines = (
+                ["probe diagnostics:", *_render_probe_diagnostics(diagnostics)]
+                if diagnostics
+                else []
+            )
+            diagnostic_text = (
+                "\n".join(diagnostic_lines) + "\n"
+                if diagnostic_lines
+                else ""
+            )
             parser.exit(
                 2,
                 (
                     "schemarouter: source is not a supported structured source. "
                     f"{exc}\n"
-                    f"supported source kinds: {supported}\n"
-                    "A normal HTML website is not auto-converted into an executable tool. "
-                    "For human-readable API documentation, use SchemaRouter.inspect_url() "
-                    "followed by explicit proposal approval; for a trusted manual contract, "
-                    "use SchemaRouter.add_http_tool().\n"
+                    + diagnostic_text
+                    + f"supported source kinds: {supported}\n"
+                    + "A normal HTML website is not auto-converted into an executable tool. "
+                    + "For human-readable API documentation, use SchemaRouter.inspect_url() "
+                    + "followed by explicit proposal approval; for a trusted manual contract, "
+                    + "use SchemaRouter.add_http_tool().\n"
                 ),
             )
         parser.exit(2, f"schemarouter: {type(exc).__name__}: {exc}\n")
