@@ -182,6 +182,28 @@ jobs:
           path: artifacts/external-validation-openai-agents.json
           if-no-files-found: error
           retention-days: 30
+      - run: python -m venv /tmp/schemarouter-wheel-mcp-agent
+      - run: /tmp/schemarouter-wheel-mcp-agent/bin/python -m pip install --upgrade pip
+      - name: Install built wheel and pinned mcp-agent validation dependencies
+        run: |
+          WHEEL="$(pwd)/$(ls dist/*.whl)"
+          /tmp/schemarouter-wheel-mcp-agent/bin/pip install "$WHEEL"
+          /tmp/schemarouter-wheel-mcp-agent/bin/pip install -r examples/external_validation/mcp_agent_catalog/requirements.txt
+          /tmp/schemarouter-wheel-mcp-agent/bin/pip check
+      - name: Run focused mcp-agent catalog contract
+        run: |
+          /tmp/schemarouter-wheel-mcp-agent/bin/python -m unittest \
+            examples.external_validation.mcp_agent_catalog.contract_smoke -v
+      - name: Run mcp-agent large-tool-catalog external validation
+        run: |
+          /tmp/schemarouter-wheel-mcp-agent/bin/python scripts/external_validation_mcp_agent.py \
+            --json-out artifacts/external-validation-mcp-agent.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: external-validation-mcp-agent-${{ github.run_id }}
+          path: artifacts/external-validation-mcp-agent.json
+          if-no-files-found: error
+          retention-days: 30
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
       - run: /tmp/schemarouter-wheel/bin/python examples/sdk_bound_demo.py
       - run: /tmp/schemarouter-wheel/bin/python examples/mixed_provider_demo.py
