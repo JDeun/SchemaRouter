@@ -54,8 +54,23 @@ async def run_smoke(url: str) -> dict[str, object]:
     assert "type" not in first
 
     return {
+        "evidence_kind": "live_public_provider",
+        "provider": "COD OPTIMADE",
+        "discovery_success": True,
+        "tool_count": len(keys),
+        "endpoint_count": len(tool.endpoints),
+        "execution_bound": router.executor.is_binding_ready_for_contract(
+            tool.key,
+            tool.fingerprint,
+        ),
+        "execution_success": True,
+        "safe_endpoint": plan.calls[0].endpoint,
+        "returned_shape": "array<object>",
+        "auth_required": tool.endpoint(plan.calls[0].endpoint).auth_required,
+        "known_quirks": [
+            "Public provider availability and dataset latency vary."
+        ],
         "tool": tool_key,
-        "endpoint": plan.calls[0].endpoint,
         "api_version": tool.metadata["api_version"],
         "result_count": len(results[0].data),
         "first_id": first["id"],
@@ -68,9 +83,13 @@ async def main() -> None:
     args = parser.parse_args()
     url = os.environ.get("SCHEMAROUTER_LIVE_OPTIMADE_URL", DEFAULT_URL)
     report = new_report(adapter="optimade", source=url)
+    report["details"] = {
+        "evidence_kind": "live_public_provider",
+        "provider": "COD OPTIMADE",
+    }
 
     try:
-        report["details"] = await run_smoke(url)
+        report["details"].update(await run_smoke(url))
         report["status"] = "success"
     except Exception as exc:
         report["status"] = "failure"
