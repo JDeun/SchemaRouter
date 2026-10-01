@@ -437,3 +437,57 @@ async def test_materials_project_can_coexist_through_openapi_optimade_and_python
         for field in optimade_tool.endpoint("search_structures").output_fields
     }
     assert fields["band_gap"].unit == "eV"
+
+
+def test_direct_toolspec_is_lowest_level_canonical_ingestion_path() -> None:
+    tool = ToolSpec(
+        name="internal_catalog",
+        provider="internal",
+        access_mode="manual",
+        remote=False,
+        endpoints=[
+            EndpointSpec(
+                name="lookup",
+                read_only=True,
+                destructive=False,
+                parameters=[
+                    ParameterSpec(
+                        name="id",
+                        required=True,
+                        location="argument",
+                        json_schema={"type": "string"},
+                    )
+                ],
+                output_schema={
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "label": {"type": "string"},
+                    },
+                },
+                output_fields=[
+                    FieldSpec(
+                        name="id",
+                        json_schema={"type": "string"},
+                        identifier=True,
+                    ),
+                    FieldSpec(
+                        name="label",
+                        json_schema={"type": "string"},
+                    ),
+                ],
+            )
+        ],
+    )
+
+    router = SchemaRouter()
+    key = router.add_tool(tool)
+    registered = router.registry.get(key)
+
+    assert registered.provider == "internal"
+    assert registered.access_mode == "manual"
+    assert registered.endpoint("lookup").read_only is True
+    assert {field.name for field in registered.endpoint("lookup").output_fields} == {
+        "id",
+        "label",
+    }
