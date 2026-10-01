@@ -4,6 +4,7 @@ from schemarouter import (
     AdapterContext,
     AdapterLoadResult,
     AdapterRegistry,
+    DiscoveryProfile,
     EndpointSpec,
     SchemaRouter,
     ToolSpec,
@@ -11,9 +12,20 @@ from schemarouter import (
 
 
 class DummyAdapter:
-    def __init__(self, kind: str, priority: int, *, matches: bool = True) -> None:
+    def __init__(
+        self,
+        kind: str,
+        priority: int,
+        *,
+        matches: bool = True,
+        activity: str = "passive",
+    ) -> None:
         self.kind = kind
         self.priority = priority
+        self.discovery = DiscoveryProfile(
+            activity=activity,
+            http_methods=("GET",) if activity == "passive" else ("POST",),
+        )
         self.matches = matches
         self.calls: list[str] = []
 

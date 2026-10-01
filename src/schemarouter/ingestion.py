@@ -12,7 +12,13 @@ import yaml
 from pydantic import Field
 
 from ._url_safety import safe_provenance_url
-from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .adapters.base import (
+    AdapterContext,
+    AdapterLoadResult,
+    AdapterRegistry,
+    DiscoveryProfile,
+    SourceAdapter,
+)
 from .adapters.graphql import GraphQLSourceAdapter
 from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
 from .adapters.odata import ODataSourceAdapter
@@ -652,6 +658,11 @@ class _OpenAPIRefBundler:
 class OpenAPISourceAdapter:
     kind = "openapi"
     priority = 100
+    discovery = DiscoveryProfile(
+        activity="passive",
+        http_methods=("GET",),
+        derives_urls=True,
+    )
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None:
         owns_client = context.http_client is None
@@ -808,6 +819,10 @@ class OpenAPISourceAdapter:
 class MCPSourceAdapter:
     kind = "mcp"
     priority = 80
+    discovery = DiscoveryProfile(
+        activity="active",
+        opens_protocol_session=True,
+    )
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None:
         if context.base_url is not None:
@@ -917,6 +932,7 @@ class URLSchemaLoader:
         schema_validators: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: Any | None = None,
+        allow_active_probes: bool = False,
         openapi_external_refs: bool = False,
         openapi_ref_max_depth: int = _DEFAULT_OPENAPI_REF_MAX_DEPTH,
         openapi_ref_max_documents: int = _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS,
@@ -935,6 +951,7 @@ class URLSchemaLoader:
             schema_validators=schema_validators,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            allow_active_probes=allow_active_probes,
             openapi_external_refs=openapi_external_refs,
             openapi_ref_max_depth=openapi_ref_max_depth,
             openapi_ref_max_documents=openapi_ref_max_documents,
@@ -982,6 +999,7 @@ class URLSchemaLoader:
         schema_validators: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: Any | None = None,
+        allow_active_probes: bool = False,
         openapi_external_refs: bool = False,
         openapi_ref_max_depth: int = _DEFAULT_OPENAPI_REF_MAX_DEPTH,
         openapi_ref_max_documents: int = _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS,
@@ -989,6 +1007,8 @@ class URLSchemaLoader:
         timeout: float = 20.0,
     ) -> AdapterLoadResult:
         _validate_url(url)
+        if not isinstance(allow_active_probes, bool):
+            raise SchemaSourceError("allow_active_probes must be a boolean")
         if not isinstance(openapi_external_refs, bool):
             raise SchemaSourceError("openapi_external_refs must be a boolean")
         for value, label in (
@@ -1055,7 +1075,9 @@ class URLSchemaLoader:
             )
             return result
 
-        for adapter in self.adapters.ordered():
+        for adapter in self.adapters.auto_candidates(
+            allow_active_probes=allow_active_probes,
+        ):
             try:
                 result = await adapter.load(context)
             except Exception as exc:  # noqa: BLE001
@@ -1069,11 +1091,22 @@ class URLSchemaLoader:
                 )
                 return result
 
-        detail = "; ".join(diagnostics) or "no registered adapter recognized the source"
+        detail = "; ".join(diagnostics) or "no passive adapter recognized the source"
+        active_hint = ""
+        if not allow_active_probes:
+            skipped = self.adapters.skipped_active_kinds()
+            if skipped:
+                kinds = ", ".join(skipped)
+                active_hint = (
+                    f" Active protocol probes were skipped by default: {kinds}. "
+                    "Use an explicit kind for one trusted protocol, or set "
+                    "allow_active_probes=True to opt into active auto-discovery."
+                )
         raise UnsupportedSchemaSourceError(
-            "URL was not recognized by any registered structured-source adapter. "
+            "URL was not recognized by the eligible registered structured-source adapters. "
             "Human-readable documentation is intentionally not inferred in the safe path. "
             + detail
+            + active_hint
         )
 
     async def probe(
@@ -1088,6 +1121,7 @@ class URLSchemaLoader:
         schema_headers: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: Any | None = None,
+        allow_active_probes: bool = False,
         openapi_external_refs: bool = False,
         openapi_ref_max_depth: int = _DEFAULT_OPENAPI_REF_MAX_DEPTH,
         openapi_ref_max_documents: int = _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS,
@@ -1106,6 +1140,7 @@ class URLSchemaLoader:
             schema_headers=schema_headers,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            allow_active_probes=allow_active_probes,
             openapi_external_refs=openapi_external_refs,
             openapi_ref_max_depth=openapi_ref_max_depth,
             openapi_ref_max_documents=openapi_ref_max_documents,

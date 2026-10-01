@@ -356,6 +356,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Optional trusted execution base URL for adapters that require one.",
     )
     source_probe.add_argument(
+        "--allow-active-probes",
+        action="store_true",
+        help=(
+            "Opt into active auto-discovery such as GraphQL POST introspection "
+            "and MCP protocol handshakes. Explicit --kind does not require this flag."
+        ),
+    )
+    source_probe.add_argument(
         "--timeout",
         type=float,
         default=20.0,
@@ -402,6 +410,7 @@ def _run(args: argparse.Namespace) -> str:
                 namespace=args.namespace,
                 provider=args.provider,
                 base_url=args.base_url,
+                allow_active_probes=args.allow_active_probes,
                 timeout=args.timeout,
             )
         )

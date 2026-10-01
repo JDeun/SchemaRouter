@@ -1,5 +1,11 @@
 from ._version import __version__
-from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
+from .adapters.base import (
+    AdapterContext,
+    AdapterLoadResult,
+    AdapterRegistry,
+    DiscoveryProfile,
+    SourceAdapter,
+)
 from .adapters.mcp import (
     DefaultMCPClientFactory,
     MCPBoundClientFactory,
@@ -192,6 +198,7 @@ __all__ = [
     "DecisionRequest",
     "DecisionResult",
     "DecisionSelection",
+    "DiscoveryProfile",
     "EmbeddingCallable",
     "EmbeddingDecisionBackend",
     "DefaultMCPClientFactory",

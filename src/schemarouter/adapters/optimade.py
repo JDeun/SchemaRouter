@@ -16,7 +16,7 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
-from .base import AdapterContext, AdapterLoadResult
+from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
 
 _MAX_DISCOVERY_BYTES = 2 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 16 * 1024 * 1024
@@ -596,6 +596,11 @@ def _tool_from_discovery(
 class OPTIMADESourceAdapter:
     kind = "optimade"
     priority = 90
+    discovery = DiscoveryProfile(
+        activity="passive",
+        http_methods=("GET",),
+        derives_urls=True,
+    )
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None:
         candidates = _candidate_versioned_bases(context.base_url or context.url)
