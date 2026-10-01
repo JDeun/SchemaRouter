@@ -3,7 +3,15 @@ from __future__ import annotations
 import httpx
 import pytest
 
-from schemarouter import SchemaRouter
+from schemarouter import (
+    EndpointSpec,
+    FieldSpec,
+    RegistrationError,
+    SchemaRouter,
+    SchemaSourceError,
+    ToolSpec,
+)
+from schemarouter.adapters.base import AdapterLoadResult
 
 
 def _document(
@@ -183,3 +191,244 @@ async def test_schema_refresh_can_report_compatible_without_applying() -> None:
         assert result.applied is False
         assert result.compatibility == "compatible"
         assert router.registry.get(tool.key).fingerprint == old_fingerprint
+
+
+def test_schema_refresh_sync_wrapper_is_available() -> None:
+    state = {"document": _document()}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=state["document"], request=request)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)):
+        pass
+
+    async def run() -> None:
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(handler)
+        ) as client:
+            router = SchemaRouter(http_client=client)
+            tool = await router.add_url(
+                "https://example.test/openapi.json",
+                kind="openapi",
+                name="materials",
+            )
+            # Exercise the synchronous wrapper outside the async loop below.
+            router.registry.get(tool.key)
+
+    import asyncio
+
+    asyncio.run(run())
+
+    async def build_router() -> tuple[SchemaRouter, str]:
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        router = SchemaRouter(http_client=client)
+        tool = await router.add_url(
+            "https://example.test/openapi.json",
+            kind="openapi",
+            name="materials",
+        )
+        return router, tool.key
+
+    router, key = asyncio.run(build_router())
+    try:
+        result = router.refresh_schema(key)
+        assert result.action == "unchanged"
+    finally:
+        asyncio.run(router.loader.http_client.aclose())
+
+
+@pytest.mark.asyncio
+async def test_schema_refresh_rejects_unknown_tool() -> None:
+    router = SchemaRouter()
+
+    with pytest.raises(RegistrationError, match="unknown tool"):
+        await router.arefresh_schema("missing")
+
+
+@pytest.mark.asyncio
+async def test_schema_refresh_rejects_non_refreshable_local_tool() -> None:
+    router = SchemaRouter()
+    tool = ToolSpec(
+        name="local",
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_schema={"type": "object"},
+            )
+        ],
+    )
+    router.add_tool(tool)
+
+    with pytest.raises(SchemaSourceError, match="refreshable structured-source"):
+        await router.arefresh_schema(tool.key)
+
+
+@pytest.mark.asyncio
+async def test_schema_refresh_rejects_missing_source_provenance() -> None:
+    router = SchemaRouter()
+    tool = ToolSpec(
+        name="remote",
+        remote=True,
+        execution_metadata={"adapter": "openapi"},
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_schema={"type": "object"},
+            )
+        ],
+    )
+    router.add_tool(tool)
+
+    with pytest.raises(SchemaSourceError, match="missing persisted source provenance"):
+        await router.arefresh_schema(tool.key)
+
+
+@pytest.mark.asyncio
+async def test_schema_refresh_rejects_candidate_key_change(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    state = {"document": _document()}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=state["document"], request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        tool = await router.add_url(
+            "https://example.test/openapi.json",
+            kind="openapi",
+            name="materials",
+        )
+
+        candidate = ToolSpec(
+            name="other",
+            remote=True,
+            metadata={"adapter": "openapi", "source_url": "https://example.test/openapi.json"},
+            endpoints=[
+                EndpointSpec(
+                    name="read",
+                    read_only=True,
+                    output_schema={"type": "object"},
+                )
+            ],
+        )
+
+        async def inspect(*args, **kwargs):
+            del args, kwargs
+            return AdapterLoadResult(tool=candidate)
+
+        monkeypatch.setattr(router.loader, "inspect", inspect)
+
+        with pytest.raises(
+            SchemaSourceError,
+            match="changed the registered tool key unexpectedly",
+        ):
+            await router.arefresh_schema(tool.key)
+
+
+def _graphql_introspection() -> dict:
+    return {
+        "data": {
+            "__schema": {
+                "queryType": {"name": "Query"},
+                "mutationType": None,
+                "subscriptionType": None,
+                "types": [
+                    {
+                        "kind": "OBJECT",
+                        "name": "Query",
+                        "fields": [
+                            {
+                                "name": "ping",
+                                "description": "Ping",
+                                "isDeprecated": False,
+                                "deprecationReason": None,
+                                "args": [],
+                                "type": {"kind": "SCALAR", "name": "String", "ofType": None},
+                            }
+                        ],
+                        "inputFields": None,
+                        "enumValues": None,
+                        "possibleTypes": None,
+                    },
+                    {
+                        "kind": "SCALAR",
+                        "name": "String",
+                        "fields": None,
+                        "inputFields": None,
+                        "enumValues": None,
+                        "possibleTypes": None,
+                    },
+                ],
+            }
+        }
+    }
+
+
+@pytest.mark.asyncio
+async def test_schema_refresh_graphql_identical_is_noop() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=_graphql_introspection(), request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        tool = await router.add_url(
+            "https://graphql.example/graphql",
+            kind="graphql",
+            name="graphql_fixture",
+        )
+        result = await router.arefresh_schema(tool.key)
+
+    assert result.action == "unchanged"
+    assert result.compatibility == "identical"
+
+
+def _openrpc_document() -> dict:
+    return {
+        "openrpc": "1.4.0",
+        "info": {"title": "Fixture RPC", "version": "1.0.0"},
+        "servers": [{"url": "https://rpc.example/rpc"}],
+        "methods": [
+            {
+                "name": "ping",
+                "params": [],
+                "result": {
+                    "name": "result",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "ok": {"type": "boolean"},
+                        },
+                    },
+                },
+            }
+        ],
+    }
+
+
+@pytest.mark.asyncio
+async def test_schema_refresh_openrpc_preserves_approved_base_url() -> None:
+    seen_gets = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal seen_gets
+        if request.method == "GET":
+            seen_gets += 1
+            return httpx.Response(200, json=_openrpc_document(), request=request)
+        raise AssertionError("refresh must not execute the RPC method")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        tool = await router.add_url(
+            "https://rpc.example/openrpc.json",
+            kind="openrpc",
+            name="rpc_fixture",
+            base_url="https://rpc.example/rpc",
+        )
+        result = await router.arefresh_schema(tool.key)
+
+    assert result.action == "unchanged"
+    assert result.compatibility == "identical"
+    assert seen_gets == 2
