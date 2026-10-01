@@ -121,6 +121,14 @@ async def _fetch_with_safe_redirects(
             headers=headers,
             follow_redirects=False,
         ) as response:
+            if response.status_code == 304:
+                return httpx.Response(
+                    status_code=response.status_code,
+                    headers=response.headers,
+                    content=b"",
+                    request=response.request,
+                )
+
             if response.is_redirect:
                 location = response.headers.get("location")
                 if not location:
@@ -131,14 +139,6 @@ async def _fetch_with_safe_redirects(
                     raise SchemaSourceError("cross-origin schema redirects are not allowed")
                 current = target
                 continue
-
-            if response.status_code == 304:
-                return httpx.Response(
-                    status_code=response.status_code,
-                    headers=response.headers,
-                    content=b"",
-                    request=response.request,
-                )
 
             response.raise_for_status()
             content_length = response.headers.get("content-length")
