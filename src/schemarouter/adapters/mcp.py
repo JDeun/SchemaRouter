@@ -151,32 +151,17 @@ class MCPStdioClientFactory:
             env=dict(self.config.env) if self.config.env is not None else None,
             cwd=Path(self.config.cwd) if self.config.cwd is not None else None,
         )
-        client_cm = Client(
-            params,
-            read_timeout_seconds=timeout,
-        )
         try:
-            client = await asyncio.wait_for(
-                client_cm.__aenter__(),
-                timeout=timeout,
-            )
+            async with asyncio.timeout(timeout):
+                async with Client(
+                    params,
+                    read_timeout_seconds=timeout,
+                ) as client:
+                    yield client
         except TimeoutError as exc:
             raise InvocationUnavailableError(
-                "MCP stdio server did not start before the timeout"
+                "MCP stdio lifecycle exceeded the configured timeout"
             ) from exc
-
-        try:
-            yield client
-        finally:
-            try:
-                await asyncio.wait_for(
-                    client_cm.__aexit__(None, None, None),
-                    timeout=timeout,
-                )
-            except TimeoutError as exc:
-                raise InvocationUnavailableError(
-                    "MCP stdio server did not shut down before the timeout"
-                ) from exc
 
 
 class _BoundHTTPMCPClientFactory:
