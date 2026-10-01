@@ -44,6 +44,14 @@ from .validation import (
 )
 
 
+_MISSING_PROJECTION = object()
+
+
+@dataclass(frozen=True)
+class _WildcardProjection:
+    values: list[Any]
+
+
 class EndpointInvoker(Protocol):
     def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any | Awaitable[Any]: ...
 
@@ -1091,6 +1099,208 @@ class RegistryExecutor:
             )
 
     @staticmethod
+    def _path_values(
+        value: Any,
+        path: tuple[str, ...],
+        *,
+        indices: tuple[int, ...] = (),
+    ) -> list[tuple[tuple[int, ...], bool, Any]]:
+        if not path:
+            return [(indices, True, value)]
+
+        part = path[0]
+        rest = path[1:]
+        if part == "*":
+            if not isinstance(value, list):
+                return [(indices, False, None)]
+            results: list[tuple[tuple[int, ...], bool, Any]] = []
+            for index, item in enumerate(value):
+                results.extend(
+                    RegistryExecutor._path_values(
+                        item,
+                        rest,
+                        indices=(*indices, index),
+                    )
+                )
+            return results
+
+        if not isinstance(value, dict) or part not in value:
+            return [(indices, False, None)]
+        return RegistryExecutor._path_values(
+            value[part],
+            rest,
+            indices=indices,
+        )
+
+    @staticmethod
+    def _extract_projection_value(
+        value: Any,
+        path: tuple[str, ...],
+    ) -> Any:
+        if not path:
+            return deepcopy(value)
+
+        part = path[0]
+        rest = path[1:]
+        if part == "*":
+            if not isinstance(value, list):
+                return _MISSING_PROJECTION
+            return _WildcardProjection(
+                [
+                    RegistryExecutor._extract_projection_value(item, rest)
+                    for item in value
+                ]
+            )
+
+        if not isinstance(value, dict) or part not in value:
+            return _MISSING_PROJECTION
+        return RegistryExecutor._extract_projection_value(value[part], rest)
+
+    @staticmethod
+    def _materialize_projection_value(value: Any) -> Any:
+        if value is _MISSING_PROJECTION:
+            return None
+        if isinstance(value, _WildcardProjection):
+            return [
+                RegistryExecutor._materialize_projection_value(item)
+                for item in value.values
+            ]
+        return deepcopy(value)
+
+    @staticmethod
+    def _empty_projection_for_path(path: tuple[str, ...]) -> Any:
+        if not path:
+            return None
+        return [] if path[0] == "*" else {}
+
+    @staticmethod
+    def _projection_fragment(
+        result_path: tuple[str, ...],
+        value: Any,
+        *,
+        field_name: str,
+        endpoint_name: str,
+    ) -> Any:
+        if value is _MISSING_PROJECTION:
+            return _MISSING_PROJECTION
+        if not result_path:
+            return RegistryExecutor._materialize_projection_value(value)
+
+        part = result_path[0]
+        rest = result_path[1:]
+        if part == "*":
+            if not isinstance(value, _WildcardProjection):
+                raise PlanValidationError(
+                    "array-wildcard result path requires an array-wildcard source path for "
+                    f"{field_name!r} in {endpoint_name!r}"
+                )
+            projected_items: list[Any] = []
+            for item in value.values:
+                if item is _MISSING_PROJECTION:
+                    projected_items.append(
+                        RegistryExecutor._empty_projection_for_path(rest)
+                    )
+                    continue
+                fragment = RegistryExecutor._projection_fragment(
+                    rest,
+                    item,
+                    field_name=field_name,
+                    endpoint_name=endpoint_name,
+                )
+                projected_items.append(
+                    RegistryExecutor._empty_projection_for_path(rest)
+                    if fragment is _MISSING_PROJECTION
+                    else fragment
+                )
+            return projected_items
+
+        fragment = RegistryExecutor._projection_fragment(
+            rest,
+            value,
+            field_name=field_name,
+            endpoint_name=endpoint_name,
+        )
+        if fragment is _MISSING_PROJECTION:
+            return _MISSING_PROJECTION
+        return {part: fragment}
+
+    @staticmethod
+    def _merge_projection_fragments(
+        left: Any,
+        right: Any,
+        *,
+        field_name: str,
+        endpoint_name: str,
+    ) -> Any:
+        if left is _MISSING_PROJECTION:
+            return deepcopy(right)
+        if right is _MISSING_PROJECTION:
+            return deepcopy(left)
+
+        if isinstance(left, dict) and isinstance(right, dict):
+            merged = deepcopy(left)
+            for key, value in right.items():
+                if key not in merged:
+                    merged[key] = deepcopy(value)
+                    continue
+                merged[key] = RegistryExecutor._merge_projection_fragments(
+                    merged[key],
+                    value,
+                    field_name=field_name,
+                    endpoint_name=endpoint_name,
+                )
+            return merged
+
+        if isinstance(left, list) and isinstance(right, list):
+            if len(left) != len(right):
+                raise PlanValidationError(
+                    "record-preserving array projection length mismatch for "
+                    f"{field_name!r} in {endpoint_name!r}"
+                )
+            return [
+                RegistryExecutor._merge_projection_fragments(
+                    left_item,
+                    right_item,
+                    field_name=field_name,
+                    endpoint_name=endpoint_name,
+                )
+                for left_item, right_item in zip(left, right, strict=True)
+            ]
+
+        if left == right:
+            return deepcopy(left)
+
+        raise PlanValidationError(
+            "nested projection result-path collision for "
+            f"{field_name!r} in {endpoint_name!r}"
+        )
+
+    @staticmethod
+    def _transform_result_path(
+        value: Any,
+        path: tuple[str, ...],
+        transform: Any,
+    ) -> None:
+        if not path:
+            return
+
+        part = path[0]
+        rest = path[1:]
+        if part == "*":
+            if not isinstance(value, list):
+                return
+            for item in value:
+                RegistryExecutor._transform_result_path(item, rest, transform)
+            return
+
+        if not isinstance(value, dict) or part not in value:
+            return
+        if not rest:
+            value[part] = transform(value[part])
+            return
+        RegistryExecutor._transform_result_path(value[part], rest, transform)
+
+    @staticmethod
     def _validate_selected_fields_present(
         value: Any,
         fields: list[str],
@@ -1114,19 +1324,22 @@ class RegistryExecutor:
                 continue
             for field_name in fields:
                 field = field_map[field_name]
-                current: Any = item
-                missing = False
-                for part in field.projection_path:
-                    if not isinstance(current, dict) or part not in current:
-                        missing = True
-                        break
-                    current = current[part]
-                if missing:
+                resolved = RegistryExecutor._path_values(
+                    item,
+                    field.projection_path,
+                )
+                for indices, present, _resolved_value in resolved:
+                    if present:
+                        continue
                     suffix = (
                         f" item {item_index}"
                         if isinstance(value, list)
                         else ""
                     )
+                    if indices:
+                        suffix += " nested item " + ".".join(
+                            str(index) for index in indices
+                        )
                     raise SchemaValidationError(
                         f"{context}{suffix}: projected field {field_name!r} is missing"
                     )
@@ -1157,26 +1370,27 @@ class RegistryExecutor:
                 if field is None or not field.json_schema:
                     continue
 
-                current: Any = item
-                missing = False
-                for part in field.projection_path:
-                    if not isinstance(current, dict) or part not in current:
-                        missing = True
-                        break
-                    current = current[part]
-                if missing:
-                    continue
-
-                suffix = (
-                    f" item {item_index}"
-                    if isinstance(value, list)
-                    else ""
+                resolved = RegistryExecutor._path_values(
+                    item,
+                    field.projection_path,
                 )
-                validate_json_schema_value(
-                    current,
-                    field.json_schema,
-                    context=f"{context}{suffix} field {field_name!r}",
-                )
+                for indices, present, resolved_value in resolved:
+                    if not present:
+                        continue
+                    suffix = (
+                        f" item {item_index}"
+                        if isinstance(value, list)
+                        else ""
+                    )
+                    if indices:
+                        suffix += " nested item " + ".".join(
+                            str(index) for index in indices
+                        )
+                    validate_json_schema_value(
+                        resolved_value,
+                        field.json_schema,
+                        context=f"{context}{suffix} field {field_name!r}",
+                    )
 
     @staticmethod
     def _normalize_projected_units(
@@ -1203,18 +1417,6 @@ class RegistryExecutor:
             if field is None or field.unit_normalization is None:
                 continue
 
-            current: Any = normalized
-            path = field.result_projection_path
-            missing = False
-            for part in path[:-1]:
-                if not isinstance(current, dict) or part not in current:
-                    missing = True
-                    break
-                current = current[part]
-            if missing or not isinstance(current, dict) or path[-1] not in current:
-                continue
-
-            raw_value = current[path[-1]]
             spec = field.unit_normalization
 
             def convert_numeric(
@@ -1244,7 +1446,11 @@ class RegistryExecutor:
                     )
                 return converted
 
-            current[path[-1]] = convert_numeric(raw_value)
+            RegistryExecutor._transform_result_path(
+                normalized,
+                field.result_projection_path,
+                convert_numeric,
+            )
 
         return normalized
 
@@ -1314,33 +1520,32 @@ class RegistryExecutor:
             return value
 
         field_map = {field.name: field for field in endpoint.output_fields}
-        projected: dict[str, Any] = {}
+        projected: Any = {}
 
         for field_name in fields:
             field = field_map[field_name]
-            current: Any = value
-            missing = False
-            for part in field.projection_path:
-                if not isinstance(current, dict) or part not in current:
-                    missing = True
-                    break
-                current = current[part]
-            if missing:
+            extracted = RegistryExecutor._extract_projection_value(
+                value,
+                field.projection_path,
+            )
+            if extracted is _MISSING_PROJECTION:
                 continue
 
-            target = projected
-            result_path = field.result_projection_path
-            for part in result_path[:-1]:
-                child = target.get(part)
-                if child is None:
-                    child = {}
-                    target[part] = child
-                if not isinstance(child, dict):
-                    raise PlanValidationError(
-                        "nested projection result-path collision for "
-                        f"{field_name!r} in {endpoint.name!r}"
-                    )
-                target = child
-            target[result_path[-1]] = deepcopy(current)
+            fragment = RegistryExecutor._projection_fragment(
+                field.result_projection_path,
+                extracted,
+                field_name=field_name,
+                endpoint_name=endpoint.name,
+            )
+            if fragment is _MISSING_PROJECTION:
+                continue
+
+            projected = RegistryExecutor._merge_projection_fragments(
+                projected,
+                fragment,
+                field_name=field_name,
+                endpoint_name=endpoint.name,
+            )
 
         return projected
+
