@@ -112,8 +112,19 @@ def _schema_at_projection_path(
     schema = output_schema
     if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
         schema = schema["items"]
+
     for part in path:
-        if schema.get("type") != "object":
+        if part == "*":
+            schema_types = _schema_types(schema)
+            if "array" not in schema_types:
+                return {}
+            items = schema.get("items")
+            if not isinstance(items, dict):
+                return {}
+            schema = items
+            continue
+
+        if "object" not in _schema_types(schema):
             return {}
         properties = schema.get("properties")
         if not isinstance(properties, dict):
@@ -271,6 +282,25 @@ class FieldSpec(StrictModel):
             raise ValueError("field path requires non-empty string segments")
         if any(not isinstance(part, str) or not part for part in self.result_path):
             raise ValueError("field result_path requires non-empty string segments")
+
+        for label, path in (("path", self.path), ("result_path", self.result_path)):
+            if path and path[0] == "*":
+                raise ValueError(
+                    f"field {label} must not begin with the array wildcard; "
+                    "root arrays are traversed implicitly"
+                )
+            if path and path[-1] == "*":
+                raise ValueError(
+                    f"field {label} must not end with the array wildcard; "
+                    "select the array field itself instead"
+                )
+
+        source_wildcards = self.path.count("*")
+        result_wildcards = self.result_path.count("*")
+        if result_wildcards and result_wildcards != source_wildcards:
+            raise ValueError(
+                "field result_path wildcard count must match source path wildcard count"
+            )
         if self.unit is not None:
             if not self.unit.strip():
                 raise ValueError("field unit must be non-empty when provided")
@@ -478,6 +508,7 @@ class EndpointSpec(StrictModel):
                 if (
                     source_longer[: len(source_shorter)] == source_shorter
                     and result_longer[: len(result_shorter)] == result_shorter
+                    and "*" not in result_longer
                 ):
                     raise ValueError(
                         "overlapping output field paths in endpoint "
@@ -497,7 +528,10 @@ class EndpointSpec(StrictModel):
                     if len(left_path) <= len(right_path)
                     else (right_path, left_path)
                 )
-                if longer[: len(shorter)] == shorter:
+                if (
+                    longer[: len(shorter)] == shorter
+                    and "*" not in longer
+                ):
                     raise ValueError(
                         "overlapping output result paths in endpoint "
                         f"{self.name!r}: {left_name!r} and {right_name!r}"
