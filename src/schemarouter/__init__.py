@@ -2,8 +2,10 @@ from ._version import __version__
 from .adapters.base import (
     AdapterContext,
     AdapterLoadResult,
+    AdapterProbeError,
     AdapterRegistry,
     DiscoveryProfile,
+    ProbeFailureCategory,
     SourceAdapter,
 )
 from .adapters.mcp import (
@@ -78,7 +80,7 @@ from .errors import (
 from .executor import RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot, HealthStatus
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
-from .ingestion import SourceProbeResult
+from .ingestion import SourceProbeDiagnostic, SourceProbeReport, SourceProbeResult
 from .inspection import (
     EndpointInspection,
     ExecutionInspection,
@@ -170,6 +172,7 @@ __all__ = [
     "canonical_identity",
     "AdapterContext",
     "AdapterLoadResult",
+    "AdapterProbeError",
     "AdapterPluginInfo",
     "AdapterRegistry",
     "ApprovalCallback",
@@ -199,6 +202,7 @@ __all__ = [
     "DecisionResult",
     "DecisionSelection",
     "DiscoveryProfile",
+    "ProbeFailureCategory",
     "EmbeddingCallable",
     "EmbeddingDecisionBackend",
     "DefaultMCPClientFactory",
@@ -284,6 +288,8 @@ __all__ = [
     "ServerProjectionSpec",
     "SourceAdapter",
     "SourceProbeResult",
+    "SourceProbeDiagnostic",
+    "SourceProbeReport",
     "OPTIMADESourceAdapter",
     "ToolCall",
     "ToolRegistry",
