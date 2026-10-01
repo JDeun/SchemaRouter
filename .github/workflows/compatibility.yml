@@ -61,6 +61,94 @@ jobs:
           retention-days: 30
 
 
+  public-graphql:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install .
+      - run: python -m pip check
+      - run: python scripts/live_graphql_smoke.py --json-out artifacts/graphql-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-graphql-${{ github.run_id }}
+          path: artifacts/graphql-compatibility.json
+          if-no-files-found: warn
+          retention-days: 30
+
+
+  public-odata:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install .
+      - run: python -m pip check
+      - run: python scripts/live_odata_smoke.py --json-out artifacts/odata-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-odata-${{ github.run_id }}
+          path: artifacts/odata-compatibility.json
+          if-no-files-found: warn
+          retention-days: 30
+
+
+  public-openrpc-reference:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install .
+      - run: python -m pip check
+      - run: python scripts/live_openrpc_smoke.py --json-out artifacts/openrpc-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-openrpc-reference-${{ github.run_id }}
+          path: artifacts/openrpc-compatibility.json
+          if-no-files-found: warn
+          retention-days: 30
+
+
+  reference-mcp:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: pip install ".[mcp]"
+      - run: python -m pip check
+      - run: python scripts/live_mcp_smoke.py --json-out artifacts/mcp-reference-compatibility.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-mcp-reference-${{ github.run_id }}
+          path: artifacts/mcp-reference-compatibility.json
+          if-no-files-found: warn
+          retention-days: 30
+
+
   published-pypi:
     continue-on-error: true
     runs-on: ubuntu-latest
