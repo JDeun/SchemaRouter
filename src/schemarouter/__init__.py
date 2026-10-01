@@ -238,6 +238,7 @@ __all__ = [
     "ModelAnalysisError",
     "ModelCallable",
     "ModelQueryAnalyzer",
+    "MutableToolRegistry",
     "NonRetryableInvocationError",
     "ODataSourceAdapter",
     "OpenAPICompatibilityIssue",
