@@ -8,8 +8,10 @@ from datetime import datetime, timezone
 from typing import Any, Literal
 
 from .errors import SchemaSourceError
+from .models import ToolSpec
 from .registry import ToolRegistry
 from .schema_diff import SchemaRefreshResult
+from .source_identity import StructuredSourceIdentity, structured_source_identity
 
 SchemaWatchStatus = Literal[
     "idle",
@@ -19,6 +21,8 @@ SchemaWatchStatus = Literal[
     "pending_review",
     "error",
     "stale",
+    "stale_contract",
+    "stale_source",
 ]
 
 RefreshCallable = Callable[..., Awaitable[SchemaRefreshResult]]
@@ -51,6 +55,8 @@ class SchemaWatchSnapshot:
 
 @dataclass
 class _WatchRecord:
+    tool_fingerprint: str
+    source_identity: StructuredSourceIdentity
     interval_seconds: float
     apply_compatible: bool
     schema_headers: dict[str, str] | None
@@ -97,7 +103,7 @@ class SchemaWatchManager:
             adapter = tool.metadata.get("adapter")
         return adapter if isinstance(adapter, str) else None
 
-    def _assert_refreshable(self, tool_key: str) -> None:
+    def _assert_refreshable(self, tool_key: str) -> ToolSpec:
         try:
             tool = self.registry.get(tool_key)
         except KeyError as exc:
@@ -107,6 +113,48 @@ class SchemaWatchManager:
             raise SchemaSourceError(
                 f"tool {tool_key!r} does not have a refreshable structured-source adapter"
             )
+        return tool
+
+    @staticmethod
+    def _watch_identity(tool: ToolSpec) -> StructuredSourceIdentity:
+        identity = structured_source_identity(tool)
+        if identity is None:
+            raise SchemaSourceError(
+                f"tool {tool.key!r} is missing structured-source identity"
+            )
+        if identity.adapter == "mcp":
+            if identity.source_url is None and identity.transport_fingerprint is None:
+                raise SchemaSourceError(
+                    f"tool {tool.key!r} is missing MCP source/transport identity"
+                )
+        elif identity.source_url is None:
+            raise SchemaSourceError(
+                f"tool {tool.key!r} is missing source identity for schema watch"
+            )
+        return identity
+
+    def _contract_status(
+        self,
+        tool_key: str,
+        record: _WatchRecord,
+    ) -> tuple[bool, SchemaWatchStatus | None, str | None]:
+        try:
+            current = self._assert_refreshable(tool_key)
+        except KeyError:
+            return False, "stale", "CapabilityRemoved"
+        except SchemaSourceError:
+            return False, "stale", "AdapterNotRefreshable"
+
+        try:
+            current_identity = self._watch_identity(current)
+        except SchemaSourceError:
+            return False, "stale_source", "SourceIdentityMissing"
+
+        if current_identity != record.source_identity:
+            return False, "stale_source", "SourceIdentityChanged"
+        if current.fingerprint != record.tool_fingerprint:
+            return False, "stale_contract", "ToolContractChanged"
+        return True, None, None
 
     def register(
         self,
@@ -119,7 +167,8 @@ class SchemaWatchManager:
         mcp_client_factory: Any | None = None,
         timeout_seconds: float = 20.0,
     ) -> None:
-        self._assert_refreshable(tool_key)
+        tool = self._assert_refreshable(tool_key)
+        identity = self._watch_identity(tool)
         interval = float(interval_seconds)
         timeout = float(timeout_seconds)
         if interval <= 0:
@@ -128,6 +177,8 @@ class SchemaWatchManager:
             raise ValueError("timeout_seconds must be > 0")
 
         self._records[tool_key] = _WatchRecord(
+            tool_fingerprint=tool.fingerprint,
+            source_identity=identity,
             interval_seconds=interval,
             apply_compatible=bool(apply_compatible),
             schema_headers=(
@@ -186,12 +237,14 @@ class SchemaWatchManager:
     ) -> None:
         async with semaphore:
             now = datetime.now(timezone.utc)
-            try:
-                self._assert_refreshable(tool_key)
-            except (KeyError, SchemaSourceError) as exc:
-                record.status = "stale"
+            current, stale_status, stale_reason = self._contract_status(
+                tool_key,
+                record,
+            )
+            if not current:
+                record.status = stale_status or "stale"
                 record.last_checked_at = now
-                record.last_error_type = type(exc).__name__
+                record.last_error_type = stale_reason
                 record.pending_result = None
                 record.next_due = time.monotonic() + record.interval_seconds
                 return
@@ -205,15 +258,26 @@ class SchemaWatchManager:
                         trusted_headers=record.trusted_headers,
                         mcp_client_factory=record.mcp_client_factory,
                         timeout=record.timeout_seconds,
+                        _expected_fingerprint=record.tool_fingerprint,
+                        _expected_source_identity=record.source_identity,
                     ),
                     timeout=record.timeout_seconds,
                 )
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
-                record.status = "error"
+                current, stale_status, stale_reason = self._contract_status(
+                    tool_key,
+                    record,
+                )
+                if not current:
+                    record.status = stale_status or "stale"
+                    record.last_error_type = stale_reason
+                    record.pending_result = None
+                else:
+                    record.status = "error"
+                    record.last_error_type = type(exc).__name__
                 record.last_checked_at = datetime.now(timezone.utc)
-                record.last_error_type = type(exc).__name__
                 record.next_due = time.monotonic() + record.interval_seconds
                 return
 
@@ -221,6 +285,41 @@ class SchemaWatchManager:
             record.last_checked_at = checked_at
             record.last_compatibility = result.compatibility
             record.last_error_type = None
+
+            if result.action == "applied":
+                try:
+                    applied_tool = self.registry.get(tool_key)
+                    applied_identity = self._watch_identity(applied_tool)
+                except (KeyError, SchemaSourceError):
+                    record.status = "stale"
+                    record.last_error_type = "AppliedContractMissing"
+                    record.pending_result = None
+                    record.next_due = time.monotonic() + record.interval_seconds
+                    return
+                if applied_identity != record.source_identity:
+                    record.status = "stale_source"
+                    record.last_error_type = "SourceIdentityChanged"
+                    record.pending_result = None
+                    record.next_due = time.monotonic() + record.interval_seconds
+                    return
+                if applied_tool.fingerprint != result.report.new_fingerprint:
+                    record.status = "stale_contract"
+                    record.last_error_type = "AppliedContractChanged"
+                    record.pending_result = None
+                    record.next_due = time.monotonic() + record.interval_seconds
+                    return
+                record.tool_fingerprint = applied_tool.fingerprint
+            else:
+                current, stale_status, stale_reason = self._contract_status(
+                    tool_key,
+                    record,
+                )
+                if not current:
+                    record.status = stale_status or "stale"
+                    record.last_error_type = stale_reason
+                    record.pending_result = None
+                    record.next_due = time.monotonic() + record.interval_seconds
+                    return
             if result.action == "pending_review":
                 record.status = "pending_review"
                 record.pending_result = result.model_copy(deep=True)

@@ -45,6 +45,7 @@ from .registry import InMemoryRegistry, ToolRegistry, replace_if_current
 from .runs import RunConfig, RunEvent
 from .schema_diff import SchemaRefreshResult, compare_tool_specs
 from .schema_watch import SchemaWatchManager, SchemaWatchSnapshot
+from .source_identity import StructuredSourceIdentity, structured_source_identity
 from .traces import RunTraceStore
 
 _T = TypeVar("_T")
@@ -1087,6 +1088,8 @@ class SchemaRouter:
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: MCPClientFactory | None = None,
         timeout: float = 20.0,
+        _expected_fingerprint: str | None = None,
+        _expected_source_identity: StructuredSourceIdentity | None = None,
     ) -> SchemaRefreshResult:
         """Reinspect a registered remote schema and apply only proven-compatible drift."""
 
@@ -1095,6 +1098,20 @@ class SchemaRouter:
             current = self.registry.get(tool_key)
         except KeyError as exc:
             raise RegistrationError(f"unknown tool: {tool_key}") from exc
+
+        if _expected_source_identity is not None:
+            current_source_identity = structured_source_identity(current)
+            if current_source_identity != _expected_source_identity:
+                raise SchemaSourceError(
+                    f"tool {tool_key!r} source identity changed before schema refresh"
+                )
+        if (
+            _expected_fingerprint is not None
+            and current.fingerprint != _expected_fingerprint
+        ):
+            raise SchemaSourceError(
+                f"tool {tool_key!r} contract changed before schema refresh"
+            )
 
         adapter = current.execution_metadata.get("adapter")
         if not isinstance(adapter, str):
