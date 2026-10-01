@@ -30,7 +30,6 @@ from schemarouter import (
     ToolSpec,
 )
 
-
 CATALOG: tuple[dict[str, Any], ...] = (
     {
         "name": "weather_lookup",
