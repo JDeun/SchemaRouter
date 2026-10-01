@@ -142,6 +142,24 @@ jobs:
           /tmp/schemarouter-wheel-adapter-plugin/bin/pip check
       - name: Exercise downstream adapter plugin against built wheel
         run: /tmp/schemarouter-wheel-adapter-plugin/bin/python scripts/downstream_adapter_plugin_smoke.py
+      - run: python -m venv /tmp/schemarouter-wheel-pydanticai
+      - run: /tmp/schemarouter-wheel-pydanticai/bin/python -m pip install --upgrade pip
+      - name: Install built wheel and pinned PydanticAI validation dependency
+        run: |
+          WHEEL="$(pwd)/$(ls dist/*.whl)"
+          /tmp/schemarouter-wheel-pydanticai/bin/pip install "$WHEEL"
+          /tmp/schemarouter-wheel-pydanticai/bin/pip install -r examples/external_validation/pydanticai-tool-search/requirements.txt
+          /tmp/schemarouter-wheel-pydanticai/bin/pip check
+      - name: Run PydanticAI ToolSearch external validation
+        run: |
+          /tmp/schemarouter-wheel-pydanticai/bin/python scripts/external_validation_pydanticai.py \
+            --json-out artifacts/external-validation-pydanticai.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: external-validation-pydanticai-${{ github.run_id }}
+          path: artifacts/external-validation-pydanticai.json
+          if-no-files-found: error
+          retention-days: 30
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
       - run: /tmp/schemarouter-wheel/bin/python examples/sdk_bound_demo.py
       - run: /tmp/schemarouter-wheel/bin/python examples/mixed_provider_demo.py
