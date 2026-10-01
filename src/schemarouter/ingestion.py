@@ -220,6 +220,10 @@ def _auto_probe_outcome(
         )
     ):
         return "not_recognized"
+    if adapter_kind == "optimade" and (
+        "base url must not contain query or fragment" in message
+    ):
+        return "not_recognized"
     if adapter_kind == "mcp" and category == "protocol_error":
         return "not_recognized"
     return category
