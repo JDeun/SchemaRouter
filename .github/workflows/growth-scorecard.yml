@@ -1,0 +1,32 @@
+name: Growth Scorecard
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 2 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Capture adoption scorecard
+        env:
+          GITHUB_TOKEN: ${{ secrets.SCHEMAROUTER_GROWTH_GITHUB_TOKEN || github.token }}
+        run: |
+          python scripts/capture_growth_scorecard.py \
+            --json-out artifacts/growth-scorecard.json \
+            --markdown-out artifacts/growth-scorecard.md
+          cat artifacts/growth-scorecard.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: growth-scorecard-${{ github.run_id }}
+          path: artifacts/growth-scorecard.*
+          if-no-files-found: error
+          retention-days: 180
