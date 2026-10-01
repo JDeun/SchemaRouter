@@ -45,6 +45,24 @@ python scripts/external_validation_pydanticai.py \
 The script refuses to run as valid downstream evidence if `schemarouter` resolves from the
 repository source tree instead of the installed environment.
 
+## Explicit no-route disclosure gate
+
+The first validation run exposed an important integration detail: SchemaRouter's raw lexical score is
+**recall-oriented**, not an abstention probability. A generic query token that appears only in
+free-form tool descriptions can therefore produce a positive score even when no registered
+capability should be revealed.
+
+The PydanticAI strategy does not treat `score > 0` as support. It reveals a candidate only when at
+least one bounded relevance signal exists:
+
+- a declared output field matched the query;
+- the caller explicitly preferred the tool/endpoint; or
+- a matched `tool_token` also belongs to the registered tool identifier itself, rather than only
+  to description prose.
+
+The raw Top-K scores, score components, matched fields, and final gate signal are retained per case
+in the JSON evidence so this behavior remains inspectable.
+
 ## What is measured
 
 The deterministic mixed catalog includes weather, finance, travel, logistics, software, research,
