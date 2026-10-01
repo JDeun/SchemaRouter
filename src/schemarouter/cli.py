@@ -9,6 +9,10 @@ from pathlib import Path
 from typing import Any
 
 from .dashboard import write_dashboard
+from .explorer import (
+    build_schema_explorer_document,
+    write_schema_explorer,
+)
 from .errors import (
     SchemaSourceError,
     SourceProbeDiagnosticError,
@@ -527,6 +531,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_json_flag(storage_migrate)
 
+    explorer = subparsers.add_parser(
+        "explorer",
+        help="Export a self-contained read-only capability contract explorer.",
+    )
+    explorer.add_argument(
+        "--registry",
+        required=True,
+        type=Path,
+        help="SQLite registry path.",
+    )
+    explorer.add_argument(
+        "--output",
+        required=True,
+        type=Path,
+        help="Destination self-contained HTML path.",
+    )
+
     dashboard = subparsers.add_parser(
         "dashboard",
         help="Export a self-contained read-only HTML inspection dashboard.",
@@ -593,6 +614,15 @@ def _run(args: argparse.Namespace) -> str:
                 else _render_storage_migration(result)
             )
         raise ValueError(f"unsupported storage surface: {args.surface}")
+
+    if args.command == "explorer":
+        with SQLiteRegistry(_existing_db(args.registry)) as registry:
+            document = build_schema_explorer_document(registry)
+        destination = write_schema_explorer(
+            document,
+            args.output,
+        )
+        return str(destination)
 
     if args.command == "dashboard":
         with SQLiteRegistry(_existing_db(args.registry)) as registry:
