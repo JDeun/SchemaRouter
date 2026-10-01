@@ -76,8 +76,6 @@ async def _bounded_get(
         params=params,
         follow_redirects=False,
     ) as response:
-        if response.is_redirect:
-            raise SchemaSourceError("OData redirects are not followed automatically")
         if response.status_code == 304:
             return httpx.Response(
                 status_code=response.status_code,
@@ -85,6 +83,8 @@ async def _bounded_get(
                 content=b"",
                 request=response.request,
             )
+        if response.is_redirect:
+            raise SchemaSourceError("OData redirects are not followed automatically")
         response.raise_for_status()
 
         content_length = response.headers.get("content-length")
