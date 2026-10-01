@@ -314,6 +314,17 @@ class FieldSpec(StrictModel):
             raise ValueError("field path requires non-empty string segments")
         if any(not isinstance(part, str) or not part for part in self.result_path):
             raise ValueError("field result_path requires non-empty string segments")
+        for label, path in (("path", self.path), ("result_path", self.result_path)):
+            if path and path[0] == "*":
+                raise ValueError(
+                    f"field {label} must not begin with the array wildcard; "
+                    "root arrays are traversed implicitly"
+                )
+            if path and path[-1] == "*":
+                raise ValueError(
+                    f"field {label} must not end with the array wildcard; "
+                    "select the array field itself instead"
+                )
         source_wildcards = [
             index
             for index, part in enumerate(self.path)
@@ -540,6 +551,8 @@ class EndpointSpec(StrictModel):
                 if (
                     source_longer[: len(source_shorter)] == source_shorter
                     and result_longer[: len(result_shorter)] == result_shorter
+                    and "*" not in source_longer
+                    and "*" not in result_longer
                 ):
                     raise ValueError(
                         "overlapping output field paths in endpoint "
@@ -559,7 +572,10 @@ class EndpointSpec(StrictModel):
                     if len(left_path) <= len(right_path)
                     else (right_path, left_path)
                 )
-                if longer[: len(shorter)] == shorter:
+                if (
+                    longer[: len(shorter)] == shorter
+                    and "*" not in longer
+                ):
                     raise ValueError(
                         "overlapping output result paths in endpoint "
                         f"{self.name!r}: {left_name!r} and {right_name!r}"
