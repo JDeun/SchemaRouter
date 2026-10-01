@@ -137,6 +137,9 @@ jobs:
       - run: /tmp/schemarouter-wheel/bin/python examples/mixed_provider_demo.py
       - run: /tmp/schemarouter-wheel/bin/python examples/schema_drift_demo.py
       - run: /tmp/schemarouter-wheel/bin/python examples/context_reduction_demo.py
+      - name: Install external-style decision backend demo against built wheel
+        run: /tmp/schemarouter-wheel/bin/pip install --no-deps -e examples/decision_backend_plugin_demo
+      - run: /tmp/schemarouter-wheel/bin/python examples/decision_backend_plugin_quickstart.py
       - run: /tmp/schemarouter-wheel/bin/python scripts/quickstart_provider_contract_smoke.py
       - run: /tmp/schemarouter-wheel/bin/python scripts/consumer_acceptance.py --json-out artifacts/consumer-acceptance-wheel.json
       - run: /tmp/schemarouter-wheel/bin/schemarouter --help
