@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import json
 import os
+from time import perf_counter
 
 from compatibility_report import new_report, write_report
 
@@ -13,7 +14,9 @@ DEFAULT_URL = "https://www.crystallography.net/cod/optimade"
 
 
 async def run_smoke(url: str) -> dict[str, object]:
+    discovery_started = perf_counter()
     router = await SchemaRouter.from_url(url, kind="optimade")
+    discovery_ms = round((perf_counter() - discovery_started) * 1000, 2)
 
     keys = router.registry.keys()
     assert len(keys) == 1
@@ -40,7 +43,9 @@ async def run_smoke(url: str) -> dict[str, object]:
     assert "chemical_formula_descriptive" in plan.calls[0].fields
     assert "nelements" in plan.calls[0].fields
 
+    execution_started = perf_counter()
     results = await router.execute(plan)
+    execution_ms = round((perf_counter() - execution_started) * 1000, 2)
     assert len(results) == 1
     assert isinstance(results[0].data, list)
     assert results[0].data
@@ -66,6 +71,8 @@ async def run_smoke(url: str) -> dict[str, object]:
         "execution_success": True,
         "safe_endpoint": plan.calls[0].endpoint,
         "returned_shape": "array<object>",
+        "discovery_latency_ms": discovery_ms,
+        "execution_latency_ms": execution_ms,
         "auth_required": tool.endpoint(plan.calls[0].endpoint).auth_required,
         "known_quirks": [
             "Public provider availability and dataset latency vary."
