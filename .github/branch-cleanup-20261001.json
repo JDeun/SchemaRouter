@@ -1,0 +1,816 @@
+{
+  "generated_at": "2026-10-01",
+  "repository": "JDeun/SchemaRouter",
+  "purpose": "One-shot deletion allowlist for stale closed-unmerged branches after product 0.13.0 closure.",
+  "safety_criteria": [
+    "branch is not protected",
+    "branch currently points to the exact head SHA recorded by a closed, unmerged PR",
+    "active 0.14 research prefixes are excluded",
+    "research/v7-field-projection is excluded",
+    "runtime cleanup rechecks exact SHA, protection, and absence of open PRs before deletion",
+    "runtime cleanup rechecks that the recorded closed PR remains unmerged and still anchors the exact branch name and head SHA before deleting the branch ref"
+  ],
+  "retained_prefixes": [
+    "research/0.14-",
+    "docs/0.14-",
+    "feature/0.14-"
+  ],
+  "retained_exact": [
+    "main",
+    "research/v7-field-projection"
+  ],
+  "candidate_count": 113,
+  "candidates": [
+    {
+      "branch": "feature/524-schema-refresh-watcher",
+      "sha": "e2ff95455ebf7b9a590d4f6141a9caa7f7905c40",
+      "closed_pr": 561,
+      "title": "feat: add bounded periodic provider schema refresh watcher",
+      "closed_at": "2026-10-01T02:59:52Z"
+    },
+    {
+      "branch": "fix/523-mcp-root-array-contracts",
+      "sha": "6fc2c3560878e55ce0b87d87659936ed6ebe70c2",
+      "closed_pr": 560,
+      "title": "fix: preserve MCP root-array record fields",
+      "closed_at": "2026-10-01T01:33:44Z"
+    },
+    {
+      "branch": "docs/536-universal-ingestion-matrix",
+      "sha": "b9d2c5cb6f16cf895cc6d6342fcb4a57a031d2ec",
+      "closed_pr": 558,
+      "title": "docs: add universal ingestion matrix and broad-domain coverage",
+      "closed_at": "2026-10-01T02:59:57Z"
+    },
+    {
+      "branch": "feature/536-domain-ingestion-matrix",
+      "sha": "59b20895349ecf010664e7ec4eca08ccd88d50ed",
+      "closed_pr": 557,
+      "title": "test: prove universal ingestion across domains and tool shapes",
+      "closed_at": "2026-10-01T01:36:39Z"
+    },
+    {
+      "branch": "feature/540-bound-tool-invoker",
+      "sha": "78855ef21e9454d995b83d3ff65be9886d2b0d7a",
+      "closed_pr": 542,
+      "title": "feat: bind explicit ToolSpec contracts to arbitrary SDK invokers",
+      "closed_at": "2026-10-01T01:13:31Z"
+    },
+    {
+      "branch": "research/0.13-end-to-end-operation-parser",
+      "sha": "f2cdf2278bf6fe3994c496c6d4aac92c10cb2d22",
+      "closed_pr": 416,
+      "title": "research: V6H end-to-end multilingual operation/OOS parser",
+      "closed_at": "2026-09-29T00:22:44Z"
+    },
+    {
+      "branch": "research/0.13-conformal-e5-membership",
+      "sha": "f9aef518eb84444fdfe70fdcd5e478f03fc2fbb4",
+      "closed_pr": 413,
+      "title": "research: V6G conformal multilingual-E5 catalog membership",
+      "closed_at": "2026-09-28T23:43:22Z"
+    },
+    {
+      "branch": "research/0.13-relative-cross-encoder-gate",
+      "sha": "46f66e71357aaa541a29d42da43b7820b829a37e",
+      "closed_pr": 411,
+      "title": "research: V6G relative multilingual cross-encoder capability gate",
+      "closed_at": "2026-09-28T23:49:20Z"
+    },
+    {
+      "branch": "research/0.13-gte-positive-retriever",
+      "sha": "1466f6ffdc5ee959a925354da66fcae5a481b234",
+      "closed_pr": 410,
+      "title": "research: V6G frozen GTE multilingual positive selector",
+      "closed_at": "2026-09-28T23:54:27Z"
+    },
+    {
+      "branch": "research/0.13-tool-specialized-retriever",
+      "sha": "6f8ad88b67a6c93ac6f978a23b6c853f8d44f88e",
+      "closed_pr": 407,
+      "title": "research: V6F tool-specialized pretrained route retriever",
+      "closed_at": "2026-09-28T23:17:41Z"
+    },
+    {
+      "branch": "research/0.13-naturalistic-operation-probe",
+      "sha": "ce6b2dfc5047d48acad18678b05a273e4f56ca3c",
+      "closed_pr": 405,
+      "title": "research: V6F naturalistic operation-probe membership",
+      "closed_at": "2026-09-28T23:54:03Z"
+    },
+    {
+      "branch": "research/0.13-component-mixture-density",
+      "sha": "6c2f03b20d8a248863f485c40b6a7f1a52e4a447",
+      "closed_pr": 400,
+      "title": "research: V6D component Gaussian-mixture density ratio",
+      "closed_at": "2026-09-28T22:23:58Z"
+    },
+    {
+      "branch": "research/0.13-density-ratio",
+      "sha": "05a957e50f5857e93c27e841cb6c6d73ab1b585b",
+      "closed_pr": 398,
+      "title": "research: V6C tied-Gaussian density-ratio membership",
+      "closed_at": "2026-09-28T15:19:26Z"
+    },
+    {
+      "branch": "research/0.13-hard-negative-ellipsoid",
+      "sha": "28c33b27bf4b904110c3c3960ed55f858c8fc0a3",
+      "closed_pr": 396,
+      "title": "research: V6B schema-derived hard-negative ellipsoid",
+      "closed_at": "2026-09-28T14:37:30Z"
+    },
+    {
+      "branch": "research/0.13-schema-adb-baseline",
+      "sha": "9bd0effc7316cfa1849d5628e8d29207e4239105",
+      "closed_pr": 386,
+      "title": "research: schema-derived adaptive decision boundary baseline",
+      "closed_at": "2026-09-28T13:33:39Z"
+    },
+    {
+      "branch": "research/0.13-schema-derived-adb",
+      "sha": "bd42d7b056718631994aa05e051fc02111eaf49b",
+      "closed_pr": 385,
+      "title": "research: schema-derived adaptive decision boundary baseline",
+      "closed_at": "2026-09-28T13:23:26Z"
+    },
+    {
+      "branch": "research/0.12-pairwise-nli-membership",
+      "sha": "02aeefd4656f5b61a948142dfba74f51207bd979",
+      "closed_pr": 380,
+      "title": "research: pairwise NLI supported-vs-counterfactual membership",
+      "closed_at": "2026-09-28T13:03:33Z"
+    },
+    {
+      "branch": "research/0.12-independent-capability-entailment",
+      "sha": "a872c9602dcad959ea1bf10f16a052592754d4ae",
+      "closed_pr": 379,
+      "title": "research: independent per-capability entailment veto",
+      "closed_at": "2026-09-28T12:55:06Z"
+    },
+    {
+      "branch": "research/0.12-set-conditioned-entailment",
+      "sha": "e61058d0aa31819bf99b182f4bd5947dd0d11fab",
+      "closed_pr": 375,
+      "title": "research: set-conditioned binary entailment membership",
+      "closed_at": "2026-09-28T12:34:56Z"
+    },
+    {
+      "branch": "research/0.12-external-zeroshot-membership",
+      "sha": "5e6dde0c3860ff46f0961c74233d7196e6c86f59",
+      "closed_pr": 372,
+      "title": "research: external multilingual zero-shot capability membership",
+      "closed_at": "2026-09-28T12:10:31Z"
+    },
+    {
+      "branch": "research/sync-0.12e-membership-consensus-evidence",
+      "sha": "c9ba23cd93c72ba7b744fb09665ed722f424724e",
+      "closed_pr": 367,
+      "title": "research: sync terminal capability-set consensus evidence",
+      "closed_at": "2026-09-28T11:52:12Z"
+    },
+    {
+      "branch": "research/sync-0.12e-membership-evidence",
+      "sha": "368b1e2bfbcc0579ee01ea21ea5d6c38b21ab5e5",
+      "closed_pr": 365,
+      "title": "research: sync terminal capability-set membership evidence",
+      "closed_at": "2026-09-28T11:42:31Z"
+    },
+    {
+      "branch": "research/0.12-capability-set-membership-veto",
+      "sha": "f198f896c44860c27ce14b4c88200096ef0b754f",
+      "closed_pr": 364,
+      "title": "research: capability-set membership consensus veto",
+      "closed_at": "2026-09-28T11:35:09Z"
+    },
+    {
+      "branch": "research/0.12-asymmetric-ontology-veto",
+      "sha": "759359882c3deb1be310fc540bbb1780b1543885",
+      "closed_pr": 360,
+      "title": "research: asymmetric capability-ontology veto",
+      "closed_at": "2026-09-28T10:55:38Z"
+    },
+    {
+      "branch": "research/0.12-factorized-resource-action",
+      "sha": "38af3f92987bcd4bcb2c93db03de7418d721012b",
+      "closed_pr": 356,
+      "title": "research: factorize resource and action capability routing",
+      "closed_at": "2026-09-28T11:27:00Z"
+    },
+    {
+      "branch": "research/0.12-semantic-action-ontology-349",
+      "sha": "f7ef75666c61e9b701ce1cee447b528d11e66a15",
+      "closed_pr": 353,
+      "title": "research: shared-embedding semantic action ontology for 0.12",
+      "closed_at": "2026-09-28T11:26:52Z"
+    },
+    {
+      "branch": "research/0.12-semantic-action-ontology",
+      "sha": "38ee7557565983746e33741897e6168bf4f35643",
+      "closed_pr": 352,
+      "title": "research: semantic action ontology for 0.12 capability matching",
+      "closed_at": "2026-09-28T10:04:04Z"
+    },
+    {
+      "branch": "research/0.12-query-first-typed-frame",
+      "sha": "ef0e0a567f12129bf9f4b003d13f9f6e9679a216",
+      "closed_pr": 348,
+      "title": "research: query-first typed capability frame for 0.12",
+      "closed_at": "2026-09-28T09:42:53Z"
+    },
+    {
+      "branch": "research/evidence-sync-registry-capability-20260928",
+      "sha": "4db52ca5d7b89e983d027e260dff58106525bf25",
+      "closed_pr": 344,
+      "title": "research: record terminal registry capability verifier",
+      "closed_at": "2026-09-28T09:20:25Z"
+    },
+    {
+      "branch": "research/v4-registry-capability-verifier",
+      "sha": "ef75100abc1bb03a80ef2d7cfbd9d463accfb623",
+      "closed_pr": 341,
+      "title": "research: registry-compiled capability verifier for arbitrary tools",
+      "closed_at": "2026-09-28T08:07:28Z"
+    },
+    {
+      "branch": "research/v4-bge-gte-consensus",
+      "sha": "d25f427569fc4419a72963c6f31994fa170805f6",
+      "closed_pr": 337,
+      "title": "research: test threshold-free BGE GTE consensus",
+      "closed_at": "2026-09-28T07:18:07Z"
+    },
+    {
+      "branch": "research/evidence-sync-alias-envelope-20260928",
+      "sha": "82c50d457986f350264f905a29c7ddd28f9b4f35",
+      "closed_pr": 335,
+      "title": "research: sync terminal alias-envelope evidence",
+      "closed_at": "2026-09-28T07:16:41Z"
+    },
+    {
+      "branch": "research/v4-bge-alias-envelope",
+      "sha": "fa091f43296eb1ca680f39921010482275bb4cda",
+      "closed_pr": 333,
+      "title": "research: test registry-self-calibrated BGE alias envelope",
+      "closed_at": "2026-09-28T07:01:13Z"
+    },
+    {
+      "branch": "research/v4-bge-m3-colbert-runtime-audit-fix",
+      "sha": "49c2b26e24a737a0e3e1beda93cff69a2f70ebf7",
+      "closed_pr": 331,
+      "title": "research: close ColBERT latency audit after terminal rejection",
+      "closed_at": "2026-09-28T06:34:58Z"
+    },
+    {
+      "branch": "research/v4-bge-m3-colbert-operation-gate",
+      "sha": "4c72f2dd1939edb6ecf8415d620dbb5d58683fa0",
+      "closed_pr": 329,
+      "title": "research: reject BGE-M3 ColBERT operation-contract gate",
+      "closed_at": "2026-09-28T06:34:55Z"
+    },
+    {
+      "branch": "research/v4-lightweight-negative-gte-freeze",
+      "sha": "b19d7b0255ee9717464b6fa65ce1ebdeaf58a1bd",
+      "closed_pr": 327,
+      "title": "research: fresh confirmation failed for frozen lightweight BGE+GTE candidate",
+      "closed_at": "2026-09-28T05:48:27Z"
+    },
+    {
+      "branch": "research/v4-lightweight-negative-gte-executable",
+      "sha": "caca039aff1c7b2960d167196f883e3bcbc5d431",
+      "closed_pr": 325,
+      "title": "research: confirm executable lightweight BGE negative-veto + GTE rescue",
+      "closed_at": "2026-09-28T05:18:33Z"
+    },
+    {
+      "branch": "research/v4-lightweight-negative-gte-composite",
+      "sha": "fcd6c73dee318e0d58e4f6e5cef1d646a2832c67",
+      "closed_pr": 323,
+      "title": "research: confirm lightweight negative veto + GTE composition",
+      "closed_at": "2026-09-28T05:00:49Z"
+    },
+    {
+      "branch": "research/v4-kev-08b-system-one-timeout-retry",
+      "sha": "f8e25fe58e5b5a622732e7d57719cab21ac46648",
+      "closed_pr": 317,
+      "title": "research: retire unrealistic CPU timeout retry",
+      "closed_at": "2026-09-28T04:35:00Z"
+    },
+    {
+      "branch": "research/v4-bge-kev-noul-compose",
+      "sha": "f0b292648349372bc5aa5cf82ebc8e4ae4026c92",
+      "closed_pr": 315,
+      "title": "research: close BGE+Kev composition without source analysis",
+      "closed_at": "2026-09-28T04:39:54Z"
+    },
+    {
+      "branch": "research/v4-anyjev-l0-noul-veto",
+      "sha": "4098da5dcbc100bde34c62088813415f3f260e05",
+      "closed_pr": 313,
+      "title": "research: retire AnyJev CPU execution path",
+      "closed_at": "2026-09-28T04:39:58Z"
+    },
+    {
+      "branch": "research/v4-laya-noul-veto",
+      "sha": "46af3c3d0156b7b7bfd40686aa5639571f91a936",
+      "closed_pr": 302,
+      "title": "research: reject pinned Laya noul veto",
+      "closed_at": "2026-09-28T02:10:54Z"
+    },
+    {
+      "branch": "research/v4-kev-08b-system-one",
+      "sha": "250513c70d08e926251ce28683b404fe97581527",
+      "closed_pr": 300,
+      "title": "research: terminate impractical Kev CPU runtime without quality result",
+      "closed_at": "2026-09-28T04:39:45Z"
+    },
+    {
+      "branch": "research/v4-laya-choice-noul",
+      "sha": "13d8befd8e5eef651040a432c584cd03a7bd771b",
+      "closed_pr": 296,
+      "title": "research: superseded Laya choice+noul full-catalog routing",
+      "closed_at": "2026-09-28T01:47:08Z"
+    },
+    {
+      "branch": "research/v4-laya-direct-routing",
+      "sha": "48e329ee949d0d7a42d93a7c06c7ecbc62edfedc",
+      "closed_pr": 294,
+      "title": "research: reject direct Laya full-catalog routing",
+      "closed_at": "2026-09-28T01:41:40Z"
+    },
+    {
+      "branch": "research/v4-qwen3-capability-verifier",
+      "sha": "68e812ab5c72bd42664e21f8c9f62a760465cb03",
+      "closed_pr": 290,
+      "title": "research: reject external Qwen3 capability verifier",
+      "closed_at": "2026-09-28T01:56:30Z"
+    },
+    {
+      "branch": "research/v4-frozen-learned-verifier",
+      "sha": "e5b10ee01ec23af6113c562b51e1db0c6d003d7a",
+      "closed_pr": 288,
+      "title": "research: freeze learned winner verifier candidate",
+      "closed_at": "2026-09-28T00:47:30Z"
+    },
+    {
+      "branch": "research/v4-oof-learned-verifier",
+      "sha": "cfaafb84bb651a6d6d38c4ce741f05ac61f37e9e",
+      "closed_pr": 286,
+      "title": "research: test grouped-OOF learned winner verifier",
+      "closed_at": "2026-09-28T00:13:09Z"
+    },
+    {
+      "branch": "research/v4-rank-vote-openworld",
+      "sha": "f9c75c1a2fade5846a071afe0fe50503c8e9b265",
+      "closed_pr": 284,
+      "title": "research: test relative rank-vote open-world detector",
+      "closed_at": "2026-09-27T23:40:13Z"
+    },
+    {
+      "branch": "research/v4-rank-capability-openworld",
+      "sha": "944df2e0f2dc8617e7b97e6a38d4e2f5684f5324",
+      "closed_pr": 283,
+      "title": "research: test rank-based capability-set open-world veto",
+      "closed_at": "2026-09-27T23:42:38Z"
+    },
+    {
+      "branch": "research/v4-dual-negative-openworld",
+      "sha": "4a481a3413ed12adb0fe51887ac1509a887bd4cb",
+      "closed_pr": 280,
+      "title": "research: test dual signed negative open-world veto",
+      "closed_at": "2026-09-27T23:30:37Z"
+    },
+    {
+      "branch": "research/v4-global-signed-capability-bank",
+      "sha": "772d81d993e44d9723601c6bc7d1e067a4d00822",
+      "closed_pr": 278,
+      "title": "research: test global signed capability prototype bank",
+      "closed_at": "2026-09-27T23:17:13Z"
+    },
+    {
+      "branch": "research/v4-negative-capability-prototypes",
+      "sha": "fa99ddcdff183dfec1907f55a03e69051c5a9b2c",
+      "closed_pr": 276,
+      "title": "research: test explicit negative-capability prototype veto",
+      "closed_at": "2026-09-27T22:45:31Z"
+    },
+    {
+      "branch": "research/v4-typed-nli-contradiction-veto",
+      "sha": "d0d8162994087f2ef83f7b19c1c046f00608dc82",
+      "closed_pr": 274,
+      "title": "research: diagnose typed NLI contradiction veto",
+      "closed_at": "2026-09-27T21:34:39Z"
+    },
+    {
+      "branch": "research/v4-bge-m3-abstention-geometry",
+      "sha": "f5e506a1b449aa7de98a35cfa02971a75f450ff8",
+      "closed_pr": 272,
+      "title": "research: diagnose BGE-M3 abstention geometry",
+      "closed_at": "2026-09-27T16:02:05Z"
+    },
+    {
+      "branch": "research/v4-zero-false-cross-model-candidate",
+      "sha": "9bdb57a0331fb7dc4c9a4aeedacfab19d7afa0e9",
+      "closed_pr": 270,
+      "title": "research: confirm frozen zero-false cross-model rescue candidate",
+      "closed_at": "2026-09-27T16:13:28Z"
+    },
+    {
+      "branch": "research/v4-robust-2d-rescue",
+      "sha": "96a5a138c4449b94019083c2c728623bde625dbd",
+      "closed_pr": 269,
+      "title": "research: diagnose robust 2D rescue boundary",
+      "closed_at": "2026-09-27T15:44:54Z"
+    },
+    {
+      "branch": "research/v4-robust-winner-rescue-validator",
+      "sha": "2da1af1deed734f45f2288b8a680e8b23972b36b",
+      "closed_pr": 267,
+      "title": "research: diagnose robust winner rescue validator",
+      "closed_at": "2026-09-27T15:13:35Z"
+    },
+    {
+      "branch": "research/v4-typed-two-view-gate",
+      "sha": "47e8fd990ab82e9631ee6b2f2c0226bd2d731919",
+      "closed_pr": 264,
+      "title": "research: prepare typed two-view BGE-M3 gate",
+      "closed_at": "2026-09-27T14:54:58Z"
+    },
+    {
+      "branch": "research/v4-robust-abstention-rescue",
+      "sha": "ba67b81d3f24dbf530b916e94e1b97202ba8364b",
+      "closed_pr": 263,
+      "title": "research: prepare zero-false abstention rescue",
+      "closed_at": "2026-09-27T14:54:51Z"
+    },
+    {
+      "branch": "research/v4-bge-m3-robust-candidate",
+      "sha": "9e9b1049eac779adbc5781bfc45a447966ae32e8",
+      "closed_pr": 260,
+      "title": "research: confirm robust BGE-M3 candidate",
+      "closed_at": "2026-09-27T15:31:52Z"
+    },
+    {
+      "branch": "research/v4-bge-m3-zero-false-rescue",
+      "sha": "982ef0a40f766c1f62b22bb6948532ec6a1795d1",
+      "closed_pr": 258,
+      "title": "research: diagnose strict BGE-M3 zero-false rescue",
+      "closed_at": "2026-09-27T14:41:42Z"
+    },
+    {
+      "branch": "research/v4-route-local-stable-fusion",
+      "sha": "b62f0b79c517fa88161c5a6a00e8dc1de32c64fc",
+      "closed_pr": 257,
+      "title": "research: diagnose route-local stable BGE-M3 fusion",
+      "closed_at": "2026-09-27T14:41:49Z"
+    },
+    {
+      "branch": "research/v4-winner-rescue-validator",
+      "sha": "25db2a08ec9a4ac10865097d68f1ad12fb702061",
+      "closed_pr": 252,
+      "title": "research: diagnose winner-only cross-encoder rescue",
+      "closed_at": "2026-09-27T14:05:14Z"
+    },
+    {
+      "branch": "research/v4-gte-winner-bge-rejector",
+      "sha": "27f2290bd37123e19544cd5e9a62e8b4a0782634",
+      "closed_pr": 249,
+      "title": "research: diagnose GTE winner-only BGE rejection",
+      "closed_at": "2026-09-27T14:10:11Z"
+    },
+    {
+      "branch": "research/v4-bge-m3-fine-fusion",
+      "sha": "9d6f5bdc18c933a35d4f8f9983c12c850ab9b0fb",
+      "closed_pr": 248,
+      "title": "research: fine-sweep BGE-M3 dual-view fusion",
+      "closed_at": "2026-09-27T14:16:29Z"
+    },
+    {
+      "branch": "research/v4-bge-m3-frozen-candidate",
+      "sha": "786040135ee1818c4ba6211f09a63c332cdedb9d",
+      "closed_pr": 247,
+      "title": "research: confirm frozen BGE-M3 budget-6 planner candidate",
+      "closed_at": "2026-09-27T14:04:21Z"
+    },
+    {
+      "branch": "research/v4-embedding-backbone-screen",
+      "sha": "e15db2c47f0192c470ed3c60369986cb5f093171",
+      "closed_pr": 243,
+      "title": "research: screen stronger multilingual embedding backbones",
+      "closed_at": "2026-09-27T14:11:10Z"
+    },
+    {
+      "branch": "research/v4-dual-view-embedding",
+      "sha": "5ddbec60ee78b26d12e917a279580c99ff735f33",
+      "closed_pr": 241,
+      "title": "research: diagnose single-query dual-view embedding router",
+      "closed_at": "2026-09-27T14:11:07Z"
+    },
+    {
+      "branch": "research/v4-lightweight-crossencoder-gates",
+      "sha": "7363f0a222cfc9545a9c63f86a4008c1b0e26b61",
+      "closed_pr": 239,
+      "title": "research: compare lightweight cross-encoder winner gates",
+      "closed_at": "2026-09-27T14:02:46Z"
+    },
+    {
+      "branch": "research/v4-bounded-action-embedding-v2",
+      "sha": "28d0689583d2adc13eb9f4bad2d31e7c0e07fb6a",
+      "closed_pr": 236,
+      "title": "research: diagnose bounded width2 action embedding rerank",
+      "closed_at": "2026-09-27T12:59:51Z"
+    },
+    {
+      "branch": "research/v4-action-guided-single-bge-diagnostic",
+      "sha": "784169f922f97085c5a9fd72fcf308cb0d64ec36",
+      "closed_pr": 232,
+      "title": "research: diagnose action-guided single-pair BGE",
+      "closed_at": "2026-09-27T14:01:40Z"
+    },
+    {
+      "branch": "research/v4-width2-winner-gate-candidate",
+      "sha": "fdaf3f77e95b504e81739c69cd1d9889d36afabb",
+      "closed_pr": 228,
+      "title": "research: execute frozen width2 winner gate candidate",
+      "closed_at": "2026-09-27T12:26:46Z"
+    },
+    {
+      "branch": "research/v4-paired-candidate-harness",
+      "sha": "9c38b71e731c0d0bda52baeabebfa23c7d998506",
+      "closed_pr": 223,
+      "title": "research: add paired v4 candidate benchmark harness",
+      "closed_at": "2026-09-27T11:32:01Z"
+    },
+    {
+      "branch": "research/evidence-ledger-0.11-rerank",
+      "sha": "50aa1f5741deb122835e2cbb32017f25f2932b14",
+      "closed_pr": 217,
+      "title": "research: record winner-gated bounded rerank evidence",
+      "closed_at": "2026-09-27T11:32:45Z"
+    },
+    {
+      "branch": "research/v4-rerank-width",
+      "sha": "af2ef96b9b429cff3d14086f3727073de72ad268",
+      "closed_pr": 215,
+      "title": "research: superseded bounded rerank width diagnostic",
+      "closed_at": "2026-09-27T10:44:34Z"
+    },
+    {
+      "branch": "research/v4-bounded-rerank-diagnostic",
+      "sha": "87cd764ef5b58e0e2a3f325724a21cc45f61683f",
+      "closed_pr": 205,
+      "title": "research: record bounded retrieve-rerank score surface",
+      "closed_at": "2026-09-27T10:32:35Z"
+    },
+    {
+      "branch": "research/v4-route-local-safety",
+      "sha": "53bdca4f8aec6b1ca7687c9cb2a9aabf2a8267f2",
+      "closed_pr": 203,
+      "title": "research: evaluate route-local operation-fit safety",
+      "closed_at": "2026-09-27T11:31:56Z"
+    },
+    {
+      "branch": "research/v4-bounded-rerank",
+      "sha": "e93f5ddd104b5d876b248a8607092e6900a6e0a3",
+      "closed_pr": 195,
+      "title": "research: implement bounded retrieve-rerank routing",
+      "closed_at": "2026-09-27T15:58:32Z"
+    },
+    {
+      "branch": "research/v4-nli-operation-narrow",
+      "sha": "a5a9294591d50d280557b1d8273130bad8986d01",
+      "closed_pr": 194,
+      "title": "research: reject direct NLI operation boundary",
+      "closed_at": "2026-09-27T09:47:22Z"
+    },
+    {
+      "branch": "research/v4-hierarchical-pairwise-tool",
+      "sha": "f7babbd43fb67fd8abec86756fb182e8217d97df",
+      "closed_pr": 193,
+      "title": "research: reject pairwise tool-stage hierarchy",
+      "closed_at": "2026-09-27T09:47:17Z"
+    },
+    {
+      "branch": "research/v4-nli-operation-boundary",
+      "sha": "1695bb28f644090063c69fe8e5789b0e81fa8222",
+      "closed_pr": 192,
+      "title": "research: evaluate multilingual NLI operation boundary",
+      "closed_at": "2026-09-27T08:39:30Z"
+    },
+    {
+      "branch": "research/v4-route-local-thresholds",
+      "sha": "7f3ac3386dd09a69da7af49efae0328934214d27",
+      "closed_pr": 191,
+      "title": "research: evaluate route-local operation thresholds",
+      "closed_at": "2026-09-27T08:37:14Z"
+    },
+    {
+      "branch": "research/v4-hierarchical-routing",
+      "sha": "003f302fb1afaab6a764d2777fd05384ae75fd60",
+      "closed_pr": 189,
+      "title": "research: reject hierarchical tool-then-operation routing",
+      "closed_at": "2026-09-27T08:38:52Z"
+    },
+    {
+      "branch": "research/v4-dev-baseline-record",
+      "sha": "e07577bcb01d92c528d1b61ca7a7fc2c5de70f22",
+      "closed_pr": 187,
+      "title": "research: record fresh v4 development baseline",
+      "closed_at": "2026-09-27T11:31:52Z"
+    },
+    {
+      "branch": "research/v4-evidence-projection",
+      "sha": "6374a0b78dc2e214a9c0b1230d27a718d193cbc0",
+      "closed_pr": 186,
+      "title": "research: superseded score-kind-safe evidence projection",
+      "closed_at": "2026-09-27T10:51:04Z"
+    },
+    {
+      "branch": "research/v4-typed-evidence-contract",
+      "sha": "212df048ecee1bea53dc2b5763a0c05393f90054",
+      "closed_pr": 185,
+      "title": "research: emit typed decision evidence from semantic backends",
+      "closed_at": "2026-09-27T11:31:46Z"
+    },
+    {
+      "branch": "research/operation-routing-quality-v4",
+      "sha": "470d126c7dedb93e71640d29222fc007f95126d9",
+      "closed_pr": 184,
+      "title": "research: start operation routing quality v4",
+      "closed_at": "2026-09-27T11:31:42Z"
+    },
+    {
+      "branch": "prep/cache-backend-hardening",
+      "sha": "6fb8bfe09b7327438560f40025c16b7e8dc435ac",
+      "closed_pr": 183,
+      "title": "prep: bound cached embedding option vectors",
+      "closed_at": "2026-09-27T11:31:37Z"
+    },
+    {
+      "branch": "prep/operation-routing-production-quality",
+      "sha": "d2d33472744fff876bd571e9834eaabad6f0e940",
+      "closed_pr": 182,
+      "title": "prep: production routing quality and scoped graph authority",
+      "closed_at": "2026-09-27T03:19:27Z"
+    },
+    {
+      "branch": "research/graph-projection-v3",
+      "sha": "cb1fb81d6a42a6fa27b5ff9b3935681d30a17e25",
+      "closed_pr": 181,
+      "title": "research: complete graph-first operation routing cycle",
+      "closed_at": "2026-09-27T11:31:33Z"
+    },
+    {
+      "branch": "research/pairwise-score-observability",
+      "sha": "650ba5ee249db2d1175ad5a00c4a07ad607ec3c2",
+      "closed_pr": 174,
+      "title": "bench: expose pairwise operation score geometry",
+      "closed_at": "2026-09-26T13:44:15Z"
+    },
+    {
+      "branch": "research/operation-explicit-abstention",
+      "sha": "09c1e45314cffc07e0a64a04ea848f346bb95501",
+      "closed_pr": 172,
+      "title": "research: evaluate explicit operation abstention",
+      "closed_at": "2026-09-26T13:11:31Z"
+    },
+    {
+      "branch": "docs/benchmark-cleanup",
+      "sha": "9ac5af55cfa14b1cbcb0c6d114b9745c55bc9378",
+      "closed_pr": 167,
+      "title": "research: finalize consumed v11 evidence",
+      "closed_at": "2026-09-26T12:20:01Z"
+    },
+    {
+      "branch": "research/operation-fit-bge-rescue-fine",
+      "sha": "c1ac9bfcafdffacbacc8b011468bbef8b903f65b",
+      "closed_pr": 160,
+      "title": "research: calibrate baseline-preserving BGE operation rescue",
+      "closed_at": "2026-09-26T11:21:26Z"
+    },
+    {
+      "branch": "research/operation-fit-encoder-comparison",
+      "sha": "51d872b5cb4dd3ddbef62e1118978dd28c825f18",
+      "closed_pr": 158,
+      "title": "research: compare operation-fit multilingual encoders",
+      "closed_at": "2026-09-26T10:58:32Z"
+    },
+    {
+      "branch": "research/operation-fit-two-tier-rescue",
+      "sha": "f610a315714f311aa1c44d738f21598bb4373380",
+      "closed_pr": 157,
+      "title": "research: evaluate two-tier operation-fit rescue",
+      "closed_at": "2026-09-26T10:50:22Z"
+    },
+    {
+      "branch": "research/operation-fit-margin-calibration",
+      "sha": "448956b5f199c574bd6a3563ee29b8287e92174f",
+      "closed_pr": 156,
+      "title": "research: calibrate operation-fit threshold and sibling margin",
+      "closed_at": "2026-09-26T10:29:38Z"
+    },
+    {
+      "branch": "research/operation-fit-margin-grid",
+      "sha": "2d1565b41eeee09659e1ef07d6876bee9e90415d",
+      "closed_pr": 155,
+      "title": "research: evaluate operation-fit similarity and margin",
+      "closed_at": "2026-09-26T10:37:55Z"
+    },
+    {
+      "branch": "research/operation-fit-max-variants",
+      "sha": "6934512aebdeeb4b5450c605726f86bbc2987b5e",
+      "closed_pr": 151,
+      "title": "research: evaluate max-over-alias operation fit",
+      "closed_at": "2026-09-26T09:05:07Z"
+    },
+    {
+      "branch": "perf/operation-fit-alias-surface",
+      "sha": "73a57f4645d2c117de8fa86a297cdbb25d6bd16e",
+      "closed_pr": 150,
+      "title": "perf: strengthen operation-fit semantic surface",
+      "closed_at": "2026-09-26T09:05:05Z"
+    },
+    {
+      "branch": "feat/multi-provider-evidence-clean",
+      "sha": "411322d5ba8c2973465bd82c1ab9de813caa64eb",
+      "closed_pr": 145,
+      "title": "feat: add provenance-aware multi-provider evidence aggregation",
+      "closed_at": "2026-09-26T08:16:11Z"
+    },
+    {
+      "branch": "research/operation-rerank",
+      "sha": "198c31a0ca02ab3aa6e02fcad01283ce84748019",
+      "closed_pr": 140,
+      "title": "research: evaluate bounded operation reranking",
+      "closed_at": "2026-09-26T02:31:35Z"
+    },
+    {
+      "branch": "research/capability-fit-margin",
+      "sha": "81abcfbc4dcac9ad6e0df7fc86b76d21f88b501e",
+      "closed_pr": 139,
+      "title": "research: calibrate capability-fit margin",
+      "closed_at": "2026-09-26T01:51:41Z"
+    },
+    {
+      "branch": "research/capability-fit-abstention",
+      "sha": "81abcfbc4dcac9ad6e0df7fc86b76d21f88b501e",
+      "closed_pr": 138,
+      "title": "research: complete capability-fit abstention calibration",
+      "closed_at": "2026-09-26T01:51:37Z"
+    },
+    {
+      "branch": "research/semantic-fit-diagnostics",
+      "sha": "9b2a334e8eb3dc91747920093f9b3d8a14ed2280",
+      "closed_pr": 135,
+      "title": "research: run isolated semantic fit diagnostics",
+      "closed_at": "2026-09-26T01:43:54Z"
+    },
+    {
+      "branch": "research/capability-fit-gate",
+      "sha": "7a8ec22f576b311d1f8aebbe9157b49f4d11459f",
+      "closed_pr": 134,
+      "title": "research: calibrate semantic capability-fit gate",
+      "closed_at": "2026-09-26T01:43:52Z"
+    },
+    {
+      "branch": "research/run-0.8-benchmark",
+      "sha": "746c8cf032024e86982529c11237bcbed09e7e02",
+      "closed_pr": 132,
+      "title": "research: run 0.8 empirical benchmark",
+      "closed_at": "2026-09-25T20:32:22Z"
+    },
+    {
+      "branch": "fix/runtime-evidence-revalidation",
+      "sha": "723b8fcd6da8631da48bc9b0a8c7510df2d84372",
+      "closed_pr": 129,
+      "title": "fix: revalidate evidence contracts at execution time",
+      "closed_at": "2026-09-25T15:19:14Z"
+    },
+    {
+      "branch": "fix/typed-unit-field-contracts",
+      "sha": "b08eaa20de256051c39171a8854d1674eb886fe4",
+      "closed_pr": 117,
+      "title": "fix: make field type and optional unit contracts enforceable",
+      "closed_at": "2026-09-25T08:57:34Z"
+    },
+    {
+      "branch": "feat/0.7-parameter-alias-routing",
+      "sha": "3d34b3de6d77a44b2547556c8de63ee3a53b6f58",
+      "closed_pr": 112,
+      "title": "feat: route trusted parameter aliases across providers",
+      "closed_at": "2026-09-25T08:58:25Z"
+    },
+    {
+      "branch": "bench/laya-recall-threshold-sweep",
+      "sha": "22df77f6a71ec435e77c784232dd3460b2b125bb",
+      "closed_pr": 86,
+      "title": "bench: sweep Laya confidence for recall-on-empty",
+      "closed_at": "2026-09-23T14:03:08Z"
+    },
+    {
+      "branch": "feat/ollama-decision-backend",
+      "sha": "c45581a1cc69b05f88b8fd3ef55ceba23bf8d683",
+      "closed_pr": 41,
+      "title": "feat: add local Ollama bounded decision backend",
+      "closed_at": "2026-09-22T09:05:02Z"
+    }
+  ]
+}
