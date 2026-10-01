@@ -330,3 +330,108 @@ async def test_odata_refresh_uses_metadata_etag_and_304() -> None:
 
     assert result.action == "unchanged"
     assert seen_headers[-1]["if-none-match"] == '"odata-v1"'
+
+
+@pytest.mark.asyncio
+async def test_breaking_candidate_does_not_poison_validator_cache() -> None:
+    state = {
+        "etag": '"v1"',
+        "document": _openapi_document(),
+    }
+    seen_etags: list[str | None] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_etags.append(request.headers.get("if-none-match"))
+        if request.headers.get("if-none-match") == state["etag"]:
+            return httpx.Response(
+                304,
+                headers={"ETag": state["etag"]},
+                request=request,
+            )
+        return httpx.Response(
+            200,
+            json=state["document"],
+            headers={"ETag": state["etag"]},
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        tool = await router.add_url(
+            "https://example.test/openapi.json",
+            kind="openapi",
+            name="materials",
+        )
+
+        breaking = _openapi_document()
+        breaking["paths"]["/materials"]["get"]["parameters"] = [
+            {
+                "name": "q",
+                "in": "query",
+                "required": True,
+                "schema": {"type": "string"},
+            }
+        ]
+        state["etag"] = '"v2"'
+        state["document"] = breaking
+
+        first = await router.arefresh_schema(tool.key)
+        second = await router.arefresh_schema(tool.key)
+
+    assert first.action == "pending_review"
+    assert second.action == "pending_review"
+    assert seen_etags[-2:] == ['"v1"', '"v1"']
+    assert router.loader.schema_http_validators_for(tool.key) == {
+        "etag": '"v1"',
+    }
+
+
+@pytest.mark.asyncio
+async def test_report_only_compatible_candidate_keeps_current_validator() -> None:
+    state = {
+        "etag": '"v1"',
+        "document": _openapi_document(),
+    }
+    seen_etags: list[str | None] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_etags.append(request.headers.get("if-none-match"))
+        if request.headers.get("if-none-match") == state["etag"]:
+            return httpx.Response(
+                304,
+                headers={"ETag": state["etag"]},
+                request=request,
+            )
+        return httpx.Response(
+            200,
+            json=state["document"],
+            headers={"ETag": state["etag"]},
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        tool = await router.add_url(
+            "https://example.test/openapi.json",
+            kind="openapi",
+            name="materials",
+        )
+
+        state["etag"] = '"v2"'
+        state["document"] = _openapi_document(summary="Updated")
+
+        first = await router.arefresh_schema(
+            tool.key,
+            apply_compatible=False,
+        )
+        second = await router.arefresh_schema(
+            tool.key,
+            apply_compatible=False,
+        )
+
+    assert first.action == "report_only"
+    assert second.action == "report_only"
+    assert seen_etags[-2:] == ['"v1"', '"v1"']
+    assert router.loader.schema_http_validators_for(tool.key) == {
+        "etag": '"v1"',
+    }
