@@ -1,0 +1,101 @@
+from __future__ import annotations
+
+import argparse
+import asyncio
+import json
+import os
+from time import perf_counter
+
+from compatibility_report import new_report, write_report
+
+from schemarouter import ExecutionPlan, SchemaRouter, ToolCall
+
+DEFAULT_URL = "https://services.odata.org/V4/TripPinServiceRW/"
+
+
+async def run_smoke(url: str) -> dict[str, object]:
+    started = perf_counter()
+    router = await SchemaRouter.from_url(url, kind="odata")
+    discovery_ms = round((perf_counter() - started) * 1000, 2)
+
+    tools = router.registry.tools()
+    assert len(tools) == 1
+    tool = tools[0]
+    endpoint = tool.endpoint("list_people")
+    assert endpoint.read_only is True
+
+    available_fields = {field.name for field in endpoint.output_fields}
+    fields = [
+        field
+        for field in ("UserName", "FirstName", "LastName")
+        if field in available_fields
+    ]
+    assert "UserName" in fields
+
+    call = ToolCall(
+        tool=tool.key,
+        endpoint=endpoint.name,
+        arguments={"top": 1},
+        fields=fields,
+        schema_fingerprint=endpoint.fingerprint,
+        tool_fingerprint=tool.fingerprint,
+    )
+    plan = ExecutionPlan(
+        query="one TripPin person",
+        registry_version=router.registry.version,
+        calls=[call],
+    )
+
+    started = perf_counter()
+    results = await router.execute(plan)
+    execution_ms = round((perf_counter() - started) * 1000, 2)
+
+    assert len(results) == 1
+    assert isinstance(results[0].data, list)
+    assert results[0].data
+    assert isinstance(results[0].data[0], dict)
+    assert results[0].data[0].get("UserName")
+
+    return {
+        "evidence_kind": "live_public_provider",
+        "provider": "OData TripPin V4",
+        "discovery_success": True,
+        "tool_count": len(tools),
+        "endpoint_count": len(tool.endpoints),
+        "execution_bound": bool(tool.metadata.get("execution_bound")),
+        "execution_success": True,
+        "safe_endpoint": endpoint.name,
+        "returned_shape": "array<object>",
+        "selected_fields": fields,
+        "discovery_latency_ms": discovery_ms,
+        "execution_latency_ms": execution_ms,
+        "auth_required": endpoint.auth_required,
+        "known_quirks": [
+            "TripPin may redirect to a session-scoped service URL.",
+            "Only a read-only GET with $top=1 is exercised.",
+        ],
+    }
+
+
+async def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--json-out", default=None)
+    args = parser.parse_args()
+    url = os.environ.get("SCHEMAROUTER_LIVE_ODATA_URL", DEFAULT_URL)
+    report = new_report(adapter="odata", source=url)
+
+    try:
+        report["details"] = await run_smoke(url)
+        report["status"] = "success"
+    except Exception as exc:
+        report["status"] = "failure"
+        report["error_type"] = type(exc).__name__
+        write_report(args.json_out, report)
+        raise
+
+    write_report(args.json_out, report)
+    print(json.dumps(report, ensure_ascii=False, sort_keys=True))
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
