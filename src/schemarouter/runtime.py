@@ -478,6 +478,11 @@ class SchemaRouter:
             expected_version=expected_version,
         )
         restamped = self.executor.restamp_binding(key, amended.fingerprint)
+        self.health_monitor.transition_tool_contract(
+            key,
+            expected_old_fingerprint=current.fingerprint,
+            expected_new_fingerprint=amended.fingerprint,
+        )
         if was_bound and not restamped:
             raise BindingDriftError(
                 f"amendment of {key!r} was registered, but its existing binding "
@@ -1336,6 +1341,11 @@ class SchemaRouter:
                         candidate_invoker,
                         expected_fingerprint=candidate_tool.fingerprint,
                     )
+            self.health_monitor.transition_tool_contract(
+                tool_key,
+                expected_old_fingerprint=current.fingerprint,
+                expected_new_fingerprint=candidate_tool.fingerprint,
+            )
             return SchemaRefreshResult(
                 tool_key=tool_key,
                 action="applied",
