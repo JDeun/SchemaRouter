@@ -10,7 +10,7 @@ from compatibility_report import new_report, write_report
 
 from schemarouter import ExecutionPlan, SchemaRouter, ToolCall
 
-DEFAULT_URL = "https://services.odata.org/V4/TripPinServiceRW/"
+DEFAULT_URL = "https://services.odata.org/V4/OData/OData.svc/"
 
 
 async def run_smoke(url: str) -> dict[str, object]:
@@ -21,16 +21,16 @@ async def run_smoke(url: str) -> dict[str, object]:
     tools = router.registry.tools()
     assert len(tools) == 1
     tool = tools[0]
-    endpoint = tool.endpoint("list_people")
+    endpoint = tool.endpoint("list_products")
     assert endpoint.read_only is True
 
     available_fields = {field.name for field in endpoint.output_fields}
     fields = [
         field
-        for field in ("UserName", "FirstName", "LastName")
+        for field in ("ID", "Name", "Description", "ReleaseDate")
         if field in available_fields
     ]
-    assert "UserName" in fields
+    assert {"ID", "Name"} <= set(fields)
 
     call = ToolCall(
         tool=tool.key,
@@ -41,7 +41,7 @@ async def run_smoke(url: str) -> dict[str, object]:
         tool_fingerprint=tool.fingerprint,
     )
     plan = ExecutionPlan(
-        query="one TripPin person",
+        query="one OData product",
         registry_version=router.registry.version,
         calls=[call],
     )
@@ -54,15 +54,19 @@ async def run_smoke(url: str) -> dict[str, object]:
     assert isinstance(results[0].data, list)
     assert results[0].data
     assert isinstance(results[0].data[0], dict)
-    assert results[0].data[0].get("UserName")
+    assert results[0].data[0].get("ID") is not None
+    assert isinstance(results[0].data[0].get("Name"), str)
 
     return {
         "evidence_kind": "live_public_provider",
-        "provider": "OData TripPin V4",
+        "provider": "OData.org V4 reference service",
         "discovery_success": True,
         "tool_count": len(tools),
         "endpoint_count": len(tool.endpoints),
-        "execution_bound": bool(tool.metadata.get("execution_bound")),
+        "execution_bound": router.executor.is_binding_ready_for_contract(
+            tool.key,
+            tool.fingerprint,
+        ),
         "execution_success": True,
         "safe_endpoint": endpoint.name,
         "returned_shape": "array<object>",
@@ -71,8 +75,7 @@ async def run_smoke(url: str) -> dict[str, object]:
         "execution_latency_ms": execution_ms,
         "auth_required": endpoint.auth_required,
         "known_quirks": [
-            "TripPin may redirect to a session-scoped service URL.",
-            "Only a read-only GET with $top=1 is exercised.",
+            "Only a read-only Products GET with $top=1 is exercised.",
         ],
     }
 
@@ -83,9 +86,13 @@ async def main() -> None:
     args = parser.parse_args()
     url = os.environ.get("SCHEMAROUTER_LIVE_ODATA_URL", DEFAULT_URL)
     report = new_report(adapter="odata", source=url)
+    report["details"] = {
+        "evidence_kind": "live_public_provider",
+        "provider": "OData.org V4 reference service",
+    }
 
     try:
-        report["details"] = await run_smoke(url)
+        report["details"].update(await run_smoke(url))
         report["status"] = "success"
     except Exception as exc:
         report["status"] = "failure"
