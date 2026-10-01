@@ -14,7 +14,6 @@ from .http_json import (
     build_http_json_invoker,
     prepare_http_json_tool,
 )
-from .odata import ODataRemoteInvoker, ODataSourceAdapter, tool_from_odata_metadata
 from .mcp import (
     DefaultMCPClientFactory,
     MCPClientFactory,
@@ -22,6 +21,7 @@ from .mcp import (
     inspect_mcp_url,
     tool_from_mcp,
 )
+from .odata import ODataRemoteInvoker, ODataSourceAdapter, tool_from_odata_metadata
 from .openapi import OpenAPIRemoteInvoker, resolve_openapi_base_url, tool_from_openapi
 from .openrpc import OpenRPCRemoteInvoker, OpenRPCSourceAdapter, tool_from_openrpc
 from .optimade import OPTIMADERemoteInvoker, OPTIMADESourceAdapter

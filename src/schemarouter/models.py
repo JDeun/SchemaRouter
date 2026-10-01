@@ -110,10 +110,21 @@ def _schema_at_projection_path(
     path: tuple[str, ...],
 ) -> dict[str, Any]:
     schema = output_schema
-    if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
+    if "array" in _schema_types(schema) and isinstance(schema.get("items"), dict):
+        # Root collection endpoints historically address fields relative to each record.
         schema = schema["items"]
+
     for part in path:
-        if schema.get("type") != "object":
+        if part == "*":
+            if "array" not in _schema_types(schema):
+                return {}
+            items = schema.get("items")
+            if not isinstance(items, dict):
+                return {}
+            schema = items
+            continue
+
+        if "object" not in _schema_types(schema):
             return {}
         properties = schema.get("properties")
         if not isinstance(properties, dict):
@@ -271,6 +282,25 @@ class FieldSpec(StrictModel):
             raise ValueError("field path requires non-empty string segments")
         if any(not isinstance(part, str) or not part for part in self.result_path):
             raise ValueError("field result_path requires non-empty string segments")
+        source_wildcards = [
+            index
+            for index, part in enumerate(self.path)
+            if part == "*"
+        ]
+        result_wildcards = [
+            index
+            for index, part in enumerate(self.result_path)
+            if part == "*"
+        ]
+        if source_wildcards:
+            if not self.result_path:
+                raise ValueError(
+                    "array-item field paths require an explicit result_path"
+                )
+            if source_wildcards != result_wildcards:
+                raise ValueError(
+                    "array-item source/result paths must preserve wildcard positions"
+                )
         if self.unit is not None:
             if not self.unit.strip():
                 raise ValueError("field unit must be non-empty when provided")

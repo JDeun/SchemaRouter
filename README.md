@@ -173,7 +173,7 @@ factors from a unit string alone.
 ```mermaid
 flowchart TD
     F["LangChain / LangGraph / LlamaIndex / your application"] --> SR["SchemaRouter"]
-    SR --> T["OpenAPI / MCP / OPTIMADE / GraphQL / OData / OpenRPC / HTTP JSON / Python + SDK"]
+    SR --> T["OpenAPI / MCP / OPTIMADE / Python"]
 ```
 
 The surrounding framework owns conversation, decomposition, generation, memory, graphs, and agent
@@ -187,21 +187,13 @@ cannot invent tools, fields, credentials, permissions, or side effects.
 
 | Source | Use when | Entry point |
 | --- | --- | --- |
-| Python callable | capability is local and typed | `router.add_callable(...)` |
-| Explicit ToolSpec + SDK/client | SDK is opaque or weakly typed but the contract is trusted | `router.add_bound_tool(...)` |
-| LangChain tool | an existing `BaseTool` / `StructuredTool` already exists | `router.add_langchain_tool(...)` |
-| LlamaIndex tool | an existing `BaseTool` / `FunctionTool` already exists | `router.add_llamaindex_tool(...)` |
+| Python | capability is local and typed | `router.add_callable(...)` |
 | OpenAPI | HTTP API publishes a machine-readable contract | `SchemaRouter.from_url(..., kind="openapi")` |
 | MCP | capabilities are exposed through MCP | `SchemaRouter.from_url(..., kind="mcp")` |
 | OPTIMADE | materials data is exposed through OPTIMADE | `SchemaRouter.from_url(..., kind="optimade")` |
-| GraphQL | introspection is available and selection sets matter | `SchemaRouter.from_url(..., kind="graphql")` |
-| OData | CSDL / `$metadata` describes entity fields | `SchemaRouter.from_url(..., kind="odata")` |
-| OpenRPC | JSON-RPC publishes an OpenRPC document | `SchemaRouter.from_url(..., kind="openrpc")` |
-| HTTP/JSON | REST contract is known locally but no discoverable schema exists | `router.add_http_tool(...)` |
-| SourceAdapter plugin | a protocol/provider needs custom discovery or transport | `router.register_adapter(...)` |
 | Human-readable docs | no machine-readable contract exists | inspect → proposal → explicit approval |
 
-LangChain and LlamaIndex support both export **and inbound tool import**. LangGraph remains an orchestration bridge. OpenTelemetry is optional.
+Framework bridges are available for LangChain, LangGraph, and LlamaIndex. OpenTelemetry is optional.
 Third-party bounded decision backends can be published through the
 `schemarouter.decision_backends` entry-point group.
 
@@ -211,7 +203,7 @@ The released package provides a working beta implementation of the core architec
 
 - typed Tool / Endpoint / Parameter / Field registry contracts;
 - first-class bounded Top-K capability retrieval through `retrieve` / `aretrieve` and executable-ready variants;
-- Python, OpenAPI, MCP, and OPTIMADE ingestion paths in the stable 0.12.0 release;
+- Python, OpenAPI, MCP, and OPTIMADE ingestion paths;
 - field-first planning and bounded multi-provider field coverage;
 - input and raw-output JSON Schema validation;
 - schema fingerprints and binding-drift rejection;
@@ -224,23 +216,6 @@ The released package provides a working beta implementation of the core architec
   surfaces.
 
 So **the architecture works today** for declared capabilities and supported routing cases.
-
-### Current `main` beyond 0.12.0
-
-The unreleased development branch additionally includes broader, domain-neutral ingestion:
-
-- inbound LangChain and LlamaIndex tool compilation;
-- GraphQL introspection with native selection-set projection;
-- OData CSDL / `$metadata` ingestion with `$select`;
-- OpenRPC / JSON-RPC 2.0 ingestion;
-- declarative HTTP/JSON binding for REST APIs without discoverable schemas;
-- explicit `ToolSpec` + trusted SDK/client binding for opaque libraries;
-- record-preserving array-item field paths such as `results[].title` across structured adapters.
-
-These are **main-branch capabilities**, not claims about the currently published 0.12.0 wheel until a
-later release includes them.
-
-[See the universal ingestion matrix →](docs/guides/universal-ingestion.md)
 
 ## Current research direction: compact capability retrieval for agents
 
