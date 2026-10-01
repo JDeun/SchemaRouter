@@ -85,8 +85,47 @@ Planner matching considers the logical field name, aliases, and explicit path se
 
 This keeps transport/schema representation separate from the bounded decision surface.
 
+## Array-item fields
+
+Array traversal is explicit and record-preserving. Use the reserved `"*"` path segment only in
+trusted `FieldSpec.path` / `result_path` metadata:
+
+```python
+FieldSpec(
+    name="results[].title",
+    path=["results", "*", "title"],
+    result_path=["results", "*", "title"],
+    json_schema={"type": "string"},
+)
+```
+
+Selecting both `results[].title` and `results[].url` preserves each source record:
+
+```json
+{
+  "results": [
+    {"title": "A", "url": "https://a.example"},
+    {"title": "B"}
+  ]
+}
+```
+
+SchemaRouter does not flatten those children into independent arrays because that could destroy
+row/entity alignment. Missing optional children remain missing in the corresponding record.
+
+Wildcard array paths have stricter invariants:
+
+- the source path must declare an explicit `result_path`;
+- source and result paths must contain wildcards at the same positions;
+- wildcards traverse only declared JSON Schema arrays;
+- server-projected schemas are narrowed through array `items`;
+- unit normalization and selected-field validation operate per preserved record;
+- selecting the parent array does not implicitly select every descendant.
+
+The `"*"` segment is an internal typed path marker, not arbitrary JSONPath syntax supplied by a
+model.
+
 ## Current scope
 
-Explicit paths currently traverse nested JSON objects. Array-element projection and wildcard/JSONPath
-semantics are not inferred. Those require a separate typed contract rather than
-special string syntax.
+Explicit paths support nested objects and explicit record-preserving array-item traversal. General
+JSONPath expressions, filters, slices, and inferred wildcard traversal remain unsupported.
