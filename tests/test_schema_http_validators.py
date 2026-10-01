@@ -102,13 +102,20 @@ def test_schema_http_validator_normalization_is_privacy_bounded() -> None:
     ) == {}
 
 
-def test_explicit_conditional_header_wins_over_cached_validator() -> None:
+def test_caller_conditional_headers_are_replaced_by_accepted_validator() -> None:
     headers = conditional_schema_headers(
-        {"If-Modified-Since": "caller-value"},
+        {
+            "If-Modified-Since": "caller-value",
+            "If-None-Match": '"caller-etag"',
+            "X-Trace": "keep-me",
+        },
         {"etag": '"cached"', "last_modified": "cached-date"},
     )
 
-    assert headers == {"If-Modified-Since": "caller-value"}
+    assert headers == {
+        "X-Trace": "keep-me",
+        "If-None-Match": '"cached"',
+    }
 
 
 @pytest.mark.asyncio
