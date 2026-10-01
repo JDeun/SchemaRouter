@@ -6,6 +6,7 @@
     "mcp",
     "optimade",
     "python_callable",
+    "bound_tool",
     "source_adapter",
     "langchain_tool",
     "llamaindex_tool",
@@ -34,10 +35,11 @@
       "access_modes": [
         "openapi",
         "optimade",
-        "python_callable"
+        "python_callable",
+        "bound_tool"
       ],
       "same_provider_fallback": true,
-      "notes": "Official API schema, OPTIMADE federation route, and mp-api/Python SDK can coexist as distinct access modes."
+      "notes": "Official API schema, OPTIMADE federation route, typed mp-api wrapper, and explicit ToolSpec+SDK binding can coexist as distinct access modes."
     },
     {
       "id": "duckduckgo",
@@ -81,13 +83,14 @@
       "id": "yahoo_finance",
       "domain": "finance",
       "provider": "yahoo-finance",
-      "primary_mode": "python_callable",
+      "primary_mode": "bound_tool",
       "access_modes": [
+        "bound_tool",
         "python_callable",
         "langchain_tool"
       ],
       "same_provider_fallback": true,
-      "notes": "Python SDK/wrapper is canonical when no authoritative machine-readable service schema is available."
+      "notes": "Opaque or weakly typed yfinance/SDK clients can use explicit ToolSpec+trusted invoker; typed wrappers remain available."
     },
     {
       "id": "arxiv",
@@ -97,7 +100,8 @@
       "access_modes": [
         "langchain_tool",
         "python_callable",
-        "source_adapter"
+        "source_adapter",
+        "bound_tool"
       ],
       "same_provider_fallback": true,
       "notes": "Atom/XML transport can be normalized by an existing tool, Python wrapper, or explicit adapter."
@@ -109,7 +113,8 @@
       "primary_mode": "openapi",
       "access_modes": [
         "openapi",
-        "http_json"
+        "http_json",
+        "bound_tool"
       ],
       "same_provider_fallback": true,
       "notes": "Swagger/OpenAPI discovery is preferred; declarative REST remains a deterministic fallback."
