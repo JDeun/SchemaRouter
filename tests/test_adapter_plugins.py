@@ -124,3 +124,17 @@ def test_duplicate_adapter_kinds_fail_without_partial_registry_mutation(monkeypa
 
     assert loaded == ["demo", "other"]
     assert registry.kinds() == ()
+
+def test_example_adapter_package_declares_real_entry_point() -> None:
+    with open(
+        "examples/adapter_plugin_demo/pyproject.toml",
+        encoding="utf-8",
+    ) as handle:
+        pyproject = handle.read()
+
+    assert '[project.entry-points."schemarouter.adapters"]' in pyproject
+    assert (
+        'demo_static = "schemarouter_demo_adapter:DemoStaticAdapter"'
+        in pyproject
+    )
+
