@@ -87,6 +87,21 @@ from .errors import (
     UnsupportedSchemaSourceError,
 )
 from .executor import RegistryExecutor
+from .explorer import (
+    CapabilityExplorerDocument,
+    ExplorerAuthScheme,
+    ExplorerEndpoint,
+    ExplorerEndpointStatus,
+    ExplorerField,
+    ExplorerParameter,
+    ExplorerProjection,
+    ExplorerTool,
+    ExplorerUnitNormalization,
+    ExplorerWatchStatus,
+    build_capability_explorer_document,
+    render_schema_explorer,
+    write_schema_explorer,
+)
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot, HealthStatus
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
 from .ingestion import (
@@ -216,6 +231,16 @@ __all__ = [
     "BindingReconciliationStatus",
     "BindingResolver",
     "ConfiguredSchemaRouter",
+    "CapabilityExplorerDocument",
+    "ExplorerAuthScheme",
+    "ExplorerEndpoint",
+    "ExplorerEndpointStatus",
+    "ExplorerField",
+    "ExplorerParameter",
+    "ExplorerProjection",
+    "ExplorerTool",
+    "ExplorerUnitNormalization",
+    "ExplorerWatchStatus",
     "ContractAmendmentError",
     "DECISION_BACKEND_ENTRY_POINT_GROUP",
     "DecisionBackendPluginInfo",
@@ -353,6 +378,9 @@ __all__ = [
     "compare_endpoint_specs",
     "compare_tool_specs",
     "backup_sqlite_storage",
+    "build_capability_explorer_document",
+    "render_schema_explorer",
+    "write_schema_explorer",
     "inspect_sqlite_storage",
     "migrate_sqlite_storage",
     "discover_adapter_plugins",
