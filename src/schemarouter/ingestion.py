@@ -40,7 +40,11 @@ from .errors import (
 )
 from .executor import RegistryExecutor
 from .models import StrictModel, ToolSpec
-from .probe_diagnostics import SourceProbeDiagnostic, diagnostic_from_error
+from .probe_diagnostics import (
+    SourceProbeDiagnostic,
+    diagnostic_from_error,
+    http_probe_error,
+)
 from .registry import ToolRegistry, replace_if_current
 from .schema_http import (
     attach_schema_http_validators,
@@ -726,6 +730,17 @@ class OpenAPISourceAdapter:
             if response.status_code == 304:
                 raise SchemaNotModifiedError(validators=validators)
             document = _parse_openapi_text(response.text)
+            if document is None:
+                generic_document = _parse_reference_text(response.text)
+                if (
+                    isinstance(generic_document, dict)
+                    and "openapi" in generic_document
+                ):
+                    raise AdapterProbeError(
+                        self.kind,
+                        "invalid_schema",
+                        "OpenAPI document declared an invalid or unsupported schema shape",
+                    )
             if document is not None:
                 resolved_schema_url = str(response.url)
                 if context.openapi_external_refs:
@@ -744,10 +759,28 @@ class OpenAPISourceAdapter:
                         document,
                         resolved_schema_url,
                     )
-        except SchemaSourceError:
+        except SchemaNotModifiedError:
             raise
-        except Exception:  # noqa: BLE001
-            return None
+        except AdapterProbeError:
+            raise
+        except (httpx.HTTPStatusError, httpx.TimeoutException, httpx.TransportError) as exc:
+            raise http_probe_error(
+                self.kind,
+                exc,
+                operation="OpenAPI schema fetch",
+            ) from exc
+        except SchemaSourceError as exc:
+            raise AdapterProbeError(
+                self.kind,
+                "protocol_error",
+                "OpenAPI schema inspection violated the safe source contract",
+            ) from exc
+        except Exception as exc:  # noqa: BLE001
+            raise AdapterProbeError(
+                self.kind,
+                "protocol_error",
+                "OpenAPI schema inspection failed",
+            ) from exc
         finally:
             if owns_client:
                 await client.aclose()
@@ -758,7 +791,18 @@ class OpenAPISourceAdapter:
         inferred_name = context.name or _slug(
             str((document.get("info") or {}).get("title") or _name_from_url(context.url))
         )
-        tool = tool_from_openapi(inferred_name, document, namespace=context.namespace)
+        try:
+            tool = tool_from_openapi(
+                inferred_name,
+                document,
+                namespace=context.namespace,
+            )
+        except (SchemaSourceError, ValueError) as exc:
+            raise AdapterProbeError(
+                self.kind,
+                "invalid_schema",
+                "OpenAPI document could not be converted into a safe capability contract",
+            ) from exc
         try:
             suggested_base_url = resolve_openapi_base_url(document, resolved_schema_url)
         except ValueError as exc:
@@ -872,8 +916,41 @@ class MCPSourceAdapter:
                 timeout=context.timeout,
                 client_factory=context.mcp_client_factory,
             )
-        except Exception:  # noqa: BLE001
-            return None
+        except AdapterProbeError:
+            raise
+        except SchemaSourceError as exc:
+            cause = exc.__cause__
+            if isinstance(
+                cause,
+                (httpx.HTTPStatusError, httpx.TimeoutException, httpx.TransportError),
+            ):
+                raise http_probe_error(
+                    self.kind,
+                    cause,
+                    operation="MCP handshake",
+                ) from exc
+            category = (
+                "unreachable"
+                if isinstance(cause, (TimeoutError, ConnectionError, OSError))
+                else "protocol_error"
+            )
+            raise AdapterProbeError(
+                self.kind,
+                category,
+                "MCP server handshake or tool discovery failed",
+            ) from exc
+        except (TimeoutError, ConnectionError, OSError) as exc:
+            raise AdapterProbeError(
+                self.kind,
+                "unreachable",
+                "MCP server could not be reached",
+            ) from exc
+        except Exception as exc:  # noqa: BLE001
+            raise AdapterProbeError(
+                self.kind,
+                "protocol_error",
+                "MCP server handshake or tool discovery failed",
+            ) from exc
 
         tool.remote = True
         tool.metadata["remote"] = True
