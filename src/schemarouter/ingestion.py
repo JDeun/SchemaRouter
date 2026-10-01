@@ -199,11 +199,14 @@ def _auto_probe_outcome(
     category = _probe_category(exc)
     if category in {
         "authentication_failed",
-        "not_found",
         "unreachable",
         "unsupported_feature",
     }:
         return category
+    if category in {"not_found", "invalid_schema", "protocol_error"}:
+        # In auto discovery these are ambiguous: another passive adapter may be
+        # the correct protocol. Explicit kind probing retains the exact category.
+        return "not_recognized"
 
     message = str(exc).casefold()
     if adapter_kind == "graphql" and (
@@ -1247,6 +1250,7 @@ class URLSchemaLoader:
             openapi_ref_max_documents=openapi_ref_max_documents,
             openapi_ref_max_bytes=openapi_ref_max_bytes,
             timeout=timeout,
+            _diagnose_probe=True,
         )
         return self._commit(result, replace=replace)
 
@@ -1295,6 +1299,7 @@ class URLSchemaLoader:
         openapi_ref_max_documents: int = _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS,
         openapi_ref_max_bytes: int = _DEFAULT_OPENAPI_REF_MAX_BYTES,
         timeout: float = 20.0,
+        _diagnose_probe: bool = False,
     ) -> AdapterLoadResult:
         _validate_url(url)
         if not isinstance(allow_active_probes, bool):
@@ -1382,6 +1387,13 @@ class URLSchemaLoader:
             except SchemaNotModifiedError:
                 raise
             except SchemaSourceError as exc:
+                if not _diagnose_probe:
+                    if normalized_kind == "openapi":
+                        raise UnsupportedSchemaSourceError(
+                            f"URL did not yield a supported OpenAPI source: {exc}"
+                        ) from exc
+                    raise
+
                 category = _probe_category(exc)
                 record(adapter, category, exc)
                 report = failure_report(category)
@@ -1395,16 +1407,25 @@ class URLSchemaLoader:
                     probe_report=report,
                 ) from exc
             except Exception as exc:  # noqa: BLE001
+                safe_url = safe_provenance_url(url)
+                if not _diagnose_probe:
+                    raise SchemaSourceError(
+                        f"{normalized_kind} adapter failed for {safe_url!r}"
+                    ) from exc
+
                 category = _probe_category(exc)
                 record(adapter, category, exc)
                 report = failure_report(category)
-                safe_url = safe_provenance_url(url)
                 raise SourceProbeDiagnosticError(
                     f"{normalized_kind} adapter failed for {safe_url!r}",
                     probe_report=report,
                 ) from exc
 
             if result is None:
+                if not _diagnose_probe:
+                    raise UnsupportedSchemaSourceError(
+                        f"URL did not yield a supported {normalized_kind} source"
+                    )
                 record(adapter, "not_recognized")
                 report = failure_report("not_recognized")
                 raise UnsupportedSchemaSourceError(
@@ -1412,44 +1433,76 @@ class URLSchemaLoader:
                     probe_report=report,
                 )
 
-            record(adapter, "recognized")
-            result = AdapterLoadResult(
-                tool=result.tool,
-                invoker=result.invoker,
-                probe_diagnostics=tuple(diagnostics),
-            )
+            if _diagnose_probe:
+                record(adapter, "recognized")
+                result = AdapterLoadResult(
+                    tool=result.tool,
+                    invoker=result.invoker,
+                    probe_diagnostics=tuple(diagnostics),
+                )
             return self._with_identity(
                 result,
                 context,
                 adapter_kind=adapter.kind,
             )
 
+        legacy_diagnostics: list[str] = []
         for adapter in self.adapters.auto_candidates(
             allow_active_probes=allow_active_probes,
         ):
             try:
                 result = await adapter.load(context)
             except Exception as exc:  # noqa: BLE001
-                record(
-                    adapter,
-                    _auto_probe_outcome(str(adapter.kind), exc),
-                    exc,
-                )
+                if _diagnose_probe:
+                    record(
+                        adapter,
+                        _auto_probe_outcome(str(adapter.kind), exc),
+                        exc,
+                    )
+                else:
+                    legacy_diagnostics.append(
+                        f"{adapter.kind}: {type(exc).__name__}"
+                    )
                 continue
             if result is None:
-                record(adapter, "not_recognized")
+                if _diagnose_probe:
+                    record(adapter, "not_recognized")
                 continue
 
-            record(adapter, "recognized")
-            result = AdapterLoadResult(
-                tool=result.tool,
-                invoker=result.invoker,
-                probe_diagnostics=tuple(diagnostics),
-            )
+            if _diagnose_probe:
+                record(adapter, "recognized")
+                result = AdapterLoadResult(
+                    tool=result.tool,
+                    invoker=result.invoker,
+                    probe_diagnostics=tuple(diagnostics),
+                )
             return self._with_identity(
                 result,
                 context,
                 adapter_kind=adapter.kind,
+            )
+
+        if not _diagnose_probe:
+            detail = (
+                "; ".join(legacy_diagnostics)
+                or "no passive adapter recognized the source"
+            )
+            active_hint = ""
+            if not allow_active_probes:
+                skipped = self.adapters.skipped_active_kinds()
+                if skipped:
+                    kinds = ", ".join(skipped)
+                    active_hint = (
+                        f" Active protocol probes were skipped by default: {kinds}. "
+                        "Use an explicit kind for one trusted protocol, or set "
+                        "allow_active_probes=True to opt into active auto-discovery."
+                    )
+            raise UnsupportedSchemaSourceError(
+                "URL was not recognized by the eligible registered structured-source "
+                "adapters. Human-readable documentation is intentionally not inferred "
+                "in the safe path. "
+                + detail
+                + active_hint
             )
 
         category = _terminal_probe_category(diagnostics)
