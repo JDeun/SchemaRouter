@@ -19,6 +19,10 @@ through GitHub before publishing technical details.
 
 For non-sensitive correctness bugs, normal GitHub issues are appropriate.
 
+Public release digests, SBOM/attestation mechanics, CI/security controls, hardening history, and the
+current research claim boundary are indexed in
+[Trust, stability, and public evidence](docs/project/trust-and-evidence.md).
+
 ## Threat model
 
 ### Remote schema and model output
