@@ -1017,6 +1017,200 @@ class URLSchemaLoader:
         self._schema_http_validators.pop(tool.key, None)
         self.schema_http_validators_for(tool.key, tool)
 
+    def _prepare_context(
+        self,
+        url: str,
+        *,
+        kind: SourceKind,
+        name: str | None,
+        namespace: str | None,
+        provider: str | None,
+        access_mode: str | None,
+        base_url: str | None,
+        schema_headers: dict[str, str] | None,
+        schema_validators: dict[str, str] | None,
+        trusted_headers: dict[str, str] | None,
+        mcp_client_factory: Any | None,
+        allow_active_probes: bool,
+        openapi_external_refs: bool,
+        openapi_ref_max_depth: int,
+        openapi_ref_max_documents: int,
+        openapi_ref_max_bytes: int,
+        timeout: float,
+    ) -> tuple[str, AdapterContext]:
+        _validate_url(url)
+        if not isinstance(allow_active_probes, bool):
+            raise SchemaSourceError("allow_active_probes must be a boolean")
+        if not isinstance(openapi_external_refs, bool):
+            raise SchemaSourceError("openapi_external_refs must be a boolean")
+        for value, label in (
+            (openapi_ref_max_depth, "openapi_ref_max_depth"),
+            (openapi_ref_max_documents, "openapi_ref_max_documents"),
+            (openapi_ref_max_bytes, "openapi_ref_max_bytes"),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise SchemaSourceError(f"{label} must be a positive integer")
+
+        normalized_kind = kind.strip().lower()
+        return normalized_kind, AdapterContext(
+            url=url,
+            name=name,
+            namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
+            base_url=base_url,
+            schema_headers=schema_headers,
+            schema_validators=schema_validators,
+            trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
+            openapi_external_refs=openapi_external_refs,
+            openapi_ref_max_depth=openapi_ref_max_depth,
+            openapi_ref_max_documents=openapi_ref_max_documents,
+            openapi_ref_max_bytes=openapi_ref_max_bytes,
+            timeout=timeout,
+            http_client=self.http_client,
+        )
+
+    def _probe_diagnostic(
+        self,
+        adapter: SourceAdapter,
+        *,
+        attempted: bool,
+        status: Literal["recognized", "not_recognized", "failed", "skipped"],
+        failure_category: ProbeFailureCategory | None = None,
+        message: str | None = None,
+    ) -> SourceProbeDiagnostic:
+        profile = self.adapters.discovery_profile(str(adapter.kind))
+        return SourceProbeDiagnostic(
+            adapter_kind=str(adapter.kind),
+            discovery_activity=profile.activity,
+            http_methods=list(profile.http_methods),
+            attempted=attempted,
+            status=status,
+            failure_category=failure_category,
+            message=message,
+        )
+
+    async def _attempt_adapter(
+        self,
+        adapter: SourceAdapter,
+        context: AdapterContext,
+    ) -> _AdapterAttempt:
+        try:
+            result = await adapter.load(context)
+        except SchemaNotModifiedError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            probe_error = adapter_probe_error(str(adapter.kind), exc)
+            return _AdapterAttempt(
+                result=None,
+                diagnostic=self._probe_diagnostic(
+                    adapter,
+                    attempted=True,
+                    status="failed",
+                    failure_category=probe_error.category,
+                    message=str(probe_error),
+                ),
+                error=exc,
+            )
+
+        if result is None:
+            return _AdapterAttempt(
+                result=None,
+                diagnostic=self._probe_diagnostic(
+                    adapter,
+                    attempted=True,
+                    status="not_recognized",
+                ),
+            )
+
+        identified = self._with_identity(
+            result,
+            context,
+            adapter_kind=str(adapter.kind),
+        )
+        return _AdapterAttempt(
+            result=identified,
+            diagnostic=self._probe_diagnostic(
+                adapter,
+                attempted=True,
+                status="recognized",
+            ),
+        )
+
+    async def _inspect_attempts(
+        self,
+        context: AdapterContext,
+        *,
+        normalized_kind: str,
+        allow_active_probes: bool,
+    ) -> tuple[
+        AdapterLoadResult | None,
+        list[SourceProbeDiagnostic],
+        BaseException | None,
+    ]:
+        diagnostics: list[SourceProbeDiagnostic] = []
+
+        if normalized_kind != "auto":
+            try:
+                adapter = self.adapters.get(normalized_kind)
+            except KeyError as exc:
+                supported = ", ".join(self.adapters.kinds())
+                raise SchemaSourceError(
+                    f"unsupported source kind {normalized_kind!r}; "
+                    f"registered kinds: {supported}"
+                ) from exc
+
+            attempt = await self._attempt_adapter(adapter, context)
+            diagnostics.append(attempt.diagnostic)
+            return attempt.result, diagnostics, attempt.error
+
+        for adapter in self.adapters.auto_candidates(
+            allow_active_probes=allow_active_probes,
+        ):
+            attempt = await self._attempt_adapter(adapter, context)
+            diagnostics.append(attempt.diagnostic)
+            if attempt.result is not None:
+                return attempt.result, diagnostics, None
+
+        if not allow_active_probes:
+            for adapter in self.adapters.ordered():
+                profile = self.adapters.discovery_profile(str(adapter.kind))
+                if profile.activity != "active":
+                    continue
+                diagnostics.append(
+                    self._probe_diagnostic(
+                        adapter,
+                        attempted=False,
+                        status="skipped",
+                        message=(
+                            "active discovery requires an explicit kind or "
+                            "allow_active_probes=True"
+                        ),
+                    )
+                )
+
+        return None, diagnostics, None
+
+    @staticmethod
+    def _diagnostic_summary(
+        diagnostics: list[SourceProbeDiagnostic],
+    ) -> str:
+        parts: list[str] = []
+        for diagnostic in diagnostics:
+            if diagnostic.status == "failed":
+                parts.append(
+                    f"{diagnostic.adapter_kind}="
+                    f"{diagnostic.failure_category or 'failed'}"
+                )
+            elif diagnostic.status == "skipped":
+                parts.append(f"{diagnostic.adapter_kind}=skipped_active")
+            else:
+                parts.append(
+                    f"{diagnostic.adapter_kind}={diagnostic.status}"
+                )
+        return "; ".join(parts) or "no adapter attempts were available"
+
     async def load(
         self,
         url: str,
@@ -1106,22 +1300,9 @@ class URLSchemaLoader:
         openapi_ref_max_bytes: int = _DEFAULT_OPENAPI_REF_MAX_BYTES,
         timeout: float = 20.0,
     ) -> AdapterLoadResult:
-        _validate_url(url)
-        if not isinstance(allow_active_probes, bool):
-            raise SchemaSourceError("allow_active_probes must be a boolean")
-        if not isinstance(openapi_external_refs, bool):
-            raise SchemaSourceError("openapi_external_refs must be a boolean")
-        for value, label in (
-            (openapi_ref_max_depth, "openapi_ref_max_depth"),
-            (openapi_ref_max_documents, "openapi_ref_max_documents"),
-            (openapi_ref_max_bytes, "openapi_ref_max_bytes"),
-        ):
-            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
-                raise SchemaSourceError(f"{label} must be a positive integer")
-
-        normalized_kind = kind.strip().lower()
-        context = AdapterContext(
-            url=url,
+        normalized_kind, context = self._prepare_context(
+            url,
+            kind=kind,
             name=name,
             namespace=namespace,
             provider=provider,
@@ -1131,82 +1312,38 @@ class URLSchemaLoader:
             schema_validators=schema_validators,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
+            allow_active_probes=allow_active_probes,
             openapi_external_refs=openapi_external_refs,
             openapi_ref_max_depth=openapi_ref_max_depth,
             openapi_ref_max_documents=openapi_ref_max_documents,
             openapi_ref_max_bytes=openapi_ref_max_bytes,
             timeout=timeout,
-            http_client=self.http_client,
         )
-
-        diagnostics: list[str] = []
-        if normalized_kind != "auto":
-            try:
-                adapter = self.adapters.get(normalized_kind)
-            except KeyError as exc:
-                supported = ", ".join(self.adapters.kinds())
-                raise SchemaSourceError(
-                    f"unsupported source kind {kind!r}; registered kinds: {supported}"
-                ) from exc
-
-            try:
-                result = await adapter.load(context)
-            except SchemaNotModifiedError:
-                raise
-            except SchemaSourceError as exc:
-                if normalized_kind == "openapi":
-                    raise UnsupportedSchemaSourceError(
-                        f"URL did not yield a supported OpenAPI source: {exc}"
-                    ) from exc
-                raise
-            except Exception as exc:  # noqa: BLE001
-                safe_url = safe_provenance_url(url)
-                raise SchemaSourceError(
-                    f"{normalized_kind} adapter failed for {safe_url!r}"
-                ) from exc
-            if result is None:
-                raise UnsupportedSchemaSourceError(
-                    f"URL did not yield a supported {normalized_kind} source"
-                )
-            result = self._with_identity(
-                result,
-                context,
-                adapter_kind=adapter.kind,
-            )
+        result, diagnostics, error = await self._inspect_attempts(
+            context,
+            normalized_kind=normalized_kind,
+            allow_active_probes=allow_active_probes,
+        )
+        if result is not None:
             return result
 
-        for adapter in self.adapters.auto_candidates(
-            allow_active_probes=allow_active_probes,
-        ):
-            try:
-                result = await adapter.load(context)
-            except Exception as exc:  # noqa: BLE001
-                diagnostics.append(f"{adapter.kind}: {type(exc).__name__}")
-                continue
-            if result is not None:
-                result = self._with_identity(
-                    result,
-                    context,
-                    adapter_kind=adapter.kind,
-                )
-                return result
+        if normalized_kind != "auto" and diagnostics:
+            diagnostic = diagnostics[0]
+            if diagnostic.status == "failed":
+                category = diagnostic.failure_category or "protocol_error"
+                raise SchemaSourceError(
+                    f"{normalized_kind} source inspection failed "
+                    f"({category}): {diagnostic.message or 'inspection failed'}"
+                ) from error
+            raise UnsupportedSchemaSourceError(
+                f"URL did not yield a supported {normalized_kind} source"
+            )
 
-        detail = "; ".join(diagnostics) or "no passive adapter recognized the source"
-        active_hint = ""
-        if not allow_active_probes:
-            skipped = self.adapters.skipped_active_kinds()
-            if skipped:
-                kinds = ", ".join(skipped)
-                active_hint = (
-                    f" Active protocol probes were skipped by default: {kinds}. "
-                    "Use an explicit kind for one trusted protocol, or set "
-                    "allow_active_probes=True to opt into active auto-discovery."
-                )
+        summary = self._diagnostic_summary(diagnostics)
         raise UnsupportedSchemaSourceError(
             "URL was not recognized by the eligible registered structured-source adapters. "
             "Human-readable documentation is intentionally not inferred in the safe path. "
-            + detail
-            + active_hint
+            f"Probe summary: {summary}."
         )
 
     async def probe(
