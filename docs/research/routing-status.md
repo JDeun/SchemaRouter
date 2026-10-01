@@ -4,7 +4,7 @@ This page is the **current-state summary**, not the complete experiment log.
 
 For the full research record:
 
-- [Complete experiment index](experiment-index.md) — all 88 machine-readable experiment records;
+- [Complete experiment index](experiment-index.md) — all 92 machine-readable experiment records;
 - [Design and experiment history](design-and-experiment-history.md) — architectural chronology and decisions;
 - [0.11 terminal report](operation-routing-v4-terminal-report.md) — the closed-cycle decision;
 - [Prior-art roadmap](prior-art-roadmap.md) — cross-session literature/work-item map and experiment-order guardrail;
