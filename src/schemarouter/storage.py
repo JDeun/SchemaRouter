@@ -4,7 +4,7 @@ import sqlite3
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from .errors import StorageFormatError
 from .models import StrictModel
@@ -37,6 +37,7 @@ class StorageComponentInspection(StrictModel):
     document_count: int = Field(default=0, ge=0)
     migrations: list[StorageMigrationRecord] = Field(default_factory=list)
 
+    @computed_field
     @property
     def migration_required(self) -> bool:
         return self.status == "legacy"
@@ -46,6 +47,7 @@ class StorageInspection(StrictModel):
     path: str
     components: list[StorageComponentInspection] = Field(default_factory=list)
 
+    @computed_field
     @property
     def migration_required(self) -> bool:
         return any(component.migration_required for component in self.components)
