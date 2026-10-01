@@ -760,6 +760,17 @@ def _response_properties(
 _NESTED_RESPONSE_FIELD_MAX_DEPTH = 8
 
 
+def _display_field_path(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if parts:
+                parts[-1] += "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
 def _nested_response_fields(
     document: dict[str, Any],
     schemas: list[dict[str, Any]],
@@ -824,7 +835,7 @@ def _nested_response_fields(
         for name, spec in merged.items():
             path = (*prefix, name)
             if prefix:
-                field_name = ".".join(path)
+                field_name = _display_field_path(path)
                 if field_name not in seen_names:
                     seen_names.add(field_name)
                     leaf_alias = name.replace("_", " ")
@@ -838,7 +849,11 @@ def _nested_response_fields(
                             ),
                             json_schema=spec if isinstance(spec, dict) else {},
                             path=list(path),
-                            result_path=[field_name],
+                            result_path=(
+                                list(path)
+                                if "*" in path
+                                else [field_name]
+                            ),
                             unit=_schema_unit(spec),
                             identifier=(
                                 name in {"id", "uuid", "key"}
@@ -855,15 +870,28 @@ def _nested_response_fields(
                         )
                     )
 
-            # Object-only recursion for phase 1. Arrays intentionally remain opaque until
-            # record-preserving item traversal semantics are implemented.
             if isinstance(spec, dict):
-                visit(
-                    spec,
-                    prefix=path,
-                    depth=depth + 1,
-                    ancestors=next_ancestors,
+                resolved_spec = _resolve_local_ref(document, spec)
+                raw_type = resolved_spec.get("type")
+                is_array = raw_type == "array" or (
+                    isinstance(raw_type, list) and "array" in raw_type
                 )
+                if is_array:
+                    items = resolved_spec.get("items")
+                    if isinstance(items, dict):
+                        visit(
+                            items,
+                            prefix=(*path, "*"),
+                            depth=depth + 1,
+                            ancestors=next_ancestors,
+                        )
+                else:
+                    visit(
+                        resolved_spec,
+                        prefix=path,
+                        depth=depth + 1,
+                        ancestors=next_ancestors,
+                    )
 
     for schema in schemas:
         if not isinstance(schema, dict):
