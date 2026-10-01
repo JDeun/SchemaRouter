@@ -21,12 +21,12 @@
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/JDeun/SchemaRouter/actions/workflows/codeql.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/security.yml"><img alt="Security Audit" src="https://github.com/JDeun/SchemaRouter/actions/workflows/security.yml/badge.svg"></a>
-  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.13.0"></a>
+  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.14.0"></a>
   <a href="https://pypi.org/project/schemarouter/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/schemarouter"></a>
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-> **Stable release: 0.13.0** · Beta / pre-1.0
+> **Stable release: 0.14.0** · Beta / pre-1.0
 
 SchemaRouter is a **typed capability retrieval and schema-aware execution layer for LLM/RAG agents**
 across MCP, OpenAPI, Python, and framework tools.
@@ -46,7 +46,7 @@ It is **not** a general agent framework, an LLM provider layer, or a RAG generat
 
 ## Stability and verification
 
-SchemaRouter `0.13.0` is **Beta / pre-1.0**. Python 3.10–3.14 are release-blocking CI targets;
+SchemaRouter `0.14.0` is **Beta / pre-1.0**. Python 3.10–3.14 are release-blocking CI targets;
 Python 3.15 is a non-blocking preview.
 
 Plans and retrieved candidates do not grant execution authority. The runtime revalidates current
@@ -261,7 +261,7 @@ Framework bridges are available for LangChain, LangGraph, and LlamaIndex. OpenTe
 Third-party bounded decision backends can be published through the
 `schemarouter.decision_backends` entry-point group.
 
-## What works in 0.13.0
+## What works in 0.14.0
 
 The released package provides a working beta implementation of the core architecture:
 
@@ -280,12 +280,12 @@ The released package provides a working beta implementation of the core architec
   surfaces.
 
 So **the architecture works today** for declared capabilities and supported routing cases.
-0.13.0 also ships trusted contract amendment, safe provider schema refresh/watch, HTTP validator optimization, MCP stdio/custom transport refresh, and record-preserving nested array-item field projection.
+0.14.0 also ships source probing, startup rebinding, storage migrations, explicit schema-drift review, unified shutdown, the Capability Explorer, and the 0.13 field/schema lifecycle surface.
 
 
 ## Current research direction: compact capability retrieval for agents
 
-The stable-core execution boundary established in 0.12.0 remains unchanged in 0.13.0. The active research question has shifted from
+The stable-core execution boundary established in 0.12.0 remains unchanged in 0.14.0. The active research question has shifted from
 making SchemaRouter itself the final open-set classifier to evaluating it as a **typed capability
 retrieval substrate** for a downstream LLM agent.
 
@@ -321,7 +321,7 @@ See:
 - [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [Complete experiment index](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
 - [0.14 paper-evidence checkpoint](https://jdeun.github.io/SchemaRouter/research/0.14-paper-evidence-checkpoint/)
-- [0.13.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.13.0/)
+- [0.14.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.14.0/)
 - [Changelog](CHANGELOG.md)
 
 ## Inspect the registry and runs
