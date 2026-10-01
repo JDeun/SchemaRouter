@@ -1,6 +1,8 @@
 # MCP
 
-SchemaRouter uses the official MCP Python SDK for Streamable HTTP discovery and execution.
+SchemaRouter uses the official MCP Python SDK while keeping the **MCP protocol** separate from
+its transport. Built-in paths cover Streamable HTTP, local stdio subprocess servers, and caller-owned
+transport-neutral client factories.
 
 ## Install
 
@@ -32,6 +34,61 @@ router = await SchemaRouter.from_url(
 
 Discovery performs protocol negotiation, paginates `list_tools()`, and imports each advertised
 `inputSchema` and `outputSchema`.
+
+## Local stdio servers
+
+CLI-distributed MCP servers can be registered without inventing an HTTP URL:
+
+```python
+import os
+import sys
+
+tool = await router.add_mcp_stdio(
+    sys.executable,
+    args=["/opt/my_server.py"],
+    env={"API_TOKEN": os.environ["API_TOKEN"]},
+    allowed_commands=[sys.executable],
+    provider="my-provider",
+)
+```
+
+`command`, `args`, `cwd`, and `env` are trusted local configuration. They are never
+model-selectable arguments and are not copied into the canonical `ToolSpec`.
+
+The stdio subprocess is spawned with the MCP SDK's `StdioServerParameters`; SchemaRouter never
+uses `shell=True` and never accepts a shell command string. `allowed_commands` is an optional
+explicit executable allowlist. Environment values may contain secrets; only environment **keys**
+participate in the non-secret transport fingerprint.
+
+The imported MCP tool is still marked remote/untrusted for execution-policy purposes. This is
+intentional: a local subprocess can expose arbitrary side effects, so unclassified MCP operations
+remain fail-closed unless trusted local policy permits them.
+
+## Transport-neutral client factories
+
+Applications may already own an MCP transport lifecycle: an in-process server, enterprise tunnel,
+custom transport, or another SDK-supported transport. Register it directly without a fake URL:
+
+```python
+tool = await router.add_mcp_client_factory(
+    my_bound_factory,
+    name="enterprise-mcp",
+    transport="enterprise-tunnel",
+    transport_fingerprint="corp-mcp-v3",
+)
+```
+
+The bound factory has this shape:
+
+```python
+@asynccontextmanager
+async def my_bound_factory(*, timeout: float = 20.0):
+    async with my_mcp_client() as client:
+        yield client
+```
+
+The factory owns credentials and transport state. SchemaRouter only sees the connected MCP client
+for `list_tools()` and `call_tool()`.
 
 ## Authenticated Streamable HTTP
 
@@ -102,10 +159,10 @@ ExecutionPolicy(
 
 ## Integration coverage
 
-Repository CI starts a real Streamable HTTP MCP server using the official SDK and verifies:
+Repository CI starts real Streamable HTTP **and stdio** MCP servers using the official SDK and verifies:
 
 ```text
-HTTP server
+HTTP or stdio server
  -> discovery
  -> input/output schema import
  -> planning
