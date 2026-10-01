@@ -314,17 +314,6 @@ class FieldSpec(StrictModel):
             raise ValueError("field path requires non-empty string segments")
         if any(not isinstance(part, str) or not part for part in self.result_path):
             raise ValueError("field result_path requires non-empty string segments")
-        for label, path in (("path", self.path), ("result_path", self.result_path)):
-            if path and path[0] == "*":
-                raise ValueError(
-                    f"field {label} must not begin with the array wildcard; "
-                    "root arrays are traversed implicitly"
-                )
-            if path and path[-1] == "*":
-                raise ValueError(
-                    f"field {label} must not end with the array wildcard; "
-                    "select the array field itself instead"
-                )
         source_wildcards = [
             index
             for index, part in enumerate(self.path)
@@ -336,10 +325,18 @@ class FieldSpec(StrictModel):
             if part == "*"
         ]
         if source_wildcards:
+            if source_wildcards[0] == 0:
+                raise ValueError("array wildcard must not begin a field path")
+            if source_wildcards[-1] == len(self.path) - 1:
+                raise ValueError("array wildcard must not end a field path")
             if not self.result_path:
                 raise ValueError(
                     "array-item field paths require an explicit result_path"
                 )
+            if result_wildcards and result_wildcards[0] == 0:
+                raise ValueError("array wildcard must not begin a result path")
+            if result_wildcards and result_wildcards[-1] == len(self.result_path) - 1:
+                raise ValueError("array wildcard must not end a result path")
             if source_wildcards != result_wildcards:
                 raise ValueError(
                     "array-item source/result paths must preserve wildcard positions"
@@ -548,12 +545,17 @@ class EndpointSpec(StrictModel):
                     if len(left_result) <= len(right_result)
                     else (right_result, left_result)
                 )
-                if (
+                source_overlaps = (
                     source_longer[: len(source_shorter)] == source_shorter
-                    and result_longer[: len(result_shorter)] == result_shorter
-                    and "*" not in source_longer
-                    and "*" not in result_longer
-                ):
+                )
+                result_overlaps = (
+                    result_longer[: len(result_shorter)] == result_shorter
+                )
+                wildcard_mergeable = (
+                    "*" in source_longer
+                    and "*" in result_longer
+                )
+                if source_overlaps and result_overlaps and not wildcard_mergeable:
                     raise ValueError(
                         "overlapping output field paths in endpoint "
                         f"{self.name!r}: {left_name!r} and {right_name!r}"
