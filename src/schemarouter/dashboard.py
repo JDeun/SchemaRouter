@@ -156,8 +156,49 @@ def render_dashboard(
         binding_states = ", ".join(
             f"{key}={value}" for key, value in sorted(live.execution.binding_states.items())
         )
-        unavailable = ", ".join(live.execution.unavailable_access_paths)
+        unavailable_paths = set(live.execution.unavailable_access_paths)
+        unavailable = ", ".join(sorted(unavailable_paths))
         health_monitor = "running" if live.execution.health_monitor_running else "stopped"
+        schema_watcher = "running" if live.execution.schema_watcher_running else "stopped"
+
+        health_probe_rows = "".join(
+            (
+                '<tr class="attention-row">' if f"{probe.tool}.{probe.endpoint}" in unavailable_paths else "<tr>"
+            )
+            + f"<td>{escape(probe.tool)}.{escape(probe.endpoint)}</td>"
+            + f"<td>{escape(probe.status)}</td>"
+            + (
+                "<td><strong>temporarily unavailable</strong></td>"
+                if f"{probe.tool}.{probe.endpoint}" in unavailable_paths
+                else "<td>available</td>"
+            )
+            + f"<td>{escape(_text(probe.last_checked_at))}</td>"
+            + f"<td>{escape(probe.last_error_type or '—')}</td>"
+            + "</tr>"
+            for probe in live.execution.health_probes
+        )
+        if not health_probe_rows:
+            health_probe_rows = '<tr><td colspan="5" class="muted">No health probes registered.</td></tr>'
+
+        schema_watch_rows = "".join(
+            (
+                '<tr class="attention-row">' if watch.pending_review or watch.status in {"error", "stale"} else "<tr>"
+            )
+            + f"<td>{escape(watch.tool)}</td>"
+            + f"<td>{escape(watch.status)}</td>"
+            + f"<td>{escape(_text(watch.interval_seconds))}s</td>"
+            + f"<td>{escape(_text(watch.last_checked_at))}</td>"
+            + f"<td>{escape(_text(watch.last_applied_at))}</td>"
+            + f"<td>{escape(watch.last_compatibility or '—')}</td>"
+            + f"<td>{escape(_text(watch.pending_review))}</td>"
+            + f"<td>{watch.pending_change_count}</td>"
+            + f"<td>{escape(watch.last_error_type or '—')}</td>"
+            + "</tr>"
+            for watch in live.execution.schema_watches
+        )
+        if not schema_watch_rows:
+            schema_watch_rows = '<tr><td colspan="9" class="muted">No schema watches registered.</td></tr>'
+
         live_html = f"""
 <section>
 <h2>Live router</h2>
@@ -177,8 +218,32 @@ def render_dashboard(
 <div><strong>Binding states</strong><br><code>{escape(binding_states or "none")}</code></div>
 <div><strong>Unavailable paths</strong><br>{escape(unavailable or "none")}</div>
 <div><strong>Health monitor</strong><br>{escape(health_monitor)}</div>
+<div><strong>Schema watcher</strong><br>{escape(schema_watcher)}</div>
 <div><strong>Execution policy</strong><br><code>{escape(policy)}</code></div>
 <div><strong>Decision policy</strong><br><code>{escape(decision)}</code></div>
+</div>
+
+<h3>Health probes</h3>
+<div class="table-wrap">
+<table>
+<thead><tr>
+<th>Access path</th><th>Probe status</th><th>Runtime availability</th>
+<th>Last checked</th><th>Last error type</th>
+</tr></thead>
+<tbody>{health_probe_rows}</tbody>
+</table>
+</div>
+
+<h3>Schema watches</h3>
+<div class="table-wrap">
+<table>
+<thead><tr>
+<th>Tool</th><th>Status</th><th>Interval</th><th>Last checked</th>
+<th>Last applied</th><th>Compatibility</th><th>Pending review</th>
+<th>Pending changes</th><th>Last error type</th>
+</tr></thead>
+<tbody>{schema_watch_rows}</tbody>
+</table>
 </div>
 </section>
 """
@@ -217,6 +282,7 @@ th, td {{
   vertical-align: top;
 }}
 th {{ white-space: nowrap; }}
+.attention-row {{ font-weight: 600; outline: 1px solid currentColor; outline-offset: -1px; }}
 input {{
   width: min(560px, 100%);
   box-sizing: border-box;
