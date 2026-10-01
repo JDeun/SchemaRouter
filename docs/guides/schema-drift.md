@@ -67,8 +67,8 @@ rather than a claim of filesystem-level read-only access.
 
 ## Reinspect a registered provider
 
-For URL-backed OpenAPI, MCP, and OPTIMADE tools, SchemaRouter can reinspect the provider without
-committing the candidate first:
+For URL-backed OpenAPI, MCP, OPTIMADE, GraphQL, OData, and OpenRPC tools, SchemaRouter can
+reinspect the provider without committing the candidate first:
 
 ```python
 result = await router.arefresh_schema("materials")
@@ -99,9 +99,72 @@ The apply step uses the exact registry version and tool fingerprint that were co
 writer mutates the registry while remote inspection is in progress, the compare-and-swap fails
 instead of applying a candidate against an unseen newer snapshot.
 
-This is a one-shot primitive. Periodic watcher lifecycle, conditional `ETag` /
-`Last-Modified` optimization, telemetry, and pending-review persistence are tracked separately in
-the provider-schema watcher work item.
+## Periodic provider-schema watcher
+
+The one-shot primitive can be scheduled per tool without persisting credentials into the registry:
+
+```python
+router.register_schema_watch(
+    "materials",
+    interval_seconds=300,
+    apply_compatible=True,
+    refresh_timeout_seconds=20,
+    schema_headers={"X-Schema-Key": schema_key},
+    trusted_headers={"Authorization": f"Bearer {runtime_token}"},
+)
+
+await router.start_schema_watcher(max_concurrency=4)
+```
+
+Each watched tool has its own interval and compatible-change policy. A watcher cycle calls the same
+`arefresh_schema()` path, so the exact same conservative diff and compare-and-swap boundary
+applies:
+
+```text
+identical        -> no-op
+compatible       -> atomic apply only when apply_compatible=True
+breaking         -> pending_review, registry unchanged
+security_review  -> pending_review, registry unchanged
+error / timeout  -> recorded in watcher snapshot, loop continues
+```
+
+Run all registered watches once on demand:
+
+```python
+snapshots = await router.check_schema_watches_once()
+```
+
+Inspect them without exposing secrets:
+
+```python
+for snapshot in router.schema_watch_snapshots():
+    print(
+        snapshot.tool_key,
+        snapshot.status,
+        snapshot.last_compatibility,
+        snapshot.last_error_type,
+    )
+
+live = router.inspect()
+print(live.execution.schema_watcher_running)
+print(live.execution.schema_watches)
+```
+
+Stop background refresh cleanly:
+
+```python
+await router.stop_schema_watcher()
+```
+
+Schema headers, runtime headers, and MCP client factories live only in trusted watcher state. Public
+snapshots and `router.inspect()` contain only operational status.
+
+The watcher bounds total refresh time per tool and global concurrency. Concurrent cycles skip a
+tool that is already being refreshed instead of launching duplicate writes.
+
+Conditional HTTP requests with `ETag` / `Last-Modified` remain an optional transport
+optimization. Correctness does not depend on conditional fetch: every fetched candidate is still
+fingerprinted, semantically compared, and committed through compare-and-swap.
 
 ## Security-semantic drift
 
