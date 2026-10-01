@@ -19,7 +19,7 @@ fallback, fingerprint, health, drift, and observability boundaries.
 | --- | --- | --- |
 | Manual ToolSpec | already-known trusted capability contract | internal tools, generated contracts, tests |
 | OpenAPI | REST API with machine-readable operation schemas | Crossref, Materials Project, GitHub-style APIs |
-| MCP | MCP server tool catalog | local/remote MCP tools |
+| MCP | MCP server tool catalog | Streamable HTTP, local stdio, custom/in-process transports |
 | OPTIMADE | materials provider implementing OPTIMADE | Materials Project, NOMAD, Materials Cloud |
 | Python callable | typed SDK/client wrapper | mp-api, yfinance, arXiv Python client |
 | Bound ToolSpec + invoker | explicit trusted contract over opaque SDK/client | yfinance, mp-api client, internal SDKs |
@@ -57,9 +57,29 @@ The machine-readable source for this table is
 | GitHub GraphQL | developer platform | GraphQL | OpenAPI/HTTP fallback through same provider |
 | Microsoft Graph OData | enterprise productivity | OData | HTTP/JSON |
 | Generic OpenRPC service | RPC platform | OpenRPC | HTTP/JSON |
+| MCP reference server | tool protocol | MCP | Streamable HTTP, stdio, custom factory |
 
 This matrix is intentionally heterogeneous. Passing only materials-science fixtures is not enough to
 claim that SchemaRouter's ingestion layer is domain-neutral.
+
+## MCP protocol vs transport
+
+MCP is one ingestion protocol with multiple transport bindings. SchemaRouter keeps those concerns
+separate:
+
+```text
+MCP protocol
+  -> Streamable HTTP       router.add_url(..., kind="mcp")
+  -> local stdio           router.add_mcp_stdio(...)
+  -> caller-owned factory  router.add_mcp_client_factory(...)
+```
+
+All three paths discover the same `tools/list` schema and compile it into the same canonical
+`ToolSpec`. HTTP headers, stdio command/argv/environment, and custom transport state remain trusted
+runtime configuration rather than model-selectable arguments.
+
+A local stdio server is still treated as an untrusted MCP capability for execution-policy purposes.
+Running in a local subprocess does not make unknown side effects safe.
 
 ## Same provider, multiple access paths
 
