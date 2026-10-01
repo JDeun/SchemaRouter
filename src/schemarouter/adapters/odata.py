@@ -255,7 +255,7 @@ def _field_specs(
     entity_type = types[entity_type_name]
     keys = _key_names(entity_type)
     fields: list[FieldSpec] = []
-    field_map: dict[str, str] = []
+    field_map: dict[str, str] = {}
 
     def visit_type(
         type_name: str,
