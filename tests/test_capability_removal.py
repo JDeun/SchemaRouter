@@ -85,7 +85,7 @@ async def test_remove_tool_purges_all_router_owned_runtime_state() -> None:
         assert tool.key in router.executor.bound_keys()
         assert router.schema_watch_snapshots()
         assert router.health_snapshots()
-        assert router.unavailable_access_paths() == (f"{tool.key}.read",)
+        assert router.unavailable_access_paths() == ((tool.key, "read"),)
         assert router.loader.schema_http_validators_for(tool.key, tool) == {
             "etag": '"v1"',
         }
