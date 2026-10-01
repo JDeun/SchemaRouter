@@ -113,6 +113,7 @@ nav:
       - Runtime lifecycle: getting-started/runtime-lifecycle.md
       - Startup rebinding: getting-started/startup-rebinding.md
       - Storage migrations: getting-started/storage-migrations.md
+      - Capability Explorer: getting-started/capability-explorer.md
   - Concepts:
       - What SchemaRouter is: concepts/schema-router.md
       - RAG positioning and capability retrieval: concepts/capability-catalog.md
