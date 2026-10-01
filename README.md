@@ -79,6 +79,8 @@ For network-independent CI/package acceptance, the repository keeps
 [`examples/quickstart.py`](examples/quickstart.py) as a deterministic local smoke. The complete
 live version above is [`examples/live_openapi_quickstart.py`](examples/live_openapi_quickstart.py).
 
+[Browse the runnable example gallery →](examples/README.md) for SDK-bound tools, MCP HTTP/stdio, mixed-provider execution, schema drift/watch, framework bridges, and a full-schema vs Top-K context comparison.
+
 ## Retrieve a compact tool set for an agent
 
 SchemaRouter can return registered capability candidates **without planning or executing them**:
