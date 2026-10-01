@@ -1459,6 +1459,19 @@ class RegistryExecutor:
 
         for field_name in fields:
             field = field_map[field_name]
+            if "*" in field.projection_path:
+                fragment = RegistryExecutor._project_wildcard_fragment(
+                    value,
+                    field.projection_path,
+                )
+                if fragment is RegistryExecutor._MISSING_PROJECTION:
+                    continue
+                projected = RegistryExecutor._merge_projection_fragments(
+                    projected,
+                    fragment,
+                )
+                continue
+
             current: Any = value
             missing = False
             for part in field.projection_path:
@@ -1485,3 +1498,4 @@ class RegistryExecutor:
             target[result_path[-1]] = deepcopy(current)
 
         return projected
+
