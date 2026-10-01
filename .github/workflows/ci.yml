@@ -171,7 +171,7 @@ jobs:
       - name: Run focused OpenAI Agents SDK MCP filter contract
         run: |
           /tmp/schemarouter-wheel-openai-agents/bin/python -m unittest \
-            examples.external_validation.openai_agents_mcp_filter.test_contract -v
+            examples.external_validation.openai_agents_mcp_filter.contract_smoke -v
       - name: Run OpenAI Agents SDK dynamic MCP filter external validation
         run: |
           /tmp/schemarouter-wheel-openai-agents/bin/python scripts/external_validation_openai_agents.py \
