@@ -363,6 +363,17 @@ def _schema_has_type(schema: dict[str, Any], expected: str) -> bool:
     return isinstance(raw, list) and expected in raw
 
 
+def _display_field_path(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if parts:
+                parts[-1] += "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
 def _fields_from_output_schema(schema: dict[str, Any]) -> list[FieldSpec]:
     fields: list[FieldSpec] = []
     seen: set[str] = set()
@@ -370,8 +381,14 @@ def _fields_from_output_schema(schema: dict[str, Any]) -> list[FieldSpec]:
     def visit(value: dict[str, Any], *, prefix: tuple[str, ...], depth: int) -> None:
         if depth >= _MAX_TYPE_DEPTH:
             return
+
         if _schema_has_type(value, "array"):
+            items = value.get("items")
+            if isinstance(items, dict):
+                next_prefix = prefix if not prefix else (*prefix, "*")
+                visit(items, prefix=next_prefix, depth=depth + 1)
             return
+
         properties = value.get("properties")
         if not isinstance(properties, dict):
             return
@@ -379,7 +396,7 @@ def _fields_from_output_schema(schema: dict[str, Any]) -> list[FieldSpec]:
             if not isinstance(name, str) or not isinstance(child, dict):
                 continue
             path = (*prefix, name)
-            field_name = ".".join(path)
+            field_name = _display_field_path(path)
             if field_name not in seen:
                 seen.add(field_name)
                 fields.append(
@@ -389,7 +406,11 @@ def _fields_from_output_schema(schema: dict[str, Any]) -> list[FieldSpec]:
                         json_schema=child,
                         aliases=[name.replace("_", " ")],
                         path=list(path) if prefix else [],
-                        result_path=[field_name] if prefix else [],
+                        result_path=(
+                            list(path)
+                            if "*" in path
+                            else ([field_name] if prefix else [])
+                        ),
                         identifier=(
                             name in {"id", "uuid", "key"}
                             or name.endswith("_id")
@@ -401,7 +422,6 @@ def _fields_from_output_schema(schema: dict[str, Any]) -> list[FieldSpec]:
 
     visit(schema, prefix=(), depth=0)
     return fields
-
 
 def _default_field_names(schema: dict[str, Any]) -> list[str]:
     if _schema_has_type(schema, "array"):
@@ -429,10 +449,21 @@ def _default_field_names(schema: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys([*identifiers, *scalar]))[:_MAX_DEFAULT_SELECTION_FIELDS]
 
 
-def _selection_tree(fields: list[str]) -> dict[str, Any]:
+def _selection_tree(
+    endpoint: EndpointSpec,
+    fields: list[str],
+) -> dict[str, Any]:
     tree: dict[str, Any] = {}
-    for field in fields:
-        parts = [part for part in field.split(".") if part]
+    field_map = {field.name: field for field in endpoint.output_fields}
+    for field_name in fields:
+        field = field_map.get(field_name)
+        if field is None:
+            continue
+        parts = [
+            part
+            for part in field.projection_path
+            if part != "*"
+        ]
         if not parts:
             continue
         node = tree
@@ -450,7 +481,6 @@ def _selection_tree(fields: list[str]) -> dict[str, Any]:
             else:
                 node = existing
     return tree
-
 
 def _child_schema(schema: dict[str, Any]) -> dict[str, Any]:
     if _schema_has_type(schema, "array"):
@@ -517,7 +547,7 @@ def _operation_query(
 
     selection = _render_selection(
         endpoint.output_schema,
-        _selection_tree(fields),
+        _selection_tree(endpoint, fields),
     )
     selection_clause = f" {{ {selection} }}" if selection else ""
     return (
