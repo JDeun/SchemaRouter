@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 import httpx
 
@@ -34,9 +34,37 @@ class AdapterLoadResult:
     invoker: Any | None = None
 
 
+@dataclass(frozen=True)
+class DiscoveryProfile:
+    """Trusted local declaration of one adapter's discovery-side effects."""
+
+    activity: Literal["passive", "active"] = "active"
+    http_methods: tuple[str, ...] = ()
+    derives_urls: bool = False
+    opens_protocol_session: bool = False
+
+    def __post_init__(self) -> None:
+        if self.activity not in {"passive", "active"}:
+            raise ValueError("discovery activity must be 'passive' or 'active'")
+        methods = tuple(str(method).strip().upper() for method in self.http_methods)
+        if any(not method for method in methods):
+            raise ValueError("discovery HTTP methods must be non-empty")
+        if self.activity == "passive":
+            if any(method not in {"GET", "HEAD"} for method in methods):
+                raise ValueError(
+                    "passive discovery may declare only GET/HEAD HTTP methods"
+                )
+            if self.opens_protocol_session:
+                raise ValueError(
+                    "passive discovery cannot open a protocol session"
+                )
+        object.__setattr__(self, "http_methods", methods)
+
+
 class SourceAdapter(Protocol):
     kind: str
     priority: int
+    discovery: DiscoveryProfile
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None: ...
 
@@ -46,6 +74,7 @@ class AdapterRegistry:
 
     def __init__(self, adapters: list[SourceAdapter] | None = None) -> None:
         self._adapters: dict[str, SourceAdapter] = {}
+        self._discovery_profiles: dict[str, DiscoveryProfile] = {}
         for adapter in adapters or []:
             self.register(adapter)
 
@@ -55,10 +84,22 @@ class AdapterRegistry:
             raise ValueError("adapter kind must be a non-empty name other than 'auto'")
         if kind in self._adapters and not replace:
             raise ValueError(f"adapter kind already registered: {kind!r}")
+        profile = getattr(adapter, "discovery", None)
+        if profile is None:
+            # Backward-compatible plugin registration is fail-safe for auto mode:
+            # adapters without a trusted local profile are treated as active.
+            profile = DiscoveryProfile(activity="active")
+        if not isinstance(profile, DiscoveryProfile):
+            raise ValueError(
+                "adapter discovery must be a DiscoveryProfile declared by trusted local code"
+            )
         self._adapters[kind] = adapter
+        self._discovery_profiles[kind] = profile
 
     def unregister(self, kind: str) -> None:
-        self._adapters.pop(kind.strip().lower(), None)
+        normalized = kind.strip().lower()
+        self._adapters.pop(normalized, None)
+        self._discovery_profiles.pop(normalized, None)
 
     def get(self, kind: str) -> SourceAdapter:
         normalized = kind.strip().lower()
@@ -76,4 +117,35 @@ class AdapterRegistry:
                 self._adapters.values(),
                 key=lambda adapter: (-int(adapter.priority), str(adapter.kind)),
             )
+        )
+
+
+    def discovery_profile(self, kind: str) -> DiscoveryProfile:
+        normalized = kind.strip().lower()
+        try:
+            return self._discovery_profiles[normalized]
+        except KeyError as exc:
+            raise KeyError(f"unknown adapter kind: {normalized!r}") from exc
+
+    def auto_candidates(
+        self,
+        *,
+        allow_active_probes: bool = False,
+    ) -> tuple[SourceAdapter, ...]:
+        """Return adapters eligible for generic auto discovery."""
+
+        return tuple(
+            adapter
+            for adapter in self.ordered()
+            if (
+                self.discovery_profile(str(adapter.kind)).activity == "passive"
+                or allow_active_probes
+            )
+        )
+
+    def skipped_active_kinds(self) -> tuple[str, ...]:
+        return tuple(
+            str(adapter.kind)
+            for adapter in self.ordered()
+            if self.discovery_profile(str(adapter.kind)).activity == "active"
         )

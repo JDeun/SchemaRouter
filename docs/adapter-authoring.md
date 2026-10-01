@@ -11,6 +11,7 @@ A source adapter has a stable `kind`, a discovery `priority`, and one async load
 from schemarouter import (
     AdapterContext,
     AdapterLoadResult,
+    DiscoveryProfile,
     SourceAdapter,
 )
 
@@ -18,6 +19,10 @@ from schemarouter import (
 class MyAdapter:
     kind = "my_protocol"
     priority = 50
+    discovery = DiscoveryProfile(
+        activity="passive",
+        http_methods=("GET",),
+    )
 
     async def load(
         self,
@@ -28,6 +33,15 @@ class MyAdapter:
 
 Return `None` when the source is not recognized during auto discovery. Return
 `AdapterLoadResult(tool=..., invoker=...)` when the source is supported.
+
+The discovery profile is a trusted local declaration of what `load()` may do while
+SchemaRouter is trying `kind="auto"`. Use `activity="passive"` only for bounded GET/HEAD
+schema reads that do not open a protocol session. GraphQL introspection POSTs, MCP handshakes, and
+similar interactions are `activity="active"`.
+
+Adapters without a `DiscoveryProfile` remain usable by explicit `kind`, but are conservatively
+treated as active and skipped by default auto discovery. Applications that intentionally want
+active auto-probing must pass `allow_active_probes=True`; remote content cannot enable that flag.
 
 ## Registering adapters
 

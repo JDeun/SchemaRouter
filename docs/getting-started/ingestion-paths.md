@@ -66,24 +66,53 @@ non-executable proposal first because model inference is weaker evidence than a 
 
 ## What `kind="auto"` does
 
-`SchemaRouter.from_url(..., kind="auto")` asks registered adapters in priority order.
+`SchemaRouter.from_url(..., kind="auto")` is intentionally **passive by default**. It asks only
+registered adapters whose trusted local discovery profile declares bounded GET/HEAD-style
+inspection with no protocol session.
 
-The built-in order is:
+The built-in passive order is:
 
 ```text
 OpenAPI
   -> OpenRPC
-  -> OData
   -> OPTIMADE
-  -> MCP
-  -> GraphQL
+  -> OData
 ```
 
-The first adapter that recognizes the source returns a canonical `ToolSpec` and optional trusted
-invoker. Additional adapters can be registered without changing the core loader.
+GraphQL and MCP are active discovery protocols:
 
-A normal HTML documentation page is not silently converted into an executable tool. Use
-`inspect_url()` for that path.
+- GraphQL introspection sends a POST;
+- MCP Streamable HTTP establishes a protocol client/session.
+
+They are therefore skipped by default auto-detection. Use an explicit kind when you know the
+protocol:
+
+```python
+await router.add_url(url, kind="graphql")
+await router.add_url(url, kind="mcp")
+```
+
+If an application deliberately wants the historical broad probing behavior, it must opt in locally:
+
+```python
+await router.add_url(
+    url,
+    kind="auto",
+    allow_active_probes=True,
+)
+```
+
+The same safety boundary applies to `probe_url()` and `from_url()`. The CLI equivalent is
+`schemarouter source probe URL --allow-active-probes`.
+
+Adapters without a trusted discovery profile are treated as active for auto-detection, so a
+third-party plugin cannot acquire surprise probing authority merely by being installed. Explicit
+`kind="plugin_kind"` remains supported.
+
+A normal HTML documentation page is not silently converted into an executable tool. If passive
+detection fails, diagnostics name the skipped active protocols. Use `inspect_url()` for
+human-readable documentation.
+
 
 ## Declarative HTTP/JSON
 

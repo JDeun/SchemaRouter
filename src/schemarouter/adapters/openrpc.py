@@ -22,7 +22,7 @@ from ..schema_http import (
     conditional_schema_headers,
     schema_http_validators_from_headers,
 )
-from .base import AdapterContext, AdapterLoadResult
+from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
 from .openapi import same_origin
 
 _MAX_DISCOVERY_BYTES = 5 * 1024 * 1024
@@ -579,6 +579,10 @@ class OpenRPCRemoteInvoker:
 class OpenRPCSourceAdapter:
     kind = "openrpc"
     priority = 95
+    discovery = DiscoveryProfile(
+        activity="passive",
+        http_methods=("GET",),
+    )
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None:
         owns_client = context.http_client is None

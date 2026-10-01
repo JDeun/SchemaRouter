@@ -14,7 +14,7 @@ from ..errors import (
     SchemaSourceError,
 )
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
-from .base import AdapterContext, AdapterLoadResult
+from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
 
 _MAX_INTROSPECTION_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 10 * 1024 * 1024
@@ -739,6 +739,10 @@ class GraphQLRemoteInvoker:
 class GraphQLSourceAdapter:
     kind = "graphql"
     priority = 70
+    discovery = DiscoveryProfile(
+        activity="active",
+        http_methods=("POST",),
+    )
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None:
         if context.base_url is not None:
