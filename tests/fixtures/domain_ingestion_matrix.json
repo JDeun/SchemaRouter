@@ -28,6 +28,16 @@
       "kind": "mcp"
     },
     {
+      "id": "mcp_stdio",
+      "api": "SchemaRouter.add_mcp_stdio",
+      "kind": null
+    },
+    {
+      "id": "mcp_client_factory",
+      "api": "SchemaRouter.add_mcp_client_factory",
+      "kind": null
+    },
+    {
       "id": "optimade",
       "api": "SchemaRouter.add_url",
       "kind": "optimade"
@@ -274,6 +284,22 @@
       "auth_boundary": "trusted runtime headers/client state",
       "schema_drift": "OpenRPC refresh/fingerprint",
       "semantic_metadata": "provider schema plus trusted enrichment"
+    },
+    {
+      "id": "local_mcp_stdio",
+      "domain": "local_tooling",
+      "provider": "local-mcp",
+      "preferred_mode": "mcp_stdio",
+      "access_modes": [
+        "mcp_stdio",
+        "mcp_client_factory"
+      ],
+      "same_provider_fallback": true,
+      "input_contract": "MCP tool schemas discovered from a trusted local stdio server",
+      "output_contract": "MCP outputSchema with nested and record-preserving array fields when declared",
+      "auth_boundary": "trusted command/argv/env/cwd or caller-owned transport factory",
+      "schema_drift": "transport fingerprint + advertised tool fingerprint; re-discovery on restart",
+      "semantic_metadata": "remote MCP annotations remain untrusted; trusted enrichment is explicit"
     }
   ]
 }
