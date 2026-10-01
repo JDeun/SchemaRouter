@@ -43,6 +43,22 @@ Adapters without a `DiscoveryProfile` remain usable by explicit `kind`, but are 
 treated as active and skipped by default auto discovery. Applications that intentionally want
 active auto-probing must pass `allow_active_probes=True`; remote content cannot enable that flag.
 
+### Discovery failure semantics
+
+An adapter must use `None` only for a genuine **not this protocol** result. Once the source is
+recognizably the adapter's protocol, inspection failures should be preserved instead of being
+collapsed into `None`.
+
+Built-in adapters classify sanitized failures with `AdapterProbeError` categories such as
+`authentication_failed`, `not_found`, `unreachable`, `invalid_schema`,
+`unsupported_feature`, and `protocol_error`. Third-party adapters may raise
+`AdapterProbeError` directly when they can make the same distinction safely. Otherwise,
+SchemaRouter classifies common HTTP/transport exceptions conservatively.
+
+Do not place response bodies, remote exception text, authorization values, signed query strings, or
+other potentially secret source content in diagnostic messages. A diagnostic should identify the
+failure class and protocol boundary, not echo the provider's payload.
+
 ## Registering adapters
 
 ```python
@@ -217,6 +233,8 @@ concurrency control and atomic replacement.
 New adapters should test:
 
 - explicit-kind and auto-discovery behavior;
+- not-recognized versus recognized-but-failed discovery outcomes;
+- sanitized 401/403, 404, timeout/transport, malformed-schema, and unsupported-feature diagnostics;
 - registration collisions and namespaces;
 - schema fingerprint changes;
 - required and undeclared parameters;
