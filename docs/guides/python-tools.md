@@ -89,8 +89,8 @@ router.add_bound_tool(
 ```
 
 The supplied `ToolSpec` remains the complete model-visible contract. The invoker may capture a
-client object, API key, database connection, CLI process wrapper, or other local transport state;
-none of that state is copied into the schema.
+client object, API key, database connection, CLI wrapper, or other trusted transport state; none of
+that state is copied into the schema.
 
 Both endpoint-style invokers:
 
@@ -104,8 +104,8 @@ and call-aware invokers:
 invoker.invoke_call(tool_call)
 ```
 
-are supported. Bindings are pinned to the exact tool fingerprint, and replacement uses the same
-registry compare-and-swap boundary as other trusted registration paths.
+are supported. Bindings are pinned to the exact tool fingerprint, and replacement uses the normal
+registry compare-and-swap boundary.
 
-Prefer `add_callable()` when a normal typed Python function is available. Use `add_bound_tool()`
-when the external SDK/protocol surface cannot be safely introspected.
+Prefer `add_callable()` when a normal typed Python function is available. Use
+`add_bound_tool()` when the external SDK/protocol surface cannot be safely introspected.
