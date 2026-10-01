@@ -628,7 +628,10 @@ class OPTIMADESourceAdapter:
                         headers=context.schema_headers,
                         max_bytes=_MAX_DISCOVERY_BYTES,
                     )
-                    document = response.json()
+                    try:
+                        document = response.json()
+                    except ValueError:
+                        continue
                 except SchemaSourceError:
                     raise
                 except Exception as exc:  # noqa: BLE001
