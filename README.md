@@ -173,7 +173,7 @@ factors from a unit string alone.
 ```mermaid
 flowchart TD
     F["LangChain / LangGraph / LlamaIndex / your application"] --> SR["SchemaRouter"]
-    SR --> T["OpenAPI / MCP / OPTIMADE / GraphQL / OData / OpenRPC / HTTP JSON / Python + SDK"]
+    SR --> T["OpenAPI / MCP (HTTP·stdio·custom) / OPTIMADE / GraphQL / OData / OpenRPC / HTTP JSON / Python + SDK"]
 ```
 
 The surrounding framework owns conversation, decomposition, generation, memory, graphs, and agent
@@ -192,7 +192,7 @@ cannot invent tools, fields, credentials, permissions, or side effects.
 | LangChain tool | an existing `BaseTool` / `StructuredTool` already exists | `router.add_langchain_tool(...)` |
 | LlamaIndex tool | an existing `BaseTool` / `FunctionTool` already exists | `router.add_llamaindex_tool(...)` |
 | OpenAPI | HTTP API publishes a machine-readable contract | `SchemaRouter.from_url(..., kind="openapi")` |
-| MCP | capabilities are exposed through MCP | `SchemaRouter.from_url(..., kind="mcp")` |
+| MCP | capabilities are exposed through MCP | HTTP: `from_url(..., kind="mcp")`; stdio/custom: `add_mcp_stdio(...)` / `add_mcp_client_factory(...)` |
 | OPTIMADE | materials data is exposed through OPTIMADE | `SchemaRouter.from_url(..., kind="optimade")` |
 | GraphQL | introspection is available and selection sets matter | `SchemaRouter.from_url(..., kind="graphql")` |
 | OData | CSDL / `$metadata` describes entity fields | `SchemaRouter.from_url(..., kind="odata")` |
@@ -235,6 +235,7 @@ The unreleased development branch additionally includes broader, domain-neutral 
 - OpenRPC / JSON-RPC 2.0 ingestion;
 - declarative HTTP/JSON binding for REST APIs without discoverable schemas;
 - explicit `ToolSpec` + trusted SDK/client binding for opaque libraries;
+- MCP stdio and transport-neutral client-factory bindings in addition to Streamable HTTP;
 - record-preserving array-item field paths such as `results[].title` across structured adapters.
 
 These are **main-branch capabilities**, not claims about the currently published 0.12.0 wheel until a
