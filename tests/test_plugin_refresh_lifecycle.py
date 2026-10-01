@@ -272,3 +272,45 @@ def test_http_validators_require_url_refresh() -> None:
             source_key="source_url",
             http_validators=True,
         )
+
+
+def test_refresh_profile_rejects_invalid_source_location() -> None:
+    with pytest.raises(ValueError, match="source_location"):
+        RefreshProfile(
+            mode="url",
+            source_key="source_url",
+            source_location="unknown",  # type: ignore[arg-type]
+        )
+
+
+def test_plugin_identity_qualifier_values_are_hashed() -> None:
+    from schemarouter.source_identity import structured_source_identity
+
+    profile = RefreshProfile(
+        mode="url",
+        source_key="source_url",
+        identity_metadata_keys=("representation",),
+    )
+    tool = ToolSpec(
+        name="identity",
+        execution_metadata={"adapter": "fixture_refresh"},
+        metadata={
+            "adapter": "fixture_refresh",
+            "source_url": "https://fixture.example.test/schema",
+            "representation": {"channel": "private-marker"},
+        },
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_schema={"type": "object"},
+            )
+        ],
+    )
+
+    identity = structured_source_identity(tool, profile)
+
+    assert identity is not None
+    assert identity.qualifiers
+    assert "private-marker" not in repr(identity)
+    assert len(identity.qualifiers[0][1]) == 64
