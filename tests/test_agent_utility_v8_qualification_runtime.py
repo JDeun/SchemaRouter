@@ -158,8 +158,6 @@ def test_workflow_keeps_candidates_strictly_sequential_and_revision_pinned():
 
 
 
-
-
 def test_workflow_publishes_model_cache_before_evaluator_fanout():
     from pathlib import Path
 
