@@ -169,6 +169,27 @@
       ],
       "same_provider_fallback": true,
       "notes": "Representative JSON-RPC/OpenRPC capability surface compiled into the same canonical contracts."
+    },
+    {
+      "id": "mcp_reference_server",
+      "domain": "tool_protocol",
+      "provider": "mcp-reference",
+      "primary_mode": "mcp",
+      "access_modes": [
+        "mcp"
+      ],
+      "mcp_transports": [
+        "streamable_http",
+        "stdio",
+        "custom_factory"
+      ],
+      "same_provider_fallback": false,
+      "notes": "MCP protocol is transport-neutral: Streamable HTTP, local stdio, and caller-owned client factories compile to the same ToolSpec contract."
     }
+  ],
+  "mcp_transports": [
+    "streamable_http",
+    "stdio",
+    "custom_factory"
   ]
 }
