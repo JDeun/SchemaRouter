@@ -204,7 +204,7 @@ def test_evaluator_cache_eviction_recovers_only_the_exact_pinned_revision():
     assert workflow.count('HF_HUB_OFFLINE: "0"') == 3
     assert workflow.count('TRANSFORMERS_OFFLINE: "0"') == 3
     assert workflow.count('repo_id=os.environ["QUAL_MODEL"]') == 6
-    assert workflow.count('revision=os.environ["QUAL_REV"]') == 6
+    assert workflow.count('revision=os.environ["QUAL_REV"]') == 9
 
 
 def test_workflow_downloads_qualification_corpus_at_repo_root():
