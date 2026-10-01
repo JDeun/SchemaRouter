@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "schemarouter-demo-adapter"
+version = "0.1.0"
+description = "Deterministic third-party SourceAdapter example for SchemaRouter"
+requires-python = ">=3.10"
+dependencies = ["schemarouter"]
+
+[project.entry-points."schemarouter.adapters"]
+demo_static = "schemarouter_demo_adapter:DemoStaticAdapter"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/schemarouter_demo_adapter"]
