@@ -5,7 +5,70 @@ from typing import Any, Literal, Protocol
 
 import httpx
 
+from ..errors import SchemaSourceError
 from ..models import ToolSpec
+
+
+ProbeFailureCategory = Literal[
+    "authentication_failed",
+    "invalid_schema",
+    "not_found",
+    "protocol_error",
+    "unreachable",
+    "unsupported_feature",
+]
+
+
+class AdapterProbeError(SchemaSourceError):
+    """Sanitized, typed structured-source discovery failure."""
+
+    def __init__(
+        self,
+        category: ProbeFailureCategory,
+        message: str,
+    ) -> None:
+        super().__init__(message)
+        self.category = category
+
+
+def adapter_probe_error(
+    adapter_kind: str,
+    exc: BaseException,
+) -> AdapterProbeError:
+    """Classify a discovery exception without copying remote payloads or secrets."""
+
+    if isinstance(exc, AdapterProbeError):
+        return exc
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code
+        if status in {401, 403}:
+            return AdapterProbeError(
+                "authentication_failed",
+                f"{adapter_kind} discovery was denied by the remote server (HTTP {status})",
+            )
+        if status == 404:
+            return AdapterProbeError(
+                "not_found",
+                f"{adapter_kind} discovery endpoint was not found (HTTP 404)",
+            )
+        return AdapterProbeError(
+            "protocol_error",
+            f"{adapter_kind} discovery returned HTTP {status}",
+        )
+    if isinstance(exc, (httpx.TimeoutException, httpx.TransportError)):
+        return AdapterProbeError(
+            "unreachable",
+            f"{adapter_kind} discovery could not reach the remote source",
+        )
+    if isinstance(exc, SchemaSourceError):
+        return AdapterProbeError(
+            "invalid_schema",
+            f"{adapter_kind} discovery rejected the structured source",
+        )
+    return AdapterProbeError(
+        "protocol_error",
+        f"{adapter_kind} discovery failed during protocol inspection",
+    )
 
 
 @dataclass(frozen=True)
