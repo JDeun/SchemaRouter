@@ -650,3 +650,44 @@ def test_inspection_exposes_trusted_operation_aliases() -> None:
         "open support case",
         "file support request",
     ]
+
+
+def test_live_inspection_reports_schema_watches_without_credentials() -> None:
+    router = SchemaRouter()
+    tool = ToolSpec(
+        name="remote_schema",
+        remote=True,
+        metadata={
+            "adapter": "openapi",
+            "source_url": "https://example.test/openapi.json",
+        },
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_schema={"type": "object"},
+            )
+        ],
+    )
+    router.add_tool(tool)
+    router.register_schema_watch(
+        tool.key,
+        interval_seconds=120,
+        schema_headers={"X-Schema-Key": "schema-secret"},
+        trusted_headers={"Authorization": "Bearer runtime-secret"},
+    )
+
+    snapshot = router.inspect()
+
+    assert snapshot.execution.schema_watcher_running is False
+    assert len(snapshot.execution.schema_watches) == 1
+    watch = snapshot.execution.schema_watches[0]
+    assert watch.tool_key == tool.key
+    assert watch.interval_seconds == 120
+    assert watch.apply_compatible is True
+    assert watch.status == "idle"
+
+    serialized = snapshot.model_dump_json()
+    assert "schema-secret" not in serialized
+    assert "runtime-secret" not in serialized
+    assert "Authorization" not in serialized
