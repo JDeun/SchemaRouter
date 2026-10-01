@@ -1,0 +1,53 @@
+name: Integration request
+description: Propose a framework, runtime, or ecosystem integration
+title: "[Integration] "
+labels:
+  - enhancement
+body:
+  - type: input
+    id: project
+    attributes:
+      label: Integration target
+      placeholder: "Framework/runtime/project name and canonical URL"
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Concrete use case
+      description: Explain what SchemaRouter contract should cross the integration boundary and who benefits.
+    validations:
+      required: true
+  - type: dropdown
+    id: direction
+    attributes:
+      label: Integration direction
+      options:
+        - Import external tools/capabilities into SchemaRouter
+        - Export SchemaRouter capabilities into another framework
+        - Decision backend/provider
+        - Observability / tracing
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: boundary
+    attributes:
+      label: Trust and authority boundary
+      description: State what remains owned by SchemaRouter versus the external framework/runtime.
+    validations:
+      required: true
+  - type: textarea
+    id: maintenance
+    attributes:
+      label: Dependency and maintenance considerations
+      description: Expected optional dependency, supported versions, release cadence, and upstream policy if known.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Design checks
+      options:
+        - label: The integration can remain optional; core SchemaRouter should still import without it.
+          required: true
+        - label: Execution will still pass through SchemaRouter validation/policy rather than bypassing it.
+          required: true
