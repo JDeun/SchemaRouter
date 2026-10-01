@@ -184,6 +184,25 @@ def _schema_unit(schema: Any) -> str | None:
     return None
 
 
+def _openrpc_field_name(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if not parts:
+                raise ValueError("array wildcard cannot be the first named field segment")
+            parts[-1] = parts[-1] + "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
+def _openrpc_schema_is_array(schema: dict[str, Any]) -> bool:
+    raw_type = schema.get("type")
+    return raw_type == "array" or (
+        isinstance(raw_type, list) and "array" in raw_type
+    )
+
+
 def _fields_from_result_schema(
     document: dict[str, Any],
     schema: dict[str, Any],
@@ -211,15 +230,20 @@ def _fields_from_result_schema(
             return
         next_ancestors = ancestors | {signature}
 
-        raw_type = resolved.get("type")
-        if raw_type == "array" or (
-            isinstance(raw_type, list) and "array" in raw_type
-        ):
+        if _openrpc_schema_is_array(resolved):
+            items = resolved.get("items")
+            if isinstance(items, dict):
+                visit(
+                    items,
+                    prefix=(*prefix, "*") if prefix else prefix,
+                    depth=depth + 1,
+                    ancestors=next_ancestors,
+                )
             return
 
         for name, child in _schema_properties(document, resolved).items():
             path = (*prefix, name)
-            field_name = ".".join(path)
+            field_name = _openrpc_field_name(path)
             if field_name not in seen:
                 seen.add(field_name)
                 fields.append(
@@ -229,7 +253,11 @@ def _fields_from_result_schema(
                         json_schema=child,
                         aliases=[name.replace("_", " ")],
                         path=list(path) if prefix else [],
-                        result_path=[field_name] if prefix else [],
+                        result_path=(
+                            list(path)
+                            if "*" in path
+                            else ([field_name] if prefix else [])
+                        ),
                         unit=_schema_unit(child),
                         identifier=(
                             name in {"id", "uuid", "key"}
