@@ -89,6 +89,35 @@ query SchemaRouterIntrospection {{
 }}
 """.strip()
 
+_COMPACT_TYPE_REF = _type_ref_selection(depth=4)
+_COMPACT_INTROSPECTION_QUERY = f"""
+query SchemaRouterCompactIntrospection {{
+  __schema {{
+    queryType {{ name }}
+    mutationType {{ name }}
+    subscriptionType {{ name }}
+    types {{
+      kind
+      name
+      fields {{
+        name
+        args {{
+          name
+          type {{ {_COMPACT_TYPE_REF} }}
+        }}
+        type {{ {_COMPACT_TYPE_REF} }}
+      }}
+      inputFields {{
+        name
+        type {{ {_COMPACT_TYPE_REF} }}
+      }}
+      enumValues {{ name }}
+      possibleTypes {{ kind name }}
+    }}
+  }}
+}}
+""".strip()
+
 
 async def _bounded_post(
     client: httpx.AsyncClient,
@@ -769,12 +798,21 @@ class GraphQLSourceAdapter:
                     payload={"query": _INTROSPECTION_QUERY},
                     max_bytes=_MAX_INTROSPECTION_BYTES,
                 )
+            except httpx.HTTPStatusError as exc:
+                if exc.response.status_code != 413:
+                    raise
+                response = await _bounded_post(
+                    client,
+                    context.url,
+                    headers=context.schema_headers,
+                    payload={"query": _COMPACT_INTROSPECTION_QUERY},
+                    max_bytes=_MAX_INTROSPECTION_BYTES,
+                )
             except SchemaSourceError:
                 raise
             except (
                 httpx.TimeoutException,
                 httpx.TransportError,
-                httpx.HTTPStatusError,
             ):
                 raise
             except Exception:  # noqa: BLE001
