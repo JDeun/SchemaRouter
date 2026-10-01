@@ -1,0 +1,166 @@
+name: Cleanup stale branches 2026-10-01
+
+on:
+  pull_request:
+    paths:
+      - ".github/branch-cleanup-20261001.json"
+      - ".github/workflows/cleanup-stale-branches-20261001.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".github/branch-cleanup-20261001.json"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: stale-branch-cleanup-20261001
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    if: github.repository == 'JDeun/SchemaRouter'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Delete only allowlisted stale branches
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          token = os.environ["GITHUB_TOKEN"]
+          repository = os.environ["GITHUB_REPOSITORY"]
+          owner = os.environ["GITHUB_REPOSITORY_OWNER"]
+          manifest_path = ".github/branch-cleanup-20261001.json"
+
+          with open(manifest_path, encoding="utf-8") as fh:
+              manifest = json.load(fh)
+
+          if manifest.get("repository") != repository:
+              raise SystemExit("cleanup manifest repository mismatch")
+
+          base = f"https://api.github.com/repos/{repository}"
+
+          def request(method: str, path: str):
+              req = urllib.request.Request(
+                  f"{base}/{path}",
+                  method=method,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "schemarouter-branch-cleanup",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(req) as response:
+                      payload = response.read()
+                      if not payload:
+                          return None
+                      return json.loads(payload.decode("utf-8"))
+              except urllib.error.HTTPError as exc:
+                  if exc.code == 404:
+                      return {"_not_found": True}
+                  detail = exc.read().decode("utf-8", errors="replace")
+                  raise RuntimeError(f"{method} {path} failed: HTTP {exc.code}: {detail}") from exc
+
+          delete_mode = os.environ.get("GITHUB_EVENT_NAME") == "push"
+          deleted = []
+          dry_run = []
+          absent = []
+          skipped = []
+
+          for item in manifest["candidates"]:
+              branch = item["branch"]
+              expected_sha = item["sha"]
+              encoded = urllib.parse.quote(branch, safe="")
+
+              branch_info = request("GET", f"branches/{encoded}")
+              if branch_info.get("_not_found"):
+                  absent.append(branch)
+                  continue
+
+              current_sha = branch_info["commit"]["sha"]
+              if current_sha != expected_sha:
+                  skipped.append((branch, "sha-changed"))
+                  continue
+
+              if branch_info.get("protected"):
+                  skipped.append((branch, "protected"))
+                  continue
+
+              # Preserve an independently addressable GitHub provenance anchor
+              # before deleting the ordinary branch ref. The closed PR must still
+              # point at this exact branch name and commit, and must remain
+              # unmerged. If any of those facts changed, fail closed for that ref.
+              closed_pr = request("GET", f"pulls/{item['closed_pr']}")
+              if (
+                  closed_pr.get("_not_found")
+                  or closed_pr.get("state") != "closed"
+                  or closed_pr.get("merged_at") is not None
+                  or closed_pr.get("head", {}).get("ref") != branch
+                  or closed_pr.get("head", {}).get("sha") != expected_sha
+              ):
+                  skipped.append((branch, "closed-pr-anchor-changed"))
+                  continue
+
+              query = urllib.parse.urlencode(
+                  {"state": "open", "head": f"{owner}:{branch}", "per_page": 1}
+              )
+              open_prs = request("GET", f"pulls?{query}")
+              if open_prs:
+                  skipped.append((branch, "open-pr"))
+                  continue
+
+              if delete_mode:
+                  result = request("DELETE", f"git/refs/heads/{encoded}")
+                  if isinstance(result, dict) and result.get("_not_found"):
+                      absent.append(branch)
+                      continue
+                  deleted.append(branch)
+              else:
+                  dry_run.append(branch)
+
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+          lines = [
+              "# Stale branch cleanup",
+              "",
+              f"- mode: {'delete' if delete_mode else 'dry-run'}",
+              f"- allowlisted: {len(manifest['candidates'])}",
+              f"- validated for deletion: {len(dry_run) if not delete_mode else len(deleted)}",
+              f"- deleted: {len(deleted)}",
+              f"- already absent: {len(absent)}",
+              f"- skipped safely: {len(skipped)}",
+              "",
+          ]
+          if skipped:
+              lines += ["## Safely skipped", ""] + [
+                  f"- `{branch}`: {reason}" for branch, reason in skipped
+              ]
+          if summary_path:
+              with open(summary_path, "a", encoding="utf-8") as fh:
+                  fh.write("\n".join(lines) + "\n")
+
+          print(
+              json.dumps(
+                  {
+                      "mode": "delete" if delete_mode else "dry-run",
+                      "allowlisted": len(manifest["candidates"]),
+                      "validated_for_deletion": len(dry_run) if not delete_mode else len(deleted),
+                      "deleted": len(deleted),
+                      "already_absent": len(absent),
+                      "skipped": skipped,
+                  },
+                  indent=2,
+              )
+          )
+          PY
