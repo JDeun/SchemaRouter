@@ -8,6 +8,7 @@ tool names from a retrieval-only mirror of the PydanticAI ToolDefinition surface
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 import re
 import statistics
@@ -21,7 +22,6 @@ from typing import Any
 from pydantic_ai import ToolDefinition
 from pydantic_ai.capabilities import ToolSearch
 
-import schemarouter
 from schemarouter import (
     EndpointSpec,
     FieldSpec,
@@ -357,7 +357,7 @@ def _serialized_tool_bytes(tools: Sequence[ToolDefinition]) -> int:
 
 
 def _assert_installed_wheel() -> None:
-    package_file = Path(schemarouter.__file__).resolve()
+    package_file = Path(inspect.getfile(SchemaRouter)).resolve()
     repository_root = Path(__file__).resolve().parents[1]
     assert repository_root not in package_file.parents, package_file
     assert "site-packages" in package_file.parts, package_file
