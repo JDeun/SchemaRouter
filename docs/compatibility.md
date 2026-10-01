@@ -105,8 +105,9 @@ likewise remains an optional
 
 ## External compatibility checks
 
-The `Compatibility Smoke` workflow runs weekly and can also be triggered manually for public
-OpenAPI/OPTIMADE services and the latest stable SchemaRouter package published on PyPI. The PyPI
+The `Compatibility Smoke` workflow runs weekly and can also be triggered manually for the
+protocol compatibility matrix (OpenAPI, OPTIMADE, GraphQL, OData, OpenRPC, and MCP) plus the
+latest stable SchemaRouter package published on PyPI. The PyPI
 smoke separately forces wheel and sdist installation, runs `pip check`, and executes a public API
 scenario from outside the repository checkout. A dedicated isolated smoke installs only
 `schemarouter[mcp,jev,otel]` so those integrations cannot accidentally rely on framework
@@ -143,11 +144,17 @@ services. Both should be reviewed before a release candidate is promoted.
 
 ## Scheduled live-smoke artifacts
 
-The non-blocking public OpenAPI, OPTIMADE, published-PyPI, and published-integration compatibility
-jobs emit one
-machine-readable JSON artifact per smoke job. Reports include a schema version, UTC generation time, SchemaRouter version,
+The non-blocking adapter matrix, published-PyPI, and published-integration compatibility jobs emit
+machine-readable JSON artifacts. The adapter matrix includes public OpenAPI, OPTIMADE, GraphQL, and
+OData evidence plus pinned-reference OpenRPC and MCP Streamable HTTP evidence. Reports include a schema version, UTC generation time, SchemaRouter version,
 adapter/source identity, runtime environment, success/failure state, and bounded success details.
 On failure, only the exception type is recorded; exception messages are omitted.
+
+GitHub Actions retains these artifacts for 30 days. The unified
+`adapter-compatibility-matrix.json` and `adapter-compatibility-matrix.md` artifacts summarize the
+per-adapter reports and are also written to the workflow step summary. See
+[Live adapter compatibility matrix](guides/live-compatibility-matrix.md) for evidence policy and
+provider/reference choices.
 
 GitHub Actions retains these artifacts for 30 days. This makes compatibility drift inspectable
 without turning live third-party availability into a release-blocking gate. The raw JSON remains the
