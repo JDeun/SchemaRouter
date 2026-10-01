@@ -17,6 +17,7 @@ from .adapters.base import (
     AdapterLoadResult,
     AdapterRegistry,
     DiscoveryProfile,
+    RefreshProfile,
     SourceAdapter,
 )
 from .adapters.graphql import GraphQLSourceAdapter
@@ -670,6 +671,17 @@ class OpenAPISourceAdapter:
         http_methods=("GET",),
         derives_urls=True,
     )
+    refresh = RefreshProfile(
+        mode="url",
+        source_key="source_url",
+        source_location="metadata",
+        http_validators=True,
+        identity_metadata_keys=(
+            "resolved_schema_url",
+            "external_refs_enabled",
+            "external_ref_limits",
+        ),
+    )
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None:
         owns_client = context.http_client is None
@@ -772,7 +784,7 @@ class OpenAPISourceAdapter:
         attach_schema_http_validators(
             tool.metadata,
             validators,
-            source_identity_digest=structured_source_identity_digest_for(tool),
+            source_identity_digest=structured_source_identity_digest_for(tool, self.refresh),
         )
 
         selected_base_url = context.base_url or suggested_base_url
@@ -833,6 +845,12 @@ class MCPSourceAdapter:
     discovery = DiscoveryProfile(
         activity="active",
         opens_protocol_session=True,
+    )
+    refresh = RefreshProfile(
+        mode="url_or_bound_mcp",
+        source_key="source_url",
+        source_location="either",
+        identity_execution_keys=("transport", "transport_fingerprint"),
     )
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None:
@@ -905,18 +923,22 @@ class URLSchemaLoader:
     def register_adapter(self, adapter: SourceAdapter, *, replace: bool = False) -> None:
         self.adapters.register(adapter, replace=replace)
 
-    @staticmethod
     def _validator_source_identity(
+        self,
         tool: ToolSpec,
     ) -> StructuredSourceIdentity | None:
-        identity = structured_source_identity(tool)
-        if identity is None or identity.adapter not in {
-            "openapi",
-            "openrpc",
-            "odata",
-        }:
+        adapter = tool.execution_metadata.get("adapter")
+        if not isinstance(adapter, str):
+            adapter = tool.metadata.get("adapter")
+        if not isinstance(adapter, str):
             return None
-        return identity
+        try:
+            refresh = self.adapters.refresh_profile(adapter)
+        except KeyError:
+            return None
+        if not refresh.http_validators:
+            return None
+        return structured_source_identity(tool, refresh)
 
     def schema_http_validators_for(
         self,

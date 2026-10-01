@@ -4,6 +4,7 @@ from .adapters.base import (
     AdapterLoadResult,
     AdapterRegistry,
     DiscoveryProfile,
+    RefreshProfile,
     SourceAdapter,
 )
 from .adapters.mcp import (
@@ -260,6 +261,7 @@ __all__ = [
     "ResultFieldContract",
     "RetrievalMode",
     "RegistrationError",
+    "RefreshProfile",
     "RegistryExecutor",
     "RetryPolicy",
     "RunConfig",

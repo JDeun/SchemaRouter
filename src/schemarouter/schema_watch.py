@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Literal
 
+from .adapters.base import AdapterRegistry, RefreshProfile
 from .errors import SchemaSourceError
 from .models import ToolSpec
 from .registry import ToolRegistry
@@ -26,15 +27,6 @@ SchemaWatchStatus = Literal[
 ]
 
 RefreshCallable = Callable[..., Awaitable[SchemaRefreshResult]]
-
-_REFRESHABLE_ADAPTERS = {
-    "openapi",
-    "mcp",
-    "optimade",
-    "graphql",
-    "odata",
-    "openrpc",
-}
 
 
 @dataclass(frozen=True)
@@ -83,9 +75,11 @@ class SchemaWatchManager:
         self,
         registry: ToolRegistry,
         refresh: RefreshCallable,
+        adapters: AdapterRegistry,
     ) -> None:
         self.registry = registry
         self._refresh = refresh
+        self.adapters = adapters
         self._records: dict[str, _WatchRecord] = {}
         self._task: asyncio.Task[None] | None = None
         self._run_lock = asyncio.Lock()
@@ -103,33 +97,50 @@ class SchemaWatchManager:
             adapter = tool.metadata.get("adapter")
         return adapter if isinstance(adapter, str) else None
 
+    def _refresh_profile(self, tool: ToolSpec) -> RefreshProfile:
+        adapter = self._adapter(tool)
+        if adapter is None:
+            raise SchemaSourceError(
+                f"tool {tool.key!r} does not declare a structured-source adapter"
+            )
+        try:
+            profile = self.adapters.refresh_profile(adapter)
+        except KeyError as exc:
+            raise SchemaSourceError(
+                f"tool {tool.key!r} references an unavailable source adapter"
+            ) from exc
+        if not profile.supported:
+            raise SchemaSourceError(
+                f"tool {tool.key!r} does not have a refreshable structured-source adapter"
+            )
+        return profile
+
     def _assert_refreshable(self, tool_key: str) -> ToolSpec:
         try:
             tool = self.registry.get(tool_key)
         except KeyError as exc:
             raise KeyError(f"unknown tool: {tool_key}") from exc
-        adapter = self._adapter(tool)
-        if adapter not in _REFRESHABLE_ADAPTERS:
-            raise SchemaSourceError(
-                f"tool {tool_key!r} does not have a refreshable structured-source adapter"
-            )
+        self._refresh_profile(tool)
         return tool
 
-    @staticmethod
-    def _watch_identity(tool: ToolSpec) -> StructuredSourceIdentity:
-        identity = structured_source_identity(tool)
+    def _watch_identity(self, tool: ToolSpec) -> StructuredSourceIdentity:
+        profile = self._refresh_profile(tool)
+        identity = structured_source_identity(tool, profile)
         if identity is None:
             raise SchemaSourceError(
                 f"tool {tool.key!r} is missing structured-source identity"
             )
-        if identity.adapter == "mcp":
-            if identity.source_url is None and identity.transport_fingerprint is None:
-                raise SchemaSourceError(
-                    f"tool {tool.key!r} is missing MCP source/transport identity"
-                )
-        elif identity.source_url is None:
+        if profile.mode == "url" and identity.source_url is None:
             raise SchemaSourceError(
                 f"tool {tool.key!r} is missing source identity for schema watch"
+            )
+        if (
+            profile.mode == "url_or_bound_mcp"
+            and identity.source_url is None
+            and identity.transport_fingerprint is None
+        ):
+            raise SchemaSourceError(
+                f"tool {tool.key!r} is missing source/transport identity for schema watch"
             )
         return identity
 

@@ -7,6 +7,7 @@ import pytest
 
 from schemarouter import EndpointSpec, SchemaRouter, ToolSpec, compare_tool_specs
 from schemarouter.registry import InMemoryRegistry
+from schemarouter.ingestion import default_adapter_registry
 from schemarouter.schema_diff import SchemaDiffReport, SchemaRefreshResult
 from schemarouter.schema_watch import SchemaWatchManager
 
@@ -92,7 +93,7 @@ async def test_same_key_different_source_never_calls_registered_refresh(
         calls += 1
         return _unchanged(registry.get(tool_key))
 
-    watcher = SchemaWatchManager(registry, refresh)
+    watcher = SchemaWatchManager(registry, refresh, default_adapter_registry())
     watcher.register(
         original.key,
         interval_seconds=60,
@@ -130,7 +131,7 @@ async def test_same_source_contract_replacement_is_stale_before_refresh() -> Non
         calls += 1
         return _unchanged(registry.get(tool_key))
 
-    watcher = SchemaWatchManager(registry, refresh)
+    watcher = SchemaWatchManager(registry, refresh, default_adapter_registry())
     watcher.register(original.key, interval_seconds=60)
 
     replacement = _tool(
@@ -174,7 +175,7 @@ async def test_mcp_http_source_change_never_reuses_old_factory() -> None:
         factory()
         return _unchanged(registry.get(tool_key))
 
-    watcher = SchemaWatchManager(registry, refresh)
+    watcher = SchemaWatchManager(registry, refresh, default_adapter_registry())
     watcher.register(
         original.key,
         interval_seconds=60,
@@ -214,7 +215,7 @@ async def test_mcp_bound_transport_fingerprint_change_is_stale_source() -> None:
         calls += 1
         return _unchanged(registry.get(tool_key))
 
-    watcher = SchemaWatchManager(registry, refresh)
+    watcher = SchemaWatchManager(registry, refresh, default_adapter_registry())
     watcher.register(original.key, interval_seconds=60)
 
     registry.register(
@@ -268,7 +269,7 @@ async def test_watch_driven_compatible_apply_advances_contract_pin() -> None:
             )
         return _unchanged(current)
 
-    watcher = SchemaWatchManager(registry, refresh)
+    watcher = SchemaWatchManager(registry, refresh, default_adapter_registry())
     watcher.register(original.key, interval_seconds=60)
 
     first = await watcher.run_once()
@@ -308,7 +309,7 @@ async def test_pending_review_does_not_advance_watch_pin() -> None:
             report=report,
         )
 
-    watcher = SchemaWatchManager(registry, refresh)
+    watcher = SchemaWatchManager(registry, refresh, default_adapter_registry())
     watcher.register(original.key, interval_seconds=60)
 
     first = await watcher.run_once()
@@ -354,7 +355,7 @@ async def test_same_source_credential_rotation_requires_watch_reregistration() -
         seen.append(kwargs["trusted_headers"])
         return _unchanged(registry.get(tool_key))
 
-    watcher = SchemaWatchManager(registry, refresh)
+    watcher = SchemaWatchManager(registry, refresh, default_adapter_registry())
     watcher.register(
         original.key,
         interval_seconds=60,

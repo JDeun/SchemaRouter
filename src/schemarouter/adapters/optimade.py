@@ -16,7 +16,7 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
-from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
+from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 
 _MAX_DISCOVERY_BYTES = 2 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 16 * 1024 * 1024
@@ -600,6 +600,11 @@ class OPTIMADESourceAdapter:
         activity="passive",
         http_methods=("GET",),
         derives_urls=True,
+    )
+    refresh = RefreshProfile(
+        mode="url",
+        source_key="versioned_base_url",
+        source_location="either",
     )
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None:

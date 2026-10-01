@@ -61,10 +61,79 @@ class DiscoveryProfile:
         object.__setattr__(self, "http_methods", methods)
 
 
+@dataclass(frozen=True)
+class RefreshProfile:
+    """Trusted local declaration of one adapter's schema-lifecycle support."""
+
+    mode: Literal["unsupported", "url", "url_or_bound_mcp"] = "unsupported"
+    source_key: str | None = None
+    source_location: Literal["metadata", "execution_metadata", "either"] = "metadata"
+    http_validators: bool = False
+    identity_metadata_keys: tuple[str, ...] = ()
+    identity_execution_keys: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.mode not in {"unsupported", "url", "url_or_bound_mcp"}:
+            raise ValueError("unsupported refresh mode")
+        if self.mode == "url" and not self.source_key:
+            raise ValueError("URL refresh requires a source_key")
+        if self.source_key is not None and (
+            not self.source_key or self.source_key != self.source_key.strip()
+        ):
+            raise ValueError("refresh source_key must be non-empty and trimmed")
+        if self.http_validators and self.mode != "url":
+            raise ValueError("HTTP validators require URL refresh mode")
+        for key in (*self.identity_metadata_keys, *self.identity_execution_keys):
+            if not key or key != key.strip():
+                raise ValueError("refresh identity keys must be non-empty and trimmed")
+            normalized = key.casefold().replace("-", "_")
+            if any(
+                marker in normalized
+                for marker in (
+                    "authorization",
+                    "credential",
+                    "password",
+                    "secret",
+                    "token",
+                    "cookie",
+                    "api_key",
+                    "apikey",
+                )
+            ):
+                raise ValueError(
+                    "refresh identity keys must never name credential-bearing fields"
+                )
+        if len(self.identity_metadata_keys) != len(set(self.identity_metadata_keys)):
+            raise ValueError("refresh identity metadata keys must be unique")
+        if len(self.identity_execution_keys) != len(set(self.identity_execution_keys)):
+            raise ValueError("refresh identity execution keys must be unique")
+
+    @property
+    def supported(self) -> bool:
+        return self.mode != "unsupported"
+
+    def source_url(self, tool: ToolSpec) -> str | None:
+        if self.source_key is None:
+            return None
+        sources: tuple[dict[str, Any], ...]
+        if self.source_location == "metadata":
+            sources = (tool.metadata,)
+        elif self.source_location == "execution_metadata":
+            sources = (tool.execution_metadata,)
+        else:
+            sources = (tool.execution_metadata, tool.metadata)
+        for source in sources:
+            value = source.get(self.source_key)
+            if isinstance(value, str) and value:
+                return value
+        return None
+
+
 class SourceAdapter(Protocol):
     kind: str
     priority: int
     discovery: DiscoveryProfile
+    refresh: RefreshProfile
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None: ...
 
@@ -75,6 +144,7 @@ class AdapterRegistry:
     def __init__(self, adapters: list[SourceAdapter] | None = None) -> None:
         self._adapters: dict[str, SourceAdapter] = {}
         self._discovery_profiles: dict[str, DiscoveryProfile] = {}
+        self._refresh_profiles: dict[str, RefreshProfile] = {}
         for adapter in adapters or []:
             self.register(adapter)
 
@@ -93,13 +163,23 @@ class AdapterRegistry:
             raise ValueError(
                 "adapter discovery must be a DiscoveryProfile declared by trusted local code"
             )
+        refresh = getattr(adapter, "refresh", None)
+        if refresh is None:
+            # Legacy plugins remain ingestible, but refresh/watch is opt-in only.
+            refresh = RefreshProfile()
+        if not isinstance(refresh, RefreshProfile):
+            raise ValueError(
+                "adapter refresh must be a RefreshProfile declared by trusted local code"
+            )
         self._adapters[kind] = adapter
         self._discovery_profiles[kind] = profile
+        self._refresh_profiles[kind] = refresh
 
     def unregister(self, kind: str) -> None:
         normalized = kind.strip().lower()
         self._adapters.pop(normalized, None)
         self._discovery_profiles.pop(normalized, None)
+        self._refresh_profiles.pop(normalized, None)
 
     def get(self, kind: str) -> SourceAdapter:
         normalized = kind.strip().lower()
@@ -119,13 +199,25 @@ class AdapterRegistry:
             )
         )
 
-
     def discovery_profile(self, kind: str) -> DiscoveryProfile:
         normalized = kind.strip().lower()
         try:
             return self._discovery_profiles[normalized]
         except KeyError as exc:
             raise KeyError(f"unknown adapter kind: {normalized!r}") from exc
+
+    def refresh_profile(self, kind: str) -> RefreshProfile:
+        normalized = kind.strip().lower()
+        try:
+            return self._refresh_profiles[normalized]
+        except KeyError as exc:
+            raise KeyError(f"unknown adapter kind: {normalized!r}") from exc
+
+    def is_refreshable(self, kind: str) -> bool:
+        try:
+            return self.refresh_profile(kind).supported
+        except KeyError:
+            return False
 
     def auto_candidates(
         self,

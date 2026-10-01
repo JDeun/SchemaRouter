@@ -7,6 +7,7 @@ import pytest
 
 from schemarouter import EndpointSpec, SchemaRouter, ToolSpec
 from schemarouter.registry import InMemoryRegistry
+from schemarouter.ingestion import default_adapter_registry
 from schemarouter.schema_diff import SchemaDiffReport, SchemaRefreshResult
 from schemarouter.schema_watch import SchemaWatchManager
 
@@ -178,7 +179,7 @@ def test_schema_watch_registration_does_not_require_running_loop() -> None:
             ),
         )
 
-    watcher = SchemaWatchManager(registry, refresh)
+    watcher = SchemaWatchManager(registry, refresh, default_adapter_registry())
     watcher.register(tool.key, interval_seconds=60)
 
     assert watcher.snapshots()[0].status == "idle"
@@ -232,7 +233,7 @@ async def test_schema_watcher_bounds_concurrency_and_starts_stops_cleanly() -> N
             ),
         )
 
-    watcher = SchemaWatchManager(registry, refresh)
+    watcher = SchemaWatchManager(registry, refresh, default_adapter_registry())
     for key in keys:
         watcher.register(key, interval_seconds=0.03)
 
@@ -280,7 +281,7 @@ async def test_schema_watcher_snapshots_never_expose_secret_headers() -> None:
             ),
         )
 
-    watcher = SchemaWatchManager(registry, refresh)
+    watcher = SchemaWatchManager(registry, refresh, default_adapter_registry())
     watcher.register(
         tool.key,
         interval_seconds=60,

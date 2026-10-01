@@ -14,7 +14,7 @@ from ..errors import (
     SchemaSourceError,
 )
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
-from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
+from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 
 _MAX_INTROSPECTION_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 10 * 1024 * 1024
@@ -742,6 +742,11 @@ class GraphQLSourceAdapter:
     discovery = DiscoveryProfile(
         activity="active",
         http_methods=("POST",),
+    )
+    refresh = RefreshProfile(
+        mode="url",
+        source_key="source_url",
+        source_location="metadata",
     )
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None:

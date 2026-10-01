@@ -23,7 +23,7 @@ from ..schema_http import (
     schema_http_validators_from_headers,
 )
 from ..source_identity import structured_source_identity_digest_for
-from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
+from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 from .openapi import same_origin
 
 _MAX_DISCOVERY_BYTES = 5 * 1024 * 1024
@@ -584,6 +584,12 @@ class OpenRPCSourceAdapter:
         activity="passive",
         http_methods=("GET",),
     )
+    refresh = RefreshProfile(
+        mode="url",
+        source_key="source_url",
+        source_location="metadata",
+        http_validators=True,
+    )
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None:
         owns_client = context.http_client is None
@@ -670,7 +676,7 @@ class OpenRPCSourceAdapter:
             attach_schema_http_validators(
                 tool.metadata,
                 validators,
-                source_identity_digest=structured_source_identity_digest_for(tool),
+                source_identity_digest=structured_source_identity_digest_for(tool, self.refresh),
             )
             return AdapterLoadResult(tool=tool, invoker=invoker)
         finally:
