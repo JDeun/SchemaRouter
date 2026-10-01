@@ -50,7 +50,7 @@ def main() -> None:
     substring_only = choose_sync(
         backend,
         DecisionRequest(
-            query="weathered data should not select weather",
+            query="weathered data should not select that route",
             options=[
                 DecisionOption(id="weather", label="Weather"),
                 DecisionOption(id="search", label="Search"),
