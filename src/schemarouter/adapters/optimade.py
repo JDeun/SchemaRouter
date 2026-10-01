@@ -7,7 +7,12 @@ from urllib.parse import quote, urljoin, urlparse
 
 import httpx
 
-from ..errors import InvocationUnavailableError, NonRetryableInvocationError, SchemaSourceError
+from ..errors import (
+    AdapterProbeError,
+    InvocationUnavailableError,
+    NonRetryableInvocationError,
+    SchemaSourceError,
+)
 from ..models import (
     EndpointSpec,
     FieldSpec,
@@ -16,6 +21,7 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
+from ..probe_diagnostics import http_probe_error
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 
 _MAX_DISCOVERY_BYTES = 2 * 1024 * 1024
@@ -618,6 +624,8 @@ class OPTIMADESourceAdapter:
         try:
             versioned_base_url: str | None = None
             base_info: dict[str, Any] | None = None
+            last_probe_error: AdapterProbeError | None = None
+            had_successful_response = False
             for candidate in candidates:
                 try:
                     response = await _bounded_get(
@@ -626,10 +634,24 @@ class OPTIMADESourceAdapter:
                         headers=context.schema_headers,
                         max_bytes=_MAX_DISCOVERY_BYTES,
                     )
+                    had_successful_response = True
                     document = response.json()
-                except SchemaSourceError:
-                    raise
+                except (httpx.HTTPStatusError, httpx.TimeoutException, httpx.TransportError) as exc:
+                    last_probe_error = http_probe_error(
+                        self.kind,
+                        exc,
+                        operation="OPTIMADE info discovery",
+                    )
+                    continue
+                except SchemaSourceError as exc:
+                    raise AdapterProbeError(
+                        self.kind,
+                        "protocol_error",
+                        "OPTIMADE discovery violated the safe source contract",
+                    ) from exc
                 except Exception:  # noqa: BLE001
+                    # A successful non-JSON response is evidence that this URL is
+                    # simply not an OPTIMADE endpoint, not a transport failure.
                     continue
                 attributes = _base_info_attributes(document)
                 if attributes is not None:
@@ -638,12 +660,15 @@ class OPTIMADESourceAdapter:
                     break
 
             if versioned_base_url is None or base_info is None:
+                if not had_successful_response and last_probe_error is not None:
+                    raise last_probe_error
                 return None
 
             if bool(base_info.get("is_index", False)):
-                raise SchemaSourceError(
-                    "OPTIMADE index meta-databases are discovery catalogs, not executable "
-                    "entry databases; provide a concrete provider database URL"
+                raise AdapterProbeError(
+                    self.kind,
+                    "unsupported_feature",
+                    "OPTIMADE index meta-database is not an executable entry database",
                 )
 
             entry_types_by_format = base_info.get("entry_types_by_format")
@@ -692,14 +717,21 @@ class OPTIMADESourceAdapter:
 
             parsed = urlparse(versioned_base_url)
             inferred_name = context.name or _slug(parsed.hostname or "optimade")
-            tool = _tool_from_discovery(
-                name=inferred_name,
-                namespace=context.namespace,
-                versioned_base_url=versioned_base_url,
-                base_info=base_info,
-                entries=entries,
-                skipped=skipped,
-            )
+            try:
+                tool = _tool_from_discovery(
+                    name=inferred_name,
+                    namespace=context.namespace,
+                    versioned_base_url=versioned_base_url,
+                    base_info=base_info,
+                    entries=entries,
+                    skipped=skipped,
+                )
+            except SchemaSourceError as exc:
+                raise AdapterProbeError(
+                    self.kind,
+                    "invalid_schema",
+                    "OPTIMADE source exposed no usable entry schema contract",
+                ) from exc
             invoker = OPTIMADERemoteInvoker(
                 tool,
                 versioned_base_url,
