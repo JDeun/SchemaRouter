@@ -152,10 +152,8 @@ On failure, only the exception type is recorded; exception messages are omitted.
 
 GitHub Actions retains these artifacts for 30 days. The unified
 `adapter-compatibility-matrix.json` and `adapter-compatibility-matrix.md` artifacts summarize the
-per-adapter reports and are also written to the workflow step summary. See
+per-adapter reports and are also written to the workflow step summary. This makes compatibility
+drift inspectable without turning live third-party availability into a release-blocking gate. The
+raw JSON remains the source of truth for any later history/dashboard tooling. See
 [Live adapter compatibility matrix](guides/live-compatibility-matrix.md) for evidence policy and
 provider/reference choices.
-
-GitHub Actions retains these artifacts for 30 days. This makes compatibility drift inspectable
-without turning live third-party availability into a release-blocking gate. The raw JSON remains the
-source of truth for any later history/dashboard tooling.
