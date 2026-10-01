@@ -211,6 +211,8 @@ nav:
       - Adoption scorecard: project/adoption-scorecard.md
       - Developer launch playbook: project/launch-playbook.md
       - Launch and outreach log: project/launch-log.md
+      - External adoption and validation: project/external-adoption.md
+      - External case-study template: project/case-study-template.md
       - Versioning: versioning.md
       - Release notes:
           - 0.13.0: releases/0.13.0.md

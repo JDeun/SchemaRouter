@@ -71,6 +71,8 @@ Current coordination:
 - [Discoverability and positioning](discoverability.md)
 - [Developer launch playbook](launch-playbook.md)
 - [Launch and outreach log](launch-log.md)
+- [External adoption and validation](external-adoption.md)
+- [External case-study template](case-study-template.md)
 
 Stars are a lagging signal. Prefer reproducible examples, downstream integrations, external
 reproductions, and repeat usage over vanity promotion.
