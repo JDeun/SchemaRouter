@@ -9,12 +9,12 @@
 
 # 에이전트와 도구 사이에 타입 기반 실행 경계를 두세요
 
-SchemaRouter는 MCP, OpenAPI, Python, 프레임워크 도구를 아우르는 **LLM/RAG 에이전트용 typed
-capability retrieval 및 schema-aware execution 계층**입니다.
+SchemaRouter는 MCP, OpenAPI, Python, 프레임워크 도구를 하나의 **타입 기반 검색·실행 경계**로
+묶어 주는 라이브러리입니다.
 
-도구가 늘어날수록 에이전트가 모든 스키마를 한 번에 보게 하는 방식은 비효율적이고 위험해집니다.
-SchemaRouter는 먼저 **필요한 데이터 필드**를 식별하고, 그 필드를 제공할 수 있는 등록된 capability만
-제한된 범위로 노출한 뒤, 실행 직전에 스키마·정책·바인딩을 다시 검증합니다.
+도구가 많아질수록 모든 스키마를 한꺼번에 모델에 넘기는 방식은 비용도 크고 통제하기도 어렵습니다.
+SchemaRouter는 질문에 필요한 **데이터 필드**를 먼저 찾고, 그 필드를 제공할 수 있는 등록된
+capability만 좁혀서 보여 줍니다. 실제 호출 직전에는 스키마, 정책, 바인딩을 다시 확인합니다.
 
 ```bash
 pip install schemarouter
@@ -31,30 +31,30 @@ pip install schemarouter
 
 -   **최소화**
 
-    요청에 필요한 semantic field를 먼저 정하고, 가능한 경우 upstream에서도 해당 필드만 요청한 뒤
-    downstream에는 선언된 필드만 전달합니다.
+    질문에 필요한 의미 단위의 필드를 먼저 정합니다. API가 필드 선택을 지원하면 필요한 값만
+    요청하고, 최종 결과에도 선언된 필드만 남깁니다.
 
 -   **컴파일**
 
-    OpenAPI, MCP, OPTIMADE, Python callable과 승인된 adapter를 공통 Provider / Access path /
-    Tool / Endpoint / Parameter / Field 모델로 정규화합니다.
+    OpenAPI, MCP, OPTIMADE, Python callable과 승인된 adapter를 같은
+    Provider / Access path / Tool / Endpoint / Parameter / Field 구조로 정리합니다.
 
 -   **검증**
 
-    미등록 인자, 잘못된 raw output, stale fingerprint, stale binding, 지원되지 않는 스키마 가정을
-    fail-closed로 처리합니다.
+    등록되지 않은 인자, 스키마와 맞지 않는 응답, 오래된 fingerprint나 binding처럼
+    실행 계약을 어기는 상태는 허용하지 않습니다.
 
 -   **권한 분리**
 
-    retrieval score나 모델 출력은 실행 권한이 아닙니다. 실제 실행 권한은 로컬 정책과 등록된
-    계약이 갖습니다.
+    검색 점수나 모델의 선택만으로는 도구를 실행할 수 없습니다. 실행 권한은 로컬 정책과
+    등록된 계약에서만 나옵니다.
 
 </div>
 
 ## SchemaRouter가 필요한 이유
 
-전통적인 tool router는 보통 `Query -> Tool`을 고릅니다. SchemaRouter는 더 세분화된 경계를
-다룹니다.
+일반적인 tool router가 `Query -> Tool` 선택에 집중한다면, SchemaRouter는 그 다음 단계까지
+계약으로 다룹니다.
 
 ```text
 사용자 질문
@@ -68,7 +68,8 @@ pip install schemarouter
   -> validated execution
 ```
 
-즉, **도구를 하나 고르는 문제**뿐 아니라 **어떤 데이터를 어떤 계약으로 가져올지**까지 다룹니다.
+핵심은 도구 이름 하나를 고르는 데서 끝나지 않는다는 점입니다. 어떤 필드를 어떤 경로와
+계약으로 가져올지까지 실행 계획에 포함합니다.
 
 ## RAG/에이전트에서의 위치
 
@@ -81,16 +82,16 @@ flowchart LR
     D --> A
 ```
 
-SchemaRouter는 범용 agent framework, LLM provider gateway, 메모리 시스템, 최종 답변 생성기가
-아닙니다. LangChain/LangGraph/LlamaIndex 같은 상위 계층과 함께 사용할 수 있습니다.
+SchemaRouter는 범용 agent framework나 LLM gateway가 아니며, 메모리나 최종 답변 생성도
+담당하지 않습니다. LangChain, LangGraph, LlamaIndex 같은 상위 계층 아래에 붙여 쓰는 구조입니다.
 
 ## 현재 안정판과 연구
 
-현재 안정판은 **0.13.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14가 release-blocking CI
-대상이며 Python 3.15는 preview로 확인합니다.
+현재 안정판은 **0.13.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 릴리스 차단 CI에서
+검증하고, Python 3.15는 별도 preview job으로 확인합니다.
 
-0.14 연구는 stable product contract와 분리되어 진행됩니다. 연구 결과가 좋아도 자동으로 제품
-기본값이 바뀌지 않습니다.
+0.14 연구는 안정판의 제품 계약과 분리되어 있습니다. 실험 결과가 좋아도 검증 절차 없이
+제품 기본값으로 들어가지는 않습니다.
 
 [설치하기 →](getting-started/installation.md) ·
 [SchemaRouter의 역할 →](concepts/schema-router.md) ·
