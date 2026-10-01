@@ -2,6 +2,11 @@ name: Growth Scorecard
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/growth-scorecard.yml"
+      - "scripts/capture_growth_scorecard.py"
   schedule:
     - cron: "20 2 * * 1"
 
