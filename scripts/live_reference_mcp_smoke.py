@@ -93,7 +93,10 @@ async def run_smoke() -> dict[str, object]:
             "discovery_success": True,
             "tool_count": 1,
             "endpoint_count": len(tool.endpoints),
-            "execution_bound": bool(tool.metadata.get("execution_bound")),
+            "execution_bound": router.executor.is_binding_ready_for_contract(
+                tool.key,
+                tool.fingerprint,
+            ),
             "execution_success": True,
             "safe_endpoint": endpoint.name,
             "returned_shape": "object",
@@ -124,10 +127,17 @@ async def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--json-out", default=None)
     args = parser.parse_args()
-    report = new_report(adapter="mcp", source="pinned-local-streamable-http-reference")
+    report = new_report(
+        adapter="mcp",
+        source="pinned-local-streamable-http-reference",
+    )
+    report["details"] = {
+        "evidence_kind": "pinned_reference_implementation",
+        "provider": "SchemaRouter pinned MCP Streamable HTTP reference server",
+    }
 
     try:
-        report["details"] = await run_smoke()
+        report["details"].update(await run_smoke())
         report["status"] = "success"
     except Exception as exc:
         report["status"] = "failure"
