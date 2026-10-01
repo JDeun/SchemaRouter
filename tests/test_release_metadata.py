@@ -84,6 +84,11 @@ def test_release_workflow_keeps_trusted_publishing_top_level_and_isolates_build(
     assert "sbom-path: artifacts/schemarouter-" in workflow
     assert "name: release-sbom" in workflow
     assert "path: sbom" in workflow
+    assert "name: release-metadata" in workflow
+    assert "artifacts/SHA256SUMS.txt" in workflow
+    assert "artifacts/release-manifest.json" in workflow
+    assert '"source_sha": os.environ["RELEASE_SHA"]' in workflow
+    assert "metadata/*" in workflow
     assert 'gh release create "$RELEASE_TAG" dist/* sbom/*' in workflow
     assert "environment:" in workflow
     assert "name: pypi" in workflow
