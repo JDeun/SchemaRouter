@@ -5,9 +5,11 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.12.0</span>
+<span class="sr-kicker">SchemaRouter 0.13.0</span>
 
 # Put a typed execution boundary between agents and tools
+
+SchemaRouter is a **typed capability retrieval and execution layer for RAG and LLM agents across OpenAPI, MCP, OPTIMADE, and Python tools**.
 
 Agents get harder to steer as you connect more tools, and each tool can return far more than the
 request needs. SchemaRouter decides which **declared data fields** are needed, exposes a bounded set
@@ -171,8 +173,8 @@ surface. Applications can expose a compact registered candidate set to an extern
 `retrieve` / `aretrieve`, or require current local binding readiness through `retrieve_executable`
 / `aretrieve_executable`.
 
-Version `0.12.0` closes that product cycle: the architecture and public API boundary are now the
-frozen **stable core**. Research may improve ranking, index implementations, shortlist defaults and
+Version `0.12.0` froze the architecture and public API boundary as the **stable core**. Version
+`0.13.0` then hardened the user-facing product surface around that core without changing its role. Research may improve ranking, index implementations, shortlist defaults and
 re-retrieval behind that boundary, but a benchmark improvement alone is not a reason to redesign
 the public facade.
 
