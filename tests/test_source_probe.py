@@ -75,6 +75,16 @@ async def test_probe_url_detects_openapi_without_registry_mutation() -> None:
     assert probe.endpoint_count == 1
     assert probe.execution_bindable is True
     assert probe.warnings == []
+    assert any(
+        diagnostic.adapter_kind == "openapi"
+        and diagnostic.status == "recognized"
+        for diagnostic in probe.diagnostics
+    )
+    assert any(
+        diagnostic.adapter_kind == "graphql"
+        and diagnostic.status == "skipped_active"
+        for diagnostic in probe.diagnostics
+    )
     assert probe.source_url == "https://docs.example.test/openapi.json"
     assert "private-value" not in probe.model_dump_json()
 
