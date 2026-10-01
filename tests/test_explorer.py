@@ -428,7 +428,6 @@ def test_write_schema_explorer_creates_static_html(tmp_path) -> None:
     assert "one.read" in html
 
 
-
 def test_schema_explorer_cli_exports_persisted_registry(
     tmp_path,
     capsys: pytest.CaptureFixture[str],
