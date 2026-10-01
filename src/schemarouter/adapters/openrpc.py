@@ -676,7 +676,10 @@ class OpenRPCSourceAdapter:
             attach_schema_http_validators(
                 tool.metadata,
                 validators,
-                source_identity_digest=structured_source_identity_digest_for(tool, self.refresh),
+                source_identity_digest=structured_source_identity_digest_for(
+                tool,
+                self.refresh,
+            ),
             )
             return AdapterLoadResult(tool=tool, invoker=invoker)
         finally:
