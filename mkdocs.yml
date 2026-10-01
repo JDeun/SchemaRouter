@@ -111,6 +111,7 @@ nav:
       - Quickstart: getting-started/quickstart.md
       - Choose an ingestion path: getting-started/ingestion-paths.md
       - Runtime lifecycle: getting-started/runtime-lifecycle.md
+      - Startup rebinding: getting-started/startup-rebinding.md
   - Concepts:
       - What SchemaRouter is: concepts/schema-router.md
       - RAG positioning and capability retrieval: concepts/capability-catalog.md

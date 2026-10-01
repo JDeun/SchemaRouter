@@ -31,6 +31,14 @@ from .aggregation import (
     canonical_identity,
 )
 from .analyzers import ModelCallable, ModelQueryAnalyzer
+from .binding_reconciliation import (
+    BindingReconciliationError,
+    BindingReconciliationItem,
+    BindingReconciliationReport,
+    BindingReconciliationStatus,
+    BindingResolver,
+    TrustedBindingConfig,
+)
 from .dashboard import render_dashboard, write_dashboard
 from .decision_plugins import (
     DECISION_BACKEND_ENTRY_POINT_GROUP,
@@ -181,6 +189,11 @@ __all__ = [
     "AuthSchemeRequirement",
     "BeforeExecutionHook",
     "BindingDriftError",
+    "BindingReconciliationError",
+    "BindingReconciliationItem",
+    "BindingReconciliationReport",
+    "BindingReconciliationStatus",
+    "BindingResolver",
     "ConfiguredSchemaRouter",
     "ContractAmendmentError",
     "DECISION_BACKEND_ENTRY_POINT_GROUP",
@@ -232,6 +245,7 @@ __all__ = [
     "RouterInspection",
     "ToolInspection",
     "TraceInspection",
+    "TrustedBindingConfig",
     "KeywordAnalyzer",
     "MCPBoundClientFactory",
     "MCPClientFactory",
