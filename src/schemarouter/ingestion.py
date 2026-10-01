@@ -1008,6 +1008,7 @@ class OpenAPISourceAdapter:
                     selected_base_url,
                     trusted_headers=context.trusted_headers,
                     timeout=context.timeout,
+                    http_client=context.http_client,
                 )
             except ValueError as exc:
                 raise SchemaSourceError(

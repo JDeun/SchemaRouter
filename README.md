@@ -38,30 +38,46 @@ It is **not** a general agent framework, an LLM provider layer, or a RAG generat
 
 ## Quickstart
 
+This first example uses the public, no-auth APIs.guru OpenAPI document, so the returned number is
+provider-owned live data rather than a hard-coded demo value.
+
 ```python
-from pydantic import BaseModel
-from schemarouter import PlanRequest, SchemaRouter, schema_tool
+import asyncio
+
+from schemarouter import PlanRequest, SchemaRouter
 
 
-class Weather(BaseModel):
-    city: str
-    temperature: float
+async def main():
+    router = await SchemaRouter.from_url(
+        "https://api.apis.guru/v2/openapi.yaml",
+        kind="openapi",
+    )
+    async with router:
+        tool = next(
+            tool
+            for tool in router.registry.tools()
+            if any(endpoint.name == "getMetrics" for endpoint in tool.endpoints)
+        )
+        plan = router.plan(
+            PlanRequest(
+                query="API directory metrics total number of APIs",
+                preferred_tools=[tool.key],
+                max_calls=1,
+            )
+        )
+        result = (await router.execute(plan))[0]
+        print(result.tool, result.endpoint, result.data["numAPIs"])
 
 
-@schema_tool(read_only=True)
-def current_weather(city: str) -> Weather:
-    return Weather(city=city, temperature=20.5)
-
-
-router = SchemaRouter()
-router.add_callable(current_weather)
-
-result = router.invoke(
-    PlanRequest(query="city temperature", arguments={"city": "Seoul"})
-)
-
-print(result[0].data)
+asyncio.run(main())
 ```
+
+The flow is the product in miniature: **external schema → typed registered capabilities → bounded
+selection → validated execution → typed result**. The final integer changes as APIs.guru changes.
+
+For network-independent CI/package acceptance, the repository keeps
+[`examples/quickstart.py`](examples/quickstart.py) as a deterministic local smoke. The complete
+live version above is [`examples/live_openapi_quickstart.py`](examples/live_openapi_quickstart.py).
 
 ## Retrieve a compact tool set for an agent
 
