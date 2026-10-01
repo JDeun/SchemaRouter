@@ -110,7 +110,7 @@ def _schema_at_projection_path(
     path: tuple[str, ...],
 ) -> dict[str, Any]:
     schema = output_schema
-    if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
+    if "array" in _schema_types(schema) and isinstance(schema.get("items"), dict):
         schema = schema["items"]
 
     for part in path:
