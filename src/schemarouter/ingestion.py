@@ -29,6 +29,7 @@ from .executor import RegistryExecutor
 from .models import ToolSpec
 from .registry import ToolRegistry, replace_if_current
 from .schema_http import (
+    attach_schema_http_validators,
     conditional_schema_headers,
     normalize_schema_http_validators,
     schema_http_validators_from_headers,
@@ -130,6 +131,14 @@ async def _fetch_with_safe_redirects(
                     raise SchemaSourceError("cross-origin schema redirects are not allowed")
                 current = target
                 continue
+
+            if response.status_code == 304:
+                return httpx.Response(
+                    status_code=response.status_code,
+                    headers=response.headers,
+                    content=b"",
+                    request=response.request,
+                )
 
             response.raise_for_status()
             content_length = response.headers.get("content-length")
@@ -644,11 +653,25 @@ class OpenAPISourceAdapter:
         resolved_schema_url = context.url
         normalized_ref_count = 0
         try:
+            conditional_headers = (
+                context.schema_headers
+                if context.openapi_external_refs
+                else conditional_schema_headers(
+                    context.schema_headers,
+                    context.schema_validators,
+                )
+            )
             response = await _fetch_with_safe_redirects(
                 client,
                 context.url,
-                headers=context.schema_headers,
+                headers=conditional_headers,
             )
+            validators = schema_http_validators_from_headers(
+                response.headers,
+                fallback=context.schema_validators,
+            )
+            if response.status_code == 304:
+                raise SchemaNotModifiedError(validators=validators)
             document = _parse_openapi_text(response.text)
             if document is not None:
                 resolved_schema_url = str(response.url)
@@ -712,6 +735,7 @@ class OpenAPISourceAdapter:
                 "remote": True,
             }
         )
+        attach_schema_http_validators(tool.metadata, validators)
 
         selected_base_url = context.base_url or suggested_base_url
         auto_bind_allowed = context.base_url is not None or (
