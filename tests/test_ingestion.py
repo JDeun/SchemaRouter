@@ -5,10 +5,12 @@ import pytest
 
 from schemarouter import (
     ExecutionError,
+    ExecutionPlan,
     PlanRequest,
     SchemaDriftError,
     SchemaRouter,
     SchemaSourceError,
+    ToolCall,
     UnsupportedSchemaSourceError,
 )
 
@@ -364,3 +366,82 @@ async def test_adapter_error_redacts_source_query_secret() -> None:
     assert "https://docs.example.com/schema" in message
     assert "top-secret" not in message
     assert "token=" not in message
+
+
+
+@pytest.mark.asyncio
+async def test_openapi_injected_http_client_is_reused_for_execution() -> None:
+    seen_paths: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen_paths.append(request.url.path)
+        if request.url.path == "/openapi.json":
+            return httpx.Response(
+                200,
+                json={
+                    "openapi": "3.1.0",
+                    "info": {"title": "Injected Client", "version": "1.0.0"},
+                    "servers": [{"url": "https://api.example.test"}],
+                    "paths": {
+                        "/metrics": {
+                            "get": {
+                                "operationId": "getMetrics",
+                                "responses": {
+                                    "200": {
+                                        "description": "ok",
+                                        "content": {
+                                            "application/json": {
+                                                "schema": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "numAPIs": {"type": "integer"}
+                                                    },
+                                                }
+                                            }
+                                        },
+                                    }
+                                },
+                            }
+                        }
+                    },
+                },
+                request=request,
+            )
+        if request.url.path == "/metrics":
+            return httpx.Response(
+                200,
+                json={"numAPIs": 42},
+                request=request,
+            )
+        raise AssertionError(f"unexpected request: {request.url}")
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler)
+    ) as client:
+        router = await SchemaRouter.from_url(
+            "https://api.example.test/openapi.json",
+            kind="openapi",
+            http_client=client,
+        )
+        tool = router.registry.tools()[0]
+        endpoint = tool.endpoint("getMetrics")
+        result = (
+            await router.execute(
+                ExecutionPlan(
+                    query="metrics",
+                    registry_version=router.registry.version,
+                    calls=[
+                        ToolCall(
+                            tool=tool.key,
+                            endpoint=endpoint.name,
+                            fields=["numAPIs"],
+                            schema_fingerprint=endpoint.fingerprint,
+                            tool_fingerprint=tool.fingerprint,
+                        )
+                    ],
+                )
+            )
+        )[0]
+
+    assert seen_paths == ["/openapi.json", "/metrics"]
+    assert result.data == {"numAPIs": 42}
