@@ -18,8 +18,9 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Package wheel and sdist build successfully.
 - [ ] Wheel and sdist both install and run the quickstart in clean environments.
 - [ ] Package metadata can be inspected without errors.
-- [ ] The public trust/evidence page names the intended stable release and is updated with the
-  published artifact digests, SBOM, and any changed verification limitations before promotion.
+- [ ] The public trust/evidence page names the intended stable release and documents any changed
+  verification limitations; per-release digests come from the generated release manifest rather
+  than being copied into documentation by hand.
 - [ ] README, PyPI summary/keywords, docs home, and release notes use consistent positioning and
   stable-version language.
 - [ ] The [discoverability checklist](project/discoverability.md#release-discoverability-checklist)
@@ -72,6 +73,8 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Clean-install and smoke-test both built artifacts before publication.
 - [ ] Generate GitHub artifact provenance attestations for the wheel and sdist from the build job before upload.
 - [ ] Generate an SPDX JSON SBOM, attach it to the GitHub release, and create an SBOM attestation for the wheel and sdist.
+- [ ] Generate `SHA256SUMS.txt` and `release-manifest.json` from the exact built artifacts and
+  attach both to the GitHub release.
 - [ ] Publish GitHub release assets and PyPI artifacts from separate jobs; only the PyPI job receives
   OIDC `id-token: write` permission.
 - [ ] Confirm the PyPI Trusted Publisher is configured for the `pypi` GitHub environment.
@@ -90,6 +93,8 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Confirm the exact-version post-publish PyPI verification job is green for wheel, sdist,
   isolated MCP/Jev/OpenTelemetry extras, and the combined
   MCP/LangChain/LangGraph/LlamaIndex/Jev/OpenTelemetry extras.
+- [ ] Confirm `SHA256SUMS.txt` and `release-manifest.json` are attached to the GitHub Release and
+  identify the exact release source SHA.
 - [ ] Confirm documentation examples match the released package.
 - [ ] Record any compatibility regressions as release blockers for the next patch.
 - [ ] Keep security/correctness fixes separate from convenience refactors where practical.
