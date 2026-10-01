@@ -138,8 +138,8 @@ def sync(facts: Facts) -> None:
     )
     _replace(
         "docs_ko/getting-started/installation.md",
-        r"공개 release tag와 package metadata는 `\d+\.\d+\.\d+`을 현재 non-prerelease 릴리스로 식별합니다\.",
-        f"공개 release tag와 package metadata는 `{version}`을 현재 non-prerelease 릴리스로 식별합니다.",
+        r"공개 release tag와 package metadata에서 현재 정식 배포 버전은 `\d+\.\d+\.\d+`입니다\.",
+        f"공개 release tag와 package metadata에서 현재 정식 배포 버전은 `{version}`입니다.",
     )
 
     # Stable trust index.
