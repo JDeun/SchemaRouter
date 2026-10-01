@@ -66,16 +66,16 @@ def conditional_schema_headers(
     normalized = normalize_schema_http_validators(validators)
 
     existing = {key.lower() for key in output}
+    if {"if-none-match", "if-modified-since"} & existing:
+        return output or None
+
     etag = normalized.get("etag")
-    if etag is not None and "if-none-match" not in existing:
+    if etag is not None:
         output["If-None-Match"] = etag
+        return output
 
     last_modified = normalized.get("last_modified")
-    if (
-        last_modified is not None
-        and "if-modified-since" not in existing
-        and "if-none-match" not in {key.lower() for key in output}
-    ):
+    if last_modified is not None:
         output["If-Modified-Since"] = last_modified
 
     return output or None
