@@ -84,7 +84,7 @@ Issues = "https://github.com/JDeun/SchemaRouter/issues"
 Research = "https://github.com/JDeun/paper_SchemaRouter"
 Brand = "https://jdeun.github.io/SchemaRouter/project/brand/"
 Examples = "https://github.com/JDeun/SchemaRouter/tree/main/examples"
-Changelog = "https://jdeun.github.io/SchemaRouter/project/changelog/"
+Changelog = "https://jdeun.github.io/SchemaRouter/changelog/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/schemarouter"]
