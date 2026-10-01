@@ -39,6 +39,22 @@ class SchemaDiffReport(StrictModel):
         return bool(self.changes)
 
 
+SchemaRefreshAction = Literal["unchanged", "applied", "pending_review", "report_only"]
+
+
+class SchemaRefreshResult(StrictModel):
+    """Outcome of one trusted remote-schema reinspection."""
+
+    tool_key: str
+    action: SchemaRefreshAction
+    applied: bool
+    report: SchemaDiffReport
+
+    @property
+    def compatibility(self) -> SchemaCompatibility:
+        return self.report.compatibility
+
+
 def _compatibility(changes: list[SchemaChange]) -> SchemaCompatibility:
     if not changes:
         return "identical"
