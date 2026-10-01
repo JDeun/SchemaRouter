@@ -8,8 +8,14 @@ from typing import Protocol
 
 from pydantic import ValidationError
 
-from .errors import RegistrationError
+from .errors import RegistrationError, StorageFormatError
 from .models import EndpointSpec, ToolSpec
+from .storage import (
+    component_presence,
+    component_versions,
+    stamp_current_component_format,
+    validate_component_openable,
+)
 
 
 def _validated_tool_snapshot(tool: ToolSpec) -> ToolSpec:
@@ -243,6 +249,71 @@ class InMemoryRegistry:
                 self._version += 1
 
 
+def _validate_legacy_registry_storage(
+    connection: sqlite3.Connection,
+) -> None:
+    try:
+        row = connection.execute(
+            "SELECT value FROM schemarouter_registry_meta WHERE key = 'version'"
+        ).fetchone()
+    except sqlite3.DatabaseError as exc:
+        raise StorageFormatError(
+            "legacy registry metadata table shape is not compatible with migration"
+        ) from exc
+    if row is None:
+        raise StorageFormatError("registry logical version metadata is missing")
+    try:
+        version = int(row["value"])
+    except (TypeError, ValueError) as exc:
+        raise StorageFormatError(
+            "registry logical version metadata is not an integer"
+        ) from exc
+    if version < 0:
+        raise StorageFormatError(
+            "registry logical version metadata must be non-negative"
+        )
+
+    try:
+        rows = connection.execute(
+            """
+            SELECT key, position, document
+            FROM schemarouter_registry_tools
+            ORDER BY position
+            """
+        ).fetchall()
+    except sqlite3.DatabaseError as exc:
+        raise StorageFormatError(
+            "legacy registry table shape is not compatible with migration"
+        ) from exc
+
+    seen_positions: set[int] = set()
+    for stored in rows:
+        key = str(stored["key"])
+        try:
+            position = int(stored["position"])
+        except (TypeError, ValueError) as exc:
+            raise StorageFormatError(
+                f"stored tool {key!r} has an invalid registry position"
+            ) from exc
+        if position < 0 or position in seen_positions:
+            raise StorageFormatError(
+                f"stored tool {key!r} has an invalid registry position"
+            )
+        seen_positions.add(position)
+
+        try:
+            tool = ToolSpec.model_validate_json(str(stored["document"]))
+        except (ValidationError, ValueError) as exc:
+            raise StorageFormatError(
+                f"legacy stored tool {key!r} cannot be migrated safely"
+            ) from exc
+        if tool.key != key:
+            raise StorageFormatError(
+                f"legacy stored tool key mismatch: row={key!r}, "
+                f"document={tool.key!r}"
+            )
+
+
 class SQLiteRegistry:
     """Persistent versioned tool catalog backed by SQLite.
 
@@ -273,33 +344,108 @@ class SQLiteRegistry:
         self._connection.execute(f"PRAGMA busy_timeout = {busy_timeout_ms}")
         if self.path != ":memory:":
             self._connection.execute("PRAGMA journal_mode = WAL")
-        self._initialize()
+        try:
+            self._initialize()
+        except Exception:
+            self._connection.close()
+            self._closed = True
+            raise
+
+    def _create_component_tables(self) -> None:
+        self._connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS schemarouter_registry_meta (
+                key TEXT PRIMARY KEY,
+                value INTEGER NOT NULL
+            )
+            """
+        )
+        self._connection.execute(
+            """
+            INSERT OR IGNORE INTO schemarouter_registry_meta (key, value)
+            VALUES ('version', 0)
+            """
+        )
+        self._connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS schemarouter_registry_tools (
+                key TEXT PRIMARY KEY,
+                position INTEGER NOT NULL UNIQUE,
+                document TEXT NOT NULL
+            )
+            """
+        )
+
+    def _validated_logical_version(self) -> int:
+        row = self._connection.execute(
+            "SELECT value FROM schemarouter_registry_meta WHERE key = 'version'"
+        ).fetchone()
+        if row is None:
+            raise StorageFormatError(
+                "registry logical version metadata is missing"
+            )
+        try:
+            version = int(row["value"])
+        except (TypeError, ValueError) as exc:
+            raise StorageFormatError(
+                "registry logical version metadata is not an integer"
+            ) from exc
+        if version < 0:
+            raise StorageFormatError(
+                "registry logical version metadata must be non-negative"
+            )
+        return version
+
+    def _validate_legacy_storage(self) -> None:
+        _validate_legacy_registry_storage(self._connection)
 
     def _initialize(self) -> None:
-        with self._lock, self._connection:
-            self._connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS schemarouter_registry_meta (
-                    key TEXT PRIMARY KEY,
-                    value INTEGER NOT NULL
+        with self._lock:
+            presence = component_presence(self._connection, "registry")
+            if presence == "partial":
+                raise StorageFormatError(
+                    "registry SQLite storage is incomplete; required tables are missing"
                 )
-                """
+
+            if presence == "absent":
+                self._connection.execute("BEGIN IMMEDIATE")
+                try:
+                    self._create_component_tables()
+                    stamp_current_component_format(
+                        self._connection,
+                        "registry",
+                    )
+                except Exception:
+                    self._connection.rollback()
+                    raise
+                else:
+                    self._connection.commit()
+                return
+
+            status = validate_component_openable(
+                self._connection,
+                "registry",
             )
-            self._connection.execute(
-                """
-                INSERT OR IGNORE INTO schemarouter_registry_meta (key, value)
-                VALUES ('version', 0)
-                """
-            )
-            self._connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS schemarouter_registry_tools (
-                    key TEXT PRIMARY KEY,
-                    position INTEGER NOT NULL UNIQUE,
-                    document TEXT NOT NULL
+            if status == "current":
+                self._validated_logical_version()
+                return
+
+            # v0 -> v1 only stamps compatibility metadata after every stored
+            # ToolSpec has been validated. Logical registry version/order and
+            # serialized documents remain untouched.
+            self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                self._validate_legacy_storage()
+                stamp_current_component_format(
+                    self._connection,
+                    "registry",
+                    from_version=0,
                 )
-                """
-            )
+            except Exception:
+                self._connection.rollback()
+                raise
+            else:
+                self._connection.commit()
 
     def _ensure_open(self) -> None:
         if self._closed:
@@ -352,12 +498,35 @@ class SQLiteRegistry:
     def version(self) -> int:
         with self._lock:
             self._ensure_open()
-            row = self._connection.execute(
-                "SELECT value FROM schemarouter_registry_meta WHERE key = 'version'"
-            ).fetchone()
-            if row is None:
-                raise RegistrationError("registry version metadata is missing")
-            return int(row["value"])
+            return self._validated_logical_version()
+
+    @property
+    def storage_format_version(self) -> int:
+        with self._lock:
+            self._ensure_open()
+            storage_version, _ = component_versions(
+                self._connection,
+                "registry",
+            )
+            if storage_version is None:
+                raise StorageFormatError(
+                    "registry storage format metadata is missing"
+                )
+            return storage_version
+
+    @property
+    def document_format_version(self) -> int:
+        with self._lock:
+            self._ensure_open()
+            _, document_version = component_versions(
+                self._connection,
+                "registry",
+            )
+            if document_version is None:
+                raise StorageFormatError(
+                    "registry document format metadata is missing"
+                )
+            return document_version
 
     def register(self, tool: ToolSpec, *, replace: bool = False) -> str:
         validated = _validated_tool_snapshot(tool)
