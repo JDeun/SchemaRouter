@@ -158,6 +158,28 @@ def test_workflow_keeps_candidates_strictly_sequential_and_revision_pinned():
 
 
 
+def test_workflow_publishes_model_cache_before_evaluator_fanout():
+    from pathlib import Path
+
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github"
+        / "workflows"
+        / "research-0.14-runtime-qualification.yml"
+    ).read_text(encoding="utf-8")
+
+    # Cache warm-up jobs must commit the exact-revision cache as a normal step,
+    # not rely on the generic cache action's post-job save. Downstream matrix
+    # jobs otherwise can race cache visibility and fail before inference.
+    assert workflow.count(
+        "uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830"
+    ) == 3
+    assert workflow.count(
+        "uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830"
+    ) == 6
+    assert "Publish exact candidate cache before fan-out" in workflow
+    assert "uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830" not in workflow
+
 def test_workflow_downloads_qualification_corpus_at_repo_root():
     from pathlib import Path
 

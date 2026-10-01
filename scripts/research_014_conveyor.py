@@ -378,6 +378,29 @@ def _age_seconds(value: str) -> float:
     return max(0.0, (datetime.now(timezone.utc) - parsed).total_seconds())
 
 
+STALE_QUEUED_WRAPPER_SECONDS = 1800.0
+
+
+def stale_queued_wrapper(
+    run: StageRun | None,
+    *,
+    wrapper_sha: str,
+    min_age_seconds: float = STALE_QUEUED_WRAPPER_SECONDS,
+) -> bool:
+    """Whether a queued run is pinned to an obsolete workflow wrapper.
+
+    Scientific source revisions are carried separately in workflow inputs. A
+    fresh dispatch can therefore pick up infrastructure-only wrapper fixes
+    without changing frozen experiment semantics.
+    """
+    return bool(
+        run is not None
+        and run.status == "queued"
+        and run.head_sha != wrapper_sha
+        and _age_seconds(run.created_at) >= min_age_seconds
+    )
+
+
 def _status_line(label: str, run: StageRun | None) -> str:
     if run is None:
         return f"{label}=absent"
@@ -605,6 +628,27 @@ def run_controller(
                 },
             )
         actions.append("dispatch_corrective")
+    elif stale_queued_wrapper(corrective, wrapper_sha=_wrapper_sha):
+        # A long-queued run keeps the workflow wrapper SHA from dispatch time.
+        # If an infrastructure-only wrapper fix has since landed, issue a fresh
+        # dispatch while preserving the exact frozen scientific source input.
+        # GitHub's concurrency group keeps only the newest pending run.
+        retry_source_sha = source_sha_from_run(corrective)
+        if execute:
+            api.dispatch(
+                CORRECTIVE_WORKFLOW,
+                ref=ref,
+                inputs={
+                    "evidence_digest": b2_digest,
+                    "source_sha": retry_source_sha,
+                },
+            )
+        actions.append(
+            "recover_dispatch_stale_queued_corrective_wrapper:"
+            f"prior_run={corrective.id}:source={retry_source_sha}:"
+            f"wrapper={_wrapper_sha}"
+        )
+        corrective = None
     elif terminal_failure(corrective):
         failed_corrective_runs = [
             run for run in corrective_runs if terminal_failure(run)
