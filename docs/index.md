@@ -95,30 +95,44 @@ bound: for example, Materials Project for `band_gap` and arXiv for `abstract`.
 
 ## Start in five minutes
 
+The first user-facing path uses the public, no-auth APIs.guru OpenAPI document. The value comes from
+the provider rather than from a hard-coded local demo.
+
 ```python
-from pydantic import BaseModel
-from schemarouter import PlanRequest, SchemaRouter, schema_tool
+import asyncio
+
+from schemarouter import PlanRequest, SchemaRouter
 
 
-class Weather(BaseModel):
-    city: str
-    temperature: float
+async def main():
+    router = await SchemaRouter.from_url(
+        "https://api.apis.guru/v2/openapi.yaml",
+        kind="openapi",
+    )
+    async with router:
+        tool = next(
+            tool
+            for tool in router.registry.tools()
+            if any(endpoint.name == "getMetrics" for endpoint in tool.endpoints)
+        )
+        plan = router.plan(
+            PlanRequest(
+                query="API directory metrics total number of APIs",
+                preferred_tools=[tool.key],
+                max_calls=1,
+            )
+        )
+        result = (await router.execute(plan))[0]
+        print(result.tool, result.endpoint, result.data["numAPIs"])
 
 
-@schema_tool(read_only=True)
-def current_weather(city: str) -> Weather:
-    return Weather(city=city, temperature=20.5)
-
-
-router = SchemaRouter()
-router.add_callable(current_weather)
-
-result = router.invoke(
-    PlanRequest(query="city temperature", arguments={"city": "Seoul"})
-)
+asyncio.run(main())
 ```
 
-[Continue the quickstart →](getting-started/quickstart.md)
+Required CI stays deterministic and offline; the live provider is for first-use and compatibility
+evidence, not a release-blocking dependency.
+
+[Continue the real-provider quickstart →](getting-started/quickstart.md)
 
 ## Connect a capability source
 
@@ -200,8 +214,13 @@ cycle evaluates the retrieval boundary more rigorously.
 - **B2** is terminal success on the frozen SmolLM3-3B replication protocol.
 - A separate **structural K3-vs-K5** downstream gate failed its preregistered -2pp task-pass
   promotion floor, so K3 is not promoted into the large held-out benchmark.
-- **#431 corrective re-retrieval** is the active gate. The 780-task **#432 held-out** benchmark and
-  **#424 final-answer quality** benchmark are downstream confirmation stages.
+- **#431 corrective re-retrieval** is the active conveyor gate. The current recovery run preserves
+  the frozen scientific source and does not permit partial-row interpretation.
+- The separate **#510 runtime qualification** line is also active as instrument evidence for the
+  output-field-projection successor. Infrastructure-only recovery attempts do not count as model
+  qualification or projection evidence.
+- The 780-task **#432 held-out** benchmark and **#424 final-answer quality** benchmark remain
+  downstream confirmation stages.
 
 These results are kept separate from the stable product contract and from any broad production
 claim.
