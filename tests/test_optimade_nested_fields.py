@@ -126,8 +126,23 @@ async def test_optimade_discovers_nested_dictionary_fields_and_units() -> None:
     endpoint = router.registry.endpoint("materials.example", "search_structures")
     fields = {field.name: field for field in endpoint.output_fields}
 
-    assert {"metadata", "metadata.score", "metadata.label", "trajectories"} <= set(fields)
-    assert "trajectories.energy" not in fields
+    assert {
+        "metadata",
+        "metadata.score",
+        "metadata.label",
+        "trajectories",
+        "trajectories[].energy",
+    } <= set(fields)
+    assert fields["trajectories[].energy"].path == [
+        "trajectories",
+        "*",
+        "energy",
+    ]
+    assert fields["trajectories[].energy"].result_path == [
+        "trajectories",
+        "*",
+        "energy",
+    ]
     assert fields["metadata.score"].path == ["metadata", "score"]
     assert fields["metadata.score"].result_path == ["metadata.score"]
     assert fields["metadata.score"].json_schema["type"] == "number"
