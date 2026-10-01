@@ -4,17 +4,17 @@ SchemaRouter는 **Python 3.10 이상**이 필요합니다.
 
 ## 공개 릴리스 설치
 
-현재 공개 안정판은 `0.13.0`입니다.
+현재 공개 안정판은 `0.14.0`입니다.
 
 ```bash
 pip install schemarouter
 ```
 
-0.13.0은 0.12에서 정한 stable-core 경계를 유지하면서 입력 방식과 운영 기능을 넓힌 릴리스입니다.
-GraphQL, OData, OpenRPC, SDK/client binding, MCP stdio/client factory, schema refresh/watch,
-중첩 출력 필드 처리가 이 버전에 포함됩니다.
+0.14.0은 0.12에서 정한 stable-core 경계를 유지하면서 운영 수명주기와 외부 생태계 검증을
+보강한 릴리스입니다. Source probe, startup rebinding, storage migration, schema-drift review,
+unified shutdown, Capability Explorer, 한·영 문서 전환이 포함됩니다.
 
-[0.13.0 릴리스 노트 보기](../releases/0.13.0.md)
+[0.14.0 릴리스 노트 보기](../releases/0.14.0.md)
 
 ## 개발 체크아웃
 
@@ -79,7 +79,7 @@ pip install -e ".[dev]"
 python -c "import schemarouter; print(schemarouter.__version__)"
 ```
 
-공개 release tag와 package metadata에서 현재 정식 배포 버전은 `0.13.0`입니다.
+공개 release tag와 package metadata에서 현재 정식 배포 버전은 `0.14.0`입니다.
 개발 브랜치는 PEP 440의 `.dev0` 표기를 사용해 PyPI에 올라간 안정판과 구분합니다.
 
 ## 릴리스 검증
