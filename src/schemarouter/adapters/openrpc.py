@@ -23,7 +23,13 @@ from ..schema_http import (
     schema_http_validators_from_headers,
 )
 from ..source_identity import structured_source_identity_digest_for
-from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
+from .base import (
+    AdapterContext,
+    AdapterLoadResult,
+    AdapterProbeError,
+    DiscoveryProfile,
+    adapter_probe_error,
+)
 from .openapi import same_origin
 
 _MAX_DISCOVERY_BYTES = 5 * 1024 * 1024
@@ -608,13 +614,18 @@ class OpenRPCSourceAdapter:
                 if response.status_code == 304:
                     raise SchemaNotModifiedError(validators=validators)
                 document = response.json()
-            except SchemaSourceError:
+            except SchemaNotModifiedError:
                 raise
-            except Exception:  # noqa: BLE001
-                return None
+            except Exception as exc:  # noqa: BLE001
+                raise adapter_probe_error("openrpc", exc) from exc
 
             parsed = _parse_document(document)
             if parsed is None:
+                if isinstance(document, dict) and "openrpc" in document:
+                    raise AdapterProbeError(
+                        "invalid_schema",
+                        "OpenRPC-like document is malformed or unsupported",
+                    )
                 return None
 
             info = parsed.get("info") or {}
