@@ -15,7 +15,6 @@ import sys
 
 from schemarouter import ExecutionPolicy, PlanRequest, SchemaRouter
 
-
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 HTTP_SERVER = ROOT / "tests" / "fixtures" / "mcp_http_server.py"
 STDIO_SERVER = ROOT / "tests" / "fixtures" / "mcp_stdio_server.py"
