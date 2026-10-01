@@ -22,6 +22,7 @@ fallback, fingerprint, health, drift, and observability boundaries.
 | MCP | MCP server tool catalog | local/remote MCP tools |
 | OPTIMADE | materials provider implementing OPTIMADE | Materials Project, NOMAD, Materials Cloud |
 | Python callable | typed SDK/client wrapper | mp-api, yfinance, arXiv Python client |
+| Bound ToolSpec + invoker | explicit trusted contract over opaque SDK/client | yfinance, mp-api client, internal SDKs |
 | LangChain tool import | existing BaseTool / StructuredTool | search, scholarly, finance, SaaS tools |
 | LlamaIndex tool import | existing BaseTool / FunctionTool | agent/retrieval ecosystem tools |
 | GraphQL | introspection schema + selection sets | GitHub GraphQL and other typed GraphQL APIs |
@@ -45,11 +46,11 @@ The machine-readable source for this table is
 
 | Service | Domain | Primary path | Additional paths |
 | --- | --- | --- | --- |
-| Materials Project | materials science | OpenAPI | OPTIMADE, Python/mp-api |
+| Materials Project | materials science | OpenAPI | OPTIMADE, Python/mp-api, bound SDK |
 | DuckDuckGo | web search | LangChain tool | Python wrapper |
 | Tavily | web search | HTTP/JSON | LangChain tool, Python SDK |
 | Brave Search | web search | HTTP/JSON | Python wrapper, plugin |
-| Yahoo Finance | finance | Python callable | LangChain tool |
+| Yahoo Finance | finance | Bound ToolSpec + SDK invoker | Python callable, LangChain tool |
 | arXiv | scholarly search | LangChain tool | Python wrapper, plugin |
 | Crossref | scholarly metadata | OpenAPI | HTTP/JSON |
 | GitHub REST | developer platform | OpenAPI | HTTP/JSON, plugin |
@@ -112,7 +113,7 @@ domain.
 Examples:
 
 - a web-search service with an existing LangChain tool enters through the inbound tool bridge;
-- a finance SDK becomes a typed Python callable;
+- a typed finance SDK becomes a Python callable; an opaque/weakly typed SDK uses `add_bound_tool()` with an explicit `ToolSpec`;
 - a REST API with a Swagger/OpenAPI schema enters through OpenAPI;
 - a stable REST endpoint without OpenAPI uses a trusted declarative HTTP/JSON ToolSpec;
 - an unusual protocol can be implemented as a SourceAdapter plugin without changing core.
