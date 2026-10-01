@@ -1155,8 +1155,6 @@ class SchemaRouter:
                 report=compare_tool_specs(current, current),
             )
 
-        if use_http_validators:
-            self.loader.remember_tool_schema_http_validators(candidate.tool)
         if candidate.tool.key != tool_key:
             raise SchemaSourceError(
                 "refreshed schema changed the registered tool key unexpectedly"
@@ -1164,6 +1162,8 @@ class SchemaRouter:
 
         report = compare_tool_specs(current, candidate.tool)
         if report.compatibility == "identical":
+            if use_http_validators:
+                self.loader.remember_tool_schema_http_validators(candidate.tool)
             return SchemaRefreshResult(
                 tool_key=tool_key,
                 action="unchanged",
