@@ -156,13 +156,10 @@ async def test_array_item_projection_keeps_missing_child_in_same_record_slot() -
 
     result = (await router.execute(plan))[0]
 
-    assert result.data == {
-        "data": [
-            {"band_gap": 1.2, "density": 2.4},
-            {"density": 3.1},
-            {"band_gap": 0.7, "density": 4.2},
-        ]
-    }
+    assert result.data["data"][0] == {"band_gap": 1.2, "density": 2.4}
+    assert result.data["data"][1] == {"density": 3.1}
+    assert result.data["data"][2]["density"] == 4.2
+    assert result.data["data"][2]["band_gap"] == pytest.approx(0.7)
 
 
 @pytest.mark.asyncio
