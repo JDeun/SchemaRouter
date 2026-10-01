@@ -17,11 +17,11 @@
 <p align="center">
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg"></a>
-  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.12.0"></a>
+  <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.13.0"></a>
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
-> **Stable release: 0.12.0** · Beta / pre-1.0
+> **Stable release: 0.13.0** · Beta / pre-1.0
 
 Agents get harder to steer as their tool catalog grows, and tool responses often contain far more
 than the request needs. SchemaRouter works out **which declared data fields are needed**, exposes a
@@ -218,13 +218,13 @@ Framework bridges are available for LangChain, LangGraph, and LlamaIndex. OpenTe
 Third-party bounded decision backends can be published through the
 `schemarouter.decision_backends` entry-point group.
 
-## What works in 0.12.0
+## What works in 0.13.0
 
 The released package provides a working beta implementation of the core architecture:
 
 - typed Tool / Endpoint / Parameter / Field registry contracts;
 - first-class bounded Top-K capability retrieval through `retrieve` / `aretrieve` and executable-ready variants;
-- Python, OpenAPI, MCP, and OPTIMADE ingestion paths;
+- direct ToolSpec/Python/SDK binding plus OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC, declarative HTTP/JSON, and inbound LangChain/LlamaIndex ingestion paths;
 - field-first planning and bounded multi-provider field coverage;
 - input and raw-output JSON Schema validation;
 - schema fingerprints and binding-drift rejection;
@@ -237,12 +237,12 @@ The released package provides a working beta implementation of the core architec
   surfaces.
 
 So **the architecture works today** for declared capabilities and supported routing cases.
-Current `main` additionally includes explicit SDK/client binding, inbound LangChain/LlamaIndex tools, GraphQL, OData, OpenRPC, declarative HTTP/JSON, MCP stdio/custom transports, and record-preserving nested array fields. These newer surfaces belong to the next release rather than the published 0.12.0 wheel.
+0.13.0 also ships trusted contract amendment, safe provider schema refresh/watch, HTTP validator optimization, MCP stdio/custom transport refresh, and record-preserving nested array-item field projection.
 
 
 ## Current research direction: compact capability retrieval for agents
 
-The stable 0.12.0 execution boundary is unchanged. The active research question has shifted from
+The stable-core execution boundary established in 0.12.0 remains unchanged in 0.13.0. The active research question has shifted from
 making SchemaRouter itself the final open-set classifier to evaluating it as a **typed capability
 retrieval substrate** for a downstream LLM agent.
 
@@ -270,7 +270,7 @@ gate, so K3 is not carried into the held-out benchmark. Execution-state-aware co
 (#424) are downstream confirmation stages.
 
 The earlier 0.11–0.13 open-set classifier/veto experiments are still valuable negative evidence. No
-experimental learned router or structural retrieval profile is promoted as an unconditional production default in 0.12.0.
+experimental learned router or structural retrieval profile is promoted as an unconditional production default in 0.13.0.
 
 See:
 
@@ -278,7 +278,7 @@ See:
 - [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [Complete experiment index](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
 - [0.14 paper-evidence checkpoint](https://jdeun.github.io/SchemaRouter/research/0.14-paper-evidence-checkpoint/)
-- [0.12.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.12.0/)
+- [0.13.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.13.0/)
 - [Changelog](CHANGELOG.md)
 
 ## Inspect the registry and runs
