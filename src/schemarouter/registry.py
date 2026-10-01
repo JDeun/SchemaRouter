@@ -44,6 +44,40 @@ class ToolRegistry(Protocol):
     def endpoint(self, tool_key: str, endpoint_name: str) -> EndpointSpec: ...
 
 
+class MutableToolRegistry(ToolRegistry, Protocol):
+    """Optional registry capability for atomic remove-if-current semantics."""
+
+    def unregister_if_fingerprint(
+        self,
+        key: str,
+        *,
+        expected_fingerprint: str,
+        expected_version: int,
+    ) -> None: ...
+
+
+def unregister_if_current(
+    registry: ToolRegistry,
+    key: str,
+    *,
+    expected_fingerprint: str,
+    expected_version: int,
+) -> None:
+    """Atomically remove a tool only while the caller still owns its snapshot."""
+
+    unregister = getattr(registry, "unregister_if_fingerprint", None)
+    if not callable(unregister):
+        raise RegistrationError(
+            "registry does not support atomic unregister-if-fingerprint; "
+            "this operation requires MutableToolRegistry semantics"
+        )
+    unregister(
+        key,
+        expected_fingerprint=expected_fingerprint,
+        expected_version=expected_version,
+    )
+
+
 class CompareAndSwapToolRegistry(ToolRegistry, Protocol):
     """Optional registry capability for atomic replace-if-current semantics."""
 
@@ -144,6 +178,30 @@ class InMemoryRegistry:
             self._tools[key] = self._snapshot(validated)
             self._version += 1
         return key
+
+    def unregister_if_fingerprint(
+        self,
+        key: str,
+        *,
+        expected_fingerprint: str,
+        expected_version: int,
+    ) -> None:
+        with self._lock:
+            if self._version != expected_version:
+                raise RegistrationError(
+                    f"registry changed concurrently; expected version "
+                    f"{expected_version}, found {self._version}"
+                )
+            current = self._tools.get(key)
+            if current is None:
+                raise KeyError(key)
+            if current.fingerprint != expected_fingerprint:
+                raise RegistrationError(
+                    f"tool {key!r} changed concurrently; expected fingerprint "
+                    f"{expected_fingerprint!r}, found {current.fingerprint!r}"
+                )
+            del self._tools[key]
+            self._version += 1
 
     def unregister(self, key: str) -> None:
         with self._lock:
@@ -390,6 +448,50 @@ class SQLiteRegistry:
             else:
                 self._connection.commit()
         return validated.key
+
+    def unregister_if_fingerprint(
+        self,
+        key: str,
+        *,
+        expected_fingerprint: str,
+        expected_version: int,
+    ) -> None:
+        with self._lock:
+            self._begin_write()
+            try:
+                version_row = self._connection.execute(
+                    "SELECT value FROM schemarouter_registry_meta WHERE key = 'version'"
+                ).fetchone()
+                if version_row is None:
+                    raise RegistrationError("registry version metadata is missing")
+                current_version = int(version_row["value"])
+                if current_version != expected_version:
+                    raise RegistrationError(
+                        f"registry changed concurrently; expected version "
+                        f"{expected_version}, found {current_version}"
+                    )
+                row = self._connection.execute(
+                    "SELECT document FROM schemarouter_registry_tools WHERE key = ?",
+                    (key,),
+                ).fetchone()
+                if row is None:
+                    raise KeyError(key)
+                current = self._deserialize(key, str(row["document"]))
+                if current.fingerprint != expected_fingerprint:
+                    raise RegistrationError(
+                        f"tool {key!r} changed concurrently; expected fingerprint "
+                        f"{expected_fingerprint!r}, found {current.fingerprint!r}"
+                    )
+                self._connection.execute(
+                    "DELETE FROM schemarouter_registry_tools WHERE key = ?",
+                    (key,),
+                )
+                self._bump_version()
+            except Exception:
+                self._connection.rollback()
+                raise
+            else:
+                self._connection.commit()
 
     def unregister(self, key: str) -> None:
         with self._lock:

@@ -996,6 +996,9 @@ class URLSchemaLoader:
         self._schema_http_validators.pop(tool.key, None)
         self.schema_http_validators_for(tool.key, tool)
 
+    def forget_schema_http_validators(self, tool_key: str) -> None:
+        self._schema_http_validators.pop(tool_key, None)
+
     async def load(
         self,
         url: str,
