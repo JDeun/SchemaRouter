@@ -121,6 +121,17 @@ def _properties(schema: dict[str, Any] | None) -> dict[str, dict[str, Any]]:
 _NESTED_OUTPUT_MAX_DEPTH = 8
 
 
+def _display_field_path(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if parts:
+                parts[-1] += "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
 def _local_ref_target(document: dict[str, Any], ref: str) -> dict[str, Any] | None:
     if not ref.startswith("#/"):
         return None
@@ -228,7 +239,7 @@ def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
         for name, spec in _merged_properties(output_schema, resolved).items():
             path = (*prefix, name)
             if prefix:
-                field_name = ".".join(path)
+                field_name = _display_field_path(path)
                 if field_name not in seen_names:
                     seen_names.add(field_name)
                     discovered.append(
@@ -237,7 +248,11 @@ def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
                             description=str(spec.get("description") or ""),
                             json_schema=spec,
                             path=list(path),
-                            result_path=[field_name],
+                            result_path=(
+                                list(path)
+                                if "*" in path
+                                else [field_name]
+                            ),
                             unit=_schema_unit(spec),
                             identifier=(
                                 name in {"id", "uuid", "key"}
@@ -252,14 +267,23 @@ def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
                         )
                     )
 
-            # Arrays remain opaque until record-preserving item traversal is defined.
-            spec_type = spec.get("type")
-            if spec_type == "array" or (
+            resolved_spec = _resolve_output_schema(output_schema, spec)
+            spec_type = resolved_spec.get("type")
+            is_array = spec_type == "array" or (
                 isinstance(spec_type, list) and "array" in spec_type
-            ):
+            )
+            if is_array:
+                items = resolved_spec.get("items")
+                if isinstance(items, dict):
+                    visit(
+                        items,
+                        prefix=(*path, "*"),
+                        depth=depth + 1,
+                        ancestors=next_ancestors,
+                    )
                 continue
             visit(
-                spec,
+                resolved_spec,
                 prefix=path,
                 depth=depth + 1,
                 ancestors=next_ancestors,
