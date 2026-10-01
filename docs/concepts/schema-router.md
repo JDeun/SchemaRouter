@@ -1,6 +1,6 @@
 # What SchemaRouter is
 
-SchemaRouter is a **typed capability retrieval, planning, and execution layer**.
+SchemaRouter is a **typed capability retrieval and schema-aware execution layer for LLM/RAG agents** across MCP, OpenAPI, Python, and framework tools.
 
 Its job is narrower than a general agent framework and deeper than a semantic tool router.
 **Retrieval-Augmented Generation (RAG)** augments generation with information retrieved from
