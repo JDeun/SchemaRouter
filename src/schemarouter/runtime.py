@@ -160,6 +160,48 @@ class SchemaRouter:
             self.loader.adapters,
         )
 
+    async def __aenter__(self) -> SchemaRouter:
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        traceback: Any | None,
+    ) -> bool:
+        del exc_type, exc, traceback
+        await self.aclose()
+        return False
+
+    async def aclose(self) -> None:
+        """Stop router-owned background tasks without closing caller-owned resources."""
+
+        results = await asyncio.gather(
+            self.schema_watcher.stop(),
+            self.health_monitor.stop(),
+            return_exceptions=True,
+        )
+        errors = [result for result in results if isinstance(result, BaseException)]
+        if not errors:
+            return
+
+        cancellation = next(
+            (
+                error
+                for error in errors
+                if isinstance(error, asyncio.CancelledError)
+            ),
+            None,
+        )
+        if cancellation is not None:
+            raise cancellation
+
+        first = errors[0]
+        raise RuntimeError(
+            "SchemaRouter shutdown encountered an error after attempting all "
+            "router-owned background tasks"
+        ) from first
+
     @property
     def input_schema(self) -> dict[str, Any]:
         return PlanRequest.model_json_schema()
