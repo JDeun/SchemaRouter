@@ -18,6 +18,10 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] Package wheel and sdist build successfully.
 - [ ] Wheel and sdist both install and run the quickstart in clean environments.
 - [ ] Package metadata can be inspected without errors.
+- [ ] README, PyPI summary/keywords, docs home, and release notes use consistent positioning and
+  stable-version language.
+- [ ] The [discoverability checklist](project/discoverability.md#release-discoverability-checklist)
+  is reviewed; GitHub description/topics/homepage still match supported capabilities.
 - [ ] Public API changes are reflected in README and architecture docs.
 - [ ] CHANGELOG contains the release entry and migration notes for breaking changes.
 - [ ] Security invariants have regression tests.
