@@ -126,8 +126,23 @@ async def test_optimade_discovers_nested_dictionary_fields_and_units() -> None:
     endpoint = router.registry.endpoint("materials.example", "search_structures")
     fields = {field.name: field for field in endpoint.output_fields}
 
-    assert {"metadata", "metadata.score", "metadata.label", "trajectories"} <= set(fields)
-    assert "trajectories.energy" not in fields
+    assert {
+        "metadata",
+        "metadata.score",
+        "metadata.label",
+        "trajectories",
+        "trajectories[].energy",
+    } <= set(fields)
+    assert fields["trajectories[].energy"].path == [
+        "trajectories",
+        "*",
+        "energy",
+    ]
+    assert fields["trajectories[].energy"].result_path == [
+        "trajectories",
+        "*",
+        "energy",
+    ]
     assert fields["metadata.score"].path == ["metadata", "score"]
     assert fields["metadata.score"].result_path == ["metadata.score"]
     assert fields["metadata.score"].json_schema["type"] == "number"
@@ -288,3 +303,58 @@ async def test_optimade_nested_field_supports_trusted_enrichment() -> None:
     assert enriched.unit_normalization.dimension == "energy"
     assert enriched.qualifiers == {"temperature": "300 K"}
     assert enriched.license == "CC-BY-4.0"
+
+
+@pytest.mark.asyncio
+async def test_optimade_array_item_projection_requests_parent_and_keeps_records() -> None:
+    seen_queries: list[dict[str, str]] = []
+    response_attributes = {
+        "trajectories": [
+            {"energy": 1.25},
+            {"energy": 0.75},
+        ]
+    }
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(
+            _handler(
+                response_attributes=response_attributes,
+                seen_queries=seen_queries,
+            )
+        )
+    ) as client:
+        router = await SchemaRouter.from_url(
+            "https://materials.example/v1",
+            kind="optimade",
+            http_client=client,
+        )
+        tool = router.registry.get("materials.example")
+        endpoint = tool.endpoint("search_structures")
+        call = ToolCall(
+            tool=tool.key,
+            endpoint=endpoint.name,
+            fields=["trajectories[].energy"],
+            schema_fingerprint=endpoint.fingerprint,
+            tool_fingerprint=tool.fingerprint,
+        )
+        plan = ExecutionPlan(
+            query="trajectory energies",
+            registry_version=router.registry.version,
+            calls=[call],
+        )
+        result = (await router.execute(plan))[0]
+
+    assert seen_queries == [
+        {
+            "response_fields": "trajectories",
+            "page_limit": "20",
+        }
+    ]
+    assert result.data == [
+        {
+            "trajectories": [
+                {"energy": 1.25},
+                {"energy": 0.75},
+            ]
+        }
+    ]

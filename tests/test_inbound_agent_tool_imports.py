@@ -19,6 +19,36 @@ class SearchOutput(BaseModel):
     count: int
 
 
+class SearchHit(BaseModel):
+    title: str
+    url: str
+    score: float | None = None
+
+
+class SearchBatch(BaseModel):
+    results: list[SearchHit]
+
+
+class FakeLangChainResultsTool:
+    name = "web_results"
+    description = "Search the web and return structured results."
+    args_schema = SearchArgs
+
+    def get_output_jsonschema(self) -> dict:
+        return SearchBatch.model_json_schema()
+
+    async def ainvoke(self, arguments: dict) -> dict:
+        return {
+            "results": [
+                {
+                    "title": f"result:{arguments['query']}",
+                    "url": "https://example.test",
+                    "score": 0.9,
+                }
+            ]
+        }
+
+
 class FakeLangChainTool:
     name = "web_search"
     description = "Search the web."
@@ -48,6 +78,27 @@ class FakeLlamaMetadata:
 
 def _paper_fn(query: str, limit: int = 3) -> SearchOutput:
     return SearchOutput(answer=f"paper:{query}", count=limit)
+
+
+def _paper_batch_fn(query: str, limit: int = 3) -> SearchBatch:
+    return SearchBatch(
+        results=[
+            SearchHit(
+                title=f"paper:{query}",
+                url="https://arxiv.org/abs/fixture",
+                score=0.8,
+            )
+            for _ in range(limit)
+        ]
+    )
+
+
+class FakeLlamaResultsTool:
+    metadata = FakeLlamaMetadata()
+    real_fn = staticmethod(_paper_batch_fn)
+
+    async def acall(self, **arguments):
+        return SimpleNamespace(raw_output=_paper_batch_fn(**arguments))
 
 
 class FakeLlamaTool:
@@ -149,3 +200,41 @@ async def test_router_executes_imported_llamaindex_tool_through_normal_pipeline(
 
     assert results[0].tool == key
     assert results[0].data["answer"] == "paper:agent routing"
+
+
+def test_langchain_import_exposes_structured_result_array_fields() -> None:
+    spec = tool_from_langchain(
+        FakeLangChainResultsTool(),
+        provider="tavily",
+        read_only=True,
+        remote=True,
+    )
+    fields = {field.name: field for field in spec.endpoint("invoke").output_fields}
+
+    assert {
+        "results",
+        "results[].title",
+        "results[].url",
+        "results[].score",
+    } <= set(fields)
+    assert fields["results[].title"].path == ["results", "*", "title"]
+    assert fields["results[].title"].result_path == ["results", "*", "title"]
+
+
+def test_llamaindex_import_exposes_structured_result_array_fields() -> None:
+    spec = tool_from_llamaindex(
+        FakeLlamaResultsTool(),
+        provider="arxiv",
+        read_only=True,
+        remote=True,
+    )
+    fields = {field.name: field for field in spec.endpoint("invoke").output_fields}
+
+    assert {
+        "results",
+        "results[].title",
+        "results[].url",
+        "results[].score",
+    } <= set(fields)
+    assert fields["results[].url"].path == ["results", "*", "url"]
+    assert fields["results[].url"].result_path == ["results", "*", "url"]

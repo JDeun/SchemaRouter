@@ -67,7 +67,7 @@ def test_openapi_discovers_nested_object_fields_without_hiding_parent() -> None:
     assert "band gap" in fields["data.band_gap"].aliases
 
 
-def test_nested_array_items_remain_opaque_until_item_projection_is_defined() -> None:
+def test_nested_array_items_are_record_preserving_first_class_fields() -> None:
     tool = tool_from_openapi(
         "materials",
         _document(
@@ -90,12 +90,13 @@ def test_nested_array_items_remain_opaque_until_item_projection_is_defined() -> 
     )
 
     fields = {
-        field.name
+        field.name: field
         for field in tool.endpoint("get_materials").output_fields
     }
-    assert "data" in fields
-    assert "data.band_gap" not in fields
-    assert "data.density" not in fields
+    assert {"data", "data[].band_gap", "data[].density"} <= set(fields)
+    assert fields["data[].band_gap"].path == ["data", "*", "band_gap"]
+    assert fields["data[].band_gap"].result_path == ["data", "*", "band_gap"]
+    assert fields["data[].band_gap"].json_schema["type"] == "number"
 
 
 def test_recursive_local_ref_discovery_is_bounded() -> None:

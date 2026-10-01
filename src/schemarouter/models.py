@@ -105,23 +105,55 @@ def _schema_type_shape_compatible(
     return True
 
 
+def _resolve_local_schema_ref(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> dict[str, Any]:
+    """Resolve only local JSON Schema refs against the endpoint's own schema document."""
+
+    current = schema
+    seen: set[str] = set()
+    while isinstance(current, dict):
+        ref = current.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/") or ref in seen:
+            return current
+        seen.add(ref)
+
+        node: Any = document
+        try:
+            for raw in ref[2:].split("/"):
+                part = raw.replace("~1", "/").replace("~0", "~")
+                node = node[part]
+        except (KeyError, TypeError):
+            return current
+        if not isinstance(node, dict):
+            return current
+
+        merged = dict(node)
+        merged.update({key: value for key, value in current.items() if key != "$ref"})
+        current = merged
+    return schema
+
+
 def _schema_at_projection_path(
     output_schema: dict[str, Any],
     path: tuple[str, ...],
 ) -> dict[str, Any]:
-    schema = output_schema
+    document = output_schema
+    schema = _resolve_local_schema_ref(document, output_schema)
     if "array" in _schema_types(schema) and isinstance(schema.get("items"), dict):
         # Root collection endpoints historically address fields relative to each record.
-        schema = schema["items"]
+        schema = _resolve_local_schema_ref(document, schema["items"])
 
     for part in path:
+        schema = _resolve_local_schema_ref(document, schema)
         if part == "*":
             if "array" not in _schema_types(schema):
                 return {}
             items = schema.get("items")
             if not isinstance(items, dict):
                 return {}
-            schema = items
+            schema = _resolve_local_schema_ref(document, items)
             continue
 
         if "object" not in _schema_types(schema):
@@ -132,7 +164,7 @@ def _schema_at_projection_path(
         child = properties.get(part)
         if not isinstance(child, dict):
             return {}
-        schema = child
+        schema = _resolve_local_schema_ref(document, child)
     return schema
 
 

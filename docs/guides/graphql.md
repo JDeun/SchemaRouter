@@ -85,7 +85,9 @@ contract.
 - redirects are not followed automatically;
 - introspection and execution responses are size-bounded;
 - recursive type traversal is depth-bounded;
-- array item traversal remains conservative;
+- list fields use the same record-preserving item contract as other adapters; nested list children
+  are named like `results[].title` while GraphQL selection sets remain normal
+  `results { title }`;
 - GraphQL execution errors fail the invocation;
 - ordinary SchemaRouter input/output validation still applies after transport execution.
 
