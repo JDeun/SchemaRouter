@@ -629,6 +629,12 @@ class OPTIMADESourceAdapter:
                     document = response.json()
                 except SchemaSourceError:
                     raise
+                except (
+                    httpx.TimeoutException,
+                    httpx.TransportError,
+                    httpx.HTTPStatusError,
+                ):
+                    raise
                 except Exception:  # noqa: BLE001
                     continue
                 attributes = _base_info_attributes(document)

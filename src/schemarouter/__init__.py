@@ -81,13 +81,19 @@ from .errors import (
     SchemaRouterError,
     SchemaSourceError,
     SchemaValidationError,
+    SourceProbeDiagnosticError,
     TraceError,
     UnsupportedSchemaSourceError,
 )
 from .executor import RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot, HealthStatus
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
-from .ingestion import SourceProbeResult
+from .ingestion import (
+    SourceAdapterProbeDiagnostic,
+    SourceProbeFailureCategory,
+    SourceProbeFailureReport,
+    SourceProbeResult,
+)
 from .inspection import (
     EndpointInspection,
     ExecutionInspection,
@@ -300,6 +306,10 @@ __all__ = [
     "SemanticFieldRequirement",
     "ServerProjectionSpec",
     "SourceAdapter",
+    "SourceProbeDiagnosticError",
+    "SourceAdapterProbeDiagnostic",
+    "SourceProbeFailureCategory",
+    "SourceProbeFailureReport",
     "SourceProbeResult",
     "OPTIMADESourceAdapter",
     "ToolCall",

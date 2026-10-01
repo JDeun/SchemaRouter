@@ -771,11 +771,22 @@ class GraphQLSourceAdapter:
                 )
             except SchemaSourceError:
                 raise
+            except (
+                httpx.TimeoutException,
+                httpx.TransportError,
+                httpx.HTTPStatusError,
+            ):
+                raise
             except Exception:  # noqa: BLE001
                 return None
 
             data = response.get("data")
             if not isinstance(data, dict) or not isinstance(data.get("__schema"), dict):
+                errors = response.get("errors")
+                if isinstance(errors, list) and errors:
+                    raise SchemaSourceError(
+                        "GraphQL introspection is unavailable or disabled"
+                    )
                 return None
 
             inferred_name = context.name or _slug(

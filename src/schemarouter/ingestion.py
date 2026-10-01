@@ -4,7 +4,7 @@ import json
 import re
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
 
 import httpx
@@ -15,8 +15,10 @@ from ._url_safety import safe_provenance_url
 from .adapters.base import (
     AdapterContext,
     AdapterLoadResult,
+    AdapterProbeDiagnostic,
     AdapterRegistry,
     DiscoveryProfile,
+    ProbeOutcome,
     RefreshProfile,
     SourceAdapter,
 )
@@ -32,7 +34,12 @@ from .adapters.openapi import (
 )
 from .adapters.openrpc import OpenRPCSourceAdapter
 from .adapters.optimade import OPTIMADESourceAdapter
-from .errors import SchemaNotModifiedError, SchemaSourceError, UnsupportedSchemaSourceError
+from .errors import (
+    SchemaNotModifiedError,
+    SchemaSourceError,
+    SourceProbeDiagnosticError,
+    UnsupportedSchemaSourceError,
+)
 from .executor import RegistryExecutor
 from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry, replace_if_current
@@ -60,11 +67,46 @@ _DEFAULT_OPENAPI_REF_MAX_BYTES = 10 * 1024 * 1024
 _OPENAPI_EXTERNAL_REFS_KEY = "x-schemarouter-external-refs"
 
 
+SourceProbeFailureCategory = Literal[
+    "not_recognized",
+    "unreachable",
+    "authentication_failed",
+    "not_found",
+    "invalid_schema",
+    "unsupported_feature",
+    "protocol_error",
+]
+
+
+class SourceAdapterProbeDiagnostic(StrictModel):
+    """Credential-free result from one adapter considered during source probing."""
+
+    adapter_kind: str
+    activity: Literal["passive", "active"]
+    outcome: ProbeOutcome
+    error_type: str | None = None
+
+
+class SourceProbeFailureReport(StrictModel):
+    """Privacy-safe terminal diagnosis for a failed structured-source probe."""
+
+    source_url: str
+    status: Literal["failed"] = "failed"
+    failure_category: SourceProbeFailureCategory
+    adapters_considered: list[SourceAdapterProbeDiagnostic] = Field(
+        default_factory=list
+    )
+    active_probes_allowed: bool = False
+    skipped_active_adapters: list[str] = Field(default_factory=list)
+
+
 class SourceProbeResult(StrictModel):
     """Privacy-safe, non-mutating diagnosis of one structured source URL."""
 
     source_url: str
+    status: Literal["recognized"] = "recognized"
     adapter_kind: str
+    probe_activity: Literal["passive", "active"] | None = None
     tool_key: str
     tool_name: str
     namespace: str | None = None
@@ -72,7 +114,79 @@ class SourceProbeResult(StrictModel):
     access_mode: str | None = None
     endpoint_count: int = Field(ge=0)
     execution_bindable: bool
+    adapters_considered: list[SourceAdapterProbeDiagnostic] = Field(
+        default_factory=list
+    )
+    active_probes_allowed: bool = False
     warnings: list[str] = Field(default_factory=list)
+
+
+def _probe_category(exc: BaseException) -> SourceProbeFailureCategory:
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code
+        if status in {401, 403}:
+            return "authentication_failed"
+        if status == 404:
+            return "not_found"
+        if status in {408, 425, 429} or status >= 500:
+            return "unreachable"
+        return "protocol_error"
+    if isinstance(exc, (httpx.TimeoutException, httpx.TransportError, TimeoutError)):
+        return "unreachable"
+    if isinstance(exc, (json.JSONDecodeError, yaml.YAMLError)):
+        return "invalid_schema"
+    if isinstance(exc, SchemaSourceError):
+        message = str(exc).casefold()
+        if "introspection" in message and (
+            "disabled" in message or "unavailable" in message
+        ):
+            return "unsupported_feature"
+        if "unsupported" in message or "does not support" in message:
+            return "unsupported_feature"
+        if any(
+            marker in message
+            for marker in (
+                "invalid schema",
+                "invalid openapi",
+                "malformed",
+                "missing __schema",
+                "missing data",
+                "not a valid openapi",
+                "not structured json",
+            )
+        ):
+            return "invalid_schema"
+        if "protocol" in message or "handshake" in message:
+            return "protocol_error"
+    return "protocol_error"
+
+
+def _terminal_probe_category(
+    diagnostics: list[AdapterProbeDiagnostic],
+) -> SourceProbeFailureCategory:
+    outcomes = {diagnostic.outcome for diagnostic in diagnostics}
+    for outcome in (
+        "authentication_failed",
+        "not_found",
+        "unreachable",
+        "unsupported_feature",
+        "invalid_schema",
+        "protocol_error",
+    ):
+        if outcome in outcomes:
+            return outcome
+    return "not_recognized"
+
+
+def _public_probe_diagnostic(
+    diagnostic: AdapterProbeDiagnostic,
+) -> SourceAdapterProbeDiagnostic:
+    return SourceAdapterProbeDiagnostic(
+        adapter_kind=diagnostic.adapter_kind,
+        activity=diagnostic.activity,
+        outcome=diagnostic.outcome,
+        error_type=diagnostic.error_type,
+    )
 
 
 class _OpenAPIYAMLLoader(yaml.SafeLoader):
@@ -739,6 +853,12 @@ class OpenAPISourceAdapter:
                     )
         except SchemaSourceError:
             raise
+        except (
+            httpx.TimeoutException,
+            httpx.TransportError,
+            httpx.HTTPStatusError,
+        ):
+            raise
         except Exception:  # noqa: BLE001
             return None
         finally:
@@ -746,6 +866,18 @@ class OpenAPISourceAdapter:
                 await client.aclose()
 
         if document is None:
+            content_type = response.headers.get("content-type", "").casefold()
+            stripped = response.text.lstrip()
+            if (
+                "json" in content_type
+                or "yaml" in content_type
+                or stripped.startswith("{")
+                or stripped.startswith("[")
+            ):
+                raise SchemaSourceError(
+                    "OpenAPI source returned structured content that is not a valid "
+                    "OpenAPI 3 document"
+                )
             return None
 
         inferred_name = context.name or _slug(
@@ -868,8 +1000,16 @@ class MCPSourceAdapter:
                 timeout=context.timeout,
                 client_factory=context.mcp_client_factory,
             )
-        except Exception:  # noqa: BLE001
-            return None
+        except (
+            httpx.TimeoutException,
+            httpx.TransportError,
+            httpx.HTTPStatusError,
+        ):
+            raise
+        except SchemaSourceError:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            raise SchemaSourceError("MCP protocol handshake failed") from exc
 
         tool.remote = True
         tool.metadata["remote"] = True
@@ -1121,7 +1261,45 @@ class URLSchemaLoader:
             http_client=self.http_client,
         )
 
-        diagnostics: list[str] = []
+        diagnostics: list[AdapterProbeDiagnostic] = []
+        causes: list[tuple[AdapterProbeDiagnostic, BaseException]] = []
+
+        def record(
+            adapter: SourceAdapter,
+            outcome: ProbeOutcome,
+            exc: BaseException | None = None,
+        ) -> AdapterProbeDiagnostic:
+            profile = self.adapters.discovery_profile(str(adapter.kind))
+            diagnostic = AdapterProbeDiagnostic(
+                adapter_kind=str(adapter.kind),
+                activity=profile.activity,
+                outcome=outcome,
+                error_type=type(exc).__name__ if exc is not None else None,
+            )
+            diagnostics.append(diagnostic)
+            if exc is not None:
+                causes.append((diagnostic, exc))
+            return diagnostic
+
+        def failure_report(
+            category: SourceProbeFailureCategory,
+        ) -> SourceProbeFailureReport:
+            skipped = (
+                []
+                if allow_active_probes
+                else list(self.adapters.skipped_active_kinds())
+            )
+            return SourceProbeFailureReport(
+                source_url=safe_provenance_url(url),
+                failure_category=category,
+                adapters_considered=[
+                    _public_probe_diagnostic(item)
+                    for item in diagnostics
+                ],
+                active_probes_allowed=allow_active_probes,
+                skipped_active_adapters=skipped,
+            )
+
         if normalized_kind != "auto":
             try:
                 adapter = self.adapters.get(normalized_kind)
@@ -1135,27 +1313,34 @@ class URLSchemaLoader:
                 result = await adapter.load(context)
             except SchemaNotModifiedError:
                 raise
-            except SchemaSourceError as exc:
-                if normalized_kind == "openapi":
-                    raise UnsupportedSchemaSourceError(
-                        f"URL did not yield a supported OpenAPI source: {exc}"
-                    ) from exc
-                raise
             except Exception as exc:  # noqa: BLE001
-                safe_url = safe_provenance_url(url)
-                raise SchemaSourceError(
-                    f"{normalized_kind} adapter failed for {safe_url!r}"
+                category = _probe_category(exc)
+                record(adapter, category, exc)
+                report = failure_report(category)
+                raise SourceProbeDiagnosticError(
+                    f"{normalized_kind} source probe failed: {category}",
+                    probe_report=report,
                 ) from exc
+
             if result is None:
+                record(adapter, "not_recognized")
+                report = failure_report("not_recognized")
                 raise UnsupportedSchemaSourceError(
-                    f"URL did not yield a supported {normalized_kind} source"
+                    f"URL did not yield a supported {normalized_kind} source",
+                    probe_report=report,
                 )
-            result = self._with_identity(
+
+            record(adapter, "recognized")
+            result = AdapterLoadResult(
+                tool=result.tool,
+                invoker=result.invoker,
+                probe_diagnostics=tuple(diagnostics),
+            )
+            return self._with_identity(
                 result,
                 context,
                 adapter_kind=adapter.kind,
             )
-            return result
 
         for adapter in self.adapters.auto_candidates(
             allow_active_probes=allow_active_probes,
@@ -1163,33 +1348,59 @@ class URLSchemaLoader:
             try:
                 result = await adapter.load(context)
             except Exception as exc:  # noqa: BLE001
-                diagnostics.append(f"{adapter.kind}: {type(exc).__name__}")
+                record(adapter, _probe_category(exc), exc)
                 continue
-            if result is not None:
-                result = self._with_identity(
-                    result,
-                    context,
-                    adapter_kind=adapter.kind,
-                )
-                return result
+            if result is None:
+                record(adapter, "not_recognized")
+                continue
 
-        detail = "; ".join(diagnostics) or "no passive adapter recognized the source"
+            record(adapter, "recognized")
+            result = AdapterLoadResult(
+                tool=result.tool,
+                invoker=result.invoker,
+                probe_diagnostics=tuple(diagnostics),
+            )
+            return self._with_identity(
+                result,
+                context,
+                adapter_kind=adapter.kind,
+            )
+
+        category = _terminal_probe_category(diagnostics)
+        report = failure_report(category)
         active_hint = ""
-        if not allow_active_probes:
-            skipped = self.adapters.skipped_active_kinds()
-            if skipped:
-                kinds = ", ".join(skipped)
-                active_hint = (
-                    f" Active protocol probes were skipped by default: {kinds}. "
-                    "Use an explicit kind for one trusted protocol, or set "
-                    "allow_active_probes=True to opt into active auto-discovery."
-                )
-        raise UnsupportedSchemaSourceError(
-            "URL was not recognized by the eligible registered structured-source adapters. "
-            "Human-readable documentation is intentionally not inferred in the safe path. "
-            + detail
-            + active_hint
+        if not allow_active_probes and report.skipped_active_adapters:
+            kinds = ", ".join(report.skipped_active_adapters)
+            active_hint = (
+                f" Active protocol probes were skipped by default: {kinds}. "
+                "Use an explicit kind for one trusted protocol, or set "
+                "allow_active_probes=True to opt into active auto-discovery."
+            )
+
+        if category == "not_recognized":
+            raise UnsupportedSchemaSourceError(
+                "URL was not recognized by the eligible registered structured-source "
+                "adapters. Human-readable documentation is intentionally not inferred "
+                "in the safe path."
+                + active_hint,
+                probe_report=report,
+            )
+
+        root_cause = next(
+            (
+                exc
+                for diagnostic, exc in causes
+                if diagnostic.outcome == category
+            ),
+            None,
         )
+        error = SourceProbeDiagnosticError(
+            f"structured-source probing failed: {category}" + active_hint,
+            probe_report=report,
+        )
+        if root_cause is not None:
+            raise error from root_cause
+        raise error
 
     async def probe(
         self,
@@ -1255,9 +1466,16 @@ class URLSchemaLoader:
                 "recognized source did not produce a built-in execution binding"
             )
 
+        activity: Literal["passive", "active"] | None = None
+        try:
+            activity = self.adapters.discovery_profile(adapter_kind).activity
+        except KeyError:
+            activity = None
+
         return SourceProbeResult(
             source_url=safe_provenance_url(url),
             adapter_kind=adapter_kind,
+            probe_activity=activity,
             tool_key=tool.key,
             tool_name=tool.name,
             namespace=tool.namespace,
@@ -1265,6 +1483,11 @@ class URLSchemaLoader:
             access_mode=tool.access_mode,
             endpoint_count=len(tool.endpoints),
             execution_bindable=result.invoker is not None,
+            adapters_considered=[
+                _public_probe_diagnostic(item)
+                for item in result.probe_diagnostics
+            ],
+            active_probes_allowed=allow_active_probes,
             warnings=warnings,
         )
 
@@ -1296,7 +1519,11 @@ class URLSchemaLoader:
             tool.access_mode = context.access_mode
         elif tool.access_mode is None:
             tool.access_mode = normalized_kind
-        return AdapterLoadResult(tool=tool, invoker=result.invoker)
+        return AdapterLoadResult(
+            tool=tool,
+            invoker=result.invoker,
+            probe_diagnostics=result.probe_diagnostics,
+        )
 
     def _commit(self, result: AdapterLoadResult, *, replace: bool) -> ToolSpec:
         if replace:
