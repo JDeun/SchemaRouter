@@ -17,7 +17,7 @@ python -m venv .venv-openai-agents-validation
 pip install /path/to/schemarouter-*.whl
 pip install -r examples/external_validation/openai_agents_mcp_filter/requirements.txt
 python -m unittest \
-  examples.external_validation.openai_agents_mcp_filter.test_contract -v
+  examples.external_validation.openai_agents_mcp_filter.contract_smoke -v
 python scripts/external_validation_openai_agents.py \
   --json-out /tmp/openai-agents-mcp-filter.json
 ```
