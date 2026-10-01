@@ -75,10 +75,16 @@ class SchemaWatchManager:
         self,
         registry: ToolRegistry,
         refresh: RefreshCallable,
-        adapters: AdapterRegistry,
+        adapters: AdapterRegistry | None = None,
     ) -> None:
         self.registry = registry
         self._refresh = refresh
+        if adapters is None:
+            # Preserve direct SchemaWatchManager construction while keeping
+            # refresh capability knowledge in the adapter registry.
+            from .ingestion import default_adapter_registry
+
+            adapters = default_adapter_registry()
         self.adapters = adapters
         self._records: dict[str, _WatchRecord] = {}
         self._task: asyncio.Task[None] | None = None
