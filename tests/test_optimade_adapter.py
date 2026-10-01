@@ -157,6 +157,7 @@ async def test_optimade_discovery_planning_and_execution_use_response_fields() -
         assert router.adapter_registry.kinds() == (
             "graphql",
             "mcp",
+            "odata",
             "openapi",
             "openrpc",
             "optimade",

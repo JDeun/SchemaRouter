@@ -21,6 +21,7 @@ from .mcp import (
     inspect_mcp_url,
     tool_from_mcp,
 )
+from .odata import ODataRemoteInvoker, ODataSourceAdapter, tool_from_odata_metadata
 from .openapi import OpenAPIRemoteInvoker, resolve_openapi_base_url, tool_from_openapi
 from .openrpc import OpenRPCRemoteInvoker, OpenRPCSourceAdapter, tool_from_openrpc
 from .optimade import OPTIMADERemoteInvoker, OPTIMADESourceAdapter
@@ -49,6 +50,8 @@ __all__ = [
     "GraphQLSourceAdapter",
     "MCPClientFactory",
     "MCPRemoteInvoker",
+    "ODataRemoteInvoker",
+    "ODataSourceAdapter",
     "OPTIMADERemoteInvoker",
     "OPTIMADESourceAdapter",
     "OpenAPICompatibilityIssue",
@@ -70,6 +73,7 @@ __all__ = [
     "tool_from_callable",
     "tool_from_graphql_introspection",
     "tool_from_mcp",
+    "tool_from_odata_metadata",
     "tool_from_openapi",
     "tool_from_openrpc",
 ]
