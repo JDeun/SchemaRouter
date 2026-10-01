@@ -185,7 +185,7 @@ registered candidates, while SchemaRouter still owns schema validation, policy a
 authority. Ongoing 0.14 agent-utility research is reported separately and is not required for the
 stable package to function.
 
-[Read the 0.12.0 release notes →](releases/0.12.0.md) ·
+[Read the 0.13.0 release notes →](releases/0.13.0.md) ·
 [Read the stable-core contract →](stable-core.md) ·
 [Read the routing research status →](research/routing-status.md)
 
