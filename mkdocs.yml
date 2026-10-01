@@ -109,6 +109,7 @@ nav:
   - Start:
       - Installation: getting-started/installation.md
       - Quickstart: getting-started/quickstart.md
+      - Example and demo gallery: getting-started/examples.md
       - Choose an ingestion path: getting-started/ingestion-paths.md
       - Runtime lifecycle: getting-started/runtime-lifecycle.md
       - Startup rebinding: getting-started/startup-rebinding.md
