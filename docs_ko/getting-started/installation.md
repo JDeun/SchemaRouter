@@ -10,9 +10,9 @@ SchemaRouter는 **Python 3.10 이상**이 필요합니다.
 pip install schemarouter
 ```
 
-0.13.0은 0.12 stable-core 경계를 유지하면서 universal capability ingestion, nested field
-contract, schema refresh/watch, trusted SDK/client binding, 더 넓은 protocol/framework integration을
-추가한 operational-completeness 릴리스입니다.
+0.13.0은 0.12에서 정한 stable-core 경계를 유지하면서 입력 방식과 운영 기능을 넓힌 릴리스입니다.
+GraphQL, OData, OpenRPC, SDK/client binding, MCP stdio/client factory, schema refresh/watch,
+중첩 출력 필드 처리가 이 버전에 포함됩니다.
 
 [0.13.0 릴리스 노트 보기](../releases/0.13.0.md)
 
@@ -79,10 +79,11 @@ pip install -e ".[dev]"
 python -c "import schemarouter; print(schemarouter.__version__)"
 ```
 
-공개 release tag와 package metadata는 `0.13.0`을 현재 non-prerelease 릴리스로 식별합니다.
-개발 브랜치는 PEP 440 `.dev0` 버전을 사용해 공개 artifact와 구분합니다.
+공개 release tag와 package metadata에서 현재 정식 배포 버전은 `0.13.0`입니다.
+개발 브랜치는 PEP 440의 `.dev0` 표기를 사용해 PyPI에 올라간 안정판과 구분합니다.
 
 ## 릴리스 검증
 
-CI에서는 package metadata, wheel/sdist build, clean install, integration contract, strict docs
-build를 검증합니다. 외부 provider의 실시간 상태는 deterministic PR gate와 분리합니다.
+CI에서는 package metadata, wheel/sdist 빌드, 깨끗한 환경에서의 설치, 통합 계약, strict docs
+build를 확인합니다. 외부 서비스 상태는 PR 통과 조건과 분리해, 제3자 장애가 릴리스를 막지 않게
+했습니다.

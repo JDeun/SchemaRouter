@@ -1,0 +1,45 @@
+name: Repository Facts
+
+on:
+  pull_request:
+    paths:
+      - "CHANGELOG.md"
+      - "pyproject.toml"
+      - "benchmarks/research-experiment-ledger.json"
+      - "README.md"
+      - "README.ko.md"
+      - "docs/**"
+      - "docs_ko/**"
+      - "scripts/sync_repository_facts.py"
+      - "tests/test_repository_facts.py"
+      - ".github/workflows/repository-facts.yml"
+  push:
+    branches: [main]
+    paths:
+      - "CHANGELOG.md"
+      - "pyproject.toml"
+      - "benchmarks/research-experiment-ledger.json"
+      - "README.md"
+      - "README.ko.md"
+      - "docs/**"
+      - "docs_ko/**"
+      - "scripts/sync_repository_facts.py"
+      - "tests/test_repository_facts.py"
+      - ".github/workflows/repository-facts.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "5 2 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - name: Check canonical repository facts
+        run: python scripts/sync_repository_facts.py --check

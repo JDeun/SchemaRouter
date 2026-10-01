@@ -1,6 +1,6 @@
 # Python 도구
 
-Typed Python callable은 가장 단순한 로컬 integration 경로입니다.
+타입이 선언된 Python 함수는 가장 간단한 로컬 연결 방식입니다.
 
 ## Callable 등록
 
@@ -33,7 +33,7 @@ result = router.invoke(
 
 ## 자동으로 도출되는 것
 
-Python type information에서 다음을 만듭니다.
+함수의 타입 정보에서 다음 항목을 만듭니다.
 
 - endpoint input JSON Schema
 - function signature 기반 required argument
@@ -51,12 +51,12 @@ async def lookup_user(user_id: int) -> dict[str, str]:
     ...
 ```
 
-Common executor가 필요할 때 await합니다.
+공통 executor가 반환값이 awaitable이면 알아서 기다립니다.
 
 ## 제한
 
-자동 derivation에서는 variadic `*args` / `**kwargs`, positional-only parameter를 거부합니다.
-Named JSON argument로 안전하게 표현하기 어려운 경우 explicit `ToolSpec`을 사용하십시오.
+자동 변환에서는 variadic `*args` / `**kwargs`와 positional-only parameter를 받지 않습니다.
+이름이 있는 JSON 인자로 안전하게 표현하기 어렵다면 `ToolSpec`을 직접 선언해야 합니다.
 
 ## `@schema_tool`과 `add_callable`
 

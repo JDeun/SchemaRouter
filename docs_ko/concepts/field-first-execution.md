@@ -2,8 +2,8 @@
 
 SchemaRouter의 핵심 원칙은 **field-first, route-second** 입니다.
 
-도구 하나를 고르는 것이 목적이 아니라, 질문에 필요한 최소 declared data surface를 먼저 정한 뒤
-그 데이터를 제공할 수 있는 trusted route를 고릅니다.
+목표는 도구 이름 하나를 고르는 것이 아닙니다. 질문에 필요한 데이터 범위를 먼저 정하고, 그 값을
+제공할 수 있는 신뢰된 route를 고릅니다.
 
 ```text
 user query
@@ -27,7 +27,7 @@ user query
 - downstream LLM context 오염
 - prompt token 증가
 
-그래서 field를 execution plan의 일부로 취급합니다.
+그래서 출력 field를 실행 계획의 일부로 다룹니다.
 
 ## Provider보다 logical field가 먼저
 
@@ -41,8 +41,8 @@ flowchart LR
 ```
 
 `FieldSpec.semantic_id`, `aliases`, `path`, `result_path`,
-`ServerProjectionSpec.field_map` 같은 trusted contract가 이 차이를 연결합니다. 모델이 임의로
-field mapping을 발명하지 않습니다.
+`ServerProjectionSpec.field_map` 같은 등록된 계약이 이 차이를 연결합니다. 모델이 임의로
+field mapping을 만들어 내지는 않습니다.
 
 ## Unit은 field semantics에 따라 optional
 
@@ -81,8 +81,8 @@ query
   -> abstract -> literature provider
 ```
 
-SchemaRouter는 `max_calls`를 자동으로 늘리지 않습니다. multi-source fan-out은 caller가 명시적으로
-허용해야 합니다.
+SchemaRouter는 `max_calls`를 알아서 늘리지 않습니다. 여러 source를 동시에 조회하려면
+애플리케이션이 그 비용과 권한을 명시적으로 허용해야 합니다.
 
 ## 두 단계의 projection
 

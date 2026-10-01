@@ -1,7 +1,6 @@
 # OpenAPI
 
-SchemaRouter는 JSON 또는 YAML로 된 일반적인 production-oriented **OpenAPI 3.x subset**을 가져올 수
-있습니다.
+SchemaRouter는 JSON이나 YAML로 작성된 **OpenAPI 3.x의 주요 기능**을 읽어 등록할 수 있습니다.
 
 ## Import
 
@@ -15,12 +14,12 @@ router = await SchemaRouter.from_url(
 ```
 
 Adapter는 operation, path/query/header parameter, JSON request body, response schema, local
-component reference, read/write classification을 typed contract로 컴파일합니다.
+component reference를 읽고, HTTP method를 바탕으로 읽기/쓰기 성격까지 계약에 기록합니다.
 
 ## Same-origin / cross-origin server
 
-같은 origin의 runtime server는 자동 binding할 수 있습니다. 문서가 다른 origin의 server를
-가리키는 경우에는 schema만 import하고 실행 권한을 자동으로 넓히지 않습니다.
+OpenAPI 문서와 같은 origin의 server는 자동으로 연결할 수 있습니다. 문서가 다른 origin을
+가리키면 schema는 읽되, 그 주소를 자동으로 실행 대상으로 신뢰하지는 않습니다.
 
 ```python
 router.bind_openapi(
@@ -42,8 +41,8 @@ router = await SchemaRouter.from_url(
 )
 ```
 
-`schema_headers`는 runtime API header가 되지 않고, `trusted_headers`는 model-selectable
-argument로 노출되지 않습니다.
+`schema_headers`는 문서를 읽을 때만 쓰고 runtime API 요청에는 전달하지 않습니다.
+반대로 `trusted_headers`는 모델이 선택하거나 수정할 수 있는 argument로 노출하지 않습니다.
 
 ## JSON root body
 
@@ -85,9 +84,9 @@ OpenAPI 3.1은 원래 JSON Schema 표현을 그대로 사용합니다.
 | query | `form` | true |
 | header | `simple` | false |
 
-정확하게 emit하지 못하는 `matrix`, `label`, `spaceDelimited`, `pipeDelimited`,
-`deepObject` 및 `allowReserved: true`는 조용히 추측하지 않고 compatibility finding으로
-fail-closed 처리합니다.
+SchemaRouter가 정확히 직렬화하지 못하는 `matrix`, `label`, `spaceDelimited`,
+`pipeDelimited`, `deepObject`, `allowReserved: true`는 임의로 흉내 내지 않습니다.
+호환성 검사에서 지원하지 않는 항목으로 표시하고 실행하지 않습니다.
 
 같은 wire name이 path/query/header/body에 중복되면 논리 argument를 분리합니다.
 
@@ -100,11 +99,11 @@ body:id   -> body__id
 
 ## Reference 처리
 
-Local `#/components/...` chain은 planner-side discovery와 runtime validation 모두를 위해
-보수적으로 해석합니다.
+같은 문서 안의 `#/components/...` reference chain은 planner와 runtime validator가 함께 사용할
+수 있도록 해석합니다.
 
-Cross-document `$ref`는 기본적으로 fetch하지 않습니다. 필요한 경우 trusted caller가 명시적으로
-켜야 합니다.
+다른 문서를 가리키는 `$ref`는 기본적으로 가져오지 않습니다. 필요할 때만 애플리케이션 코드에서
+명시적으로 켭니다.
 
 ```python
 router = await SchemaRouter.from_url(
@@ -141,8 +140,8 @@ OpenAPI runtime response는 기본 **16 MiB** 상한을 적용한 뒤 decode합�
 
 ## sparse schema 보완
 
-Upstream OpenAPI가 output field를 충분히 선언하지 않았다면 trusted local code가
-`amend_capability()`로 semantic ID, unit, field contract를 보완할 수 있습니다. 이 수정은
-execution identity나 remote permission을 임의로 바꾸는 수단이 아닙니다.
+Upstream OpenAPI가 필요한 output field를 충분히 선언하지 않았다면 애플리케이션 코드에서
+`amend_capability()`로 semantic ID, unit, field contract를 보완할 수 있습니다. 다만 이 기능으로
+endpoint의 실행 정체성이나 원격 권한을 바꿀 수는 없습니다.
 
 [MCP의 result contract 보완 예제 →](mcp.md#서버가-공개하지-않는-result-contract-선언)

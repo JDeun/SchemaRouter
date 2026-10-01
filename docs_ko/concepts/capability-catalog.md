@@ -1,11 +1,11 @@
 # RAG와 에이전트를 위한 구조화된 retrieval/execution
 
-**RAG (Retrieval-Augmented Generation)** 는 외부 source에서 가져온 정보를 사용해 모델 생성
-과정을 보강하는 아키텍처입니다.
+**RAG (Retrieval-Augmented Generation)** 는 외부에서 찾은 정보를 모델 입력에 보태 답변을
+생성하는 방식입니다.
 
-SchemaRouter 자체가 RAG는 아닙니다. 다만 외부 정보가 OpenAPI endpoint, MCP tool, OPTIMADE
-service, typed Python callable 같은 **구조화된 실행 source**에 있을 때 retrieval/execution 경계의
-일부를 담당할 수 있습니다.
+SchemaRouter 자체가 RAG인 것은 아닙니다. 대신 OpenAPI endpoint, MCP tool, OPTIMADE service,
+typed Python callable처럼 **실행 가능한 구조화 source**에서 데이터를 가져와야 할 때 그 검색과
+실행 경계를 맡을 수 있습니다.
 
 ```mermaid
 flowchart LR
@@ -41,10 +41,10 @@ router.retrieve_executable("current Young's modulus for MAT-7", k=5)
 
 비동기 API는 `aretrieve`, `aretrieve_executable`입니다.
 
-Retrieval 결과는 full effective input/output JSON Schema, parameter, output field, semantic ID,
-unit, qualifier, side-effect classification, provider/access identity, fingerprint를 보존합니다.
+반환되는 후보에는 실제 input/output JSON Schema와 parameter, output field, semantic ID, unit,
+qualifier, side-effect 분류, provider/access identity, fingerprint가 함께 들어 있습니다.
 
-중요한 점은 **retrieval이 execution authority가 아니라는 것**입니다.
+검색 결과만으로 실행 권한이 생기지는 않습니다.
 
 ```text
 query
@@ -56,8 +56,8 @@ query
 
 ## Capability는 실행 계약입니다
 
-문서 retriever가 context chunk를 반환한다면 SchemaRouter는 등록된 **executable contract**를
-반환합니다.
+문서 검색기가 문맥 조각을 돌려준다면, SchemaRouter는 등록된 **실행 계약**을 돌려준다고 보면
+됩니다.
 
 ```text
 Endpoint
@@ -114,7 +114,7 @@ Unit은 optional입니다. 문자열, identifier, boolean, metadata, dimensionle
 
 ## 범용 registration
 
-새 OpenAPI/MCP/Python source가 들어오면 같은 typed registry contract로 컴파일되어야 합니다.
+새 OpenAPI/MCP/Python source도 같은 registry 계약으로 정리되어야 합니다.
 
 ```text
 new source

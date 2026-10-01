@@ -1,8 +1,8 @@
 # 운영 상태 확인
 
-SchemaRouter는 `SQLiteRegistry`로 capability catalog를, `SQLiteRunTraceStore`로 실행 event를
-저장할 수 있습니다. `schemarouter inspect` 명령은 등록된 tool을 실행하지 않고 이 상태를
-확인합니다.
+SchemaRouter는 등록된 capability를 `SQLiteRegistry`에, 실행 기록을
+`SQLiteRunTraceStore`에 저장할 수 있습니다. `schemarouter inspect`는 tool을 호출하지 않고
+이 정보를 읽어 현재 상태를 보여 줍니다.
 
 확인할 수 있는 질문의 예:
 
@@ -28,7 +28,7 @@ Registry v3: 2 tools, 5 endpoints (4 read-only, 1 mutating, 0 unclassified)
   - search: GET /materials · read-only · 2 params/6 fields [c77ac9d7181a]
 ```
 
-Full SHA-256 fingerprint는 JSON 출력에서 확인할 수 있습니다.
+화면에는 짧은 fingerprint를 보여 주고, JSON 출력에는 전체 SHA-256 값을 담습니다.
 
 ## Tool 상세
 
@@ -50,8 +50,9 @@ schemarouter inspect traces --db ./schemarouter-traces.sqlite3 --complete
 schemarouter inspect trace <RUN_ID> --db ./schemarouter-traces.sqlite3
 ```
 
-기본 redacted `RunConfig`로 저장한 payload는 inspection 단계에서 복구할 수 없습니다.
-`include_payloads=True`로 저장했다면 SQLite DB 자체를 민감 데이터로 취급해야 합니다.
+기본 `RunConfig`는 payload 값을 가려서 저장합니다. 이렇게 저장된 값은 나중에 inspection으로
+복원할 수 없습니다. `include_payloads=True`를 켰다면 SQLite 파일 자체에 민감한 값이 들어갈 수
+있으므로 접근 권한을 별도로 관리해야 합니다.
 
 ## Python API
 
@@ -77,10 +78,11 @@ snapshot = router.inspect()
 print(snapshot.model_dump_json(indent=2))
 ```
 
-Live view에는 analyzer, decision backend, decision policy, execution policy, bound tool,
-cooldown 중인 access path, health monitor 상태 등이 포함됩니다.
+`router.inspect()`는 analyzer, decision backend, 실행 정책, 현재 bound tool, cooldown 중인
+access path, health monitor 상태를 함께 보여 줍니다.
 
-Invoker object, credential, arbitrary metadata value, argument/result payload는 포함하지 않습니다.
+Invoker 객체나 credential, 임의 metadata 값, 실제 argument/result payload는 이 출력에 넣지
+않습니다.
 
 ## Static HTML dashboard
 
@@ -88,14 +90,13 @@ Invoker object, credential, arbitrary metadata value, argument/result payload는
 schemarouter dashboard   --registry ./schemarouter-registry.sqlite3   --traces ./schemarouter-traces.sqlite3   --output ./artifacts/schemarouter-dashboard.html
 ```
 
-Dashboard는 self-contained static HTML입니다.
+Dashboard는 파일 하나로 열 수 있는 정적 HTML입니다.
 
-- 별도 server 불필요
-- external JavaScript 없음
-- analytics 없음
-- tool execution button 없음
-- credential 편집 없음
-- raw trace payload rendering 없음
+- 별도 server가 필요하지 않습니다.
+- 외부 JavaScript를 불러오지 않습니다.
+- analytics를 넣지 않습니다.
+- tool 실행 버튼이나 credential 편집 기능이 없습니다.
+- raw trace payload를 화면에 다시 노출하지 않습니다.
 
 실제 예제:
 

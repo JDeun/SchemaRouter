@@ -320,6 +320,57 @@ jobs:
           upload-artifact: false
           upload-release-assets: false
           dependency-snapshot: false
+      - name: Generate release checksum manifest
+        env:
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_SHA: ${{ needs.prepare.outputs.release_sha }}
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          artifacts = sorted(Path("dist").glob("*")) + sorted(Path("artifacts").glob("*.spdx.json"))
+          if not artifacts:
+              raise SystemExit("no release artifacts found")
+
+          records = []
+          checksum_lines = []
+          for path in artifacts:
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              records.append(
+                  {
+                      "name": path.name,
+                      "sha256": digest,
+                      "size_bytes": path.stat().st_size,
+                  }
+              )
+              checksum_lines.append(f"{digest}  {path.name}")
+
+          out = Path("artifacts")
+          (out / "SHA256SUMS.txt").write_text(
+              "\n".join(checksum_lines) + "\n",
+              encoding="utf-8",
+          )
+          (out / "release-manifest.json").write_text(
+              json.dumps(
+                  {
+                      "schema_version": 1,
+                      "package": "schemarouter",
+                      "version": os.environ["RELEASE_VERSION"],
+                      "tag": os.environ["RELEASE_TAG"],
+                      "source_sha": os.environ["RELEASE_SHA"],
+                      "artifacts": records,
+                  },
+                  indent=2,
+                  sort_keys=True,
+              )
+              + "\n",
+              encoding="utf-8",
+          )
+          PY
       - name: Attest release artifacts
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
@@ -341,6 +392,14 @@ jobs:
           path: artifacts/*.spdx.json
           if-no-files-found: error
           retention-days: 7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-metadata
+          path: |
+            artifacts/SHA256SUMS.txt
+            artifacts/release-manifest.json
+          if-no-files-found: error
+          retention-days: 30
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: release-notes
@@ -367,6 +426,10 @@ jobs:
         with:
           name: release-notes
           path: release-notes
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-metadata
+          path: metadata
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -381,7 +444,11 @@ jobs:
             prerelease_args+=(--prerelease)
           fi
 
-          gh release create "$RELEASE_TAG" dist/* sbom/*             --title "SchemaRouter $RELEASE_VERSION"             --notes-file "$RELEASE_NOTES"             "${prerelease_args[@]}"             --verify-tag
+          gh release create "$RELEASE_TAG" dist/* sbom/* metadata/* \
+            --title "SchemaRouter $RELEASE_VERSION" \
+            --notes-file "$RELEASE_NOTES" \
+            "${prerelease_args[@]}" \
+            --verify-tag
 
   pypi:
     needs: [prepare, build]

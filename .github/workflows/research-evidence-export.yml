@@ -8,7 +8,17 @@ on:
       - "tests/test_export_research_evidence.py"
       - "docs/research/paper-evidence-package.md"
       - ".github/workflows/research-evidence-export.yml"
+  push:
+    branches: [main]
+    paths:
+      - "benchmarks/research-experiment-ledger.json"
+      - "scripts/export_research_evidence.py"
+      - "tests/test_export_research_evidence.py"
+      - "docs/research/paper-evidence-package.md"
+      - ".github/workflows/research-evidence-export.yml"
   workflow_dispatch:
+  schedule:
+    - cron: "35 2 * * 1"
 
 permissions:
   contents: read
