@@ -1,0 +1,117 @@
+name: One-shot merged branch GC
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/branch-gc-20261001.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/branch-gc-20261001.yml"
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  branch-gc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Fetch all branch refs
+        run: git fetch origin '+refs/heads/*:refs/remotes/origin/*' --prune
+
+      - name: Select branches that are fully contained in main
+        id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cutoff="$(( $(date +%s) - 3*24*60*60 ))"
+          mapfile -t open_pr_branches < <(
+            gh pr list --state open --limit 1000 --json headRefName --jq '.[].headRefName'
+          )
+
+          is_open_pr_branch() {
+            local candidate="$1"
+            local item
+            for item in "${open_pr_branches[@]}"; do
+              if [[ "$item" == "$candidate" ]]; then
+                return 0
+              fi
+            done
+            return 1
+          }
+
+          : > /tmp/branch-gc-candidates.txt
+
+          while IFS= read -r ref; do
+            branch="${ref#refs/remotes/origin/}"
+
+            [[ "$branch" == "main" ]] && continue
+            [[ "$branch" == "HEAD" ]] && continue
+            [[ "$branch" == maintenance/* ]] && continue
+
+            # Do not touch the currently active 0.14 research lineage even when a
+            # branch is already contained in main. It can be revisited after the
+            # current evidence conveyor is terminal.
+            [[ "$branch" == *"0.14"* ]] && continue
+
+            if is_open_pr_branch "$branch"; then
+              continue
+            fi
+
+            commit_ts="$(git log -1 --format=%ct "$ref")"
+            if (( commit_ts > cutoff )); then
+              continue
+            fi
+
+            # Hard safety gate: every commit reachable from the branch tip must
+            # already be reachable from current main. Squash-equivalent or merely
+            # similar branches are deliberately NOT deleted.
+            if git merge-base --is-ancestor "$ref" origin/main; then
+              printf '%s\n' "$branch" >> /tmp/branch-gc-candidates.txt
+            fi
+          done < <(git for-each-ref --format='%(refname)' refs/remotes/origin/ | sort)
+
+          count="$(wc -l < /tmp/branch-gc-candidates.txt | tr -d ' ')"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "BRANCH_GC_CANDIDATE_COUNT=$count"
+          if (( count > 0 )); then
+            sed 's/^/BRANCH_GC_CANDIDATE=/' /tmp/branch-gc-candidates.txt
+          fi
+
+          {
+            echo "## Branch GC dry-run"
+            echo
+            echo "Mode: \`${{ github.event_name == 'push' && 'delete' || 'dry-run' }}\`"
+            echo
+            echo "Safety rules:"
+            echo "- branch tip must be an ancestor of current \`main\`;"
+            echo "- no open PR may use the branch;"
+            echo "- last branch commit must be at least 72 hours old;"
+            echo "- \`main\`, \`maintenance/*\`, and every branch containing \`0.14\` are excluded."
+            echo
+            echo "Candidates: **$count**"
+            echo
+            if (( count > 0 )); then
+              sed 's/^/- \`/; s/$/\`/' /tmp/branch-gc-candidates.txt
+            else
+              echo "_No branch satisfies the conservative deletion gate._"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Delete selected merged branches
+        if: github.event_name == 'push' && steps.select.outputs.count != '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r branch; do
+            echo "Deleting fully-contained branch: $branch"
+            git push origin --delete "$branch"
+          done < /tmp/branch-gc-candidates.txt
