@@ -3,12 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable
 
 from schemarouter import EndpointSpec, FieldSpec, PlanRequest, SchemaRouter, ToolSpec
-
-
-Invoker = Callable[[str, dict[str, object]], Awaitable[dict[str, object]]]
 
 
 def _tool(
