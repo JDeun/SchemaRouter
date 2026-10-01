@@ -4,7 +4,7 @@ import json
 import re
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
 
 import httpx
@@ -15,9 +15,12 @@ from ._url_safety import safe_provenance_url
 from .adapters.base import (
     AdapterContext,
     AdapterLoadResult,
+    AdapterProbeError,
     AdapterRegistry,
     DiscoveryProfile,
+    ProbeFailureCategory,
     SourceAdapter,
+    adapter_probe_error,
 )
 from .adapters.graphql import GraphQLSourceAdapter
 from .adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
@@ -72,6 +75,43 @@ class SourceProbeResult(StrictModel):
     endpoint_count: int = Field(ge=0)
     execution_bindable: bool
     warnings: list[str] = Field(default_factory=list)
+
+
+class SourceProbeDiagnostic(StrictModel):
+    """One sanitized adapter attempt emitted by non-mutating source diagnosis."""
+
+    adapter_kind: str
+    discovery_activity: Literal["passive", "active"]
+    http_methods: list[str] = Field(default_factory=list)
+    attempted: bool
+    status: Literal["recognized", "not_recognized", "failed", "skipped"]
+    failure_category: ProbeFailureCategory | None = None
+    message: str | None = None
+
+
+class SourceProbeReport(StrictModel):
+    """Complete privacy-safe report for structured-source diagnosis."""
+
+    source_url: str
+    requested_kind: str
+    status: Literal["recognized", "not_recognized", "failed"]
+    recognized_kind: str | None = None
+    tool_key: str | None = None
+    tool_name: str | None = None
+    namespace: str | None = None
+    provider: str | None = None
+    access_mode: str | None = None
+    endpoint_count: int = Field(default=0, ge=0)
+    execution_bindable: bool = False
+    warnings: list[str] = Field(default_factory=list)
+    diagnostics: list[SourceProbeDiagnostic] = Field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class _AdapterAttempt:
+    result: AdapterLoadResult | None
+    diagnostic: SourceProbeDiagnostic
+    error: BaseException | None = None
 
 
 class _OpenAPIYAMLLoader(yaml.SafeLoader):
@@ -725,15 +765,21 @@ class OpenAPISourceAdapter:
                         document,
                         resolved_schema_url,
                     )
-        except SchemaSourceError:
+        except SchemaNotModifiedError:
             raise
-        except Exception:  # noqa: BLE001
-            return None
+        except Exception as exc:  # noqa: BLE001
+            raise adapter_probe_error("openapi", exc) from exc
         finally:
             if owns_client:
                 await client.aclose()
 
         if document is None:
+            candidate = _parse_reference_text(response.text)
+            if isinstance(candidate, dict) and "openapi" in candidate:
+                raise AdapterProbeError(
+                    "invalid_schema",
+                    "OpenAPI-like document is malformed or unsupported",
+                )
             return None
 
         inferred_name = context.name or _slug(
@@ -847,8 +893,8 @@ class MCPSourceAdapter:
                 timeout=context.timeout,
                 client_factory=context.mcp_client_factory,
             )
-        except Exception:  # noqa: BLE001
-            return None
+        except Exception as exc:  # noqa: BLE001
+            raise adapter_probe_error("mcp", exc) from exc
 
         tool.remote = True
         tool.metadata["remote"] = True
