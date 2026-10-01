@@ -140,7 +140,7 @@ async def test_probe_url_rejects_html_under_explicit_openapi_kind() -> None:
         router = SchemaRouter(http_client=client)
         with pytest.raises(
             UnsupportedSchemaSourceError,
-            match="supported OpenAPI source",
+            match="supported openapi source",
         ):
             await router.probe_url(
                 "https://docs.example.test/reference",
