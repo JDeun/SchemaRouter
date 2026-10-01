@@ -21,6 +21,7 @@ SchemaWatchStatus = Literal[
     "applied",
     "report_only",
     "pending_review",
+    "rejected",
     "error",
     "stale",
     "stale_contract",
@@ -43,6 +44,9 @@ class SchemaWatchSnapshot:
     last_compatibility: str | None = None
     pending_review: bool = False
     pending_change_count: int = 0
+    pending_reviewed_current_fingerprint: str | None = None
+    pending_candidate_fingerprint: str | None = None
+    pending_candidate_source_identity: str | None = None
     last_error_type: str | None = None
 
 
@@ -243,6 +247,21 @@ class SchemaWatchManager:
                     if record.pending_result is not None
                     else 0
                 ),
+                pending_reviewed_current_fingerprint=(
+                    record.pending_result.reviewed_current_fingerprint
+                    if record.pending_result is not None
+                    else None
+                ),
+                pending_candidate_fingerprint=(
+                    record.pending_result.candidate_fingerprint
+                    if record.pending_result is not None
+                    else None
+                ),
+                pending_candidate_source_identity=(
+                    record.pending_result.candidate_source_identity
+                    if record.pending_result is not None
+                    else None
+                ),
                 last_error_type=record.last_error_type,
             )
             for tool_key, record in sorted(self._records.items())
@@ -253,6 +272,169 @@ class SchemaWatchManager:
         if record is None or record.pending_result is None:
             return None
         return record.pending_result.model_copy(deep=True)
+
+    @staticmethod
+    def _expected_pending_candidate(
+        tool_key: str,
+        record: _WatchRecord,
+        expected_candidate_fingerprint: str,
+    ) -> SchemaRefreshResult:
+        pending = record.pending_result
+        if pending is None:
+            raise SchemaSourceError(
+                f"tool {tool_key!r} has no pending schema candidate to review"
+            )
+        candidate_fingerprint = pending.candidate_fingerprint
+        if candidate_fingerprint is None:
+            raise SchemaSourceError(
+                f"tool {tool_key!r} pending review has no pinned candidate fingerprint"
+            )
+        if candidate_fingerprint != expected_candidate_fingerprint:
+            raise SchemaSourceError(
+                f"tool {tool_key!r} pending candidate fingerprint does not match "
+                "the reviewed candidate"
+            )
+        if (
+            pending.reviewed_current_fingerprint is None
+            or pending.reviewed_current_fingerprint != record.tool_fingerprint
+        ):
+            raise SchemaSourceError(
+                f"tool {tool_key!r} pending review no longer matches the watched contract"
+            )
+        if pending.candidate_source_identity is None:
+            raise SchemaSourceError(
+                f"tool {tool_key!r} pending review has no pinned candidate source identity"
+            )
+        return pending
+
+    async def accept_pending(
+        self,
+        tool_key: str,
+        *,
+        expected_candidate_fingerprint: str,
+    ) -> SchemaRefreshResult:
+        """Refetch and accept only the exact candidate reviewed by trusted local code."""
+
+        async with self._run_lock:
+            record = self._records.get(tool_key)
+            if record is None:
+                raise SchemaSourceError(
+                    f"tool {tool_key!r} has no registered schema watch"
+                )
+            pending = self._expected_pending_candidate(
+                tool_key,
+                record,
+                expected_candidate_fingerprint,
+            )
+            current, stale_status, stale_reason = self._contract_status(
+                tool_key,
+                record,
+            )
+            if not current:
+                record.status = stale_status or "stale"
+                record.last_error_type = stale_reason
+                record.pending_result = None
+                raise SchemaSourceError(
+                    f"tool {tool_key!r} changed before pending schema approval"
+                )
+
+            result = await asyncio.wait_for(
+                self._refresh(
+                    tool_key,
+                    apply_compatible=False,
+                    schema_headers=record.schema_headers,
+                    trusted_headers=record.trusted_headers,
+                    mcp_client_factory=record.mcp_client_factory,
+                    timeout=record.timeout_seconds,
+                    _expected_fingerprint=record.tool_fingerprint,
+                    _expected_source_identity=record.source_identity,
+                    _accept_candidate_fingerprint=expected_candidate_fingerprint,
+                    _accept_candidate_source_identity=(
+                        pending.candidate_source_identity
+                    ),
+                ),
+                timeout=record.timeout_seconds,
+            )
+            checked_at = datetime.now(timezone.utc)
+            record.last_checked_at = checked_at
+            record.last_compatibility = result.compatibility
+            record.last_error_type = None
+
+            if result.action == "pending_review":
+                record.pending_result = result.model_copy(deep=True)
+                record.status = "pending_review"
+                record.next_due = time.monotonic() + record.interval_seconds
+                return result.model_copy(deep=True)
+
+            if result.action != "applied":
+                raise SchemaSourceError(
+                    f"tool {tool_key!r} pending approval returned unexpected "
+                    f"refresh action {result.action!r}"
+                )
+
+            applied_tool = self.registry.get(tool_key)
+            applied_identity = self._watch_identity(applied_tool)
+            if applied_identity != record.source_identity:
+                record.status = "stale_source"
+                record.last_error_type = "SourceIdentityChanged"
+                record.pending_result = None
+                raise SchemaSourceError(
+                    f"tool {tool_key!r} source identity changed during pending approval"
+                )
+            if (
+                result.candidate_fingerprint is None
+                or applied_tool.fingerprint != result.candidate_fingerprint
+            ):
+                record.status = "stale_contract"
+                record.last_error_type = "AppliedContractChanged"
+                record.pending_result = None
+                raise SchemaSourceError(
+                    f"tool {tool_key!r} accepted contract does not match reviewed candidate"
+                )
+
+            record.tool_fingerprint = applied_tool.fingerprint
+            record.pending_result = None
+            record.status = "applied"
+            record.last_applied_at = checked_at
+            record.next_due = time.monotonic() + record.interval_seconds
+            return result.model_copy(deep=True)
+
+    async def reject_pending(
+        self,
+        tool_key: str,
+        *,
+        expected_candidate_fingerprint: str,
+    ) -> SchemaRefreshResult:
+        """Clear only the exact pending candidate reviewed by trusted local code."""
+
+        async with self._run_lock:
+            record = self._records.get(tool_key)
+            if record is None:
+                raise SchemaSourceError(
+                    f"tool {tool_key!r} has no registered schema watch"
+                )
+            pending = self._expected_pending_candidate(
+                tool_key,
+                record,
+                expected_candidate_fingerprint,
+            )
+            current, stale_status, stale_reason = self._contract_status(
+                tool_key,
+                record,
+            )
+            if not current:
+                record.status = stale_status or "stale"
+                record.last_error_type = stale_reason
+                record.pending_result = None
+                raise SchemaSourceError(
+                    f"tool {tool_key!r} changed before pending schema rejection"
+                )
+
+            record.pending_result = None
+            record.status = "rejected"
+            record.last_error_type = None
+            record.next_due = time.monotonic() + record.interval_seconds
+            return pending.model_copy(deep=True)
 
     async def _run_record(
         self,

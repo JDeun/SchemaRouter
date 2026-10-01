@@ -127,6 +127,41 @@ async def test_bound_mcp_breaking_refresh_stays_pending_and_keeps_binding() -> N
 
 
 @pytest.mark.asyncio
+async def test_bound_mcp_pending_candidate_can_be_explicitly_accepted() -> None:
+    factory = RefreshableBoundFactory()
+    router = SchemaRouter()
+    tool = await router.add_mcp_client_factory(
+        factory,
+        name="bound-refresh",
+        transport="inprocess",
+        transport_fingerprint="fixture-inprocess-v1",
+    )
+    router.register_schema_watch(tool.key, interval_seconds=60)
+    factory.required_query = True
+
+    await router.check_schema_watches_once()
+    pending = router.schema_watch_pending_review(tool.key)
+
+    assert pending is not None
+    assert pending.candidate_fingerprint is not None
+    result = await router.aaccept_schema_watch_pending(
+        tool.key,
+        expected_candidate_fingerprint=pending.candidate_fingerprint,
+    )
+
+    current = router.registry.get(tool.key)
+    assert result.action == "applied"
+    assert result.compatibility == "breaking"
+    assert current.fingerprint == pending.candidate_fingerprint
+    assert current.endpoint("whoami").parameters[0].required is True
+    assert router.executor.binding_status_for_contract(
+        tool.key,
+        current.fingerprint,
+    ) == "ready"
+    assert router.schema_watch_pending_review(tool.key) is None
+
+
+@pytest.mark.asyncio
 async def test_bound_mcp_refresh_fails_closed_without_current_transport_binding() -> None:
     factory = RefreshableBoundFactory()
     router = SchemaRouter()

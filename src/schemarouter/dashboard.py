@@ -210,13 +210,28 @@ def render_dashboard(
             + f"<td>{escape(watch.last_compatibility or '—')}</td>"
             + f"<td>{escape(_text(watch.pending_review))}</td>"
             + f"<td>{watch.pending_change_count}</td>"
+            + (
+                f"<td><code>{escape(watch.pending_reviewed_current_fingerprint[:12])}</code></td>"
+                if watch.pending_reviewed_current_fingerprint
+                else "<td>—</td>"
+            )
+            + (
+                f"<td><code>{escape(watch.pending_candidate_fingerprint[:12])}</code></td>"
+                if watch.pending_candidate_fingerprint
+                else "<td>—</td>"
+            )
+            + (
+                f"<td><code>{escape(watch.pending_candidate_source_identity[:12])}</code></td>"
+                if watch.pending_candidate_source_identity
+                else "<td>—</td>"
+            )
             + f"<td>{escape(watch.last_error_type or '—')}</td>"
             + "</tr>"
             for watch in live.execution.schema_watches
         )
         if not schema_watch_rows:
             schema_watch_rows = (
-                '<tr><td colspan="9" class="muted">'
+                '<tr><td colspan="12" class="muted">'
                 "No schema watches registered.</td></tr>"
             )
 
@@ -261,7 +276,8 @@ def render_dashboard(
 <thead><tr>
 <th>Tool</th><th>Status</th><th>Interval</th><th>Last checked</th>
 <th>Last applied</th><th>Compatibility</th><th>Pending review</th>
-<th>Pending changes</th><th>Last error type</th>
+<th>Pending changes</th><th>Reviewed current</th><th>Candidate</th>
+<th>Source identity</th><th>Last error type</th>
 </tr></thead>
 <tbody>{schema_watch_rows}</tbody>
 </table>

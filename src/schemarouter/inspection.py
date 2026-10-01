@@ -196,6 +196,9 @@ class SchemaWatchInspection(StrictModel):
     last_compatibility: str | None = None
     pending_review: bool = False
     pending_change_count: int = Field(default=0, ge=0)
+    pending_reviewed_current_fingerprint: str | None = None
+    pending_candidate_fingerprint: str | None = None
+    pending_candidate_source_identity: str | None = None
     last_error_type: str | None = None
 
 
@@ -414,6 +417,15 @@ def inspect_router(router: Any) -> RouterInspection:
                     last_compatibility=snapshot.last_compatibility,
                     pending_review=snapshot.pending_review,
                     pending_change_count=snapshot.pending_change_count,
+                    pending_reviewed_current_fingerprint=(
+                        snapshot.pending_reviewed_current_fingerprint
+                    ),
+                    pending_candidate_fingerprint=(
+                        snapshot.pending_candidate_fingerprint
+                    ),
+                    pending_candidate_source_identity=(
+                        snapshot.pending_candidate_source_identity
+                    ),
                     last_error_type=snapshot.last_error_type,
                 )
                 for snapshot in router.schema_watcher.snapshots()
