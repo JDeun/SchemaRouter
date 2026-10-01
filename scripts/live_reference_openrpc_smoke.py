@@ -91,6 +91,7 @@ async def run_smoke() -> dict[str, object]:
     thread.start()
     port = server.server_address[1]
     source = f"http://127.0.0.1:{port}/openrpc.json"
+    router: SchemaRouter | None = None
 
     try:
         started = perf_counter()
@@ -149,6 +150,8 @@ async def run_smoke() -> dict[str, object]:
             ],
         }
     finally:
+        if router is not None:
+            await router.aclose()
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
