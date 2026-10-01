@@ -44,6 +44,15 @@ schemarouter storage migrate ./registry.sqlite3 \
   --backup-path ./backups/registry-before-upgrade.sqlite3
 ```
 
+Skipping the backup requires an explicit flag and is not recommended for production:
+
+```bash
+schemarouter storage migrate ./registry.sqlite3 --no-backup
+```
+
+`--backup-path` and `--no-backup` are mutually incompatible. Existing backup files are never
+silently overwritten.
+
 The current legacy v0 -> v1 migration is metadata-only: it validates all stored documents first,
 then records explicit format metadata and migration history in a single component transaction.
 ToolSpec/RunEvent JSON is not rewritten.
@@ -56,6 +65,11 @@ after upgrading.
 
 For production upgrades, explicit `storage inspect` / `storage migrate` is still recommended so
 operators have a pre-migration backup and an auditable preflight step.
+
+The equivalent Python APIs are `inspect_sqlite_storage(...)`,
+`migrate_sqlite_storage(...)`, and `backup_sqlite_storage(...)`. Migration returns a typed
+`StorageMigrationResult` containing the before/after inspections and the backup path when one was
+created.
 
 ## Fail-closed cases
 
