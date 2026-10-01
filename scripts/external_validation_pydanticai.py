@@ -17,10 +17,10 @@ from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
-import schemarouter
 from pydantic_ai import ToolDefinition
 from pydantic_ai.capabilities import ToolSearch
 
+import schemarouter
 from schemarouter import (
     EndpointSpec,
     FieldSpec,
