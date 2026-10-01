@@ -689,16 +689,19 @@ async def inspect_mcp_url(
         transport="streamable_http",
         transport_fingerprint=transport_fingerprint,
     )
+    custom_client_factory_required = client_factory is not None
     tool.execution_metadata.update(
         {
             "source_url": url,
             "authenticated_transport": bool(headers),
+            "custom_client_factory_required": custom_client_factory_required,
         }
     )
     tool.metadata.update(
         {
             "source_url": url,
             "authenticated_transport": bool(headers),
+            "custom_client_factory_required": custom_client_factory_required,
         }
     )
     return tool
