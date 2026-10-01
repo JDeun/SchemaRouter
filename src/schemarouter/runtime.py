@@ -23,7 +23,7 @@ from .errors import (
     RegistrationError,
     SchemaSourceError,
 )
-from .executor import ExecutionBudgetTracker, RegistryExecutor
+from .executor import BoundEndpointInvoker, ExecutionBudgetTracker, RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
 from .ingestion import SourceKind, URLSchemaLoader
@@ -278,6 +278,44 @@ class SchemaRouter:
 
     def add_tool(self, tool: ToolSpec, *, replace: bool = False) -> str:
         return self.registry.register(tool, replace=replace)
+
+    def add_bound_tool(
+        self,
+        tool: ToolSpec,
+        invoker: BoundEndpointInvoker,
+        *,
+        replace: bool = False,
+    ) -> str:
+        """Register a canonical ToolSpec and bind one trusted invoker.
+
+        This is the explicit escape hatch for SDKs and protocol clients that do not expose a
+        safely introspectable Python signature. The ToolSpec remains the complete model-visible
+        contract; client objects, credentials, and transport state stay inside trusted invoker
+        state.
+        """
+
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(tool.key)
+            except KeyError:
+                key = self.registry.register(tool)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    tool,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(tool)
+
+        self.executor.bind(
+            key,
+            invoker,
+            expected_fingerprint=tool.fingerprint,
+        )
+        return key
 
     def amend_capability(self, tool_key: str, amended: ToolSpec) -> str:
         """Declare or annotate the result contract of an already registered capability.
