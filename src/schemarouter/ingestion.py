@@ -1578,6 +1578,7 @@ class URLSchemaLoader:
             openapi_ref_max_documents=openapi_ref_max_documents,
             openapi_ref_max_bytes=openapi_ref_max_bytes,
             timeout=timeout,
+            _diagnose_probe=True,
         )
         tool = result.tool
         adapter_kind = tool.execution_metadata.get("adapter")
