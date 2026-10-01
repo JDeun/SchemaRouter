@@ -1105,7 +1105,8 @@ class SchemaRouter:
             adapter = current.metadata.get("adapter")
         if not isinstance(adapter, str):
             raise SchemaSourceError(
-                f"tool {tool_key!r} does not declare a structured-source adapter"
+                f"tool {tool_key!r} does not have a refreshable structured-source adapter; "
+                "no structured-source adapter is declared"
             )
         try:
             refresh_profile = self.loader.adapters.refresh_profile(adapter)
