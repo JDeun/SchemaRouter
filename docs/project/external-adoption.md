@@ -92,6 +92,12 @@ run query
 This is deliberately retrieval-only integration. It should not duplicate or bypass SDK approval
 authority.
 
+The maintainer-owned E0 evaluation for this path is tracked in
+[#645](https://github.com/JDeun/SchemaRouter/issues/645) and documented in
+[OpenAI Agents SDK MCP filter validation](external-validation-openai-agents.md). The evaluation
+uses a real local stdio MCP lifecycle but remains E0 until someone outside this repository reviews,
+reproduces, or adopts it publicly.
+
 ### mcp-agent
 
 mcp-agent already owns MCP connection/session lifecycle. Avoid replacing that lifecycle.
@@ -207,6 +213,7 @@ For each contact/evaluation, record only public or permissioned information:
 | Project | Contact/evaluation URL | Level | Status | Evidence | Limitation / next action |
 | --- | --- | --- | --- | --- | --- |
 | PydanticAI | [#644](https://github.com/JDeun/SchemaRouter/issues/644) | E0 | maintainer-owned deterministic evaluation | [validation page](external-validation-pydanticai.md) | external review/evaluation still required |
+| OpenAI Agents SDK | [#645](https://github.com/JDeun/SchemaRouter/issues/645) | E0 | maintainer-owned local-MCP filter evaluation | [validation page](external-validation-openai-agents.md) | external review/evaluation still required |
 | _other candidates_ | — | E0 | candidate set prepared | this page | external outreach/evaluation not yet performed |
 
 Do not publish private email addresses, private conversations, or unpublished organization names.
