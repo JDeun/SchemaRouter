@@ -5,11 +5,10 @@ import re
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
-
-from pydantic import Field
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
 
 import httpx
+from pydantic import Field
 import yaml
 
 from ._url_safety import safe_provenance_url
