@@ -1262,20 +1262,34 @@ class URLSchemaLoader:
             warnings=warnings,
         )
 
-    @staticmethod
     def _with_identity(
+        self,
         result: AdapterLoadResult,
         context: AdapterContext,
         *,
         adapter_kind: str,
     ) -> AdapterLoadResult:
         tool = result.tool.model_copy(deep=True)
+        normalized_kind = adapter_kind.strip().lower()
+        tool.execution_metadata["adapter"] = normalized_kind
+        tool.metadata["adapter"] = normalized_kind
+
+        refresh = self.adapters.refresh_profile(normalized_kind)
+        if refresh.source_key is not None and refresh.source_url(tool) is None:
+            safe_source = safe_provenance_url(context.url)
+            if refresh.source_location == "execution_metadata":
+                tool.execution_metadata[refresh.source_key] = safe_source
+            else:
+                # metadata is the default for descriptive provenance and for
+                # profiles that permit either location.
+                tool.metadata[refresh.source_key] = safe_source
+
         if context.provider is not None:
             tool.provider = context.provider
         if context.access_mode is not None:
             tool.access_mode = context.access_mode
         elif tool.access_mode is None:
-            tool.access_mode = adapter_kind
+            tool.access_mode = normalized_kind
         return AdapterLoadResult(tool=tool, invoker=result.invoker)
 
     def _commit(self, result: AdapterLoadResult, *, replace: bool) -> ToolSpec:
