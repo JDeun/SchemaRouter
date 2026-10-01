@@ -163,7 +163,9 @@ def render_dashboard(
 
         health_probe_rows = "".join(
             (
-                '<tr class="attention-row">' if f"{probe.tool}.{probe.endpoint}" in unavailable_paths else "<tr>"
+                '<tr class="attention-row">'
+                if f"{probe.tool}.{probe.endpoint}" in unavailable_paths
+                else "<tr>"
             )
             + f"<td>{escape(probe.tool)}.{escape(probe.endpoint)}</td>"
             + f"<td>{escape(probe.status)}</td>"
@@ -178,11 +180,16 @@ def render_dashboard(
             for probe in live.execution.health_probes
         )
         if not health_probe_rows:
-            health_probe_rows = '<tr><td colspan="5" class="muted">No health probes registered.</td></tr>'
+            health_probe_rows = (
+                '<tr><td colspan="5" class="muted">'
+                "No health probes registered.</td></tr>"
+            )
 
         schema_watch_rows = "".join(
             (
-                '<tr class="attention-row">' if watch.pending_review or watch.status in {"error", "stale"} else "<tr>"
+                '<tr class="attention-row">'
+                if watch.pending_review or watch.status in {"error", "stale"}
+                else "<tr>"
             )
             + f"<td>{escape(watch.tool)}</td>"
             + f"<td>{escape(watch.status)}</td>"
@@ -197,7 +204,10 @@ def render_dashboard(
             for watch in live.execution.schema_watches
         )
         if not schema_watch_rows:
-            schema_watch_rows = '<tr><td colspan="9" class="muted">No schema watches registered.</td></tr>'
+            schema_watch_rows = (
+                '<tr><td colspan="9" class="muted">'
+                "No schema watches registered.</td></tr>"
+            )
 
         live_html = f"""
 <section>
