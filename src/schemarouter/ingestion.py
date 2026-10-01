@@ -8,8 +8,8 @@ from typing import Any
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
 
 import httpx
-from pydantic import Field
 import yaml
+from pydantic import Field
 
 from ._url_safety import safe_provenance_url
 from .adapters.base import AdapterContext, AdapterLoadResult, AdapterRegistry, SourceAdapter
