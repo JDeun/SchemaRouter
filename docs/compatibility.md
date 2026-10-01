@@ -17,9 +17,12 @@ claim that every historical version inside the range is exhaustively tested.
 | Jev / TypeSafe | `typesafe-sdk>=0.7,<1` | Dedicated adversarial contract tests on Python 3.12 | Optional `schemarouter[jev]` extra; no live API call in required CI |
 | Laya | `laya>=0.3.6,<1` | Dedicated adversarial adapter tests plus optional-extra install on Python 3.12 | Optional `schemarouter[laya]` extra; required CI does not download model weights |
 | Ollama decision backend | Ollama structured-output HTTP API | Mock-transport adversarial tests in the core suite | No SDK dependency; live model benchmark is explicit and non-blocking |
-| MCP | `mcp>=2,<3` | Real Streamable HTTP integration against a local server | Optional `schemarouter[mcp]` extra |
+| MCP | `mcp>=2,<3` | Real Streamable HTTP integration + real local stdio subprocess discovery/execution + transport-boundary tests | Optional `schemarouter[mcp]` extra |
 | OpenTelemetry | `opentelemetry-api/sdk>=1.44,<2` | In-memory span hierarchy, error status, and privacy tests | Optional `schemarouter[otel]` extra; core has no OTel dependency |
 | OpenAPI | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OpenAPI SDK dependency |
+| GraphQL | Built-in adapter | Deterministic introspection/selection-set fixtures | No GraphQL SDK dependency |
+| OData | Built-in adapter | Deterministic CSDL/$select fixtures | No OData SDK dependency |
+| OpenRPC / JSON-RPC | Built-in adapter | Deterministic schema/RPC transport fixtures | No OpenRPC SDK dependency |
 | OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |
 | Published PyPI package | Latest stable wheel + sdist | Scheduled/manual external smoke | Installs from PyPI in a fresh runner, runs `pip check`, and executes a public API scenario outside the checkout |
 | Published lightweight extras | Latest stable `mcp` + `jev` + `otel` extras | Scheduled/manual external smoke | Installs only those three extras from PyPI and validates their SDK integration surface without relying on framework transitive dependencies |
@@ -50,6 +53,8 @@ Every pull request runs the blocking `CI` workflow with:
 - Laya adapter adversarial tests with the official package installed but no model-weight download;
 - Ollama bounded-decision adversarial tests using a local mock HTTP transport;
 - real MCP Streamable HTTP integration using the official SDK and a local HTTP server;
+- real MCP stdio subprocess discovery/execution plus transport-neutral client-factory contract tests;
+- deterministic GraphQL, OData, and OpenRPC protocol-adapter tests;
 - OpenTelemetry integration tests using the SDK in-memory exporter;
 - strict MkDocs build.
 
