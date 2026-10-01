@@ -52,13 +52,14 @@ def _safe_url(value: str | None) -> str | None:
 
 
 def _canonical_identity_value(value: Any) -> str:
-    return json.dumps(
+    serialized = json.dumps(
         value,
         sort_keys=True,
         separators=(",", ":"),
         ensure_ascii=True,
         default=str,
     )
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
 def _profile_identity_qualifiers(
