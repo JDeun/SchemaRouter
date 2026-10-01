@@ -6,7 +6,7 @@ from typing import Any
 from jsonschema import exceptions, validators
 
 from .errors import SchemaValidationError
-from .models import EndpointSpec
+from .models import EndpointSpec, _schema_at_projection_path
 
 
 def _synthesized_input_schema(endpoint: EndpointSpec) -> dict[str, Any]:
@@ -72,30 +72,10 @@ def field_value_schema(endpoint: EndpointSpec, field_name: str) -> dict[str, Any
     if field.json_schema:
         return deepcopy(field.json_schema)
 
-    schema = effective_output_schema(endpoint)
-    if "array" in json_schema_types(schema) and isinstance(schema.get("items"), dict):
-        schema = schema["items"]
-
-    for part in field.projection_path:
-        if part == "*":
-            if "array" not in json_schema_types(schema):
-                return {}
-            items = schema.get("items")
-            if not isinstance(items, dict):
-                return {}
-            schema = items
-            continue
-
-        if "object" not in json_schema_types(schema):
-            return {}
-        properties = schema.get("properties")
-        if not isinstance(properties, dict):
-            return {}
-        child = properties.get(part)
-        if not isinstance(child, dict):
-            return {}
-        schema = child
-
+    schema = _schema_at_projection_path(
+        effective_output_schema(endpoint),
+        field.projection_path,
+    )
     return deepcopy(schema)
 
 

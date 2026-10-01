@@ -248,6 +248,22 @@ def _object_schema(
     return result
 
 
+def _odata_field_name(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if not parts:
+                raise ValueError("array wildcard cannot be the first named field segment")
+            parts[-1] = parts[-1] + "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
+def _odata_selector(path: tuple[str, ...]) -> str:
+    return "/".join(segment for segment in path if segment != "*")
+
+
 def _field_specs(
     entity_type_name: str,
     types: dict[str, ET.Element],
@@ -277,8 +293,8 @@ def _field_specs(
                 continue
 
             path = (*prefix, name)
-            field_name = ".".join(path)
-            selector = "/".join(path)
+            field_name = _odata_field_name(path)
+            selector = _odata_selector(path)
             nullable = prop.get("Nullable", "true").lower() != "false"
             collection = _COLLECTION_RE.match(prop_type)
             inner_type = collection.group(1) if collection else prop_type
@@ -312,7 +328,11 @@ def _field_specs(
                     json_schema=json_schema,
                     aliases=[name.replace("_", " ")],
                     path=list(path) if prefix else [],
-                    result_path=[field_name] if prefix else [],
+                    result_path=(
+                        list(path)
+                        if "*" in path
+                        else ([field_name] if prefix else [])
+                    ),
                     unit=_property_unit(prop),
                     identifier=name in keys and not prefix,
                     source_type="odata",
@@ -320,10 +340,10 @@ def _field_specs(
             )
             field_map[field_name] = selector
 
-            if inner_type in types and collection is None:
+            if inner_type in types:
                 visit_type(
                     inner_type,
-                    prefix=path,
+                    prefix=(*path, "*") if collection is not None else path,
                     depth=depth + 1,
                     ancestors=ancestors | {type_name},
                 )

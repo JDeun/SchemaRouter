@@ -59,7 +59,7 @@ def test_mcp_discovers_nested_object_fields_and_units() -> None:
     assert fields["data.band_gap"].json_schema["type"] == "number"
 
 
-def test_mcp_nested_arrays_remain_opaque() -> None:
+def test_mcp_nested_arrays_expose_record_preserving_fields() -> None:
     tool = _tool(
         {
             "type": "object",
@@ -77,9 +77,10 @@ def test_mcp_nested_arrays_remain_opaque() -> None:
         }
     )
 
-    names = {field.name for field in tool.endpoint("lookup").output_fields}
-    assert "data" in names
-    assert "data.band_gap" not in names
+    fields = {field.name: field for field in tool.endpoint("lookup").output_fields}
+    assert {"data", "data[].band_gap"} <= set(fields)
+    assert fields["data[].band_gap"].path == ["data", "*", "band_gap"]
+    assert fields["data[].band_gap"].result_path == ["data", "*", "band_gap"]
 
 
 def test_mcp_recursive_local_ref_is_bounded_without_descendant_chain() -> None:

@@ -27,6 +27,11 @@ class MaterialResult(BaseModel):
     metrics: Metrics
 
 
+class MaterialSeries(BaseModel):
+    material_id: str
+    measurements: list[Metrics]
+
+
 def lookup_material() -> MaterialResult:
     return MaterialResult(
         material_id="mp-1",
@@ -35,6 +40,23 @@ def lookup_material() -> MaterialResult:
             density=2.5,
         ),
     )
+
+
+def lookup_series() -> MaterialSeries:
+    return MaterialSeries(
+        material_id="mp-1",
+        measurements=[
+            Metrics(band_gap=1.25, density=2.5),
+            Metrics(band_gap=0.75, density=3.1),
+        ],
+    )
+
+
+def list_metrics() -> list[Metrics]:
+    return [
+        Metrics(band_gap=1.25, density=2.5),
+        Metrics(band_gap=0.75, density=3.1),
+    ]
 
 
 def test_python_adapter_discovers_nested_typed_return_fields() -> None:
@@ -109,3 +131,35 @@ def test_python_nested_field_supports_trusted_enrichment() -> None:
     assert enriched.unit_normalization.dimension == "energy"
     assert enriched.qualifiers == {"temperature": "300 K"}
     assert enriched.license == "internal-contract"
+
+
+def test_python_adapter_discovers_nested_array_item_fields() -> None:
+    tool = tool_from_callable(lookup_series)
+    fields = {field.name: field for field in tool.endpoint("call").output_fields}
+
+    assert {
+        "material_id",
+        "measurements",
+        "measurements[].band_gap",
+        "measurements[].density",
+    } <= set(fields)
+    assert fields["measurements[].band_gap"].path == [
+        "measurements",
+        "*",
+        "band_gap",
+    ]
+    assert fields["measurements[].band_gap"].result_path == [
+        "measurements",
+        "*",
+        "band_gap",
+    ]
+    assert fields["measurements[].band_gap"].unit == "eV"
+
+
+def test_python_root_list_uses_implicit_record_traversal() -> None:
+    tool = tool_from_callable(list_metrics)
+    fields = {field.name: field for field in tool.endpoint("call").output_fields}
+
+    assert {"band_gap", "density"} <= set(fields)
+    assert fields["band_gap"].projection_path == ("band_gap",)
+    assert fields["band_gap"].unit == "eV"

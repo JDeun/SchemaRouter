@@ -252,11 +252,23 @@ def _schema_type_includes(schema: dict[str, Any], expected: str) -> bool:
     return isinstance(raw, list) and expected in raw
 
 
+def _optimade_field_name_from_path(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if not parts:
+                raise ValueError("array wildcard cannot be the first named field segment")
+            parts[-1] = parts[-1] + "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
 def _nested_property_fields(
     parent_name: str,
     spec: dict[str, Any],
 ) -> list[FieldSpec]:
-    """Expose nested dictionary children while preserving top-level OPTIMADE wire selection."""
+    """Expose nested dictionary and list-item children under one top-level wire property."""
 
     discovered: list[FieldSpec] = []
 
@@ -269,18 +281,37 @@ def _nested_property_fields(
         if depth >= _NESTED_PROPERTY_MAX_DEPTH:
             return
         normalized = _property_schema(schema)
+
         if _schema_type_includes(normalized, "array"):
+            normalized_items = normalized.get("items")
+            raw_items = schema.get("items")
+            item_schema = (
+                raw_items
+                if isinstance(raw_items, dict)
+                else normalized_items
+            )
+            if isinstance(item_schema, dict):
+                visit(
+                    item_schema,
+                    path=(*path, "*"),
+                    depth=depth + 1,
+                )
             return
+
         properties = normalized.get("properties")
         if not isinstance(properties, dict):
             return
+
+        raw_properties = schema.get("properties")
+        if not isinstance(raw_properties, dict):
+            raw_properties = {}
 
         for child_name, child_schema in properties.items():
             if not isinstance(child_schema, dict):
                 continue
             child_path = (*path, str(child_name))
-            field_name = ".".join(child_path)
-            raw_child = schema.get("properties", {}).get(child_name, child_schema)
+            field_name = _optimade_field_name_from_path(child_path)
+            raw_child = raw_properties.get(child_name, child_schema)
             if not isinstance(raw_child, dict):
                 raw_child = child_schema
             description = str(
@@ -302,7 +333,11 @@ def _nested_property_fields(
                         )
                     ),
                     path=list(child_path),
-                    result_path=[field_name],
+                    result_path=(
+                        list(child_path)
+                        if "*" in child_path
+                        else [field_name]
+                    ),
                     unit=(
                         str(unit)
                         if unit not in {None, "inapplicable"}

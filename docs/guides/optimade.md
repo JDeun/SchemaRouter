@@ -120,6 +120,11 @@ before SchemaRouter output validation.
 Properties exposed through `/info/<entry_type>` become normal `FieldSpec` objects. OPTIMADE unit
 metadata such as `x-optimade-unit` is preserved as `FieldSpec.unit`.
 
+Declared list-of-dictionary properties expose record-preserving item fields. For example,
+`trajectories[].energy` uses `["trajectories", "*", "energy"]` internally. The wire request still
+uses only the provider's top-level `response_fields=trajectories`; item projection happens locally
+without converting the list into parallel arrays.
+
 This means fields such as provider-specific band gaps or formation energies can participate in the
 same planner and evidence logic as standard fields.
 
