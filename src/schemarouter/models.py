@@ -5,7 +5,7 @@ import json
 import math
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 
 _REMOTE_ADAPTERS = {"mcp", "openapi", "optimade", "html_proposal"}
 _OPENAPI_ENDPOINT_RUNTIME_KEYS = {
@@ -390,6 +390,58 @@ class FieldSpec(StrictModel):
         return tuple(self.result_path or self.projection_path)
 
 
+AuthKind = Literal["api_key", "http", "oauth2", "openid_connect", "unsupported"]
+AuthLocation = Literal["header", "query", "cookie"]
+
+
+class AuthSchemeRequirement(StrictModel):
+    """Secret-free identity of one credential requirement."""
+
+    name: str
+    kind: AuthKind
+    location: AuthLocation | None = None
+    parameter_name: str | None = None
+    http_scheme: str | None = None
+    scopes: list[str] = Field(default_factory=list)
+    declared_type: str | None = None
+
+    @model_validator(mode="after")
+    def validate_auth_scheme(self) -> AuthSchemeRequirement:
+        if not self.name or self.name != self.name.strip():
+            raise ValueError("auth scheme name must be non-empty and trimmed")
+        if self.declared_type is not None and (
+            not self.declared_type or self.declared_type != self.declared_type.strip()
+        ):
+            raise ValueError("declared auth scheme type must be non-empty and trimmed")
+        if len(self.scopes) != len(set(self.scopes)):
+            raise ValueError("auth requirement scopes must be unique")
+        if any(not scope or scope != scope.strip() for scope in self.scopes):
+            raise ValueError("auth requirement scopes must be non-empty and trimmed")
+
+        if self.kind == "api_key":
+            if self.location is None or not self.parameter_name:
+                raise ValueError(
+                    "api_key auth requires a declared header/query/cookie name"
+                )
+        elif self.kind == "http":
+            if not self.http_scheme:
+                raise ValueError("http auth requires a declared HTTP auth scheme")
+        return self
+
+
+class AuthRequirementSet(StrictModel):
+    """One OpenAPI security alternative; schemes inside the set are conjunctive."""
+
+    schemes: list[AuthSchemeRequirement] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_unique_auth_schemes(self) -> AuthRequirementSet:
+        names = [scheme.name for scheme in self.schemes]
+        if len(names) != len(set(names)):
+            raise ValueError("auth requirement set contains duplicate scheme names")
+        return self
+
+
 class EndpointSpec(StrictModel):
     name: str
     description: str = ""
@@ -403,6 +455,7 @@ class EndpointSpec(StrictModel):
     read_only: bool | None = None
     destructive: bool | None = None
     server_projection: ServerProjectionSpec | None = None
+    auth_requirements: list[AuthRequirementSet] = Field(default_factory=list)
     execution_metadata: dict[str, Any] = Field(default_factory=dict)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -419,6 +472,58 @@ class EndpointSpec(StrictModel):
             return value
         migrated = dict(value)
         migrated["execution_metadata"] = execution_metadata
+        return migrated
+
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_legacy_auth_requirements(cls, value: Any) -> Any:
+        """Fail closed for legacy endpoint documents that only stored raw security metadata."""
+
+        if not isinstance(value, dict) or "auth_requirements" in value:
+            return value
+        metadata = value.get("metadata")
+        if not isinstance(metadata, dict):
+            return value
+        security = metadata.get("security")
+        if not isinstance(security, list) or not security:
+            return value
+
+        alternatives: list[dict[str, Any]] = []
+        for alternative in security:
+            if not isinstance(alternative, dict):
+                alternatives.append(
+                    {
+                        "schemes": [
+                            {
+                                "name": "__legacy_invalid_security__",
+                                "kind": "unsupported",
+                                "declared_type": "legacy_invalid",
+                            }
+                        ]
+                    }
+                )
+                continue
+            schemes: list[dict[str, Any]] = []
+            for name, raw_scopes in sorted(alternative.items()):
+                if not isinstance(name, str) or not name.strip():
+                    continue
+                scopes = (
+                    sorted({scope for scope in raw_scopes if isinstance(scope, str)})
+                    if isinstance(raw_scopes, list)
+                    else []
+                )
+                schemes.append(
+                    {
+                        "name": name,
+                        "kind": "unsupported",
+                        "scopes": scopes,
+                        "declared_type": "legacy_unknown",
+                    }
+                )
+            alternatives.append({"schemes": schemes})
+
+        migrated = dict(value)
+        migrated["auth_requirements"] = alternatives
         return migrated
 
     @model_validator(mode="after")
@@ -584,9 +689,29 @@ class EndpointSpec(StrictModel):
                     )
         return self
 
+    @model_serializer(mode="wrap")
+    def serialize_endpoint(self, handler: Any) -> dict[str, Any]:
+        """Omit the empty auth default so legacy public contracts serialize identically."""
+
+        data = handler(self)
+        if not self.auth_requirements:
+            data.pop("auth_requirements", None)
+        return data
+
+    @property
+    def auth_required(self) -> bool:
+        """Whether every declared auth alternative requires at least one credential."""
+
+        return bool(self.auth_requirements) and all(
+            bool(requirement.schemes) for requirement in self.auth_requirements
+        )
+
     @property
     def fingerprint(self) -> str:
         payload = self.model_dump(mode="json", exclude={"metadata"})
+        if not self.auth_requirements:
+            # Preserve pre-auth-contract fingerprints for public endpoints.
+            payload.pop("auth_requirements", None)
         canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
@@ -658,10 +783,14 @@ class ToolSpec(StrictModel):
             mode="json",
             exclude={"metadata", "endpoints"},
         )
-        payload["endpoints"] = [
-            endpoint.model_dump(mode="json", exclude={"metadata"})
-            for endpoint in self.endpoints
-        ]
+        endpoint_payloads: list[dict[str, Any]] = []
+        for endpoint in self.endpoints:
+            endpoint_payload = endpoint.model_dump(mode="json", exclude={"metadata"})
+            if not endpoint.auth_requirements:
+                # Keep existing public-tool fingerprints stable across this migration.
+                endpoint_payload.pop("auth_requirements", None)
+            endpoint_payloads.append(endpoint_payload)
+        payload["endpoints"] = endpoint_payloads
         canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 

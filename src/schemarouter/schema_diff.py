@@ -424,6 +424,26 @@ def compare_endpoint_specs(old: EndpointSpec, new: EndpointSpec) -> SchemaDiffRe
             message="Destructive classification changed and requires local policy review.",
         )
 
+    if old.auth_requirements != new.auth_requirements:
+        _change(
+            changes,
+            path="auth_requirements",
+            kind="authentication_requirements_changed",
+            severity="security",
+            old=[
+                requirement.model_dump(mode="json")
+                for requirement in old.auth_requirements
+            ],
+            new=[
+                requirement.model_dump(mode="json")
+                for requirement in new.auth_requirements
+            ],
+            message=(
+                "Authentication requirements changed and require trusted binding review; "
+                "replan and rebind before execution."
+            ),
+        )
+
     if old.execution_metadata != new.execution_metadata:
         _change(
             changes,

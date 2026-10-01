@@ -72,8 +72,13 @@ def _render_registry(snapshot: RegistryInspection) -> str:
             else:
                 mode = "unclassified"
             destructive = ", destructive" if endpoint.destructive is True else ""
+            auth = (
+                "public"
+                if not endpoint.auth_required
+                else "auth=" + ",".join(endpoint.auth_kinds or ["unknown"])
+            )
             lines.append(
-                f"  - {endpoint.name}: {method} {path} · {mode}{destructive} · "
+                f"  - {endpoint.name}: {method} {path} · {mode}{destructive} · {auth} · "
                 f"{endpoint.parameter_count} params/{endpoint.output_field_count} fields "
                 f"[{_short_fingerprint(endpoint.fingerprint)}]"
             )
@@ -106,6 +111,16 @@ def _render_tool(tool: ToolInspection, *, document: dict[str, Any]) -> str:
         lines.append(f"[{endpoint.name}]")
         lines.append(f"fingerprint: {endpoint.fingerprint}")
         lines.append(f"method/path: {endpoint.method or '-'} {endpoint.path or '-'}")
+        lines.append(
+            "authentication: "
+            + (
+                "public"
+                if not endpoint.auth_required
+                else "required ("
+                + ", ".join(endpoint.auth_kinds or ["unknown"])
+                + ")"
+            )
+        )
         lines.append(
             "classification: "
             + (
