@@ -44,6 +44,9 @@ Every pull request runs the blocking `CI` workflow with:
 - executable core quickstart;
 - wheel and sdist build + metadata checks;
 - clean-environment installation and quickstart smoke tests from both wheel and sdist;
+- a clean downstream venv that installs the built wheel plus a separate
+  `schemarouter.adapters` distribution, verifies metadata-only discovery, explicit plugin loading,
+  schema validation, and local execution-policy enforcement;
 - LangChain integration contract tests and `examples/langchain_quickstart.py`;
 - LangGraph `StateGraph` sync/async contract tests and `examples/langgraph_quickstart.py`;
 - LlamaIndex integration contract tests and `examples/llamaindex_quickstart.py`;

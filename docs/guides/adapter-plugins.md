@@ -93,6 +93,25 @@ deterministic.
 Source:
 [`examples/adapter_plugin_demo/`](https://github.com/JDeun/SchemaRouter/tree/main/examples/adapter_plugin_demo)
 
+## Downstream installed-wheel compatibility smoke
+
+Required package CI also exercises the plugin from a **separate clean virtual environment**:
+
+1. build the SchemaRouter wheel;
+2. install that wheel into a fresh venv;
+3. install `examples/adapter_plugin_demo` as a separate distribution with its real
+   `schemarouter.adapters` entry point;
+4. run `scripts/downstream_adapter_plugin_smoke.py`.
+
+The smoke asserts that SchemaRouter was imported from the venv's `site-packages`, not from the
+repository source tree. It then proves that metadata discovery does not import plugin code, explicit
+allowlisting does import exactly the requested plugin, valid execution succeeds, an input violating
+the registered JSON Schema is rejected, and a trusted local deny rule still blocks the
+plugin-supplied invoker.
+
+This is a **downstream compatibility and authority-boundary smoke**, not a provider-quality,
+routing-accuracy, or performance benchmark. It uses no network access and no credentials.
+
 ## Security model
 
 Treat adapter plugins like any other installed application dependency. They execute with the Python
