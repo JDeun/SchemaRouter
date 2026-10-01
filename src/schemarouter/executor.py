@@ -1117,6 +1117,121 @@ class RegistryExecutor:
             )
 
     @staticmethod
+    def _path_values(value: Any, path: tuple[str, ...]) -> list[Any]:
+        """Return all present leaf values reached by one explicit field path."""
+
+        if not path:
+            return [value]
+
+        part = path[0]
+        rest = path[1:]
+        if part == "*":
+            if not isinstance(value, list):
+                return []
+            values: list[Any] = []
+            for item in value:
+                values.extend(RegistryExecutor._path_values(item, rest))
+            return values
+
+        if not isinstance(value, dict) or part not in value:
+            return []
+        return RegistryExecutor._path_values(value[part], rest)
+
+    @staticmethod
+    def _project_wildcard_fragment(
+        value: Any,
+        path: tuple[str, ...],
+    ) -> Any:
+        """Build a projection fragment without collapsing wildcard record positions."""
+
+        missing = RegistryExecutor._MISSING_PROJECTION
+        if not path:
+            return deepcopy(value)
+
+        part = path[0]
+        rest = path[1:]
+        if part == "*":
+            if not isinstance(value, list):
+                return missing
+            projected_items: list[Any] = []
+            for item in value:
+                child = RegistryExecutor._project_wildcard_fragment(item, rest)
+                projected_items.append({} if child is missing else child)
+            return projected_items
+
+        if not isinstance(value, dict) or part not in value:
+            return missing
+        child = RegistryExecutor._project_wildcard_fragment(value[part], rest)
+        if child is missing:
+            return missing
+        return {part: child}
+
+    @staticmethod
+    def _merge_projection_fragments(left: Any, right: Any) -> Any:
+        """Merge field fragments while preserving list indexes."""
+
+        if isinstance(left, dict) and isinstance(right, dict):
+            merged = deepcopy(left)
+            for key, value in right.items():
+                if key not in merged:
+                    merged[key] = deepcopy(value)
+                    continue
+                merged[key] = RegistryExecutor._merge_projection_fragments(
+                    merged[key],
+                    value,
+                )
+            return merged
+
+        if isinstance(left, list) and isinstance(right, list):
+            if len(left) != len(right):
+                raise PlanValidationError(
+                    "array projection fragments changed record cardinality"
+                )
+            return [
+                RegistryExecutor._merge_projection_fragments(a, b)
+                for a, b in zip(left, right, strict=True)
+            ]
+
+        if left == right:
+            return deepcopy(left)
+        if left == {}:
+            return deepcopy(right)
+        if right == {}:
+            return deepcopy(left)
+        raise PlanValidationError(
+            "array projection fragments collide at incompatible values"
+        )
+
+    @staticmethod
+    def _transform_path_in_place(
+        value: Any,
+        path: tuple[str, ...],
+        transform: Callable[[Any], Any],
+    ) -> None:
+        if not path:
+            return
+
+        part = path[0]
+        rest = path[1:]
+        if part == "*":
+            if not isinstance(value, list):
+                return
+            for item in value:
+                RegistryExecutor._transform_path_in_place(item, rest, transform)
+            return
+
+        if not isinstance(value, dict) or part not in value:
+            return
+        if not rest:
+            value[part] = transform(value[part])
+            return
+        RegistryExecutor._transform_path_in_place(
+            value[part],
+            rest,
+            transform,
+        )
+
+    @staticmethod
     def _validate_selected_fields_present(
         value: Any,
         fields: list[str],
@@ -1140,6 +1255,11 @@ class RegistryExecutor:
                 continue
             for field_name in fields:
                 field = field_map[field_name]
+                if "*" in field.projection_path:
+                    # Optional children may be absent from individual array records. The raw
+                    # output schema still enforces required fields and array shape.
+                    continue
+
                 current: Any = item
                 missing = False
                 for part in field.projection_path:
@@ -1183,26 +1303,29 @@ class RegistryExecutor:
                 if field is None or not field.json_schema:
                     continue
 
-                current: Any = item
-                missing = False
-                for part in field.projection_path:
-                    if not isinstance(current, dict) or part not in current:
-                        missing = True
-                        break
-                    current = current[part]
-                if missing:
-                    continue
-
+                values = RegistryExecutor._path_values(
+                    item,
+                    field.projection_path,
+                )
                 suffix = (
                     f" item {item_index}"
                     if isinstance(value, list)
                     else ""
                 )
-                validate_json_schema_value(
-                    current,
-                    field.json_schema,
-                    context=f"{context}{suffix} field {field_name!r}",
-                )
+                for match_index, current in enumerate(values):
+                    wildcard_suffix = (
+                        f" match {match_index}"
+                        if "*" in field.projection_path
+                        else ""
+                    )
+                    validate_json_schema_value(
+                        current,
+                        field.json_schema,
+                        context=(
+                            f"{context}{suffix} field {field_name!r}"
+                            f"{wildcard_suffix}"
+                        ),
+                    )
 
     @staticmethod
     def _normalize_projected_units(
@@ -1229,18 +1352,6 @@ class RegistryExecutor:
             if field is None or field.unit_normalization is None:
                 continue
 
-            current: Any = normalized
-            path = field.result_projection_path
-            missing = False
-            for part in path[:-1]:
-                if not isinstance(current, dict) or part not in current:
-                    missing = True
-                    break
-                current = current[part]
-            if missing or not isinstance(current, dict) or path[-1] not in current:
-                continue
-
-            raw_value = current[path[-1]]
             spec = field.unit_normalization
 
             def convert_numeric(
@@ -1270,7 +1381,11 @@ class RegistryExecutor:
                     )
                 return converted
 
-            current[path[-1]] = convert_numeric(raw_value)
+            RegistryExecutor._transform_path_in_place(
+                normalized,
+                field.result_projection_path,
+                convert_numeric,
+            )
 
         return normalized
 
