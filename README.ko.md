@@ -173,7 +173,7 @@ SchemaRouter는 **어떤 데이터가 필요한지**를 먼저 풀고, 그다음
 ```mermaid
 flowchart TD
     F["LangChain / LangGraph / LlamaIndex / 자체 애플리케이션"] --> SR["SchemaRouter"]
-    SR --> T["OpenAPI / MCP / OPTIMADE / Python"]
+    SR --> T["OpenAPI / MCP / OPTIMADE / GraphQL / OData / OpenRPC / Python / SDK"]
 ```
 
 상위 프레임워크가 대화, 질의 분해, 생성, 메모리, 그래프, 에이전트 루프를 맡고, SchemaRouter는
@@ -185,13 +185,34 @@ Laya, Ollama, Jev/System-One, 호스팅 모델, 임베딩, pairwise 결정 백�
 
 ## capability 연결
 
+현재 `main`은 여러 범용 수집 경로를 지원합니다. 가능한 경우 가장 풍부하고 권위 있는
+기계 판독 계약을 우선하고, SDK나 스키마가 약한 REST만 제공되는 경우에는 신뢰된 wrapper/binding을
+사용합니다.
+
 | 소스 | 적합한 경우 | 진입점 |
 | --- | --- | --- |
+| 직접 ToolSpec | 애플리케이션이 이미 정규 계약을 갖고 있을 때 | `router.add_tool(...)` |
 | Python | capability가 로컬에 있고 타입이 붙어 있을 때 | `router.add_callable(...)` |
-| OpenAPI | HTTP API가 기계가 읽을 수 있는 계약을 낼 때 | `SchemaRouter.from_url(..., kind="openapi")` |
-| MCP | capability가 MCP로 노출돼 있을 때 | `SchemaRouter.from_url(..., kind="mcp")` |
+| ToolSpec + SDK/client | transport는 신뢰하지만 안전한 자동 introspection이 어려울 때 | `router.add_bound_tool(...)` |
+| OpenAPI | HTTP API가 OpenAPI/Swagger를 낼 때 | `SchemaRouter.from_url(..., kind="openapi")` |
+| MCP Streamable HTTP | MCP 서버가 HTTP로 접근 가능할 때 | `SchemaRouter.from_url(..., kind="mcp")` |
+| MCP stdio | 로컬 MCP 서버를 신뢰된 subprocess로 실행할 때 | `router.add_mcp_stdio(...)` |
+| MCP custom transport | 애플리케이션이 MCP client lifecycle을 이미 소유할 때 | `router.add_mcp_client_factory(...)` |
 | OPTIMADE | 소재 데이터가 OPTIMADE로 노출돼 있을 때 | `SchemaRouter.from_url(..., kind="optimade")` |
+| GraphQL | introspection과 selection set을 쓸 수 있을 때 | `SchemaRouter.from_url(..., kind="graphql")` |
+| OData | CSDL/`$metadata`와 `$select`를 제공할 때 | `SchemaRouter.from_url(..., kind="odata")` |
+| OpenRPC | JSON-RPC 서비스가 OpenRPC를 낼 때 | `SchemaRouter.from_url(..., kind="openrpc")` |
+| LangChain tool | 이미 LangChain tool로 존재할 때 | `router.add_langchain_tool(...)` |
+| LlamaIndex tool | 이미 LlamaIndex tool로 존재할 때 | `router.add_llamaindex_tool(...)` |
+| REST/JSON | 신뢰된 계약은 있지만 discoverable schema가 없을 때 | `router.add_http_tool(...)` |
+| 커스텀 프로토콜 | 별도 discovery/transport가 필요할 때 | `router.register_adapter(...)` |
 | 사람이 읽는 문서 | 기계가 읽을 수 있는 계약이 없을 때 | 검사 → 제안 → 명시적 승인 |
+
+하나의 provider에 여러 접근 경로를 동시에 등록할 수도 있습니다. 예를 들어 Materials Project는
+같은 provider 아래 OpenAPI, OPTIMADE, Python/mp-api, 명시적 SDK binding을 서로 다른
+`access_mode`로 둘 수 있습니다.
+
+[범용 ingestion matrix와 여러 도메인 예시 보기 →](docs/guides/universal-ingestion.md)
 
 LangChain, LangGraph, LlamaIndex 브리지와 선택형 OpenTelemetry 내보내기를 제공합니다. 표준이
 아닌 결정 런타임은 `schemarouter.decision_backends` entry-point 플러그인으로 연결할 수 있습니다.
@@ -214,6 +235,8 @@ LangChain, LangGraph, LlamaIndex 브리지와 선택형 OpenTelemetry 내보내�
 - LangChain, LangGraph, LlamaIndex, Jev/System-One, Laya, Ollama, OpenTelemetry 연동 지점
 
 그래서 등록된 capability와 지원되는 라우팅 상황에서는 **지금도 아키텍처가 동작합니다**.
+현재 `main`에는 여기에 명시적 SDK/client binding, LangChain/LlamaIndex tool 역방향 수집, GraphQL, OData, OpenRPC, declarative HTTP/JSON, MCP stdio/custom transport, record-preserving nested array field가 추가되어 있습니다. 이 신규 surface는 배포된 0.12.0 wheel이 아니라 다음 릴리스 대상입니다.
+
 
 ## 현재 연구 방향: 에이전트를 위한 압축된 capability 검색
 

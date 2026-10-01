@@ -11,7 +11,9 @@ inputs as equivalent.
 | OData v4 CSDL | Automatic entity-set discovery | Automatic read-only binding | Metadata narrows shape; writes remain ungranted |
 | GraphQL introspection | Automatic query/mutation discovery | Same-endpoint automatic | Query narrows to read-only; mutations remain policy-gated |
 | OPTIMADE | `/info` + `/info/<entry_type>` discovery | Automatic read-only HTTP binding | Remote schema is descriptive |
-| MCP Streamable HTTP | Automatic discovery | Automatic transport, policy-gated | Remote annotations are untrusted |
+| MCP Streamable HTTP | Automatic discovery | Automatic HTTP transport, policy-gated | Remote annotations are untrusted |
+| MCP stdio | Automatic discovery from trusted subprocess | Trusted local stdio lifecycle | command/argv/env are local configuration |
+| MCP custom client factory | Automatic discovery through caller-owned client | Caller-owned transport lifecycle | transport state stays outside ToolSpec |
 | Declarative HTTP/JSON | Trusted local ToolSpec | Automatic fixed-origin HTTP binding | Local manifest; secrets stay runtime-only |
 | Custom `SourceAdapter` | Adapter-defined | Adapter-defined | Must preserve local policy authority |
 | Human-readable docs | Model-assisted proposal | Explicit approval required | Inferred, evidence-grounded |
@@ -40,13 +42,24 @@ Use **OPTIMADE** when querying interoperable materials databases. SchemaRouter d
 type and its available properties, creates read-only search/get endpoints, and maps planned output
 fields to OPTIMADE `response_fields`.
 
-Use **MCP** when the capability already participates in the MCP ecosystem. The official SDK handles
-protocol negotiation; SchemaRouter imports the tool schemas and applies its own policy and runtime
-validation.
+Use **MCP** when the capability already participates in the MCP ecosystem. Streamable HTTP is the
+URL-oriented path; local servers can use `add_mcp_stdio(...)`, and caller-owned/in-process or
+enterprise transports can use `add_mcp_client_factory(...)`. Command arguments, environment
+secrets, sockets, credentials, and client state remain trusted transport configuration rather than
+model-selectable schema fields.
 
-Use a **custom adapter** when the source follows another structured protocol such as GraphQL, OData,
-STAC, FHIR, or a domain-specific standard. Adapters compile protocol semantics into canonical
-SchemaRouter contracts rather than adding protocol-specific branches to the planner.
+Use an **existing LangChain/LlamaIndex tool** when the capability is already packaged in one of
+those ecosystems. SchemaRouter imports the declared tool contract and binds its trusted invocation
+path instead of requiring a service-specific adapter.
+
+Use an **explicit ToolSpec + trusted invoker** when an SDK/client cannot be safely introspected.
+This is the universal escape hatch for yfinance, mp-api helpers, internal SDKs, database clients,
+CLI wrappers, and similar trusted transports.
+
+Use a **custom adapter** when the source follows another structured protocol that is not built in,
+such as a STAC overlay, FHIR-specific surface, gRPC descriptor plugin, WSDL/SOAP integration, or an
+organization-specific standard. Adapters compile protocol semantics into canonical SchemaRouter
+contracts rather than adding provider-specific branches to the planner.
 
 Use **human-readable documentation** only when no structured contract exists. This path creates a
 non-executable proposal first because model inference is weaker evidence than a published schema.
@@ -78,4 +91,7 @@ When an API has a precise trusted contract but no discoverable OpenAPI/MCP/OPTIM
 locally declared `ToolSpec` and bind it with `router.add_http_tool(...)`. This preserves the
 normal parameter, field, validation, policy, provenance, and secret-separation boundaries without
 inventing a second REST-specific schema language.
+
+For a cross-domain view of these modes and concrete service examples, see
+[Universal capability ingestion](../guides/universal-ingestion.md).
 
