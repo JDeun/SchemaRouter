@@ -62,12 +62,12 @@ def conditional_schema_headers(
     headers: Mapping[str, str] | None,
     validators: object,
 ) -> dict[str, str] | None:
-    output = dict(headers or {})
+    output = {
+        key: value
+        for key, value in dict(headers or {}).items()
+        if key.lower() not in {"if-none-match", "if-modified-since"}
+    }
     normalized = normalize_schema_http_validators(validators)
-
-    existing = {key.lower() for key in output}
-    if {"if-none-match", "if-modified-since"} & existing:
-        return output or None
 
     etag = normalized.get("etag")
     if etag is not None:
