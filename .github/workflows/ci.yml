@@ -133,6 +133,10 @@ jobs:
       - run: /tmp/schemarouter-wheel/bin/pip install dist/*.whl
       - run: /tmp/schemarouter-wheel/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
+      - run: /tmp/schemarouter-wheel/bin/python examples/sdk_bound.py
+      - run: /tmp/schemarouter-wheel/bin/python examples/mixed_provider.py
+      - run: /tmp/schemarouter-wheel/bin/python examples/context_reduction.py
+      - run: /tmp/schemarouter-wheel/bin/python examples/schema_drift_watch.py
       - run: /tmp/schemarouter-wheel/bin/python scripts/quickstart_provider_contract_smoke.py
       - run: /tmp/schemarouter-wheel/bin/python scripts/consumer_acceptance.py --json-out artifacts/consumer-acceptance-wheel.json
       - run: /tmp/schemarouter-wheel/bin/schemarouter --help
@@ -268,6 +272,7 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[dev,mcp]"
       - run: pytest -q tests/test_mcp_integration.py
+      - run: python examples/mcp_transports.py
 
   docs:
     runs-on: ubuntu-latest
