@@ -37,7 +37,14 @@ jobs:
           fi
       - run: python -m pip install --upgrade pip
       - run: pip install -e ".[docs]"
-      - run: mkdocs build --strict
+      - name: Prepare Korean documentation tree
+        run: python scripts/prepare_korean_docs.py
+      - name: Build English documentation
+        run: mkdocs build --strict -f mkdocs.yml
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+      - name: Build Korean documentation
+        run: mkdocs build --strict -f mkdocs.ko.yml
         env:
           NO_MKDOCS_2_WARNING: "1"
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
