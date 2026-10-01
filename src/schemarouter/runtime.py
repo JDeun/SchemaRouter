@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterator, Mapping, Sequence
 from typing import Any, TypeVar
 from urllib.parse import urlparse
 from uuid import uuid4
@@ -11,7 +11,15 @@ import httpx
 from pydantic import TypeAdapter
 
 from .adapters.base import AdapterRegistry, SourceAdapter
-from .adapters.mcp import MCPClientFactory
+from .adapters.mcp import (
+    MCPBoundClientFactory,
+    MCPBoundInvoker,
+    MCPClientFactory,
+    MCPStdioClientFactory,
+    MCPStdioConfig,
+    inspect_mcp_client_factory,
+    inspect_mcp_stdio,
+)
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
@@ -842,6 +850,149 @@ class SchemaRouter:
             expected_fingerprint=tool.fingerprint,
         )
         return key
+
+    async def add_mcp_client_factory(
+        self,
+        client_factory: MCPBoundClientFactory,
+        *,
+        name: str | None = None,
+        namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
+        transport: str = "custom",
+        transport_fingerprint: str | None = None,
+        replace: bool = False,
+        timeout: float = 20.0,
+    ) -> ToolSpec:
+        """Import MCP tools through a trusted transport-neutral client factory.
+
+        The factory owns transport, credentials, subprocesses, sockets, or in-process state.
+        None of that trusted state is copied into the model-visible ToolSpec.
+        """
+
+        if not isinstance(transport, str) or not transport.strip():
+            raise ValueError("MCP transport label must be a non-empty string")
+        if transport_fingerprint is not None and (
+            not isinstance(transport_fingerprint, str)
+            or not transport_fingerprint.strip()
+        ):
+            raise ValueError(
+                "MCP transport_fingerprint must be a non-empty string when provided"
+            )
+
+        tool = await inspect_mcp_client_factory(
+            client_factory,
+            server_name=name,
+            namespace=namespace,
+            timeout=timeout,
+            transport=transport.strip(),
+            transport_fingerprint=(
+                transport_fingerprint.strip()
+                if transport_fingerprint is not None
+                else None
+            ),
+        )
+        if provider is not None:
+            tool.provider = provider
+        if access_mode is not None:
+            tool.access_mode = access_mode
+        elif tool.access_mode is None:
+            tool.access_mode = f"mcp_{transport.strip()}"
+
+        invoker = MCPBoundInvoker(
+            client_factory,
+            timeout=timeout,
+        )
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(tool.key)
+            except KeyError:
+                key = self.registry.register(tool)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    tool,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(tool)
+
+        self.executor.bind(
+            key,
+            invoker,
+            expected_fingerprint=tool.fingerprint,
+        )
+        return self.registry.get(key)
+
+
+
+    async def add_mcp_stdio(
+        self,
+        command: str,
+        *,
+        args: Sequence[str] = (),
+        env: Mapping[str, str] | None = None,
+        cwd: str | None = None,
+        allowed_commands: Sequence[str] = (),
+        name: str | None = None,
+        namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
+        replace: bool = False,
+        timeout: float = 20.0,
+    ) -> ToolSpec:
+        """Spawn a trusted local MCP stdio server and register its advertised tools."""
+
+        config = MCPStdioConfig(
+            command=command,
+            args=tuple(args),
+            env=dict(env) if env is not None else None,
+            cwd=cwd,
+            allowed_commands=tuple(allowed_commands),
+        )
+        tool = await inspect_mcp_stdio(
+            config,
+            server_name=name,
+            namespace=namespace,
+            timeout=timeout,
+        )
+        if provider is not None:
+            tool.provider = provider
+        if access_mode is not None:
+            tool.access_mode = access_mode
+        elif tool.access_mode is None:
+            tool.access_mode = "mcp_stdio"
+
+        invoker = MCPBoundInvoker(
+            MCPStdioClientFactory(config),
+            timeout=timeout,
+        )
+        if replace:
+            expected_version = self.registry.version
+            try:
+                current = self.registry.get(tool.key)
+            except KeyError:
+                key = self.registry.register(tool)
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    tool,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+        else:
+            key = self.registry.register(tool)
+
+        self.executor.bind(
+            key,
+            invoker,
+            expected_fingerprint=tool.fingerprint,
+        )
+        return self.registry.get(key)
+
+
 
     async def add_url(
         self,
