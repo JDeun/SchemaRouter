@@ -2,6 +2,11 @@
 
 Tracking issue: #506
 
+> **Current status — 2026-10-02:** the original #506 DEV screen is consumed as an instrument
+> failure because the frozen small agent did not call tools. The preregistered #510 successor
+> runtime qualification is active. Its infrastructure recoveries are instrument-transport work,
+> not projection evidence; the projection successor remains gated on a terminal qualified runtime.
+
 ## The question
 
 > Holding the query, the candidate exposure, the selected route and the raw tool
