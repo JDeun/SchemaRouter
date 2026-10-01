@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import unittest
 
 from scripts.external_validation_mcp_agent import evaluate
