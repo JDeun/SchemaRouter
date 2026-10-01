@@ -476,6 +476,18 @@ class RegistryExecutor:
         self._invokers.pop(tool_key, None)
         self._binding_fingerprints.pop(tool_key, None)
 
+    def purge_tool_runtime_state(self, tool_key: str) -> None:
+        """Forget trusted binding and bounded availability state for one tool."""
+
+        self.unbind(tool_key)
+        stale = [
+            key
+            for key in self._unavailable_until
+            if key[0] == tool_key
+        ]
+        for key in stale:
+            self._unavailable_until.pop(key, None)
+
     def bound_keys(self) -> tuple[str, ...]:
         """Return live trusted-invoker keys without exposing invoker objects."""
         return tuple(sorted(self._invokers))
