@@ -37,30 +37,43 @@ def adapter_probe_error(
 ) -> AdapterProbeError:
     """Classify a discovery exception without copying remote payloads or secrets."""
 
-    if isinstance(exc, AdapterProbeError):
-        return exc
-    if isinstance(exc, httpx.HTTPStatusError):
-        status = exc.response.status_code
-        if status in {401, 403}:
+    current: BaseException | None = exc
+    seen: set[int] = set()
+    wrapped_schema_error = False
+
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, AdapterProbeError):
+            return current
+        if isinstance(current, httpx.HTTPStatusError):
+            status = current.response.status_code
+            if status in {401, 403}:
+                return AdapterProbeError(
+                    "authentication_failed",
+                    (
+                        f"{adapter_kind} discovery was denied by the remote "
+                        f"server (HTTP {status})"
+                    ),
+                )
+            if status == 404:
+                return AdapterProbeError(
+                    "not_found",
+                    f"{adapter_kind} discovery endpoint was not found (HTTP 404)",
+                )
             return AdapterProbeError(
-                "authentication_failed",
-                f"{adapter_kind} discovery was denied by the remote server (HTTP {status})",
+                "protocol_error",
+                f"{adapter_kind} discovery returned HTTP {status}",
             )
-        if status == 404:
+        if isinstance(current, (httpx.TimeoutException, httpx.TransportError)):
             return AdapterProbeError(
-                "not_found",
-                f"{adapter_kind} discovery endpoint was not found (HTTP 404)",
+                "unreachable",
+                f"{adapter_kind} discovery could not reach the remote source",
             )
-        return AdapterProbeError(
-            "protocol_error",
-            f"{adapter_kind} discovery returned HTTP {status}",
-        )
-    if isinstance(exc, (httpx.TimeoutException, httpx.TransportError)):
-        return AdapterProbeError(
-            "unreachable",
-            f"{adapter_kind} discovery could not reach the remote source",
-        )
-    if isinstance(exc, SchemaSourceError):
+        if isinstance(current, SchemaSourceError):
+            wrapped_schema_error = True
+        current = current.__cause__ or current.__context__
+
+    if wrapped_schema_error:
         return AdapterProbeError(
             "invalid_schema",
             f"{adapter_kind} discovery rejected the structured source",
