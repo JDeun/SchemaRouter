@@ -55,6 +55,7 @@ from .decisions import (
     choose_sync,
 )
 from .errors import (
+    AdapterProbeError,
     ApprovalDeniedError,
     BindingDriftError,
     ContractAmendmentError,
@@ -133,6 +134,7 @@ from .openapi_compatibility import (
 )
 from .pairwise import PairwiseDecisionBackend, PairwiseScoreCallable
 from .planner import KeywordAnalyzer, QueryAnalyzer, SchemaPlanner
+from .probe_diagnostics import SourceProbeDiagnostic
 from .policy import (
     ApprovalCallback,
     ExecutionPolicy,
@@ -173,6 +175,7 @@ __all__ = [
     "AdapterLoadResult",
     "AdapterPluginInfo",
     "AdapterRegistry",
+    "AdapterProbeError",
     "ApprovalCallback",
     "AccessHealthMonitor",
     "AfterExecutionHook",
@@ -285,6 +288,7 @@ __all__ = [
     "SemanticFieldRequirement",
     "ServerProjectionSpec",
     "SourceAdapter",
+    "SourceProbeDiagnostic",
     "SourceProbeResult",
     "OPTIMADESourceAdapter",
     "ToolCall",
