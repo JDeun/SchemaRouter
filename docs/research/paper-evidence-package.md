@@ -84,6 +84,16 @@ The evidence package should be read with these limits:
 
 ## Final-paper closure
 
-The package can be regenerated throughout the 0.11 cycle. Final paper tables must be cut only
-after the promoted candidate has a validated freeze manifest, passes independent fresh
-confirmation, and completes the #198 calibration/blind protocol without semantic retuning.
+The package can be regenerated throughout the active 0.14 cycle, but final paper tables must not
+treat an active or infrastructure-invalid run as scientific evidence. The current closure path is:
+
+- terminal #431 corrective aggregate and preregistered gate;
+- terminal #432 large held-out generalization result;
+- terminal #424 final-answer factual/value/unit/provenance result;
+- terminal #510 runtime qualification and the successor projection result if that field-level line
+  is included in the paper.
+
+Historical calibration/blind work from the earlier operation-routing lineage remains part of the
+ledger, but it is not a substitute for the frozen 0.14 held-out and final-answer evidence above.
+Every final table must be reconstructable from the canonical ledger plus immutable workflow/artifact
+provenance without semantic retuning from consumed or invalid runs.
