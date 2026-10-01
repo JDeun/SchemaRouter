@@ -1,12 +1,11 @@
 # SchemaRouter란?
 
-SchemaRouter는 MCP, OpenAPI, Python, framework tool을 아우르는 **LLM/RAG 에이전트용 typed
-capability retrieval 및 schema-aware execution 계층**입니다.
+SchemaRouter는 MCP, OpenAPI, Python, 프레임워크 도구를 **하나의 타입 기반 capability
+검색·실행 경계**로 다루는 라이브러리입니다.
 
-범용 agent framework보다는 범위가 좁고, 단순 semantic tool router보다는 더 깊은 실행 경계를
-다룹니다. RAG에서 외부 정보가 API나 tool을 통해 들어오는 경우, SchemaRouter는 그 source를
-typed endpoint/field contract로 정규화하고 상위 agent가 사용할 수 있는 작은 trusted executable
-surface를 제공합니다.
+범용 agent framework처럼 대화와 추론 루프 전체를 맡지는 않습니다. 대신 API나 tool에서 외부
+데이터를 가져와야 할 때, 각 source를 endpoint/field 계약으로 정리하고 상위 agent가 볼 수 있는
+실행 후보를 필요한 범위로 줄여 줍니다.
 
 ## 역할 분리
 
@@ -17,8 +16,8 @@ surface를 제공합니다.
 | Optional decision backend | 로컬에서 허가된 유한 후보 중 bounded selection |
 | Capability source | OpenAPI, MCP, OPTIMADE, Python callable, 승인된 adapter/plugin |
 
-Laya, Ollama, Jev 같은 decision backend는 중첩 agent가 아닙니다. 새 capability를 만들거나,
-별도의 tool loop를 시작하거나, execution authority를 얻을 수 없습니다.
+Laya, Ollama, Jev 같은 decision backend는 후보 선택을 보조할 뿐입니다. 새 capability를
+만들거나 별도의 tool loop를 시작할 수 없고, 실행 권한도 갖지 않습니다.
 
 ## 단순 라우팅보다 더 세분화된 계획
 
@@ -42,7 +41,7 @@ Query
   -> execution policy / availability
 ```
 
-계획은 실행 직전에 다시 검증됩니다.
+이 계획은 그대로 실행하지 않고, 실제 호출 직전에 다시 검증합니다.
 
 ## Endpoint가 first-class인 이유
 
@@ -71,8 +70,8 @@ prompt token을 낭비할 수 있습니다. SchemaRouter는 **field-first, route
 
 ## 실행 단계에서 다시 검증하는 이유
 
-Planning 결과 자체에는 실행 권한이 없습니다. planning과 execution 사이에 schema, binding,
-parameter, policy가 바뀔 수 있습니다. Executor는 다음을 다시 확인합니다.
+계획 결과만으로는 도구를 실행할 수 없습니다. 계획을 만든 뒤 실제 호출까지 사이에 schema,
+binding, parameter, policy가 달라질 수 있기 때문에 executor가 다음 항목을 다시 확인합니다.
 
 - required arguments
 - schema/tool fingerprint
