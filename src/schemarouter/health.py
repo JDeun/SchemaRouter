@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Literal
 
-from .errors import PlanValidationError
+from .errors import PlanValidationError, RegistrationError
 from .executor import RegistryExecutor
 
 HealthProbe = Callable[[], bool | Awaitable[bool]]
@@ -28,6 +28,8 @@ class HealthProbeSnapshot:
 class _ProbeRecord:
     probe: HealthProbe
     tool_fingerprint: str
+    generation: int = 0
+    invalidated_reason: str | None = None
     status: HealthStatus = "unknown"
     last_checked_at: datetime | None = None
     last_error_type: str | None = None
@@ -86,6 +88,52 @@ class AccessHealthMonitor:
         for key in stale:
             self._probes.pop(key, None)
 
+    def transition_tool_contract(
+        self,
+        tool_key: str,
+        *,
+        expected_old_fingerprint: str,
+        expected_new_fingerprint: str,
+    ) -> None:
+        """Carry trusted probes across one accepted contract transition."""
+
+        candidates = [
+            (endpoint, record)
+            for (registered_tool, endpoint), record in self._probes.items()
+            if registered_tool == tool_key
+            and record.tool_fingerprint == expected_old_fingerprint
+        ]
+        if not candidates:
+            return
+
+        current = self.executor.registry.get(tool_key)
+        if current.fingerprint != expected_new_fingerprint:
+            raise RegistrationError(
+                f"tool {tool_key!r} changed before health probes could be restamped"
+            )
+
+        for endpoint, record in candidates:
+            record.generation += 1
+            record.tool_fingerprint = expected_new_fingerprint
+
+            try:
+                endpoint_spec = current.endpoint(endpoint)
+            except KeyError:
+                record.invalidated_reason = "EndpointRemoved"
+                record.status = "stale"
+                record.last_error_type = record.invalidated_reason
+                continue
+
+            if endpoint_spec.read_only is not True:
+                record.invalidated_reason = "EndpointNoLongerReadOnly"
+                record.status = "stale"
+                record.last_error_type = record.invalidated_reason
+                continue
+
+            record.invalidated_reason = None
+            record.status = "unknown"
+            record.last_error_type = None
+
     @asynccontextmanager
     async def lifecycle_guard(self):
         """Quiesce probe execution while a router lifecycle mutation runs."""
@@ -99,6 +147,8 @@ class AccessHealthMonitor:
         endpoint: str,
         record: _ProbeRecord,
     ) -> tuple[bool, str | None]:
+        if record.invalidated_reason is not None:
+            return False, record.invalidated_reason
         try:
             current_tool = self.executor.registry.get(tool_key)
             current_tool.endpoint(endpoint)
@@ -145,6 +195,7 @@ class AccessHealthMonitor:
                 record.last_error_type = stale_reason
                 return
 
+            generation = record.generation
             try:
                 outcome = record.probe()
                 if inspect.isawaitable(outcome):
@@ -152,6 +203,9 @@ class AccessHealthMonitor:
                         outcome,
                         timeout=probe_timeout_seconds,
                     )
+
+                if record.generation != generation:
+                    return
 
                 current, stale_reason = self._contract_status(
                     tool_key,
@@ -177,6 +231,8 @@ class AccessHealthMonitor:
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
+                if record.generation != generation:
+                    return
                 error_type = type(exc).__name__
                 current, stale_reason = self._contract_status(
                     tool_key,

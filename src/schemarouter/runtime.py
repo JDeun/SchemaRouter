@@ -485,6 +485,11 @@ class SchemaRouter:
                 "could not be re-stamped because the registered contract changed "
                 "concurrently; the binding is stale until it is bound again"
             )
+        self.health_monitor.transition_tool_contract(
+            key,
+            expected_old_fingerprint=current.fingerprint,
+            expected_new_fingerprint=amended.fingerprint,
+        )
         return key
 
     def register_adapter(
@@ -1339,6 +1344,11 @@ class SchemaRouter:
                         candidate_invoker,
                         expected_fingerprint=candidate_tool.fingerprint,
                     )
+            self.health_monitor.transition_tool_contract(
+                tool_key,
+                expected_old_fingerprint=current.fingerprint,
+                expected_new_fingerprint=candidate_tool.fingerprint,
+            )
             return SchemaRefreshResult(
                 tool_key=tool_key,
                 action="applied",
