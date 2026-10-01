@@ -38,6 +38,7 @@ class StorageComponentInspection(StrictModel):
     migrations: list[StorageMigrationRecord] = Field(default_factory=list)
 
     @computed_field
+    @computed_field
     @property
     def migration_required(self) -> bool:
         return self.status == "legacy"
@@ -47,6 +48,7 @@ class StorageInspection(StrictModel):
     path: str
     components: list[StorageComponentInspection] = Field(default_factory=list)
 
+    @computed_field
     @computed_field
     @property
     def migration_required(self) -> bool:
