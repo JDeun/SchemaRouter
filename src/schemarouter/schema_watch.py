@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 from collections.abc import Awaitable, Callable, Mapping
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Literal
@@ -95,6 +96,13 @@ class SchemaWatchManager:
     @property
     def running(self) -> bool:
         return self._task is not None and not self._task.done()
+
+    @asynccontextmanager
+    async def lifecycle_guard(self):
+        """Quiesce schema refresh while a router lifecycle mutation runs."""
+
+        async with self._run_lock:
+            yield
 
     @staticmethod
     def _adapter(tool: Any) -> str | None:
