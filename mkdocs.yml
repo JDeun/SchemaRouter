@@ -128,13 +128,14 @@ nav:
       - OpenAPI compatibility: guides/openapi-compatibility.md
       - OpenRPC / JSON-RPC: guides/openrpc.md
       - OData: guides/odata.md
-      - Universal ingestion matrix: guides/universal-ingestion.md
       - GraphQL: guides/graphql.md
       - OPTIMADE: guides/optimade.md
       - MCP: guides/mcp.md
       - Declarative HTTP/JSON: guides/http-json.md
+      - Universal ingestion matrix: guides/universal-ingestion.md
       - Human-readable documentation: guides/html-documentation.md
       - Third-party adapter plugins: guides/adapter-plugins.md
+      - Protocol plugin recipes: guides/protocol-plugin-recipes.md
       - Recipes:
           - OpenAPI agent boundary: recipes/openapi-agent.md
           - MCP agent boundary: recipes/mcp-agent.md
