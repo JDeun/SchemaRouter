@@ -138,6 +138,7 @@ def test_universal_modes_cover_first_class_and_generic_ingestion_paths() -> None
     matrix = _matrix()
 
     assert {
+        "manual_tool_spec",
         "openapi",
         "mcp",
         "optimade",
