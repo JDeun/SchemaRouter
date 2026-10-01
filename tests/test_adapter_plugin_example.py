@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import importlib.metadata
-import pathlib
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -10,7 +10,7 @@ from schemarouter import PlanRequest, SchemaRouter
 from schemarouter.adapters import plugins
 
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[1]
 PLUGIN_SOURCE = ROOT / "examples" / "adapter_plugin_demo" / "src"
 PLUGIN_MODULE = "schemarouter_demo_adapter"
 PLUGIN_ENTRY_POINT = "demo_static"
