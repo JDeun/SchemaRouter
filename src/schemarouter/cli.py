@@ -10,7 +10,7 @@ from typing import Any
 
 from .dashboard import write_dashboard
 from .errors import SchemaSourceError, UnsupportedSchemaSourceError
-from .ingestion import SourceProbeResult, default_adapter_registry
+from .ingestion import SourceProbeReport, SourceProbeResult, default_adapter_registry
 from .inspection import (
     RegistryInspection,
     ToolInspection,
@@ -196,6 +196,43 @@ def _render_source_probe(probe: SourceProbeResult) -> str:
         lines.extend(f"  - {warning}" for warning in probe.warnings)
     else:
         lines.append("warnings: none")
+    return "\n".join(lines)
+
+
+def _render_source_probe_report(report: SourceProbeReport) -> str:
+    lines = [
+        f"Structured source: {report.source_url}",
+        f"status: {report.status}",
+        f"requested kind: {report.requested_kind}",
+        f"recognized kind: {report.recognized_kind or '-'}",
+        f"tool: {report.tool_key or '-'}",
+        f"provider: {report.provider or '-'}",
+        f"access_mode: {report.access_mode or '-'}",
+        f"endpoints: {report.endpoint_count}",
+        f"execution binding: {'available' if report.execution_bindable else 'not available'}",
+    ]
+    if report.warnings:
+        lines.append("warnings:")
+        lines.extend(f"  - {warning}" for warning in report.warnings)
+    else:
+        lines.append("warnings: none")
+
+    lines.append("adapter diagnostics:")
+    for diagnostic in report.diagnostics:
+        outcome = diagnostic.status
+        if diagnostic.failure_category is not None:
+            outcome += f"/{diagnostic.failure_category}"
+        activity = diagnostic.discovery_activity
+        methods = ",".join(diagnostic.http_methods) or "-"
+        detail = (
+            f"  - {diagnostic.adapter_kind}: {outcome} "
+            f"({activity}; methods={methods}; attempted={diagnostic.attempted})"
+        )
+        if diagnostic.message:
+            detail += f" · {diagnostic.message}"
+        lines.append(detail)
+    if not report.diagnostics:
+        lines.append("  - none")
     return "\n".join(lines)
 
 
@@ -402,8 +439,8 @@ def _run(args: argparse.Namespace) -> str:
         if args.surface != "probe":
             raise ValueError(f"unsupported source surface: {args.surface}")
         router = SchemaRouter()
-        probe = asyncio.run(
-            router.probe_url(
+        report = asyncio.run(
+            router.diagnose_url(
                 args.url,
                 kind=args.kind,
                 name=args.name,
@@ -414,7 +451,11 @@ def _run(args: argparse.Namespace) -> str:
                 timeout=args.timeout,
             )
         )
-        return _json_dump(probe) if args.json else _render_source_probe(probe)
+        return (
+            _json_dump(report)
+            if args.json
+            else _render_source_probe_report(report)
+        )
 
     if args.command == "dashboard":
         with SQLiteRegistry(_existing_db(args.registry)) as registry:
