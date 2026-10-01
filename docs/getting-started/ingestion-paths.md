@@ -113,6 +113,42 @@ A normal HTML documentation page is not silently converted into an executable to
 detection fails, diagnostics name the skipped active protocols. Use `inspect_url()` for
 human-readable documentation.
 
+### Diagnose a source without registering it
+
+Use `diagnose_url()` when you need to understand why a structured source can or cannot be
+inspected without changing the registry or binding an executor:
+
+```python
+report = await router.diagnose_url(
+    "https://example.com/openapi.json",
+    kind="auto",
+)
+```
+
+The report distinguishes:
+
+- `recognized`;
+- `not_recognized`;
+- sanitized failures such as `authentication_failed`, `not_found`, `unreachable`,
+  `invalid_schema`, `unsupported_feature`, and `protocol_error`;
+- adapters that were skipped because their discovery mode is active.
+
+It also reports passive/active discovery classification, HTTP methods declared by each adapter,
+whether the adapter was attempted, endpoint count, execution-binding availability, and warnings.
+URLs are rendered through credential-free provenance formatting, and response bodies, credential
+values, signed query values, and arbitrary remote error payloads are not copied into diagnostics.
+
+The CLI exposes the same report:
+
+```text
+schemarouter source probe https://example.com/openapi.json
+schemarouter source probe https://example.com/graphql --kind graphql --json
+```
+
+`probe_url()` remains the compact compatibility API: it returns `SourceProbeResult` on success
+and raises on failure. `diagnose_url()` is the preferred API when failure information itself is
+the requested result.
+
 
 ## Declarative HTTP/JSON
 
