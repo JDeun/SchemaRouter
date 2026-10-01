@@ -49,8 +49,8 @@ The release workflow:
 Implementation:
 [release.yml](https://github.com/JDeun/SchemaRouter/blob/main/.github/workflows/release.yml)
 
-A local verifier can additionally download a release artifact and compare its SHA-256 with the table
-above. When GitHub CLI attestation verification is available:
+For 0.14.0 and later, verify artifact digests against the `release-manifest.json` or
+`SHA256SUMS.txt` attached to that release. When GitHub CLI attestation verification is available:
 
 ```bash
 gh attestation verify schemarouter-0.14.0-py3-none-any.whl --repo JDeun/SchemaRouter
