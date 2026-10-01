@@ -601,6 +601,9 @@ class ODataSourceAdapter:
             except Exception as exc:  # noqa: BLE001
                 raise adapter_probe_error("odata", exc) from exc
 
+            if _EDMX_NS.encode("utf-8") not in response.content:
+                return None
+
             try:
                 tool = tool_from_odata_metadata(
                     context.name
