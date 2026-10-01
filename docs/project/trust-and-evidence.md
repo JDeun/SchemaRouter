@@ -57,6 +57,16 @@ gh attestation verify schemarouter-0.13.0-py3-none-any.whl --repo JDeun/SchemaRo
 The repository release checklist treats provenance, SBOM, public-PyPI digest equivalence, and
 post-publish installation as explicit release mechanics rather than optional documentation tasks.
 
+Beginning with the next stable release, the release workflow also attaches two machine-generated
+records so checksums are not copied into documentation by hand:
+
+- `SHA256SUMS.txt` — SHA-256 digests for wheel, sdist, and SPDX SBOM;
+- `release-manifest.json` — package version, tag, exact source commit, artifact names, sizes, and
+  SHA-256 digests.
+
+Those release assets are the canonical per-release checksum record. The static 0.13.0 table above
+is retained as historical evidence for the release that predates this manifest.
+
 ## CI and security automation
 
 The protected product surface is tested through independent workflows rather than one decorative
