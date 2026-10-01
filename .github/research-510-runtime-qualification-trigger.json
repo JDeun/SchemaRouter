@@ -1,11 +1,11 @@
 {
   "issue": 510,
-  "launch": "runtime-qualification-v1-recovery-2",
+  "launch": "runtime-qualification-v1-recovery-3",
   "policy": "run once when this trigger reaches main",
   "candidates": "frozen ordered roster; later candidate only after measured failure",
-  "recovery_of_run": 36808991480,
-  "recovery_of_attempt": 2,
+  "recovery_of_run": 36897572955,
+  "recovery_of_attempt": 3,
   "recovery_class": "infrastructure_only",
-  "recovery_reason": "Qwen3-8B evaluator fan-out raced generic actions/cache post-job publication; four shards failed before inference on repeated attempts",
+  "recovery_reason": "Evaluator cache restore still failed closed when the explicitly published Actions cache was unavailable; recover the same pinned candidate revision locally instead of terminating before inference",
   "prior_scientific_source_sha": "213f14b09a917710785e286d76161cd6d385b8cf"
 }
