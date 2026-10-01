@@ -54,6 +54,31 @@ SchemaRouter does not auto-load all installed decision plugins.
 The returned backend still participates in the normal bounded-decision contract. Any selected option
 ID is validated against the finite IDs offered by SchemaRouter before it can influence planning.
 
+## Runnable external-package example
+
+The repository includes a deterministic package that declares a real decision-backend entry point:
+
+```bash
+python -m pip install -e examples/decision_backend_plugin_demo
+python examples/decision_backend_plugin_quickstart.py
+```
+
+Its package metadata contains:
+
+```toml
+[project.entry-points."schemarouter.decision_backends"]
+demo_bounded = "schemarouter_demo_decision:DemoBoundedDecisionBackend"
+```
+
+The demo backend never receives execution authority. It receives only the finite
+`DecisionRequest.options`, returns one of those IDs when the query exactly matches an offered
+ID/label, and explicitly abstains when none match. SchemaRouter still validates the returned ID
+through `choose_sync()` / `choose_async()`; a plugin that invents an ID fails closed with
+`PlanningError`.
+
+The deterministic implementation is intentionally not a quality benchmark. A hosted/local model can
+replace its `decide()` logic while the same finite-option validation remains in force.
+
 ## Benchmark a plugin without editing SchemaRouter
 
 The shared decision benchmark can load the same installed plugin:
