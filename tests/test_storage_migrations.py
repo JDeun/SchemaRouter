@@ -458,7 +458,6 @@ def test_backup_api_refuses_to_overwrite_source_path(tmp_path) -> None:
         backup_sqlite_storage(path, path)
 
 
-
 def test_explicit_migration_is_atomic_across_registry_and_trace_components(
     tmp_path,
 ) -> None:
@@ -514,7 +513,6 @@ def test_explicit_migration_is_atomic_across_registry_and_trace_components(
 
     assert "schemarouter_storage_meta" not in tables
     assert row is not None and int(row[0]) == 7
-
 
 
 def test_malformed_legacy_registry_meta_shape_fails_as_storage_error(
@@ -590,7 +588,6 @@ def test_backup_refuses_existing_destination_without_overwrite(tmp_path) -> None
         backup_sqlite_storage(path, backup)
 
     assert backup.read_bytes() == b"do-not-overwrite"
-
 
 
 def test_current_format_corrupt_document_is_reported_by_storage_inspect(
