@@ -257,35 +257,34 @@ def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
 
         for name, spec in _merged_properties(output_schema, resolved).items():
             path = (*prefix, name)
-            if prefix:
-                field_name = _mcp_field_name_from_path(path)
-                if field_name not in seen_names:
-                    seen_names.add(field_name)
-                    resolved_spec = _resolve_output_schema(output_schema, spec)
-                    discovered.append(
-                        FieldSpec(
-                            name=field_name,
-                            description=str(resolved_spec.get("description") or ""),
-                            json_schema=resolved_spec,
-                            path=list(path),
-                            result_path=(
-                                list(path)
-                                if "*" in path
-                                else [field_name]
-                            ),
-                            unit=_schema_unit(resolved_spec),
-                            identifier=(
-                                name in {"id", "uuid", "key"}
-                                or name.endswith("_id")
-                            ),
-                            aliases=list(
-                                dict.fromkeys(
-                                    [name, name.replace("_", " ")]
-                                )
-                            ),
-                            source_type="mcp",
-                        )
+            field_name = _mcp_field_name_from_path(path)
+            if field_name not in seen_names:
+                seen_names.add(field_name)
+                resolved_spec = _resolve_output_schema(output_schema, spec)
+                discovered.append(
+                    FieldSpec(
+                        name=field_name,
+                        description=str(resolved_spec.get("description") or ""),
+                        json_schema=resolved_spec,
+                        path=list(path),
+                        result_path=(
+                            list(path)
+                            if "*" in path
+                            else [field_name]
+                        ),
+                        unit=_schema_unit(resolved_spec),
+                        identifier=(
+                            name in {"id", "uuid", "key"}
+                            or name.endswith("_id")
+                        ),
+                        aliases=list(
+                            dict.fromkeys(
+                                [name, name.replace("_", " ")]
+                            )
+                        ),
+                        source_type="mcp",
                     )
+                )
 
             visit(
                 spec,
