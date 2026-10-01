@@ -6,7 +6,7 @@ from html import escape
 from pathlib import Path
 from typing import Any, Literal, Sequence
 
-from pydantic import Field
+from pydantic import Field, computed_field
 
 from .errors import RegistrationError
 from .inspection import RouterInspection, tool_spec_document
@@ -118,6 +118,7 @@ class ExplorerEndpoint(StrictModel):
     fingerprint: str
     live: ExplorerEndpointLiveStatus | None = None
 
+    @computed_field
     @property
     def auth_required(self) -> bool:
         return bool(self.auth_requirements)
