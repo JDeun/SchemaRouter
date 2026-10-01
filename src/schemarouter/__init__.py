@@ -86,6 +86,20 @@ from .errors import (
     TraceError,
     UnsupportedSchemaSourceError,
 )
+from .explorer import (
+    ExplorerAuthRequirement,
+    ExplorerAuthScheme,
+    ExplorerEndpoint,
+    ExplorerEndpointLiveStatus,
+    ExplorerField,
+    ExplorerParameter,
+    ExplorerTool,
+    ExplorerToolLiveStatus,
+    SchemaExplorerDocument,
+    build_schema_explorer_document,
+    render_schema_explorer,
+    write_schema_explorer,
+)
 from .executor import RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot, HealthStatus
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
@@ -253,6 +267,14 @@ __all__ = [
     "FallbackRoute",
     "FallbackScope",
     "ExecutionPolicy",
+    "ExplorerAuthRequirement",
+    "ExplorerAuthScheme",
+    "ExplorerEndpoint",
+    "ExplorerEndpointLiveStatus",
+    "ExplorerField",
+    "ExplorerParameter",
+    "ExplorerTool",
+    "ExplorerToolLiveStatus",
     "FieldSelectionExplanation",
     "FieldSpec",
     "FirstOptionDecisionBackend",
@@ -310,6 +332,7 @@ __all__ = [
     "SchemaChangeSeverity",
     "SchemaCompatibility",
     "SchemaDiffReport",
+    "SchemaExplorerDocument",
     "SchemaPlanner",
     "SchemaProposal",
     "SchemaRouter",
@@ -352,6 +375,9 @@ __all__ = [
     "choose_sync",
     "compare_endpoint_specs",
     "compare_tool_specs",
+    "build_schema_explorer_document",
+    "render_schema_explorer",
+    "write_schema_explorer",
     "backup_sqlite_storage",
     "inspect_sqlite_storage",
     "migrate_sqlite_storage",
