@@ -11,7 +11,9 @@ inputs as equivalent.
 | OData v4 CSDL | Automatic entity-set discovery | Automatic read-only binding | Metadata narrows shape; writes remain ungranted |
 | GraphQL introspection | Automatic query/mutation discovery | Same-endpoint automatic | Query narrows to read-only; mutations remain policy-gated |
 | OPTIMADE | `/info` + `/info/<entry_type>` discovery | Automatic read-only HTTP binding | Remote schema is descriptive |
-| MCP Streamable HTTP | Automatic discovery | Automatic transport, policy-gated | Remote annotations are untrusted |
+| MCP Streamable HTTP | Automatic discovery | Automatic HTTP transport, policy-gated | Remote annotations are untrusted |
+| MCP stdio | Automatic discovery from trusted subprocess | Trusted local stdio lifecycle | command/argv/env are local configuration |
+| MCP custom client factory | Automatic discovery through caller-owned client | Caller-owned transport lifecycle | transport state stays outside ToolSpec |
 | Declarative HTTP/JSON | Trusted local ToolSpec | Automatic fixed-origin HTTP binding | Local manifest; secrets stay runtime-only |
 | Custom `SourceAdapter` | Adapter-defined | Adapter-defined | Must preserve local policy authority |
 | Human-readable docs | Model-assisted proposal | Explicit approval required | Inferred, evidence-grounded |
@@ -40,9 +42,11 @@ Use **OPTIMADE** when querying interoperable materials databases. SchemaRouter d
 type and its available properties, creates read-only search/get endpoints, and maps planned output
 fields to OPTIMADE `response_fields`.
 
-Use **MCP** when the capability already participates in the MCP ecosystem. The official SDK handles
-protocol negotiation; SchemaRouter imports the tool schemas and applies its own policy and runtime
-validation.
+Use **MCP** when the capability already participates in the MCP ecosystem. Streamable HTTP is the
+URL-oriented path; local servers can use `add_mcp_stdio(...)`, and caller-owned/in-process or
+enterprise transports can use `add_mcp_client_factory(...)`. Command arguments, environment
+secrets, sockets, credentials, and client state remain trusted transport configuration rather than
+model-selectable schema fields.
 
 Use an **existing LangChain/LlamaIndex tool** when the capability is already packaged in one of
 those ecosystems. SchemaRouter imports the declared tool contract and binds its trusted invocation
