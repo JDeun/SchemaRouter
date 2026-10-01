@@ -18,7 +18,10 @@
 <p align="center">
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg"></a>
+  <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/JDeun/SchemaRouter/actions/workflows/codeql.yml/badge.svg"></a>
+  <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/security.yml"><img alt="Security Audit" src="https://github.com/JDeun/SchemaRouter/actions/workflows/security.yml/badge.svg"></a>
   <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.13.0"></a>
+  <a href="https://pypi.org/project/schemarouter/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/schemarouter"></a>
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
@@ -39,6 +42,22 @@ SchemaRouter 자체는 범용 에이전트 프레임워크도, LLM 공급자 계
 
 [outputSchema를 공개하지 않는 MCP 서버에 결과 계약 선언하기 →](docs/guides/mcp.md#declare-a-result-contract-the-server-does-not-publish) ·
 [측정된 agent-utility 결과 보기 →](docs/research/agent-utility-b1-result.md)
+
+## 안정성 및 검증
+
+SchemaRouter `0.13.0`은 **Beta / pre-1.0**입니다. Python 3.10–3.14는 릴리스 차단 CI 대상이며,
+Python 3.15는 비차단 preview로 검증합니다.
+
+계획이나 검색된 후보 자체에는 실행 권한이 없습니다. 실제 실행 직전에 현재 schema/tool
+fingerprint, 바인딩, 인자, 정책, 원본 출력, 필드 투영을 다시 검증합니다. 파괴적 동작과 분류되지
+않은 원격 동작은 로컬 정책이 명시적으로 허용하지 않으면 fail-closed로 처리합니다.
+
+공개 릴리스에는 wheel, sdist, SPDX SBOM이 포함됩니다. 릴리스 파이프라인은 GitHub artifact
+attestation을 만들고, 공개 PyPI에서 다시 내려받은 wheel/sdist의 digest가 신뢰된 빌드 산출물과
+동일한지 검증합니다. 연구 결과는 안정 제품 보장과 분리되어 있으며 live decision-backend 실측은
+#15에서 계속 추적합니다.
+
+[릴리스 자산·CI/보안·hardening 이력·연구 claim 경계 검증하기 →](docs/project/trust-and-evidence.md)
 
 ## 빠른 시작
 
