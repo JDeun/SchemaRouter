@@ -22,7 +22,9 @@ fallback, health, schema-drift, projection, evidence, and observability boundari
 | Typed Python callable | an SDK/function has a stable typed signature | router.add_callable(...) |
 | ToolSpec + trusted invoker | an SDK/client is not safely introspectable | router.add_bound_tool(...) |
 | OpenAPI / Swagger | an HTTP API publishes OpenAPI | from_url(..., kind="openapi") |
-| MCP | a server publishes MCP tools | from_url(..., kind="mcp") |
+| MCP Streamable HTTP | a remote server publishes MCP tools over HTTP | from_url(..., kind="mcp") |
+| MCP stdio | a local MCP server is launched as a trusted subprocess | router.add_mcp_stdio(...) |
+| MCP custom transport | the application already owns a trusted MCP lifecycle | router.add_mcp_client_factory(...) |
 | OPTIMADE | materials data is exposed through OPTIMADE | from_url(..., kind="optimade") |
 | GraphQL | introspection and native selection sets are available | from_url(..., kind="graphql") |
 | OData | CSDL/$metadata and $select are available | from_url(..., kind="odata") |
@@ -55,6 +57,7 @@ materials science.
 | GraphQL business API | business application | GraphQL | bound SDK |
 | OData enterprise API | enterprise data | OData | bound SDK |
 | OpenRPC service | generic RPC | OpenRPC | HTTP/JSON, bound SDK |
+| Local MCP stdio server | local tooling | MCP stdio | custom MCP client factory |
 
 The matrix is validated in CI. Adding a new advertised ingestion mode without a corresponding
 public API or built-in adapter makes the conformance test fail.
