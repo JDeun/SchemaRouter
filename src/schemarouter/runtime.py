@@ -35,7 +35,12 @@ from .errors import (
 from .executor import BoundEndpointInvoker, ExecutionBudgetTracker, RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
-from .ingestion import SourceKind, SourceProbeResult, URLSchemaLoader
+from .ingestion import (
+    SourceKind,
+    SourceProbeReport,
+    SourceProbeResult,
+    URLSchemaLoader,
+)
 from .inspection import RouterInspection, inspect_router
 from .models import CapabilityRetrieval, ExecutionPlan, PlanRequest, ToolResult, ToolSpec
 from .planner import QueryAnalyzer, SchemaPlanner
@@ -996,6 +1001,46 @@ class SchemaRouter:
         )
         return self.registry.get(key)
 
+
+
+    async def diagnose_url(
+        self,
+        url: str,
+        *,
+        kind: SourceKind = "auto",
+        name: str | None = None,
+        namespace: str | None = None,
+        provider: str | None = None,
+        base_url: str | None = None,
+        schema_headers: dict[str, str] | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: MCPClientFactory | None = None,
+        allow_active_probes: bool = False,
+        openapi_external_refs: bool = False,
+        openapi_ref_max_depth: int = 3,
+        openapi_ref_max_documents: int = 8,
+        openapi_ref_max_bytes: int = 10 * 1024 * 1024,
+        timeout: float = 20.0,
+    ) -> SourceProbeReport:
+        """Diagnose a structured URL source without mutating registry or bindings."""
+
+        return await self.loader.diagnose(
+            url,
+            kind=kind,
+            name=name,
+            namespace=namespace,
+            provider=provider,
+            base_url=base_url,
+            schema_headers=schema_headers,
+            trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
+            allow_active_probes=allow_active_probes,
+            openapi_external_refs=openapi_external_refs,
+            openapi_ref_max_depth=openapi_ref_max_depth,
+            openapi_ref_max_documents=openapi_ref_max_documents,
+            openapi_ref_max_bytes=openapi_ref_max_bytes,
+            timeout=timeout,
+        )
 
 
     async def probe_url(
