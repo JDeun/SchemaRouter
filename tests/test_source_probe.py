@@ -8,7 +8,8 @@ import pytest
 from schemarouter import (
     SchemaRouter,
     SchemaSourceError,
-    SourceProbeResult,
+    SourceProbeDiagnostic,
+    SourceProbeReport,
     UnsupportedSchemaSourceError,
 )
 from schemarouter.cli import main
@@ -160,11 +161,13 @@ def test_source_probe_cli_renders_success_without_mutation(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    async def fake_probe(self, url: str, **kwargs) -> SourceProbeResult:
+    async def fake_diagnose(self, url: str, **kwargs) -> SourceProbeReport:
         del self, kwargs
-        return SourceProbeResult(
+        return SourceProbeReport(
             source_url=url,
-            adapter_kind="openapi",
+            requested_kind="auto",
+            status="recognized",
+            recognized_kind="openapi",
             tool_key="demo",
             tool_name="Demo",
             provider="provider",
@@ -172,36 +175,69 @@ def test_source_probe_cli_renders_success_without_mutation(
             endpoint_count=2,
             execution_bindable=True,
             warnings=[],
+            diagnostics=[
+                SourceProbeDiagnostic(
+                    adapter_kind="openapi",
+                    discovery_activity="passive",
+                    http_methods=["GET"],
+                    attempted=True,
+                    status="recognized",
+                )
+            ],
         )
 
-    monkeypatch.setattr(SchemaRouter, "probe_url", fake_probe)
+    monkeypatch.setattr(SchemaRouter, "diagnose_url", fake_diagnose)
 
     assert main(["source", "probe", "https://example.test/openapi.json"]) == 0
     output = capsys.readouterr().out
 
     assert "Structured source: https://example.test/openapi.json" in output
-    assert "adapter: openapi" in output
+    assert "status: recognized" in output
+    assert "recognized kind: openapi" in output
     assert "endpoints: 2" in output
     assert "execution binding: available" in output
+    assert "openapi: recognized" in output
 
 
-def test_source_probe_cli_explains_unsupported_html(
+def test_source_probe_cli_reports_unsupported_html_without_generic_failure(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    async def fake_probe(self, url: str, **kwargs) -> SourceProbeResult:
-        del self, url, kwargs
-        raise UnsupportedSchemaSourceError("no registered adapter recognized the source")
+    async def fake_diagnose(self, url: str, **kwargs) -> SourceProbeReport:
+        del self, kwargs
+        return SourceProbeReport(
+            source_url=url,
+            requested_kind="auto",
+            status="not_recognized",
+            diagnostics=[
+                SourceProbeDiagnostic(
+                    adapter_kind="openapi",
+                    discovery_activity="passive",
+                    http_methods=["GET"],
+                    attempted=True,
+                    status="not_recognized",
+                ),
+                SourceProbeDiagnostic(
+                    adapter_kind="graphql",
+                    discovery_activity="active",
+                    http_methods=["POST"],
+                    attempted=False,
+                    status="skipped",
+                    message=(
+                        "active discovery requires an explicit kind or "
+                        "allow_active_probes=True"
+                    ),
+                ),
+            ],
+        )
 
-    monkeypatch.setattr(SchemaRouter, "probe_url", fake_probe)
+    monkeypatch.setattr(SchemaRouter, "diagnose_url", fake_diagnose)
 
-    with pytest.raises(SystemExit) as exc_info:
-        main(["source", "probe", "https://example.test/docs"])
+    assert main(["source", "probe", "https://example.test/docs"]) == 0
+    output = capsys.readouterr().out
 
-    assert exc_info.value.code == 2
-    error = capsys.readouterr().err
-    assert "not a supported structured source" in error
-    assert "normal HTML website is not auto-converted" in error
-    assert "SchemaRouter.inspect_url()" in error
-    assert "SchemaRouter.add_http_tool()" in error
-    assert "supported source kinds:" in error
+    assert "status: not_recognized" in output
+    assert "openapi: not_recognized" in output
+    assert "graphql: skipped" in output
+    assert "active" in output
+    assert capsys.readouterr().err == ""
