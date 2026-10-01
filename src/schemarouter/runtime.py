@@ -61,7 +61,11 @@ from .schema_diff import (
     compare_tool_specs,
 )
 from .schema_watch import SchemaWatchManager, SchemaWatchSnapshot
-from .source_identity import StructuredSourceIdentity, structured_source_identity
+from .source_identity import (
+    StructuredSourceIdentity,
+    structured_source_identity,
+    structured_source_identity_digest_for,
+)
 from .traces import RunTraceStore
 
 _T = TypeVar("_T")
@@ -323,6 +327,54 @@ class SchemaRouter:
         tool_key: str,
     ) -> SchemaRefreshResult | None:
         return self.schema_watcher.pending_review(tool_key)
+
+    async def aaccept_schema_watch_pending(
+        self,
+        tool_key: str,
+        *,
+        expected_candidate_fingerprint: str,
+    ) -> SchemaRefreshResult:
+        return await self.schema_watcher.accept_pending(
+            tool_key,
+            expected_candidate_fingerprint=expected_candidate_fingerprint,
+        )
+
+    def accept_schema_watch_pending(
+        self,
+        tool_key: str,
+        *,
+        expected_candidate_fingerprint: str,
+    ) -> SchemaRefreshResult:
+        return _run_sync(
+            lambda: self.aaccept_schema_watch_pending(
+                tool_key,
+                expected_candidate_fingerprint=expected_candidate_fingerprint,
+            )
+        )
+
+    async def areject_schema_watch_pending(
+        self,
+        tool_key: str,
+        *,
+        expected_candidate_fingerprint: str,
+    ) -> SchemaRefreshResult:
+        return await self.schema_watcher.reject_pending(
+            tool_key,
+            expected_candidate_fingerprint=expected_candidate_fingerprint,
+        )
+
+    def reject_schema_watch_pending(
+        self,
+        tool_key: str,
+        *,
+        expected_candidate_fingerprint: str,
+    ) -> SchemaRefreshResult:
+        return _run_sync(
+            lambda: self.areject_schema_watch_pending(
+                tool_key,
+                expected_candidate_fingerprint=expected_candidate_fingerprint,
+            )
+        )
 
     async def check_schema_watches_once(
         self,
@@ -1181,6 +1233,8 @@ class SchemaRouter:
         timeout: float = 20.0,
         _expected_fingerprint: str | None = None,
         _expected_source_identity: StructuredSourceIdentity | None = None,
+        _accept_candidate_fingerprint: str | None = None,
+        _accept_candidate_source_identity: str | None = None,
     ) -> SchemaRefreshResult:
         """Reinspect a registered remote schema and apply only proven-compatible drift."""
 
@@ -1224,6 +1278,21 @@ class SchemaRouter:
         ):
             raise SchemaSourceError(
                 f"tool {tool_key!r} contract changed before schema refresh"
+            )
+
+        if (
+            _accept_candidate_fingerprint is not None
+            or _accept_candidate_source_identity is not None
+        ) and (
+            _accept_candidate_fingerprint is None
+            or _accept_candidate_source_identity is None
+            or _expected_fingerprint is None
+            or _expected_source_identity is None
+        ):
+            raise SchemaSourceError(
+                "pending schema acceptance requires pinned current fingerprint, "
+                "candidate fingerprint, current source identity, and candidate "
+                "source identity"
             )
 
         source_url = refresh_profile.source_url(current)
@@ -1397,6 +1466,12 @@ class SchemaRouter:
                         new_fingerprint=candidate_tool.fingerprint,
                         changes=changes,
                     ),
+                    reviewed_current_fingerprint=current.fingerprint,
+                    candidate_fingerprint=candidate_tool.fingerprint,
+                    candidate_source_identity=structured_source_identity_digest_for(
+                        candidate_tool,
+                        refresh_profile,
+                    ),
                 )
 
         effective_report = compare_tool_specs(current, effective_candidate)
@@ -1415,6 +1490,119 @@ class SchemaRouter:
             and raw_report.changed
             and effective_report.compatibility == "identical"
         )
+
+        candidate_fingerprint = effective_candidate.fingerprint
+        candidate_source_identity = structured_source_identity_digest_for(
+            effective_candidate,
+            refresh_profile,
+        )
+
+        if _accept_candidate_fingerprint is not None:
+            assert _accept_candidate_source_identity is not None
+            if candidate_source_identity != _accept_candidate_source_identity:
+                changes = list(report.changes)
+                changes.append(
+                    SchemaChange(
+                        path="candidate_source_identity",
+                        kind="candidate_source_changed_before_approval",
+                        severity="security",
+                        old=_accept_candidate_source_identity,
+                        new=candidate_source_identity,
+                        message=(
+                            "remote candidate source identity changed after review; "
+                            "the new candidate must be reviewed explicitly"
+                        ),
+                    )
+                )
+                return SchemaRefreshResult(
+                    tool_key=tool_key,
+                    action="pending_review",
+                    applied=False,
+                    report=SchemaDiffReport(
+                        compatibility="security_review",
+                        old_fingerprint=current.fingerprint,
+                        new_fingerprint=candidate_fingerprint,
+                        changes=changes,
+                    ),
+                    reviewed_current_fingerprint=current.fingerprint,
+                    candidate_fingerprint=candidate_fingerprint,
+                    candidate_source_identity=candidate_source_identity,
+                )
+
+            if candidate_fingerprint != _accept_candidate_fingerprint:
+                changes = list(report.changes)
+                changes.append(
+                    SchemaChange(
+                        path="candidate_fingerprint",
+                        kind="candidate_changed_before_approval",
+                        severity="breaking",
+                        old=_accept_candidate_fingerprint,
+                        new=candidate_fingerprint,
+                        message=(
+                            "remote schema changed after review; the new candidate "
+                            "must be reviewed explicitly"
+                        ),
+                    )
+                )
+                compatibility = (
+                    "security_review"
+                    if report.compatibility == "security_review"
+                    else "breaking"
+                )
+                return SchemaRefreshResult(
+                    tool_key=tool_key,
+                    action="pending_review",
+                    applied=False,
+                    report=SchemaDiffReport(
+                        compatibility=compatibility,
+                        old_fingerprint=current.fingerprint,
+                        new_fingerprint=candidate_fingerprint,
+                        changes=changes,
+                    ),
+                    reviewed_current_fingerprint=current.fingerprint,
+                    candidate_fingerprint=candidate_fingerprint,
+                    candidate_source_identity=candidate_source_identity,
+                )
+
+            if overlay is None and candidate is not None:
+                self.loader.commit_candidate_if_current(
+                    candidate,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+            else:
+                key = replace_if_current(
+                    self.registry,
+                    effective_candidate,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+                if candidate_invoker is not None:
+                    self.executor.bind(
+                        key,
+                        candidate_invoker,
+                        expected_fingerprint=candidate_fingerprint,
+                    )
+                if not use_bound_mcp_transport and use_http_validators:
+                    self.loader.remember_tool_schema_http_validators(
+                        effective_candidate
+                    )
+
+            if candidate_fingerprint != current.fingerprint:
+                self.health_monitor.transition_tool_contract(
+                    tool_key,
+                    expected_old_fingerprint=current.fingerprint,
+                    expected_new_fingerprint=candidate_fingerprint,
+                )
+            return SchemaRefreshResult(
+                tool_key=tool_key,
+                action="applied",
+                applied=True,
+                report=report,
+                reviewed_current_fingerprint=current.fingerprint,
+                candidate_fingerprint=candidate_fingerprint,
+                candidate_source_identity=candidate_source_identity,
+            )
 
         if report.compatibility == "identical" and not raw_changed_under_overlay:
             if not use_bound_mcp_transport and use_http_validators:
@@ -1485,6 +1673,15 @@ class SchemaRouter:
             action=action,
             applied=False,
             report=report,
+            reviewed_current_fingerprint=(
+                current.fingerprint if action == "pending_review" else None
+            ),
+            candidate_fingerprint=(
+                candidate_fingerprint if action == "pending_review" else None
+            ),
+            candidate_source_identity=(
+                candidate_source_identity if action == "pending_review" else None
+            ),
         )
 
     def refresh_schema(

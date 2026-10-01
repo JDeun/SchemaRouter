@@ -49,6 +49,9 @@ class SchemaRefreshResult(StrictModel):
     action: SchemaRefreshAction
     applied: bool
     report: SchemaDiffReport
+    reviewed_current_fingerprint: str | None = None
+    candidate_fingerprint: str | None = None
+    candidate_source_identity: str | None = None
 
     @property
     def compatibility(self) -> SchemaCompatibility:
