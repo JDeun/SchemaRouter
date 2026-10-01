@@ -4,7 +4,7 @@ import json
 import re
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
 
 import httpx
@@ -1202,7 +1202,9 @@ class URLSchemaLoader:
 
         diagnostics = _diagnostics if _diagnostics is not None else []
 
-        def activity_for(adapter_kind: str) -> str | None:
+        def activity_for(
+            adapter_kind: str,
+        ) -> Literal["passive", "active"] | None:
             try:
                 return self.adapters.discovery_profile(adapter_kind).activity
             except KeyError:
