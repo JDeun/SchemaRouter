@@ -26,6 +26,8 @@ Use this checklist before promoting a SchemaRouter alpha, beta, release candidat
 - [ ] No credentials, tokens, fixtures containing secrets, or generated local state are committed.
 - [ ] MIT license metadata and the root LICENSE file are present in the release artifact.
 - [ ] README, documentation header, favicon, and brand guide use the approved SchemaRouter mark.
+- [ ] GitHub description/homepage/topics, PyPI description/keywords/project URLs, and MkDocs site description still match the canonical positioning in `docs/project/discoverability.md`.
+- [ ] Search terminology is descriptive and current; no framework name or benchmark claim is included solely for keyword stuffing.
 - [ ] The GitHub repository social preview is exported from the approved 1280×640 brand source and set in repository settings.
 
 ## Compatibility gates
