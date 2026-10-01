@@ -19,6 +19,7 @@ pip install schemarouter
 ```
 
 [Get started](getting-started/installation.md){ .md-button .md-button--primary }
+[Example gallery](getting-started/examples.md){ .md-button }
 [Declare an MCP result contract](guides/mcp.md#declare-a-result-contract-the-server-does-not-publish){ .md-button }
 [GitHub](https://github.com/JDeun/SchemaRouter){ .md-button }
 
