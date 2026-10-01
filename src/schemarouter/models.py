@@ -5,7 +5,7 @@ import json
 import math
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 
 _REMOTE_ADAPTERS = {"mcp", "openapi", "optimade", "html_proposal"}
 _OPENAPI_ENDPOINT_RUNTIME_KEYS = {
@@ -688,6 +688,15 @@ class EndpointSpec(StrictModel):
                         f"{self.name!r}: {left_name!r} and {right_name!r}"
                     )
         return self
+
+    @model_serializer(mode="wrap")
+    def serialize_endpoint(self, handler: Any) -> dict[str, Any]:
+        """Omit the empty auth default so legacy public contracts serialize identically."""
+
+        data = handler(self)
+        if not self.auth_requirements:
+            data.pop("auth_requirements", None)
+        return data
 
     @property
     def auth_required(self) -> bool:
