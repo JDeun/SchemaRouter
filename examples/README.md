@@ -24,6 +24,7 @@ materials-science examples used elsewhere in the project.
 | Full catalog vs bounded Top-K | `python examples/context_reduction_demo.py` | core | offline deterministic |
 | Schema drift comparison | `python examples/schema_drift_demo.py` | core | offline deterministic |
 | Inspection + HTML dashboard | `python examples/inspection_dashboard.py` | core | offline deterministic |
+| Third-party SourceAdapter plugin | `python examples/adapter_plugin_quickstart.py` | install local demo package | offline deterministic |
 | LangChain bridge | `python examples/langchain_quickstart.py` | `langchain` | offline deterministic |
 | LangGraph node | `python examples/langgraph_quickstart.py` | `langgraph` | offline deterministic |
 | LlamaIndex bridge | `python examples/llamaindex_quickstart.py` | `llamaindex` | offline deterministic |
@@ -101,6 +102,22 @@ The SDK object remains trusted local state. Only the explicit `ToolSpec` becomes
 The planner selects complementary providers because neither route alone covers the requested
 semantic field set. This is the small deterministic version of the field-first / route-second
 architecture.
+
+## Third-party SourceAdapter plugin
+
+The plugin example is a separate installable package rather than an in-tree import trick:
+
+```bash
+python -m pip install -e examples/adapter_plugin_demo
+python examples/adapter_plugin_quickstart.py
+```
+
+It demonstrates metadata-only discovery, explicit allowlisted loading, a normal typed
+`ToolSpec`, and deterministic execution without network access or credentials. Discovery does not
+import the plugin module; import occurs only when the application explicitly loads
+`demo_static`.
+
+See the [adapter plugin guide](../docs/guides/adapter-plugins.md).
 
 ## MCP: HTTP and stdio are both covered
 
