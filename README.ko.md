@@ -63,6 +63,8 @@ result = router.invoke(
 print(result[0].data)
 ```
 
+[실행 가능한 예제 갤러리 →](examples/README.md)에서 SDK 바인딩, MCP HTTP/stdio, 다중 제공자 실행, 스키마 변경 감시, LangChain/LangGraph/LlamaIndex 연동, 전체 스키마 덤프와 Top-K 후보 컨텍스트 비교를 볼 수 있습니다.
+
 ## 에이전트에 넘길 도구 후보만 추리기
 
 SchemaRouter는 계획도 실행도 하지 않고 등록된 capability의 **Top-K 후보만** 돌려줄 수 있습니다.
