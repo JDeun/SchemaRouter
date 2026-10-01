@@ -1,0 +1,151 @@
+INHERIT: mkdocs.yml
+
+site_name: SchemaRouter 문서
+site_description: LLM/RAG 에이전트를 위한 타입 기반 capability 검색과 스키마 인식 실행
+site_url: https://jdeun.github.io/SchemaRouter/ko/
+docs_dir: .build/docs-ko
+site_dir: site/ko
+edit_uri: edit/main/docs_ko/
+
+theme:
+  language: ko
+
+plugins:
+  - search:
+      lang:
+        - ko
+        - en
+
+nav:
+  - 홈: index.md
+  - 시작하기:
+      - 설치: getting-started/installation.md
+      - 빠른 시작: getting-started/quickstart.md
+      - 예제와 데모: getting-started/examples.md
+      - 입력 방식 선택: getting-started/ingestion-paths.md
+      - 런타임 수명주기: getting-started/runtime-lifecycle.md
+      - 시작 시 재바인딩: getting-started/startup-rebinding.md
+      - 저장소 마이그레이션: getting-started/storage-migrations.md
+      - Capability Explorer: getting-started/schema-explorer.md
+  - 핵심 개념:
+      - SchemaRouter란?: concepts/schema-router.md
+      - RAG와 capability 검색: concepts/capability-catalog.md
+      - 설계 원칙: concepts/design-principles.md
+      - Tool/Endpoint 계약: concepts/tool-endpoint.md
+      - 계획과 필드 투영: concepts/planning.md
+      - 필드 우선 실행: concepts/field-first-execution.md
+      - Registry와 스키마 식별성: concepts/registry.md
+      - 실행과 신뢰 경계: concepts/execution.md
+      - Adapter 생태계: concepts/adapters.md
+      - 프로토콜 입력 결정: concepts/protocol-ingestion-decisions.md
+      - Decision backend: concepts/decision-backends.md
+  - 연결:
+      - Python 도구: guides/python-tools.md
+      - OpenAPI: guides/openapi.md
+      - OpenAPI 호환성: guides/openapi-compatibility.md
+      - OpenRPC / JSON-RPC: guides/openrpc.md
+      - OData: guides/odata.md
+      - GraphQL: guides/graphql.md
+      - OPTIMADE: guides/optimade.md
+      - MCP: guides/mcp.md
+      - 선언형 HTTP/JSON: guides/http-json.md
+      - 범용 입력 매트릭스: guides/universal-ingestion.md
+      - 실서비스 호환성 매트릭스: guides/live-compatibility-matrix.md
+      - 사람이 읽는 API 문서: guides/html-documentation.md
+      - 서드파티 adapter plugin: guides/adapter-plugins.md
+      - 프로토콜 plugin recipe: guides/protocol-plugin-recipes.md
+      - 레시피:
+          - OpenAPI agent 경계: recipes/openapi-agent.md
+          - MCP agent 경계: recipes/mcp-agent.md
+          - 대규모 도구 카탈로그: recipes/many-tools.md
+  - 런타임:
+      - Batch/stream/event: guides/runtime.md
+      - 실행 정책: guides/execution-policy.md
+      - Provider-aware fallback: guides/provider-fallback.md
+      - 다중 provider 근거: guides/multi-provider-evidence.md
+      - 스키마 변경 분석: guides/schema-drift.md
+      - Retry 정책: guides/retry.md
+      - 신뢰 실행 hook: guides/execution-hooks.md
+      - 영속 실행 trace: guides/run-traces.md
+      - 운영 상태 확인: guides/inspection.md
+      - 필드 투영: guides/field-projection.md
+      - Candidate indexing: guides/candidate-indexing.md
+      - 모델 보조 분석: guides/model-analyzer.md
+      - Decision routing benchmark: guides/decision-benchmark.md
+      - Consumer acceptance 검증: guides/consumer-acceptance.md
+  - 통합:
+      - LangChain: integrations/langchain.md
+      - LangGraph: integrations/langgraph.md
+      - LlamaIndex: integrations/llamaindex.md
+      - System One 호환: integrations/system-one.md
+      - Decision backend plugin: integrations/decision-backend-plugins.md
+      - Decision-model 생태계: integrations/decision-model-ecosystem.md
+      - Jev / TypeSafe: integrations/jev.md
+      - Laya: integrations/laya.md
+      - Ollama: integrations/ollama.md
+      - OpenTelemetry: integrations/opentelemetry.md
+  - 레퍼런스:
+      - API:
+          - 공개 API: reference/api.md
+          - Runtime: reference/runtime.md
+          - Model: reference/models.md
+          - Registry와 planner: reference/planning.md
+      - 아키텍처: architecture.md
+      - 프레임워크 성숙도: framework-maturity.md
+      - 호환성 테스트: compatibility.md
+      - Adapter 작성: adapter-authoring.md
+      - 보안 모델: security/threat-model.md
+  - 연구:
+      - 라우팅 연구 현황: research/routing-status.md
+      - 전체 실험 인덱스: research/experiment-index.md
+      - 설계와 실험 이력: research/design-and-experiment-history.md
+      - Agent utility:
+          - B1 local-agent 결과: research/agent-utility-b1-result.md
+          - 대규모 held-out 일반화: research/large-heldout-agent-utility.md
+          - 최종 응답 품질: research/final-answer-quality.md
+          - Typed retrieval 표현 ablation: research/typed-capability-retrieval-ablation.md
+          - Intent-manual DEV 결과: research/intent-manual-dev-result.md
+          - Adaptive shortlist depth: research/adaptive-shortlist-depth.md
+          - Corrective re-retrieval: research/corrective-reretrieval.md
+          - Output-field projection: research/field-projection-answer-quality.md
+          - Successor screen: research/successor-screen.md
+      - 근거와 프로토콜:
+          - 0.14 논문 근거 체크포인트: research/0.14-paper-evidence-checkpoint.md
+          - 논문 근거 패키지: research/paper-evidence-package.md
+          - 연구 거버넌스: research/governance.md
+          - 연구 freeze protocol: research/operation-routing-freeze-protocol.md
+          - 0.11 terminal report: research/operation-routing-v4-terminal-report.md
+      - 선행연구 로드맵: research/prior-art-roadmap.md
+  - 프로젝트:
+      - Stable core 계약: stable-core.md
+      - 공개 로드맵: project/roadmap.md
+      - 신뢰성·안정성·공개 근거: project/trust-and-evidence.md
+      - 도입 지표: project/adoption-scorecard.md
+      - 개발자 공개 playbook: project/launch-playbook.md
+      - 공개/아웃리치 로그: project/launch-log.md
+      - 외부 도입과 검증: project/external-adoption.md
+      - PydanticAI ToolSearch 검증: project/external-validation-pydanticai.md
+      - OpenAI Agents SDK MCP filter 검증: project/external-validation-openai-agents.md
+      - mcp-agent catalog 검증: project/external-validation-mcp-agent.md
+      - 외부 사례 템플릿: project/case-study-template.md
+      - 버전 정책: versioning.md
+      - 릴리스 노트:
+          - 0.13.0: releases/0.13.0.md
+          - 0.12.0: releases/0.12.0.md
+          - 0.11.0: releases/0.11.0.md
+          - 0.10.0: releases/0.10.0.md
+          - 0.9.0: releases/0.9.0.md
+          - 0.8.0: releases/0.8.0.md
+          - 0.7.0: releases/0.7.0.md
+          - 0.6.0: releases/0.6.0.md
+          - 0.5.0: releases/0.5.0.md
+          - 0.4.0: releases/0.4.0.md
+          - 0.3.0: releases/0.3.0.md
+          - 0.3.0a1: releases/0.3.0a1.md
+          - 0.2.0a1: releases/0.2.0a1.md
+      - 릴리스 체크리스트: release-checklist.md
+      - 기여하기: contributing.md
+      - 변경 이력: changelog.md
+      - 브랜드: project/brand.md
+      - 검색/포지셔닝: project/discoverability.md
+      - 라이선스: license.md
