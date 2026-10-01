@@ -1,7 +1,7 @@
 # 예제와 데모
 
-현재 가지고 있는 stack에 맞춰 가장 짧은 실행 경로를 고를 수 있습니다. 예제는 **offline
-deterministic** 또는 명시적인 **live/pinned provider** 경로로 구분됩니다.
+지금 쓰고 있는 stack에 맞춰 가장 짧은 예제를 고를 수 있습니다. 외부 서비스 없이 반복 실행할 수
+있는 예제와 실제 provider를 호출하는 예제를 구분해 두었습니다.
 
 ![SchemaRouter field-first, route-second scenario](../assets/real-world-scenario.svg)
 
@@ -39,8 +39,8 @@ python scripts/live_odata_smoke.py
 python scripts/live_optimade_smoke.py
 ```
 
-외부 provider uptime은 repository 밖의 상태이므로 mandatory PR gate가 아니라 별도
-compatibility evidence로 다룹니다.
+외부 provider의 장애 여부는 저장소가 통제할 수 없으므로 PR 통과 조건에는 넣지 않습니다.
+대신 별도의 호환성 검사 결과로 기록합니다.
 
 ## 전체 schema를 모델에 던지지 않기
 
@@ -49,7 +49,8 @@ python examples/context_reduction_demo.py
 ```
 
 40-tool registry 전체 serialization과 bounded Top-3 `CapabilityRetrieval` payload를 비교합니다.
-이 데모의 목적은 token benchmark가 아니라 **bounded contract**를 보여주는 것입니다.
+이 예제는 토큰 성능을 주장하기 위한 benchmark가 아니라, 전체 catalog 대신 제한된 후보 계약만
+전달하는 구조를 보여주기 위한 것입니다.
 
 ## 다중 provider field-first planning
 
