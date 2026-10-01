@@ -41,7 +41,12 @@ from .models import CapabilityRetrieval, ExecutionPlan, PlanRequest, ToolResult,
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
-from .registry import InMemoryRegistry, ToolRegistry, replace_if_current
+from .registry import (
+    InMemoryRegistry,
+    ToolRegistry,
+    replace_if_current,
+    unregister_if_current,
+)
 from .runs import RunConfig, RunEvent
 from .schema_diff import SchemaRefreshResult, compare_tool_specs
 from .schema_watch import SchemaWatchManager, SchemaWatchSnapshot
@@ -351,6 +356,35 @@ class SchemaRouter:
 
     def add_tool(self, tool: ToolSpec, *, replace: bool = False) -> str:
         return self.registry.register(tool, replace=replace)
+
+    async def aremove_tool(self, tool_key: str) -> ToolSpec:
+        """Atomically remove one capability and all router-owned runtime state."""
+
+        async with self.schema_watcher.lifecycle_guard():
+            async with self.health_monitor.lifecycle_guard():
+                expected_version = self.registry.version
+                try:
+                    current = self.registry.get(tool_key)
+                except KeyError as exc:
+                    raise RegistrationError(f"unknown tool: {tool_key}") from exc
+
+                unregister_if_current(
+                    self.registry,
+                    tool_key,
+                    expected_fingerprint=current.fingerprint,
+                    expected_version=expected_version,
+                )
+
+                self.schema_watcher.unregister(tool_key)
+                self.health_monitor.unregister_tool(tool_key)
+                self.executor.purge_tool_runtime_state(tool_key)
+                self.loader.forget_schema_http_validators(tool_key)
+                return current
+
+    def remove_tool(self, tool_key: str) -> ToolSpec:
+        """Synchronous wrapper for :meth:`aremove_tool`."""
+
+        return _run_sync(lambda: self.aremove_tool(tool_key))
 
     def add_bound_tool(
         self,
