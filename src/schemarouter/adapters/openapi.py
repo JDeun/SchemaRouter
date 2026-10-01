@@ -852,43 +852,42 @@ def _nested_response_fields(
 
         for name, spec in merged.items():
             path = (*prefix, name)
-            if prefix:
-                field_name = _field_name_from_path(path)
-                if field_name not in seen_names:
-                    seen_names.add(field_name)
-                    leaf_alias = name.replace("_", " ")
-                    resolved_spec = _resolve_local_ref(document, spec)
-                    declared_schema = (
-                        resolved_spec
-                        if isinstance(resolved_spec, dict)
-                        else spec
+            field_name = _field_name_from_path(path)
+            if field_name not in seen_names:
+                seen_names.add(field_name)
+                leaf_alias = name.replace("_", " ")
+                resolved_spec = _resolve_local_ref(document, spec)
+                declared_schema = (
+                    resolved_spec
+                    if isinstance(resolved_spec, dict)
+                    else spec
+                )
+                discovered.append(
+                    FieldSpec(
+                        name=field_name,
+                        description=str(declared_schema.get("description") or ""),
+                        json_schema=declared_schema,
+                        path=list(path),
+                        result_path=(
+                            list(path)
+                            if "*" in path
+                            else [field_name]
+                        ),
+                        unit=_schema_unit(declared_schema),
+                        identifier=(
+                            name in {"id", "uuid", "key"}
+                            or name.endswith("_id")
+                        ),
+                        aliases=list(
+                            dict.fromkeys(
+                                [
+                                    name,
+                                    leaf_alias,
+                                ]
+                            )
+                        ),
                     )
-                    discovered.append(
-                        FieldSpec(
-                            name=field_name,
-                            description=str(declared_schema.get("description") or ""),
-                            json_schema=declared_schema,
-                            path=list(path),
-                            result_path=(
-                                list(path)
-                                if "*" in path
-                                else [field_name]
-                            ),
-                            unit=_schema_unit(declared_schema),
-                            identifier=(
-                                name in {"id", "uuid", "key"}
-                                or name.endswith("_id")
-                            ),
-                            aliases=list(
-                                dict.fromkeys(
-                                    [
-                                        name,
-                                        leaf_alias,
-                                    ]
-                                )
-                            ),
-                        )
-                    )
+                )
 
             if isinstance(spec, dict):
                 visit(
