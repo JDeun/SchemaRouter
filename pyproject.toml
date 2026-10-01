@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "schemarouter"
-version = "0.12.0"
+version = "0.13.0.dev0"
 description = "Typed capability retrieval, planning, and execution layer for LLM and RAG tool ecosystems"
 readme = "README.md"
 requires-python = ">=3.10"
