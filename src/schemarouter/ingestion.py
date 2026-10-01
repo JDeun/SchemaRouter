@@ -192,6 +192,39 @@ def _probe_category(exc: BaseException) -> SourceProbeFailureCategory:
     return "protocol_error"
 
 
+def _auto_probe_outcome(
+    adapter_kind: str,
+    exc: BaseException,
+) -> ProbeOutcome:
+    category = _probe_category(exc)
+    if category in {
+        "authentication_failed",
+        "not_found",
+        "unreachable",
+        "unsupported_feature",
+    }:
+        return category
+
+    message = str(exc).casefold()
+    if adapter_kind == "graphql" and (
+        "did not return valid json" in message
+        or "returned a non-object response" in message
+    ):
+        return "not_recognized"
+    if adapter_kind == "odata" and any(
+        marker in message
+        for marker in (
+            "metadata is not valid xml",
+            "declares no entity/complex types",
+            "declares no usable entity sets",
+        )
+    ):
+        return "not_recognized"
+    if adapter_kind == "mcp" and category == "protocol_error":
+        return "not_recognized"
+    return category
+
+
 def _terminal_probe_category(
     diagnostics: list[AdapterProbeDiagnostic],
 ) -> SourceProbeFailureCategory:
@@ -1344,12 +1377,26 @@ class URLSchemaLoader:
                 result = await adapter.load(context)
             except SchemaNotModifiedError:
                 raise
+            except SchemaSourceError as exc:
+                category = _probe_category(exc)
+                record(adapter, category, exc)
+                report = failure_report(category)
+                if normalized_kind == "openapi":
+                    raise UnsupportedSchemaSourceError(
+                        f"URL did not yield a supported OpenAPI source: {exc}",
+                        probe_report=report,
+                    ) from exc
+                raise SourceProbeDiagnosticError(
+                    str(exc),
+                    probe_report=report,
+                ) from exc
             except Exception as exc:  # noqa: BLE001
                 category = _probe_category(exc)
                 record(adapter, category, exc)
                 report = failure_report(category)
+                safe_url = safe_provenance_url(url)
                 raise SourceProbeDiagnosticError(
-                    f"{normalized_kind} source probe failed: {category}",
+                    f"{normalized_kind} adapter failed for {safe_url!r}",
                     probe_report=report,
                 ) from exc
 
@@ -1379,7 +1426,11 @@ class URLSchemaLoader:
             try:
                 result = await adapter.load(context)
             except Exception as exc:  # noqa: BLE001
-                record(adapter, _probe_category(exc), exc)
+                record(
+                    adapter,
+                    _auto_probe_outcome(str(adapter.kind), exc),
+                    exc,
+                )
                 continue
             if result is None:
                 record(adapter, "not_recognized")
