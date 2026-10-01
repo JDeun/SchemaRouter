@@ -119,6 +119,8 @@ infrastructure requirement.
 The framework examples are executed in dedicated CI jobs. The OpenAPI live path is checked by the
 scheduled compatibility workflow and by an offline contract-equivalent wheel/sdist smoke.
 
+For SDK-bound tools, mixed-provider execution, context-reduction before/after, schema drift/watch, and MCP transport demos, continue to the [examples gallery](examples.md).
+
 ## Troubleshooting
 
 **`ModuleNotFoundError` for MCP/LangChain/LlamaIndex**
