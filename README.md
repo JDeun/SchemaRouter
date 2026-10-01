@@ -23,6 +23,8 @@
 
 > **Stable release: 0.13.0** · Beta / pre-1.0
 
+SchemaRouter is a **typed capability retrieval and execution layer for RAG and LLM agents across OpenAPI, MCP, OPTIMADE, and Python tools**.
+
 Agents get harder to steer as their tool catalog grows, and tool responses often contain far more
 than the request needs. SchemaRouter works out **which declared data fields are needed**, exposes a
 bounded set of registered tools that can supply them, and keeps only declared output fields before
