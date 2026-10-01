@@ -6,8 +6,8 @@ import httpx
 import pytest
 
 from schemarouter import EndpointSpec, SchemaRouter, ToolSpec, compare_tool_specs
-from schemarouter.registry import InMemoryRegistry
 from schemarouter.ingestion import default_adapter_registry
+from schemarouter.registry import InMemoryRegistry
 from schemarouter.schema_diff import SchemaDiffReport, SchemaRefreshResult
 from schemarouter.schema_watch import SchemaWatchManager
 
