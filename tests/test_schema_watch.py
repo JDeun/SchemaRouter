@@ -4,14 +4,19 @@ import asyncio
 
 import pytest
 
-from schemarouter.schema_diff import SchemaDiffReport, SchemaRefreshResult
+from schemarouter.schema_diff import (
+    SchemaCompatibility,
+    SchemaDiffReport,
+    SchemaRefreshAction,
+    SchemaRefreshResult,
+)
 from schemarouter.schema_watch import SchemaRefreshWatcher
 
 
 def _result(
     *,
-    action: str = "unchanged",
-    compatibility: str = "identical",
+    action: SchemaRefreshAction = "unchanged",
+    compatibility: SchemaCompatibility = "identical",
     applied: bool = False,
 ) -> SchemaRefreshResult:
     return SchemaRefreshResult(
