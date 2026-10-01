@@ -113,6 +113,23 @@ A normal HTML documentation page is not silently converted into an executable to
 detection fails, diagnostics name the skipped active protocols. Use `inspect_url()` for
 human-readable documentation.
 
+Use `probe_url()` or `schemarouter source probe URL --json` when diagnosing a source
+without registering or binding it. Probe diagnostics distinguish:
+
+- `recognized`: the adapter produced a capability contract;
+- `not_recognized`: the response is safely determined not to be that protocol;
+- `skipped_active`: an active POST/session probe was not authorized by the caller;
+- `unreachable`: timeout, transport failure, missing endpoint, or transient HTTP failure;
+- `authentication_failed`: HTTP 401/403 without echoing credential or response data;
+- `invalid_schema`: the source identifies as the protocol but its structured contract is invalid;
+- `unsupported_feature`: a recognized protocol cannot be imported safely, such as disabled
+  GraphQL introspection or an OPTIMADE index catalog;
+- `protocol_error`: another recognized protocol/handshake safety failure.
+
+Diagnostics contain only adapter/activity/category, a bounded HTTP status when relevant, and local
+exception type. SchemaRouter does not copy signed query values, request header values, response
+bodies, or arbitrary remote error messages into the report.
+
 
 ## Declarative HTTP/JSON
 
