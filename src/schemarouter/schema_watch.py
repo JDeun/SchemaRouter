@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -127,7 +128,6 @@ class SchemaWatchManager:
         if timeout <= 0:
             raise ValueError("timeout_seconds must be > 0")
 
-        loop = asyncio.get_running_loop()
         self._records[tool_key] = _WatchRecord(
             interval_seconds=interval,
             apply_compatible=bool(apply_compatible),
@@ -143,7 +143,7 @@ class SchemaWatchManager:
             ),
             mcp_client_factory=mcp_client_factory,
             timeout_seconds=timeout,
-            next_due=loop.time(),
+            next_due=time.monotonic(),
         )
         self._wake.set()
 
@@ -194,10 +194,7 @@ class SchemaWatchManager:
                 record.last_checked_at = now
                 record.last_error_type = type(exc).__name__
                 record.pending_result = None
-                record.next_due = (
-                    asyncio.get_running_loop().time()
-                    + record.interval_seconds
-                )
+                record.next_due = time.monotonic() + record.interval_seconds
                 return
 
             try:
@@ -241,10 +238,7 @@ class SchemaWatchManager:
                 else:
                     record.status = "unchanged"
 
-            record.next_due = (
-                asyncio.get_running_loop().time()
-                + record.interval_seconds
-            )
+            record.next_due = time.monotonic() + record.interval_seconds
 
     async def run_once(
         self,
@@ -261,7 +255,7 @@ class SchemaWatchManager:
             raise ValueError("max_concurrency must be >= 1")
 
         async with self._run_lock:
-            now = asyncio.get_running_loop().time()
+            now = time.monotonic()
             due = [
                 (tool_key, record)
                 for tool_key, record in tuple(self._records.items())
@@ -286,7 +280,7 @@ class SchemaWatchManager:
     def _next_delay(self) -> float:
         if not self._records:
             return 60.0
-        now = asyncio.get_running_loop().time()
+        now = time.monotonic()
         return max(
             0.05,
             min(
