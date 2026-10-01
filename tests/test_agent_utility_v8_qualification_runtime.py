@@ -180,6 +180,33 @@ def test_workflow_publishes_model_cache_before_evaluator_fanout():
     assert "Publish exact candidate cache before fan-out" in workflow
     assert "uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830" not in workflow
 
+def test_evaluator_cache_eviction_recovers_only_the_exact_pinned_revision():
+    from pathlib import Path
+
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github"
+        / "workflows"
+        / "research-0.14-runtime-qualification.yml"
+    ).read_text(encoding="utf-8")
+
+    # GitHub's shared cache is an optimization, not part of the scientific
+    # contract. Cache eviction must recover the exact frozen revision rather
+    # than terminate an evaluator before inference.
+    assert "fail-on-cache-miss: true" not in workflow
+    assert workflow.count("id: evaluator-hf-cache") == 3
+    assert workflow.count(
+        "Recover exact candidate revision after cache eviction"
+    ) == 3
+    assert workflow.count(
+        "if: steps.evaluator-hf-cache.outputs.cache-hit != 'true'"
+    ) == 3
+    assert workflow.count('HF_HUB_OFFLINE: "0"') == 3
+    assert workflow.count('TRANSFORMERS_OFFLINE: "0"') == 3
+    assert workflow.count('repo_id=os.environ["QUAL_MODEL"]') == 6
+    assert workflow.count('revision=os.environ["QUAL_REV"]') == 9
+
+
 def test_workflow_downloads_qualification_corpus_at_repo_root():
     from pathlib import Path
 
