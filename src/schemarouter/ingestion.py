@@ -653,13 +653,13 @@ class OpenAPISourceAdapter:
         resolved_schema_url = context.url
         normalized_ref_count = 0
         try:
-            conditional_headers = (
-                context.schema_headers
-                if context.openapi_external_refs
-                else conditional_schema_headers(
-                    context.schema_headers,
-                    context.schema_validators,
-                )
+            conditional_headers = conditional_schema_headers(
+                context.schema_headers,
+                (
+                    {}
+                    if context.openapi_external_refs
+                    else context.schema_validators
+                ),
             )
             response = await _fetch_with_safe_redirects(
                 client,
