@@ -85,7 +85,10 @@ def render_markdown(matrix: dict[str, Any]) -> str:
         "",
         f"Generated: {matrix['generated_at']}",
         "",
-        "| Adapter | Evidence | Provider/source | Discovery | Endpoints | Bound | Safe execution | Latency (discover/execute ms) | Auth | Status |",
+        (
+            "| Adapter | Evidence | Provider/source | Discovery | Endpoints | "
+            "Bound | Safe execution | Latency (discover/execute ms) | Auth | Status |"
+        ),
         "| --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- |",
     ]
     for row in rows:
@@ -135,8 +138,14 @@ def render_markdown(matrix: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
-            "Public-provider failures are external compatibility evidence and are not, by themselves, classified as SchemaRouter regressions.",
-            "Pinned-reference failures indicate a local compatibility regression and should be investigated.",
+            (
+                "Public-provider failures are external compatibility evidence and are not, "
+                "by themselves, classified as SchemaRouter regressions."
+            ),
+            (
+                "Pinned-reference failures indicate a local compatibility regression and "
+                "should be investigated."
+            ),
             "",
         ]
     )
