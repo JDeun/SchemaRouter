@@ -57,6 +57,14 @@ A compatible refresh that the watch itself validates and applies may advance onl
 pin; the source/transport identity must remain unchanged. Credential rotation therefore requires
 explicit trusted-local watch re-registration rather than implicit carry-over.
 
+Conditional schema-fetch validators (ETag / Last-Modified) are also source-bound. SchemaRouter
+stores an opaque digest of the structured-source identity alongside persisted validator metadata and
+keeps the process-local cache keyed by both logical tool key and source identity. A same-key
+replacement, adapter change, or source change therefore starts uncached; a validator is never sent
+or trusted merely because the replacement capability reused the same registry key. Legacy or
+malformed persisted validator metadata without a matching source digest is ignored and repaired by
+a normal full fetch.
+
 ### Network destinations and SSRF
 
 SchemaRouter supports localhost and private-network MCP/OpenAPI endpoints because local

@@ -1254,7 +1254,7 @@ class SchemaRouter:
                 )
             except SchemaNotModifiedError as exc:
                 self.loader.remember_schema_http_validators(
-                    tool_key,
+                    current,
                     exc.validators or schema_validators,
                 )
                 return SchemaRefreshResult(

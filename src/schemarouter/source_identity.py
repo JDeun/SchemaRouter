@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import hashlib
+import json
+from dataclasses import asdict, dataclass
 from typing import Any
 
 from ._url_safety import safe_provenance_url
@@ -51,6 +53,20 @@ def _positive_int(value: Any) -> int | None:
     if isinstance(value, int) and not isinstance(value, bool) and value > 0:
         return value
     return None
+
+
+def structured_source_identity_digest(
+    identity: StructuredSourceIdentity,
+) -> str:
+    """Return an opaque stable digest suitable for persisted validator ownership."""
+
+    payload = json.dumps(
+        asdict(identity),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def structured_source_identity(tool: ToolSpec) -> StructuredSourceIdentity | None:
@@ -105,3 +121,10 @@ def structured_source_identity(tool: ToolSpec) -> StructuredSourceIdentity | Non
         openapi_ref_max_documents=max_documents,
         openapi_ref_max_bytes=max_bytes,
     )
+
+
+def structured_source_identity_digest_for(tool: ToolSpec) -> str | None:
+    identity = structured_source_identity(tool)
+    if identity is None:
+        return None
+    return structured_source_identity_digest(identity)
