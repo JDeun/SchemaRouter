@@ -69,6 +69,17 @@ def _resolve_local_ref(
 _NESTED_RETURN_MAX_DEPTH = 8
 
 
+def _display_field_path(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if parts:
+                parts[-1] += "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
 def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
     discovered: list[FieldSpec] = []
     root = _top_level_object_schema(schema)
@@ -103,9 +114,18 @@ def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
         next_ancestors = ancestors | {signature}
 
         raw_type = resolved.get("type")
-        if raw_type == "array" or (
+        is_array = raw_type == "array" or (
             isinstance(raw_type, list) and "array" in raw_type
-        ):
+        )
+        if is_array:
+            items = resolved.get("items")
+            if isinstance(items, dict):
+                visit(
+                    items,
+                    prefix=(*prefix, "*"),
+                    depth=depth + 1,
+                    ancestors=next_ancestors,
+                )
             return
 
         properties = resolved.get("properties")
@@ -117,7 +137,7 @@ def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
                 continue
             path = (*prefix, str(name))
             if prefix:
-                field_name = ".".join(path)
+                field_name = _display_field_path(path)
                 if field_name not in top_names:
                     discovered.append(
                         FieldSpec(
@@ -130,7 +150,11 @@ def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
                                 )
                             ),
                             path=list(path),
-                            result_path=[field_name],
+                            result_path=(
+                                list(path)
+                                if "*" in path
+                                else [field_name]
+                            ),
                             unit=_schema_unit(child),
                             identifier=(
                                 str(name) in {"id", "uuid", "key"}
