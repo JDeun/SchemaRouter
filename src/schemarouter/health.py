@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import inspect
 from collections.abc import Awaitable, Callable
+from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Literal
@@ -47,6 +48,7 @@ class AccessHealthMonitor:
         self._interval_seconds = 30.0
         self._probe_timeout_seconds = 5.0
         self._max_concurrency = 4
+        self._run_lock = asyncio.Lock()
 
     @property
     def running(self) -> bool:
@@ -74,6 +76,22 @@ class AccessHealthMonitor:
 
     def unregister(self, tool_key: str, endpoint: str) -> None:
         self._probes.pop((tool_key, endpoint), None)
+
+    def unregister_tool(self, tool_key: str) -> None:
+        stale = [
+            key
+            for key in self._probes
+            if key[0] == tool_key
+        ]
+        for key in stale:
+            self._probes.pop(key, None)
+
+    @asynccontextmanager
+    async def lifecycle_guard(self):
+        """Quiesce probe execution while a router lifecycle mutation runs."""
+
+        async with self._run_lock:
+            yield
 
     def _contract_status(
         self,
@@ -181,6 +199,20 @@ class AccessHealthMonitor:
             record.last_error_type = error_type
 
     async def run_once(
+        self,
+        *,
+        probe_timeout_seconds: float | None = None,
+        unavailable_cooldown_seconds: float | None = None,
+        max_concurrency: int | None = None,
+    ) -> tuple[HealthProbeSnapshot, ...]:
+        async with self._run_lock:
+            return await self._run_once_unlocked(
+                probe_timeout_seconds=probe_timeout_seconds,
+                unavailable_cooldown_seconds=unavailable_cooldown_seconds,
+                max_concurrency=max_concurrency,
+            )
+
+    async def _run_once_unlocked(
         self,
         *,
         probe_timeout_seconds: float | None = None,
