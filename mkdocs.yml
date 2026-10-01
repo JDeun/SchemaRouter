@@ -1,5 +1,5 @@
 site_name: SchemaRouter
-site_description: Typed capability retrieval and execution for RAG and LLM agent systems
+site_description: Typed capability retrieval and schema-aware execution for LLM/RAG agents and tools
 site_author: Yong-eun Cho
 site_url: https://jdeun.github.io/SchemaRouter/
 copyright: © 2026 Yong-eun Cho · MIT License
@@ -225,4 +225,5 @@ nav:
       - Contributing: contributing.md
       - Changelog: changelog.md
       - Brand: project/brand.md
+      - Discoverability and positioning: project/discoverability.md
       - License: license.md
