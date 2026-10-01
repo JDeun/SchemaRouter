@@ -67,6 +67,11 @@ toolset boundary.
 First contribution should live in SchemaRouter or a tiny external example package until Pydantic
 maintainers indicate that an upstream example/listing is welcome.
 
+The maintainer-owned E0 evaluation for this path is tracked in
+[#644](https://github.com/JDeun/SchemaRouter/issues/644) and documented in
+[PydanticAI ToolSearch validation](external-validation-pydanticai.md). It is intentionally labeled
+E0 until someone outside this repository evaluates or adopts it publicly.
+
 ### OpenAI Agents SDK
 
 Current fit:
@@ -201,7 +206,8 @@ For each contact/evaluation, record only public or permissioned information:
 
 | Project | Contact/evaluation URL | Level | Status | Evidence | Limitation / next action |
 | --- | --- | --- | --- | --- | --- |
-| _none yet_ | — | E0 | candidate set prepared | this page | external outreach/evaluation not yet performed |
+| PydanticAI | [#644](https://github.com/JDeun/SchemaRouter/issues/644) | E0 | maintainer-owned deterministic evaluation | [validation page](external-validation-pydanticai.md) | external review/evaluation still required |
+| _other candidates_ | — | E0 | candidate set prepared | this page | external outreach/evaluation not yet performed |
 
 Do not publish private email addresses, private conversations, or unpublished organization names.
 
