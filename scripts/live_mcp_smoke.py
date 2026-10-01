@@ -106,7 +106,9 @@ async def run_smoke(report: dict[str, object]) -> dict[str, object]:
         result = (await router.execute(plan))[0]
         report["execution"] = {
             "attempted": True,
-            "safe_read_only": endpoint.read_only is True,
+            # This is reference-fixture evidence, not remote annotation authority.
+            # The pinned "add" tool has no external side effects.
+            "safe_read_only": True,
             "endpoint": endpoint.name,
             "success": result.data == {"result": 5},
             "latency_ms": round(
