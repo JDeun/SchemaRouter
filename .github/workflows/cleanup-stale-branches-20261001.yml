@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: stale-branch-cleanup-20261001
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   cleanup:
