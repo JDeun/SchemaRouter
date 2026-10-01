@@ -47,6 +47,19 @@ def main() -> None:
     assert abstained.selections == []
     assert abstained.abstained is True
 
+    substring_only = choose_sync(
+        backend,
+        DecisionRequest(
+            query="weathered data should not select weather",
+            options=[
+                DecisionOption(id="weather", label="Weather"),
+                DecisionOption(id="search", label="Search"),
+            ],
+        ),
+    )
+    assert substring_only.selections == []
+    assert substring_only.abstained is True
+
     print(
         {
             "plugin": plugin.name,
