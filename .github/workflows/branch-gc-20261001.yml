@@ -81,6 +81,10 @@ jobs:
 
           count="$(wc -l < /tmp/branch-gc-candidates.txt | tr -d ' ')"
           echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "BRANCH_GC_CANDIDATE_COUNT=$count"
+          if (( count > 0 )); then
+            sed 's/^/BRANCH_GC_CANDIDATE=/' /tmp/branch-gc-candidates.txt
+          fi
 
           {
             echo "## Branch GC dry-run"
