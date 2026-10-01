@@ -25,6 +25,7 @@ materials-science examples used elsewhere in the project.
 | Schema drift comparison | `python examples/schema_drift_demo.py` | core | offline deterministic |
 | Inspection + HTML dashboard | `python examples/inspection_dashboard.py` | core | offline deterministic |
 | Third-party SourceAdapter plugin | `python examples/adapter_plugin_quickstart.py` | install local demo package | offline deterministic |
+| Third-party decision backend plugin | `python examples/decision_backend_plugin_quickstart.py` | install local demo package | offline deterministic |
 | LangChain bridge | `python examples/langchain_quickstart.py` | `langchain` | offline deterministic |
 | LangGraph node | `python examples/langgraph_quickstart.py` | `langgraph` | offline deterministic |
 | LlamaIndex bridge | `python examples/llamaindex_quickstart.py` | `llamaindex` | offline deterministic |
@@ -118,6 +119,21 @@ import the plugin module; import occurs only when the application explicitly loa
 `demo_static`.
 
 See the [adapter plugin guide](../docs/guides/adapter-plugins.md).
+
+## Third-party decision backend plugin
+
+Install and run the separate package:
+
+```bash
+python -m pip install -e examples/decision_backend_plugin_demo
+python examples/decision_backend_plugin_quickstart.py
+```
+
+The example selects only from IDs supplied in the current `DecisionRequest` and abstains when no
+offered option matches. It makes no routing-quality or performance claim; the point is the
+entry-point and finite-authority contract.
+
+See the [decision backend plugin guide](../docs/integrations/decision-backend-plugins.md).
 
 ## MCP: HTTP and stdio are both covered
 
