@@ -23,6 +23,12 @@ python scripts/external_validation_pydanticai.py \
 
 No provider API key, remote model, or network service is required after installation.
 
+The custom strategy includes an explicit no-route disclosure gate. Raw positive
+SchemaRouter lexical score is treated as recall evidence, **not** as support: a tool is revealed only
+when a typed field matches, it was explicitly preferred, or a matched token belongs to the registered
+tool identifier itself. Per-case raw scores/components and the final gate signal are written to the
+JSON output.
+
 The script records:
 
 - declared deferred-tool count;
