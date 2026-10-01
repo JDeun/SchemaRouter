@@ -15,9 +15,10 @@ router = await SchemaRouter.from_url(
 OpenRPC method names become endpoint names. Declared params become typed arguments and the result
 JSON Schema becomes the output contract.
 
-Local `$ref` values under `components` are resolved. Nested object result fields become
-planner-visible fields while arrays remain opaque until record-preserving item traversal is
-explicitly defined.
+Local `$ref` values under `components` are resolved. Nested object fields and declared array-item
+fields become planner-visible. A result such as `results: [{title, score}, ...]` can expose
+`results[].title` and `results[].score`, with record alignment preserved through projection.
+Root result arrays keep implicit record semantics and expose their item fields directly.
 
 ## Execution authority remains local
 

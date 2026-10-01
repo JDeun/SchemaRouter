@@ -201,6 +201,25 @@ def _merged_properties(
     return merged
 
 
+def _mcp_field_name_from_path(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if not parts:
+                raise ValueError("array wildcard cannot be the first named field segment")
+            parts[-1] = parts[-1] + "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
+def _mcp_schema_is_array(schema: dict[str, Any]) -> bool:
+    raw_type = schema.get("type")
+    return raw_type == "array" or (
+        isinstance(raw_type, list) and "array" in raw_type
+    )
+
+
 def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
     discovered: list[FieldSpec] = []
     seen_names = set(_merged_properties(output_schema, output_schema))
@@ -225,39 +244,48 @@ def _nested_output_fields(output_schema: dict[str, Any]) -> list[FieldSpec]:
             return
         next_ancestors = ancestors | {signature}
 
+        if _mcp_schema_is_array(resolved):
+            items = resolved.get("items")
+            if isinstance(items, dict):
+                visit(
+                    items,
+                    prefix=(*prefix, "*") if prefix else prefix,
+                    depth=depth + 1,
+                    ancestors=next_ancestors,
+                )
+            return
+
         for name, spec in _merged_properties(output_schema, resolved).items():
             path = (*prefix, name)
-            if prefix:
-                field_name = ".".join(path)
-                if field_name not in seen_names:
-                    seen_names.add(field_name)
-                    discovered.append(
-                        FieldSpec(
-                            name=field_name,
-                            description=str(spec.get("description") or ""),
-                            json_schema=spec,
-                            path=list(path),
-                            result_path=[field_name],
-                            unit=_schema_unit(spec),
-                            identifier=(
-                                name in {"id", "uuid", "key"}
-                                or name.endswith("_id")
-                            ),
-                            aliases=list(
-                                dict.fromkeys(
-                                    [name, name.replace("_", " ")]
-                                )
-                            ),
-                            source_type="mcp",
-                        )
+            field_name = _mcp_field_name_from_path(path)
+            if field_name not in seen_names:
+                seen_names.add(field_name)
+                resolved_spec = _resolve_output_schema(output_schema, spec)
+                discovered.append(
+                    FieldSpec(
+                        name=field_name,
+                        description=str(resolved_spec.get("description") or ""),
+                        json_schema=resolved_spec,
+                        path=list(path),
+                        result_path=(
+                            list(path)
+                            if "*" in path
+                            else [field_name]
+                        ),
+                        unit=_schema_unit(resolved_spec),
+                        identifier=(
+                            name in {"id", "uuid", "key"}
+                            or name.endswith("_id")
+                        ),
+                        aliases=list(
+                            dict.fromkeys(
+                                [name, name.replace("_", " ")]
+                            )
+                        ),
+                        source_type="mcp",
                     )
+                )
 
-            # Arrays remain opaque until record-preserving item traversal is defined.
-            spec_type = spec.get("type")
-            if spec_type == "array" or (
-                isinstance(spec_type, list) and "array" in spec_type
-            ):
-                continue
             visit(
                 spec,
                 prefix=path,

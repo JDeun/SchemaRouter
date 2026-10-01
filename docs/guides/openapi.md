@@ -292,10 +292,22 @@ exposes `data`, `data.band_gap`, and `data.density`. The nested fields retain th
 JSON Schema, description, unit metadata, and source path. Their projected result key is the dotted
 field name, so selecting a nested field does not collide with selecting its parent object.
 
-Recursive local references are bounded and cycle-safe. This first delivery intentionally does not
-descend through arrays of objects: a schema such as `data[].band_gap` keeps `data` as the
-planner-visible field until record-preserving array-item projection semantics are implemented.
-SchemaRouter never guesses array wildcard behavior from payloads.
+Recursive local references are bounded and cycle-safe. Declared arrays of objects also expose
+record-preserving item fields. For example, `data[].band_gap` uses the source/result path
+`["data", "*", "band_gap"]`. The `*` segment means “for each declared array item”; SchemaRouter
+never infers wildcard fields from observed payloads.
+
+Selecting several item fields preserves each source record:
+
+```text
+data[].band_gap + data[].density
+    -> data:
+         - {band_gap: ..., density: ...}
+         - {band_gap: ..., density: ...}
+```
+
+Root response arrays remain implicit: a response shaped as `[{id, score}, ...]` exposes `id` and
+`score`, not synthetic root names such as `[].id`.
 
 Nested discovery also preserves the existing typed-contract split. Provider-declared JSON Schema,
 description, and source unit metadata are imported when available. Semantic IDs, qualifiers,

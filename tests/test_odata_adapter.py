@@ -27,6 +27,12 @@ METADATA = b"""<?xml version="1.0" encoding="utf-8"?>
         <Property Name="City" Type="Edm.String" Nullable="false" />
         <Property Name="Country" Type="Edm.String" />
       </ComplexType>
+      <ComplexType Name="Measurement">
+        <Property Name="Value" Type="Edm.Double">
+          <Annotation Term="Org.OData.Measures.V1.Unit" String="eV" />
+        </Property>
+        <Property Name="Method" Type="Edm.String" />
+      </ComplexType>
       <EntityType Name="Product">
         <Key><PropertyRef Name="ID" /></Key>
         <Property Name="ID" Type="Edm.Int32" Nullable="false" />
@@ -38,6 +44,7 @@ METADATA = b"""<?xml version="1.0" encoding="utf-8"?>
           />
         </Property>
         <Property Name="Address" Type="Demo.Address" />
+        <Property Name="Measurements" Type="Collection(Demo.Measurement)" />
       </EntityType>
       <EntityContainer Name="Container">
         <EntitySet Name="Products" EntityType="Demo.Product" />
@@ -64,6 +71,9 @@ def test_odata_metadata_compiles_fields_units_and_complex_paths() -> None:
         "Address",
         "Address.City",
         "Address.Country",
+        "Measurements",
+        "Measurements[].Value",
+        "Measurements[].Method",
     } <= set(fields)
     assert fields["ID"].identifier is True
     assert fields["Price"].unit == "USD"
@@ -71,6 +81,13 @@ def test_odata_metadata_compiles_fields_units_and_complex_paths() -> None:
     assert fields["Address.City"].result_path == ["Address.City"]
     assert fields["Address.City"].source_type == "odata"
     assert endpoint.server_projection.field_map["Address.City"] == "Address/City"
+    assert fields["Measurements[].Value"].path == ["Measurements", "*", "Value"]
+    assert fields["Measurements[].Value"].result_path == ["Measurements", "*", "Value"]
+    assert fields["Measurements[].Value"].unit == "eV"
+    assert (
+        endpoint.server_projection.field_map["Measurements[].Value"]
+        == "Measurements/Value"
+    )
     assert endpoint.output_schema["type"] == "array"
 
 
@@ -352,7 +369,8 @@ def test_odata_collection_types_and_descriptions_are_preserved() -> None:
     assert fields["Tags"].json_schema["items"]["type"] == "string"
     assert fields["Addresses"].json_schema["type"] == "array"
     assert fields["Addresses"].json_schema["items"]["type"] == "object"
-    assert "Addresses.City" not in fields
+    assert "Addresses[].City" in fields
+    assert fields["Addresses[].City"].path == ["Addresses", "*", "City"]
     assert fields["Score"].description == "Model score"
     assert fields["Score"].unit == "eV"
 
@@ -496,3 +514,67 @@ async def test_odata_source_adapter_rejects_explicit_base_url_override() -> None
                 base_url="https://other.example/odata",
                 http_client=client,
             )
+
+
+@pytest.mark.asyncio
+async def test_odata_nested_collection_projection_preserves_record_alignment() -> None:
+    seen_queries: list[dict[str, str]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/odata/$metadata":
+            return httpx.Response(200, content=METADATA, request=request)
+        if request.url.path == "/odata/Products":
+            seen_queries.append(dict(request.url.params))
+            return httpx.Response(
+                200,
+                json={
+                    "value": [
+                        {
+                            "ID": 1,
+                            "Measurements": [
+                                {"Value": 1.1, "Method": "A"},
+                                {"Value": 2.2, "Method": "B"},
+                            ],
+                        }
+                    ]
+                },
+                request=request,
+            )
+        raise AssertionError(f"unexpected request: {request.url}")
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = await SchemaRouter.from_url(
+            "https://odata.example/odata",
+            kind="odata",
+            http_client=client,
+        )
+        tool = router.registry.get("odata.example")
+        endpoint = tool.endpoint("list_products")
+        call = ToolCall(
+            tool=tool.key,
+            endpoint=endpoint.name,
+            fields=["ID", "Measurements[].Value", "Measurements[].Method"],
+            schema_fingerprint=endpoint.fingerprint,
+            tool_fingerprint=tool.fingerprint,
+        )
+        plan = ExecutionPlan(
+            query="measurement values and methods",
+            registry_version=router.registry.version,
+            calls=[call],
+        )
+        result = (await router.execute(plan))[0]
+
+    assert seen_queries == [
+        {
+            "$select": "ID,Measurements/Value,Measurements/Method",
+        }
+    ]
+    assert result.data == [
+        {
+            "ID": 1,
+            "Measurements": [
+                {"Value": 1.1, "Method": "A"},
+                {"Value": 2.2, "Method": "B"},
+            ],
+        }
+    ]

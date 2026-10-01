@@ -37,6 +37,10 @@ SchemaRouter reads `ToolMetadata.get_parameters_dict()` or the declared `fn_sche
 input contract. For typed `FunctionTool` objects, a declared return annotation is preserved as an
 output JSON Schema when it can be represented safely.
 
+Typed list results use the same record-preserving item-field contract as native adapters. A typed
+`results: list[Hit]` return can expose fields such as `results[].title` when the return schema
+declares those item properties.
+
 The imported tool remains subject to SchemaRouter policy, fingerprints, validation, fallback,
 health, and observability. Tool metadata does not grant execution authority.
 
