@@ -23,9 +23,15 @@ from .adapters.mcp import (
 from .adapters.openapi import OpenAPIRemoteInvoker
 from .adapters.plugins import load_adapter_plugins as _load_adapter_plugins
 from .adapters.python import PythonCallableInvoker, callable_options, tool_from_callable
-from .amendment import validate_amendment
+from .amendment_overlay import (
+    amendment_overlay,
+    prepare_amended_capability,
+    reapply_amendment_overlay,
+    strip_amendment_overlay,
+)
 from .errors import (
     BindingDriftError,
+    ContractAmendmentError,
     InvocationUnavailableError,
     ProposalApprovalError,
     RegistrationError,
@@ -48,7 +54,12 @@ from .registry import (
     unregister_if_current,
 )
 from .runs import RunConfig, RunEvent
-from .schema_diff import SchemaRefreshResult, compare_tool_specs
+from .schema_diff import (
+    SchemaChange,
+    SchemaDiffReport,
+    SchemaRefreshResult,
+    compare_tool_specs,
+)
 from .schema_watch import SchemaWatchManager, SchemaWatchSnapshot
 from .source_identity import StructuredSourceIdentity, structured_source_identity
 from .traces import RunTraceStore
@@ -512,7 +523,7 @@ class SchemaRouter:
         """
         expected_version = self.registry.version
         current = self.registry.get(tool_key)
-        validate_amendment(current, amended)
+        amended = prepare_amended_capability(current, amended)
         was_bound = tool_key in self.executor.bound_keys()
         key = replace_if_current(
             self.registry,
@@ -1013,7 +1024,6 @@ class SchemaRouter:
         return self.registry.get(key)
 
 
-
     async def add_mcp_stdio(
         self,
         command: str,
@@ -1077,7 +1087,6 @@ class SchemaRouter:
             expected_fingerprint=tool.fingerprint,
         )
         return self.registry.get(key)
-
 
 
     async def probe_url(
@@ -1355,8 +1364,59 @@ class SchemaRouter:
                 "refreshed schema changed the registered tool key unexpectedly"
             )
 
-        report = compare_tool_specs(current, candidate_tool)
-        if report.compatibility == "identical":
+        overlay = amendment_overlay(current)
+        raw_current = strip_amendment_overlay(current) if overlay is not None else current
+        raw_report = compare_tool_specs(raw_current, candidate_tool)
+
+        effective_candidate = candidate_tool
+        if overlay is not None:
+            try:
+                effective_candidate = reapply_amendment_overlay(
+                    candidate_tool,
+                    overlay,
+                )
+            except ContractAmendmentError as exc:
+                changes = list(raw_report.changes)
+                changes.append(
+                    SchemaChange(
+                        path="trusted_amendment_overlay",
+                        kind="amendment_overlay_conflict",
+                        severity="breaking",
+                        old="trusted local amendment",
+                        new="provider contract no longer accepts amendment target",
+                        message=str(exc),
+                    )
+                )
+                return SchemaRefreshResult(
+                    tool_key=tool_key,
+                    action="pending_review",
+                    applied=False,
+                    report=SchemaDiffReport(
+                        compatibility="breaking",
+                        old_fingerprint=current.fingerprint,
+                        new_fingerprint=candidate_tool.fingerprint,
+                        changes=changes,
+                    ),
+                )
+
+        effective_report = compare_tool_specs(current, effective_candidate)
+        if raw_report.compatibility in {"breaking", "security_review"}:
+            report = SchemaDiffReport(
+                compatibility=raw_report.compatibility,
+                old_fingerprint=current.fingerprint,
+                new_fingerprint=effective_candidate.fingerprint,
+                changes=list(raw_report.changes),
+            )
+        else:
+            report = effective_report
+
+        raw_changed_under_overlay = (
+            overlay is not None
+            and raw_report.changed
+            and effective_report.compatibility == "identical"
+        )
+
+        if report.compatibility == "identical" and not raw_changed_under_overlay:
             if not use_bound_mcp_transport and use_http_validators:
                 self.loader.remember_tool_schema_http_validators(candidate_tool)
             return SchemaRefreshResult(
@@ -1366,8 +1426,10 @@ class SchemaRouter:
                 report=report,
             )
 
-        if report.compatibility == "compatible" and apply_compatible:
-            if candidate is not None:
+        if (
+            report.compatibility == "compatible" or raw_changed_under_overlay
+        ) and apply_compatible:
+            if overlay is None and candidate is not None:
                 self.loader.commit_candidate_if_current(
                     candidate,
                     expected_fingerprint=current.fingerprint,
@@ -1376,7 +1438,7 @@ class SchemaRouter:
             else:
                 key = replace_if_current(
                     self.registry,
-                    candidate_tool,
+                    effective_candidate,
                     expected_fingerprint=current.fingerprint,
                     expected_version=expected_version,
                 )
@@ -1384,18 +1446,33 @@ class SchemaRouter:
                     self.executor.bind(
                         key,
                         candidate_invoker,
-                        expected_fingerprint=candidate_tool.fingerprint,
+                        expected_fingerprint=effective_candidate.fingerprint,
                     )
-            self.health_monitor.transition_tool_contract(
-                tool_key,
-                expected_old_fingerprint=current.fingerprint,
-                expected_new_fingerprint=candidate_tool.fingerprint,
-            )
+                if not use_bound_mcp_transport and use_http_validators:
+                    self.loader.remember_tool_schema_http_validators(
+                        effective_candidate
+                    )
+
+            if effective_candidate.fingerprint != current.fingerprint:
+                self.health_monitor.transition_tool_contract(
+                    tool_key,
+                    expected_old_fingerprint=current.fingerprint,
+                    expected_new_fingerprint=effective_candidate.fingerprint,
+                )
+
+            applied_report = report
+            if raw_changed_under_overlay:
+                applied_report = SchemaDiffReport(
+                    compatibility="compatible",
+                    old_fingerprint=current.fingerprint,
+                    new_fingerprint=effective_candidate.fingerprint,
+                    changes=list(raw_report.changes),
+                )
             return SchemaRefreshResult(
                 tool_key=tool_key,
                 action="applied",
                 applied=True,
-                report=report,
+                report=applied_report,
             )
 
         action = (
