@@ -157,6 +157,7 @@ def test_workflow_keeps_candidates_strictly_sequential_and_revision_pinned():
     assert 'ref: "${{ env.SOURCE_SHA }}"' in workflow
 
 
+
 def test_workflow_downloads_qualification_corpus_at_repo_root():
     from pathlib import Path
 
@@ -172,7 +173,8 @@ def test_workflow_downloads_qualification_corpus_at_repo_root():
     # artifacts/qualification would double-nest the corpus path and fail before inference.
     download_blocks = workflow.split("uses: actions/download-artifact@")[1:]
     qualification_blocks = [
-        block for block in download_blocks
+        block
+        for block in download_blocks
         if 'name: "qualification-corpus-${{ github.run_id }}"' in block
     ]
     assert qualification_blocks
@@ -181,7 +183,6 @@ def test_workflow_downloads_qualification_corpus_at_repo_root():
         "\n          path: artifacts/qualification\n" not in block
         for block in qualification_blocks
     )
-
 
 def test_workflow_launch_is_armed_only_by_the_explicit_trigger_file():
     from pathlib import Path
