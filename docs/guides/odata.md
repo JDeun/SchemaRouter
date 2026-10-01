@@ -51,6 +51,12 @@ and SchemaRouter preserves record alignment while projecting each object in the 
 Complex properties use planner-visible dotted identities while provider selectors use OData slash
 notation.
 
+Declared collections of complex values use the same record-preserving array-item contract as other
+adapters. For example, `Measurements[].Value` uses the trusted path
+`["Measurements", "*", "Value"]`, while the provider receives
+`$select=Measurements/Value`. Multiple selected children remain grouped inside the same
+`Measurements[]` records by index; SchemaRouter never flattens them into unrelated parallel arrays.
+
 ## Type and unit contracts
 
 Common `Edm.*` primitives are mapped to JSON Schema, including strings/UUIDs, booleans, integer

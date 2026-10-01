@@ -1,0 +1,317 @@
+from __future__ import annotations
+
+import asyncio
+import time
+from collections.abc import Awaitable, Callable, Mapping
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Any, Literal
+
+from .errors import SchemaSourceError
+from .registry import ToolRegistry
+from .schema_diff import SchemaRefreshResult
+
+SchemaWatchStatus = Literal[
+    "idle",
+    "unchanged",
+    "applied",
+    "report_only",
+    "pending_review",
+    "error",
+    "stale",
+]
+
+RefreshCallable = Callable[..., Awaitable[SchemaRefreshResult]]
+
+_REFRESHABLE_ADAPTERS = {
+    "openapi",
+    "mcp",
+    "optimade",
+    "graphql",
+    "odata",
+    "openrpc",
+}
+
+
+@dataclass(frozen=True)
+class SchemaWatchSnapshot:
+    """Privacy-safe state for one periodically refreshed remote schema."""
+
+    tool: str
+    status: SchemaWatchStatus
+    interval_seconds: float
+    apply_compatible: bool
+    last_checked_at: datetime | None = None
+    last_applied_at: datetime | None = None
+    last_compatibility: str | None = None
+    pending_review: bool = False
+    pending_change_count: int = 0
+    last_error_type: str | None = None
+
+
+@dataclass
+class _WatchRecord:
+    interval_seconds: float
+    apply_compatible: bool
+    schema_headers: dict[str, str] | None
+    trusted_headers: dict[str, str] | None
+    mcp_client_factory: Any | None
+    timeout_seconds: float
+    status: SchemaWatchStatus = "idle"
+    last_checked_at: datetime | None = None
+    last_applied_at: datetime | None = None
+    last_compatibility: str | None = None
+    last_error_type: str | None = None
+    pending_result: SchemaRefreshResult | None = None
+    next_due: float = 0.0
+
+
+class SchemaWatchManager:
+    """Optional periodic schema refresh for registered remote structured sources.
+
+    The manager stores trusted transport credentials only in process-local private records.
+    Snapshots never expose header values, factories, or other transport state.
+    """
+
+    def __init__(
+        self,
+        registry: ToolRegistry,
+        refresh: RefreshCallable,
+    ) -> None:
+        self.registry = registry
+        self._refresh = refresh
+        self._records: dict[str, _WatchRecord] = {}
+        self._task: asyncio.Task[None] | None = None
+        self._run_lock = asyncio.Lock()
+        self._wake = asyncio.Event()
+        self._max_concurrency = 4
+
+    @property
+    def running(self) -> bool:
+        return self._task is not None and not self._task.done()
+
+    @staticmethod
+    def _adapter(tool: Any) -> str | None:
+        adapter = tool.execution_metadata.get("adapter")
+        if not isinstance(adapter, str):
+            adapter = tool.metadata.get("adapter")
+        return adapter if isinstance(adapter, str) else None
+
+    def _assert_refreshable(self, tool_key: str) -> None:
+        try:
+            tool = self.registry.get(tool_key)
+        except KeyError as exc:
+            raise KeyError(f"unknown tool: {tool_key}") from exc
+        adapter = self._adapter(tool)
+        if adapter not in _REFRESHABLE_ADAPTERS:
+            raise SchemaSourceError(
+                f"tool {tool_key!r} does not have a refreshable structured-source adapter"
+            )
+
+    def register(
+        self,
+        tool_key: str,
+        *,
+        interval_seconds: float = 300.0,
+        apply_compatible: bool = True,
+        schema_headers: Mapping[str, str] | None = None,
+        trusted_headers: Mapping[str, str] | None = None,
+        mcp_client_factory: Any | None = None,
+        timeout_seconds: float = 20.0,
+    ) -> None:
+        self._assert_refreshable(tool_key)
+        interval = float(interval_seconds)
+        timeout = float(timeout_seconds)
+        if interval <= 0:
+            raise ValueError("interval_seconds must be > 0")
+        if timeout <= 0:
+            raise ValueError("timeout_seconds must be > 0")
+
+        self._records[tool_key] = _WatchRecord(
+            interval_seconds=interval,
+            apply_compatible=bool(apply_compatible),
+            schema_headers=(
+                dict(schema_headers)
+                if schema_headers is not None
+                else None
+            ),
+            trusted_headers=(
+                dict(trusted_headers)
+                if trusted_headers is not None
+                else None
+            ),
+            mcp_client_factory=mcp_client_factory,
+            timeout_seconds=timeout,
+            next_due=time.monotonic(),
+        )
+        self._wake.set()
+
+    def unregister(self, tool_key: str) -> None:
+        self._records.pop(tool_key, None)
+        self._wake.set()
+
+    def snapshots(self) -> tuple[SchemaWatchSnapshot, ...]:
+        return tuple(
+            SchemaWatchSnapshot(
+                tool=tool_key,
+                status=record.status,
+                interval_seconds=record.interval_seconds,
+                apply_compatible=record.apply_compatible,
+                last_checked_at=record.last_checked_at,
+                last_applied_at=record.last_applied_at,
+                last_compatibility=record.last_compatibility,
+                pending_review=record.pending_result is not None,
+                pending_change_count=(
+                    len(record.pending_result.report.changes)
+                    if record.pending_result is not None
+                    else 0
+                ),
+                last_error_type=record.last_error_type,
+            )
+            for tool_key, record in sorted(self._records.items())
+        )
+
+    def pending_review(self, tool_key: str) -> SchemaRefreshResult | None:
+        record = self._records.get(tool_key)
+        if record is None or record.pending_result is None:
+            return None
+        return record.pending_result.model_copy(deep=True)
+
+    async def _run_record(
+        self,
+        tool_key: str,
+        record: _WatchRecord,
+        *,
+        semaphore: asyncio.Semaphore,
+    ) -> None:
+        async with semaphore:
+            now = datetime.now(timezone.utc)
+            try:
+                self._assert_refreshable(tool_key)
+            except (KeyError, SchemaSourceError) as exc:
+                record.status = "stale"
+                record.last_checked_at = now
+                record.last_error_type = type(exc).__name__
+                record.pending_result = None
+                record.next_due = time.monotonic() + record.interval_seconds
+                return
+
+            try:
+                result = await asyncio.wait_for(
+                    self._refresh(
+                        tool_key,
+                        apply_compatible=record.apply_compatible,
+                        schema_headers=record.schema_headers,
+                        trusted_headers=record.trusted_headers,
+                        mcp_client_factory=record.mcp_client_factory,
+                        timeout=record.timeout_seconds,
+                    ),
+                    timeout=record.timeout_seconds,
+                )
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                record.status = "error"
+                record.last_checked_at = datetime.now(timezone.utc)
+                record.last_error_type = type(exc).__name__
+                record.next_due = time.monotonic() + record.interval_seconds
+                return
+
+            checked_at = datetime.now(timezone.utc)
+            record.last_checked_at = checked_at
+            record.last_compatibility = result.compatibility
+            record.last_error_type = None
+            if result.action == "pending_review":
+                record.status = "pending_review"
+                record.pending_result = result.model_copy(deep=True)
+            else:
+                record.pending_result = None
+                if result.action == "applied":
+                    record.status = "applied"
+                    record.last_applied_at = checked_at
+                elif result.action == "report_only":
+                    record.status = "report_only"
+                else:
+                    record.status = "unchanged"
+
+            record.next_due = time.monotonic() + record.interval_seconds
+
+    async def run_once(
+        self,
+        *,
+        force: bool = True,
+        max_concurrency: int | None = None,
+    ) -> tuple[SchemaWatchSnapshot, ...]:
+        concurrency = (
+            self._max_concurrency
+            if max_concurrency is None
+            else int(max_concurrency)
+        )
+        if concurrency < 1:
+            raise ValueError("max_concurrency must be >= 1")
+
+        async with self._run_lock:
+            now = time.monotonic()
+            due = [
+                (tool_key, record)
+                for tool_key, record in tuple(self._records.items())
+                if force or record.next_due <= now
+            ]
+            if not due:
+                return self.snapshots()
+
+            semaphore = asyncio.Semaphore(concurrency)
+            await asyncio.gather(
+                *(
+                    self._run_record(
+                        tool_key,
+                        record,
+                        semaphore=semaphore,
+                    )
+                    for tool_key, record in due
+                )
+            )
+            return self.snapshots()
+
+    def _next_delay(self) -> float:
+        if not self._records:
+            return 60.0
+        now = time.monotonic()
+        return max(
+            0.05,
+            min(
+                max(0.0, record.next_due - now)
+                for record in self._records.values()
+            ),
+        )
+
+    async def _loop(self) -> None:
+        try:
+            while True:
+                await self.run_once(force=False)
+                self._wake.clear()
+                try:
+                    await asyncio.wait_for(
+                        self._wake.wait(),
+                        timeout=self._next_delay(),
+                    )
+                except TimeoutError:
+                    pass
+        except asyncio.CancelledError:
+            raise
+
+    async def start(self, *, max_concurrency: int = 4) -> None:
+        if self.running:
+            raise RuntimeError("schema watcher is already running")
+        if max_concurrency < 1:
+            raise ValueError("max_concurrency must be >= 1")
+        self._max_concurrency = int(max_concurrency)
+        self._task = asyncio.create_task(self._loop())
+
+    async def stop(self) -> None:
+        task = self._task
+        self._task = None
+        if task is None:
+            return
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)

@@ -164,8 +164,14 @@ Nested object fields may be exposed as additional planner-visible fields only wh
 project them without corrupting record alignment. Parent fields may remain available at the same
 time, so nested fields should use disjoint `result_path` values.
 
-Array-item traversal must not be guessed. An adapter should keep an array field opaque until it has
-an explicit record-preserving item-projection rule.
+Array-item traversal uses an explicit `"*"` path segment only when the authoritative source schema
+declares an array item schema. For example, `["results", "*", "title"]` is exposed as
+`results[].title`. The same wildcard should normally appear in `result_path` so several selected
+item fields merge back into the original record structure by array index. Root arrays are traversed
+implicitly and do not start with `"*"`.
+
+Never add wildcard fields by inspecting example payloads alone. The array/item contract must come
+from structured schema metadata or trusted local adapter code.
 
 Semantic IDs, unit-normalization dimensions/conversions, qualifiers, licences, and provenance are
 trusted contracts. Import them only from an authoritative structured source or attach them through
@@ -211,7 +217,7 @@ New adapters should test:
 - nested object path/result-path fidelity when nested fields are exposed;
 - source-unit preservation without inferred conversion factors;
 - parent-field queries not implicitly selecting every nested descendant;
-- array-item behavior remaining opaque unless record-preserving traversal is explicitly supported;
+- array-item wildcard paths preserving source record alignment and never being inferred from payload examples;
 - trusted enrichment of semantic IDs, normalization/dimension, qualifiers, source type and licence;
 - transport-specific origin/redirect behavior where relevant.
 

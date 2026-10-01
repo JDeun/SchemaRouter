@@ -180,6 +180,11 @@ into a text block. SchemaRouter derives output fields only from a declared
 `outputSchema`, so such an endpoint arrives with none, and there is nothing to
 project or normalize.
 
+Declared output arrays are traversed only from the published `outputSchema`. A shape such as
+`results: array<object{title,url}>` exposes `results[].title` and `results[].url`; the internal
+`"*"` path segment preserves record alignment during projection. No array-item fields are inferred
+from example tool responses.
+
 Trusted local code can declare that contract itself:
 
 ```python

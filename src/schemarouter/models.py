@@ -105,23 +105,55 @@ def _schema_type_shape_compatible(
     return True
 
 
+def _resolve_local_schema_ref(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> dict[str, Any]:
+    """Resolve only local JSON Schema refs against the endpoint's own schema document."""
+
+    current = schema
+    seen: set[str] = set()
+    while isinstance(current, dict):
+        ref = current.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/") or ref in seen:
+            return current
+        seen.add(ref)
+
+        node: Any = document
+        try:
+            for raw in ref[2:].split("/"):
+                part = raw.replace("~1", "/").replace("~0", "~")
+                node = node[part]
+        except (KeyError, TypeError):
+            return current
+        if not isinstance(node, dict):
+            return current
+
+        merged = dict(node)
+        merged.update({key: value for key, value in current.items() if key != "$ref"})
+        current = merged
+    return schema
+
+
 def _schema_at_projection_path(
     output_schema: dict[str, Any],
     path: tuple[str, ...],
 ) -> dict[str, Any]:
-    schema = output_schema
+    document = output_schema
+    schema = _resolve_local_schema_ref(document, output_schema)
     if "array" in _schema_types(schema) and isinstance(schema.get("items"), dict):
         # Root collection endpoints historically address fields relative to each record.
-        schema = schema["items"]
+        schema = _resolve_local_schema_ref(document, schema["items"])
 
     for part in path:
+        schema = _resolve_local_schema_ref(document, schema)
         if part == "*":
             if "array" not in _schema_types(schema):
                 return {}
             items = schema.get("items")
             if not isinstance(items, dict):
                 return {}
-            schema = items
+            schema = _resolve_local_schema_ref(document, items)
             continue
 
         if "object" not in _schema_types(schema):
@@ -132,7 +164,7 @@ def _schema_at_projection_path(
         child = properties.get(part)
         if not isinstance(child, dict):
             return {}
-        schema = child
+        schema = _resolve_local_schema_ref(document, child)
     return schema
 
 
@@ -293,10 +325,18 @@ class FieldSpec(StrictModel):
             if part == "*"
         ]
         if source_wildcards:
+            if source_wildcards[0] == 0:
+                raise ValueError("array wildcard must not begin a field path")
+            if source_wildcards[-1] == len(self.path) - 1:
+                raise ValueError("array wildcard must not end a field path")
             if not self.result_path:
                 raise ValueError(
                     "array-item field paths require an explicit result_path"
                 )
+            if result_wildcards and result_wildcards[0] == 0:
+                raise ValueError("array wildcard must not begin a result path")
+            if result_wildcards and result_wildcards[-1] == len(self.result_path) - 1:
+                raise ValueError("array wildcard must not end a result path")
             if source_wildcards != result_wildcards:
                 raise ValueError(
                     "array-item source/result paths must preserve wildcard positions"
@@ -505,10 +545,17 @@ class EndpointSpec(StrictModel):
                     if len(left_result) <= len(right_result)
                     else (right_result, left_result)
                 )
-                if (
+                source_overlaps = (
                     source_longer[: len(source_shorter)] == source_shorter
-                    and result_longer[: len(result_shorter)] == result_shorter
-                ):
+                )
+                result_overlaps = (
+                    result_longer[: len(result_shorter)] == result_shorter
+                )
+                wildcard_mergeable = (
+                    "*" in source_longer
+                    and "*" in result_longer
+                )
+                if source_overlaps and result_overlaps and not wildcard_mergeable:
                     raise ValueError(
                         "overlapping output field paths in endpoint "
                         f"{self.name!r}: {left_name!r} and {right_name!r}"
@@ -527,7 +574,10 @@ class EndpointSpec(StrictModel):
                     if len(left_path) <= len(right_path)
                     else (right_path, left_path)
                 )
-                if longer[: len(shorter)] == shorter:
+                if (
+                    longer[: len(shorter)] == shorter
+                    and "*" not in longer
+                ):
                     raise ValueError(
                         "overlapping output result paths in endpoint "
                         f"{self.name!r}: {left_name!r} and {right_name!r}"

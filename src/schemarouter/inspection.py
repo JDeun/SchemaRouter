@@ -181,6 +181,21 @@ class HealthProbeInspection(StrictModel):
     last_error_type: str | None = None
 
 
+class SchemaWatchInspection(StrictModel):
+    """Privacy-safe view of one registered remote-schema watch."""
+
+    tool: str
+    status: str
+    interval_seconds: float
+    apply_compatible: bool
+    last_checked_at: datetime.datetime | None = None
+    last_applied_at: datetime.datetime | None = None
+    last_compatibility: str | None = None
+    pending_review: bool = False
+    pending_change_count: int = Field(default=0, ge=0)
+    last_error_type: str | None = None
+
+
 class ExecutionInspection(StrictModel):
     """Privacy-safe view of live execution authority, bindings, and access health."""
 
@@ -190,6 +205,8 @@ class ExecutionInspection(StrictModel):
     unavailable_access_paths: list[str] = Field(default_factory=list)
     health_monitor_running: bool = False
     health_probes: list[HealthProbeInspection] = Field(default_factory=list)
+    schema_watcher_running: bool = False
+    schema_watches: list[SchemaWatchInspection] = Field(default_factory=list)
 
 
 class RouterInspection(StrictModel):
@@ -366,6 +383,22 @@ def inspect_router(router: Any) -> RouterInspection:
                     last_error_type=snapshot.last_error_type,
                 )
                 for snapshot in router.health_monitor.snapshots()
+            ],
+            schema_watcher_running=router.schema_watcher.running,
+            schema_watches=[
+                SchemaWatchInspection(
+                    tool=snapshot.tool,
+                    status=snapshot.status,
+                    interval_seconds=snapshot.interval_seconds,
+                    apply_compatible=snapshot.apply_compatible,
+                    last_checked_at=snapshot.last_checked_at,
+                    last_applied_at=snapshot.last_applied_at,
+                    last_compatibility=snapshot.last_compatibility,
+                    pending_review=snapshot.pending_review,
+                    pending_change_count=snapshot.pending_change_count,
+                    last_error_type=snapshot.last_error_type,
+                )
+                for snapshot in router.schema_watcher.snapshots()
             ],
         ),
     )

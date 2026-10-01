@@ -43,6 +43,7 @@ from .proposals import DocumentationModelCallable, SchemaProposal, inspect_docum
 from .registry import InMemoryRegistry, ToolRegistry, replace_if_current
 from .runs import RunConfig, RunEvent
 from .schema_diff import SchemaRefreshResult, compare_tool_specs
+from .schema_watch import SchemaWatchManager, SchemaWatchSnapshot
 from .traces import RunTraceStore
 
 _T = TypeVar("_T")
@@ -146,6 +147,10 @@ class SchemaRouter:
             http_client=http_client,
             adapters=adapter_registry,
         )
+        self.schema_watcher = SchemaWatchManager(
+            self.registry,
+            self.arefresh_schema,
+        )
 
     @property
     def input_schema(self) -> dict[str, Any]:
@@ -222,6 +227,62 @@ class SchemaRouter:
 
     async def stop_health_monitor(self) -> None:
         await self.health_monitor.stop()
+
+    def register_schema_watch(
+        self,
+        tool_key: str,
+        *,
+        interval_seconds: float = 300.0,
+        apply_compatible: bool = True,
+        schema_headers: dict[str, str] | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: MCPClientFactory | None = None,
+        timeout_seconds: float = 20.0,
+    ) -> None:
+        """Register one remote structured source for periodic schema refresh."""
+
+        self.schema_watcher.register(
+            tool_key,
+            interval_seconds=interval_seconds,
+            apply_compatible=apply_compatible,
+            schema_headers=schema_headers,
+            trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
+            timeout_seconds=timeout_seconds,
+        )
+
+    def unregister_schema_watch(self, tool_key: str) -> None:
+        self.schema_watcher.unregister(tool_key)
+
+    def schema_watch_snapshots(self) -> tuple[SchemaWatchSnapshot, ...]:
+        return self.schema_watcher.snapshots()
+
+    def schema_watch_pending_review(
+        self,
+        tool_key: str,
+    ) -> SchemaRefreshResult | None:
+        return self.schema_watcher.pending_review(tool_key)
+
+    async def check_schema_watches_once(
+        self,
+        *,
+        force: bool = True,
+        max_concurrency: int | None = None,
+    ) -> tuple[SchemaWatchSnapshot, ...]:
+        return await self.schema_watcher.run_once(
+            force=force,
+            max_concurrency=max_concurrency,
+        )
+
+    async def start_schema_watcher(
+        self,
+        *,
+        max_concurrency: int = 4,
+    ) -> None:
+        await self.schema_watcher.start(max_concurrency=max_concurrency)
+
+    async def stop_schema_watcher(self) -> None:
+        await self.schema_watcher.stop()
 
     def with_config(
         self,
@@ -790,45 +851,6 @@ class SchemaRouter:
         )
         return key
 
-    async def add_url(
-        self,
-        url: str,
-        *,
-        kind: SourceKind = "auto",
-        name: str | None = None,
-        namespace: str | None = None,
-        provider: str | None = None,
-        access_mode: str | None = None,
-        replace: bool = False,
-        base_url: str | None = None,
-        schema_headers: dict[str, str] | None = None,
-        trusted_headers: dict[str, str] | None = None,
-        mcp_client_factory: MCPClientFactory | None = None,
-        openapi_external_refs: bool = False,
-        openapi_ref_max_depth: int = 3,
-        openapi_ref_max_documents: int = 8,
-        openapi_ref_max_bytes: int = 10 * 1024 * 1024,
-        timeout: float = 20.0,
-    ) -> ToolSpec:
-        return await self.loader.load(
-            url,
-            kind=kind,
-            name=name,
-            namespace=namespace,
-            provider=provider,
-            access_mode=access_mode,
-            replace=replace,
-            base_url=base_url,
-            schema_headers=schema_headers,
-            trusted_headers=trusted_headers,
-            mcp_client_factory=mcp_client_factory,
-            openapi_external_refs=openapi_external_refs,
-            openapi_ref_max_depth=openapi_ref_max_depth,
-            openapi_ref_max_documents=openapi_ref_max_documents,
-            openapi_ref_max_bytes=openapi_ref_max_bytes,
-            timeout=timeout,
-        )
-
     async def add_mcp_client_factory(
         self,
         client_factory: MCPBoundClientFactory,
@@ -904,6 +926,7 @@ class SchemaRouter:
         )
         return self.registry.get(key)
 
+
     async def add_mcp_stdio(
         self,
         command: str,
@@ -967,6 +990,46 @@ class SchemaRouter:
             expected_fingerprint=tool.fingerprint,
         )
         return self.registry.get(key)
+
+
+    async def add_url(
+        self,
+        url: str,
+        *,
+        kind: SourceKind = "auto",
+        name: str | None = None,
+        namespace: str | None = None,
+        provider: str | None = None,
+        access_mode: str | None = None,
+        replace: bool = False,
+        base_url: str | None = None,
+        schema_headers: dict[str, str] | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: MCPClientFactory | None = None,
+        openapi_external_refs: bool = False,
+        openapi_ref_max_depth: int = 3,
+        openapi_ref_max_documents: int = 8,
+        openapi_ref_max_bytes: int = 10 * 1024 * 1024,
+        timeout: float = 20.0,
+    ) -> ToolSpec:
+        return await self.loader.load(
+            url,
+            kind=kind,
+            name=name,
+            namespace=namespace,
+            provider=provider,
+            access_mode=access_mode,
+            replace=replace,
+            base_url=base_url,
+            schema_headers=schema_headers,
+            trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
+            openapi_external_refs=openapi_external_refs,
+            openapi_ref_max_depth=openapi_ref_max_depth,
+            openapi_ref_max_documents=openapi_ref_max_documents,
+            openapi_ref_max_bytes=openapi_ref_max_bytes,
+            timeout=timeout,
+        )
 
     async def arefresh_schema(
         self,

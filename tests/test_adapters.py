@@ -271,7 +271,7 @@ async def test_openapi_nested_local_refs_remain_runtime_resolvable() -> None:
     call = ToolCall(
         tool="pets",
         endpoint="list_pets",
-        fields=[],
+        fields=["id", "category.name"],
         schema_fingerprint=endpoint.fingerprint,
 
         tool_fingerprint=tool.fingerprint,
@@ -286,7 +286,7 @@ async def test_openapi_nested_local_refs_remain_runtime_resolvable() -> None:
     )
 
     result = await executor.execute(plan)
-    assert result[0].data[0]["category"]["name"] == "Dogs"
+    assert result[0].data == [{"id": 1, "category.name": "Dogs"}]
 
     executor.bind(
         "pets",

@@ -69,10 +69,38 @@ def _resolve_local_ref(
 _NESTED_RETURN_MAX_DEPTH = 8
 
 
+def _python_field_name_from_path(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if not parts:
+                raise ValueError("array wildcard cannot be the first named field segment")
+            parts[-1] = parts[-1] + "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
+def _python_schema_is_array(schema: dict[str, Any]) -> bool:
+    raw_type = schema.get("type")
+    return raw_type == "array" or (
+        isinstance(raw_type, list) and "array" in raw_type
+    )
+
+
+def _return_record_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    root = _top_level_object_schema(schema)
+    if _python_schema_is_array(root):
+        items = root.get("items")
+        if isinstance(items, dict):
+            return _resolve_local_ref(schema, items)
+    return root
+
+
 def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
     discovered: list[FieldSpec] = []
-    root = _top_level_object_schema(schema)
-    root_properties = root.get("properties")
+    record_schema = _return_record_schema(schema)
+    root_properties = record_schema.get("properties")
     top_names = (
         set(root_properties)
         if isinstance(root_properties, dict)
@@ -102,10 +130,15 @@ def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
             return
         next_ancestors = ancestors | {signature}
 
-        raw_type = resolved.get("type")
-        if raw_type == "array" or (
-            isinstance(raw_type, list) and "array" in raw_type
-        ):
+        if _python_schema_is_array(resolved):
+            items = resolved.get("items")
+            if isinstance(items, dict):
+                visit(
+                    items,
+                    prefix=(*prefix, "*") if prefix else prefix,
+                    depth=depth + 1,
+                    ancestors=next_ancestors,
+                )
             return
 
         properties = resolved.get("properties")
@@ -117,21 +150,26 @@ def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
                 continue
             path = (*prefix, str(name))
             if prefix:
-                field_name = ".".join(path)
+                field_name = _python_field_name_from_path(path)
                 if field_name not in top_names:
+                    resolved_child = _resolve_local_ref(schema, child)
                     discovered.append(
                         FieldSpec(
                             name=field_name,
-                            description=str(child.get("description") or ""),
-                            json_schema=_resolve_local_ref(schema, child),
+                            description=str(resolved_child.get("description") or ""),
+                            json_schema=resolved_child,
                             aliases=list(
                                 dict.fromkeys(
                                     [str(name), str(name).replace("_", " ")]
                                 )
                             ),
                             path=list(path),
-                            result_path=[field_name],
-                            unit=_schema_unit(child),
+                            result_path=(
+                                list(path)
+                                if "*" in path
+                                else [field_name]
+                            ),
+                            unit=_schema_unit(resolved_child),
                             identifier=(
                                 str(name) in {"id", "uuid", "key"}
                                 or str(name).endswith("_id")
@@ -146,12 +184,13 @@ def _nested_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
                 ancestors=next_ancestors,
             )
 
+    root = _top_level_object_schema(schema)
     visit(root, prefix=(), depth=0, ancestors=frozenset())
     return discovered
 
 
 def _fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
-    object_schema = _top_level_object_schema(schema)
+    object_schema = _return_record_schema(schema)
     properties = object_schema.get("properties", {})
     if not isinstance(properties, dict):
         return []
