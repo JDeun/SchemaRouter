@@ -230,3 +230,38 @@ def test_array_wildcard_cannot_be_root_or_terminal_segment() -> None:
             path=["data", "*"],
             json_schema={"type": "array"},
         )
+
+
+def test_non_array_parent_child_result_overlap_remains_rejected() -> None:
+    with pytest.raises(ValueError, match="overlapping output field paths"):
+        EndpointSpec(
+            name="unsafe_overlap",
+            output_schema={
+                "type": "object",
+                "properties": {
+                    "profile": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                        },
+                    }
+                },
+            },
+            output_fields=[
+                FieldSpec(
+                    name="profile",
+                    json_schema={
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                        },
+                    },
+                ),
+                FieldSpec(
+                    name="profile.name",
+                    path=["profile", "name"],
+                    result_path=["profile", "name"],
+                    json_schema={"type": "string"},
+                ),
+            ],
+        )
