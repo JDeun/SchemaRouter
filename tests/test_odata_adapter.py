@@ -10,7 +10,6 @@ from schemarouter import (
     tool_from_odata_metadata,
 )
 
-
 METADATA = b"""<?xml version="1.0" encoding="utf-8"?>
 <edmx:Edmx Version="4.0"
   xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx">
