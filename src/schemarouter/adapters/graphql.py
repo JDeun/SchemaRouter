@@ -14,7 +14,13 @@ from ..errors import (
     SchemaSourceError,
 )
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
-from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
+from .base import (
+    AdapterContext,
+    AdapterLoadResult,
+    AdapterProbeError,
+    DiscoveryProfile,
+    adapter_probe_error,
+)
 
 _MAX_INTROSPECTION_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 10 * 1024 * 1024
@@ -764,13 +770,16 @@ class GraphQLSourceAdapter:
                     payload={"query": _INTROSPECTION_QUERY},
                     max_bytes=_MAX_INTROSPECTION_BYTES,
                 )
-            except SchemaSourceError:
-                raise
-            except Exception:  # noqa: BLE001
-                return None
+            except Exception as exc:  # noqa: BLE001
+                raise adapter_probe_error("graphql", exc) from exc
 
             data = response.get("data")
             if not isinstance(data, dict) or not isinstance(data.get("__schema"), dict):
+                if "data" in response or isinstance(response.get("errors"), list):
+                    raise AdapterProbeError(
+                        "unsupported_feature",
+                        "GraphQL endpoint responded but schema introspection is unavailable",
+                    )
                 return None
 
             inferred_name = context.name or _slug(
