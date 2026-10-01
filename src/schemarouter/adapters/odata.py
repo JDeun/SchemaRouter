@@ -29,6 +29,7 @@ from ..schema_http import (
     conditional_schema_headers,
     schema_http_validators_from_headers,
 )
+from ..source_identity import structured_source_identity_digest_for
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
 
 _MAX_METADATA_BYTES = 5 * 1024 * 1024
@@ -618,7 +619,11 @@ class ODataSourceAdapter:
                     "service_url": safe_provenance_url(service_url),
                 }
             )
-            attach_schema_http_validators(tool.metadata, validators)
+            attach_schema_http_validators(
+                tool.metadata,
+                validators,
+                source_identity_digest=structured_source_identity_digest_for(tool),
+            )
             invoker = ODataRemoteInvoker(
                 tool,
                 service_url,

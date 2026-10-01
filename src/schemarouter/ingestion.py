@@ -39,8 +39,15 @@ from .schema_http import (
     attach_schema_http_validators,
     conditional_schema_headers,
     normalize_schema_http_validators,
+    schema_http_validator_source_from_metadata,
     schema_http_validators_from_headers,
     schema_http_validators_from_metadata,
+)
+from .source_identity import (
+    StructuredSourceIdentity,
+    structured_source_identity,
+    structured_source_identity_digest,
+    structured_source_identity_digest_for,
 )
 
 SourceKind = str
@@ -762,7 +769,11 @@ class OpenAPISourceAdapter:
                 "remote": True,
             }
         )
-        attach_schema_http_validators(tool.metadata, validators)
+        attach_schema_http_validators(
+            tool.metadata,
+            validators,
+            source_identity_digest=structured_source_identity_digest_for(tool),
+        )
 
         selected_base_url = context.base_url or suggested_base_url
         auto_bind_allowed = context.base_url is not None or (
@@ -865,6 +876,12 @@ def default_adapter_registry() -> AdapterRegistry:
     )
 
 
+@dataclass(frozen=True)
+class _SchemaHTTPValidatorCacheEntry:
+    source_identity: StructuredSourceIdentity
+    validators: dict[str, str]
+
+
 class URLSchemaLoader:
     """Resolve structured URL sources through a pluggable adapter registry."""
 
@@ -880,42 +897,79 @@ class URLSchemaLoader:
         self.executor = executor
         self.http_client = http_client
         self.adapters = adapters if adapters is not None else default_adapter_registry()
-        self._schema_http_validators: dict[str, dict[str, str]] = {}
+        self._schema_http_validators: dict[
+            str,
+            _SchemaHTTPValidatorCacheEntry,
+        ] = {}
 
     def register_adapter(self, adapter: SourceAdapter, *, replace: bool = False) -> None:
         self.adapters.register(adapter, replace=replace)
+
+    @staticmethod
+    def _validator_source_identity(
+        tool: ToolSpec,
+    ) -> StructuredSourceIdentity | None:
+        identity = structured_source_identity(tool)
+        if identity is None or identity.adapter not in {
+            "openapi",
+            "openrpc",
+            "odata",
+        }:
+            return None
+        return identity
 
     def schema_http_validators_for(
         self,
         tool_key: str,
         tool: ToolSpec | None = None,
     ) -> dict[str, str]:
+        """Return validators only when they are pinned to the exact current source."""
+
+        if tool is None or tool.key != tool_key:
+            return {}
+
+        identity = self._validator_source_identity(tool)
+        if identity is None:
+            self._schema_http_validators.pop(tool_key, None)
+            return {}
+
         cached = self._schema_http_validators.get(tool_key)
         if cached is not None:
-            return dict(cached)
-        if tool is None:
-            return {}
+            if cached.source_identity == identity:
+                return dict(cached.validators)
+            self._schema_http_validators.pop(tool_key, None)
+
         validators = schema_http_validators_from_metadata(tool.metadata)
-        if validators:
-            self._schema_http_validators[tool_key] = dict(validators)
-        return validators
+        metadata_source = schema_http_validator_source_from_metadata(tool.metadata)
+        expected_source = structured_source_identity_digest(identity)
+        if validators and metadata_source == expected_source:
+            self._schema_http_validators[tool_key] = _SchemaHTTPValidatorCacheEntry(
+                source_identity=identity,
+                validators=dict(validators),
+            )
+            return validators
+        return {}
 
     def remember_schema_http_validators(
         self,
-        tool_key: str,
+        tool: ToolSpec,
         validators: object,
     ) -> None:
         normalized = normalize_schema_http_validators(validators)
-        if normalized:
-            self._schema_http_validators[tool_key] = normalized
+        identity = self._validator_source_identity(tool)
+        if normalized and identity is not None:
+            self._schema_http_validators[tool.key] = _SchemaHTTPValidatorCacheEntry(
+                source_identity=identity,
+                validators=normalized,
+            )
         else:
-            self._schema_http_validators.pop(tool_key, None)
+            self._schema_http_validators.pop(tool.key, None)
 
     def remember_tool_schema_http_validators(self, tool: ToolSpec) -> None:
-        self.remember_schema_http_validators(
-            tool.key,
-            schema_http_validators_from_metadata(tool.metadata),
-        )
+        # Metadata is persisted/descriptive, so verify its source digest before
+        # letting it seed the process-local conditional-request cache.
+        self._schema_http_validators.pop(tool.key, None)
+        self.schema_http_validators_for(tool.key, tool)
 
     async def load(
         self,

@@ -22,6 +22,7 @@ from ..schema_http import (
     conditional_schema_headers,
     schema_http_validators_from_headers,
 )
+from ..source_identity import structured_source_identity_digest_for
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
 from .openapi import same_origin
 
@@ -666,7 +667,11 @@ class OpenRPCSourceAdapter:
                     "suggested_base_url": suggested_base,
                 }
             )
-            attach_schema_http_validators(tool.metadata, validators)
+            attach_schema_http_validators(
+                tool.metadata,
+                validators,
+                source_identity_digest=structured_source_identity_digest_for(tool),
+            )
             return AdapterLoadResult(tool=tool, invoker=invoker)
         finally:
             if owns_client:
