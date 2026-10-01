@@ -65,6 +65,42 @@ used by the Python API. It does not register, bind, or invoke tools. The underly
 connection uses the normal registry implementation, so this is an execution-safe inspection path
 rather than a claim of filesystem-level read-only access.
 
+## HTTP validator optimization
+
+GET-backed schema sources can reuse authoritative HTTP validators during refresh. SchemaRouter
+stores only privacy-safe validator values and never stores authentication headers:
+
+- `ETag` -> `If-None-Match`;
+- `Last-Modified` -> `If-Modified-Since`;
+- `304 Not Modified` -> immediate `unchanged` refresh result without a registry write.
+
+Validator metadata is excluded from canonical tool fingerprints. Updated validators can also live in
+the router's trusted loader cache, so an unchanged schema does not need a registry-version bump just
+to remember a new ETag.
+
+Correctness never depends on HTTP validators. If a provider does not supply one, ignores it, or
+returns a new document, SchemaRouter falls back to the existing full fetch, fingerprint comparison,
+compatibility classification, and compare-and-swap apply path.
+
+The optimization is deliberately limited to schema surfaces where one conditional GET can prove
+that the complete inspected document is unchanged:
+
+| Source | Conditional refresh |
+| --- | --- |
+| OpenAPI without external refs | ETag / Last-Modified |
+| OpenRPC document | ETag / Last-Modified |
+| OData `$metadata` | ETag / Last-Modified |
+| OpenAPI with external refs | full fetch; root validator alone is insufficient |
+| OPTIMADE | full multi-resource fetch; `/info` alone is insufficient |
+| GraphQL introspection | full introspection POST; HTTP 304 is not used |
+| MCP | transport-specific refresh; no HTTP-validator assumption |
+
+`If-None-Match` and `If-Modified-Since` are reserved for SchemaRouter's accepted-schema
+validator state during refresh. Caller-supplied values for those two headers are stripped before the
+conditional request is built; unrelated trusted schema headers are preserved. This prevents an
+arbitrary external condition from producing a 304 that is unrelated to the currently registered
+schema snapshot.
+
 ## Reinspect a registered provider
 
 For URL-backed OpenAPI, MCP, OPTIMADE, GraphQL, OData, and OpenRPC tools, SchemaRouter can

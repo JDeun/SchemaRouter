@@ -29,6 +29,7 @@ from .errors import (
     InvocationUnavailableError,
     ProposalApprovalError,
     RegistrationError,
+    SchemaNotModifiedError,
     SchemaSourceError,
 )
 from .executor import BoundEndpointInvoker, ExecutionBudgetTracker, RegistryExecutor
@@ -1114,23 +1115,46 @@ class SchemaRouter:
                 f"tool {tool_key!r} is missing persisted source provenance for refresh"
             )
 
-        candidate = await self.loader.inspect(
-            source_url,
-            kind=adapter,
-            name=current.name,
-            namespace=current.namespace,
-            provider=current.provider,
-            access_mode=current.access_mode,
-            base_url=base_url,
-            schema_headers=schema_headers,
-            trusted_headers=trusted_headers,
-            mcp_client_factory=mcp_client_factory,
-            openapi_external_refs=openapi_external_refs,
-            openapi_ref_max_depth=openapi_ref_max_depth,
-            openapi_ref_max_documents=openapi_ref_max_documents,
-            openapi_ref_max_bytes=openapi_ref_max_bytes,
-            timeout=timeout,
+        use_http_validators = adapter in {"openapi", "openrpc", "odata"}
+        if adapter == "openapi" and openapi_external_refs:
+            use_http_validators = False
+
+        schema_validators = (
+            self.loader.schema_http_validators_for(tool_key, current)
+            if use_http_validators
+            else {}
         )
+        try:
+            candidate = await self.loader.inspect(
+                source_url,
+                kind=adapter,
+                name=current.name,
+                namespace=current.namespace,
+                provider=current.provider,
+                access_mode=current.access_mode,
+                base_url=base_url,
+                schema_headers=schema_headers,
+                schema_validators=schema_validators,
+                trusted_headers=trusted_headers,
+                mcp_client_factory=mcp_client_factory,
+                openapi_external_refs=openapi_external_refs,
+                openapi_ref_max_depth=openapi_ref_max_depth,
+                openapi_ref_max_documents=openapi_ref_max_documents,
+                openapi_ref_max_bytes=openapi_ref_max_bytes,
+                timeout=timeout,
+            )
+        except SchemaNotModifiedError as exc:
+            self.loader.remember_schema_http_validators(
+                tool_key,
+                exc.validators or schema_validators,
+            )
+            return SchemaRefreshResult(
+                tool_key=tool_key,
+                action="unchanged",
+                applied=False,
+                report=compare_tool_specs(current, current),
+            )
+
         if candidate.tool.key != tool_key:
             raise SchemaSourceError(
                 "refreshed schema changed the registered tool key unexpectedly"
@@ -1138,6 +1162,8 @@ class SchemaRouter:
 
         report = compare_tool_specs(current, candidate.tool)
         if report.compatibility == "identical":
+            if use_http_validators:
+                self.loader.remember_tool_schema_http_validators(candidate.tool)
             return SchemaRefreshResult(
                 tool_key=tool_key,
                 action="unchanged",

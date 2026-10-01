@@ -13,9 +13,15 @@ from .._url_safety import safe_provenance_url
 from ..errors import (
     InvocationUnavailableError,
     NonRetryableInvocationError,
+    SchemaNotModifiedError,
     SchemaSourceError,
 )
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
+from ..schema_http import (
+    attach_schema_http_validators,
+    conditional_schema_headers,
+    schema_http_validators_from_headers,
+)
 from .base import AdapterContext, AdapterLoadResult
 from .openapi import same_origin
 
@@ -54,6 +60,13 @@ async def _bounded_get(
         headers=headers,
         follow_redirects=False,
     ) as response:
+        if response.status_code == 304:
+            return httpx.Response(
+                status_code=response.status_code,
+                headers=response.headers,
+                content=b"",
+                request=response.request,
+            )
         if response.is_redirect:
             raise SchemaSourceError("OpenRPC schema redirects are not followed automatically")
         response.raise_for_status()
@@ -578,8 +591,17 @@ class OpenRPCSourceAdapter:
                 response = await _bounded_get(
                     client,
                     context.url,
-                    headers=context.schema_headers,
+                    headers=conditional_schema_headers(
+                        context.schema_headers,
+                        context.schema_validators,
+                    ),
                 )
+                validators = schema_http_validators_from_headers(
+                    response.headers,
+                    fallback=context.schema_validators,
+                )
+                if response.status_code == 304:
+                    raise SchemaNotModifiedError(validators=validators)
                 document = response.json()
             except SchemaSourceError:
                 raise
@@ -640,6 +662,7 @@ class OpenRPCSourceAdapter:
                     "suggested_base_url": suggested_base,
                 }
             )
+            attach_schema_http_validators(tool.metadata, validators)
             return AdapterLoadResult(tool=tool, invoker=invoker)
         finally:
             if owns_client:

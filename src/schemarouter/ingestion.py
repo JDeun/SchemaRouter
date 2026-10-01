@@ -24,10 +24,17 @@ from .adapters.openapi import (
 )
 from .adapters.openrpc import OpenRPCSourceAdapter
 from .adapters.optimade import OPTIMADESourceAdapter
-from .errors import SchemaSourceError, UnsupportedSchemaSourceError
+from .errors import SchemaNotModifiedError, SchemaSourceError, UnsupportedSchemaSourceError
 from .executor import RegistryExecutor
 from .models import ToolSpec
 from .registry import ToolRegistry, replace_if_current
+from .schema_http import (
+    attach_schema_http_validators,
+    conditional_schema_headers,
+    normalize_schema_http_validators,
+    schema_http_validators_from_headers,
+    schema_http_validators_from_metadata,
+)
 
 SourceKind = str
 
@@ -114,6 +121,14 @@ async def _fetch_with_safe_redirects(
             headers=headers,
             follow_redirects=False,
         ) as response:
+            if response.status_code == 304:
+                return httpx.Response(
+                    status_code=response.status_code,
+                    headers=response.headers,
+                    content=b"",
+                    request=response.request,
+                )
+
             if response.is_redirect:
                 location = response.headers.get("location")
                 if not location:
@@ -638,11 +653,25 @@ class OpenAPISourceAdapter:
         resolved_schema_url = context.url
         normalized_ref_count = 0
         try:
+            conditional_headers = conditional_schema_headers(
+                context.schema_headers,
+                (
+                    {}
+                    if context.openapi_external_refs
+                    else context.schema_validators
+                ),
+            )
             response = await _fetch_with_safe_redirects(
                 client,
                 context.url,
-                headers=context.schema_headers,
+                headers=conditional_headers,
             )
+            validators = schema_http_validators_from_headers(
+                response.headers,
+                fallback=context.schema_validators,
+            )
+            if response.status_code == 304:
+                raise SchemaNotModifiedError(validators=validators)
             document = _parse_openapi_text(response.text)
             if document is not None:
                 resolved_schema_url = str(response.url)
@@ -706,6 +735,7 @@ class OpenAPISourceAdapter:
                 "remote": True,
             }
         )
+        attach_schema_http_validators(tool.metadata, validators)
 
         selected_base_url = context.base_url or suggested_base_url
         auto_bind_allowed = context.base_url is not None or (
@@ -819,9 +849,42 @@ class URLSchemaLoader:
         self.executor = executor
         self.http_client = http_client
         self.adapters = adapters if adapters is not None else default_adapter_registry()
+        self._schema_http_validators: dict[str, dict[str, str]] = {}
 
     def register_adapter(self, adapter: SourceAdapter, *, replace: bool = False) -> None:
         self.adapters.register(adapter, replace=replace)
+
+    def schema_http_validators_for(
+        self,
+        tool_key: str,
+        tool: ToolSpec | None = None,
+    ) -> dict[str, str]:
+        cached = self._schema_http_validators.get(tool_key)
+        if cached is not None:
+            return dict(cached)
+        if tool is None:
+            return {}
+        validators = schema_http_validators_from_metadata(tool.metadata)
+        if validators:
+            self._schema_http_validators[tool_key] = dict(validators)
+        return validators
+
+    def remember_schema_http_validators(
+        self,
+        tool_key: str,
+        validators: object,
+    ) -> None:
+        normalized = normalize_schema_http_validators(validators)
+        if normalized:
+            self._schema_http_validators[tool_key] = normalized
+        else:
+            self._schema_http_validators.pop(tool_key, None)
+
+    def remember_tool_schema_http_validators(self, tool: ToolSpec) -> None:
+        self.remember_schema_http_validators(
+            tool.key,
+            schema_http_validators_from_metadata(tool.metadata),
+        )
 
     async def load(
         self,
@@ -835,6 +898,7 @@ class URLSchemaLoader:
         replace: bool = False,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
+        schema_validators: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: Any | None = None,
         openapi_external_refs: bool = False,
@@ -852,6 +916,7 @@ class URLSchemaLoader:
             access_mode=access_mode,
             base_url=base_url,
             schema_headers=schema_headers,
+            schema_validators=schema_validators,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
             openapi_external_refs=openapi_external_refs,
@@ -883,7 +948,9 @@ class URLSchemaLoader:
                 result.invoker,
                 expected_fingerprint=result.tool.fingerprint,
             )
-        return self.registry.get(key)
+        committed = self.registry.get(key)
+        self.remember_tool_schema_http_validators(committed)
+        return committed
 
     async def inspect(
         self,
@@ -896,6 +963,7 @@ class URLSchemaLoader:
         access_mode: str | None = None,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
+        schema_validators: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: Any | None = None,
         openapi_external_refs: bool = False,
@@ -924,6 +992,7 @@ class URLSchemaLoader:
             access_mode=access_mode,
             base_url=base_url,
             schema_headers=schema_headers,
+            schema_validators=schema_validators,
             trusted_headers=trusted_headers,
             mcp_client_factory=mcp_client_factory,
             openapi_external_refs=openapi_external_refs,
@@ -946,6 +1015,8 @@ class URLSchemaLoader:
 
             try:
                 result = await adapter.load(context)
+            except SchemaNotModifiedError:
+                raise
             except SchemaSourceError as exc:
                 if normalized_kind == "openapi":
                     raise UnsupportedSchemaSourceError(
@@ -1028,4 +1099,6 @@ class URLSchemaLoader:
                 result.invoker,
                 expected_fingerprint=result.tool.fingerprint,
             )
-        return self.registry.get(key)
+        committed = self.registry.get(key)
+        self.remember_tool_schema_http_validators(committed)
+        return committed
