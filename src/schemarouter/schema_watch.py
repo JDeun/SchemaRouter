@@ -11,7 +11,6 @@ from .errors import SchemaSourceError
 from .registry import ToolRegistry
 from .schema_diff import SchemaRefreshResult
 
-
 SchemaWatchStatus = Literal[
     "idle",
     "unchanged",
