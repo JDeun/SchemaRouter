@@ -224,7 +224,7 @@ The released package provides a working beta implementation of the core architec
 
 - typed Tool / Endpoint / Parameter / Field registry contracts;
 - first-class bounded Top-K capability retrieval through `retrieve` / `aretrieve` and executable-ready variants;
-- protocol-neutral capability ingestion with Python/SDK bindings plus OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC, and declarative HTTP/JSON paths on current `main`;
+- Python, OpenAPI, MCP, and OPTIMADE ingestion paths;
 - field-first planning and bounded multi-provider field coverage;
 - input and raw-output JSON Schema validation;
 - schema fingerprints and binding-drift rejection;
@@ -237,6 +237,8 @@ The released package provides a working beta implementation of the core architec
   surfaces.
 
 So **the architecture works today** for declared capabilities and supported routing cases.
+Current `main` additionally includes explicit SDK/client binding, inbound LangChain/LlamaIndex tools, GraphQL, OData, OpenRPC, declarative HTTP/JSON, MCP stdio/custom transports, and record-preserving nested array fields. These newer surfaces belong to the next release rather than the published 0.12.0 wheel.
+
 
 ## Current research direction: compact capability retrieval for agents
 
