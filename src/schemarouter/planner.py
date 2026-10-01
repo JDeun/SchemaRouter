@@ -3425,8 +3425,62 @@ class SchemaPlanner:
         if not endpoint.output_fields:
             return []
 
-        identifiers = [field.name for field in endpoint.output_fields if field.identifier]
+        field_map = {field.name: field for field in endpoint.output_fields}
+        matched_set = set(matched_fields)
+        matched_wildcard_paths = [
+            field_map[name].result_projection_path
+            for name in matched_fields
+            if name in field_map
+            and "*" in field_map[name].result_projection_path
+        ]
+
+        def wildcard_group(path: tuple[str, ...]) -> tuple[str, ...] | None:
+            if "*" not in path:
+                return None
+            index = path.index("*")
+            return path[: index + 1]
+
+        identifiers: list[str] = []
+        for field in endpoint.output_fields:
+            if not field.identifier:
+                continue
+            path = field.result_projection_path
+            group = wildcard_group(path)
+            if group is None:
+                identifiers.append(field.name)
+                continue
+            if field.name in matched_set or any(
+                wildcard_group(candidate) == group
+                for candidate in matched_wildcard_paths
+            ):
+                identifiers.append(field.name)
+
         selected = list(dict.fromkeys([*identifiers, *matched_fields]))
+
+        # A concrete array-item field is a narrower projection than its parent array. Returning
+        # both would create overlapping record-preserving result paths, so the child wins only
+        # when that descendant was actually matched by the query.
+        matched_wildcards = [
+            field_map[name].result_projection_path
+            for name in matched_fields
+            if name in field_map
+            and "*" in field_map[name].result_projection_path
+        ]
+        selected = [
+            name
+            for name in selected
+            if not (
+                name in field_map
+                and "*" not in field_map[name].result_projection_path
+                and any(
+                    len(child) > len(field_map[name].result_projection_path)
+                    and child[: len(field_map[name].result_projection_path)]
+                    == field_map[name].result_projection_path
+                    and "*" in child[len(field_map[name].result_projection_path) :]
+                    for child in matched_wildcards
+                )
+            )
+        ]
 
         # Recall-first fallback: if we could not identify an answer field, do not silently
         # prune a typed response to identifiers only. The executor may later apply a cost policy.
