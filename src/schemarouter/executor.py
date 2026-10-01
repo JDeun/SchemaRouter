@@ -43,7 +43,6 @@ from .validation import (
     validate_json_schema_value,
 )
 
-
 _MISSING_PROJECTION = object()
 
 
