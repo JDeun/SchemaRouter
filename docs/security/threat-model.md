@@ -49,6 +49,14 @@ and MCP URLs containing userinfo credentials are rejected. Protocol-controlled `
 cannot be overridden through SchemaRouter's trusted-header channel. Custom OAuth, mTLS, proxy, or
 gateway behavior belongs behind an application-supplied `MCPClientFactory`.
 
+Schema watches pin their process-local credentials and transport factories to the exact
+registered tool fingerprint plus a credential-free structured-source identity. If application code
+replaces the same logical tool key with another source, transport, or contract, the existing watch
+becomes `stale_source` or `stale_contract` **before any refresh request/session is opened**.
+A compatible refresh that the watch itself validates and applies may advance only the fingerprint
+pin; the source/transport identity must remain unchanged. Credential rotation therefore requires
+explicit trusted-local watch re-registration rather than implicit carry-over.
+
 ### Network destinations and SSRF
 
 SchemaRouter supports localhost and private-network MCP/OpenAPI endpoints because local

@@ -195,7 +195,11 @@ def render_dashboard(
         schema_watch_rows = "".join(
             (
                 '<tr class="attention-row">'
-                if watch.pending_review or watch.status in {"error", "stale"}
+                if (
+                    watch.pending_review
+                    or watch.status == "error"
+                    or watch.status.startswith("stale")
+                )
                 else "<tr>"
             )
             + f"<td>{escape(watch.tool)}</td>"
