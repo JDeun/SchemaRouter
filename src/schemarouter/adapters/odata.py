@@ -11,6 +11,7 @@ import httpx
 
 from .._url_safety import safe_provenance_url
 from ..errors import (
+    AdapterProbeError,
     InvocationUnavailableError,
     NonRetryableInvocationError,
     SchemaNotModifiedError,
@@ -29,6 +30,7 @@ from ..schema_http import (
     conditional_schema_headers,
     schema_http_validators_from_headers,
 )
+from ..probe_diagnostics import http_probe_error
 from ..source_identity import structured_source_identity_digest_for
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 
@@ -596,9 +598,29 @@ class ODataSourceAdapter:
                 )
                 if response.status_code == 304:
                     raise SchemaNotModifiedError(validators=validators)
-            except SchemaSourceError:
+            except SchemaNotModifiedError:
                 raise
-            except Exception:  # noqa: BLE001
+            except (httpx.HTTPStatusError, httpx.TimeoutException, httpx.TransportError) as exc:
+                raise http_probe_error(
+                    self.kind,
+                    exc,
+                    operation="OData metadata fetch",
+                ) from exc
+            except SchemaSourceError as exc:
+                raise AdapterProbeError(
+                    self.kind,
+                    "protocol_error",
+                    "OData metadata inspection violated the safe source contract",
+                ) from exc
+            except Exception as exc:  # noqa: BLE001
+                raise AdapterProbeError(
+                    self.kind,
+                    "protocol_error",
+                    "OData metadata inspection failed",
+                ) from exc
+
+            marker = b"docs.oasis-open.org/odata/ns/edm"
+            if marker not in response.content:
                 return None
 
             try:
@@ -608,10 +630,18 @@ class ODataSourceAdapter:
                     response.content,
                     namespace=context.namespace,
                 )
-            except SchemaSourceError:
-                raise
-            except Exception:  # noqa: BLE001
-                return None
+            except SchemaSourceError as exc:
+                raise AdapterProbeError(
+                    self.kind,
+                    "invalid_schema",
+                    "OData metadata document was malformed or unsupported",
+                ) from exc
+            except Exception as exc:  # noqa: BLE001
+                raise AdapterProbeError(
+                    self.kind,
+                    "invalid_schema",
+                    "OData metadata document could not be parsed",
+                ) from exc
 
             tool.execution_metadata.update(
                 {
