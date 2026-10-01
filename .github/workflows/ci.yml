@@ -368,3 +368,23 @@ jobs:
         run: mkdocs build --strict -f mkdocs.ko.yml
         env:
           NO_MKDOCS_2_WARNING: "1"
+      - name: Verify bilingual Pages layout
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          english = Path("site/index.html")
+          korean = Path("site/ko/index.html")
+          translated = Path("site/ko/getting-started/quickstart/index.html")
+          fallback = Path("site/ko/guides/graphql/index.html")
+
+          for path in (english, korean, translated, fallback):
+              assert path.is_file(), f"missing bilingual docs output: {path}"
+
+          english_html = english.read_text(encoding="utf-8")
+          korean_html = korean.read_text(encoding="utf-8")
+          assert 'hreflang="ko"' in english_html, "English site is missing Korean alternate"
+          assert 'hreflang="en"' in korean_html, "Korean site is missing English alternate"
+          assert "/SchemaRouter/ko/" in english_html, "English selector is missing Korean site link"
+          assert "/SchemaRouter/" in korean_html, "Korean selector is missing English site link"
+          PY
