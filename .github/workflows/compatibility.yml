@@ -9,6 +9,7 @@ on:
       - "src/schemarouter/adapters/**"
       - "src/schemarouter/ingestion.py"
       - "scripts/live_*"
+      - "scripts/aggregate_compatibility_matrix.py"
       - "scripts/published_pypi_smoke.py"
       - "scripts/installed_extras_smoke.py"
       - ".github/workflows/compatibility.yml"
@@ -57,6 +58,67 @@ jobs:
         with:
           name: compatibility-optimade-${{ github.run_id }}
           path: artifacts/optimade-compatibility.json
+          if-no-files-found: warn
+          retention-days: 30
+
+
+  adapter-compatibility-matrix:
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - name: Install SchemaRouter with MCP reference support
+        run: |
+          pip install ".[mcp]"
+          python -m pip check
+      - name: Run protocol compatibility matrix
+        shell: bash
+        run: |
+          mkdir -p artifacts
+
+          run_smoke() {
+            set +e
+            python "$@"
+            code=$?
+            set -e
+            if [ "$code" -ne 0 ]; then
+              echo "::warning::compatibility smoke failed: $* (exit $code)"
+            fi
+          }
+
+          run_smoke scripts/live_openapi_smoke.py \
+            --json-out artifacts/openapi-compatibility.json
+          run_smoke scripts/live_optimade_smoke.py \
+            --json-out artifacts/optimade-compatibility.json
+          run_smoke scripts/live_graphql_smoke.py \
+            --json-out artifacts/graphql-compatibility.json
+          run_smoke scripts/live_odata_smoke.py \
+            --json-out artifacts/odata-compatibility.json
+          run_smoke scripts/live_reference_openrpc_smoke.py \
+            --json-out artifacts/openrpc-compatibility.json
+          run_smoke scripts/live_reference_mcp_smoke.py \
+            --json-out artifacts/mcp-compatibility.json
+
+          python scripts/aggregate_compatibility_matrix.py \
+            --reports-dir artifacts \
+            --json-out artifacts/adapter-compatibility-matrix.json \
+            --markdown-out artifacts/adapter-compatibility-matrix.md \
+            --require-reference-success
+
+          cat artifacts/adapter-compatibility-matrix.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compatibility-adapter-matrix-${{ github.run_id }}
+          path: |
+            artifacts/*-compatibility.json
+            artifacts/adapter-compatibility-matrix.json
+            artifacts/adapter-compatibility-matrix.md
           if-no-files-found: warn
           retention-days: 30
 
