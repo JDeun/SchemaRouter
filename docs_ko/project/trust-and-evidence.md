@@ -7,16 +7,24 @@ SchemaRouter 문서에서는 **안정판이 보장하는 동작**, **릴리스 �
 
 | 항목 | 공개 상태 |
 | --- | --- |
-| 안정판 | `0.13.0` |
-| 릴리스 날짜 | 2026-10-01 |
+| 안정판 | `0.14.0` |
+| 릴리스 날짜 | 2026-10-02 |
 | 상태 | Beta / pre-1.0 |
 | Python | 3.10–3.14는 릴리스 차단 대상, 3.15는 preview |
 | License | MIT |
-| Release | [SchemaRouter 0.13.0](https://github.com/JDeun/SchemaRouter/releases/tag/v0.13.0) |
+| Release | [SchemaRouter 0.14.0](https://github.com/JDeun/SchemaRouter/releases/tag/v0.14.0) |
 | Stable core | [Stable core](../stable-core.md) |
 | Security | [SECURITY.md](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md) |
 
-## 공개 artifact digest
+## 0.14.0부터의 artifact 기록
+
+0.14.0부터는 GitHub Release에 함께 올라가는 `release-manifest.json`과
+`SHA256SUMS.txt`가 source SHA와 artifact digest의 정본입니다. 문서에 새 checksum을 손으로
+복사하지 않습니다.
+
+### 과거 0.13.0 digest
+
+0.13.0은 이 manifest 도입 전 릴리스이므로 아래 값을 과거 기록으로 남깁니다.
 
 | Artifact | SHA-256 |
 | --- | --- |
@@ -28,12 +36,12 @@ Release workflow는 CI를 통과한 `main` commit만 사용합니다. wheel/sdis
 확인하고, SPDX SBOM과 GitHub attestation을 만들며, PyPI Trusted Publishing으로 배포한 뒤
 공개 PyPI에서 다시 받은 파일의 digest까지 비교합니다.
 
-다음 안정판부터 checksum은 문서에 수동으로 옮겨 적지 않습니다. Release workflow가
-`SHA256SUMS.txt`와 `release-manifest.json`을 직접 만들고 GitHub Release에 첨부합니다.
-manifest에는 버전, tag, source commit, artifact 이름·크기·SHA-256이 기록됩니다.
+0.14.0부터 Release workflow가 `SHA256SUMS.txt`와 `release-manifest.json`을 직접 만들고
+GitHub Release에 첨부합니다. manifest에는 버전, tag, source commit, artifact 이름·크기·SHA-256이
+기록됩니다.
 
 ```bash
-gh attestation verify schemarouter-0.13.0-py3-none-any.whl --repo JDeun/SchemaRouter
+gh attestation verify schemarouter-0.14.0-py3-none-any.whl --repo JDeun/SchemaRouter
 ```
 
 ## CI / Security
