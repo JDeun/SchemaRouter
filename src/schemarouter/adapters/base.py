@@ -80,6 +80,14 @@ class RefreshProfile:
             "execution_metadata",
             "either",
         }:
+            raise ValueError(
+                "refresh source_location must be metadata, execution_metadata, or either"
+            )
+        if self.source_location not in {
+            "metadata",
+            "execution_metadata",
+            "either",
+        }:
             raise ValueError("unsupported refresh source_location")
         if self.mode == "url" and not self.source_key:
             raise ValueError("URL refresh requires a source_key")
