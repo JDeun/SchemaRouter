@@ -95,8 +95,11 @@ that the complete inspected document is unchanged:
 | GraphQL introspection | full introspection POST; HTTP 304 is not used |
 | MCP | transport-specific refresh; no HTTP-validator assumption |
 
-If the caller explicitly supplies `If-None-Match` or `If-Modified-Since` in trusted schema
-headers, that caller-provided condition wins over the internal validator cache.
+`If-None-Match` and `If-Modified-Since` are reserved for SchemaRouter's accepted-schema
+validator state during refresh. Caller-supplied values for those two headers are stripped before the
+conditional request is built; unrelated trusted schema headers are preserved. This prevents an
+arbitrary external condition from producing a 304 that is unrelated to the currently registered
+schema snapshot.
 
 ## Reinspect a registered provider
 
