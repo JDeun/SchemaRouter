@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.13.0</span>
+<span class="sr-kicker">SchemaRouter 0.14.0</span>
 
 # Put a typed execution boundary between agents and tools
 
@@ -185,10 +185,10 @@ flow and never becomes executable automatically.
 
 ## Current release
 
-Version `0.13.0` is the **operational-completeness release** on top of the stable-core boundary:
-universal capability ingestion, nested field contracts, schema refresh/watch lifecycles, trusted
-SDK/client binding, and broader protocol/framework integration are available without reopening the
-core architecture.
+Version `0.14.0` is the **operability and ecosystem-validation release** on top of the stable-core
+boundary. It adds source probing, startup rebinding, storage migrations, explicit schema-drift
+review, unified shutdown, the Capability Explorer, bilingual documentation, and broader
+installed-package ecosystem validation without reopening the core architecture.
 
 Version `0.12.0` established the frozen **stable core** and `0.11.0` introduced first-class
 bounded Top-K capability retrieval. Research may improve ranking, index implementations, shortlist
@@ -200,13 +200,13 @@ registered candidates, while SchemaRouter still owns schema validation, policy a
 authority. Ongoing 0.14 agent-utility research is reported separately and is not required for the
 stable package to function.
 
-[Read the 0.13.0 release notes →](releases/0.13.0.md) ·
+[Read the 0.14.0 release notes →](releases/0.14.0.md) ·
 [Read the stable-core contract →](stable-core.md) ·
 [Read the routing research status →](research/routing-status.md)
 
 ## Current research checkpoint
 
-The stable `0.13.0` package preserves the 0.12 stable-core public API while the 0.14 research
+The stable `0.14.0` package preserves the 0.12 stable-core public API while the 0.14 research
 cycle evaluates the retrieval boundary more rigorously.
 
 - **B1** is terminal: SR-5 reached 91.30% task pass vs 68.48% for FULL while using
