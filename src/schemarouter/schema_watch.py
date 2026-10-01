@@ -101,7 +101,8 @@ class SchemaWatchManager:
         adapter = self._adapter(tool)
         if adapter is None:
             raise SchemaSourceError(
-                f"tool {tool.key!r} does not declare a structured-source adapter"
+                f"tool {tool.key!r} does not have a refreshable structured-source adapter; "
+                "no structured-source adapter is declared"
             )
         try:
             profile = self.adapters.refresh_profile(adapter)
