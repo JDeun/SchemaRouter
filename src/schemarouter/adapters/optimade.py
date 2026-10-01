@@ -16,7 +16,13 @@ from ..models import (
     ToolCall,
     ToolSpec,
 )
-from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
+from .base import (
+    AdapterContext,
+    AdapterLoadResult,
+    AdapterProbeError,
+    DiscoveryProfile,
+    adapter_probe_error,
+)
 
 _MAX_DISCOVERY_BYTES = 2 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 16 * 1024 * 1024
@@ -613,6 +619,7 @@ class OPTIMADESourceAdapter:
         try:
             versioned_base_url: str | None = None
             base_info: dict[str, Any] | None = None
+            probe_errors: list[AdapterProbeError] = []
             for candidate in candidates:
                 try:
                     response = await _bounded_get(
@@ -624,7 +631,8 @@ class OPTIMADESourceAdapter:
                     document = response.json()
                 except SchemaSourceError:
                     raise
-                except Exception:  # noqa: BLE001
+                except Exception as exc:  # noqa: BLE001
+                    probe_errors.append(adapter_probe_error("optimade", exc))
                     continue
                 attributes = _base_info_attributes(document)
                 if attributes is not None:
@@ -633,6 +641,19 @@ class OPTIMADESourceAdapter:
                     break
 
             if versioned_base_url is None or base_info is None:
+                if probe_errors:
+                    priority = {
+                        "authentication_failed": 0,
+                        "unreachable": 1,
+                        "not_found": 2,
+                        "protocol_error": 3,
+                        "invalid_schema": 4,
+                        "unsupported_feature": 5,
+                    }
+                    raise min(
+                        probe_errors,
+                        key=lambda error: priority[error.category],
+                    )
                 return None
 
             if bool(base_info.get("is_index", False)):
