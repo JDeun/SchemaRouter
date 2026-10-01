@@ -140,7 +140,7 @@ from .policy import (
     PolicyRule,
 )
 from .proposals import SchemaProposal
-from .registry import InMemoryRegistry, SQLiteRegistry, ToolRegistry
+from .registry import InMemoryRegistry, MutableToolRegistry, SQLiteRegistry, ToolRegistry
 from .runs import ExecutionBudget, ExecutionMode, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
 from .schema_diff import (
