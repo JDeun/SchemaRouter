@@ -24,7 +24,7 @@ from .adapters.openapi import (
 )
 from .adapters.openrpc import OpenRPCSourceAdapter
 from .adapters.optimade import OPTIMADESourceAdapter
-from .errors import SchemaSourceError, UnsupportedSchemaSourceError
+from .errors import SchemaNotModifiedError, SchemaSourceError, UnsupportedSchemaSourceError
 from .executor import RegistryExecutor
 from .models import ToolSpec
 from .registry import ToolRegistry, replace_if_current
@@ -939,6 +939,7 @@ class URLSchemaLoader:
         access_mode: str | None = None,
         base_url: str | None = None,
         schema_headers: dict[str, str] | None = None,
+        schema_validators: dict[str, str] | None = None,
         trusted_headers: dict[str, str] | None = None,
         mcp_client_factory: Any | None = None,
         openapi_external_refs: bool = False,
@@ -1072,4 +1073,6 @@ class URLSchemaLoader:
                 result.invoker,
                 expected_fingerprint=result.tool.fingerprint,
             )
-        return self.registry.get(key)
+        committed = self.registry.get(key)
+        self.remember_tool_schema_http_validators(committed)
+        return committed
