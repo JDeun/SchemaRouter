@@ -12,6 +12,7 @@ from schemarouter import (
     AdapterContext,
     AdapterLoadResult,
     DiscoveryProfile,
+    RefreshProfile,
     SourceAdapter,
 )
 
@@ -22,6 +23,11 @@ class MyAdapter:
     discovery = DiscoveryProfile(
         activity="passive",
         http_methods=("GET",),
+    )
+    refresh = RefreshProfile(
+        mode="url",
+        source_key="source_url",
+        source_location="metadata",
     )
 
     async def load(
@@ -42,6 +48,36 @@ similar interactions are `activity="active"`.
 Adapters without a `DiscoveryProfile` remain usable by explicit `kind`, but are conservatively
 treated as active and skipped by default auto discovery. Applications that intentionally want
 active auto-probing must pass `allow_active_probes=True`; remote content cannot enable that flag.
+
+Schema refresh/watch is a separate trusted-local capability. A plugin must opt in with
+`RefreshProfile`; merely being ingestible does **not** make it refreshable.
+
+For ordinary URL-backed structured sources:
+
+```python
+refresh = RefreshProfile(
+    mode="url",
+    source_key="source_url",
+    source_location="metadata",
+    http_validators=False,
+)
+```
+
+The declared `source_key` must point to the stable credential-free provenance stored by the
+adapter in the returned `ToolSpec`. SchemaRouter reuses the adapter's normal `load(context)`
+path for reinspection, then applies the same schema-diff/CAS rules used by built-ins. A plugin that
+omits `RefreshProfile` (or uses the default unsupported profile) remains ingestible/executable but
+cannot be refreshed or watched.
+
+`identity_metadata_keys` and `identity_execution_keys` may add non-secret representation or
+transport qualifiers to the source identity. Credential-like key names are rejected. Never include
+Authorization headers, cookies, tokens, API keys, passwords, client secrets, or factory objects in
+refresh identity metadata.
+
+Built-in OpenAPI/OpenRPC/OData declare conditional HTTP-validator support. Plugins should set
+`http_validators=True` only when their URL refresh path honors SchemaRouter's bounded
+`schema_validators` contract. MCP's bound stdio/custom transport remains an explicit special
+trusted-state mode; it is not inferred from remote metadata.
 
 ## Registering adapters
 

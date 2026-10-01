@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from typing import Any
 
 from ._url_safety import safe_provenance_url
+from .adapters.base import RefreshProfile
 from .models import ToolSpec
 
 
@@ -22,6 +23,7 @@ class StructuredSourceIdentity:
     openapi_ref_max_depth: int | None = None
     openapi_ref_max_documents: int | None = None
     openapi_ref_max_bytes: int | None = None
+    qualifiers: tuple[tuple[str, str], ...] = ()
 
 
 def _string_value(
@@ -49,6 +51,41 @@ def _safe_url(value: str | None) -> str | None:
     return safe if not safe.startswith("<redacted-") else None
 
 
+def _canonical_identity_value(value: Any) -> str:
+    serialized = json.dumps(
+        value,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+        default=str,
+    )
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def _profile_identity_qualifiers(
+    tool: ToolSpec,
+    refresh: RefreshProfile,
+) -> tuple[tuple[str, str], ...]:
+    items: list[tuple[str, str]] = []
+    for key in refresh.identity_metadata_keys:
+        if key in tool.metadata:
+            items.append(
+                (
+                    f"metadata.{key}",
+                    _canonical_identity_value(tool.metadata[key]),
+                )
+            )
+    for key in refresh.identity_execution_keys:
+        if key in tool.execution_metadata:
+            items.append(
+                (
+                    f"execution_metadata.{key}",
+                    _canonical_identity_value(tool.execution_metadata[key]),
+                )
+            )
+    return tuple(sorted(items))
+
+
 def _positive_int(value: Any) -> int | None:
     if isinstance(value, int) and not isinstance(value, bool) and value > 0:
         return value
@@ -69,7 +106,10 @@ def structured_source_identity_digest(
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-def structured_source_identity(tool: ToolSpec) -> StructuredSourceIdentity | None:
+def structured_source_identity(
+    tool: ToolSpec,
+    refresh: RefreshProfile | None = None,
+) -> StructuredSourceIdentity | None:
     """Derive a stable source identity without inspecting credential-bearing state."""
 
     adapter = _string_value(tool, "adapter")
@@ -79,6 +119,20 @@ def structured_source_identity(tool: ToolSpec) -> StructuredSourceIdentity | Non
     if not adapter:
         return None
 
+    if refresh is not None:
+        source_url = _safe_url(refresh.source_url(tool))
+        qualifiers = _profile_identity_qualifiers(tool, refresh)
+        transport = _string_value(tool, "transport")
+        transport_fingerprint = _string_value(tool, "transport_fingerprint")
+        return StructuredSourceIdentity(
+            adapter=adapter,
+            source_url=source_url,
+            transport=transport,
+            transport_fingerprint=transport_fingerprint,
+            qualifiers=qualifiers,
+        )
+
+    # Compatibility fallback for callers that do not yet have an AdapterRegistry.
     source_url: str | None = None
     resolved_source_url: str | None = None
     transport: str | None = None
@@ -122,9 +176,11 @@ def structured_source_identity(tool: ToolSpec) -> StructuredSourceIdentity | Non
         openapi_ref_max_bytes=max_bytes,
     )
 
-
-def structured_source_identity_digest_for(tool: ToolSpec) -> str | None:
-    identity = structured_source_identity(tool)
+def structured_source_identity_digest_for(
+    tool: ToolSpec,
+    refresh: RefreshProfile | None = None,
+) -> str | None:
+    identity = structured_source_identity(tool, refresh)
     if identity is None:
         return None
     return structured_source_identity_digest(identity)

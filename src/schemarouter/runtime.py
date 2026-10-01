@@ -152,6 +152,7 @@ class SchemaRouter:
         self.schema_watcher = SchemaWatchManager(
             self.registry,
             self.arefresh_schema,
+            self.loader.adapters,
         )
 
     @property
@@ -1099,8 +1100,30 @@ class SchemaRouter:
         except KeyError as exc:
             raise RegistrationError(f"unknown tool: {tool_key}") from exc
 
+        adapter = current.execution_metadata.get("adapter")
+        if not isinstance(adapter, str):
+            adapter = current.metadata.get("adapter")
+        if not isinstance(adapter, str):
+            raise SchemaSourceError(
+                f"tool {tool_key!r} does not have a refreshable structured-source adapter; "
+                "no structured-source adapter is declared"
+            )
+        try:
+            refresh_profile = self.loader.adapters.refresh_profile(adapter)
+        except KeyError as exc:
+            raise SchemaSourceError(
+                f"tool {tool_key!r} references an unavailable source adapter"
+            ) from exc
+        if not refresh_profile.supported:
+            raise SchemaSourceError(
+                f"tool {tool_key!r} does not have a refreshable structured-source adapter"
+            )
+
         if _expected_source_identity is not None:
-            current_source_identity = structured_source_identity(current)
+            current_source_identity = structured_source_identity(
+                current,
+                refresh_profile,
+            )
             if current_source_identity != _expected_source_identity:
                 raise SchemaSourceError(
                     f"tool {tool_key!r} source identity changed before schema refresh"
@@ -1113,34 +1136,12 @@ class SchemaRouter:
                 f"tool {tool_key!r} contract changed before schema refresh"
             )
 
-        adapter = current.execution_metadata.get("adapter")
-        if not isinstance(adapter, str):
-            adapter = current.metadata.get("adapter")
-        refreshable = {"openapi", "mcp", "optimade", "graphql", "openrpc", "odata"}
-        if adapter not in refreshable:
-            raise SchemaSourceError(
-                f"tool {tool_key!r} does not have a refreshable structured-source adapter"
-            )
-
-        source_url: str | None = None
+        source_url = refresh_profile.source_url(current)
         base_url: str | None = None
         openapi_external_refs = False
         openapi_ref_max_depth = 3
         openapi_ref_max_documents = 8
         openapi_ref_max_bytes = 10 * 1024 * 1024
-
-        if adapter == "optimade":
-            raw_source = current.execution_metadata.get("versioned_base_url")
-            if not isinstance(raw_source, str) or not raw_source:
-                raw_source = current.metadata.get("versioned_base_url")
-            if isinstance(raw_source, str) and raw_source:
-                source_url = raw_source
-        else:
-            raw_source = current.metadata.get("source_url")
-            if not isinstance(raw_source, str) or not raw_source:
-                raw_source = current.execution_metadata.get("source_url")
-            if isinstance(raw_source, str) and raw_source:
-                source_url = raw_source
 
         if adapter in {"openapi", "openrpc"}:
             approved_base = current.execution_metadata.get("approved_base_url")
@@ -1171,8 +1172,11 @@ class SchemaRouter:
                 ):
                     openapi_ref_max_bytes = byte_limit
 
-        use_bound_mcp_transport = adapter == "mcp" and source_url is None
-        use_http_validators = False
+        use_bound_mcp_transport = (
+            refresh_profile.mode == "url_or_bound_mcp"
+            and source_url is None
+        )
+        use_http_validators = refresh_profile.http_validators
         schema_validators: dict[str, str] = {}
         candidate: Any | None = None
         candidate_invoker: BoundEndpointInvoker | None = None
@@ -1224,7 +1228,6 @@ class SchemaRouter:
                     f"tool {tool_key!r} is missing persisted source provenance for refresh"
                 )
 
-            use_http_validators = adapter in {"openapi", "openrpc", "odata"}
             if adapter == "openapi" and openapi_external_refs:
                 use_http_validators = False
 

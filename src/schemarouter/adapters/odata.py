@@ -30,7 +30,7 @@ from ..schema_http import (
     schema_http_validators_from_headers,
 )
 from ..source_identity import structured_source_identity_digest_for
-from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
+from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 
 _MAX_METADATA_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 16 * 1024 * 1024
@@ -560,6 +560,12 @@ class ODataSourceAdapter:
         http_methods=("GET",),
         derives_urls=True,
     )
+    refresh = RefreshProfile(
+        mode="url",
+        source_key="source_url",
+        source_location="metadata",
+        http_validators=True,
+    )
 
     async def load(self, context: AdapterContext) -> AdapterLoadResult | None:
         if context.base_url is not None:
@@ -622,7 +628,10 @@ class ODataSourceAdapter:
             attach_schema_http_validators(
                 tool.metadata,
                 validators,
-                source_identity_digest=structured_source_identity_digest_for(tool),
+                source_identity_digest=structured_source_identity_digest_for(
+                    tool,
+                    self.refresh,
+                ),
             )
             invoker = ODataRemoteInvoker(
                 tool,
