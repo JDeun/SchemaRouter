@@ -17,12 +17,12 @@ claim that every historical version inside the range is exhaustively tested.
 | Jev / TypeSafe | `typesafe-sdk>=0.7,<1` | Dedicated adversarial contract tests on Python 3.12 | Optional `schemarouter[jev]` extra; no live API call in required CI |
 | Laya | `laya>=0.3.6,<1` | Dedicated adversarial adapter tests plus optional-extra install on Python 3.12 | Optional `schemarouter[laya]` extra; required CI does not download model weights |
 | Ollama decision backend | Ollama structured-output HTTP API | Mock-transport adversarial tests in the core suite | No SDK dependency; live model benchmark is explicit and non-blocking |
-| MCP | `mcp>=2,<3` | Real Streamable HTTP integration + real local stdio subprocess discovery/execution + transport-boundary tests | Optional `schemarouter[mcp]` extra |
+| MCP | `mcp>=2,<3` | Real Streamable HTTP integration + real local stdio subprocess discovery/execution + transport-boundary tests + scheduled pinned-reference evidence | Optional `schemarouter[mcp]` extra; no unauthenticated public MCP server is assumed |
 | OpenTelemetry | `opentelemetry-api/sdk>=1.44,<2` | In-memory span hierarchy, error status, and privacy tests | Optional `schemarouter[otel]` extra; core has no OTel dependency |
 | OpenAPI | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OpenAPI SDK dependency |
-| GraphQL | Built-in adapter | Deterministic introspection/selection-set fixtures | No GraphQL SDK dependency |
-| OData | Built-in adapter | Deterministic CSDL/$select fixtures | No OData SDK dependency |
-| OpenRPC / JSON-RPC | Built-in adapter | Deterministic schema/RPC transport fixtures | No OpenRPC SDK dependency |
+| GraphQL | Built-in adapter | Deterministic introspection/selection-set fixtures + scheduled Countries public smoke | No GraphQL SDK dependency |
+| OData | Built-in adapter | Deterministic CSDL/$select fixtures + scheduled OData.org public smoke | No OData SDK dependency |
+| OpenRPC / JSON-RPC | Built-in adapter | Deterministic schema/RPC transport fixtures + scheduled pinned public reference-document smoke | Public schema evidence is discovery-only unless a trusted JSON-RPC base URL is explicitly supplied |
 | OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |
 | Published PyPI package | Latest stable wheel + sdist | Scheduled/manual external smoke | Installs from PyPI in a fresh runner, runs `pip check`, and executes a public API scenario outside the checkout |
 | Published lightweight extras | Latest stable `mcp` + `jev` + `otel` extras | Scheduled/manual external smoke | Installs only those three extras from PyPI and validates their SDK integration surface without relying on framework transitive dependencies |
@@ -103,10 +103,40 @@ The Jev and Laya providers follow the same principle: they remain optional `sche
 likewise remains an optional
 `schemarouter[otel]` exporter integration.
 
+## Core network-adapter evidence matrix
+
+Baseline recorded **2026-10-01**. The machine-readable artifact's `generated_at`
+field is the authoritative timestamp for the latest run; this table records the intended
+evidence source and safety boundary rather than pretending third-party availability is permanent.
+
+| Adapter | Deterministic conformance | Scheduled/manual evidence | Safe execution evidence | Authentication | Evidence mode / known limit |
+| --- | --- | --- | --- | --- | --- |
+| OpenAPI | Yes | APIs.guru public OpenAPI directory | Yes, read-only metrics call | None | Live provider |
+| GraphQL | Yes | Countries GraphQL API | Yes, read-only `country(code: "KR")` query | None | Live provider; public introspection must remain available |
+| OData | Yes | OData.org V4 reference service | Yes, read-only `Products` list with `$top=1` | None | Live provider/reference service |
+| OpenRPC | Yes | OpenRPC official examples repository, pinned commit | No | None | Public reference document only; advertised localhost execution URL is intentionally not trusted |
+| OPTIMADE | Yes | Crystallography Open Database OPTIMADE endpoint | Yes, read-only structures query | None | Live provider |
+| MCP Streamable HTTP | Yes | SchemaRouter pinned local MCP reference server | Yes, read-only arithmetic reference tool | Local test header | Pinned reference implementation; no stable unauthenticated public endpoint is assumed |
+| MCP stdio | Yes | Required CI local subprocess integration | Yes | Local process boundary | Deterministic reference coverage rather than public-Internet evidence |
+
+Every scheduled/manual report records:
+
+- provider/source identity and SchemaRouter/runtime version;
+- discovery success, tool/endpoint counts, execution-bound state, and latency;
+- whether a safe read-only execution was attempted and its result shape;
+- protocol version when exposed;
+- authentication class and bounded known quirks;
+- failure **type** without exception messages or credentials.
+
+Public-provider outages remain external compatibility signals. They do not turn a pull request red.
+OpenRPC and MCP deliberately use reference evidence where a stable public execution service would
+otherwise require inventing or trusting authority that SchemaRouter does not possess.
+
 ## External compatibility checks
 
 The `Compatibility Smoke` workflow runs weekly and can also be triggered manually for public
-OpenAPI/OPTIMADE services and the latest stable SchemaRouter package published on PyPI. The PyPI
+OpenAPI, GraphQL, OData, OpenRPC-reference, and OPTIMADE evidence; pinned MCP reference evidence;
+and the latest stable SchemaRouter package published on PyPI. The PyPI
 smoke separately forces wheel and sdist installation, runs `pip check`, and executes a public API
 scenario from outside the repository checkout. A dedicated isolated smoke installs only
 `schemarouter[mcp,jev,otel]` so those integrations cannot accidentally rely on framework
@@ -143,8 +173,8 @@ services. Both should be reviewed before a release candidate is promoted.
 
 ## Scheduled live-smoke artifacts
 
-The non-blocking public OpenAPI, OPTIMADE, published-PyPI, and published-integration compatibility
-jobs emit one
+The non-blocking OpenAPI, GraphQL, OData, OpenRPC-reference, OPTIMADE, MCP-reference,
+published-PyPI, and published-integration compatibility jobs emit one
 machine-readable JSON artifact per smoke job. Reports include a schema version, UTC generation time, SchemaRouter version,
 adapter/source identity, runtime environment, success/failure state, and bounded success details.
 On failure, only the exception type is recorded; exception messages are omitted.
