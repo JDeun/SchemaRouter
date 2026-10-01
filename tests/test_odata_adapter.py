@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+import zlib
+
 import httpx
 import pytest
 
@@ -578,3 +581,69 @@ async def test_odata_nested_collection_projection_preserves_record_alignment() -
             ],
         }
     ]
+
+
+
+@pytest.mark.asyncio
+async def test_odata_does_not_double_decode_streamed_compressed_response() -> None:
+    payload = json.dumps(
+        {
+            "@odata.context": "$metadata#Products",
+            "value": [
+                {
+                    "ID": 1,
+                    "Name": "Bread",
+                }
+            ],
+        }
+    ).encode("utf-8")
+    compressed = zlib.compress(payload)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/odata/$metadata":
+            return httpx.Response(
+                200,
+                content=METADATA,
+                headers={"content-type": "application/xml"},
+                request=request,
+            )
+        if request.url.path == "/odata/Products":
+            return httpx.Response(
+                200,
+                content=compressed,
+                headers={
+                    "content-type": "application/json",
+                    "content-encoding": "deflate",
+                    "content-length": str(len(compressed)),
+                },
+                request=request,
+            )
+        raise AssertionError(f"unexpected request: {request.url}")
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler)
+    ) as client:
+        router = await SchemaRouter.from_url(
+            "https://odata.example/odata",
+            kind="odata",
+            http_client=client,
+        )
+        tool = router.registry.get("odata.example")
+        endpoint = tool.endpoint("list_products")
+        plan = ExecutionPlan(
+            query="one product",
+            registry_version=router.registry.version,
+            calls=[
+                ToolCall(
+                    tool=tool.key,
+                    endpoint=endpoint.name,
+                    arguments={"top": 1},
+                    fields=["ID", "Name"],
+                    schema_fingerprint=endpoint.fingerprint,
+                    tool_fingerprint=tool.fingerprint,
+                )
+            ],
+        )
+        result = (await router.execute(plan))[0]
+
+    assert result.data == [{"ID": 1, "Name": "Bread"}]
