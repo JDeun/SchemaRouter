@@ -20,6 +20,13 @@ not_in_nav: |
   assets/brand/README.md
 
 extra:
+  alternate:
+    - name: English
+      link: /SchemaRouter/
+      lang: en
+    - name: 한국어
+      link: /SchemaRouter/ko/
+      lang: ko
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/JDeun/SchemaRouter
