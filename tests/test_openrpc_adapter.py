@@ -241,3 +241,64 @@ async def test_openrpc_cross_origin_server_requires_explicit_base_url() -> None:
     assert tool.execution_metadata["execution_bound"] is False
     assert tool.execution_metadata["requires_explicit_base_url"] is True
     assert tool.metadata["suggested_base_url"] == "https://other.example/rpc"
+
+
+def test_openrpc_nested_result_arrays_expose_record_preserving_fields() -> None:
+    document = openrpc_document()
+    result_schema = document["components"]["schemas"]["MaterialResult"]
+    result_schema["properties"]["measurements"] = {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "value": {"type": "number"},
+                "unit": {"type": "string"},
+            },
+        },
+    }
+
+    tool = tool_from_openrpc("materials_rpc", document)
+    fields = {
+        field.name: field
+        for field in tool.endpoint("materials.get").output_fields
+    }
+
+    assert {
+        "measurements",
+        "measurements[].value",
+        "measurements[].unit",
+    } <= set(fields)
+    assert fields["measurements[].value"].path == [
+        "measurements",
+        "*",
+        "value",
+    ]
+    assert fields["measurements[].value"].result_path == [
+        "measurements",
+        "*",
+        "value",
+    ]
+
+
+def test_openrpc_root_result_array_uses_implicit_record_fields() -> None:
+    document = openrpc_document()
+    method = document["methods"][0]
+    method["result"]["schema"] = {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string"},
+                "score": {"type": "number"},
+            },
+        },
+    }
+
+    tool = tool_from_openrpc("search_rpc", document)
+    fields = {
+        field.name: field
+        for field in tool.endpoint("materials.get").output_fields
+    }
+
+    assert {"title", "score"} <= set(fields)
+    assert fields["title"].projection_path == ("title",)
