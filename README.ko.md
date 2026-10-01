@@ -195,7 +195,9 @@ Laya, Ollama, Jev/System-One, 호스팅 모델, 임베딩, pairwise 결정 백�
 | Python | capability가 로컬에 있고 타입이 붙어 있을 때 | `router.add_callable(...)` |
 | ToolSpec + SDK/client | transport는 신뢰하지만 안전한 자동 introspection이 어려울 때 | `router.add_bound_tool(...)` |
 | OpenAPI | HTTP API가 OpenAPI/Swagger를 낼 때 | `SchemaRouter.from_url(..., kind="openapi")` |
-| MCP | capability가 MCP로 노출돼 있을 때 | `SchemaRouter.from_url(..., kind="mcp")` |
+| MCP Streamable HTTP | MCP 서버가 HTTP로 접근 가능할 때 | `SchemaRouter.from_url(..., kind="mcp")` |
+| MCP stdio | 로컬 MCP 서버를 신뢰된 subprocess로 실행할 때 | `router.add_mcp_stdio(...)` |
+| MCP custom transport | 애플리케이션이 MCP client lifecycle을 이미 소유할 때 | `router.add_mcp_client_factory(...)` |
 | OPTIMADE | 소재 데이터가 OPTIMADE로 노출돼 있을 때 | `SchemaRouter.from_url(..., kind="optimade")` |
 | GraphQL | introspection과 selection set을 쓸 수 있을 때 | `SchemaRouter.from_url(..., kind="graphql")` |
 | OData | CSDL/`$metadata`와 `$select`를 제공할 때 | `SchemaRouter.from_url(..., kind="odata")` |
