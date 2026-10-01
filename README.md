@@ -173,7 +173,7 @@ factors from a unit string alone.
 ```mermaid
 flowchart TD
     F["LangChain / LangGraph / LlamaIndex / your application"] --> SR["SchemaRouter"]
-    SR --> T["OpenAPI / MCP / OPTIMADE / Python"]
+    SR --> T["OpenAPI / MCP / OPTIMADE / GraphQL / OData / OpenRPC / Python / SDK"]
 ```
 
 The surrounding framework owns conversation, decomposition, generation, memory, graphs, and agent
@@ -185,13 +185,32 @@ cannot invent tools, fields, credentials, permissions, or side effects.
 
 ## Connect capabilities
 
+Current `main` supports several equivalent ingress styles. Prefer the richest authoritative
+machine-readable contract available; use a trusted wrapper/binding when a provider exposes only an
+SDK or weakly described REST surface.
+
 | Source | Use when | Entry point |
 | --- | --- | --- |
+| Direct ToolSpec | the application already owns the canonical contract | `router.add_tool(...)` |
 | Python | capability is local and typed | `router.add_callable(...)` |
-| OpenAPI | HTTP API publishes a machine-readable contract | `SchemaRouter.from_url(..., kind="openapi")` |
+| ToolSpec + SDK/client | transport is trusted but not safely introspectable | `router.add_bound_tool(...)` |
+| OpenAPI | HTTP API publishes OpenAPI/Swagger | `SchemaRouter.from_url(..., kind="openapi")` |
 | MCP | capabilities are exposed through MCP | `SchemaRouter.from_url(..., kind="mcp")` |
 | OPTIMADE | materials data is exposed through OPTIMADE | `SchemaRouter.from_url(..., kind="optimade")` |
+| GraphQL | introspection + native selection sets are available | `SchemaRouter.from_url(..., kind="graphql")` |
+| OData | CSDL/`$metadata` + `$select` are available | `SchemaRouter.from_url(..., kind="odata")` |
+| OpenRPC | JSON-RPC service publishes OpenRPC | `SchemaRouter.from_url(..., kind="openrpc")` |
+| LangChain tool | capability already exists as a LangChain tool | `router.add_langchain_tool(...)` |
+| LlamaIndex tool | capability already exists as a LlamaIndex tool | `router.add_llamaindex_tool(...)` |
+| REST/JSON | contract is trusted locally but no discoverable schema exists | `router.add_http_tool(...)` |
+| Custom protocol | custom discovery/transport is required | `router.register_adapter(...)` |
 | Human-readable docs | no machine-readable contract exists | inspect → proposal → explicit approval |
+
+A provider may expose multiple access paths at once. Materials Project, for example, can be
+represented through OpenAPI, OPTIMADE, Python/mp-api, or an explicit SDK binding under one provider
+identity with different `access_mode` values.
+
+[See the universal ingestion matrix and broad-domain examples →](docs/guides/universal-ingestion.md)
 
 Framework bridges are available for LangChain, LangGraph, and LlamaIndex. OpenTelemetry is optional.
 Third-party bounded decision backends can be published through the
@@ -203,7 +222,7 @@ The released package provides a working beta implementation of the core architec
 
 - typed Tool / Endpoint / Parameter / Field registry contracts;
 - first-class bounded Top-K capability retrieval through `retrieve` / `aretrieve` and executable-ready variants;
-- Python, OpenAPI, MCP, and OPTIMADE ingestion paths;
+- protocol-neutral capability ingestion with Python/SDK bindings plus OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC, and declarative HTTP/JSON paths on current `main`;
 - field-first planning and bounded multi-provider field coverage;
 - input and raw-output JSON Schema validation;
 - schema fingerprints and binding-drift rejection;
