@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.13.0</span>
+<span class="sr-kicker">SchemaRouter 0.14.0</span>
 
 # 에이전트와 도구 사이에 타입 기반 실행 경계를 두세요
 
@@ -87,11 +87,13 @@ SchemaRouter는 범용 agent framework나 LLM gateway가 아니며, 메모리나
 
 ## 현재 안정판과 연구
 
-현재 안정판은 **0.13.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 릴리스 차단 CI에서
+현재 안정판은 **0.14.0 (Beta / pre-1.0)** 입니다. Python 3.10–3.14는 릴리스 차단 CI에서
 검증하고, Python 3.15는 별도 preview job으로 확인합니다.
 
-0.14 연구는 안정판의 제품 계약과 분리되어 있습니다. 실험 결과가 좋아도 검증 절차 없이
+진행 중인 연구는 안정판의 제품 계약과 분리되어 있습니다. 실험 결과가 좋아도 검증 절차 없이
 제품 기본값으로 들어가지는 않습니다.
+
+[0.14.0 릴리스 노트 →](releases/0.14.0.md)
 
 [설치하기 →](getting-started/installation.md) ·
 [SchemaRouter의 역할 →](concepts/schema-router.md) ·

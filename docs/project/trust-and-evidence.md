@@ -8,22 +8,24 @@ relying on marketing copy.
 
 | Item | Verified public state |
 | --- | --- |
-| Stable version | `0.13.0` |
-| Release date | 2026-10-01 |
+| Stable version | `0.14.0` |
+| Release date | 2026-10-02 |
 | Status | Beta / pre-1.0 |
 | Python | 3.10–3.14 are release-blocking CI targets; 3.15 is a non-blocking preview |
 | License | MIT |
-| Release | [SchemaRouter 0.13.0](https://github.com/JDeun/SchemaRouter/releases/tag/v0.13.0) |
+| Release | [SchemaRouter 0.14.0](https://github.com/JDeun/SchemaRouter/releases/tag/v0.14.0) |
 | Stable-core contract | [Stable core](../stable-core.md) |
 | Security policy | [SECURITY.md](https://github.com/JDeun/SchemaRouter/blob/main/SECURITY.md) |
 
-The `v0.13.0` annotated tag resolves to release commit
-`079a1f8fe27bd886549d247bb6068e096f188b9c`. The tag itself is not GPG-signed; artifact provenance
-is provided by the release workflow's GitHub artifact attestations instead of claiming a signed tag.
+For 0.14.0 and later, the exact release source SHA and artifact digests are recorded by the
+machine-generated `release-manifest.json` and `SHA256SUMS.txt` attached to the GitHub Release.
+The annotated tag is not described as GPG-signed; artifact provenance is provided by GitHub artifact
+attestations.
 
-## Public release artifacts and digests
+## Historical 0.13.0 artifact digests
 
-The public `0.13.0` GitHub release exposes the exact wheel, sdist, and SPDX SBOM:
+The 0.13.0 release predates the generated manifest and is retained here as a fixed historical
+digest record:
 
 | Artifact | SHA-256 |
 | --- | --- |
@@ -47,17 +49,17 @@ The release workflow:
 Implementation:
 [release.yml](https://github.com/JDeun/SchemaRouter/blob/main/.github/workflows/release.yml)
 
-A local verifier can additionally download a release artifact and compare its SHA-256 with the table
-above. When GitHub CLI attestation verification is available:
+For 0.14.0 and later, verify artifact digests against the `release-manifest.json` or
+`SHA256SUMS.txt` attached to that release. When GitHub CLI attestation verification is available:
 
 ```bash
-gh attestation verify schemarouter-0.13.0-py3-none-any.whl --repo JDeun/SchemaRouter
+gh attestation verify schemarouter-0.14.0-py3-none-any.whl --repo JDeun/SchemaRouter
 ```
 
 The repository release checklist treats provenance, SBOM, public-PyPI digest equivalence, and
 post-publish installation as explicit release mechanics rather than optional documentation tasks.
 
-Beginning with the next stable release, the release workflow also attaches two machine-generated
+Beginning with 0.14.0, the release workflow also attaches two machine-generated
 records so checksums are not copied into documentation by hand:
 
 - `SHA256SUMS.txt` — SHA-256 digests for wheel, sdist, and SPDX SBOM;
@@ -65,7 +67,7 @@ records so checksums are not copied into documentation by hand:
   SHA-256 digests.
 
 Those release assets are the canonical per-release checksum record. The static 0.13.0 table above
-is retained as historical evidence for the release that predates this manifest.
+is historical evidence for the last release that predates this manifest.
 
 ## CI and security automation
 
