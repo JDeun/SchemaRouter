@@ -525,3 +525,41 @@ async def test_graphql_array_item_field_renders_selection_without_wildcard() -> 
             {"title": "two"},
         ]
     }
+
+
+@pytest.mark.asyncio
+async def test_graphql_retries_compact_introspection_after_http_413() -> None:
+    introspection_queries: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.content)
+        query = payload["query"]
+        if "__schema" not in query:
+            raise AssertionError("unexpected execution request")
+        introspection_queries.append(query)
+        if len(introspection_queries) == 1:
+            return httpx.Response(
+                413,
+                request=request,
+            )
+        return httpx.Response(
+            200,
+            json=introspection(),
+            request=request,
+        )
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(handler)
+    ) as client:
+        router = await SchemaRouter.from_url(
+            "https://graphql.example/graphql",
+            kind="graphql",
+            http_client=client,
+        )
+
+    tool = router.registry.get("graphql.example")
+    assert tool.endpoint("material").read_only is True
+    assert len(introspection_queries) == 2
+    assert len(introspection_queries[1]) < len(introspection_queries[0])
+    assert "description" in introspection_queries[0]
+    assert "description" not in introspection_queries[1]

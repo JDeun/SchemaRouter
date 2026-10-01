@@ -17,12 +17,12 @@ claim that every historical version inside the range is exhaustively tested.
 | Jev / TypeSafe | `typesafe-sdk>=0.7,<1` | Dedicated adversarial contract tests on Python 3.12 | Optional `schemarouter[jev]` extra; no live API call in required CI |
 | Laya | `laya>=0.3.6,<1` | Dedicated adversarial adapter tests plus optional-extra install on Python 3.12 | Optional `schemarouter[laya]` extra; required CI does not download model weights |
 | Ollama decision backend | Ollama structured-output HTTP API | Mock-transport adversarial tests in the core suite | No SDK dependency; live model benchmark is explicit and non-blocking |
-| MCP | `mcp>=2,<3` | Real Streamable HTTP integration + real local stdio subprocess discovery/execution + transport-boundary tests | Optional `schemarouter[mcp]` extra |
+| MCP | `mcp>=2,<3` | Real Streamable HTTP integration + real local stdio subprocess discovery/execution + transport-boundary tests + scheduled pinned-reference evidence | Optional `schemarouter[mcp]` extra; public Internet MCP availability is not assumed |
 | OpenTelemetry | `opentelemetry-api/sdk>=1.44,<2` | In-memory span hierarchy, error status, and privacy tests | Optional `schemarouter[otel]` extra; core has no OTel dependency |
 | OpenAPI | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OpenAPI SDK dependency |
-| GraphQL | Built-in adapter | Deterministic introspection/selection-set fixtures | No GraphQL SDK dependency |
-| OData | Built-in adapter | Deterministic CSDL/$select fixtures | No OData SDK dependency |
-| OpenRPC / JSON-RPC | Built-in adapter | Deterministic schema/RPC transport fixtures | No OpenRPC SDK dependency |
+| GraphQL | Built-in adapter | Deterministic introspection/selection-set fixtures + scheduled public-provider smoke | No GraphQL SDK dependency |
+| OData | Built-in adapter | Deterministic CSDL/$select fixtures + scheduled OData.org smoke | No OData SDK dependency |
+| OpenRPC / JSON-RPC | Built-in adapter | Deterministic schema/RPC transport fixtures + scheduled pinned-reference execution | No stable unauthenticated public execution endpoint is assumed |
 | OPTIMADE | Built-in adapter | Deterministic fixtures + scheduled public smoke | No OPTIMADE client dependency |
 | Published PyPI package | Latest stable wheel + sdist | Scheduled/manual external smoke | Installs from PyPI in a fresh runner, runs `pip check`, and executes a public API scenario outside the checkout |
 | Published lightweight extras | Latest stable `mcp` + `jev` + `otel` extras | Scheduled/manual external smoke | Installs only those three extras from PyPI and validates their SDK integration surface without relying on framework transitive dependencies |
@@ -105,8 +105,9 @@ likewise remains an optional
 
 ## External compatibility checks
 
-The `Compatibility Smoke` workflow runs weekly and can also be triggered manually for public
-OpenAPI/OPTIMADE services and the latest stable SchemaRouter package published on PyPI. The PyPI
+The `Compatibility Smoke` workflow runs weekly and can also be triggered manually for the
+protocol compatibility matrix (OpenAPI, OPTIMADE, GraphQL, OData, OpenRPC, and MCP) plus the
+latest stable SchemaRouter package published on PyPI. The PyPI
 smoke separately forces wheel and sdist installation, runs `pip check`, and executes a public API
 scenario from outside the repository checkout. A dedicated isolated smoke installs only
 `schemarouter[mcp,jev,otel]` so those integrations cannot accidentally rely on framework
@@ -143,12 +144,16 @@ services. Both should be reviewed before a release candidate is promoted.
 
 ## Scheduled live-smoke artifacts
 
-The non-blocking public OpenAPI, OPTIMADE, published-PyPI, and published-integration compatibility
-jobs emit one
-machine-readable JSON artifact per smoke job. Reports include a schema version, UTC generation time, SchemaRouter version,
+The non-blocking adapter matrix, published-PyPI, and published-integration compatibility jobs emit
+machine-readable JSON artifacts. The adapter matrix includes public OpenAPI, OPTIMADE, GraphQL, and
+OData evidence plus pinned-reference OpenRPC and MCP Streamable HTTP evidence. Reports include a schema version, UTC generation time, SchemaRouter version,
 adapter/source identity, runtime environment, success/failure state, and bounded success details.
 On failure, only the exception type is recorded; exception messages are omitted.
 
-GitHub Actions retains these artifacts for 30 days. This makes compatibility drift inspectable
-without turning live third-party availability into a release-blocking gate. The raw JSON remains the
-source of truth for any later history/dashboard tooling.
+GitHub Actions retains these artifacts for 30 days. The unified
+`adapter-compatibility-matrix.json` and `adapter-compatibility-matrix.md` artifacts summarize the
+per-adapter reports and are also written to the workflow step summary. This makes compatibility
+drift inspectable without turning live third-party availability into a release-blocking gate. The
+raw JSON remains the source of truth for any later history/dashboard tooling. See
+[Live adapter compatibility matrix](guides/live-compatibility-matrix.md) for evidence policy and
+provider/reference choices.
