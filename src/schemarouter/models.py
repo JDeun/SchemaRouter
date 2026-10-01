@@ -113,7 +113,15 @@ def _schema_at_projection_path(
     if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
         schema = schema["items"]
     for part in path:
-        if schema.get("type") != "object":
+        if part == "*":
+            if "array" not in _schema_types(schema):
+                return {}
+            items = schema.get("items")
+            if not isinstance(items, dict):
+                return {}
+            schema = items
+            continue
+        if "object" not in _schema_types(schema):
             return {}
         properties = schema.get("properties")
         if not isinstance(properties, dict):
@@ -123,6 +131,17 @@ def _schema_at_projection_path(
             return {}
         schema = child
     return schema
+
+
+def _is_array_descendant_path(
+    shorter: tuple[str, ...],
+    longer: tuple[str, ...],
+) -> bool:
+    return (
+        len(longer) > len(shorter)
+        and longer[: len(shorter)] == shorter
+        and "*" in longer[len(shorter) :]
+    )
 
 
 def _validate_execution_metadata(value: dict[str, Any]) -> None:
@@ -271,6 +290,21 @@ class FieldSpec(StrictModel):
             raise ValueError("field path requires non-empty string segments")
         if any(not isinstance(part, str) or not part for part in self.result_path):
             raise ValueError("field result_path requires non-empty string segments")
+        projection_path = self.projection_path
+        result_projection_path = self.result_projection_path
+        if "*" in projection_path:
+            if projection_path.count("*") != result_projection_path.count("*"):
+                raise ValueError(
+                    "array-item field paths require matching wildcard counts in path/result_path"
+                )
+            if result_projection_path != projection_path:
+                raise ValueError(
+                    "array-item field result_path must preserve the source wildcard structure"
+                )
+        elif "*" in result_projection_path:
+            raise ValueError(
+                "field result_path cannot introduce array wildcards absent from path"
+            )
         if self.unit is not None:
             if not self.unit.strip():
                 raise ValueError("field unit must be non-empty when provided")
@@ -478,6 +512,10 @@ class EndpointSpec(StrictModel):
                 if (
                     source_longer[: len(source_shorter)] == source_shorter
                     and result_longer[: len(result_shorter)] == result_shorter
+                    and not (
+                        _is_array_descendant_path(source_shorter, source_longer)
+                        and _is_array_descendant_path(result_shorter, result_longer)
+                    )
                 ):
                     raise ValueError(
                         "overlapping output field paths in endpoint "
@@ -497,7 +535,10 @@ class EndpointSpec(StrictModel):
                     if len(left_path) <= len(right_path)
                     else (right_path, left_path)
                 )
-                if longer[: len(shorter)] == shorter:
+                if (
+                    longer[: len(shorter)] == shorter
+                    and not _is_array_descendant_path(shorter, longer)
+                ):
                     raise ValueError(
                         "overlapping output result paths in endpoint "
                         f"{self.name!r}: {left_name!r} and {right_name!r}"
