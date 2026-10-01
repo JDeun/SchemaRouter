@@ -40,6 +40,7 @@ from .binding_reconciliation import (
 from .errors import (
     BindingDriftError,
     ContractAmendmentError,
+    ExecutionInvariantError,
     InvocationUnavailableError,
     ProposalApprovalError,
     RegistrationError,
@@ -51,7 +52,7 @@ from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
 from .ingestion import SourceKind, SourceProbeResult, URLSchemaLoader
 from .inspection import RouterInspection, inspect_router
-from .models import CapabilityRetrieval, ExecutionPlan, PlanRequest, ToolResult, ToolSpec
+from .models import CapabilityRetrieval, ExecutionPlan, PlanRequest, ToolCall, ToolResult, ToolSpec
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
@@ -77,6 +78,55 @@ from .source_identity import (
 from .traces import RunTraceStore
 
 _T = TypeVar("_T")
+
+
+def _require_execution_event_exception(
+    payload: Any,
+    *,
+    event_kind: str,
+    expected_type: type[Exception] = Exception,
+) -> Exception:
+    if not isinstance(payload, expected_type):
+        raise ExecutionInvariantError(
+            "parallel execution event payload violated the internal contract: "
+            f"{event_kind!r} expected {expected_type.__name__}, "
+            f"got {type(payload).__name__}"
+        )
+    return payload
+
+
+def _require_unavailable_event_payload(
+    payload: Any,
+) -> tuple[InvocationUnavailableError, ToolCall | None, int]:
+    if not isinstance(payload, tuple) or len(payload) != 3:
+        raise ExecutionInvariantError(
+            "parallel execution event payload violated the internal contract: "
+            "'unavailable' expected a 3-item tuple"
+        )
+
+    exc, next_call, candidate_index = payload
+    if not isinstance(exc, InvocationUnavailableError):
+        raise ExecutionInvariantError(
+            "parallel execution event payload violated the internal contract: "
+            "'unavailable' expected InvocationUnavailableError, "
+            f"got {type(exc).__name__}"
+        )
+    if next_call is not None and not isinstance(next_call, ToolCall):
+        raise ExecutionInvariantError(
+            "parallel execution event payload violated the internal contract: "
+            "'unavailable' expected ToolCall or None for next_call, "
+            f"got {type(next_call).__name__}"
+        )
+    if (
+        isinstance(candidate_index, bool)
+        or not isinstance(candidate_index, int)
+        or candidate_index < 0
+    ):
+        raise ExecutionInvariantError(
+            "parallel execution event payload violated the internal contract: "
+            "'unavailable' expected a non-negative integer candidate index"
+        )
+    return exc, next_call, candidate_index
 
 
 def _coerce_config(config: RunConfig | dict[str, Any] | None) -> RunConfig:
@@ -2071,7 +2121,11 @@ class SchemaRouter:
         )
 
         if _accept_candidate_fingerprint is not None:
-            assert _accept_candidate_source_identity is not None
+            if _accept_candidate_source_identity is None:
+                raise SchemaSourceError(
+                    "pending schema acceptance invariant failed: candidate source "
+                    "identity pin is missing"
+                )
             if candidate_source_identity != _accept_candidate_source_identity:
                 changes = list(report.changes)
                 changes.append(
@@ -2708,7 +2762,10 @@ class SchemaRouter:
 
                     if kind == "preflight_error":
                         terminal_count += 1
-                        assert isinstance(payload, Exception)
+                        payload = _require_execution_event_exception(
+                            payload,
+                            event_kind=kind,
+                        )
                         error_data: dict[str, Any] = {
                             "error_type": type(payload).__name__,
                             "stage": "execution",
@@ -2794,12 +2851,12 @@ class SchemaRouter:
                         continue
 
                     if kind == "unavailable":
-                        exc, next_call, candidate_index = payload
-                        assert isinstance(exc, InvocationUnavailableError)
-                        has_next = next_call is not None
+                        exc, next_call, candidate_index = (
+                            _require_unavailable_event_payload(payload)
+                        )
                         error_data: dict[str, Any] = {
                             "error_type": type(exc).__name__,
-                            "fallback_eligible": has_next,
+                            "fallback_eligible": next_call is not None,
                         }
                         if run_config.include_payloads:
                             error_data["message"] = str(exc)
@@ -2814,7 +2871,7 @@ class SchemaRouter:
                         ))
                         sequence += 1
 
-                        if not has_next:
+                        if next_call is None:
                             terminal_count += 1
                             yield await emit(RunEvent.create(
                                 event="run.error",
@@ -2860,7 +2917,10 @@ class SchemaRouter:
 
                     if kind == "error":
                         terminal_count += 1
-                        assert isinstance(payload, Exception)
+                        payload = _require_execution_event_exception(
+                            payload,
+                            event_kind=kind,
+                        )
                         error_data = {"error_type": type(payload).__name__}
                         if run_config.include_payloads:
                             error_data["message"] = str(payload)
