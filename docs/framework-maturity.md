@@ -6,10 +6,10 @@ to embed in larger ecosystems.
 
 This document tracks framework-level maturity rather than research metrics.
 
-> **0.12.0 maturity note:** the typed registry, bounded Top-K capability retrieval, planning,
-> execution, validation, policy, health, projection, persistence, inspection, and integration
-> surfaces are beta product capabilities. Retrieval returns registered capability contracts and
-> never grants execution authority. The active 0.14 agent-utility research evaluates downstream
+> **0.13.0 maturity note:** the 0.12 stable-core boundary remains intact while universal
+> ingestion, trusted SDK/client binding, nested field contracts, and schema lifecycle operations
+> complete the main product surface. Retrieval returns registered capability contracts and never
+> grants execution authority. The active 0.14 agent-utility research evaluates downstream
 > quality/efficiency separately from the stable runtime surface. See
 > [Routing research status](research/routing-status.md).
 
