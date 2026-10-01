@@ -75,6 +75,12 @@ class RefreshProfile:
     def __post_init__(self) -> None:
         if self.mode not in {"unsupported", "url", "url_or_bound_mcp"}:
             raise ValueError("unsupported refresh mode")
+        if self.source_location not in {
+            "metadata",
+            "execution_metadata",
+            "either",
+        }:
+            raise ValueError("unsupported refresh source_location")
         if self.mode == "url" and not self.source_key:
             raise ValueError("URL refresh requires a source_key")
         if self.source_key is not None and (
