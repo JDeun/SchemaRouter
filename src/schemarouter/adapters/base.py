@@ -28,10 +28,33 @@ class AdapterContext:
     http_client: httpx.AsyncClient | None = None
 
 
+ProbeOutcome = Literal[
+    "recognized",
+    "not_recognized",
+    "unreachable",
+    "authentication_failed",
+    "not_found",
+    "invalid_schema",
+    "unsupported_feature",
+    "protocol_error",
+]
+
+
+@dataclass(frozen=True)
+class AdapterProbeDiagnostic:
+    """Credential-free outcome from one structured-source adapter probe."""
+
+    adapter_kind: str
+    activity: Literal["passive", "active"]
+    outcome: ProbeOutcome
+    error_type: str | None = None
+
+
 @dataclass(frozen=True)
 class AdapterLoadResult:
     tool: ToolSpec
     invoker: Any | None = None
+    probe_diagnostics: tuple[AdapterProbeDiagnostic, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -618,6 +618,7 @@ class OPTIMADESourceAdapter:
         try:
             versioned_base_url: str | None = None
             base_info: dict[str, Any] | None = None
+            transport_failures: list[BaseException] = []
             for candidate in candidates:
                 try:
                     response = await _bounded_get(
@@ -629,6 +630,13 @@ class OPTIMADESourceAdapter:
                     document = response.json()
                 except SchemaSourceError:
                     raise
+                except (
+                    httpx.TimeoutException,
+                    httpx.TransportError,
+                    httpx.HTTPStatusError,
+                ) as exc:
+                    transport_failures.append(exc)
+                    continue
                 except Exception:  # noqa: BLE001
                     continue
                 attributes = _base_info_attributes(document)
@@ -638,6 +646,32 @@ class OPTIMADESourceAdapter:
                     break
 
             if versioned_base_url is None or base_info is None:
+                if transport_failures:
+                    authentication_failure = next(
+                        (
+                            exc
+                            for exc in transport_failures
+                            if isinstance(exc, httpx.HTTPStatusError)
+                            and exc.response.status_code in {401, 403}
+                        ),
+                        None,
+                    )
+                    if authentication_failure is not None:
+                        raise authentication_failure
+                    availability_failure = next(
+                        (
+                            exc
+                            for exc in transport_failures
+                            if isinstance(
+                                exc,
+                                (httpx.TimeoutException, httpx.TransportError),
+                            )
+                        ),
+                        None,
+                    )
+                    if availability_failure is not None:
+                        raise availability_failure
+                    raise transport_failures[0]
                 return None
 
             if bool(base_info.get("is_index", False)):

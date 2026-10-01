@@ -95,5 +95,18 @@ class SchemaNotModifiedError(SchemaSourceError):
         self.validators = dict(validators or {})
 
 
-class UnsupportedSchemaSourceError(SchemaSourceError):
+class SourceProbeDiagnosticError(SchemaSourceError):
+    """Raised when a structured-source probe has a safe actionable diagnosis."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        probe_report: object | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.probe_report = probe_report
+
+
+class UnsupportedSchemaSourceError(SourceProbeDiagnosticError):
     """Raised when no registered structured-source adapter accepts a URL."""

@@ -9,8 +9,16 @@ from pathlib import Path
 from typing import Any
 
 from .dashboard import write_dashboard
-from .errors import SchemaSourceError, UnsupportedSchemaSourceError
-from .ingestion import SourceProbeResult, default_adapter_registry
+from .errors import (
+    SchemaSourceError,
+    SourceProbeDiagnosticError,
+    UnsupportedSchemaSourceError,
+)
+from .ingestion import (
+    SourceProbeFailureReport,
+    SourceProbeResult,
+    default_adapter_registry,
+)
 from .inspection import (
     RegistryInspection,
     ToolInspection,
@@ -185,17 +193,50 @@ def _render_source_probe(probe: SourceProbeResult) -> str:
     lines = [
         f"Structured source: {probe.source_url}",
         f"adapter: {probe.adapter_kind}",
+        f"probe activity: {probe.probe_activity or '-'}",
         f"tool: {probe.tool_key}",
         f"provider: {probe.provider or '-'}",
         f"access_mode: {probe.access_mode or '-'}",
         f"endpoints: {probe.endpoint_count}",
         f"execution binding: {'available' if probe.execution_bindable else 'not available'}",
     ]
+    if probe.adapters_considered:
+        lines.append("adapters considered:")
+        lines.extend(
+            (
+                f"  - {item.adapter_kind} ({item.activity}): "
+                f"{item.outcome}"
+            )
+            for item in probe.adapters_considered
+        )
     if probe.warnings:
         lines.append("warnings:")
         lines.extend(f"  - {warning}" for warning in probe.warnings)
     else:
         lines.append("warnings: none")
+    return "\n".join(lines)
+
+
+def _render_source_probe_failure(report: SourceProbeFailureReport) -> str:
+    lines = [
+        f"Structured source probe failed: {report.source_url}",
+        f"failure category: {report.failure_category}",
+    ]
+    if report.adapters_considered:
+        lines.append("adapters considered:")
+        for item in report.adapters_considered:
+            detail = (
+                f"  - {item.adapter_kind} ({item.activity}): "
+                f"{item.outcome}"
+            )
+            if item.error_type:
+                detail += f" [{item.error_type}]"
+            lines.append(detail)
+    if report.skipped_active_adapters:
+        lines.append(
+            "active adapters skipped: "
+            + ", ".join(report.skipped_active_adapters)
+        )
     return "\n".join(lines)
 
 
@@ -497,19 +538,39 @@ def main(argv: Sequence[str] | None = None) -> int:
         output = _run(args)
     except UnsupportedSchemaSourceError as exc:
         if args.command == "source":
+            report = getattr(exc, "probe_report", None)
+            if args.json and isinstance(report, SourceProbeFailureReport):
+                parser.exit(2, _json_dump(report) + "\n")
             supported = ", ".join(default_adapter_registry().kinds())
+            diagnostic = (
+                _render_source_probe_failure(report) + "\n"
+                if isinstance(report, SourceProbeFailureReport)
+                else ""
+            )
             parser.exit(
                 2,
                 (
-                    "schemarouter: source is not a supported structured source. "
-                    f"{exc}\n"
-                    f"supported source kinds: {supported}\n"
-                    "A normal HTML website is not auto-converted into an executable tool. "
-                    "For human-readable API documentation, use SchemaRouter.inspect_url() "
-                    "followed by explicit proposal approval; for a trusted manual contract, "
-                    "use SchemaRouter.add_http_tool().\n"
+                    diagnostic
+                    + "schemarouter: source is not a supported structured source. "
+                    + f"{exc}\n"
+                    + f"supported source kinds: {supported}\n"
+                    + "A normal HTML website is not auto-converted into an executable tool. "
+                    + "For human-readable API documentation, use SchemaRouter.inspect_url() "
+                    + "followed by explicit proposal approval; for a trusted manual contract, "
+                    + "use SchemaRouter.add_http_tool().\n"
                 ),
             )
+        parser.exit(2, f"schemarouter: {type(exc).__name__}: {exc}\n")
+    except SourceProbeDiagnosticError as exc:
+        if args.command == "source":
+            report = getattr(exc, "probe_report", None)
+            if isinstance(report, SourceProbeFailureReport):
+                output = (
+                    _json_dump(report)
+                    if args.json
+                    else _render_source_probe_failure(report)
+                )
+                parser.exit(2, output + "\n")
         parser.exit(2, f"schemarouter: {type(exc).__name__}: {exc}\n")
     except (KeyError, OSError, ValueError, RuntimeError, SchemaSourceError) as exc:
         parser.exit(2, f"schemarouter: {type(exc).__name__}: {exc}\n")

@@ -616,6 +616,12 @@ class OpenRPCSourceAdapter:
                 document = response.json()
             except SchemaSourceError:
                 raise
+            except (
+                httpx.TimeoutException,
+                httpx.TransportError,
+                httpx.HTTPStatusError,
+            ):
+                raise
             except Exception:  # noqa: BLE001
                 return None
 
