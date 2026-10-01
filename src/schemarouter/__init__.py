@@ -93,6 +93,8 @@ from .inspection import (
     tool_spec_document,
 )
 from .models import (
+    AuthRequirementSet,
+    AuthSchemeRequirement,
     CapabilityCandidate,
     CapabilityRetrieval,
     EndpointSpec,
@@ -168,6 +170,8 @@ __all__ = [
     "AccessHealthMonitor",
     "AfterExecutionHook",
     "ApprovalDeniedError",
+    "AuthRequirementSet",
+    "AuthSchemeRequirement",
     "BeforeExecutionHook",
     "BindingDriftError",
     "ConfiguredSchemaRouter",

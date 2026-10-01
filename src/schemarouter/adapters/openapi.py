@@ -4,13 +4,22 @@ import hashlib
 import json
 import re
 from copy import deepcopy
+from http.cookies import CookieError, SimpleCookie
 from typing import Any
 from urllib.parse import quote, unquote, urldefrag, urljoin, urlparse
 
 import httpx
 
 from ..errors import InvocationUnavailableError, NonRetryableInvocationError
-from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
+from ..models import (
+    AuthRequirementSet,
+    AuthSchemeRequirement,
+    EndpointSpec,
+    FieldSpec,
+    ParameterSpec,
+    ToolCall,
+    ToolSpec,
+)
 from ..openapi_compatibility import analyze_openapi_compatibility
 
 _HTTP_METHODS = {"get", "post", "put", "patch", "delete", "options", "head", "trace"}
@@ -1031,6 +1040,264 @@ def _disambiguate_generated_endpoint_names(
     return result
 
 
+def _unsupported_auth_scheme(
+    name: str,
+    *,
+    declared_type: str | None,
+    scopes: list[str],
+) -> AuthSchemeRequirement:
+    return AuthSchemeRequirement(
+        name=name,
+        kind="unsupported",
+        scopes=scopes,
+        declared_type=declared_type or "unknown",
+    )
+
+
+def _openapi_security_scheme(
+    document: dict[str, Any],
+    name: str,
+    *,
+    scopes: list[str],
+    scopes_valid: bool,
+) -> AuthSchemeRequirement:
+    components = document.get("components")
+    security_schemes = (
+        components.get("securitySchemes")
+        if isinstance(components, dict)
+        else None
+    )
+    raw = security_schemes.get(name) if isinstance(security_schemes, dict) else None
+    scheme = _resolve_local_ref(document, raw)
+    if not isinstance(scheme, dict):
+        return _unsupported_auth_scheme(
+            name,
+            declared_type="missing",
+            scopes=scopes,
+        )
+
+    declared_type = scheme.get("type")
+    if not isinstance(declared_type, str) or not scopes_valid:
+        return _unsupported_auth_scheme(
+            name,
+            declared_type=declared_type if isinstance(declared_type, str) else "invalid",
+            scopes=scopes,
+        )
+
+    if declared_type == "apiKey":
+        location = scheme.get("in")
+        parameter_name = scheme.get("name")
+        if (
+            location not in {"header", "query", "cookie"}
+            or not isinstance(parameter_name, str)
+            or not parameter_name.strip()
+        ):
+            return _unsupported_auth_scheme(
+                name,
+                declared_type=declared_type,
+                scopes=scopes,
+            )
+        return AuthSchemeRequirement(
+            name=name,
+            kind="api_key",
+            location=location,
+            parameter_name=parameter_name,
+            scopes=scopes,
+            declared_type=declared_type,
+        )
+
+    if declared_type == "http":
+        http_scheme = scheme.get("scheme")
+        if not isinstance(http_scheme, str) or not http_scheme.strip():
+            return _unsupported_auth_scheme(
+                name,
+                declared_type=declared_type,
+                scopes=scopes,
+            )
+        return AuthSchemeRequirement(
+            name=name,
+            kind="http",
+            http_scheme=http_scheme.casefold(),
+            scopes=scopes,
+            declared_type=declared_type,
+        )
+
+    if declared_type == "oauth2":
+        return AuthSchemeRequirement(
+            name=name,
+            kind="oauth2",
+            scopes=scopes,
+            declared_type=declared_type,
+        )
+
+    if declared_type == "openIdConnect":
+        return AuthSchemeRequirement(
+            name=name,
+            kind="openid_connect",
+            scopes=scopes,
+            declared_type=declared_type,
+        )
+
+    return _unsupported_auth_scheme(
+        name,
+        declared_type=declared_type,
+        scopes=scopes,
+    )
+
+
+def _openapi_auth_requirements(
+    document: dict[str, Any],
+    security: Any,
+    *,
+    declared: bool,
+) -> list[AuthRequirementSet]:
+    if security is None:
+        if not declared:
+            return []
+        return [
+            AuthRequirementSet(
+                schemes=[
+                    _unsupported_auth_scheme(
+                        "__invalid_security__",
+                        declared_type="invalid",
+                        scopes=[],
+                    )
+                ]
+            )
+        ]
+    if not isinstance(security, list):
+        return [
+            AuthRequirementSet(
+                schemes=[
+                    _unsupported_auth_scheme(
+                        "__invalid_security__",
+                        declared_type="invalid",
+                        scopes=[],
+                    )
+                ]
+            )
+        ]
+
+    alternatives: list[AuthRequirementSet] = []
+    for alternative in security:
+        if not isinstance(alternative, dict):
+            alternatives.append(
+                AuthRequirementSet(
+                    schemes=[
+                        _unsupported_auth_scheme(
+                            "__invalid_security__",
+                            declared_type="invalid",
+                            scopes=[],
+                        )
+                    ]
+                )
+            )
+            continue
+
+        requirements: list[AuthSchemeRequirement] = []
+        for name, raw_scopes in alternative.items():
+            if not isinstance(name, str) or not name.strip():
+                requirements.append(
+                    _unsupported_auth_scheme(
+                        "__invalid_security_scheme__",
+                        declared_type="invalid",
+                        scopes=[],
+                    )
+                )
+                continue
+            scopes_valid = isinstance(raw_scopes, list) and all(
+                isinstance(scope, str) and bool(scope.strip())
+                for scope in raw_scopes
+            )
+            scopes = (
+                sorted({scope.strip() for scope in raw_scopes})
+                if scopes_valid
+                else []
+            )
+            requirements.append(
+                _openapi_security_scheme(
+                    document,
+                    name,
+                    scopes=scopes,
+                    scopes_valid=scopes_valid,
+                )
+            )
+        requirements.sort(key=lambda requirement: requirement.name)
+        alternatives.append(AuthRequirementSet(schemes=requirements))
+
+    alternatives.sort(
+        key=lambda requirement: json.dumps(
+            requirement.model_dump(mode="json"),
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+    )
+    return alternatives
+
+
+def _trusted_header_map(headers: dict[str, str]) -> dict[str, str]:
+    return {name.casefold(): value for name, value in headers.items()}
+
+
+def _trusted_auth_scheme_satisfied(
+    requirement: AuthSchemeRequirement,
+    headers: dict[str, str],
+) -> bool:
+    if requirement.kind == "api_key":
+        if requirement.location == "header" and requirement.parameter_name:
+            value = headers.get(requirement.parameter_name.casefold())
+            return isinstance(value, str) and bool(value)
+        if requirement.location == "cookie" and requirement.parameter_name:
+            raw_cookie = headers.get("cookie")
+            if not raw_cookie:
+                return False
+            cookie = SimpleCookie()
+            try:
+                cookie.load(raw_cookie)
+            except CookieError:
+                return False
+            return requirement.parameter_name in cookie
+        return False
+
+    authorization = headers.get("authorization", "")
+    if requirement.kind == "http":
+        if requirement.http_scheme == "bearer":
+            return authorization.casefold().startswith("bearer ") and bool(
+                authorization[7:].strip()
+            )
+        if requirement.http_scheme == "basic":
+            return authorization.casefold().startswith("basic ") and bool(
+                authorization[6:].strip()
+            )
+        return False
+
+    if requirement.kind in {"oauth2", "openid_connect"}:
+        return authorization.casefold().startswith("bearer ") and bool(
+            authorization[7:].strip()
+        )
+
+    return False
+
+
+def _trusted_auth_satisfies(
+    endpoint: EndpointSpec,
+    trusted_headers: dict[str, str],
+) -> bool:
+    if not endpoint.auth_requirements:
+        return True
+
+    headers = _trusted_header_map(trusted_headers)
+    for alternative in endpoint.auth_requirements:
+        if not alternative.schemes:
+            return True
+        if all(
+            _trusted_auth_scheme_satisfied(requirement, headers)
+            for requirement in alternative.schemes
+        ):
+            return True
+    return False
+
+
 def tool_from_openapi(
     name: str,
     document: dict[str, Any],
@@ -1066,6 +1333,17 @@ def tool_from_openapi(
             if method.lower() not in _HTTP_METHODS or not isinstance(operation, dict):
                 continue
             explicit_operation_id = operation.get("operationId")
+            security_declared = "security" in operation or "security" in document
+            effective_security = (
+                operation.get("security")
+                if "security" in operation
+                else document.get("security")
+            )
+            auth_requirements = _openapi_auth_requirements(
+                document,
+                effective_security,
+                declared=security_declared,
+            )
             fallback_name = path.strip("/").replace("/", "_") or "root"
             operation_id = (
                 explicit_operation_id
@@ -1242,6 +1520,7 @@ def tool_from_openapi(
                     path=path,
                     read_only=method.lower() in {"get", "head", "options"},
                     destructive=method.lower() == "delete",
+                    auth_requirements=auth_requirements,
                     execution_metadata={
                         "request_body_required": request_body_required,
                         "request_body_mode": request_body_mode,
@@ -1249,7 +1528,7 @@ def tool_from_openapi(
                     },
                     metadata={
                         "tags": operation.get("tags", []),
-                        "security": operation.get("security"),
+                        "security": deepcopy(effective_security),
                         "deprecated": bool(operation.get("deprecated", False)),
                         # Kept as descriptive mirrors for backward-compatible inspection. Runtime
                         # behavior reads the fingerprinted execution_metadata contract above.
@@ -1368,6 +1647,11 @@ class OpenAPIRemoteInvoker:
     ) -> Any:
         endpoint_name = endpoint
         endpoint_spec = self.tool.endpoint(endpoint_name)
+        if not _trusted_auth_satisfies(endpoint_spec, self.trusted_headers):
+            raise NonRetryableInvocationError(
+                f"authentication requirements for endpoint {endpoint_name!r} "
+                "cannot be satisfied by the trusted runtime binding"
+            )
         if not endpoint_spec.method or not endpoint_spec.path:
             raise NonRetryableInvocationError(
                 f"endpoint {endpoint_name!r} is missing HTTP method/path"

@@ -121,6 +121,9 @@ class EndpointInspection(StrictModel):
     path: str | None = None
     read_only: bool | None = None
     destructive: bool | None = None
+    auth_required: bool = False
+    auth_kinds: list[str] = Field(default_factory=list)
+    auth_scheme_names: list[str] = Field(default_factory=list)
     operation_aliases: list[str] = Field(default_factory=list)
     parameter_count: int = Field(ge=0)
     required_parameter_count: int = Field(ge=0)
@@ -239,6 +242,21 @@ def inspect_tool_spec(tool: ToolSpec) -> ToolInspection:
             path=endpoint.path,
             read_only=endpoint.read_only,
             destructive=endpoint.destructive,
+            auth_required=endpoint.auth_required,
+            auth_kinds=sorted(
+                {
+                    scheme.kind
+                    for requirement in endpoint.auth_requirements
+                    for scheme in requirement.schemes
+                }
+            ),
+            auth_scheme_names=sorted(
+                {
+                    scheme.name
+                    for requirement in endpoint.auth_requirements
+                    for scheme in requirement.schemes
+                }
+            ),
             operation_aliases=list(endpoint.operation_aliases),
             parameter_count=len(endpoint.parameters),
             required_parameter_count=sum(

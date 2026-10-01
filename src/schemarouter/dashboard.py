@@ -99,6 +99,11 @@ def render_dashboard(
                 for field in endpoint.fields
             )
             alias_summary = ", ".join(endpoint.operation_aliases)
+            auth_summary = (
+                "public"
+                if not endpoint.auth_required
+                else "required: " + ", ".join(endpoint.auth_kinds or ["unknown"])
+            )
             search = " ".join(
                 (
                     tool.key,
@@ -107,6 +112,7 @@ def render_dashboard(
                     alias_summary,
                     endpoint.method or "",
                     endpoint.path or "",
+                    auth_summary,
                     field_summary,
                 )
             ).lower()
@@ -121,6 +127,7 @@ def render_dashboard(
                 f"<td>{escape(endpoint.method or '—')}</td>"
                 f"<td>{escape(endpoint.path or '—')}</td>"
                 f"<td>{escape(_mode(endpoint.read_only, endpoint.destructive))}</td>"
+                f"<td>{escape(auth_summary)}</td>"
                 f"<td>{endpoint.parameter_count}</td>"
                 f"<td>{endpoint.output_field_count}</td>"
                 f"<td>{escape(field_summary or '—')}</td>"
@@ -322,7 +329,7 @@ No tool execution, credentials, arbitrary metadata, or trace payload values are 
 <thead><tr>
 <th>Tool</th><th>Adapter</th><th>Source</th><th>Endpoint</th>
 <th>Operation aliases</th><th>Method</th><th>Path</th>
-<th>Mode</th><th>Params</th><th>Fields</th><th>Field contracts</th>
+<th>Mode</th><th>Auth</th><th>Params</th><th>Fields</th><th>Field contracts</th>
 <th>Bound</th><th>Fingerprint</th>
 </tr></thead>
 <tbody>{"".join(tool_rows)}</tbody>
