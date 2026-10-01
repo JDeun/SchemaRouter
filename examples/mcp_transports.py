@@ -8,15 +8,15 @@ from __future__ import annotations
 
 import asyncio
 import os
+import pathlib
 import socket
 import subprocess
 import sys
-from pathlib import Path
 
 from schemarouter import ExecutionPolicy, PlanRequest, SchemaRouter
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 HTTP_SERVER = ROOT / "tests" / "fixtures" / "mcp_http_server.py"
 STDIO_SERVER = ROOT / "tests" / "fixtures" / "mcp_stdio_server.py"
 
