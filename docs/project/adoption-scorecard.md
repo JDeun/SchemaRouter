@@ -31,7 +31,7 @@ It records:
   traffic permission;
 - collection timestamp and explicit metric limitations.
 
-Each run writes JSON and Markdown artifacts retained for 180 days and renders the Markdown summary in
+Each run writes JSON and Markdown artifacts retained for 90 days and renders the Markdown summary in
 the workflow UI.
 
 The collector is:

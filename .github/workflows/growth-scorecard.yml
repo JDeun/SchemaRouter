@@ -34,4 +34,4 @@ jobs:
           name: growth-scorecard-${{ github.run_id }}
           path: artifacts/growth-scorecard.*
           if-no-files-found: error
-          retention-days: 180
+          retention-days: 90
