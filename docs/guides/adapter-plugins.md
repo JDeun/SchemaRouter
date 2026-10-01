@@ -60,6 +60,39 @@ load_adapter_plugins(
 
 An empty allowlist is rejected. Unknown requested names fail before any plugin is imported.
 
+## Runnable external-package example
+
+The repository includes a tiny package that is deliberately separate from the
+`schemarouter` distribution:
+
+```bash
+python -m pip install -e examples/adapter_plugin_demo
+python examples/adapter_plugin_quickstart.py
+```
+
+Its package metadata declares a real entry point:
+
+```toml
+[project.entry-points."schemarouter.adapters"]
+demo_static = "schemarouter_demo_adapter:DemoStaticAdapter"
+```
+
+The quickstart checks the trust boundary directly:
+
+1. `discover_adapter_plugins()` sees the entry-point metadata while
+   `schemarouter_demo_adapter` is still absent from `sys.modules`;
+2. `router.load_adapter_plugins(allowlist={"demo_static"})` explicitly imports and registers it;
+3. `router.add_url(..., kind="demo_static")` compiles a normal `ToolSpec` and trusted invoker;
+4. normal planning, argument/output validation, field projection, and execution return
+   `{"value": 5}`.
+
+The source URL is `example.invalid` and the adapter never performs network I/O. The URL exists only
+to demonstrate that a plugin can recognize a structured source identifier while keeping the demo
+deterministic.
+
+Source:
+[`examples/adapter_plugin_demo/`](https://github.com/JDeun/SchemaRouter/tree/main/examples/adapter_plugin_demo)
+
 ## Security model
 
 Treat adapter plugins like any other installed application dependency. They execute with the Python
