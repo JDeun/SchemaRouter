@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, cast
 
 import httpx
 from pydantic import Field
@@ -79,11 +79,27 @@ def diagnostic_from_error(
     *,
     activity: Literal["passive", "active"] | None,
 ) -> SourceProbeDiagnostic:
+    allowed_failures = {
+        "unreachable",
+        "authentication_failed",
+        "invalid_schema",
+        "unsupported_feature",
+        "protocol_error",
+    }
+    category = (
+        error.category
+        if error.category in allowed_failures
+        else "protocol_error"
+    )
     return SourceProbeDiagnostic(
         adapter_kind=error.adapter_kind,
         activity=activity,
-        status=error.category,
-        error_type=type(error.__cause__).__name__ if error.__cause__ else type(error).__name__,
+        status=cast(ProbeStatus, category),
+        error_type=(
+            type(error.__cause__).__name__
+            if error.__cause__ is not None
+            else type(error).__name__
+        ),
         status_code=error.status_code,
         message=str(error),
     )
