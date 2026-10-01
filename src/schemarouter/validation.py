@@ -6,7 +6,7 @@ from typing import Any
 from jsonschema import exceptions, validators
 
 from .errors import SchemaValidationError
-from .models import EndpointSpec
+from .models import EndpointSpec, _schema_at_projection_path
 
 
 def _synthesized_input_schema(endpoint: EndpointSpec) -> dict[str, Any]:
@@ -72,30 +72,10 @@ def field_value_schema(endpoint: EndpointSpec, field_name: str) -> dict[str, Any
     if field.json_schema:
         return deepcopy(field.json_schema)
 
-    schema = effective_output_schema(endpoint)
-    if "array" in json_schema_types(schema) and isinstance(schema.get("items"), dict):
-        schema = schema["items"]
-
-    for part in field.projection_path:
-        if part == "*":
-            if "array" not in json_schema_types(schema):
-                return {}
-            items = schema.get("items")
-            if not isinstance(items, dict):
-                return {}
-            schema = items
-            continue
-
-        if "object" not in json_schema_types(schema):
-            return {}
-        properties = schema.get("properties")
-        if not isinstance(properties, dict):
-            return {}
-        child = properties.get(part)
-        if not isinstance(child, dict):
-            return {}
-        schema = child
-
+    schema = _schema_at_projection_path(
+        effective_output_schema(endpoint),
+        field.projection_path,
+    )
     return deepcopy(schema)
 
 
@@ -209,9 +189,8 @@ def projected_output_schema(
 ) -> dict[str, Any]:
     """Return a conservative schema for an explicitly server-projected response.
 
-    Object paths and explicit array-item wildcard path segments are narrowed recursively. Root
-    arrays remain implicit: their item object is narrowed using the same selected field paths.
-    Unsupported shapes retain the full schema and therefore fail closed.
+    Object paths and explicit wildcard array-item paths are narrowed recursively while preserving
+    collection structure. Root collection endpoints keep their historical record-relative fields.
     """
 
     schema = deepcopy(effective_output_schema(endpoint))
@@ -258,18 +237,22 @@ def projected_output_schema(
         tree: dict[str, Any],
     ) -> dict[str, Any] | None:
         if "*" in tree:
-            if len(tree) != 1 or "array" not in json_schema_types(current_schema):
+            if set(tree) != {"*"}:
                 return None
-            subtree = tree["*"]
-            if not isinstance(subtree, dict) or not subtree:
+            if "array" not in json_schema_types(current_schema):
                 return None
             items = current_schema.get("items")
             if not isinstance(items, dict):
                 return None
+            subtree = tree["*"]
+            narrowed = deepcopy(current_schema)
+            if subtree is None:
+                return narrowed
+            if not isinstance(subtree, dict) or not subtree:
+                return None
             narrowed_items = narrow_schema(items, subtree)
             if narrowed_items is None:
                 return None
-            narrowed = deepcopy(current_schema)
             narrowed["items"] = narrowed_items
             return narrowed
 
@@ -323,7 +306,6 @@ def projected_output_schema(
             return schema
 
     return schema
-
 
 def validate_json_schema_value(
     value: Any,
