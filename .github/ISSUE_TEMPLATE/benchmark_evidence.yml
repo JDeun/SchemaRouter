@@ -1,0 +1,49 @@
+name: Benchmark / research evidence
+description: Propose or report reproducible benchmark evidence
+title: "[Evidence] "
+labels:
+  - research
+body:
+  - type: input
+    id: hypothesis
+    attributes:
+      label: Hypothesis or claim being tested
+    validations:
+      required: true
+  - type: textarea
+    id: workload
+    attributes:
+      label: Frozen workload
+      description: Corpus/task IDs, split, language mix, and whether the workload was used during development.
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Exact configuration
+      description: Model/checkpoint/provider, SchemaRouter version/SHA, runtime, hardware, thresholds, shortlist depth, and relevant package versions.
+    validations:
+      required: true
+  - type: textarea
+    id: metrics
+    attributes:
+      label: Metrics and raw artifacts
+      description: Include routing/task metrics, latency, errors, authority violations, and links/digests for machine-readable outputs.
+    validations:
+      required: true
+  - type: textarea
+    id: limits
+    attributes:
+      label: Claim boundary and limitations
+      description: State what this evidence does NOT establish.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Evidence checks
+      options:
+        - label: The report preserves negative/null results rather than only successful runs.
+          required: true
+        - label: Secrets and private provider configuration are not included in artifacts.
+          required: true

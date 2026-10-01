@@ -1,0 +1,79 @@
+name: Bug report
+description: Report a reproducible correctness, reliability, or documentation defect
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a reproducible defect. Security-sensitive issues belong in GitHub private vulnerability reporting, not here.
+  - type: input
+    id: version
+    attributes:
+      label: SchemaRouter version
+      description: Exact released version or commit SHA.
+      placeholder: "0.13.0 or commit SHA"
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected surface
+      options:
+        - Core registry/planner/runtime
+        - OpenAPI
+        - MCP
+        - OPTIMADE
+        - GraphQL
+        - OData
+        - OpenRPC / JSON-RPC
+        - Python / SDK binding
+        - LangChain / LangGraph
+        - LlamaIndex
+        - Decision backend/plugin
+        - Storage / migration
+        - CLI / dashboard / docs
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Minimal reproduction
+      description: Include the smallest code/config needed to reproduce the problem. Redact credentials.
+      render: python
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include exception type/message or observable mismatch.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python version, relevant optional dependencies/providers.
+      placeholder: "macOS 15; Python 3.13; mcp 1.x"
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Preflight
+      options:
+        - label: I checked existing issues for the same defect.
+          required: true
+        - label: This report contains no API keys, tokens, passwords, cookies, or other secrets.
+          required: true
+        - label: This is not a sensitive vulnerability requiring private disclosure.
+          required: true
