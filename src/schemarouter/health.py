@@ -86,6 +86,62 @@ class AccessHealthMonitor:
         for key in stale:
             self._probes.pop(key, None)
 
+    def transition_tool_contract(
+        self,
+        tool_key: str,
+        *,
+        expected_old_fingerprint: str,
+        expected_new_fingerprint: str,
+    ) -> None:
+        """Carry safe probes across one accepted exact contract transition."""
+
+        records = [
+            (endpoint, record)
+            for (record_tool, endpoint), record in self._probes.items()
+            if (
+                record_tool == tool_key
+                and record.tool_fingerprint == expected_old_fingerprint
+            )
+        ]
+        if not records:
+            return
+
+        now = datetime.now(timezone.utc)
+        try:
+            current = self.executor.registry.get(tool_key)
+        except KeyError:
+            for _endpoint, record in records:
+                record.status = "stale"
+                record.last_checked_at = now
+                record.last_error_type = "CapabilityRemoved"
+            return
+
+        if current.fingerprint != expected_new_fingerprint:
+            for _endpoint, record in records:
+                record.status = "stale"
+                record.last_checked_at = now
+                record.last_error_type = "ConcurrentContractChange"
+            return
+
+        for endpoint, record in records:
+            try:
+                endpoint_spec = current.endpoint(endpoint)
+            except KeyError:
+                record.status = "stale"
+                record.last_checked_at = now
+                record.last_error_type = "EndpointRemoved"
+                continue
+            if endpoint_spec.read_only is not True:
+                record.status = "stale"
+                record.last_checked_at = now
+                record.last_error_type = "EndpointNotReadOnly"
+                continue
+
+            record.tool_fingerprint = expected_new_fingerprint
+            record.status = "unknown"
+            record.last_checked_at = None
+            record.last_error_type = None
+
     @asynccontextmanager
     async def lifecycle_guard(self):
         """Quiesce probe execution while a router lifecycle mutation runs."""
