@@ -21,7 +21,7 @@
     },
     {
       "path": "getting-started/installation.md",
-      "source_blob": "2a188ec5c82064ae86e860a317feef3c7b01f2dd"
+      "source_blob": "9601d5a70d7801c7549a5eb731d935eb323dd5cc"
     },
     {
       "path": "getting-started/quickstart.md",
@@ -45,11 +45,11 @@
     },
     {
       "path": "index.md",
-      "source_blob": "d143839a16a2488544864a059e9a10c297d9c813"
+      "source_blob": "fc9432777c3535ce2b722d4c3032b1d324129d5a"
     },
     {
       "path": "project/trust-and-evidence.md",
-      "source_blob": "d8e33166f3deadeebdd94f03654e7003ef6d15af"
+      "source_blob": "7243a23996bc8403c5d4173cb3f5c52e36d1d306"
     },
     {
       "path": "releases/0.14.0.md",
