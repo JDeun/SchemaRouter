@@ -508,6 +508,11 @@ def tool_spec_document(tool: ToolSpec) -> dict[str, object]:
                 "path": endpoint.path,
                 "read_only": endpoint.read_only,
                 "destructive": endpoint.destructive,
+                "operation_aliases": list(endpoint.operation_aliases),
+                "auth_requirements": [
+                    requirement.model_dump(mode="json")
+                    for requirement in endpoint.auth_requirements
+                ],
                 "parameters": [
                     parameter.model_dump(mode="json")
                     for parameter in endpoint.parameters
