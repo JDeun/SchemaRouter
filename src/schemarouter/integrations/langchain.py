@@ -131,38 +131,116 @@ def _parameters_from_schema(schema: dict[str, Any]) -> list[ParameterSpec]:
     ]
 
 
+def _langchain_resolve_local_ref(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> dict[str, Any]:
+    current = schema
+    seen: set[str] = set()
+    while isinstance(current, dict):
+        ref = current.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/") or ref in seen:
+            return current
+        seen.add(ref)
+        node: Any = document
+        try:
+            for raw in ref[2:].split("/"):
+                part = raw.replace("~1", "/").replace("~0", "~")
+                node = node[part]
+        except (KeyError, TypeError):
+            return current
+        if not isinstance(node, dict):
+            return current
+        merged = dict(node)
+        merged.update({key: value for key, value in current.items() if key != "$ref"})
+        current = merged
+    return schema
+
+
+def _langchain_schema_is_array(schema: dict[str, Any]) -> bool:
+    raw_type = schema.get("type")
+    return raw_type == "array" or (
+        isinstance(raw_type, list) and "array" in raw_type
+    )
+
+
+def _langchain_field_name(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if not parts:
+                raise ValueError("array wildcard cannot be the first named field segment")
+            parts[-1] = parts[-1] + "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
+def _langchain_record_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    root = _langchain_resolve_local_ref(schema, schema)
+    if _langchain_schema_is_array(root):
+        items = root.get("items")
+        if isinstance(items, dict):
+            return _langchain_resolve_local_ref(schema, items)
+    return root
+
+
 def _fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
     fields: list[FieldSpec] = []
     seen: set[str] = set()
+    root = _langchain_resolve_local_ref(schema, schema)
 
     def visit(
         value: dict[str, Any],
         *,
         prefix: tuple[str, ...],
         depth: int,
+        ancestors: frozenset[str],
     ) -> None:
         if depth >= 8:
             return
-        raw_type = value.get("type")
-        if raw_type == "array" or (
-            isinstance(raw_type, list) and "array" in raw_type
-        ):
+        resolved = _langchain_resolve_local_ref(schema, value)
+        signature = repr(
+            sorted(
+                (key, repr(item))
+                for key, item in resolved.items()
+            )
+        )
+        if signature in ancestors:
             return
-        properties = _schema_properties(value)
+        next_ancestors = ancestors | {signature}
+
+        if _langchain_schema_is_array(resolved):
+            items = resolved.get("items")
+            if isinstance(items, dict):
+                visit(
+                    items,
+                    prefix=(*prefix, "*") if prefix else prefix,
+                    depth=depth + 1,
+                    ancestors=next_ancestors,
+                )
+            return
+
+        properties = _schema_properties(resolved)
         for name, child in properties.items():
+            resolved_child = _langchain_resolve_local_ref(schema, child)
             path = (*prefix, name)
-            field_name = ".".join(path)
+            field_name = _langchain_field_name(path)
             if field_name not in seen:
                 seen.add(field_name)
                 fields.append(
                     FieldSpec(
                         name=field_name,
-                        description=str(child.get("description") or ""),
-                        json_schema=child,
+                        description=str(resolved_child.get("description") or ""),
+                        json_schema=resolved_child,
                         aliases=[name.replace("_", " ")],
                         path=list(path) if prefix else [],
-                        result_path=[field_name] if prefix else [],
-                        unit=_schema_unit(child),
+                        result_path=(
+                            list(path)
+                            if "*" in path
+                            else ([field_name] if prefix else [])
+                        ),
+                        unit=_schema_unit(resolved_child),
                         identifier=(
                             name in {"id", "uuid", "key"}
                             or name.endswith("_id")
@@ -170,9 +248,14 @@ def _fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
                         source_type="langchain",
                     )
                 )
-            visit(child, prefix=path, depth=depth + 1)
+            visit(
+                child,
+                prefix=path,
+                depth=depth + 1,
+                ancestors=next_ancestors,
+            )
 
-    visit(schema, prefix=(), depth=0)
+    visit(root, prefix=(), depth=0, ancestors=frozenset())
     return fields
 
 
