@@ -927,6 +927,7 @@ class SchemaRouter:
         return self.registry.get(key)
 
 
+
     async def add_mcp_stdio(
         self,
         command: str,
@@ -990,6 +991,7 @@ class SchemaRouter:
             expected_fingerprint=tool.fingerprint,
         )
         return self.registry.get(key)
+
 
 
     async def add_url(
