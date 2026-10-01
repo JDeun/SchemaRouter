@@ -101,7 +101,10 @@ async def run_smoke() -> dict[str, object]:
             "execution_latency_ms": execution_ms,
             "auth_required": endpoint.auth_required,
             "known_quirks": [
-                "Pinned local reference server is used instead of assuming a stable public MCP endpoint."
+                (
+                    "Pinned local reference server is used instead of assuming "
+                    "a stable public MCP endpoint."
+                )
             ],
         }
     finally:
