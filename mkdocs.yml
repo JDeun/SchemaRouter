@@ -214,6 +214,7 @@ nav:
       - External adoption and validation: project/external-adoption.md
       - PydanticAI ToolSearch validation: project/external-validation-pydanticai.md
       - OpenAI Agents SDK MCP filter validation: project/external-validation-openai-agents.md
+      - mcp-agent catalog validation: project/external-validation-mcp-agent.md
       - External case-study template: project/case-study-template.md
       - Versioning: versioning.md
       - Release notes:
