@@ -468,3 +468,247 @@ def test_source_probe_cli_json_failure_is_structured_and_sanitized(
     payload = json.loads(capsys.readouterr().err)
     assert payload["failure_category"] == "authentication_failed"
     assert payload["status"] == "failed"
+
+
+
+@pytest.mark.parametrize("status", [401, 403])
+@pytest.mark.asyncio
+async def test_probe_url_classifies_authentication_failures_without_secret_leak(
+    status: int,
+) -> None:
+    source = "https://api.example.test/openapi.json?signature=private-query"
+    secret = "super-secret-token"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers.get("Authorization") == f"Bearer {secret}"
+        return httpx.Response(status, request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        version = router.registry.version
+
+        with pytest.raises(SourceProbeDiagnosticError) as exc_info:
+            await router.probe_url(
+                source,
+                kind="openapi",
+                schema_headers={"Authorization": f"Bearer {secret}"},
+            )
+
+        assert router.registry.version == version
+        assert router.registry.keys() == ()
+        assert router.executor.bound_keys() == ()
+
+    report = exc_info.value.probe_report
+    assert isinstance(report, SourceProbeFailureReport)
+    assert report.failure_category == "authentication_failed"
+    assert report.source_url == "https://api.example.test/openapi.json"
+    rendered = report.model_dump_json()
+    assert secret not in rendered
+    assert "private-query" not in rendered
+    assert "Authorization" not in rendered
+
+
+@pytest.mark.asyncio
+async def test_probe_url_classifies_not_found() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(404, request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(SourceProbeDiagnosticError) as exc_info:
+            await router.probe_url(
+                "https://api.example.test/missing.json",
+                kind="openapi",
+            )
+
+    report = exc_info.value.probe_report
+    assert isinstance(report, SourceProbeFailureReport)
+    assert report.failure_category == "not_found"
+    assert report.adapters_considered[0].adapter_kind == "openapi"
+    assert report.adapters_considered[0].outcome == "not_found"
+
+
+@pytest.mark.asyncio
+async def test_probe_url_classifies_transport_timeout() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("private timeout detail", request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(SourceProbeDiagnosticError) as exc_info:
+            await router.probe_url(
+                "https://api.example.test/openapi.json",
+                kind="openapi",
+            )
+
+    report = exc_info.value.probe_report
+    assert isinstance(report, SourceProbeFailureReport)
+    assert report.failure_category == "unreachable"
+    assert "private timeout detail" not in report.model_dump_json()
+    assert exc_info.value.__cause__ is not None
+
+
+@pytest.mark.asyncio
+async def test_probe_url_classifies_structured_but_malformed_openapi() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={"swagger": "2.0", "paths": {}},
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(SourceProbeDiagnosticError) as exc_info:
+            await router.probe_url(
+                "https://api.example.test/openapi.json",
+                kind="openapi",
+            )
+
+    report = exc_info.value.probe_report
+    assert isinstance(report, SourceProbeFailureReport)
+    assert report.failure_category == "invalid_schema"
+
+
+@pytest.mark.asyncio
+async def test_probe_url_classifies_graphql_introspection_disabled() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.method == "POST"
+        return httpx.Response(
+            200,
+            json={
+                "errors": [
+                    {
+                        "message": (
+                            "Introspection is disabled and this remote message "
+                            "must never be surfaced verbatim"
+                        )
+                    }
+                ]
+            },
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(SourceProbeDiagnosticError) as exc_info:
+            await router.probe_url(
+                "https://api.example.test/graphql",
+                kind="graphql",
+            )
+
+    report = exc_info.value.probe_report
+    assert isinstance(report, SourceProbeFailureReport)
+    assert report.failure_category == "unsupported_feature"
+    assert "remote message" not in report.model_dump_json()
+
+
+@pytest.mark.asyncio
+async def test_probe_url_wrong_explicit_kind_is_not_silently_accepted() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json=_openapi_document(),
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(UnsupportedSchemaSourceError) as exc_info:
+            await router.probe_url(
+                "https://api.example.test/openapi.json",
+                kind="graphql",
+            )
+
+    report = exc_info.value.probe_report
+    assert isinstance(report, SourceProbeFailureReport)
+    assert report.failure_category == "not_recognized"
+    assert report.adapters_considered[0].adapter_kind == "graphql"
+
+
+@pytest.mark.asyncio
+async def test_probe_url_classifies_non_mcp_protocol_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import schemarouter.ingestion as ingestion_module
+
+    async def fail_mcp(*args, **kwargs):
+        del args, kwargs
+        raise SchemaSourceError("MCP protocol handshake failed")
+
+    monkeypatch.setattr(ingestion_module, "inspect_mcp_url", fail_mcp)
+    router = SchemaRouter()
+    with pytest.raises(SourceProbeDiagnosticError) as exc_info:
+        await router.probe_url(
+            "https://api.example.test/not-mcp",
+            kind="mcp",
+        )
+
+    report = exc_info.value.probe_report
+    assert isinstance(report, SourceProbeFailureReport)
+    assert report.failure_category == "protocol_error"
+
+
+@pytest.mark.asyncio
+async def test_auto_probe_reports_considered_and_skipped_adapter_activity() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            text="<html>ordinary docs</html>",
+            headers={"content-type": "text/html"},
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        with pytest.raises(UnsupportedSchemaSourceError) as exc_info:
+            await router.probe_url(
+                "https://docs.example.test/reference",
+                kind="auto",
+            )
+
+    report = exc_info.value.probe_report
+    assert isinstance(report, SourceProbeFailureReport)
+    assert report.failure_category == "not_recognized"
+    assert report.active_probes_allowed is False
+    assert "graphql" in report.skipped_active_adapters
+    assert "mcp" in report.skipped_active_adapters
+    assert all(
+        item.activity == "passive"
+        for item in report.adapters_considered
+    )
+
+
+def test_source_probe_cli_json_renders_safe_failure_report(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    report = SourceProbeFailureReport(
+        source_url="https://example.test/openapi.json",
+        failure_category="authentication_failed",
+        adapters_considered=[],
+    )
+
+    async def fake_probe(self, url: str, **kwargs) -> SourceProbeResult:
+        del self, url, kwargs
+        raise SourceProbeDiagnosticError(
+            "authentication_failed",
+            probe_report=report,
+        )
+
+    monkeypatch.setattr(SchemaRouter, "probe_url", fake_probe)
+
+    with pytest.raises(SystemExit) as exc_info:
+        main(
+            [
+                "source",
+                "probe",
+                "https://example.test/openapi.json",
+                "--json",
+            ]
+        )
+
+    assert exc_info.value.code == 2
+    payload = json.loads(capsys.readouterr().err)
+    assert payload["failure_category"] == "authentication_failed"
+    assert payload["source_url"] == "https://example.test/openapi.json"
