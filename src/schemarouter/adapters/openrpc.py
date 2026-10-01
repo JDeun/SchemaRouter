@@ -677,9 +677,9 @@ class OpenRPCSourceAdapter:
                 tool.metadata,
                 validators,
                 source_identity_digest=structured_source_identity_digest_for(
-                tool,
-                self.refresh,
-            ),
+                    tool,
+                    self.refresh,
+                ),
             )
             return AdapterLoadResult(tool=tool, invoker=invoker)
         finally:
