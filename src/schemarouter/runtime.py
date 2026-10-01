@@ -1111,7 +1111,9 @@ class SchemaRouter:
                     openapi_ref_max_bytes = byte_limit
 
         use_bound_mcp_transport = adapter == "mcp" and source_url is None
-        candidate = None
+        use_http_validators = False
+        schema_validators: dict[str, str] = {}
+        candidate: Any | None = None
         candidate_invoker: BoundEndpointInvoker | None = None
 
         if use_bound_mcp_transport:
