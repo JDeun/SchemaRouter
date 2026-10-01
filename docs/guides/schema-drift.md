@@ -65,6 +65,44 @@ used by the Python API. It does not register, bind, or invoke tools. The underly
 connection uses the normal registry implementation, so this is an execution-safe inspection path
 rather than a claim of filesystem-level read-only access.
 
+## Reinspect a registered provider
+
+For URL-backed OpenAPI, MCP, and OPTIMADE tools, SchemaRouter can reinspect the provider without
+committing the candidate first:
+
+```python
+result = await router.arefresh_schema("materials")
+
+print(result.action)
+print(result.report.compatibility)
+```
+
+The one-shot refresh path is conservative:
+
+- `identical` -> no registry write;
+- `compatible` -> applied atomically by default;
+- `breaking` / `security_review` -> reported as `pending_review` and left unapplied.
+
+Use `apply_compatible=False` to make even compatible changes report-only.
+
+```python
+result = await router.arefresh_schema(
+    "materials",
+    apply_compatible=False,
+)
+```
+
+Schema and runtime authentication material is intentionally not persisted. If the provider requires
+headers, pass trusted `schema_headers` / `trusted_headers` again during refresh.
+
+The apply step uses the exact registry version and tool fingerprint that were compared. If another
+writer mutates the registry while remote inspection is in progress, the compare-and-swap fails
+instead of applying a candidate against an unseen newer snapshot.
+
+This is a one-shot primitive. Periodic watcher lifecycle, conditional `ETag` /
+`Last-Modified` optimization, telemetry, and pending-review persistence are tracked separately in
+the provider-schema watcher work item.
+
 ## Security-semantic drift
 
 Changes such as:

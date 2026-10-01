@@ -8,6 +8,7 @@ inputs as equivalent.
 | Typed Python callable | Automatic | Automatic | Local code |
 | OpenAPI 3.x | Automatic common subset | Same-origin automatic; cross-origin explicit | Remote schema is descriptive |
 | OpenRPC / JSON-RPC | Automatic method/result discovery | Same-origin automatic; cross-origin explicit | Interface schema does not grant side-effect authority |
+| OData v4 CSDL | Automatic entity-set discovery | Automatic read-only binding | Metadata narrows shape; writes remain ungranted |
 | GraphQL introspection | Automatic query/mutation discovery | Same-endpoint automatic | Query narrows to read-only; mutations remain policy-gated |
 | OPTIMADE | `/info` + `/info/<entry_type>` discovery | Automatic read-only HTTP binding | Remote schema is descriptive |
 | MCP Streamable HTTP | Automatic discovery | Automatic transport, policy-gated | Remote annotations are untrusted |
@@ -26,6 +27,10 @@ schema-fetch credentials separate from runtime credentials and does not let a cr
 Use **OpenRPC** when a JSON-RPC 2.0 service publishes a machine-readable OpenRPC document.
 Methods, params, result schemas, and local references compile into the same canonical contracts.
 Remote methods remain side-effect-unclassified until trusted local policy classifies them.
+
+Use **OData** when a service publishes CSDL through `$metadata`. Entity sets become read
+capabilities, complex types become nested fields, and planner-selected fields are translated to
+native `$select` selectors.
 
 Use **GraphQL** when introspection is available and native field-selection semantics matter.
 SchemaRouter maps root fields and arguments into canonical contracts and turns selected output
@@ -55,6 +60,7 @@ The built-in order is:
 ```text
 OpenAPI
   -> OpenRPC
+  -> OData
   -> OPTIMADE
   -> MCP
   -> GraphQL
