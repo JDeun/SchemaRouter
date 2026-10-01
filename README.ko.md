@@ -28,18 +28,18 @@
 
 > **현재 안정판: 0.13.0** · Beta / pre-1.0
 
-SchemaRouter는 MCP, OpenAPI, Python, 프레임워크 도구를 아우르는 **LLM/RAG 에이전트용 타입
-capability 검색·스키마 인식 실행 계층**입니다.
+SchemaRouter는 MCP, OpenAPI, Python, 프레임워크 도구를 하나의 **타입 기반 검색·실행 경계**로
+묶어 주는 LLM/RAG용 라이브러리입니다.
 
-에이전트가 쓸 수 있는 도구가 늘어날수록 방향을 잡기 어려워지고, 도구 응답에는 질문에 필요하지
-않은 데이터까지 섞여 옵니다. SchemaRouter는 요청에 **어떤 선언된 데이터 필드가 필요한지** 먼저
-정하고, 그 데이터를 줄 수 있는 등록된 도구만 제한된 범위로 노출하며, 결과가 모델에 닿기 전에
-선언된 출력 필드만 남깁니다. 타입 계약에는 단위, 측정 조건, 출처, 검증 규칙을 담을 수 있어
-서로 다른 의미의 값이 조용히 자리를 바꾸는 일을 막습니다.
+도구가 많아질수록 모든 schema를 모델에 한꺼번에 넘기는 방식은 비효율적이고 통제하기 어렵습니다.
+SchemaRouter는 질문에 필요한 **데이터 필드**를 먼저 찾고, 그 값을 제공할 수 있는 등록된
+capability만 후보로 좁힙니다. 호출 전에는 인자·정책·fingerprint를 확인하고, 응답을 받은 뒤에는
+등록된 schema와 field contract를 다시 검사합니다. 단위, 측정 조건, 출처도 field contract에
+명시할 수 있습니다.
 
 `pip install schemarouter`
 
-SchemaRouter 자체는 범용 에이전트 프레임워크도, LLM 공급자 계층도, RAG 생성기도 아닙니다.
+대화 루프, 메모리, 그래프, 최종 답변 생성은 SchemaRouter의 역할이 아닙니다.
 
 [outputSchema를 공개하지 않는 MCP 서버에 결과 계약 선언하기 →](docs/guides/mcp.md#declare-a-result-contract-the-server-does-not-publish) ·
 [측정된 agent-utility 결과 보기 →](docs/research/agent-utility-b1-result.md)
@@ -49,9 +49,10 @@ SchemaRouter 자체는 범용 에이전트 프레임워크도, LLM 공급자 계
 SchemaRouter `0.13.0`은 **Beta / pre-1.0**입니다. Python 3.10–3.14는 릴리스 차단 CI 대상이며,
 Python 3.15는 비차단 preview로 검증합니다.
 
-계획이나 검색된 후보 자체에는 실행 권한이 없습니다. 실제 실행 직전에 현재 schema/tool
-fingerprint, 바인딩, 인자, 정책, 원본 출력, 필드 투영을 다시 검증합니다. 파괴적 동작과 분류되지
-않은 원격 동작은 로컬 정책이 명시적으로 허용하지 않으면 fail-closed로 처리합니다.
+검색 결과나 plan만으로는 tool을 실행할 수 없습니다. 실제 호출 직전에 schema/tool fingerprint,
+binding, argument, policy를 다시 확인하고, 응답을 받은 뒤에는 raw output과 field projection을
+검증합니다. 파괴적 동작이나 side effect가 분류되지 않은 원격 동작은 로컬 정책이 허용해야만
+실행됩니다.
 
 공개 릴리스에는 wheel, sdist, SPDX SBOM이 포함됩니다. 릴리스 파이프라인은 GitHub artifact
 attestation을 만들고, 공개 PyPI에서 다시 내려받은 wheel/sdist의 digest가 신뢰된 빌드 산출물과
@@ -96,9 +97,8 @@ async def main():
 asyncio.run(main())
 ```
 
-이 짧은 흐름이 제품의 핵심을 그대로 보여줍니다. **외부 스키마 → 타입이 지정된 capability 등록 →
-제한된 선택 → 검증된 실행 → 타입 결과** 순서입니다. APIs.guru의 상태가 바뀌면 마지막 숫자도
-달라질 수 있습니다.
+이 예제는 **외부 schema 읽기 → capability 등록 → 후보 선택 → 검증 후 실행 → 결과 반환**의
+전체 흐름을 보여 줍니다. APIs.guru 데이터가 바뀌면 출력되는 숫자도 달라집니다.
 
 필수 CI와 패키지 검증은 외부 서비스 장애에 영향을 받지 않도록
 [`examples/quickstart.py`](examples/quickstart.py)의 결정론적 로컬 예제를 사용합니다. 위 실데이터
