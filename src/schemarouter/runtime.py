@@ -2854,10 +2854,9 @@ class SchemaRouter:
                         exc, next_call, candidate_index = (
                             _require_unavailable_event_payload(payload)
                         )
-                        has_next = next_call is not None
                         error_data: dict[str, Any] = {
                             "error_type": type(exc).__name__,
-                            "fallback_eligible": has_next,
+                            "fallback_eligible": next_call is not None,
                         }
                         if run_config.include_payloads:
                             error_data["message"] = str(exc)
@@ -2872,7 +2871,7 @@ class SchemaRouter:
                         ))
                         sequence += 1
 
-                        if not has_next:
+                        if next_call is None:
                             terminal_count += 1
                             yield await emit(RunEvent.create(
                                 event="run.error",
