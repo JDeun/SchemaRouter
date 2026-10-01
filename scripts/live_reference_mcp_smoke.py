@@ -58,6 +58,7 @@ async def run_smoke() -> dict[str, object]:
         stderr=subprocess.PIPE,
         text=True,
     )
+    router: SchemaRouter | None = None
 
     try:
         await _wait_for_port(port, process)
@@ -111,6 +112,8 @@ async def run_smoke() -> dict[str, object]:
             ],
         }
     finally:
+        if router is not None:
+            await router.aclose()
         process.terminate()
         try:
             process.wait(timeout=5)
