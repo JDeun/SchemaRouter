@@ -583,7 +583,6 @@ async def test_odata_nested_collection_projection_preserves_record_alignment() -
     ]
 
 
-
 @pytest.mark.asyncio
 async def test_odata_does_not_double_decode_streamed_compressed_response() -> None:
     payload = json.dumps(
