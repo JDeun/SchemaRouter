@@ -18,7 +18,10 @@
 <p align="center">
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/JDeun/SchemaRouter/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml"><img alt="Docs" src="https://github.com/JDeun/SchemaRouter/actions/workflows/docs.yml/badge.svg"></a>
+  <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/JDeun/SchemaRouter/actions/workflows/codeql.yml/badge.svg"></a>
+  <a href="https://github.com/JDeun/SchemaRouter/actions/workflows/security.yml"><img alt="Security Audit" src="https://github.com/JDeun/SchemaRouter/actions/workflows/security.yml/badge.svg"></a>
   <a href="https://pypi.org/project/schemarouter/"><img alt="PyPI" src="https://img.shields.io/pypi/v/schemarouter?label=PyPI&cacheSeconds=300&v=0.13.0"></a>
+  <a href="https://pypi.org/project/schemarouter/"><img alt="Python" src="https://img.shields.io/pypi/pyversions/schemarouter"></a>
   <a href="https://github.com/JDeun/SchemaRouter/blob/main/LICENSE"><img alt="MIT" src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
 </p>
 
@@ -39,6 +42,23 @@ It is **not** a general agent framework, an LLM provider layer, or a RAG generat
 
 [Declare a result contract for an MCP server that does not publish one →](docs/guides/mcp.md#declare-a-result-contract-the-server-does-not-publish) ·
 [See the measured agent-utility result →](docs/research/agent-utility-b1-result.md)
+
+## Stability and verification
+
+SchemaRouter `0.13.0` is **Beta / pre-1.0**. Python 3.10–3.14 are release-blocking CI targets;
+Python 3.15 is a non-blocking preview.
+
+Plans and retrieved candidates do not grant execution authority. The runtime revalidates current
+schema/tool fingerprints, bindings, arguments, policy, raw output, and field projection before a
+result crosses the execution boundary. Destructive and unclassified remote operations fail closed
+unless local policy explicitly authorizes them.
+
+The public release includes wheel, sdist, and an SPDX SBOM. The release pipeline creates GitHub
+artifact attestations and verifies that public PyPI wheel/sdist digests match the trusted build
+artifacts. Research results remain separate from stable product guarantees; live decision-backend
+evidence is still tracked in #15.
+
+[Verify release artifacts, CI/security controls, hardening history, and research claim boundaries →](docs/project/trust-and-evidence.md)
 
 ## Quickstart
 
