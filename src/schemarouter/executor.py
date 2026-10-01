@@ -4,7 +4,7 @@ import asyncio
 import inspect
 import math
 import time
-from collections.abc import AsyncIterator, Awaitable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -185,6 +185,8 @@ class ExecutionBudgetTracker:
 
 class RegistryExecutor:
     """Executes validated plans using caller-supplied trusted invokers."""
+
+    _MISSING_PROJECTION = object()
 
     def __init__(
         self,
@@ -552,6 +554,30 @@ class RegistryExecutor:
             raise PlanValidationError(
                 f"explicit output projection required for {call.tool}.{call.endpoint}"
             )
+
+        selected_specs = [
+            field
+            for field in endpoint.output_fields
+            if field.name in call.fields
+        ]
+        for index, left in enumerate(selected_specs):
+            for right in selected_specs[index + 1 :]:
+                left_path = left.result_projection_path
+                right_path = right.result_projection_path
+                shorter, longer = (
+                    (left_path, right_path)
+                    if len(left_path) <= len(right_path)
+                    else (right_path, left_path)
+                )
+                if (
+                    len(longer) > len(shorter)
+                    and longer[: len(shorter)] == shorter
+                    and "*" in longer[len(shorter) :]
+                ):
+                    raise PlanValidationError(
+                        "cannot select an array parent and one of its wildcard descendants "
+                        f"in the same call for {call.tool}.{call.endpoint}"
+                    )
 
         actual_available = available_evidence(
             tool,
