@@ -72,6 +72,7 @@ from .errors import (
 from .executor import RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot, HealthStatus
 from .hooks import AfterExecutionHook, BeforeExecutionHook, ExecutionHooks
+from .ingestion import SourceProbeResult
 from .inspection import (
     EndpointInspection,
     ExecutionInspection,
@@ -271,6 +272,7 @@ __all__ = [
     "SemanticFieldRequirement",
     "ServerProjectionSpec",
     "SourceAdapter",
+    "SourceProbeResult",
     "OPTIMADESourceAdapter",
     "ToolCall",
     "ToolRegistry",

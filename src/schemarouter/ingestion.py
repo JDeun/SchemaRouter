@@ -5,6 +5,8 @@ import re
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any
+
+from pydantic import Field
 from urllib.parse import unquote, urldefrag, urljoin, urlparse
 
 import httpx
@@ -26,7 +28,7 @@ from .adapters.openrpc import OpenRPCSourceAdapter
 from .adapters.optimade import OPTIMADESourceAdapter
 from .errors import SchemaNotModifiedError, SchemaSourceError, UnsupportedSchemaSourceError
 from .executor import RegistryExecutor
-from .models import ToolSpec
+from .models import StrictModel, ToolSpec
 from .registry import ToolRegistry, replace_if_current
 from .schema_http import (
     attach_schema_http_validators,
@@ -43,6 +45,21 @@ _DEFAULT_OPENAPI_REF_MAX_DEPTH = 3
 _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS = 8
 _DEFAULT_OPENAPI_REF_MAX_BYTES = 10 * 1024 * 1024
 _OPENAPI_EXTERNAL_REFS_KEY = "x-schemarouter-external-refs"
+
+
+class SourceProbeResult(StrictModel):
+    """Privacy-safe, non-mutating diagnosis of one structured source URL."""
+
+    source_url: str
+    adapter_kind: str
+    tool_key: str
+    tool_name: str
+    namespace: str | None = None
+    provider: str | None = None
+    access_mode: str | None = None
+    endpoint_count: int = Field(ge=0)
+    execution_bindable: bool
+    warnings: list[str] = Field(default_factory=list)
 
 
 class _OpenAPIYAMLLoader(yaml.SafeLoader):
@@ -1043,7 +1060,7 @@ class URLSchemaLoader:
             try:
                 result = await adapter.load(context)
             except Exception as exc:  # noqa: BLE001
-                diagnostics.append(f"{adapter.kind}: {exc}")
+                diagnostics.append(f"{adapter.kind}: {type(exc).__name__}")
                 continue
             if result is not None:
                 result = self._with_identity(
@@ -1058,6 +1075,81 @@ class URLSchemaLoader:
             "URL was not recognized by any registered structured-source adapter. "
             "Human-readable documentation is intentionally not inferred in the safe path. "
             + detail
+        )
+
+    async def probe(
+        self,
+        url: str,
+        *,
+        kind: SourceKind = "auto",
+        name: str | None = None,
+        namespace: str | None = None,
+        provider: str | None = None,
+        base_url: str | None = None,
+        schema_headers: dict[str, str] | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: Any | None = None,
+        openapi_external_refs: bool = False,
+        openapi_ref_max_depth: int = _DEFAULT_OPENAPI_REF_MAX_DEPTH,
+        openapi_ref_max_documents: int = _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS,
+        openapi_ref_max_bytes: int = _DEFAULT_OPENAPI_REF_MAX_BYTES,
+        timeout: float = 20.0,
+    ) -> SourceProbeResult:
+        """Diagnose one structured source without registering or executing a tool."""
+
+        result = await self.inspect(
+            url,
+            kind=kind,
+            name=name,
+            namespace=namespace,
+            provider=provider,
+            base_url=base_url,
+            schema_headers=schema_headers,
+            trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
+            openapi_external_refs=openapi_external_refs,
+            openapi_ref_max_depth=openapi_ref_max_depth,
+            openapi_ref_max_documents=openapi_ref_max_documents,
+            openapi_ref_max_bytes=openapi_ref_max_bytes,
+            timeout=timeout,
+        )
+        tool = result.tool
+        adapter_kind = tool.execution_metadata.get("adapter")
+        if not isinstance(adapter_kind, str):
+            adapter_kind = tool.metadata.get("adapter")
+        if not isinstance(adapter_kind, str):
+            normalized_kind = kind.strip().lower()
+            adapter_kind = (
+                normalized_kind
+                if normalized_kind != "auto"
+                else tool.access_mode or "unknown"
+            )
+
+        warnings: list[str] = []
+        requires_explicit_base_url = bool(
+            tool.execution_metadata.get("requires_explicit_base_url")
+            or tool.metadata.get("requires_explicit_base_url")
+        )
+        if requires_explicit_base_url:
+            warnings.append(
+                "recognized source requires an explicit trusted base_url before execution"
+            )
+        if result.invoker is None:
+            warnings.append(
+                "recognized source did not produce a built-in execution binding"
+            )
+
+        return SourceProbeResult(
+            source_url=safe_provenance_url(url),
+            adapter_kind=adapter_kind,
+            tool_key=tool.key,
+            tool_name=tool.name,
+            namespace=tool.namespace,
+            provider=tool.provider,
+            access_mode=tool.access_mode,
+            endpoint_count=len(tool.endpoints),
+            execution_bindable=result.invoker is not None,
+            warnings=warnings,
         )
 
     @staticmethod
