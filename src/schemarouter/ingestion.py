@@ -122,21 +122,51 @@ class SourceProbeResult(StrictModel):
 
 
 def _probe_category(exc: BaseException) -> SourceProbeFailureCategory:
-    if isinstance(exc, httpx.HTTPStatusError):
-        status = exc.response.status_code
-        if status in {401, 403}:
-            return "authentication_failed"
-        if status == 404:
-            return "not_found"
-        if status in {408, 425, 429} or status >= 500:
-            return "unreachable"
-        return "protocol_error"
-    if isinstance(exc, (httpx.TimeoutException, httpx.TransportError, TimeoutError)):
+    chain: list[BaseException] = []
+    current: BaseException | None = exc
+    seen: set[int] = set()
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        chain.append(current)
+        next_exc = current.__cause__ or current.__context__
+        current = next_exc if isinstance(next_exc, BaseException) else None
+
+    for item in chain:
+        if isinstance(item, httpx.HTTPStatusError):
+            status = item.response.status_code
+            if status in {401, 403}:
+                return "authentication_failed"
+            if status == 404:
+                return "not_found"
+            if status in {408, 425, 429} or status >= 500:
+                return "unreachable"
+            return "protocol_error"
+
+    if any(
+        isinstance(
+            item,
+            (
+                httpx.TimeoutException,
+                httpx.TransportError,
+                TimeoutError,
+                ConnectionError,
+                OSError,
+            ),
+        )
+        for item in chain
+    ):
         return "unreachable"
-    if isinstance(exc, (json.JSONDecodeError, yaml.YAMLError)):
+
+    if any(
+        isinstance(item, (json.JSONDecodeError, yaml.YAMLError))
+        for item in chain
+    ):
         return "invalid_schema"
-    if isinstance(exc, SchemaSourceError):
-        message = str(exc).casefold()
+
+    for item in chain:
+        if not isinstance(item, SchemaSourceError):
+            continue
+        message = str(item).casefold()
         if "introspection" in message and (
             "disabled" in message or "unavailable" in message
         ):
@@ -148,16 +178,17 @@ def _probe_category(exc: BaseException) -> SourceProbeFailureCategory:
             for marker in (
                 "invalid schema",
                 "invalid openapi",
+                "not a valid openapi",
                 "malformed",
                 "missing __schema",
                 "missing data",
-                "not a valid openapi",
                 "not structured json",
             )
         ):
             return "invalid_schema"
         if "protocol" in message or "handshake" in message:
             return "protocol_error"
+
     return "protocol_error"
 
 
