@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
 import json
+from pathlib import Path
 
 from schemarouter import SchemaRouter
-
 
 FIXTURE = Path(__file__).parent / "fixtures" / "domain_ingestion_matrix.json"
 
