@@ -186,37 +186,106 @@ def _llama_parameters_from_schema(schema: dict[str, Any]) -> list[ParameterSpec]
     ]
 
 
+def _llama_resolve_local_ref(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> dict[str, Any]:
+    current = schema
+    seen: set[str] = set()
+    while isinstance(current, dict):
+        ref = current.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/") or ref in seen:
+            return current
+        seen.add(ref)
+        node: Any = document
+        try:
+            for raw in ref[2:].split("/"):
+                part = raw.replace("~1", "/").replace("~0", "~")
+                node = node[part]
+        except (KeyError, TypeError):
+            return current
+        if not isinstance(node, dict):
+            return current
+        merged = dict(node)
+        merged.update({key: value for key, value in current.items() if key != "$ref"})
+        current = merged
+    return schema
+
+
+def _llama_schema_is_array(schema: dict[str, Any]) -> bool:
+    raw_type = schema.get("type")
+    return raw_type == "array" or (
+        isinstance(raw_type, list) and "array" in raw_type
+    )
+
+
+def _llama_field_name(path: tuple[str, ...]) -> str:
+    parts: list[str] = []
+    for segment in path:
+        if segment == "*":
+            if not parts:
+                raise ValueError("array wildcard cannot be the first named field segment")
+            parts[-1] = parts[-1] + "[]"
+            continue
+        parts.append(segment)
+    return ".".join(parts)
+
+
 def _llama_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
     fields: list[FieldSpec] = []
     seen: set[str] = set()
+    root = _llama_resolve_local_ref(schema, schema)
 
     def visit(
         value: dict[str, Any],
         *,
         prefix: tuple[str, ...],
         depth: int,
+        ancestors: frozenset[str],
     ) -> None:
         if depth >= 8:
             return
-        raw_type = value.get("type")
-        if raw_type == "array" or (
-            isinstance(raw_type, list) and "array" in raw_type
-        ):
+        resolved = _llama_resolve_local_ref(schema, value)
+        signature = repr(
+            sorted(
+                (key, repr(item))
+                for key, item in resolved.items()
+            )
+        )
+        if signature in ancestors:
             return
-        for name, child in _llama_schema_properties(value).items():
+        next_ancestors = ancestors | {signature}
+
+        if _llama_schema_is_array(resolved):
+            items = resolved.get("items")
+            if isinstance(items, dict):
+                visit(
+                    items,
+                    prefix=(*prefix, "*") if prefix else prefix,
+                    depth=depth + 1,
+                    ancestors=next_ancestors,
+                )
+            return
+
+        for name, child in _llama_schema_properties(resolved).items():
+            resolved_child = _llama_resolve_local_ref(schema, child)
             path = (*prefix, name)
-            field_name = ".".join(path)
+            field_name = _llama_field_name(path)
             if field_name not in seen:
                 seen.add(field_name)
                 fields.append(
                     FieldSpec(
                         name=field_name,
-                        description=str(child.get("description") or ""),
-                        json_schema=child,
+                        description=str(resolved_child.get("description") or ""),
+                        json_schema=resolved_child,
                         aliases=[name.replace("_", " ")],
                         path=list(path) if prefix else [],
-                        result_path=[field_name] if prefix else [],
-                        unit=_llama_schema_unit(child),
+                        result_path=(
+                            list(path)
+                            if "*" in path
+                            else ([field_name] if prefix else [])
+                        ),
+                        unit=_llama_schema_unit(resolved_child),
                         identifier=(
                             name in {"id", "uuid", "key"}
                             or name.endswith("_id")
@@ -224,9 +293,14 @@ def _llama_fields_from_schema(schema: dict[str, Any]) -> list[FieldSpec]:
                         source_type="llamaindex",
                     )
                 )
-            visit(child, prefix=path, depth=depth + 1)
+            visit(
+                child,
+                prefix=path,
+                depth=depth + 1,
+                ancestors=next_ancestors,
+            )
 
-    visit(schema, prefix=(), depth=0)
+    visit(root, prefix=(), depth=0, ancestors=frozenset())
     return fields
 
 
