@@ -1346,6 +1346,112 @@ class URLSchemaLoader:
             f"Probe summary: {summary}."
         )
 
+    async def diagnose(
+        self,
+        url: str,
+        *,
+        kind: SourceKind = "auto",
+        name: str | None = None,
+        namespace: str | None = None,
+        provider: str | None = None,
+        base_url: str | None = None,
+        schema_headers: dict[str, str] | None = None,
+        trusted_headers: dict[str, str] | None = None,
+        mcp_client_factory: Any | None = None,
+        allow_active_probes: bool = False,
+        openapi_external_refs: bool = False,
+        openapi_ref_max_depth: int = _DEFAULT_OPENAPI_REF_MAX_DEPTH,
+        openapi_ref_max_documents: int = _DEFAULT_OPENAPI_REF_MAX_DOCUMENTS,
+        openapi_ref_max_bytes: int = _DEFAULT_OPENAPI_REF_MAX_BYTES,
+        timeout: float = 20.0,
+    ) -> SourceProbeReport:
+        """Return a complete non-mutating source diagnosis, including failures."""
+
+        normalized_kind, context = self._prepare_context(
+            url,
+            kind=kind,
+            name=name,
+            namespace=namespace,
+            provider=provider,
+            access_mode=None,
+            base_url=base_url,
+            schema_headers=schema_headers,
+            schema_validators=None,
+            trusted_headers=trusted_headers,
+            mcp_client_factory=mcp_client_factory,
+            allow_active_probes=allow_active_probes,
+            openapi_external_refs=openapi_external_refs,
+            openapi_ref_max_depth=openapi_ref_max_depth,
+            openapi_ref_max_documents=openapi_ref_max_documents,
+            openapi_ref_max_bytes=openapi_ref_max_bytes,
+            timeout=timeout,
+        )
+        result, diagnostics, _error = await self._inspect_attempts(
+            context,
+            normalized_kind=normalized_kind,
+            allow_active_probes=allow_active_probes,
+        )
+
+        if result is None:
+            status: Literal["recognized", "not_recognized", "failed"] = (
+                "failed"
+                if any(item.status == "failed" for item in diagnostics)
+                else "not_recognized"
+            )
+            warnings = [
+                item.message
+                for item in diagnostics
+                if item.status == "skipped" and item.message is not None
+            ]
+            return SourceProbeReport(
+                source_url=safe_provenance_url(url),
+                requested_kind=normalized_kind,
+                status=status,
+                warnings=warnings,
+                diagnostics=diagnostics,
+            )
+
+        tool = result.tool
+        adapter_kind = tool.execution_metadata.get("adapter")
+        if not isinstance(adapter_kind, str):
+            adapter_kind = tool.metadata.get("adapter")
+        if not isinstance(adapter_kind, str):
+            adapter_kind = (
+                normalized_kind
+                if normalized_kind != "auto"
+                else tool.access_mode or "unknown"
+            )
+
+        warnings: list[str] = []
+        requires_explicit_base_url = bool(
+            tool.execution_metadata.get("requires_explicit_base_url")
+            or tool.metadata.get("requires_explicit_base_url")
+        )
+        if requires_explicit_base_url:
+            warnings.append(
+                "recognized source requires an explicit trusted base_url before execution"
+            )
+        if result.invoker is None:
+            warnings.append(
+                "recognized source did not produce a built-in execution binding"
+            )
+
+        return SourceProbeReport(
+            source_url=safe_provenance_url(url),
+            requested_kind=normalized_kind,
+            status="recognized",
+            recognized_kind=adapter_kind,
+            tool_key=tool.key,
+            tool_name=tool.name,
+            namespace=tool.namespace,
+            provider=tool.provider,
+            access_mode=tool.access_mode,
+            endpoint_count=len(tool.endpoints),
+            execution_bindable=result.invoker is not None,
+            warnings=warnings,
+            diagnostics=diagnostics,
+        )
+
     async def probe(
         self,
         url: str,
