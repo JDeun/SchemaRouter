@@ -1,7 +1,7 @@
 # 빠른 시작
 
-가장 짧은 사용자 경로는 실제 공개 provider를 사용합니다. 필수 CI는 외부 서비스 장애가 릴리스를
-막지 않도록 offline deterministic 경로로 유지됩니다.
+처음 써 볼 때는 인증키가 필요 없는 공개 OpenAPI를 사용합니다. 반대로 필수 CI는 외부 서비스가
+잠시 내려가도 릴리스가 막히지 않도록 로컬 fixture로 검증합니다.
 
 ## 1. 설치
 
@@ -13,8 +13,8 @@ pip install schemarouter
 
 ## 2. 실제 OpenAPI capability 탐색 및 실행
 
-아래 예제는 SchemaRouter의 compatibility smoke에서도 사용하는 공개 APIs.guru OpenAPI 문서를
-사용합니다. 스키마와 반환값은 provider가 소유합니다.
+아래 예제는 APIs.guru가 공개한 OpenAPI 문서를 그대로 읽습니다. 예제용으로 꾸며 낸 스키마나
+고정된 응답값이 아니라, 외부 서비스가 실제로 공개한 계약과 데이터를 사용합니다.
 
 --8<-- "examples/live_openapi_quickstart.py"
 
@@ -33,7 +33,7 @@ selected: apis.guru:getMetrics
 current numAPIs: <current positive integer>
 ```
 
-이 짧은 예제에서 핵심 경계 네 가지를 볼 수 있습니다.
+이 예제로 다음 네 단계를 확인할 수 있습니다.
 
 1. `from_url(..., kind="openapi")`가 외부 machine-readable contract를 읽습니다.
 2. SchemaRouter가 typed tool/endpoint와 stable fingerprint를 등록합니다.
@@ -42,8 +42,8 @@ current numAPIs: <current positive integer>
 
 ## 3. 왜 live provider를 필수 CI로 쓰지 않나
 
-공개 서비스는 rate limit, schema change, outage가 발생할 수 있습니다. 그래서 required CI는
-`tests/test_live_quickstart.py`의 deterministic OpenAPI fixture로 같은 경계를 검증합니다.
+공개 서비스에는 rate limit, schema 변경, 장애가 생길 수 있습니다. 그래서 필수 CI에서는
+`tests/test_live_quickstart.py`의 고정 OpenAPI fixture로 같은 동작을 검증합니다.
 
 로컬 callable 예제도 별도로 유지합니다.
 
@@ -67,8 +67,8 @@ async def inspect_docs_page():
         print("ordinary HTML was rejected as an executable source")
 ```
 
-사람이 읽는 API 문서는 자동 실행 권한으로 취급하지 않고 **inspect → proposal → explicit
-approval** 경로를 사용합니다.
+사람이 읽는 API 문서는 곧바로 실행 가능한 도구로 만들지 않습니다. 먼저 내용을 확인하고
+제안된 계약을 검토한 뒤 명시적으로 승인해야 합니다.
 
 ## 5. Async / batch / streaming
 
@@ -84,7 +84,7 @@ async for event in router.astream_events(request):
     print(event.event, event.tool, event.endpoint)
 ```
 
-Event payload는 기본적으로 redacted 상태입니다.
+이벤트 payload는 기본 설정에서 민감한 값을 가린 상태로 기록됩니다.
 
 ## 어떤 경로를 쓰면 되나
 
