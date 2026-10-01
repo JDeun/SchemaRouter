@@ -15,7 +15,7 @@ For consumers, install the published optional extra:
 pip install "schemarouter[jev]"
 ```
 
-The bridge is included in the published `0.3.0` release.
+The bridge ships in the current SchemaRouter distribution behind the optional `jev` extra.
 
 The integration currently supports `typesafe-sdk>=0.7,<1`.
 

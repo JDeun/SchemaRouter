@@ -11,8 +11,7 @@ loop.
 
 ## Install
 
-Laya support is currently on the `0.6.0.dev0` development line and is not part of the published
-`0.5.0` wheel.
+Laya support ships in the current SchemaRouter distribution behind the optional `laya` extra.
 
 Development checkout:
 
