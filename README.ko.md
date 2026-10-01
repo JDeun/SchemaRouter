@@ -223,7 +223,7 @@ LangChain, LangGraph, LlamaIndex 브리지와 선택형 OpenTelemetry 내보내�
 
 - 타입이 붙은 Tool / Endpoint / Parameter / Field 레지스트리 계약
 - `retrieve` / `aretrieve`와 실행 준비 확인 변형을 통한 first-class bounded Top-K capability 검색
-- 현재 `main`의 Python/SDK binding, OpenAPI, MCP, OPTIMADE, GraphQL, OData, OpenRPC, declarative HTTP/JSON 범용 수집 경로
+- Python, OpenAPI, MCP, OPTIMADE 수집 경로
 - field-first 계획 수립과 bounded 다중 제공자 필드 커버리지
 - 입력과 원본 출력의 JSON Schema 검증
 - 스키마 fingerprint와 바인딩 드리프트 차단
@@ -235,6 +235,8 @@ LangChain, LangGraph, LlamaIndex 브리지와 선택형 OpenTelemetry 내보내�
 - LangChain, LangGraph, LlamaIndex, Jev/System-One, Laya, Ollama, OpenTelemetry 연동 지점
 
 그래서 등록된 capability와 지원되는 라우팅 상황에서는 **지금도 아키텍처가 동작합니다**.
+현재 `main`에는 여기에 명시적 SDK/client binding, LangChain/LlamaIndex tool 역방향 수집, GraphQL, OData, OpenRPC, declarative HTTP/JSON, MCP stdio/custom transport, record-preserving nested array field가 추가되어 있습니다. 이 신규 surface는 배포된 0.12.0 wheel이 아니라 다음 릴리스 대상입니다.
+
 
 ## 현재 연구 방향: 에이전트를 위한 압축된 capability 검색
 
