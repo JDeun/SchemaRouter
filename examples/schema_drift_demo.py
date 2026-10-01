@@ -24,13 +24,9 @@ def make_tool(*, include_formula: bool) -> ToolSpec:
     required = ["material_id", "band_gap"]
 
     if include_formula:
-        fields.append(
-            FieldSpec(
-                name="formula",
-                json_schema={"type": "string"},
-            )
-        )
-        properties["formula"] = {"type": "string"}
+        # An untyped optional projection field is additive. A typed field would
+        # add raw-response validation and is deliberately classified as breaking.
+        fields.append(FieldSpec(name="formula"))
 
     return ToolSpec(
         name="materials",
