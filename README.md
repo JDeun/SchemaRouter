@@ -11,6 +11,7 @@
   <a href="README.md">English</a> ·
   <a href="README.ko.md">한국어</a> ·
   <a href="https://jdeun.github.io/SchemaRouter/">Docs</a> ·
+  <a href="examples/README.md">Examples</a> ·
   <a href="https://github.com/JDeun/SchemaRouter/releases/latest">Latest release</a>
 </p>
 
@@ -22,6 +23,9 @@
 </p>
 
 > **Stable release: 0.13.0** · Beta / pre-1.0
+
+SchemaRouter is a **typed capability retrieval and schema-aware execution layer for LLM/RAG agents**
+across MCP, OpenAPI, Python, and framework tools.
 
 Agents get harder to steer as their tool catalog grows, and tool responses often contain far more
 than the request needs. SchemaRouter works out **which declared data fields are needed**, exposes a
