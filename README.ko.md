@@ -62,30 +62,50 @@ attestation을 만들고, 공개 PyPI에서 다시 내려받은 wheel/sdist의 d
 
 ## 빠른 시작
 
+첫 사용자용 예제는 인증키가 필요 없는 공개 APIs.guru OpenAPI 문서를 사용합니다. 따라서 출력값은
+하드코딩한 데모 값이 아니라 외부 제공자가 실제로 돌려주는 데이터입니다.
+
 ```python
-from pydantic import BaseModel
-from schemarouter import PlanRequest, SchemaRouter, schema_tool
+import asyncio
+
+from schemarouter import PlanRequest, SchemaRouter
 
 
-class Weather(BaseModel):
-    city: str
-    temperature: float
+async def main():
+    router = await SchemaRouter.from_url(
+        "https://api.apis.guru/v2/openapi.yaml",
+        kind="openapi",
+    )
+    async with router:
+        tool = next(
+            tool
+            for tool in router.registry.tools()
+            if any(endpoint.name == "getMetrics" for endpoint in tool.endpoints)
+        )
+        plan = router.plan(
+            PlanRequest(
+                query="API directory metrics total number of APIs",
+                preferred_tools=[tool.key],
+                max_calls=1,
+            )
+        )
+        result = (await router.execute(plan))[0]
+        print(result.tool, result.endpoint, result.data["numAPIs"])
 
 
-@schema_tool(read_only=True)
-def current_weather(city: str) -> Weather:
-    return Weather(city=city, temperature=20.5)
-
-
-router = SchemaRouter()
-router.add_callable(current_weather)
-
-result = router.invoke(
-    PlanRequest(query="city temperature", arguments={"city": "Seoul"})
-)
-
-print(result[0].data)
+asyncio.run(main())
 ```
+
+이 짧은 흐름이 제품의 핵심을 그대로 보여줍니다. **외부 스키마 → 타입이 지정된 capability 등록 →
+제한된 선택 → 검증된 실행 → 타입 결과** 순서입니다. APIs.guru의 상태가 바뀌면 마지막 숫자도
+달라질 수 있습니다.
+
+필수 CI와 패키지 검증은 외부 서비스 장애에 영향을 받지 않도록
+[`examples/quickstart.py`](examples/quickstart.py)의 결정론적 로컬 예제를 사용합니다. 위 실데이터
+예제는 [`examples/live_openapi_quickstart.py`](examples/live_openapi_quickstart.py)에서 그대로
+실행할 수 있습니다.
+
+[실행 가능한 예제·데모 갤러리 보기 →](examples/README.md)
 
 ## 에이전트에 넘길 도구 후보만 추리기
 

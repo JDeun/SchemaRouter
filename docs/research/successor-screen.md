@@ -75,11 +75,29 @@ projection-stratum/language pair (36 episodes total), fixed to `SR-5` and
 `RAW-FULL`. It shares no exact query string with #506 or the successor screen.
 Its artifact is instrument evidence only; it is never projection evidence.
 
-The candidate/evaluation workflow is still absent. When it is
-added it must generate and validate this corpus first, record the candidate
-model revision and frozen harness/source revision, then pass the resulting
-evidence object through `select_runtime`. A workflow that feeds ad-hoc rows or
-reimplements the rate comparison is invalid by construction.
+The candidate/evaluation workflow is implemented in
+`.github/workflows/research-0.14-runtime-qualification.yml`. It generates and validates the
+qualification corpus before candidate execution, records the exact candidate revision and frozen
+source/harness identity, and passes complete provenance-bearing evidence through `select_runtime`.
+A workflow that feeds ad-hoc rows or reimplements the rate comparison remains invalid by
+construction.
+
+### Current qualification execution status — 2026-10-02
+
+Infrastructure failures do not advance the frozen roster:
+
+- run `36710813766` failed before inference because the qualification corpus artifact was restored
+  under a double-nested path;
+- run `36808991480` reproduced an evaluator cache-availability failure on later Qwen3-8B shards;
+- recovery-2 run `36897572955` still had fail-closed evaluator cache restores, so affected
+  Qwen3-8B shards again terminated before inference;
+- PR #656 removed shared-cache availability as a scientific prerequisite while preserving the exact
+  `QUAL_MODEL@QUAL_REV` pins, and merge `290f02355570a7db637413d7421fb648f26497b8`
+  automatically launched recovery-3 run `36922946442`.
+
+Recovery-3 is an infrastructure-only continuation of the same frozen qualification contract. No
+partial rows from any invalid attempt are model-quality evidence, and no candidate may be selected
+until the ordered selector receives complete evidence for the required roster prefix.
 
 ### Recorded trade-off
 
