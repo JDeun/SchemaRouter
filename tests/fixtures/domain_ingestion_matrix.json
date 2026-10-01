@@ -1,0 +1,279 @@
+{
+  "schema_version": 1,
+  "purpose": "Prove SchemaRouter ingestion is domain-neutral and routes real-world services through universal ingestion modes rather than bespoke service adapters.",
+  "universal_modes": [
+    {
+      "id": "tool_spec",
+      "api": "SchemaRouter.add_tool",
+      "kind": null
+    },
+    {
+      "id": "python_callable",
+      "api": "SchemaRouter.add_callable",
+      "kind": null
+    },
+    {
+      "id": "bound_tool",
+      "api": "SchemaRouter.add_bound_tool",
+      "kind": null
+    },
+    {
+      "id": "openapi",
+      "api": "SchemaRouter.add_url",
+      "kind": "openapi"
+    },
+    {
+      "id": "mcp",
+      "api": "SchemaRouter.add_url",
+      "kind": "mcp"
+    },
+    {
+      "id": "optimade",
+      "api": "SchemaRouter.add_url",
+      "kind": "optimade"
+    },
+    {
+      "id": "graphql",
+      "api": "SchemaRouter.add_url",
+      "kind": "graphql"
+    },
+    {
+      "id": "odata",
+      "api": "SchemaRouter.add_url",
+      "kind": "odata"
+    },
+    {
+      "id": "openrpc",
+      "api": "SchemaRouter.add_url",
+      "kind": "openrpc"
+    },
+    {
+      "id": "langchain_tool",
+      "api": "SchemaRouter.add_langchain_tool",
+      "kind": null
+    },
+    {
+      "id": "llamaindex_tool",
+      "api": "SchemaRouter.add_llamaindex_tool",
+      "kind": null
+    },
+    {
+      "id": "http_json",
+      "api": "SchemaRouter.add_http_tool",
+      "kind": null
+    },
+    {
+      "id": "source_adapter",
+      "api": "SchemaRouter.register_adapter",
+      "kind": null
+    },
+    {
+      "id": "documentation_proposal",
+      "api": "SchemaRouter.inspect_url",
+      "kind": null
+    }
+  ],
+  "common_contract": [
+    "input_schema",
+    "parameters",
+    "output_schema",
+    "output_fields",
+    "provider",
+    "access_mode",
+    "execution_authority",
+    "secret_boundary",
+    "schema_drift"
+  ],
+  "services": [
+    {
+      "id": "materials_project",
+      "domain": "materials_science",
+      "provider": "materials-project",
+      "preferred_mode": "openapi",
+      "access_modes": [
+        "openapi",
+        "optimade",
+        "python_callable",
+        "bound_tool"
+      ],
+      "same_provider_fallback": true,
+      "input_contract": "machine-readable API schema or typed SDK wrapper",
+      "output_contract": "materials properties with field paths, datatypes and units where declared",
+      "auth_boundary": "trusted API key/client state",
+      "schema_drift": "structured schema refresh for URL modes; explicit contract replacement for SDK modes",
+      "semantic_metadata": "provider-declared where available; trusted enrichment otherwise"
+    },
+    {
+      "id": "duckduckgo",
+      "domain": "web_search",
+      "provider": "duckduckgo",
+      "preferred_mode": "langchain_tool",
+      "access_modes": [
+        "langchain_tool",
+        "python_callable",
+        "bound_tool"
+      ],
+      "same_provider_fallback": true,
+      "input_contract": "query/options from declared tool or wrapper schema",
+      "output_contract": "search result records including record-preserving array children",
+      "auth_boundary": "no secret or trusted wrapper state",
+      "schema_drift": "tool/schema fingerprint or wrapper contract replacement",
+      "semantic_metadata": "unitless text/search metadata"
+    },
+    {
+      "id": "tavily",
+      "domain": "web_search",
+      "provider": "tavily",
+      "preferred_mode": "http_json",
+      "access_modes": [
+        "http_json",
+        "langchain_tool",
+        "python_callable",
+        "bound_tool"
+      ],
+      "same_provider_fallback": true,
+      "input_contract": "query and search options",
+      "output_contract": "answer plus results[].title/url/content style records",
+      "auth_boundary": "trusted API key/header or SDK state",
+      "schema_drift": "explicit HTTP contract or imported tool fingerprint",
+      "semantic_metadata": "unitless text/search metadata"
+    },
+    {
+      "id": "brave_search",
+      "domain": "web_search",
+      "provider": "brave",
+      "preferred_mode": "http_json",
+      "access_modes": [
+        "http_json",
+        "python_callable",
+        "bound_tool",
+        "source_adapter"
+      ],
+      "same_provider_fallback": true,
+      "input_contract": "query and search parameters",
+      "output_contract": "web/news result collections with record-preserving array children",
+      "auth_boundary": "trusted subscription header",
+      "schema_drift": "explicit HTTP contract or adapter refresh",
+      "semantic_metadata": "unitless text/search metadata"
+    },
+    {
+      "id": "yahoo_finance",
+      "domain": "finance",
+      "provider": "yahoo-finance",
+      "preferred_mode": "bound_tool",
+      "access_modes": [
+        "bound_tool",
+        "python_callable",
+        "langchain_tool"
+      ],
+      "same_provider_fallback": true,
+      "input_contract": "ticker/date/interval options declared locally or by imported tool",
+      "output_contract": "quotes/history/news with typed numeric fields and optional units/currencies",
+      "auth_boundary": "trusted SDK/session state",
+      "schema_drift": "explicit ToolSpec/wrapper replacement",
+      "semantic_metadata": "finance semantics/currency qualifiers must be authoritative or trusted enrichment"
+    },
+    {
+      "id": "arxiv",
+      "domain": "scholarly_search",
+      "provider": "arxiv",
+      "preferred_mode": "langchain_tool",
+      "access_modes": [
+        "langchain_tool",
+        "python_callable",
+        "bound_tool",
+        "source_adapter"
+      ],
+      "same_provider_fallback": true,
+      "input_contract": "query/category/date/result-limit parameters",
+      "output_contract": "paper metadata/result arrays",
+      "auth_boundary": "transport/client state outside ToolSpec",
+      "schema_drift": "imported tool fingerprint or explicit wrapper/adapter refresh",
+      "semantic_metadata": "unitless scholarly metadata"
+    },
+    {
+      "id": "crossref",
+      "domain": "scholarly_metadata",
+      "provider": "crossref",
+      "preferred_mode": "openapi",
+      "access_modes": [
+        "openapi",
+        "http_json",
+        "bound_tool"
+      ],
+      "same_provider_fallback": true,
+      "input_contract": "DOI/query/filter parameters",
+      "output_contract": "work metadata and record arrays",
+      "auth_boundary": "trusted mailto/token/header if configured",
+      "schema_drift": "OpenAPI refresh or explicit HTTP contract replacement",
+      "semantic_metadata": "unitless bibliographic metadata"
+    },
+    {
+      "id": "github_rest",
+      "domain": "developer_platform",
+      "provider": "github",
+      "preferred_mode": "openapi",
+      "access_modes": [
+        "openapi",
+        "http_json",
+        "bound_tool",
+        "source_adapter"
+      ],
+      "same_provider_fallback": true,
+      "input_contract": "repository/resource/action parameters",
+      "output_contract": "typed JSON resources",
+      "auth_boundary": "trusted bearer token/client state",
+      "schema_drift": "OpenAPI refresh or explicit contract/plugin update",
+      "semantic_metadata": "provider-declared schema plus trusted action classification"
+    },
+    {
+      "id": "graphql_business_api",
+      "domain": "business_application",
+      "provider": "example-graphql",
+      "preferred_mode": "graphql",
+      "access_modes": [
+        "graphql",
+        "bound_tool"
+      ],
+      "same_provider_fallback": true,
+      "input_contract": "GraphQL introspection arguments",
+      "output_contract": "nested selected fields via native selection sets",
+      "auth_boundary": "trusted runtime headers",
+      "schema_drift": "re-introspection/fingerprint",
+      "semantic_metadata": "typed schema; business semantics by authoritative source/enrichment"
+    },
+    {
+      "id": "odata_enterprise_api",
+      "domain": "enterprise_data",
+      "provider": "example-odata",
+      "preferred_mode": "odata",
+      "access_modes": [
+        "odata",
+        "bound_tool"
+      ],
+      "same_provider_fallback": true,
+      "input_contract": "CSDL entity/query parameters",
+      "output_contract": "entity fields with native $select projection",
+      "auth_boundary": "trusted runtime headers/client state",
+      "schema_drift": "$metadata refresh/fingerprint",
+      "semantic_metadata": "EDM types plus trusted domain enrichment"
+    },
+    {
+      "id": "jsonrpc_service",
+      "domain": "rpc_service",
+      "provider": "example-jsonrpc",
+      "preferred_mode": "openrpc",
+      "access_modes": [
+        "openrpc",
+        "http_json",
+        "bound_tool"
+      ],
+      "same_provider_fallback": true,
+      "input_contract": "OpenRPC method params",
+      "output_contract": "declared result JSON Schema",
+      "auth_boundary": "trusted runtime headers/client state",
+      "schema_drift": "OpenRPC refresh/fingerprint",
+      "semantic_metadata": "provider schema plus trusted enrichment"
+    }
+  ]
+}
