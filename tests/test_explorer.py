@@ -5,6 +5,7 @@ import re
 
 import pytest
 
+from schemarouter.cli import main
 from schemarouter.errors import RegistrationError
 from schemarouter.explorer import (
     SchemaExplorerDocument,
@@ -29,7 +30,7 @@ from schemarouter.models import (
     ToolSpec,
     UnitNormalizationSpec,
 )
-from schemarouter.registry import InMemoryRegistry
+from schemarouter.registry import InMemoryRegistry, SQLiteRegistry
 
 
 def _capability(
@@ -425,3 +426,41 @@ def test_write_schema_explorer_creates_static_html(tmp_path) -> None:
     html = destination.read_text(encoding="utf-8")
     assert "SchemaRouter Capability Explorer" in html
     assert "one.read" in html
+
+
+
+def test_schema_explorer_cli_exports_persisted_registry(
+    tmp_path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    registry_path = tmp_path / "registry.sqlite3"
+    output = tmp_path / "explorer.html"
+
+    with SQLiteRegistry(registry_path) as registry:
+        registry.register(
+            _capability(
+                "materials",
+                "openapi",
+                endpoint=_rich_endpoint(),
+            )
+        )
+
+    assert (
+        main(
+            [
+                "explorer",
+                "--registry",
+                str(registry_path),
+                "--output",
+                str(output),
+            ]
+        )
+        == 0
+    )
+
+    assert str(output) in capsys.readouterr().out
+    html = output.read_text(encoding="utf-8")
+    assert "SchemaRouter Capability Explorer" in html
+    assert "materials.search" in html
+    assert "band_gap" in html
+    assert "Try it out" not in html
