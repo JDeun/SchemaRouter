@@ -181,6 +181,19 @@ class HealthProbeInspection(StrictModel):
     last_error_type: str | None = None
 
 
+class SchemaWatchInspection(StrictModel):
+    """Privacy-safe view of one registered provider-schema watch."""
+
+    tool_key: str
+    interval_seconds: float = Field(gt=0)
+    apply_compatible: bool
+    status: str
+    last_checked_at: datetime.datetime | None = None
+    last_action: str | None = None
+    last_compatibility: str | None = None
+    last_error_type: str | None = None
+
+
 class ExecutionInspection(StrictModel):
     """Privacy-safe view of live execution authority, bindings, and access health."""
 
@@ -190,6 +203,8 @@ class ExecutionInspection(StrictModel):
     unavailable_access_paths: list[str] = Field(default_factory=list)
     health_monitor_running: bool = False
     health_probes: list[HealthProbeInspection] = Field(default_factory=list)
+    schema_watcher_running: bool = False
+    schema_watches: list[SchemaWatchInspection] = Field(default_factory=list)
 
 
 class RouterInspection(StrictModel):
@@ -366,6 +381,20 @@ def inspect_router(router: Any) -> RouterInspection:
                     last_error_type=snapshot.last_error_type,
                 )
                 for snapshot in router.health_monitor.snapshots()
+            ],
+            schema_watcher_running=router.schema_watcher.running,
+            schema_watches=[
+                SchemaWatchInspection(
+                    tool_key=snapshot.tool_key,
+                    interval_seconds=snapshot.interval_seconds,
+                    apply_compatible=snapshot.apply_compatible,
+                    status=snapshot.status,
+                    last_checked_at=snapshot.last_checked_at,
+                    last_action=snapshot.last_action,
+                    last_compatibility=snapshot.last_compatibility,
+                    last_error_type=snapshot.last_error_type,
+                )
+                for snapshot in router.schema_watcher.snapshots()
             ],
         ),
     )
