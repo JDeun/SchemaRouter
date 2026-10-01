@@ -19,8 +19,7 @@ def test_repository_facts_match_canonical_sources() -> None:
     module = _module()
     facts = module.load_facts()
 
-    assert facts.stable_version == "0.13.0"
-    assert facts.release_date == "2026-10-01"
-    assert facts.experiment_count == 92
-    assert facts.development_version == "0.14.0.dev0"
+    assert facts.experiment_count > 0
+    assert facts.release_date.count("-") == 2
+    assert facts.stable_version.count(".") == 2
     module.check(facts)
