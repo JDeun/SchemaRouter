@@ -50,6 +50,34 @@ Underscore-prefixed objects and undocumented internal helpers are not compatibil
 - Serialized plans should not be assumed portable across breaking minor versions unless an explicit
   codec/version contract is documented.
 
+## Persisted SQLite compatibility
+
+`SQLiteRegistry` and `SQLiteRunTraceStore` have an explicit storage-format contract independent
+from the package version and from the registry's logical mutation counter.
+
+During the pre-1.0 series:
+
+- the current persisted storage format is versioned explicitly in SQLite metadata;
+- ToolSpec and RunEvent document formats are versioned separately from the database/container
+  format so future document migrations can be deterministic;
+- the immediately preceding unversioned legacy format (v0) is supported as an upgrade source;
+- opening a valid v0 store automatically performs the current v0 -> v1 metadata migration in one
+  SQLite transaction **after validating every legacy document and replay invariant**;
+- the current v0 -> v1 migration does not rewrite ToolSpec or RunEvent JSON, does not change the
+  registry logical version, and does not create execution bindings or other runtime authority;
+- unknown/newer storage or document versions fail closed with `StorageFormatError` rather than
+  attempting partial decoding;
+- incomplete/corrupt version metadata also fails closed instead of guessing;
+- each successful component migration is recorded in migration history.
+
+For production databases, use `schemarouter storage inspect` before an upgrade and
+`schemarouter storage migrate` when an explicit preflight/backup is preferred. The migration
+command creates a SQLite-consistent backup by default before changing a legacy component. Keep
+that backup until the upgraded service has passed application-level verification.
+
+A future migration that rewrites or drops persisted document content must provide an explicit
+backup/recovery path and release-note migration guidance before it can become automatic.
+
 ## Deprecation policy
 
 Once an API has appeared in a non-alpha 0.x release, planned removals should normally:

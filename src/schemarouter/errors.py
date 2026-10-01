@@ -10,6 +10,10 @@ class TraceError(SchemaRouterError):
     """Raised when persisted run-trace data violates the trace contract."""
 
 
+class StorageFormatError(SchemaRouterError):
+    """Raised when persisted SQLite storage cannot be opened or migrated safely."""
+
+
 class ProposalApprovalError(RegistrationError):
     """Raised when an inferred schema proposal is not safe to approve."""
 

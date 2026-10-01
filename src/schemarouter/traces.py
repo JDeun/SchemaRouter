@@ -8,9 +8,15 @@ from typing import Protocol
 
 from pydantic import Field, ValidationError, model_validator
 
-from .errors import TraceError
+from .errors import StorageFormatError, TraceError
 from .models import StrictModel
 from .runs import RunEvent
+from .storage import (
+    component_presence,
+    component_versions,
+    stamp_current_component_format,
+    validate_component_openable,
+)
 
 _TERMINAL_EVENTS = {"run.end", "run.error"}
 
@@ -70,6 +76,125 @@ class RunTraceStore(Protocol):
     def run_ids(self, *, complete: bool | None = None) -> tuple[str, ...]: ...
 
 
+def _validate_legacy_trace_storage(
+    connection: sqlite3.Connection,
+) -> None:
+    try:
+        summaries = connection.execute(
+            """
+            SELECT run_id, created_at, last_sequence, last_timestamp, terminal
+            FROM schemarouter_trace_runs
+            ORDER BY created_at, run_id
+            """
+        ).fetchall()
+    except sqlite3.DatabaseError as exc:
+        raise StorageFormatError(
+            "legacy trace table shape is not compatible with migration"
+        ) from exc
+
+    for summary in summaries:
+        run_id = str(summary["run_id"])
+        try:
+            rows = connection.execute(
+                """
+                SELECT sequence, document
+                FROM schemarouter_trace_events
+                WHERE run_id = ?
+                ORDER BY sequence
+                """,
+                (run_id,),
+            ).fetchall()
+        except sqlite3.DatabaseError as exc:
+            raise StorageFormatError(
+                "legacy trace event table shape is not compatible with migration"
+            ) from exc
+        if not rows:
+            raise StorageFormatError(
+                f"legacy run trace {run_id!r} has no persisted events"
+            )
+
+        events: list[RunEvent] = []
+        for row in rows:
+            try:
+                sequence = int(row["sequence"])
+            except (TypeError, ValueError) as exc:
+                raise StorageFormatError(
+                    f"legacy run trace {run_id!r} contains an invalid sequence"
+                ) from exc
+            try:
+                event = RunEvent.model_validate_json(str(row["document"]))
+            except (ValidationError, ValueError) as exc:
+                raise StorageFormatError(
+                    f"legacy run event {run_id}:{sequence} "
+                    "cannot be migrated safely"
+                ) from exc
+            if event.run_id != run_id or event.sequence != sequence:
+                raise StorageFormatError(
+                    f"legacy run event identity mismatch at "
+                    f"{run_id}:{sequence}"
+                )
+            events.append(event)
+
+        try:
+            trace = RunTrace(run_id=run_id, events=events)
+        except ValidationError as exc:
+            raise StorageFormatError(
+                f"legacy run trace {run_id!r} violates replay invariants"
+            ) from exc
+
+        first_timestamp = trace.events[0].timestamp.timestamp()
+        last_timestamp = trace.events[-1].timestamp.timestamp()
+        try:
+            created_at = float(summary["created_at"])
+            last_sequence = int(summary["last_sequence"])
+            stored_last_timestamp = float(summary["last_timestamp"])
+            terminal_raw = int(summary["terminal"])
+        except (TypeError, ValueError) as exc:
+            raise StorageFormatError(
+                f"legacy run trace {run_id!r} summary contains invalid values"
+            ) from exc
+        if terminal_raw not in {0, 1}:
+            raise StorageFormatError(
+                f"legacy run trace {run_id!r} terminal summary is invalid"
+            )
+        if abs(created_at - first_timestamp) > 1e-6:
+            raise StorageFormatError(
+                f"legacy run trace {run_id!r} created_at summary is invalid"
+            )
+        if last_sequence != trace.events[-1].sequence:
+            raise StorageFormatError(
+                f"legacy run trace {run_id!r} sequence summary is invalid"
+            )
+        if abs(stored_last_timestamp - last_timestamp) > 1e-6:
+            raise StorageFormatError(
+                f"legacy run trace {run_id!r} timestamp summary is invalid"
+            )
+        if bool(terminal_raw) != trace.complete:
+            raise StorageFormatError(
+                f"legacy run trace {run_id!r} terminal summary is invalid"
+            )
+
+    try:
+        orphan = connection.execute(
+            """
+            SELECT event.run_id
+            FROM schemarouter_trace_events AS event
+            LEFT JOIN schemarouter_trace_runs AS run
+              ON run.run_id = event.run_id
+            WHERE run.run_id IS NULL
+            LIMIT 1
+            """
+        ).fetchone()
+    except sqlite3.DatabaseError as exc:
+        raise StorageFormatError(
+            "legacy trace table shape is not compatible with migration"
+        ) from exc
+    if orphan is not None:
+        raise StorageFormatError(
+            f"legacy trace event references missing run {str(orphan[0])!r}"
+        )
+
+
 class SQLiteRunTraceStore:
     """Append-only SQLite store for replayable RunEvent streams.
 
@@ -100,38 +225,117 @@ class SQLiteRunTraceStore:
         self._connection.execute(f"PRAGMA busy_timeout = {busy_timeout_ms}")
         if self.path != ":memory:":
             self._connection.execute("PRAGMA journal_mode = WAL")
-        self._initialize()
+        try:
+            self._initialize()
+        except Exception:
+            self._connection.close()
+            self._closed = True
+            raise
+
+    def _create_component_tables(self) -> None:
+        self._connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS schemarouter_trace_runs (
+                run_id TEXT PRIMARY KEY,
+                created_at REAL NOT NULL,
+                last_sequence INTEGER NOT NULL,
+                last_timestamp REAL NOT NULL,
+                terminal INTEGER NOT NULL CHECK (terminal IN (0, 1))
+            )
+            """
+        )
+        self._connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS schemarouter_trace_events (
+                run_id TEXT NOT NULL,
+                sequence INTEGER NOT NULL,
+                document TEXT NOT NULL,
+                PRIMARY KEY (run_id, sequence),
+                FOREIGN KEY (run_id)
+                    REFERENCES schemarouter_trace_runs(run_id)
+                    ON DELETE CASCADE
+            )
+            """
+        )
+
+    def _validate_legacy_storage(self) -> None:
+        _validate_legacy_trace_storage(self._connection)
 
     def _initialize(self) -> None:
-        with self._lock, self._connection:
-            self._connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS schemarouter_trace_runs (
-                    run_id TEXT PRIMARY KEY,
-                    created_at REAL NOT NULL,
-                    last_sequence INTEGER NOT NULL,
-                    last_timestamp REAL NOT NULL,
-                    terminal INTEGER NOT NULL CHECK (terminal IN (0, 1))
+        with self._lock:
+            presence = component_presence(self._connection, "trace")
+            if presence == "partial":
+                raise StorageFormatError(
+                    "trace SQLite storage is incomplete; required tables are missing"
                 )
-                """
+
+            if presence == "absent":
+                self._connection.execute("BEGIN IMMEDIATE")
+                try:
+                    self._create_component_tables()
+                    stamp_current_component_format(
+                        self._connection,
+                        "trace",
+                    )
+                except Exception:
+                    self._connection.rollback()
+                    raise
+                else:
+                    self._connection.commit()
+                return
+
+            status = validate_component_openable(
+                self._connection,
+                "trace",
             )
-            self._connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS schemarouter_trace_events (
-                    run_id TEXT NOT NULL,
-                    sequence INTEGER NOT NULL,
-                    document TEXT NOT NULL,
-                    PRIMARY KEY (run_id, sequence),
-                    FOREIGN KEY (run_id)
-                        REFERENCES schemarouter_trace_runs(run_id)
-                        ON DELETE CASCADE
+            if status == "current":
+                return
+
+            self._connection.execute("BEGIN IMMEDIATE")
+            try:
+                self._validate_legacy_storage()
+                stamp_current_component_format(
+                    self._connection,
+                    "trace",
+                    from_version=0,
                 )
-                """
-            )
+            except Exception:
+                self._connection.rollback()
+                raise
+            else:
+                self._connection.commit()
 
     def _ensure_open(self) -> None:
         if self._closed:
             raise RuntimeError("SQLiteRunTraceStore is closed")
+
+    @property
+    def storage_format_version(self) -> int:
+        with self._lock:
+            self._ensure_open()
+            storage_version, _ = component_versions(
+                self._connection,
+                "trace",
+            )
+            if storage_version is None:
+                raise StorageFormatError(
+                    "trace storage format metadata is missing"
+                )
+            return storage_version
+
+    @property
+    def document_format_version(self) -> int:
+        with self._lock:
+            self._ensure_open()
+            _, document_version = component_versions(
+                self._connection,
+                "trace",
+            )
+            if document_version is None:
+                raise StorageFormatError(
+                    "trace document format metadata is missing"
+                )
+            return document_version
 
     def _begin_write(self) -> None:
         self._ensure_open()

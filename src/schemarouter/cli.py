@@ -12,6 +12,7 @@ from .dashboard import write_dashboard
 from .errors import (
     SchemaSourceError,
     SourceProbeDiagnosticError,
+    StorageFormatError,
     UnsupportedSchemaSourceError,
 )
 from .ingestion import (
@@ -31,6 +32,12 @@ from .inspection import (
 from .registry import SQLiteRegistry
 from .runtime import SchemaRouter
 from .schema_diff import SchemaDiffReport, compare_endpoint_specs, compare_tool_specs
+from .storage import (
+    StorageInspection,
+    StorageMigrationResult,
+    inspect_sqlite_storage,
+    migrate_sqlite_storage,
+)
 from .traces import SQLiteRunTraceStore
 
 
@@ -240,6 +247,69 @@ def _render_source_probe_failure(report: SourceProbeFailureReport) -> str:
     return "\n".join(lines)
 
 
+def _render_storage_inspection(snapshot: StorageInspection) -> str:
+    lines = [f"SQLite storage: {snapshot.path}"]
+    if not snapshot.components:
+        lines.append("components: none")
+        return "\n".join(lines)
+
+    for component in snapshot.components:
+        storage_version = (
+            str(component.storage_format_version)
+            if component.storage_format_version is not None
+            else "legacy-v0"
+        )
+        document_version = (
+            str(component.document_format_version)
+            if component.document_format_version is not None
+            else "legacy-v0"
+        )
+        lines.append(
+            f"- {component.component}: {component.status}; "
+            f"storage={storage_version}/"
+            f"{component.current_storage_format_version}, "
+            f"document={document_version}/"
+            f"{component.current_document_format_version}, "
+            f"documents={component.document_count}"
+        )
+        if component.migrations:
+            lines.append("  migrations:")
+            lines.extend(
+                (
+                    f"    - {item.from_version} -> {item.to_version} "
+                    f"at {item.applied_at}"
+                )
+                for item in component.migrations
+            )
+    lines.append(
+        "migration required: "
+        + ("yes" if snapshot.migration_required else "no")
+    )
+    return "\n".join(lines)
+
+
+def _render_storage_migration(result: StorageMigrationResult) -> str:
+    lines = [
+        f"SQLite storage migration: {result.path}",
+        (
+            f"backup: {result.backup_path}"
+            if result.backup_path is not None
+            else "backup: not created"
+        ),
+        "before:",
+    ]
+    lines.extend(
+        f"  - {item.component}: {item.status}"
+        for item in result.before.components
+    )
+    lines.append("after:")
+    lines.extend(
+        f"  - {item.component}: {item.status}"
+        for item in result.after.components
+    )
+    return "\n".join(lines)
+
+
 def _render_traces(traces: Sequence[TraceInspection]) -> str:
     if not traces:
         return "No run traces."
@@ -412,6 +482,51 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_json_flag(source_probe)
 
+    storage = subparsers.add_parser(
+        "storage",
+        help="Inspect or migrate versioned SchemaRouter SQLite storage.",
+    )
+    storage_subparsers = storage.add_subparsers(
+        dest="surface",
+        required=True,
+    )
+
+    storage_inspect = storage_subparsers.add_parser(
+        "inspect",
+        help="Inspect SQLite storage/document format versions without mutating the database.",
+    )
+    storage_inspect.add_argument(
+        "db",
+        type=Path,
+        help="SchemaRouter SQLite database path.",
+    )
+    _add_json_flag(storage_inspect)
+
+    storage_migrate = storage_subparsers.add_parser(
+        "migrate",
+        help="Migrate supported legacy SQLite formats after a full preflight.",
+    )
+    storage_migrate.add_argument(
+        "db",
+        type=Path,
+        help="SchemaRouter SQLite database path.",
+    )
+    storage_migrate.add_argument(
+        "--backup-path",
+        type=Path,
+        default=None,
+        help=(
+            "Optional explicit backup destination. By default a "
+            ".schemarouter.bak file is created beside the database."
+        ),
+    )
+    storage_migrate.add_argument(
+        "--no-backup",
+        action="store_true",
+        help="Explicitly disable the pre-migration SQLite backup.",
+    )
+    _add_json_flag(storage_migrate)
+
     dashboard = subparsers.add_parser(
         "dashboard",
         help="Export a self-contained read-only HTML inspection dashboard.",
@@ -456,6 +571,28 @@ def _run(args: argparse.Namespace) -> str:
             )
         )
         return _json_dump(probe) if args.json else _render_source_probe(probe)
+
+    if args.command == "storage":
+        database = _existing_db(args.db)
+        if args.surface == "inspect":
+            snapshot = inspect_sqlite_storage(database)
+            return (
+                _json_dump(snapshot)
+                if args.json
+                else _render_storage_inspection(snapshot)
+            )
+        if args.surface == "migrate":
+            result = migrate_sqlite_storage(
+                database,
+                backup=not args.no_backup,
+                backup_path=args.backup_path,
+            )
+            return (
+                _json_dump(result)
+                if args.json
+                else _render_storage_migration(result)
+            )
+        raise ValueError(f"unsupported storage surface: {args.surface}")
 
     if args.command == "dashboard":
         with SQLiteRegistry(_existing_db(args.registry)) as registry:
@@ -572,7 +709,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
                 parser.exit(2, output + "\n")
         parser.exit(2, f"schemarouter: {type(exc).__name__}: {exc}\n")
-    except (KeyError, OSError, ValueError, RuntimeError, SchemaSourceError) as exc:
+    except (
+        KeyError,
+        OSError,
+        ValueError,
+        RuntimeError,
+        SchemaSourceError,
+        StorageFormatError,
+    ) as exc:
         parser.exit(2, f"schemarouter: {type(exc).__name__}: {exc}\n")
     sys.stdout.write(output + "\n")
     return 0
