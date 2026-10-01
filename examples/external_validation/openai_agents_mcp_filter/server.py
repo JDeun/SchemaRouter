@@ -61,14 +61,14 @@ def flight_status(flight_number: str) -> dict[str, Any]:
 
 @mcp.tool()
 def hotel_search(city: str) -> dict[str, Any]:
-    """Find hotels and lodging options in a destination city."""
+    """Find hotel and lodging options in a destination city."""
     _record_call("hotel_search")
     return {"city": city, "hotels": ["Example Hotel"]}
 
 
 @mcp.tool()
 def restaurant_search(city: str) -> dict[str, Any]:
-    """Find restaurants and dining options in a city."""
+    """Find restaurant and dining options in a city."""
     _record_call("restaurant_search")
     return {"city": city, "restaurants": ["Example Restaurant"]}
 
