@@ -10,19 +10,45 @@ from pathlib import Path
 from typing import Any
 
 
-def new_report(*, adapter: str, source: str) -> dict[str, Any]:
+def new_report(
+    *,
+    adapter: str,
+    source: str,
+    provider: str | None = None,
+    evidence_mode: str = "live-provider",
+    authentication: str = "unknown",
+) -> dict[str, Any]:
     try:
         package_version = version("schemarouter")
     except PackageNotFoundError:
         package_version = "0+unknown"
 
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "schemarouter_version": package_version,
         "adapter": adapter,
+        "provider": provider,
         "source": source,
+        "evidence_mode": evidence_mode,
+        "authentication": authentication,
         "status": "pending",
+        "discovery": {
+            "success": False,
+            "tool_count": None,
+            "endpoint_count": None,
+            "execution_bound": None,
+            "latency_ms": None,
+        },
+        "execution": {
+            "attempted": False,
+            "safe_read_only": None,
+            "endpoint": None,
+            "success": False,
+            "latency_ms": None,
+            "result_shape": None,
+        },
+        "known_quirks": [],
         "environment": {
             "system": platform.system(),
             "release": platform.release(),
