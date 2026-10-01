@@ -5,7 +5,6 @@ import pytest
 
 from schemarouter import (
     EndpointSpec,
-    FieldSpec,
     RegistrationError,
     SchemaRouter,
     SchemaSourceError,
