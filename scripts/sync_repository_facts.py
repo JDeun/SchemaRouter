@@ -50,7 +50,13 @@ def load_facts() -> Facts:
     if project_block is None:
         raise RuntimeError("pyproject.toml has no [project] table")
     version_match = re.search(
-        r'(?m)^version\s*=\s*"([^"]+)"\s*
+        r'(?m)^version\s*=\s*"([^"]+)"\s*$',
+        project_block.group(1),
+    )
+    if version_match is None:
+        raise RuntimeError("pyproject.toml [project] table has no version")
+    development_version = version_match.group(1)
+
     return Facts(
         stable_version=stable_version,
         release_date=release_date,
