@@ -784,7 +784,10 @@ class OpenAPISourceAdapter:
         attach_schema_http_validators(
             tool.metadata,
             validators,
-            source_identity_digest=structured_source_identity_digest_for(tool, self.refresh),
+            source_identity_digest=structured_source_identity_digest_for(
+                tool,
+                self.refresh,
+            ),
         )
 
         selected_base_url = context.base_url or suggested_base_url
