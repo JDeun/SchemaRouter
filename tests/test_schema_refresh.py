@@ -114,6 +114,39 @@ async def test_schema_refresh_applies_proven_compatible_description_change() -> 
 
 
 @pytest.mark.asyncio
+async def test_compatible_refresh_restamps_existing_health_probe() -> None:
+    state = {"document": _document()}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=state["document"], request=request)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        router = SchemaRouter(http_client=client)
+        tool = await router.add_url(
+            "https://example.test/openapi.json",
+            kind="openapi",
+            name="materials",
+        )
+        calls = 0
+
+        def probe() -> bool:
+            nonlocal calls
+            calls += 1
+            return True
+
+        router.register_health_probe(tool.key, "materials_search", probe)
+        state["document"] = _document(summary="Search materials")
+
+        result = await router.arefresh_schema(tool.key)
+        snapshots = await router.check_health_once()
+
+    assert result.action == "applied"
+    assert snapshots[0].status == "healthy"
+    assert snapshots[0].last_error_type is None
+    assert calls == 1
+
+
+@pytest.mark.asyncio
 async def test_schema_refresh_quarantines_breaking_required_parameter() -> None:
     state = {"document": _document()}
 

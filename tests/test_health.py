@@ -8,6 +8,7 @@ from schemarouter import (
     FieldSpec,
     PlanRequest,
     PlanValidationError,
+    RegistrationError,
     SchemaRouter,
     ToolSpec,
 )
@@ -328,3 +329,155 @@ async def test_background_probe_reintroduces_route_into_planner_before_cooldown_
     assert plan.calls[0].tool == "provider_a_rest"
     assert plan.calls[0].fields == ["elastic_modulus"]
     assert router.unavailable_access_paths() == ()
+
+
+
+@pytest.mark.asyncio
+async def test_trusted_amendment_restamps_existing_health_probe() -> None:
+    router = _router()
+    calls = 0
+
+    def probe() -> bool:
+        nonlocal calls
+        calls += 1
+        return True
+
+    router.register_health_probe("provider_api", "read", probe)
+    current = router.registry.get("provider_api")
+    amended = current.model_copy(deep=True)
+    amended.endpoints[0].description = "trusted annotation"
+
+    router.amend_capability(current.key, amended)
+
+    before = router.health_snapshots()[0]
+    assert before.status == "unknown"
+    assert before.last_error_type is None
+
+    after = await router.check_health_once()
+    assert after[0].status == "healthy"
+    assert calls == 1
+
+
+@pytest.mark.asyncio
+async def test_background_probe_from_old_generation_is_discarded_after_restamp() -> None:
+    router = _router(cooldown=60)
+    calls = 0
+    first_started = asyncio.Event()
+    second_started = asyncio.Event()
+    release_first = asyncio.Event()
+    release_second = asyncio.Event()
+
+    async def probe() -> bool:
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            first_started.set()
+            await release_first.wait()
+            return False
+        second_started.set()
+        await release_second.wait()
+        return True
+
+    router.register_health_probe("provider_api", "read", probe)
+    await router.start_health_monitor(
+        interval_seconds=0.01,
+        probe_timeout_seconds=1,
+        max_concurrency=1,
+    )
+    try:
+        await asyncio.wait_for(first_started.wait(), timeout=1)
+        current = router.registry.get("provider_api")
+        updated = current.model_copy(deep=True)
+        updated.description = "accepted compatible transition"
+        router.registry.register(updated, replace=True)
+        router.health_monitor.transition_tool_contract(
+            current.key,
+            expected_old_fingerprint=current.fingerprint,
+            expected_new_fingerprint=updated.fingerprint,
+        )
+
+        release_first.set()
+        await asyncio.wait_for(second_started.wait(), timeout=1)
+
+        assert router.unavailable_access_paths() == ()
+        assert router.health_snapshots()[0].status == "unknown"
+
+        release_second.set()
+        for _ in range(50):
+            if router.health_snapshots()[0].status == "healthy":
+                break
+            await asyncio.sleep(0.01)
+    finally:
+        release_first.set()
+        release_second.set()
+        await router.stop_health_monitor()
+
+    assert router.health_snapshots()[0].status == "healthy"
+
+
+@pytest.mark.parametrize(
+    ("replacement", "reason"),
+    [
+        (
+            ToolSpec(
+                name="provider_api",
+                provider="provider",
+                access_mode="openapi",
+                endpoints=[EndpointSpec(name="renamed", read_only=True)],
+            ),
+            "EndpointRemoved",
+        ),
+        (
+            ToolSpec(
+                name="provider_api",
+                provider="provider",
+                access_mode="openapi",
+                endpoints=[EndpointSpec(name="read", read_only=False)],
+            ),
+            "EndpointNoLongerReadOnly",
+        ),
+    ],
+)
+@pytest.mark.asyncio
+async def test_accepted_transition_invalidates_incompatible_probe_target(
+    replacement: ToolSpec,
+    reason: str,
+) -> None:
+    router = _router()
+    router.register_health_probe("provider_api", "read", lambda: True)
+    current = router.registry.get("provider_api")
+    router.registry.register(replacement, replace=True)
+
+    router.health_monitor.transition_tool_contract(
+        current.key,
+        expected_old_fingerprint=current.fingerprint,
+        expected_new_fingerprint=replacement.fingerprint,
+    )
+    snapshots = await router.check_health_once()
+
+    assert snapshots[0].status == "stale"
+    assert snapshots[0].last_error_type == reason
+
+
+@pytest.mark.asyncio
+async def test_probe_restamp_fails_closed_after_concurrent_registry_change() -> None:
+    router = _router()
+    router.register_health_probe("provider_api", "read", lambda: True)
+    current = router.registry.get("provider_api")
+
+    intended = current.model_copy(deep=True)
+    intended.description = "intended transition"
+    concurrent = current.model_copy(deep=True)
+    concurrent.description = "concurrent transition"
+    router.registry.register(concurrent, replace=True)
+
+    with pytest.raises(RegistrationError, match="changed before health probes"):
+        router.health_monitor.transition_tool_contract(
+            current.key,
+            expected_old_fingerprint=current.fingerprint,
+            expected_new_fingerprint=intended.fingerprint,
+        )
+
+    snapshots = await router.check_health_once()
+    assert snapshots[0].status == "stale"
+    assert snapshots[0].last_error_type == "ToolContractChanged"
