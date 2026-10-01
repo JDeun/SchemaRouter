@@ -5,9 +5,12 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.12.0</span>
+<span class="sr-kicker">SchemaRouter 0.13.0</span>
 
 # Put a typed execution boundary between agents and tools
+
+SchemaRouter is a **typed capability retrieval and schema-aware execution layer for LLM/RAG agents**
+across MCP, OpenAPI, Python, and framework tools.
 
 Agents get harder to steer as you connect more tools, and each tool can return far more than the
 request needs. SchemaRouter decides which **declared data fields** are needed, exposes a bounded set
@@ -167,29 +170,29 @@ flow and never becomes executable automatically.
 
 ## Current release
 
-Version `0.11.0` promoted first-class **bounded Top-K capability retrieval** to the public product
-surface. Applications can expose a compact registered candidate set to an external agent through
-`retrieve` / `aretrieve`, or require current local binding readiness through `retrieve_executable`
-/ `aretrieve_executable`.
+Version `0.13.0` is the **operational-completeness release** on top of the stable-core boundary:
+universal capability ingestion, nested field contracts, schema refresh/watch lifecycles, trusted
+SDK/client binding, and broader protocol/framework integration are available without reopening the
+core architecture.
 
-Version `0.12.0` closes that product cycle: the architecture and public API boundary are now the
-frozen **stable core**. Research may improve ranking, index implementations, shortlist defaults and
-re-retrieval behind that boundary, but a benchmark improvement alone is not a reason to redesign
-the public facade.
+Version `0.12.0` established the frozen **stable core** and `0.11.0` introduced first-class
+bounded Top-K capability retrieval. Research may improve ranking, index implementations, shortlist
+defaults and re-retrieval behind that boundary, but benchmark gains alone are not a reason to
+redesign the public facade.
 
 Retrieval is side-effect free and non-authoritative: the surrounding agent chooses among
 registered candidates, while SchemaRouter still owns schema validation, policy and execution
 authority. Ongoing 0.14 agent-utility research is reported separately and is not required for the
 stable package to function.
 
-[Read the 0.12.0 release notes →](releases/0.12.0.md) ·
+[Read the 0.13.0 release notes →](releases/0.13.0.md) ·
 [Read the stable-core contract →](stable-core.md) ·
 [Read the routing research status →](research/routing-status.md)
 
 ## Current research checkpoint
 
-The stable `0.12.0` public API is unchanged while the 0.14 research cycle evaluates the
-retrieval boundary more rigorously.
+The stable `0.13.0` package preserves the 0.12 stable-core public API while the 0.14 research
+cycle evaluates the retrieval boundary more rigorously.
 
 - **B1** is terminal: SR-5 reached 91.30% task pass vs 68.48% for FULL while using
   5.42% of FULL tool-schema tokens on the controlled Qwen3-0.6B surface.
