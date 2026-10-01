@@ -527,7 +527,6 @@ async def test_graphql_array_item_field_renders_selection_without_wildcard() -> 
     }
 
 
-
 @pytest.mark.asyncio
 async def test_graphql_retries_compact_introspection_after_http_413() -> None:
     introspection_queries: list[str] = []
