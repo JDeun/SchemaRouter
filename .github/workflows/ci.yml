@@ -132,6 +132,16 @@ jobs:
       - run: /tmp/schemarouter-wheel/bin/python -m pip install --upgrade pip
       - run: /tmp/schemarouter-wheel/bin/pip install dist/*.whl
       - run: /tmp/schemarouter-wheel/bin/python -c "from importlib.metadata import version; import schemarouter; assert schemarouter.__version__ == version('schemarouter')"
+      - run: python -m venv /tmp/schemarouter-wheel-adapter-plugin
+      - run: /tmp/schemarouter-wheel-adapter-plugin/bin/python -m pip install --upgrade pip
+      - name: Install built wheel and downstream adapter distribution
+        run: |
+          WHEEL="$(pwd)/$(ls dist/*.whl)"
+          /tmp/schemarouter-wheel-adapter-plugin/bin/pip install "$WHEEL"
+          /tmp/schemarouter-wheel-adapter-plugin/bin/pip install --no-deps examples/adapter_plugin_demo
+          /tmp/schemarouter-wheel-adapter-plugin/bin/pip check
+      - name: Exercise downstream adapter plugin against built wheel
+        run: /tmp/schemarouter-wheel-adapter-plugin/bin/python scripts/downstream_adapter_plugin_smoke.py
       - run: /tmp/schemarouter-wheel/bin/python examples/quickstart.py
       - run: /tmp/schemarouter-wheel/bin/python examples/sdk_bound_demo.py
       - run: /tmp/schemarouter-wheel/bin/python examples/mixed_provider_demo.py
