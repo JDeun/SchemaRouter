@@ -33,12 +33,42 @@ def _tool(name: str, description: str, field_name: str, aliases: list[str]) -> T
 def main() -> None:
     router = SchemaRouter()
     specs = [
-        _tool("weather", "Current city weather and temperature.", "temperature", ["weather temperature"]),
-        _tool("calendar", "Calendar events and meeting schedules.", "event", ["calendar event"]),
-        _tool("crm", "Customer relationship records and contacts.", "contact", ["customer contact"]),
-        _tool("inventory", "Warehouse stock and inventory availability.", "stock", ["inventory stock"]),
-        _tool("billing", "Invoices, account balances, and payments.", "invoice", ["billing invoice"]),
-        _tool("tickets", "Support tickets, incidents, and case status.", "ticket", ["support ticket"]),
+        _tool(
+            "weather",
+            "Current city weather and temperature.",
+            "temperature",
+            ["weather temperature"],
+        ),
+        _tool(
+            "calendar",
+            "Calendar events and meeting schedules.",
+            "event",
+            ["calendar event"],
+        ),
+        _tool(
+            "crm",
+            "Customer relationship records and contacts.",
+            "contact",
+            ["customer contact"],
+        ),
+        _tool(
+            "inventory",
+            "Warehouse stock and inventory availability.",
+            "stock",
+            ["inventory stock"],
+        ),
+        _tool(
+            "billing",
+            "Invoices, account balances, and payments.",
+            "invoice",
+            ["billing invoice"],
+        ),
+        _tool(
+            "tickets",
+            "Support tickets, incidents, and case status.",
+            "ticket",
+            ["support ticket"],
+        ),
     ]
     for spec in specs:
         router.add_tool(spec)
