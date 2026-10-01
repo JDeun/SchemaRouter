@@ -41,6 +41,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$SYNC_BRANCH:refs/remotes/origin/$SYNC_BRANCH" || true
           git checkout -B "$SYNC_BRANCH"
           git add             README.md             README.ko.md             docs/index.md             docs_ko/index.md             docs/getting-started/installation.md             docs_ko/getting-started/installation.md             docs/project/trust-and-evidence.md             docs_ko/project/trust-and-evidence.md             docs/research/experiment-index.md             docs/research/routing-status.md
           git commit -m "docs: sync canonical repository facts"
