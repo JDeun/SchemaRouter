@@ -73,7 +73,7 @@ def field_value_schema(endpoint: EndpointSpec, field_name: str) -> dict[str, Any
         return deepcopy(field.json_schema)
 
     schema = effective_output_schema(endpoint)
-    if schema.get("type") == "array" and isinstance(schema.get("items"), dict):
+    if "array" in json_schema_types(schema) and isinstance(schema.get("items"), dict):
         schema = schema["items"]
 
     for part in field.projection_path:
