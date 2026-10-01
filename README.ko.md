@@ -11,6 +11,7 @@
   <a href="README.md">English</a> ·
   <a href="README.ko.md">한국어</a> ·
   <a href="https://jdeun.github.io/SchemaRouter/">Docs</a> ·
+  <a href="examples/README.md">Examples</a> ·
   <a href="https://github.com/JDeun/SchemaRouter/releases/latest">Latest release</a>
 </p>
 
@@ -22,6 +23,9 @@
 </p>
 
 > **현재 안정판: 0.13.0** · Beta / pre-1.0
+
+SchemaRouter는 MCP, OpenAPI, Python, 프레임워크 도구를 아우르는 **LLM/RAG 에이전트용 타입
+capability 검색·스키마 인식 실행 계층**입니다.
 
 에이전트가 쓸 수 있는 도구가 늘어날수록 방향을 잡기 어려워지고, 도구 응답에는 질문에 필요하지
 않은 데이터까지 섞여 옵니다. SchemaRouter는 요청에 **어떤 선언된 데이터 필드가 필요한지** 먼저
