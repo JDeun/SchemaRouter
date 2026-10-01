@@ -1015,6 +1015,8 @@ class URLSchemaLoader:
 
             try:
                 result = await adapter.load(context)
+            except SchemaNotModifiedError:
+                raise
             except SchemaSourceError as exc:
                 if normalized_kind == "openapi":
                     raise UnsupportedSchemaSourceError(
