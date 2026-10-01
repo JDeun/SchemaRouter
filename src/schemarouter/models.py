@@ -105,23 +105,55 @@ def _schema_type_shape_compatible(
     return True
 
 
+def _resolve_local_schema_ref(
+    document: dict[str, Any],
+    schema: dict[str, Any],
+) -> dict[str, Any]:
+    """Resolve only local JSON Schema refs against the endpoint's own schema document."""
+
+    current = schema
+    seen: set[str] = set()
+    while isinstance(current, dict):
+        ref = current.get("$ref")
+        if not isinstance(ref, str) or not ref.startswith("#/") or ref in seen:
+            return current
+        seen.add(ref)
+
+        node: Any = document
+        try:
+            for raw in ref[2:].split("/"):
+                part = raw.replace("~1", "/").replace("~0", "~")
+                node = node[part]
+        except (KeyError, TypeError):
+            return current
+        if not isinstance(node, dict):
+            return current
+
+        merged = dict(node)
+        merged.update({key: value for key, value in current.items() if key != "$ref"})
+        current = merged
+    return schema
+
+
 def _schema_at_projection_path(
     output_schema: dict[str, Any],
     path: tuple[str, ...],
 ) -> dict[str, Any]:
-    schema = output_schema
+    document = output_schema
+    schema = _resolve_local_schema_ref(document, output_schema)
     if "array" in _schema_types(schema) and isinstance(schema.get("items"), dict):
-        schema = schema["items"]
+        # Root collection endpoints historically address fields relative to each record.
+        schema = _resolve_local_schema_ref(document, schema["items"])
 
     for part in path:
+        schema = _resolve_local_schema_ref(document, schema)
         if part == "*":
-            schema_types = _schema_types(schema)
-            if "array" not in schema_types:
+            if "array" not in _schema_types(schema):
                 return {}
             items = schema.get("items")
             if not isinstance(items, dict):
                 return {}
-            schema = items
+            schema = _resolve_local_schema_ref(document, items)
             continue
 
         if "object" not in _schema_types(schema):
@@ -132,7 +164,7 @@ def _schema_at_projection_path(
         child = properties.get(part)
         if not isinstance(child, dict):
             return {}
-        schema = child
+        schema = _resolve_local_schema_ref(document, child)
     return schema
 
 
@@ -282,26 +314,25 @@ class FieldSpec(StrictModel):
             raise ValueError("field path requires non-empty string segments")
         if any(not isinstance(part, str) or not part for part in self.result_path):
             raise ValueError("field result_path requires non-empty string segments")
-
-        for label, path in (("path", self.path), ("result_path", self.result_path)):
-            if path and path[0] == "*":
+        source_wildcards = [
+            index
+            for index, part in enumerate(self.path)
+            if part == "*"
+        ]
+        result_wildcards = [
+            index
+            for index, part in enumerate(self.result_path)
+            if part == "*"
+        ]
+        if source_wildcards:
+            if not self.result_path:
                 raise ValueError(
-                    f"field {label} must not begin with the array wildcard; "
-                    "root arrays are traversed implicitly"
+                    "array-item field paths require an explicit result_path"
                 )
-            if path and path[-1] == "*":
+            if source_wildcards != result_wildcards:
                 raise ValueError(
-                    f"field {label} must not end with the array wildcard; "
-                    "select the array field itself instead"
+                    "array-item source/result paths must preserve wildcard positions"
                 )
-
-        source_wildcards = self.path.count("*")
-        effective_result_path = self.result_path or self.path
-        result_wildcards = effective_result_path.count("*")
-        if result_wildcards != source_wildcards:
-            raise ValueError(
-                "field result_path wildcard count must match source path wildcard count"
-            )
         if self.unit is not None:
             if not self.unit.strip():
                 raise ValueError("field unit must be non-empty when provided")
@@ -416,12 +447,6 @@ class EndpointSpec(StrictModel):
                 else {}
             )
 
-            if "*" in field.projection_path and self.output_schema and not raw_field_schema:
-                raise ValueError(
-                    "array-wildcard field path must resolve through a declared array item schema "
-                    f"in endpoint {self.name!r}: {field.name!r}"
-                )
-
             if field.json_schema and raw_field_schema:
                 if not _schema_type_shape_compatible(
                     field.json_schema,
@@ -515,7 +540,6 @@ class EndpointSpec(StrictModel):
                 if (
                     source_longer[: len(source_shorter)] == source_shorter
                     and result_longer[: len(result_shorter)] == result_shorter
-                    and "*" not in result_longer
                 ):
                     raise ValueError(
                         "overlapping output field paths in endpoint "
@@ -535,10 +559,7 @@ class EndpointSpec(StrictModel):
                     if len(left_path) <= len(right_path)
                     else (right_path, left_path)
                 )
-                if (
-                    longer[: len(shorter)] == shorter
-                    and "*" not in longer
-                ):
+                if longer[: len(shorter)] == shorter:
                     raise ValueError(
                         "overlapping output result paths in endpoint "
                         f"{self.name!r}: {left_name!r} and {right_name!r}"
