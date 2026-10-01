@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import sys
 from collections.abc import Sequence
@@ -8,6 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from .dashboard import write_dashboard
+from .errors import SchemaSourceError, UnsupportedSchemaSourceError
+from .ingestion import SourceProbeResult, default_adapter_registry
 from .inspection import (
     RegistryInspection,
     ToolInspection,
@@ -18,6 +21,7 @@ from .inspection import (
     tool_spec_document,
 )
 from .registry import SQLiteRegistry
+from .runtime import SchemaRouter
 from .schema_diff import SchemaDiffReport, compare_endpoint_specs, compare_tool_specs
 from .traces import SQLiteRunTraceStore
 
@@ -162,6 +166,24 @@ def _render_schema_diff(
     return "\n".join(lines)
 
 
+def _render_source_probe(probe: SourceProbeResult) -> str:
+    lines = [
+        f"Structured source: {probe.source_url}",
+        f"adapter: {probe.adapter_kind}",
+        f"tool: {probe.tool_key}",
+        f"provider: {probe.provider or '-'}",
+        f"access_mode: {probe.access_mode or '-'}",
+        f"endpoints: {probe.endpoint_count}",
+        f"execution binding: {'available' if probe.execution_bindable else 'not available'}",
+    ]
+    if probe.warnings:
+        lines.append("warnings:")
+        lines.extend(f"  - {warning}" for warning in probe.warnings)
+    else:
+        lines.append("warnings: none")
+    return "\n".join(lines)
+
+
 def _render_traces(traces: Sequence[TraceInspection]) -> str:
     if not traces:
         return "No run traces."
@@ -286,6 +308,46 @@ def build_parser() -> argparse.ArgumentParser:
     trace.add_argument("--db", required=True, type=Path, help="SQLite trace-store path.")
     _add_json_flag(trace)
 
+    source = subparsers.add_parser(
+        "source",
+        help="Diagnose structured source URLs without registering or executing tools.",
+    )
+    source_subparsers = source.add_subparsers(dest="surface", required=True)
+    source_probe = source_subparsers.add_parser(
+        "probe",
+        help="Probe a URL with the same bounded structured-source adapters used by ingestion.",
+    )
+    source_probe.add_argument("url", help="Absolute http(s) structured-source URL.")
+    source_probe.add_argument(
+        "--kind",
+        default="auto",
+        choices=("auto", *default_adapter_registry().kinds()),
+        help="Structured source kind. Defaults to bounded automatic detection.",
+    )
+    source_probe.add_argument("--name", default=None, help="Optional tool name override.")
+    source_probe.add_argument(
+        "--namespace",
+        default=None,
+        help="Optional tool namespace override.",
+    )
+    source_probe.add_argument(
+        "--provider",
+        default=None,
+        help="Optional provider identity override.",
+    )
+    source_probe.add_argument(
+        "--base-url",
+        default=None,
+        help="Optional trusted execution base URL for adapters that require one.",
+    )
+    source_probe.add_argument(
+        "--timeout",
+        type=float,
+        default=20.0,
+        help="Bounded source probe timeout in seconds.",
+    )
+    _add_json_flag(source_probe)
+
     dashboard = subparsers.add_parser(
         "dashboard",
         help="Export a self-contained read-only HTML inspection dashboard.",
@@ -313,6 +375,23 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _run(args: argparse.Namespace) -> str:
+    if args.command == "source":
+        if args.surface != "probe":
+            raise ValueError(f"unsupported source surface: {args.surface}")
+        router = SchemaRouter()
+        probe = asyncio.run(
+            router.probe_url(
+                args.url,
+                kind=args.kind,
+                name=args.name,
+                namespace=args.namespace,
+                provider=args.provider,
+                base_url=args.base_url,
+                timeout=args.timeout,
+            )
+        )
+        return _json_dump(probe) if args.json else _render_source_probe(probe)
+
     if args.command == "dashboard":
         with SQLiteRegistry(_existing_db(args.registry)) as registry:
             snapshot = inspect_registry(registry)
@@ -392,7 +471,23 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         output = _run(args)
-    except (KeyError, OSError, ValueError, RuntimeError) as exc:
+    except UnsupportedSchemaSourceError as exc:
+        if args.command == "source":
+            supported = ", ".join(default_adapter_registry().kinds())
+            parser.exit(
+                2,
+                (
+                    "schemarouter: source is not a supported structured source. "
+                    f"{exc}\n"
+                    f"supported source kinds: {supported}\n"
+                    "A normal HTML website is not auto-converted into an executable tool. "
+                    "For human-readable API documentation, use SchemaRouter.inspect_url() "
+                    "followed by explicit proposal approval; for a trusted manual contract, "
+                    "use SchemaRouter.add_http_tool().\n"
+                ),
+            )
+        parser.exit(2, f"schemarouter: {type(exc).__name__}: {exc}\n")
+    except (KeyError, OSError, ValueError, RuntimeError, SchemaSourceError) as exc:
         parser.exit(2, f"schemarouter: {type(exc).__name__}: {exc}\n")
     sys.stdout.write(output + "\n")
     return 0
