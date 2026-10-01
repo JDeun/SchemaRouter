@@ -30,7 +30,13 @@ from ..schema_http import (
     schema_http_validators_from_headers,
 )
 from ..source_identity import structured_source_identity_digest_for
-from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile
+from .base import (
+    AdapterContext,
+    AdapterLoadResult,
+    AdapterProbeError,
+    DiscoveryProfile,
+    adapter_probe_error,
+)
 
 _MAX_METADATA_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 16 * 1024 * 1024
@@ -590,10 +596,10 @@ class ODataSourceAdapter:
                 )
                 if response.status_code == 304:
                     raise SchemaNotModifiedError(validators=validators)
-            except SchemaSourceError:
+            except SchemaNotModifiedError:
                 raise
-            except Exception:  # noqa: BLE001
-                return None
+            except Exception as exc:  # noqa: BLE001
+                raise adapter_probe_error("odata", exc) from exc
 
             try:
                 tool = tool_from_odata_metadata(
@@ -602,10 +608,13 @@ class ODataSourceAdapter:
                     response.content,
                     namespace=context.namespace,
                 )
-            except SchemaSourceError:
+            except AdapterProbeError:
                 raise
-            except Exception:  # noqa: BLE001
-                return None
+            except Exception as exc:  # noqa: BLE001
+                raise AdapterProbeError(
+                    "invalid_schema",
+                    "OData metadata document is malformed or unsupported",
+                ) from exc
 
             tool.execution_metadata.update(
                 {
