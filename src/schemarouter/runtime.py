@@ -40,6 +40,7 @@ from .binding_reconciliation import (
 from .errors import (
     BindingDriftError,
     ContractAmendmentError,
+    ExecutionInvariantError,
     InvocationUnavailableError,
     ProposalApprovalError,
     RegistrationError,
@@ -77,6 +78,21 @@ from .source_identity import (
 from .traces import RunTraceStore
 
 _T = TypeVar("_T")
+
+
+def _require_execution_event_exception(
+    payload: Any,
+    *,
+    event_kind: str,
+    expected_type: type[Exception] = Exception,
+) -> Exception:
+    if not isinstance(payload, expected_type):
+        raise ExecutionInvariantError(
+            "parallel execution event payload violated the internal contract: "
+            f"{event_kind!r} expected {expected_type.__name__}, "
+            f"got {type(payload).__name__}"
+        )
+    return payload
 
 
 def _coerce_config(config: RunConfig | dict[str, Any] | None) -> RunConfig:
@@ -2071,7 +2087,11 @@ class SchemaRouter:
         )
 
         if _accept_candidate_fingerprint is not None:
-            assert _accept_candidate_source_identity is not None
+            if _accept_candidate_source_identity is None:
+                raise SchemaSourceError(
+                    "pending schema acceptance invariant failed: candidate source "
+                    "identity pin is missing"
+                )
             if candidate_source_identity != _accept_candidate_source_identity:
                 changes = list(report.changes)
                 changes.append(
@@ -2708,7 +2728,10 @@ class SchemaRouter:
 
                     if kind == "preflight_error":
                         terminal_count += 1
-                        assert isinstance(payload, Exception)
+                        payload = _require_execution_event_exception(
+                            payload,
+                            event_kind=kind,
+                        )
                         error_data: dict[str, Any] = {
                             "error_type": type(payload).__name__,
                             "stage": "execution",
@@ -2795,7 +2818,11 @@ class SchemaRouter:
 
                     if kind == "unavailable":
                         exc, next_call, candidate_index = payload
-                        assert isinstance(exc, InvocationUnavailableError)
+                        exc = _require_execution_event_exception(
+                            exc,
+                            event_kind=kind,
+                            expected_type=InvocationUnavailableError,
+                        )
                         has_next = next_call is not None
                         error_data: dict[str, Any] = {
                             "error_type": type(exc).__name__,
@@ -2860,7 +2887,10 @@ class SchemaRouter:
 
                     if kind == "error":
                         terminal_count += 1
-                        assert isinstance(payload, Exception)
+                        payload = _require_execution_event_exception(
+                            payload,
+                            event_kind=kind,
+                        )
                         error_data = {"error_type": type(payload).__name__}
                         if run_config.include_payloads:
                             error_data["message"] = str(payload)
