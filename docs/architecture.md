@@ -73,7 +73,7 @@ schemarouter.traces        validated append-only run-event persistence + non-exe
 schemarouter.hooks         trusted snapshot-only before/after execution middleware
 schemarouter.health        explicit read-only health probes + bounded background monitoring
 schemarouter.executor      plan, binding, schema, policy, availability and hook enforcement
-schemarouter.adapters      adapter contracts + OpenAPI/MCP/OPTIMADE/Python implementations
+schemarouter.adapters      adapter contracts + Python/SDK/OpenAPI/MCP/OPTIMADE/GraphQL/OData/OpenRPC implementations
 schemarouter.ingestion     AdapterRegistry dispatch, safe source loading, registry binding
 schemarouter.proposals     evidence-grounded HTML documentation proposals
 schemarouter.integrations  optional LangChain/LlamaIndex/System One/Laya/OpenTelemetry integrations
