@@ -21,6 +21,7 @@ from typing import Any
 
 from pydantic_ai import ToolDefinition
 from pydantic_ai.capabilities import ToolSearch
+
 from schemarouter import (
     EndpointSpec,
     FieldSpec,
