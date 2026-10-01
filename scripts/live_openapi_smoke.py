@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import json
 import os
+from time import perf_counter
 
 from compatibility_report import new_report, write_report
 
@@ -13,7 +14,9 @@ DEFAULT_OPENAPI_URL = "https://api.apis.guru/v2/openapi.yaml"
 
 
 async def run_smoke(url: str) -> dict[str, object]:
+    discovery_started = perf_counter()
     router = await SchemaRouter.from_url(url, kind="openapi")
+    discovery_ms = round((perf_counter() - discovery_started) * 1000, 2)
 
     endpoint_name = "getMetrics"
     tools = router.registry.tools()
@@ -38,7 +41,9 @@ async def run_smoke(url: str) -> dict[str, object]:
     assert call.executable
     selected_plan = plan.model_copy(update={"calls": [call]}, deep=True)
 
+    execution_started = perf_counter()
     results = await router.execute(selected_plan)
+    execution_ms = round((perf_counter() - execution_started) * 1000, 2)
     assert len(results) == 1
     assert isinstance(results[0].data, dict)
     assert isinstance(results[0].data.get("numAPIs"), int)
@@ -57,6 +62,8 @@ async def run_smoke(url: str) -> dict[str, object]:
         "execution_success": True,
         "safe_endpoint": call.endpoint,
         "returned_shape": "object",
+        "discovery_latency_ms": discovery_ms,
+        "execution_latency_ms": execution_ms,
         "auth_required": endpoint.auth_required,
         "known_quirks": [
             "Public provider availability is external infrastructure state."
