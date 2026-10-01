@@ -68,10 +68,8 @@ async def test_add_bound_tool_runs_arbitrary_sdk_through_normal_contract() -> No
         )
     )
 
-    assert result[0].data == {
-        "symbol": "AAPL",
-        "price": 123.45,
-    }
+    assert result[0].data == {"price": 123.45}
+    assert result[0].projected_fields == ["price"]
 
 
 @dataclass
