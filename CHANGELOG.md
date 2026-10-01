@@ -7,6 +7,76 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ## Unreleased
 
+## 0.14.0 - 2026-10-02
+
+### Added
+
+- added a protocol-neutral, read-only capability explorer that exposes registered tools, endpoints,
+  parameters, output fields, units/qualifiers, fingerprints, binding state, authentication
+  requirements, health state, and schema-watch status without exposing credentials or execution
+  controls;
+- added non-mutating structured-source probing with explicit diagnostics for unsupported ordinary
+  websites, malformed URLs, recognized adapters, binding readiness, and secret-safe warnings;
+- added trusted startup rebinding for persisted registries so process-local HTTP/MCP/SDK/framework
+  authority can be reconstructed after restart without serializing credentials, live clients, or
+  execution handles;
+- versioned SQLite registry and trace storage formats, including validated transactional legacy
+  v0 -> v1 metadata migration, inspection/migration CLI commands, safe backups, and fail-closed
+  rejection of unknown future formats;
+- added explicit accept/reject review for breaking schema drift, atomic high-level capability
+  removal, unified runtime shutdown, and extensible adapter-plugin schema refresh lifecycles;
+- expanded compatibility evidence with a live-provider protocol matrix plus installed-wheel
+  validation against PydanticAI ToolSearch, OpenAI Agents SDK dynamic MCP filtering, and mcp-agent
+  large-tool catalogs;
+- added runnable real-provider quickstarts, protocol/framework demos, third-party adapter and
+  decision-backend plugin examples, public trust evidence, contributor templates, and adoption
+  instrumentation.
+
+### Changed
+
+- made OpenAPI authentication requirements a typed, secret-free part of the canonical endpoint/tool
+  fingerprint and schema-drift contract while leaving actual credentials in trusted runtime
+  bindings;
+- made automatic URL discovery passive by default and kept unsupported HTML/ordinary URLs
+  fail-closed instead of guessing a tool contract;
+- pinned schema watches, HTTP validators, refresh application, and trusted amendments to exact
+  source/contract identity so remote drift cannot silently cross an accepted execution boundary;
+- kept health probes coherent across accepted schema transitions and exposed detailed operational
+  health/watch state through inspection/dashboard surfaces;
+- broadened packaging acceptance to exercise external-style adapter plugins and major agent/tool
+  ecosystem composition against the built wheel.
+
+### Fixed
+
+- preserved structured-source probe diagnostics instead of collapsing adapter-specific safe
+  failures into ambiguous ingestion errors;
+- replaced production runtime assertions with explicit fail-closed invariant checks where optimized
+  Python execution could otherwise remove safety checks;
+- hardened Research 0.14 GitHub Actions model-cache publication/recovery so long experiments can
+  recover the same pinned model revision from cache eviction without changing frozen scientific
+  corpora, prompts, scoring, thresholds, or model identities.
+
+### Compatibility and migration
+
+- no intentional breaking change is introduced to the 0.12 stable-core retrieval/execution facade;
+- public OpenAPI endpoints with no authentication requirement preserve historical fingerprints;
+  authentication changes now correctly produce security/breaking drift and require review/rebinding;
+- legacy unversioned SQLite stores are supported as v0 and validated before transactional v1
+  metadata migration; operators can use `schemarouter storage inspect` and
+  `schemarouter storage migrate` with a backup before deployment;
+- persisted registries still never store execution authority: use `bind_existing()` or
+  `rehydrate_bindings()` to restore trusted process-local bindings after restart;
+- active 0.14 retrieval/agent-utility research remains separate from stable package guarantees.
+
+### Release integrity
+
+- protected CI covers Python 3.10-3.14, Windows, minimum dependencies, typing, branch coverage,
+  wheel/sdist clean-install acceptance, optional integrations, dependency auditing, CodeQL and
+  Python preview;
+- release automation publishes only from the exact green `main` SHA, creates the annotated tag,
+  emits provenance attestations and an SPDX SBOM, publishes through PyPI OIDC, and verifies public
+  artifact digests plus exact-version installs after publication.
+
 ## 0.13.0 - 2026-10-01
 
 ### Added
