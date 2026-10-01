@@ -22,9 +22,11 @@ when it is an ancestor of the successful current `main` and contains the same pa
 This makes interrupted releases recoverable without silently moving an existing tag.
 
 The same top-level workflow then builds wheel and sdist artifacts from the resolved release SHA,
-clean-installs and smoke-tests both artifacts, creates the GitHub release, and publishes through the
-configured PyPI Trusted Publisher. Build jobs remain unprivileged; only the dedicated publishing job
-receives OIDC `id-token: write` permission.
+clean-installs and smoke-tests both artifacts, generates the SPDX SBOM plus
+`SHA256SUMS.txt` / `release-manifest.json`, creates the GitHub release, and publishes through the
+configured PyPI Trusted Publisher. The manifest records the exact source SHA and artifact digests so
+those values do not need to be copied into documentation manually. Build jobs remain unprivileged;
+only the dedicated publishing job receives OIDC `id-token: write` permission.
 
 This keeps source checkouts distinguishable from released artifacts, removes manual tag creation,
 and preserves PyPI Trusted Publishing on the stable `.github/workflows/release.yml` identity.
