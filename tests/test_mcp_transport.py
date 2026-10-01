@@ -3,7 +3,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from schemarouter.adapters.mcp import MCPRemoteInvoker, inspect_mcp_url
+from schemarouter import ExecutionPolicy, PlanRequest, SchemaRouter
+from schemarouter.adapters.mcp import (
+    MCPRemoteInvoker,
+    MCPStdioConfig,
+    inspect_mcp_url,
+)
 
 
 class RecordingFactory:
@@ -168,3 +173,112 @@ def test_mcp_invoker_rejects_query_or_fragment_runtime_urls(url: str) -> None:
             url,
             client_factory=RecordingFactory(),
         )
+
+
+class BoundRecordingFactory:
+    def __init__(self) -> None:
+        self.calls: list[float] = []
+        self.client = SimpleNamespace(
+            server_info=SimpleNamespace(name="bound-server"),
+            protocol_version="2026-07-28",
+        )
+
+        async def list_tools(*, cursor=None):
+            return SimpleNamespace(
+                tools=[
+                    {
+                        "name": "whoami",
+                        "description": "Return identity",
+                        "inputSchema": {"type": "object", "properties": {}},
+                        "outputSchema": {
+                            "type": "object",
+                            "properties": {"subject": {"type": "string"}},
+                        },
+                    }
+                ],
+                next_cursor=None,
+            )
+
+        async def call_tool(endpoint, arguments):
+            assert endpoint == "whoami"
+            assert arguments == {}
+            return SimpleNamespace(
+                is_error=False,
+                structured_content={"subject": "bound"},
+            )
+
+        self.client.list_tools = list_tools
+        self.client.call_tool = call_tool
+
+    @asynccontextmanager
+    async def __call__(self, *, timeout=20.0):
+        self.calls.append(timeout)
+        yield self.client
+
+
+@pytest.mark.asyncio
+async def test_transport_neutral_mcp_factory_needs_no_fake_url() -> None:
+    factory = BoundRecordingFactory()
+    router = SchemaRouter(
+        policy=ExecutionPolicy(allow_unclassified_remote=True)
+    )
+
+    tool = await router.add_mcp_client_factory(
+        factory,
+        name="bound-mcp",
+        provider="fixture",
+        transport="inprocess",
+        transport_fingerprint="fixture-inprocess-v1",
+    )
+
+    assert tool.remote is True
+    assert tool.access_mode == "mcp_inprocess"
+    assert tool.metadata["transport"] == "inprocess"
+    assert tool.metadata["transport_fingerprint"] == "fixture-inprocess-v1"
+
+    results = await router.ainvoke(
+        PlanRequest(
+            query="whoami subject",
+            preferred_tools=[tool.key],
+        )
+    )
+    assert results[0].data == {"subject": "bound"}
+    assert len(factory.calls) == 2
+
+
+def test_mcp_stdio_config_enforces_command_allowlist_and_hides_env_values_from_identity() -> None:
+    with pytest.raises(ValueError, match="not in the trusted allowlist"):
+        MCPStdioConfig(
+            command="python",
+            allowed_commands=("uv",),
+        )
+
+    first = MCPStdioConfig(
+        command="python",
+        args=("server.py",),
+        env={"TOKEN": "first-secret"},
+        allowed_commands=("python",),
+    )
+    second = MCPStdioConfig(
+        command="python",
+        args=("server.py",),
+        env={"TOKEN": "rotated-secret"},
+        allowed_commands=("python",),
+    )
+
+    assert first.transport_fingerprint == second.transport_fingerprint
+    assert "first-secret" not in first.transport_fingerprint
+    assert "rotated-secret" not in second.transport_fingerprint
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "bad\ncommand",
+        "bad\rcommand",
+        "bad\x00command",
+    ],
+)
+def test_mcp_stdio_config_rejects_control_characters(value: str) -> None:
+    with pytest.raises(ValueError):
+        MCPStdioConfig(command=value)
