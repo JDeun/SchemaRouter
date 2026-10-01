@@ -13,6 +13,7 @@ from .._url_safety import safe_provenance_url
 from ..errors import (
     InvocationUnavailableError,
     NonRetryableInvocationError,
+    SchemaNotModifiedError,
     SchemaSourceError,
 )
 from ..models import (
@@ -22,6 +23,11 @@ from ..models import (
     ServerProjectionSpec,
     ToolCall,
     ToolSpec,
+)
+from ..schema_http import (
+    attach_schema_http_validators,
+    conditional_schema_headers,
+    schema_http_validators_from_headers,
 )
 from .base import AdapterContext, AdapterLoadResult
 
@@ -70,6 +76,13 @@ async def _bounded_get(
         params=params,
         follow_redirects=False,
     ) as response:
+        if response.status_code == 304:
+            return httpx.Response(
+                status_code=response.status_code,
+                headers=response.headers,
+                content=b"",
+                request=response.request,
+            )
         if response.is_redirect:
             raise SchemaSourceError("OData redirects are not followed automatically")
         response.raise_for_status()
@@ -559,9 +572,18 @@ class ODataSourceAdapter:
                 response = await _bounded_get(
                     client,
                     metadata_url,
-                    headers=context.schema_headers,
+                    headers=conditional_schema_headers(
+                        context.schema_headers,
+                        context.schema_validators,
+                    ),
                     max_bytes=_MAX_METADATA_BYTES,
                 )
+                validators = schema_http_validators_from_headers(
+                    response.headers,
+                    fallback=context.schema_validators,
+                )
+                if response.status_code == 304:
+                    raise SchemaNotModifiedError(validators=validators)
             except SchemaSourceError:
                 raise
             except Exception:  # noqa: BLE001
@@ -591,6 +613,7 @@ class ODataSourceAdapter:
                     "service_url": safe_provenance_url(service_url),
                 }
             )
+            attach_schema_http_validators(tool.metadata, validators)
             invoker = ODataRemoteInvoker(
                 tool,
                 service_url,

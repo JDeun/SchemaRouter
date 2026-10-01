@@ -17,6 +17,7 @@ class AdapterContext:
     access_mode: str | None = None
     base_url: str | None = None
     schema_headers: dict[str, str] | None = None
+    schema_validators: dict[str, str] | None = None
     trusted_headers: dict[str, str] | None = None
     mcp_client_factory: Any | None = None
     openapi_external_refs: bool = False

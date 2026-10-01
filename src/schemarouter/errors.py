@@ -83,5 +83,17 @@ class SchemaSourceError(SchemaRouterError):
     """Raised when a remote schema source cannot be loaded safely."""
 
 
+class SchemaNotModifiedError(SchemaSourceError):
+    """Raised when a conditional schema fetch returns HTTP 304 Not Modified."""
+
+    def __init__(
+        self,
+        *,
+        validators: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__("remote schema was not modified")
+        self.validators = dict(validators or {})
+
+
 class UnsupportedSchemaSourceError(SchemaSourceError):
     """Raised when no registered structured-source adapter accepts a URL."""
