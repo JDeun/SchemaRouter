@@ -4,16 +4,16 @@ SchemaRouter requires Python 3.10 or newer.
 
 ## Published release
 
-The current public release is `0.13.0`:
+The current public release is `0.14.0`:
 
 ```bash
 pip install schemarouter
 ```
 
-The release includes the structured-source core, bounded typed capability retrieval, bounded
-decision backends, OpenAPI/OPTIMADE/MCP, LangChain/LlamaIndex bridges, authenticated MCP transports, approval/budgets, OpenTelemetry, the explicit adapter-plugin contract,
-and the broader 0.13 ingestion/schema-lifecycle surface. The 0.12 stable-core boundary remains intact;
-see the [0.13.0 release notes](../releases/0.13.0.md).
+The release keeps the 0.12 stable-core retrieval/execution boundary and adds the 0.14 operational
+surface: source probing, startup rebinding, storage migrations, explicit schema-drift review,
+unified shutdown, the Capability Explorer, bilingual documentation, and broader installed-package
+ecosystem validation. See the [0.14.0 release notes](../releases/0.14.0.md).
 
 ## Development checkout
 
@@ -78,7 +78,7 @@ Install only the integrations you use.
 python -c "import schemarouter; print(schemarouter.__version__)"
 ```
 
-The published release tag and package metadata identify `0.13.0` as the current non-prerelease
+The published release tag and package metadata identify `0.14.0` as the current non-prerelease
 release. Development snapshots use PEP 440 `.dev0` versions so source checkouts remain
 distinguishable from released artifacts.
 
