@@ -212,6 +212,7 @@ nav:
       - Developer launch playbook: project/launch-playbook.md
       - Launch and outreach log: project/launch-log.md
       - External adoption and validation: project/external-adoption.md
+      - PydanticAI ToolSearch validation: project/external-validation-pydanticai.md
       - External case-study template: project/case-study-template.md
       - Versioning: versioning.md
       - Release notes:
