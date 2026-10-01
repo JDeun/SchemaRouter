@@ -3486,6 +3486,13 @@ class SchemaPlanner:
         # prune a typed response to identifiers only. The executor may later apply a cost policy.
         answer_fields = [name for name in selected if name not in set(identifiers)]
         if not answer_fields:
+            explicit_wildcard_match = any(
+                name in field_map
+                and "*" in field_map[name].result_projection_path
+                for name in matched_fields
+            )
+            if explicit_wildcard_match:
+                return selected
             return [field.name for field in endpoint.output_fields]
         return selected
 
