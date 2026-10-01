@@ -8,13 +8,13 @@ answers a different question: what was actually tried?
 
 Current machine-readable ledger:
 
-- independent experiment records: 88;
+- independent experiment records: 92;
 - legacy routing corpus lineage: 13 versioned corpora;
 - routine bugfix-only commits are not counted as independent experiments unless they changed an
   architecture invariant, evaluation protocol, or empirical claim;
 - failed, superseded, invalidated, and terminal experiments are retained rather than hidden.
 
-The 88-record count includes the terminal 0.13 V6A–V6H/open-set controls and the active 0.14 agent-utility lineage. Terminal 0.13 confirmation surfaces remain unopened unless explicitly recorded otherwise.
+The 92-record count includes the terminal 0.13 V6A–V6H/open-set controls and the active 0.14 agent-utility lineage. Terminal 0.13 confirmation surfaces remain unopened unless explicitly recorded otherwise.
 
 The canonical machine-readable source is
 [`benchmarks/research-experiment-ledger.json`](https://github.com/JDeun/SchemaRouter/blob/main/benchmarks/research-experiment-ledger.json).
