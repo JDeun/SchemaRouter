@@ -72,7 +72,7 @@ def test_materials_project_exercises_three_distinct_access_modes() -> None:
         if item["id"] == "materials_project"
     )
 
-    assert {"openapi", "optimade", "python_callable"} <= set(
+    assert {"openapi", "optimade", "python_callable", "bound_tool"} <= set(
         service["access_modes"]
     )
 
@@ -143,6 +143,7 @@ def test_universal_modes_cover_first_class_and_generic_ingestion_paths() -> None
         "mcp",
         "optimade",
         "python_callable",
+        "bound_tool",
         "langchain_tool",
         "llamaindex_tool",
         "http_json",
@@ -152,3 +153,13 @@ def test_universal_modes_cover_first_class_and_generic_ingestion_paths() -> None
         "source_adapter",
         "documentation_proposal",
     } <= set(matrix["universal_modes"])
+
+
+def test_opaque_sdk_services_use_explicit_bound_tool_path() -> None:
+    matrix = _matrix()
+    services = {item["id"]: item for item in matrix["services"]}
+
+    assert services["yahoo_finance"]["primary_mode"] == "bound_tool"
+    assert "bound_tool" in services["materials_project"]["access_modes"]
+    assert "bound_tool" in services["arxiv"]["access_modes"]
+    assert "bound_tool" in services["crossref"]["access_modes"]
