@@ -1,6 +1,9 @@
 {
   "issue": 510,
-  "launch": "runtime-qualification-v1",
+  "launch": "runtime-qualification-v1-recovery-1",
   "policy": "run once when this trigger reaches main",
-  "candidates": "frozen ordered roster; later candidate only after measured failure"
+  "candidates": "frozen ordered roster; later candidate only after measured failure",
+  "recovery_of_run": 36710813766,
+  "recovery_class": "infrastructure_only",
+  "recovery_reason": "qualification corpus artifact restore path failed before candidate inference"
 }

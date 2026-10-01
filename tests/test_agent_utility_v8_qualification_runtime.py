@@ -157,6 +157,33 @@ def test_workflow_keeps_candidates_strictly_sequential_and_revision_pinned():
     assert 'ref: "${{ env.SOURCE_SHA }}"' in workflow
 
 
+
+def test_workflow_downloads_qualification_corpus_at_repo_root():
+    from pathlib import Path
+
+    workflow = (
+        Path(__file__).resolve().parents[1]
+        / ".github"
+        / "workflows"
+        / "research-0.14-runtime-qualification.yml"
+    ).read_text(encoding="utf-8")
+
+    # The qualification artifact contains repo-root-relative paths for both
+    # artifacts/qualification/... and benchmarks/.... Downloading it under
+    # artifacts/qualification would double-nest the corpus path and fail before inference.
+    download_blocks = workflow.split("uses: actions/download-artifact@")[1:]
+    qualification_blocks = [
+        block
+        for block in download_blocks
+        if 'name: "qualification-corpus-${{ github.run_id }}"' in block
+    ]
+    assert qualification_blocks
+    assert all("\n          path: .\n" in block for block in qualification_blocks)
+    assert all(
+        "\n          path: artifacts/qualification\n" not in block
+        for block in qualification_blocks
+    )
+
 def test_workflow_launch_is_armed_only_by_the_explicit_trigger_file():
     from pathlib import Path
 
