@@ -27,7 +27,7 @@ def _openapi_document(
                             {
                                 "name": "q",
                                 "in": "query",
-                                "required": true,
+                                "required": True,
                                 "schema": {"type": "string"},
                             }
                         ]
@@ -98,7 +98,7 @@ async def test_trusted_amendment_restamps_existing_health_probe() -> None:
     router = SchemaRouter()
     tool = _local_tool()
     router.add_tool(tool)
-    router.register_health_probe(tool.key, "read", lambda: true)
+    router.register_health_probe(tool.key, "read", lambda: True)
 
     amended = tool.model_copy(deep=True)
     amended.endpoints[0].description = "trusted annotation"
@@ -147,7 +147,7 @@ def test_transition_marks_probe_stale_when_endpoint_is_removed() -> None:
     router = SchemaRouter()
     original = _local_tool()
     router.add_tool(original)
-    router.register_health_probe(original.key, "read", lambda: true)
+    router.register_health_probe(original.key, "read", lambda: True)
 
     replacement = _local_tool(endpoint="other")
     router.registry.register(replacement, replace=True)
@@ -167,7 +167,7 @@ def test_transition_marks_probe_stale_when_endpoint_becomes_mutable() -> None:
     router = SchemaRouter()
     original = _local_tool()
     router.add_tool(original)
-    router.register_health_probe(original.key, "read", lambda: true)
+    router.register_health_probe(original.key, "read", lambda: True)
 
     replacement = _local_tool(read_only=False)
     router.registry.register(replacement, replace=True)
@@ -187,7 +187,7 @@ def test_transition_fails_closed_on_concurrent_contract_change() -> None:
     router = SchemaRouter()
     original = _local_tool()
     router.add_tool(original)
-    router.register_health_probe(original.key, "read", lambda: true)
+    router.register_health_probe(original.key, "read", lambda: True)
 
     accepted = _local_tool(description="accepted")
     concurrent = _local_tool(description="concurrent")
