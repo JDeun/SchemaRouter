@@ -26,6 +26,7 @@ def test_domain_ingestion_matrix_covers_required_real_world_services() -> None:
         "github_graphql",
         "microsoft_graph_odata",
         "generic_openrpc_service",
+        "mcp_reference_server",
     } <= set(services)
 
 
@@ -42,6 +43,7 @@ def test_domain_ingestion_matrix_spans_multiple_domains() -> None:
         "developer_platform",
         "enterprise_productivity",
         "rpc_platform",
+        "tool_protocol",
     } <= domains
 
 
@@ -162,3 +164,20 @@ def test_opaque_sdk_services_use_explicit_bound_tool_path() -> None:
     assert "bound_tool" in services["materials_project"]["access_modes"]
     assert "bound_tool" in services["arxiv"]["access_modes"]
     assert "bound_tool" in services["crossref"]["access_modes"]
+
+
+def test_mcp_protocol_is_transport_neutral_in_coverage_matrix() -> None:
+    matrix = _matrix()
+    service = next(
+        item
+        for item in matrix["services"]
+        if item["id"] == "mcp_reference_server"
+    )
+
+    assert matrix["mcp_transports"] == [
+        "streamable_http",
+        "stdio",
+        "custom_factory",
+    ]
+    assert service["primary_mode"] == "mcp"
+    assert service["mcp_transports"] == matrix["mcp_transports"]
