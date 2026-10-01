@@ -296,8 +296,9 @@ class FieldSpec(StrictModel):
                 )
 
         source_wildcards = self.path.count("*")
-        result_wildcards = self.result_path.count("*")
-        if result_wildcards and result_wildcards != source_wildcards:
+        effective_result_path = self.result_path or self.path
+        result_wildcards = effective_result_path.count("*")
+        if result_wildcards != source_wildcards:
             raise ValueError(
                 "field result_path wildcard count must match source path wildcard count"
             )
@@ -414,6 +415,12 @@ class EndpointSpec(StrictModel):
                 if self.output_schema
                 else {}
             )
+
+            if "*" in field.projection_path and self.output_schema and not raw_field_schema:
+                raise ValueError(
+                    "array-wildcard field path must resolve through a declared array item schema "
+                    f"in endpoint {self.name!r}: {field.name!r}"
+                )
 
             if field.json_schema and raw_field_schema:
                 if not _schema_type_shape_compatible(
