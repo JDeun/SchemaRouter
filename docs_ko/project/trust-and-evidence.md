@@ -27,6 +27,10 @@ SchemaRouter는 **stable product guarantee**, **release/process evidence**, **re
 Release workflow는 green main SHA만 사용하고, wheel/sdist clean install, SPDX SBOM, GitHub artifact
 attestation, PyPI Trusted Publishing, 공개 PyPI artifact digest 재검증을 수행합니다.
 
+다음 안정판부터는 checksum도 문서에 손으로 옮겨 적지 않습니다. Release workflow가
+`SHA256SUMS.txt`와 `release-manifest.json`을 만들어 GitHub Release에 함께 첨부합니다.
+manifest에는 버전, tag, 정확한 source commit, artifact 이름과 크기, SHA-256이 기록됩니다.
+
 ```bash
 gh attestation verify schemarouter-0.13.0-py3-none-any.whl --repo JDeun/SchemaRouter
 ```
