@@ -152,7 +152,9 @@ class MCPStdioClientFactory:
             cwd=Path(self.config.cwd) if self.config.cwd is not None else None,
         )
         try:
-            async with asyncio.timeout(timeout):
+            from anyio import fail_after
+
+            with fail_after(timeout):
                 async with Client(
                     params,
                     read_timeout_seconds=timeout,
@@ -619,10 +621,15 @@ class MCPBoundInvoker:
         self.timeout = timeout
 
     async def __call__(self, endpoint: str, arguments: dict[str, Any]) -> Any:
+        async def invoke_bound() -> Any:
+            async with self.factory(timeout=self.timeout) as client:
+                return await client.call_tool(endpoint, arguments)
+
         try:
-            async with asyncio.timeout(self.timeout):
-                async with self.factory(timeout=self.timeout) as client:
-                    result = await client.call_tool(endpoint, arguments)
+            result = await asyncio.wait_for(
+                invoke_bound(),
+                timeout=self.timeout,
+            )
         except (TimeoutError, ConnectionError, OSError) as exc:
             raise InvocationUnavailableError(
                 "MCP access path is temporarily unavailable"
