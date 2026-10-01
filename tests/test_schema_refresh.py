@@ -193,48 +193,37 @@ async def test_schema_refresh_can_report_compatible_without_applying() -> None:
         assert router.registry.get(tool.key).fingerprint == old_fingerprint
 
 
-def test_schema_refresh_sync_wrapper_is_available() -> None:
-    state = {"document": _document()}
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json=state["document"], request=request)
-
-    with httpx.Client(transport=httpx.MockTransport(handler)):
-        pass
-
-    async def run() -> None:
-        async with httpx.AsyncClient(
-            transport=httpx.MockTransport(handler)
-        ) as client:
-            router = SchemaRouter(http_client=client)
-            tool = await router.add_url(
-                "https://example.test/openapi.json",
-                kind="openapi",
-                name="materials",
+def test_schema_refresh_sync_wrapper_is_available(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    router = SchemaRouter()
+    tool = ToolSpec(
+        name="remote",
+        remote=True,
+        metadata={
+            "adapter": "openapi",
+            "source_url": "https://example.test/openapi.json",
+        },
+        endpoints=[
+            EndpointSpec(
+                name="read",
+                read_only=True,
+                output_schema={"type": "object"},
             )
-            # Exercise the synchronous wrapper outside the async loop below.
-            router.registry.get(tool.key)
+        ],
+    )
+    router.add_tool(tool)
 
-    import asyncio
+    async def inspect(*args, **kwargs):
+        del args, kwargs
+        return AdapterLoadResult(tool=tool.model_copy(deep=True))
 
-    asyncio.run(run())
+    monkeypatch.setattr(router.loader, "inspect", inspect)
 
-    async def build_router() -> tuple[SchemaRouter, str]:
-        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
-        router = SchemaRouter(http_client=client)
-        tool = await router.add_url(
-            "https://example.test/openapi.json",
-            kind="openapi",
-            name="materials",
-        )
-        return router, tool.key
+    result = router.refresh_schema(tool.key)
 
-    router, key = asyncio.run(build_router())
-    try:
-        result = router.refresh_schema(key)
-        assert result.action == "unchanged"
-    finally:
-        asyncio.run(router.loader.http_client.aclose())
+    assert result.action == "unchanged"
+    assert result.compatibility == "identical"
 
 
 @pytest.mark.asyncio
