@@ -58,6 +58,10 @@ class ExecutionError(SchemaRouterError):
     """Raised when tool invocation fails."""
 
 
+class ExecutionInvariantError(ExecutionError):
+    """Raised when an internal execution event violates a runtime invariant."""
+
+
 class InvocationUnavailableError(ExecutionError, RuntimeError):
     """Raised when an otherwise valid access path is temporarily unavailable.
 
