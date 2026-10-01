@@ -5,7 +5,7 @@
 
 <div class="sr-hero" markdown>
 
-<span class="sr-kicker">SchemaRouter 0.13.0</span>
+<span class="sr-kicker">SchemaRouter 0.14.0</span>
 
 # Put a typed execution boundary between agents and tools
 
@@ -200,7 +200,7 @@ registered candidates, while SchemaRouter still owns schema validation, policy a
 authority. Ongoing 0.14 agent-utility research is reported separately and is not required for the
 stable package to function.
 
-[Read the 0.13.0 release notes →](releases/0.13.0.md) ·
+[Read the 0.14.0 release notes →](releases/0.14.0.md) ·
 [Read the stable-core contract →](stable-core.md) ·
 [Read the routing research status →](research/routing-status.md)
 
