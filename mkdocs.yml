@@ -206,6 +206,7 @@ nav:
       - Prior-art roadmap: research/prior-art-roadmap.md
   - Project:
       - Stable core contract: stable-core.md
+      - Public roadmap: project/roadmap.md
       - Trust, stability, and public evidence: project/trust-and-evidence.md
       - Adoption scorecard: project/adoption-scorecard.md
       - Versioning: versioning.md
