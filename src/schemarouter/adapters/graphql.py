@@ -9,11 +9,13 @@ import httpx
 
 from .._url_safety import safe_provenance_url
 from ..errors import (
+    AdapterProbeError,
     InvocationUnavailableError,
     NonRetryableInvocationError,
     SchemaSourceError,
 )
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
+from ..probe_diagnostics import http_probe_error
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 
 _MAX_INTROSPECTION_BYTES = 5 * 1024 * 1024
@@ -769,23 +771,59 @@ class GraphQLSourceAdapter:
                     payload={"query": _INTROSPECTION_QUERY},
                     max_bytes=_MAX_INTROSPECTION_BYTES,
                 )
-            except SchemaSourceError:
-                raise
-            except Exception:  # noqa: BLE001
-                return None
+            except (httpx.HTTPStatusError, httpx.TimeoutException, httpx.TransportError) as exc:
+                raise http_probe_error(
+                    self.kind,
+                    exc,
+                    operation="GraphQL introspection",
+                ) from exc
+            except SchemaSourceError as exc:
+                category = (
+                    "invalid_schema"
+                    if (
+                        "valid JSON" in str(exc)
+                        or "non-object response" in str(exc)
+                    )
+                    else "protocol_error"
+                )
+                raise AdapterProbeError(
+                    self.kind,
+                    category,
+                    "GraphQL introspection response was invalid",
+                ) from exc
+            except Exception as exc:  # noqa: BLE001
+                raise AdapterProbeError(
+                    self.kind,
+                    "protocol_error",
+                    "GraphQL introspection failed",
+                ) from exc
 
             data = response.get("data")
             if not isinstance(data, dict) or not isinstance(data.get("__schema"), dict):
+                errors = response.get("errors")
+                if isinstance(errors, list) and errors:
+                    raise AdapterProbeError(
+                        self.kind,
+                        "unsupported_feature",
+                        "GraphQL endpoint did not permit schema introspection",
+                    )
                 return None
 
             inferred_name = context.name or _slug(
                 urlparse(context.url).hostname or "graphql"
             )
-            tool = tool_from_graphql_introspection(
-                inferred_name,
-                response,
-                namespace=context.namespace,
-            )
+            try:
+                tool = tool_from_graphql_introspection(
+                    inferred_name,
+                    response,
+                    namespace=context.namespace,
+                )
+            except SchemaSourceError as exc:
+                raise AdapterProbeError(
+                    self.kind,
+                    "invalid_schema",
+                    "GraphQL introspection schema was malformed",
+                ) from exc
             tool.execution_metadata.update(
                 {
                     "execution_bound": True,
