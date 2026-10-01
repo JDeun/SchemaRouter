@@ -137,6 +137,7 @@ from .schema_diff import (
     compare_endpoint_specs,
     compare_tool_specs,
 )
+from .schema_watch import SchemaRefreshWatcher, SchemaWatchSnapshot, SchemaWatchStatus
 from .traces import (
     RunTrace,
     RunTraceStore,
@@ -255,11 +256,14 @@ __all__ = [
     "SchemaDiffReport",
     "SchemaPlanner",
     "SchemaProposal",
+    "SchemaRefreshWatcher",
     "SchemaRouter",
     "SchemaRouterError",
     "SchemaSourceError",
     "SQLiteRegistry",
     "SchemaValidationError",
+    "SchemaWatchSnapshot",
+    "SchemaWatchStatus",
     "ScoreComponent",
     "SemanticFieldRequirement",
     "ServerProjectionSpec",
