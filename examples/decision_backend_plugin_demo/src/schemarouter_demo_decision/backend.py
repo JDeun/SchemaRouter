@@ -13,6 +13,7 @@ class DemoBoundedDecisionBackend:
     def decide(self, request: DecisionRequest) -> DecisionResult:
         query = " ".join(request.query.casefold().split())
 
+        padded_query = f" {query} "
         matches = []
         for option in request.options:
             labels = {
@@ -20,7 +21,10 @@ class DemoBoundedDecisionBackend:
                 " ".join(option.label.casefold().split()),
             }
             labels.discard("")
-            if any(label in query for label in labels):
+            if any(
+                query == label or f" {label} " in padded_query
+                for label in labels
+            ):
                 matches.append(option)
 
         if not matches:
