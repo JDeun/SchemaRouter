@@ -184,3 +184,17 @@ def test_plugin_output_remains_locally_bounded(monkeypatch) -> None:
     backend = load_decision_backend_plugin("demo")
     with pytest.raises(PlanningError, match="unknown option"):
         choose_sync(backend, _request())
+
+def test_example_decision_backend_package_declares_real_entry_point() -> None:
+    with open(
+        "examples/decision_backend_plugin_demo/pyproject.toml",
+        encoding="utf-8",
+    ) as handle:
+        pyproject = handle.read()
+
+    assert '[project.entry-points."schemarouter.decision_backends"]' in pyproject
+    assert (
+        'demo_bounded = "schemarouter_demo_decision:DemoBoundedDecisionBackend"'
+        in pyproject
+    )
+

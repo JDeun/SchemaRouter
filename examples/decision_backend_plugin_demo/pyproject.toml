@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "schemarouter-demo-decision-backend"
+version = "0.1.0"
+description = "Deterministic third-party decision backend example for SchemaRouter"
+requires-python = ">=3.10"
+dependencies = ["schemarouter"]
+
+[project.entry-points."schemarouter.decision_backends"]
+demo_bounded = "schemarouter_demo_decision:DemoBoundedDecisionBackend"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/schemarouter_demo_decision"]
