@@ -11,7 +11,7 @@ For consumers, install the published optional extra:
 pip install "schemarouter[llamaindex]"
 ```
 
-The bridge is included in the published `0.3.0` release.
+The bridge ships in the current SchemaRouter distribution behind the optional `llamaindex` extra.
 
 For repository development:
 
