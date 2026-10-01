@@ -66,3 +66,45 @@ to `add_callable(...)` take precedence over decorator metadata.
 
 Use `read_only=True` when it is genuinely safe to retry the operation. Do not label a mutation
 read-only merely to enable retry behavior.
+
+## Explicit ToolSpec + trusted invoker
+
+Some SDKs do not expose stable Python signatures or return annotations. Do not reflect an entire
+package or guess a schema from runtime values. Declare the capability explicitly and bind trusted
+local code:
+
+```python
+tool = ToolSpec(
+    name="market_lookup",
+    provider="yahoo-finance",
+    access_mode="sdk",
+    endpoints=[...],
+)
+
+router.add_bound_tool(
+    tool,
+    sdk_invoker,
+)
+```
+
+The supplied `ToolSpec` remains the complete model-visible contract. The invoker may capture a
+client object, API key, database connection, CLI wrapper, or other trusted transport state; none of
+that state is copied into the schema.
+
+Both endpoint-style invokers:
+
+```python
+invoker(endpoint_name, arguments)
+```
+
+and call-aware invokers:
+
+```python
+invoker.invoke_call(tool_call)
+```
+
+are supported. Bindings are pinned to the exact tool fingerprint, and replacement uses the normal
+registry compare-and-swap boundary.
+
+Prefer `add_callable()` when a normal typed Python function is available. Use
+`add_bound_tool()` when the external SDK/protocol surface cannot be safely introspected.
