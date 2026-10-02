@@ -45,6 +45,8 @@ utility를 증명한다는 뜻이 아니라 제품의 적용 경계를 보여 �
 단순히 도구가 많을 때보다 **서로 다른 스키마와 의미를 가진 capability가 섞여 있거나 이름과
 설명만으로 구별하기 어려울 때** 더 유용합니다.
 
+[고정된 break-even matrix, latency trade-off, provenance 보기 →](docs/research/realistic-break-even-result.md)
+
 `pip install schemarouter`
 
 대화 루프, 메모리, 그래프, 최종 답변 생성은 SchemaRouter의 역할이 아닙니다.

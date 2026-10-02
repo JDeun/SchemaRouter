@@ -193,6 +193,7 @@ nav:
   - Research:
       - Routing research status: research/routing-status.md
       - Complete experiment index: research/experiment-index.md
+      - Routing break-even result: research/realistic-break-even-result.md
       - Design and experiment history: research/design-and-experiment-history.md
       - Agent utility:
           - B1 local-agent result: research/agent-utility-b1-result.md
