@@ -15,6 +15,15 @@ from pathlib import Path
 from typing import Any
 
 from external_validation_gearlynx import CASES, build_router, load_catalog
+from schemarouter import (
+    EndpointSpec,
+    EvidenceRequirements,
+    FieldSpec,
+    InMemoryRegistry,
+    PlanRequest,
+    SchemaPlanner,
+    ToolSpec,
+)
 
 
 def _percentile(values: list[float], fraction: float) -> float:
@@ -117,6 +126,69 @@ def _measure_fingerprint_overhead(iterations: int) -> dict[str, float]:
     }
 
 
+def _measure_field_evidence_validation(
+    size: int,
+    iterations: int,
+) -> dict[str, float]:
+    registry = InMemoryRegistry()
+    registry.update_many(
+        [
+            ToolSpec(
+                name=f"field_tool_{index}",
+                endpoints=[
+                    EndpointSpec(
+                        name="lookup",
+                        output_fields=[
+                            FieldSpec(
+                                name=f"value_{index}",
+                                semantic_id=f"field.value_{index}",
+                                json_schema={"type": "number"},
+                                unit="arb",
+                            )
+                        ],
+                        read_only=True,
+                    )
+                ],
+            )
+            for index in range(size)
+        ]
+    )
+    request = PlanRequest(
+        query=f"value {size - 1}",
+        concepts=[f"value_{size - 1}"],
+        field_evidence={
+            f"field.value_{size - 1}": EvidenceRequirements(units=True),
+        },
+    )
+
+    indexed = SchemaPlanner(registry, candidate_index=True)
+    exhaustive = SchemaPlanner(registry, candidate_index=False)
+    indexed._prepare_request(request)
+    exhaustive._prepare_request(request)
+
+    indexed_samples: list[float] = []
+    exhaustive_samples: list[float] = []
+    for _ in range(iterations):
+        started = time.perf_counter_ns()
+        indexed._prepare_request(request)
+        indexed_samples.append((time.perf_counter_ns() - started) / 1_000_000)
+
+        started = time.perf_counter_ns()
+        exhaustive._prepare_request(request)
+        exhaustive_samples.append((time.perf_counter_ns() - started) / 1_000_000)
+
+    indexed_median = statistics.median(indexed_samples)
+    exhaustive_median = statistics.median(exhaustive_samples)
+    return {
+        "catalog_size": float(size),
+        "indexed_median_ms": indexed_median,
+        "indexed_p95_ms": _percentile(indexed_samples, 0.95),
+        "exhaustive_median_ms": exhaustive_median,
+        "exhaustive_p95_ms": _percentile(exhaustive_samples, 0.95),
+        "median_speedup": exhaustive_median / indexed_median,
+    }
+
+
 def evaluate(iterations: int = 50) -> dict[str, Any]:
     if iterations < 1:
         raise ValueError("iterations must be >= 1")
@@ -204,6 +276,10 @@ def evaluate(iterations: int = 50) -> dict[str, Any]:
         "semantic_mismatches": mismatches,
         "lightweight_semantic_mismatches": lightweight_mismatches,
         "fingerprint_overhead": _measure_fingerprint_overhead(iterations),
+        "field_evidence_validation": [
+            _measure_field_evidence_validation(size, iterations)
+            for size in (100, 500)
+        ],
         "optimized_typed": optimized_typed,
         "optimized_route_refs": optimized_routes,
         "legacy_typed_snapshot_copy": legacy_typed,
