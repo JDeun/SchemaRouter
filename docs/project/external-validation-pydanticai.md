@@ -118,3 +118,28 @@ This is **E0 maintainer-owned evidence** under the
 that SchemaRouter replaces or outperforms native PydanticAI ToolSearch.
 
 See also the [external case-study template](case-study-template.md).
+
+
+## Frozen matrix result
+
+Canonical workflow run: `37002468981` at source
+`98b7b804002c99751fc7233938fbcf21fca14f7d`.
+
+Artifact: `external-validation-pydanticai-matrix`  
+Digest: `sha256:0f449bba15d993a516887c7e12d705c0f5f5f0d9fe69fb662ee20a0d84d6a820`
+
+| Tools | Required-tool recall | Unsupported rejection | Simple baseline unsupported rejection | Mean revealed schema bytes | Full serialized schema bytes | Mean routing latency |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 12 | 100% | 100% | 0% | 262.2 | 3,130 | 1.565 ms |
+| 50 | 100% | 100% | 0% | 262.2 | 12,972 | 3.954 ms |
+| 100 | 100% | 100% | 0% | 262.2 | 25,922 | 6.762 ms |
+| 250 | 100% | 100% | 0% | 262.2 | 64,922 | 16.400 ms |
+
+The simple name/description baseline retained the required tool on all four supported
+cases at every catalog size, but it disclosed tools for the single frozen unsupported
+case at every size. SchemaRouter retained the required tool and rejected that unsupported
+case at every size. Routing latency increased with catalog size; this result is retained
+rather than hidden behind a composite score.
+
+These are deterministic retrieval-layer results over five frozen cases. They do not
+measure final model answers or independently validate SchemaRouter adoption.
