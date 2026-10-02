@@ -286,3 +286,32 @@ def test_conveyor_can_supersede_stale_queued_corrective_wrapper() -> None:
     )
     assert "recover_dispatch_stale_queued_corrective_wrapper" in controller
     assert "stale_queued_wrapper(corrective, wrapper_sha=_wrapper_sha)" in controller
+
+
+def test_issue_15_is_registered_as_nonblocking_external_dag_node() -> None:
+    root = Path(__file__).resolve().parents[1]
+    manifest = json.loads(
+        (
+            root
+            / "benchmarks"
+            / "agent-utility-0.14-conveyor-preregistration.json"
+        ).read_text(encoding="utf-8")
+    )
+
+    assert "#15_LIVE_DECISION_EVIDENCE" in manifest["independent_stages"]
+    node = manifest["external_evidence_nodes"]["15"]
+    assert node["tracking_issue"] == 15
+    assert node["blocking"] is False
+    assert node["automatic_dispatch"] is False
+    assert node["harness"] == "scripts/benchmark_decision_routing.py"
+
+    policy = manifest["launch_policy"]
+    assert policy["issue_15_live_decision_evidence_is_independent"] is True
+    assert policy["issue_15_must_not_block_frozen_agent_utility_chain"] is True
+    assert policy["issue_15_automatic_dispatch"] is False
+
+    amendment = next(
+        row for row in manifest["amendments"] if row.get("issue") == 15
+    )
+    assert "terminal evidence digest definition" in amendment["explicitly_unchanged"]
+    assert amendment["automatic_dispatch"] is False
