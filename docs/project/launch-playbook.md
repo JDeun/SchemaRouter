@@ -15,8 +15,10 @@ A developer should understand this in under two minutes:
 The primary call to action is:
 
 ```bash
-pip install schemarouter
+pip install "schemarouter==0.14.0"
 ```
+
+For normal installs, `pip install schemarouter` resolves the latest stable release. The launch demo pins `0.14.0` so the public walkthrough remains reproducible.
 
 Repository: <https://github.com/JDeun/SchemaRouter>
 
@@ -30,7 +32,7 @@ Safe public claims should map to a reproducible artifact.
 
 ### Stable product
 
-- stable release: `0.13.0`, Beta / pre-1.0;
+- stable release: `0.14.0`, Beta / pre-1.0;
 - Python 3.10-3.14 are release-blocking CI targets;
 - supports typed ingestion/execution paths across MCP, OpenAPI, OPTIMADE, GraphQL, OData,
   OpenRPC/JSON-RPC, Python/SDK bindings, LangChain/LangGraph, and LlamaIndex;
@@ -256,6 +258,8 @@ python examples/llamaindex_quickstart.py
 
 ### Hacker News / Show HN
 
+> **2026 posting note:** Hacker News currently asks submitters to write HN submission text and comments themselves rather than posting LLM-generated or LLM-edited prose. Show HN is also temporarily restricted for accounts that have not yet established normal participation in the community. Before submitting, re-read the current official Show HN and site guidelines and confirm that the maintainer account is eligible. Treat the draft below as an internal coverage checklist only; do not paste it into Hacker News.
+
 Use Show HN only because the project is directly runnable and inspectable without a signup gate.
 
 Proposed title:
@@ -363,7 +367,7 @@ Draft:
 > showed a strong result for the bounded SchemaRouter condition, while another structural K3-vs-K5
 > promotion test failed and remains published as a negative result.
 >
-> Stable release: 0.13.0
+> Stable release: 0.14.0
 > GitHub: https://github.com/JDeun/SchemaRouter
 > Verification/evidence: https://jdeun.github.io/SchemaRouter/project/trust-and-evidence/
 >
