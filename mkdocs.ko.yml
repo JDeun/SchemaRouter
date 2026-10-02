@@ -98,6 +98,7 @@ nav:
   - 연구:
       - 라우팅 연구 현황: research/routing-status.md
       - 전체 실험 인덱스: research/experiment-index.md
+      - 라우팅 break-even 결과: research/realistic-break-even-result.md
       - 설계와 실험 이력: research/design-and-experiment-history.md
       - Agent utility:
           - B1 local-agent 결과: research/agent-utility-b1-result.md
