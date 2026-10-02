@@ -103,11 +103,15 @@ jobs:
       - run: pip install "torch==2.14.0+cpu" --index-url https://download.pytorch.org/whl/cpu
       - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
       - run: pip install -e .
-      - uses: actions/cache@0057852bfaa89a56745b974a628896c90dbd39169c037171ee0b8f85e336641 # v4
+      - uses: actions/cache@0057852bfaa89a56745b974a628896c90dbdf5c8093 # v4
         with:
           path: .hf-cache
           key: "${{ env.B2_CACHE_KEY }}"
           fail-on-cache-miss: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
+        with:
+          name: "corrective-recovery-corpus-${{ github.run_id }}"
+          path: artifacts/corrective
       - name: Verify exact ARM64 SDPA runtime
         run: |
           python - <<'PY'
