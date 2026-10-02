@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
+
 import json
 import re
 import xml.etree.ElementTree as ET
@@ -542,7 +544,7 @@ class ODataRemoteInvoker:
                 raise InvocationUnavailableError("OData transport failed") from exc
             except httpx.HTTPStatusError as exc:
                 status = exc.response.status_code
-                if status in {408, 425, 429} or status >= 500:
+                if status in _TRANSIENT_HTTP_STATUS_CODES:
                     raise InvocationUnavailableError(
                         f"OData transport temporarily unavailable: HTTP {status}"
                     ) from exc
