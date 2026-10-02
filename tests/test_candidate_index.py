@@ -220,3 +220,83 @@ def test_candidate_index_empty_lookup_matches_exhaustive_no_candidate_plan() -> 
 
     assert indexed.model_dump() == exhaustive.model_dump()
     assert indexed.calls == []
+
+
+def test_retrieval_reuses_versioned_catalog_snapshot() -> None:
+    registry = CountingRegistry()
+    registry.update_many(
+        [
+            make_tool(0, keyword="first"),
+            make_tool(1, keyword="second"),
+        ]
+    )
+    planner = SchemaPlanner(registry, candidate_index=True)
+
+    first = planner.retrieve("first", k=2)
+    second = planner.retrieve("second", k=2)
+
+    assert first.total_ranked == 2
+    assert second.total_ranked == 2
+    assert registry.tools_calls == 1
+
+    registry.register(make_tool(2, keyword="third"))
+    third = planner.retrieve("third", k=3)
+
+    assert third.total_ranked == 3
+    assert registry.tools_calls == 2
+
+
+def test_candidate_index_reduces_retrieval_scoring_work() -> None:
+    registry = make_registry(size=250)
+
+    indexed = CountingPlanner(registry, candidate_index=True)
+    indexed_result = indexed.retrieve("needle", k=5)
+
+    exhaustive = CountingPlanner(registry, candidate_index=False)
+    exhaustive_result = exhaustive.retrieve("needle", k=5)
+
+    assert indexed_result.model_dump() == exhaustive_result.model_dump()
+    assert indexed.score_calls == 1
+    assert exhaustive.score_calls == 250
+
+
+def test_candidate_index_preserves_zero_score_retrieval_tiebreaks() -> None:
+    registry = InMemoryRegistry()
+    registry.update_many(
+        [
+            ToolSpec(
+                name="z_destructive",
+                endpoints=[
+                    EndpointSpec(
+                        name="run",
+                        read_only=False,
+                        destructive=True,
+                    )
+                ],
+            ),
+            ToolSpec(
+                name="a_read_only",
+                endpoints=[
+                    EndpointSpec(
+                        name="read",
+                        read_only=True,
+                    )
+                ],
+            ),
+        ]
+    )
+
+    indexed = SchemaPlanner(registry, candidate_index=True).retrieve(
+        "absent-token",
+        k=5,
+    )
+    exhaustive = SchemaPlanner(registry, candidate_index=False).retrieve(
+        "absent-token",
+        k=5,
+    )
+
+    assert indexed.model_dump() == exhaustive.model_dump()
+    assert [item.route_id for item in indexed.candidates] == [
+        "a_read_only.read",
+        "z_destructive.run",
+    ]

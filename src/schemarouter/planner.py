@@ -16,6 +16,8 @@ from .models import (
     CandidateSelectionSource,
     CapabilityCandidate,
     CapabilityRetrieval,
+    CapabilityRouteCandidate,
+    CapabilityRouteRetrieval,
     EndpointSpec,
     EvidenceRequirements,
     ExecutionPlan,
@@ -338,6 +340,10 @@ class _CandidateIndex:
         self._parameter_refs: dict[str, set[_EndpointRef]] = {}
         self._tool_refs: dict[str, set[_EndpointRef]] = {}
         self._endpoint_refs: dict[str, set[_EndpointRef]] = {}
+        self._tool_fingerprints_by_identity = {
+            id(tool): tool.fingerprint
+            for tool in tools
+        }
 
         for tool in tools:
             for endpoint in tool.endpoints:
@@ -390,6 +396,16 @@ class _CandidateIndex:
         ref: _EndpointRef,
     ) -> None:
         index.setdefault(key, set()).add(ref)
+
+    def all_endpoint_pairs(self) -> tuple[tuple[ToolSpec, EndpointSpec], ...]:
+        """Return the version-frozen endpoint snapshot without copying ToolSpecs again."""
+
+        return tuple(self._entries[ref] for ref in sorted(self._entries))
+
+    def tool_fingerprint(self, tool: ToolSpec) -> str | None:
+        """Return a fingerprint cached for this exact version-frozen ToolSpec object."""
+
+        return self._tool_fingerprints_by_identity.get(id(tool))
 
     def endpoint_pairs(
         self,
@@ -534,6 +550,31 @@ class SchemaPlanner:
             endpoint_fingerprint=endpoint.fingerprint,
         )
 
+    @staticmethod
+    def _route_retrieval_candidate(
+        candidate: _Candidate,
+        *,
+        rank: int,
+    ) -> CapabilityRouteCandidate:
+        tool = candidate.tool
+        endpoint = candidate.endpoint
+        return CapabilityRouteCandidate(
+            rank=rank,
+            route_id=f"{tool.key}.{endpoint.name}",
+            tool=tool.key,
+            endpoint=endpoint.name,
+            score=candidate.score,
+            matched_fields=list(candidate.matched_fields),
+            score_components=list(candidate.score_components),
+            selection_source=candidate.selection_source,
+            read_only=endpoint.read_only,
+            destructive=endpoint.destructive,
+            provider=tool.provider,
+            access_mode=tool.access_mode,
+            tool_fingerprint=tool.fingerprint,
+            endpoint_fingerprint=endpoint.fingerprint,
+        )
+
     def _retrieve_from_intent(
         self,
         request: PlanRequest,
@@ -564,6 +605,61 @@ class SchemaPlanner:
                 for index, candidate in enumerate(candidates[:k], start=1)
             ],
         )
+
+    def _retrieve_routes_from_intent(
+        self,
+        request: PlanRequest,
+        intent: QueryIntent,
+        *,
+        k: int,
+    ) -> CapabilityRouteRetrieval:
+        candidates = self._semantic_recall_catalog(request, intent)
+        candidates.sort(key=self._candidate_sort_key)
+        return CapabilityRouteRetrieval(
+            query=request.query,
+            registry_version=self.registry.version,
+            requested_k=k,
+            total_ranked=len(candidates),
+            candidates=[
+                self._route_retrieval_candidate(candidate, rank=index)
+                for index, candidate in enumerate(candidates[:k], start=1)
+            ],
+        )
+
+    def retrieve_routes(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRouteRetrieval:
+        """Return lightweight Top-K route references without materializing schemas."""
+
+        k = self._validate_retrieval_k(k)
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            if inspect.iscoroutine(intent):
+                intent.close()
+            raise PlanningError(
+                "the configured analyzer is asynchronous; use "
+                "await planner.aretrieve_routes(...)"
+            )
+        return self._retrieve_routes_from_intent(request, intent, k=k)
+
+    async def aretrieve_routes(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRouteRetrieval:
+        """Async counterpart to :meth:`retrieve_routes`."""
+
+        k = self._validate_retrieval_k(k)
+        request = self._prepare_request(request)
+        intent = self.analyzer.analyze(request, self.registry)
+        if inspect.isawaitable(intent):
+            intent = await intent
+        return self._retrieve_routes_from_intent(request, intent, k=k)
 
     def retrieve(
         self,
@@ -749,6 +845,15 @@ class SchemaPlanner:
             "registry changed repeatedly while building the candidate index"
         )
 
+    def _snapshot_tool_fingerprint(self, tool: ToolSpec) -> str:
+        """Reuse the fingerprint for an immutable index snapshot when available."""
+
+        if self._candidate_index is not None:
+            cached = self._candidate_index.tool_fingerprint(tool)
+            if cached is not None:
+                return cached
+        return tool.fingerprint
+
     def _candidates(
         self,
         request: PlanRequest,
@@ -926,11 +1031,40 @@ class SchemaPlanner:
                 return False
             return True
 
-        return [
-            self._score_endpoint(tool, endpoint, request.query, intent)
-            for tool in self.registry.tools()
-            for endpoint in tool.endpoints
+        if self.candidate_index:
+            index = self._index()
+            endpoint_pairs = index.all_endpoint_pairs()
+        else:
+            index = None
+            endpoint_pairs = tuple(
+                (tool, endpoint)
+                for tool in self.registry.tools()
+                for endpoint in tool.endpoints
+            )
+
+        available_pairs = tuple(
+            (tool, endpoint)
+            for tool, endpoint in endpoint_pairs
             if is_available(tool, endpoint)
+        )
+
+        if index is None or self.structural_retrieval:
+            return [
+                self._score_endpoint(tool, endpoint, request.query, intent)
+                for tool, endpoint in available_pairs
+            ]
+
+        positive_refs = {
+            (tool.key, endpoint.name)
+            for tool, endpoint in index.endpoint_pairs(request, intent)
+        }
+        return [
+            (
+                self._score_endpoint(tool, endpoint, request.query, intent)
+                if (tool.key, endpoint.name) in positive_refs
+                else _Candidate(tool, endpoint, 0.0, ())
+            )
+            for tool, endpoint in available_pairs
         ]
 
     def _semantic_recall_request(
