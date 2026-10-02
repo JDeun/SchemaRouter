@@ -391,6 +391,11 @@ class _CandidateIndex:
     ) -> None:
         index.setdefault(key, set()).add(ref)
 
+    def all_endpoint_pairs(self) -> tuple[tuple[ToolSpec, EndpointSpec], ...]:
+        """Return the version-frozen endpoint snapshot without copying ToolSpecs again."""
+
+        return tuple(self._entries[ref] for ref in sorted(self._entries))
+
     def endpoint_pairs(
         self,
         request: PlanRequest,
@@ -926,10 +931,18 @@ class SchemaPlanner:
                 return False
             return True
 
+        if self.candidate_index:
+            endpoint_pairs = self._index().all_endpoint_pairs()
+        else:
+            endpoint_pairs = tuple(
+                (tool, endpoint)
+                for tool in self.registry.tools()
+                for endpoint in tool.endpoints
+            )
+
         return [
             self._score_endpoint(tool, endpoint, request.query, intent)
-            for tool in self.registry.tools()
-            for endpoint in tool.endpoints
+            for tool, endpoint in endpoint_pairs
             if is_available(tool, endpoint)
         ]
 
