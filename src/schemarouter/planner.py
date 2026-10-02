@@ -340,6 +340,10 @@ class _CandidateIndex:
         self._parameter_refs: dict[str, set[_EndpointRef]] = {}
         self._tool_refs: dict[str, set[_EndpointRef]] = {}
         self._endpoint_refs: dict[str, set[_EndpointRef]] = {}
+        self._tool_fingerprints_by_identity = {
+            id(tool): tool.fingerprint
+            for tool in tools
+        }
 
         for tool in tools:
             for endpoint in tool.endpoints:
@@ -397,6 +401,11 @@ class _CandidateIndex:
         """Return the version-frozen endpoint snapshot without copying ToolSpecs again."""
 
         return tuple(self._entries[ref] for ref in sorted(self._entries))
+
+    def tool_fingerprint(self, tool: ToolSpec) -> str | None:
+        """Return a fingerprint cached for this exact version-frozen ToolSpec object."""
+
+        return self._tool_fingerprints_by_identity.get(id(tool))
 
     def endpoint_pairs(
         self,
@@ -835,6 +844,15 @@ class SchemaPlanner:
         raise PlanningError(
             "registry changed repeatedly while building the candidate index"
         )
+
+    def _snapshot_tool_fingerprint(self, tool: ToolSpec) -> str:
+        """Reuse the fingerprint for an immutable index snapshot when available."""
+
+        if self._candidate_index is not None:
+            cached = self._candidate_index.tool_fingerprint(tool)
+            if cached is not None:
+                return cached
+        return tool.fingerprint
 
     def _candidates(
         self,
