@@ -258,6 +258,8 @@ python examples/llamaindex_quickstart.py
 
 ### Hacker News / Show HN
 
+> **2026 posting note:** Hacker News currently asks submitters to write HN submission text and comments themselves rather than posting LLM-generated or LLM-edited prose. Show HN is also temporarily restricted for accounts that have not yet established normal participation in the community. Before submitting, re-read the current official Show HN and site guidelines and confirm that the maintainer account is eligible. Treat the draft below as an internal coverage checklist only; do not paste it into Hacker News.
+
 Use Show HN only because the project is directly runnable and inspectable without a signup gate.
 
 Proposed title:
