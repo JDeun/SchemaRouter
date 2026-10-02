@@ -254,6 +254,51 @@ async def test_astream_events_can_opt_into_payloads() -> None:
     assert tool_end.data["result"]["data"]["temperature"] == 20
 
 
+
+@pytest.mark.asyncio
+async def test_event_stream_success_matches_ainvoke_result_payload() -> None:
+    invoke_router = make_router()
+    event_router = make_router()
+
+    expected = await invoke_router.ainvoke(request())
+    events = [
+        event
+        async for event in event_router.astream_events(
+            request(),
+            config=RunConfig(include_payloads=True),
+        )
+    ]
+
+    terminal_results = [
+        event.data["result"]
+        for event in events
+        if event.event == "tool.end"
+    ]
+    assert terminal_results == [result.model_dump(mode="json") for result in expected]
+    assert events[-1].event == "run.end"
+
+
+@pytest.mark.asyncio
+async def test_event_stream_failure_matches_ainvoke_exception_type() -> None:
+    async def failing(endpoint: str, arguments: dict) -> dict:
+        raise RuntimeError("same failure")
+
+    invoke_router = make_router()
+    event_router = make_router()
+    invoke_router.executor.bind("weather", failing)
+    event_router.executor.bind("weather", failing)
+
+    with pytest.raises(ExecutionError) as invoke_error:
+        await invoke_router.ainvoke(request())
+
+    seen = []
+    with pytest.raises(type(invoke_error.value)):
+        async for event in event_router.astream_events(request()):
+            seen.append(event)
+
+    assert seen[-1].event == "run.error"
+    assert seen[-1].data["error_type"] == type(invoke_error.value).__name__
+
 @pytest.mark.asyncio
 async def test_read_only_retry_can_recover() -> None:
     router = make_router(read_only=True)
