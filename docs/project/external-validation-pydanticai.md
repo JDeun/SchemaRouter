@@ -40,6 +40,10 @@ pinned PydanticAI release, and runs:
 ```bash
 python scripts/external_validation_pydanticai.py \
   --json-out artifacts/external-validation-pydanticai.json
+
+python scripts/external_validation_pydanticai.py \
+  --matrix \
+  --json-out artifacts/external-validation-pydanticai-matrix.json
 ```
 
 The script refuses to run as valid downstream evidence if `schemarouter` resolves from the
@@ -80,6 +84,24 @@ The JSON evidence records:
 - per-case selected names and revealed-schema bytes.
 
 No byte count is labeled as a token count.
+
+## Frozen scaling matrix
+
+The reproducible matrix is **12 / 50 / 100 / 250 tools**. The original planning note
+mentioned a 10-tool point, but the frozen real catalog contains 12 tools and the supported
+case set depends on that complete catalog. The benchmark therefore uses 12 as the smallest
+faithful point rather than deleting real tools or changing the cases after the fact.
+
+| Catalog size | Composition |
+| ---: | --- |
+| 12 | Complete frozen real catalog |
+| 50 | 12 real tools + deterministic synthetic distractors |
+| 100 | 12 real tools + deterministic synthetic distractors |
+| 250 | 12 real tools + deterministic synthetic distractors |
+
+The matrix command emits every run into one JSON document so required-tool recall,
+unsupported rejection, revealed serialized schema bytes, shortlist size, and routing
+latency can be compared without changing the query set or retrieval policy.
 
 ## Fidelity limits
 
