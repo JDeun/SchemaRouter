@@ -176,7 +176,7 @@ jobs:
       - model-cache
     strategy:
       fail-fast: false
-      max-parallel: 8
+      max-parallel: 16
       matrix: "${{ fromJSON(needs.prepare.outputs.matrix) }}"
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 300
@@ -200,21 +200,7 @@ jobs:
         with:
           path: .hf-cache
           key: "${{ env.B2_CACHE_KEY }}"
-      - name: Recover exact model revision after cache eviction
-        if: steps.evaluator-hf-cache.outputs.cache-hit != 'true'
-        env:
-          HF_HUB_OFFLINE: "0"
-          TRANSFORMERS_OFFLINE: "0"
-        run: |
-          python - <<'PY'
-          import os
-          from huggingface_hub import snapshot_download
-
-          snapshot_download(
-              repo_id=os.environ["B2_MODEL"],
-              revision=os.environ["B2_REVISION"],
-          )
-          PY
+          fail-on-cache-miss: true
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v7
         with:
           name: "final-answer-corpus-${{ github.run_id }}"
