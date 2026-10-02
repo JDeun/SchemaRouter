@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
-
 import json
 import re
 import uuid
@@ -27,6 +25,8 @@ from ..schema_http import (
 from ..source_identity import structured_source_identity_digest_for
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 from .openapi import same_origin
+
+_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
 
 _MAX_DISCOVERY_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 10 * 1024 * 1024
