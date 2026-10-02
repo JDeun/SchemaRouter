@@ -1,0 +1,42 @@
+# LangChain
+
+SchemaRouter는 LangChain runtime을 대체하지 않고 optional boundary로 통합됩니다.
+
+## 설치
+
+```bash
+pip install "schemarouter[langchain]"
+```
+
+core package는 LangChain에 의존하지 않습니다.
+
+## 기존 LangChain tool 가져오기
+
+LangChain `BaseTool` / `StructuredTool` object를 SchemaRouter canonical capability model로 컴파일하고 일반 execution pipeline에 바인딩할 수 있습니다.
+
+```python
+from langchain_community.tools import DuckDuckGoSearchRun
+from schemarouter import SchemaRouter
+
+router = SchemaRouter()
+key = router.add_langchain_tool(
+    DuckDuckGoSearchRun(),
+    provider="duckduckgo",
+    read_only=True,
+    remote=True,
+)
+```
+
+declared input/output schema를 읽되 tool description에서 read/write authority를 추론하지 않습니다. `read_only`, `destructive`, `remote`, `provider`, `access_mode`는 trusted local classification입니다.
+
+## 등록 endpoint 내보내기
+
+`to_langchain_tools(router)` 또는 `to_langchain_tool(router, "weather", "current")`로 SchemaRouter endpoint를 LangChain `StructuredTool`로 노출할 수 있습니다.
+
+## 실행 경계
+
+LangChain tool 호출도 SchemaRouter `ToolCall` → current schema validation → `ExecutionPolicy` → binding-drift check → trusted invoker → output validation을 거칩니다. 따라서 direct 사용과 같은 fail-closed contract가 적용됩니다.
+
+agent graph/conversation/model invocation/checkpoint/memory는 LangChain/LangGraph가, tool catalog schema와 endpoint/argument/field plan, side-effect policy, execution validation은 SchemaRouter가 담당하는 구성이 권장됩니다.
+
+bridge는 main distribution의 `langchain` extra에 유지합니다. 별도 package는 독립 release cadence나 dependency pressure, upstream 요구가 생길 때 검토합니다.

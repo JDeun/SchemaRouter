@@ -2,9 +2,9 @@
 """Prepare the Korean MkDocs tree without duplicating the canonical English docs.
 
 English under docs/ is canonical. First-class Korean translations live under docs_ko/.
-For every untranslated canonical Markdown page, this script emits a Korean placeholder
-at the same relative URL that links back to the English original. That keeps Material's
-language switcher page-stable without allowing translations to silently drift.
+Every canonical Markdown page must have a tracked Korean translation at the same relative
+path. Missing translations and stale source revisions fail closed; no English fallback pages
+are generated.
 """
 
 from __future__ import annotations
@@ -85,6 +85,18 @@ def validate_translations(manifest: dict[str, str]) -> None:
             + ", ".join(missing)
         )
 
+    canonical_files = {
+        path.relative_to(TRANSLATION_DIR.parent / "docs").as_posix()
+        for path in CANONICAL_DIR.rglob("*.md")
+        if path.relative_to(CANONICAL_DIR).as_posix() != "assets/brand/README.md"
+    }
+    missing_translations = sorted(canonical_files - translated_files)
+    if missing_translations:
+        raise SystemExit(
+            "canonical Markdown pages missing Korean translations: "
+            + ", ".join(missing_translations)
+        )
+
     stale: list[str] = []
     for relative, expected_blob in sorted(manifest.items()):
         source = CANONICAL_DIR / relative
@@ -130,7 +142,6 @@ def prepare(output: Path) -> tuple[int, int]:
     output.mkdir(parents=True)
 
     translated = 0
-    fallbacks = 0
     for source in sorted(CANONICAL_DIR.rglob("*")):
         if source.is_dir():
             continue
@@ -148,10 +159,9 @@ def prepare(output: Path) -> tuple[int, int]:
             shutil.copy2(translation, destination)
             translated += 1
         else:
-            write_fallback(source, destination, relative)
-            fallbacks += 1
+            raise SystemExit(f"missing Korean translation: docs_ko/{relative.as_posix()}")
 
-    return translated, fallbacks
+    return translated
 
 
 def main() -> None:
@@ -168,10 +178,9 @@ def main() -> None:
     if not output.is_absolute():
         output = ROOT / output
 
-    translated, fallbacks = prepare(output)
+    translated = prepare(output)
     print(
-        f"prepared Korean docs: {translated} translated pages, "
-        f"{fallbacks} explicit English fallbacks -> {output}"
+        f"prepared Korean docs: {translated} translated pages, 0 fallbacks -> {output}"
     )
 
 

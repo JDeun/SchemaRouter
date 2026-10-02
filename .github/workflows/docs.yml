@@ -55,9 +55,9 @@ jobs:
           english = Path("site/index.html")
           korean = Path("site/ko/index.html")
           translated = Path("site/ko/getting-started/quickstart/index.html")
-          fallback = Path("site/ko/guides/graphql/index.html")
+          translated_graphql = Path("site/ko/guides/graphql/index.html")
 
-          for path in (english, korean, translated, fallback):
+          for path in (english, korean, translated, translated_graphql):
               assert path.is_file(), f"missing bilingual docs output: {path}"
 
           english_html = english.read_text(encoding="utf-8")
