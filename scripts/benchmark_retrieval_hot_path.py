@@ -88,7 +88,7 @@ def _measure_fingerprint_overhead(iterations: int) -> dict[str, float]:
     for _ in range(iterations):
         started = time.perf_counter_ns()
         for tool, _ in pairs:
-            tool.fingerprint
+            _ = tool.fingerprint
         fingerprint_samples.append((time.perf_counter_ns() - started) / 1_000_000)
 
         started = time.perf_counter_ns()
