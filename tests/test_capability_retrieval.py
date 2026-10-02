@@ -517,3 +517,42 @@ def test_configured_router_exposes_route_retrieval_surface() -> None:
     configured_result = configured.retrieve_routes("Young's modulus", k=2)
 
     assert configured_result == direct
+
+
+def test_semantic_namespace_token_does_not_count_as_field_evidence() -> None:
+    router = SchemaRouter()
+    router.add_tool(
+        ToolSpec(
+            name="material_service",
+            description="material property service",
+            endpoints=[
+                EndpointSpec(
+                    name="lookup",
+                    description="look up material properties",
+                    read_only=True,
+                    output_fields=[
+                        FieldSpec(
+                            name="youngs_modulus",
+                            semantic_id="material.youngs_modulus",
+                            aliases=["elastic modulus"],
+                        )
+                    ],
+                )
+            ],
+        )
+    )
+
+    unsupported = router.retrieve_routes(
+        PlanRequest(
+            query="material unsupported_property",
+            concepts=["unsupported_property"],
+        ),
+        k=1,
+    )
+
+    assert unsupported.candidates[0].route_id == "material_service.lookup"
+    assert unsupported.candidates[0].matched_fields == []
+    assert all(
+        component.kind not in {"field_exact", "field_lexical", "field_substring"}
+        for component in unsupported.candidates[0].score_components
+    )
