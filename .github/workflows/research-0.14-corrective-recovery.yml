@@ -104,18 +104,10 @@ jobs:
       - run: pip install "transformers==4.57.6" "tokenizers==0.22.2" "safetensors==0.8.0"
       - run: pip install -e .
       - uses: actions/cache@0057852bfaa89a56745b974a628896c90dbd39169c037171ee0b8f85e336641 # v4
-        continue-on-error: true
         with:
           path: .hf-cache
           key: "${{ env.B2_CACHE_KEY }}"
-      - name: Restore exact model cache
-        if: always()
-        run: |
-          python - <<'PY'
-          import os
-          from huggingface_hub import snapshot_download
-          snapshot_download(repo_id=os.environ["B2_MODEL"], revision=os.environ["B2_REVISION"])
-          PY
+          fail-on-cache-miss: true
       - name: Verify exact ARM64 SDPA runtime
         run: |
           python - <<'PY'
