@@ -63,6 +63,8 @@ def main() -> None:
     if failures:
         prefix = "rendered documentation structure check failed:"
         message = prefix + "\\n- " + "\\n- ".join(failures)
+        raise SystemExit(message)
+    print(f"rendered documentation structure OK: {len(html_files)} HTML files")
 
 
 if __name__ == "__main__":
