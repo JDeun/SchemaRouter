@@ -45,6 +45,8 @@ high-ambiguity fixtures where that baseline's recall fell to about 58–67%. The
 positioning boundary, not a production-utility claim: SchemaRouter is most useful when capabilities
 are heterogeneous or difficult to distinguish by names and descriptions alone.
 
+[Read the frozen break-even matrix, latency trade-offs, and provenance →](docs/research/realistic-break-even-result.md)
+
 `pip install schemarouter`
 
 It is **not** a general agent framework, an LLM provider layer, or a RAG generator.
