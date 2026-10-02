@@ -3,10 +3,10 @@ from __future__ import annotations
 import inspect
 import math
 import re
-from collections.abc import AbstractSet, Awaitable, Callable
+from collections.abc import Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass, replace
-from typing import Any, Protocol
+from typing import AbstractSet, Any, Protocol
 
 from .decision_policy import DecisionPolicy
 from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
