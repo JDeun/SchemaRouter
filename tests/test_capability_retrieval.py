@@ -449,3 +449,71 @@ def test_retrieve_does_not_invoke_planning_candidate_recall_backend() -> None:
 
     assert len(result.candidates) == 2
     assert called is False
+
+
+def test_retrieve_routes_matches_full_retrieval_ranking() -> None:
+    router = make_retrieval_router()
+
+    routes = router.retrieve_routes("current Young's modulus", k=3)
+    full = router.retrieve("current Young's modulus", k=3)
+
+    assert routes.query == full.query
+    assert routes.registry_version == full.registry_version
+    assert routes.requested_k == full.requested_k
+    assert routes.total_ranked == full.total_ranked
+    assert [
+        (
+            item.rank,
+            item.route_id,
+            item.score,
+            item.matched_fields,
+            [component.model_dump() for component in item.score_components],
+            item.selection_source,
+            item.read_only,
+            item.destructive,
+            item.provider,
+            item.access_mode,
+            item.tool_fingerprint,
+            item.endpoint_fingerprint,
+        )
+        for item in routes.candidates
+    ] == [
+        (
+            item.rank,
+            item.route_id,
+            item.score,
+            item.matched_fields,
+            [component.model_dump() for component in item.score_components],
+            item.selection_source,
+            item.read_only,
+            item.destructive,
+            item.provider,
+            item.access_mode,
+            item.tool_fingerprint,
+            item.endpoint_fingerprint,
+        )
+        for item in full.candidates
+    ]
+
+
+@pytest.mark.asyncio
+async def test_aretrieve_routes_supports_async_analyzer() -> None:
+    router = make_retrieval_router()
+    router.planner.analyzer = AsyncAnalyzer()
+
+    with pytest.raises(PlanningError, match="use await planner.aretrieve_routes"):
+        router.retrieve_routes("Young's modulus", k=1)
+
+    result = await router.aretrieve_routes("Young's modulus", k=1)
+    assert len(result.candidates) == 1
+    assert result.candidates[0].route_id.startswith("materials.")
+
+
+def test_configured_router_exposes_route_retrieval_surface() -> None:
+    router = make_retrieval_router()
+    configured = router.with_config({})
+
+    direct = router.retrieve_routes("Young's modulus", k=2)
+    configured_result = configured.retrieve_routes("Young's modulus", k=2)
+
+    assert configured_result == direct
