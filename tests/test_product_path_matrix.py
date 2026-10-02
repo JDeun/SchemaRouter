@@ -4,11 +4,18 @@ from pathlib import Path
 from schemarouter import SchemaRouter
 
 
-
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX_PATH = ROOT / "tests" / "fixtures" / "product_path_matrix.json"
 README_PATH = ROOT / "README.md"
-REQUIRED_EXECUTION_STAGES = {\n    "register",\n    "bind",\n    "retrieve",\n    "plan",\n    "execute",\n    "project",\n    "inspect",\n}
+REQUIRED_EXECUTION_STAGES = {
+    "register",
+    "bind",
+    "retrieve",
+    "plan",
+    "execute",
+    "project",
+    "inspect",
+}
 
 
 def _matrix() -> list[dict]:
