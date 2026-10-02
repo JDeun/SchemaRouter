@@ -3,10 +3,10 @@ from __future__ import annotations
 import inspect
 import math
 import re
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Set
 from copy import deepcopy
 from dataclasses import dataclass, replace
-from typing import AbstractSet, Any, Protocol
+from typing import Any, Protocol
 
 from .decision_policy import DecisionPolicy
 from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
@@ -183,7 +183,7 @@ def _tool_identifier_forms(tool: ToolSpec) -> set[str]:
 
 
 def _tool_identifier_match(
-    query_tokens: AbstractSet[str],
+    query_tokens: Set[str],
     tool: ToolSpec,
 ) -> bool:
     query_forms = {
@@ -238,7 +238,7 @@ def _operation_tokens(endpoint: EndpointSpec) -> set[str]:
 
 
 def _operation_family_match(
-    query_tokens: AbstractSet[str],
+    query_tokens: Set[str],
     endpoint: EndpointSpec,
 ) -> bool:
     query_ascii = {
