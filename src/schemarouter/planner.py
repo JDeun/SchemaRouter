@@ -313,6 +313,14 @@ class _FieldSemantic:
 
 
 @dataclass(frozen=True)
+class _ScoringContext:
+    query_tokens: frozenset[str]
+    concept_norms: frozenset[str]
+    preferred_tools: frozenset[str]
+    preferred_endpoints: frozenset[str]
+
+
+@dataclass(frozen=True)
 class _Candidate:
     tool: ToolSpec
     endpoint: EndpointSpec
@@ -913,8 +921,15 @@ class SchemaPlanner:
                 if is_available(tool, endpoint)
             )
 
+        scoring_context = self._scoring_context(request.query, intent)
         candidates = [
-            self._score_endpoint(tool, endpoint, request.query, intent)
+            self._score_endpoint(
+                tool,
+                endpoint,
+                request.query,
+                intent,
+                _context=scoring_context,
+            )
             for tool, endpoint in endpoint_pairs
         ]
         candidates = [candidate for candidate in candidates if candidate.score > 0]
@@ -1064,9 +1079,16 @@ class SchemaPlanner:
             if is_available(tool, endpoint)
         )
 
+        scoring_context = self._scoring_context(request.query, intent)
         if index is None or self.structural_retrieval:
             return [
-                self._score_endpoint(tool, endpoint, request.query, intent)
+                self._score_endpoint(
+                    tool,
+                    endpoint,
+                    request.query,
+                    intent,
+                    _context=scoring_context,
+                )
                 for tool, endpoint in available_pairs
             ]
 
@@ -1076,7 +1098,13 @@ class SchemaPlanner:
         }
         return [
             (
-                self._score_endpoint(tool, endpoint, request.query, intent)
+                self._score_endpoint(
+                    tool,
+                    endpoint,
+                    request.query,
+                    intent,
+                    _context=scoring_context,
+                )
                 if (tool.key, endpoint.name) in positive_refs
                 else _Candidate(tool, endpoint, 0.0, ())
             )
@@ -3405,17 +3433,33 @@ class SchemaPlanner:
             ignored_arguments=list(ignored_arguments),
         )
 
+    @staticmethod
+    def _scoring_context(query: str, intent: QueryIntent) -> _ScoringContext:
+        return _ScoringContext(
+            query_tokens=frozenset(_tokens(query)),
+            concept_norms=frozenset(
+                _normalize(concept)
+                for concept in intent.concepts
+                if concept
+            ),
+            preferred_tools=frozenset(intent.preferred_tools),
+            preferred_endpoints=frozenset(intent.preferred_endpoints),
+        )
+
     def _score_endpoint(
         self,
         tool: ToolSpec,
         endpoint: EndpointSpec,
         query: str,
         intent: QueryIntent,
+        *,
+        _context: _ScoringContext | None = None,
     ) -> _Candidate:
-        query_tokens = _tokens(query)
-        concept_norms = {_normalize(concept) for concept in intent.concepts if concept}
-        preferred_tools = set(intent.preferred_tools)
-        preferred_endpoints = set(intent.preferred_endpoints)
+        context = _context or self._scoring_context(query, intent)
+        query_tokens = context.query_tokens
+        concept_norms = context.concept_norms
+        preferred_tools = context.preferred_tools
+        preferred_endpoints = context.preferred_endpoints
 
         score = 0.0
         components: list[ScoreComponent] = []
