@@ -78,6 +78,51 @@ async def test_ainvoke_exposes_async_framework_surface() -> None:
     assert result[0].data["city"] == "Busan"
 
 
+
+def test_add_tool_replace_purges_runtime_state_for_changed_contract() -> None:
+    router = make_router()
+    router.mark_access_unavailable("weather", "current", cooldown_seconds=60)
+    router.register_health_probe("weather", "current", lambda: True)
+
+    replacement = ToolSpec(
+        name="weather",
+        endpoints=[
+            EndpointSpec(
+                name="current",
+                parameters=[ParameterSpec(name="city", required=True)],
+                output_fields=[
+                    FieldSpec(name="city"),
+                    FieldSpec(name="temperature"),
+                    FieldSpec(name="humidity"),
+                ],
+                read_only=True,
+            )
+        ],
+    )
+
+    router.add_tool(replacement, replace=True)
+
+    assert router.executor.binding_status_for_contract(
+        "weather",
+        replacement.fingerprint,
+    ) == "missing"
+    assert router.unavailable_access_paths() == ()
+    assert router.health_snapshots() == ()
+
+
+def test_add_tool_identical_replace_preserves_runtime_state() -> None:
+    router = make_router()
+    current = router.registry.get("weather")
+    router.register_health_probe("weather", "current", lambda: True)
+
+    router.add_tool(current.model_copy(deep=True), replace=True)
+
+    assert router.executor.binding_status_for_contract(
+        "weather",
+        current.fingerprint,
+    ) == "ready"
+    assert len(router.health_snapshots()) == 1
+
 def test_input_output_and_config_schemas_are_introspectable() -> None:
     router = make_router()
 
