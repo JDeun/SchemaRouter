@@ -1,0 +1,294 @@
+{
+  "boundary": {
+    "execution_through_schemarouter": false,
+    "gearlynx_role": "authoritative catalog, schema, validation, execution",
+    "schemarouter_role": "candidate selection only"
+  },
+  "cases": [
+    {
+      "native_latency_ms": 0.111401,
+      "native_schema_source_bytes": 296,
+      "native_selected": [
+        "get_suzy_registers"
+      ],
+      "query": "suzy registers",
+      "required_tool": "get_suzy_registers",
+      "schemarouter_latency_ms": 5.875946,
+      "schemarouter_schema_source_bytes": 296,
+      "schemarouter_selected": [
+        "get_suzy_registers"
+      ]
+    },
+    {
+      "native_latency_ms": 0.112548,
+      "native_schema_source_bytes": 110,
+      "native_selected": [
+        "get_uart_status"
+      ],
+      "query": "uart status",
+      "required_tool": "get_uart_status",
+      "schemarouter_latency_ms": 5.445168,
+      "schemarouter_schema_source_bytes": 330,
+      "schemarouter_selected": [
+        "get_uart_status",
+        "debug_get_status",
+        "get_6502_status"
+      ]
+    },
+    {
+      "native_latency_ms": 0.106591,
+      "native_schema_source_bytes": 9140,
+      "native_selected": [
+        "list_memory_areas",
+        "read_memory",
+        "write_memory",
+        "select_memory_range",
+        "set_memory_selection_value",
+        "add_memory_bookmark",
+        "remove_memory_bookmark",
+        "add_memory_watch",
+        "remove_memory_watch",
+        "list_memory_bookmarks",
+        "list_memory_watches",
+        "get_memory_selection",
+        "memory_search_capture",
+        "memory_search",
+        "memory_find"
+      ],
+      "query": "memory search",
+      "required_tool": "memory_search",
+      "schemarouter_latency_ms": 5.556094,
+      "schemarouter_schema_source_bytes": 2321,
+      "schemarouter_selected": [
+        "memory_search",
+        "memory_search_capture",
+        "add_memory_bookmark"
+      ]
+    },
+    {
+      "native_latency_ms": 0.107497,
+      "native_schema_source_bytes": 324,
+      "native_selected": [
+        "list_memory_watches"
+      ],
+      "query": "memory watches",
+      "required_tool": "list_memory_watches",
+      "schemarouter_latency_ms": 5.753933,
+      "schemarouter_schema_source_bytes": 1866,
+      "schemarouter_selected": [
+        "list_memory_watches",
+        "add_memory_bookmark",
+        "add_memory_watch"
+      ]
+    },
+    {
+      "native_latency_ms": 0.106394,
+      "native_schema_source_bytes": 707,
+      "native_selected": [
+        "lookup_symbol_by_name",
+        "lookup_symbol_at_address"
+      ],
+      "query": "symbol lookup name",
+      "required_tool": "lookup_symbol_by_name",
+      "schemarouter_latency_ms": 5.527309,
+      "schemarouter_schema_source_bytes": 1197,
+      "schemarouter_selected": [
+        "lookup_symbol_by_name",
+        "lookup_symbol_at_address",
+        "add_symbol"
+      ]
+    },
+    {
+      "native_latency_ms": 0.109061,
+      "native_schema_source_bytes": 3896,
+      "native_selected": [
+        "get_trace_log",
+        "set_trace_log"
+      ],
+      "query": "trace log",
+      "required_tool": "get_trace_log",
+      "schemarouter_latency_ms": 5.522348,
+      "schemarouter_schema_source_bytes": 3896,
+      "schemarouter_selected": [
+        "get_trace_log",
+        "set_trace_log"
+      ]
+    },
+    {
+      "native_latency_ms": 0.106316,
+      "native_schema_source_bytes": 110,
+      "native_selected": [
+        "get_rewind_status"
+      ],
+      "query": "rewind status",
+      "required_tool": "get_rewind_status",
+      "schemarouter_latency_ms": 5.363443,
+      "schemarouter_schema_source_bytes": 330,
+      "schemarouter_selected": [
+        "get_rewind_status",
+        "debug_get_status",
+        "get_6502_status"
+      ]
+    },
+    {
+      "native_latency_ms": 0.11314,
+      "native_schema_source_bytes": 110,
+      "native_selected": [
+        "list_save_state_slots"
+      ],
+      "query": "save state slots",
+      "required_tool": "list_save_state_slots",
+      "schemarouter_latency_ms": 5.523457,
+      "schemarouter_schema_source_bytes": 330,
+      "schemarouter_selected": [
+        "list_save_state_slots",
+        "load_state",
+        "save_state"
+      ]
+    },
+    {
+      "native_latency_ms": 0.118216,
+      "native_schema_source_bytes": 220,
+      "native_selected": [
+        "get_cart_status",
+        "get_eeprom_status"
+      ],
+      "query": "cartridge status",
+      "required_tool": "get_cart_status",
+      "schemarouter_latency_ms": 5.448507,
+      "schemarouter_schema_source_bytes": 330,
+      "schemarouter_selected": [
+        "get_cart_status",
+        "debug_get_status",
+        "get_6502_status"
+      ]
+    },
+    {
+      "native_latency_ms": 0.105948,
+      "native_schema_source_bytes": 110,
+      "native_selected": [
+        "get_lcd_status"
+      ],
+      "query": "lcd status",
+      "required_tool": "get_lcd_status",
+      "schemarouter_latency_ms": 18.081389,
+      "schemarouter_schema_source_bytes": 330,
+      "schemarouter_selected": [
+        "get_lcd_status",
+        "debug_get_status",
+        "get_6502_status"
+      ]
+    },
+    {
+      "native_latency_ms": 0.137165,
+      "native_schema_source_bytes": 579,
+      "native_selected": [
+        "get_sprite"
+      ],
+      "query": "sprite metadata",
+      "required_tool": "get_sprite",
+      "schemarouter_latency_ms": 5.650432,
+      "schemarouter_schema_source_bytes": 579,
+      "schemarouter_selected": [
+        "get_sprite"
+      ]
+    },
+    {
+      "native_latency_ms": 0.10861,
+      "native_schema_source_bytes": 110,
+      "native_selected": [
+        "get_input_state"
+      ],
+      "query": "input state",
+      "required_tool": "get_input_state",
+      "schemarouter_latency_ms": 5.548388,
+      "schemarouter_schema_source_bytes": 110,
+      "schemarouter_selected": [
+        "get_input_state"
+      ]
+    },
+    {
+      "native_latency_ms": 0.107607,
+      "native_schema_source_bytes": 0,
+      "native_selected": [],
+      "query": "network socket",
+      "required_tool": null,
+      "schemarouter_latency_ms": 5.50736,
+      "schemarouter_schema_source_bytes": 0,
+      "schemarouter_selected": []
+    },
+    {
+      "native_latency_ms": 0.108603,
+      "native_schema_source_bytes": 0,
+      "native_selected": [],
+      "query": "database sql",
+      "required_tool": null,
+      "schemarouter_latency_ms": 5.509962,
+      "schemarouter_schema_source_bytes": 0,
+      "schemarouter_selected": []
+    },
+    {
+      "native_latency_ms": 0.107354,
+      "native_schema_source_bytes": 0,
+      "native_selected": [],
+      "query": "email inbox",
+      "required_tool": null,
+      "schemarouter_latency_ms": 5.509643,
+      "schemarouter_schema_source_bytes": 0,
+      "schemarouter_selected": []
+    },
+    {
+      "native_latency_ms": 0.107113,
+      "native_schema_source_bytes": 0,
+      "native_selected": [],
+      "query": "weather forecast",
+      "required_tool": null,
+      "schemarouter_latency_ms": 5.520152,
+      "schemarouter_schema_source_bytes": 0,
+      "schemarouter_selected": []
+    }
+  ],
+  "catalog": {
+    "direct_tool_count": 12,
+    "full_schema_source_bytes": 34343,
+    "note": "schema_source_bytes measures frozen C++ inputSchema initializer source, not wire JSON bytes",
+    "routed_schema_source_bytes": 29382,
+    "routed_tool_count": 70,
+    "tool_count": 82
+  },
+  "evidence_level": "E1-maintainer-accepted-benchmark",
+  "field_recall": {
+    "reason": "The pinned Gearlynx catalog does not expose normalized output-field labels; no field labels are imputed.",
+    "status": "not_reported"
+  },
+  "integration": "gearlynx-mcp-router",
+  "known_limits": [
+    "Phase A is retrieval-only and does not claim emulator task success.",
+    "The fixture is derived from a pinned upstream source commit.",
+    "Required-field recall is not reported because the frozen upstream metadata does not provide normalized output-field labels.",
+    "Parameter schemas are not reimplemented in SchemaRouter; Gearlynx remains authoritative.",
+    "Native search mirrors Gearlynx AND-substring search and alias rules for Gearlynx-relevant names.",
+    "The frozen case set is maintainer-owned E1 evidence, not independent E2 validation."
+  ],
+  "native_summary": {
+    "mean_latency_ms": 0.11084775,
+    "mean_schema_source_bytes": 982,
+    "mean_selected_tools": 1.8125,
+    "required_tool_recall": 1.0,
+    "unsupported_rejection": 1.0
+  },
+  "schema_version": 1,
+  "schemarouter_summary": {
+    "mean_latency_ms": 6.3339706875,
+    "mean_schema_source_bytes": 744.6875,
+    "mean_selected_tools": 1.8125,
+    "required_tool_recall": 1.0,
+    "unsupported_rejection": 1.0
+  },
+  "upstream": {
+    "commit": "58c0fa0fa2abe1b0b7da885640b32bce4ff3677f",
+    "registry_path": "platforms/shared/desktop/mcp/mcp_tool_registry.cpp",
+    "repository": "drhelius/Gearlynx",
+    "server_path": "platforms/shared/desktop/mcp/mcp_server.cpp"
+  }
+}
