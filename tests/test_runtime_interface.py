@@ -105,7 +105,7 @@ def test_add_tool_replace_purges_runtime_state_for_changed_contract() -> None:
     assert router.executor.binding_status_for_contract(
         "weather",
         replacement.fingerprint,
-    ) == "missing"
+    ) == "unbound"
     assert router.unavailable_access_paths() == ()
     assert router.health_snapshots() == ()
 
