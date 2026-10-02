@@ -1,0 +1,41 @@
+name: Realistic Break-even Matrix
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/benchmark_realistic_break_even.py"
+      - ".github/workflows/realistic-break-even.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: realistic-break-even-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: python -m pip install .
+
+      - name: Run realistic break-even matrix
+        run: |
+          python scripts/benchmark_realistic_break_even.py \
+            --iterations 20 \
+            --json-out artifacts/realistic-break-even.json
+
+      - name: Upload benchmark
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: realistic-break-even
+          path: artifacts/realistic-break-even.json
+          if-no-files-found: error
