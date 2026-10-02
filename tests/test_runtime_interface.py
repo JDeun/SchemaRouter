@@ -78,6 +78,51 @@ async def test_ainvoke_exposes_async_framework_surface() -> None:
     assert result[0].data["city"] == "Busan"
 
 
+
+def test_add_tool_replace_purges_runtime_state_for_changed_contract() -> None:
+    router = make_router()
+    router.mark_access_unavailable("weather", "current", cooldown_seconds=60)
+    router.register_health_probe("weather", "current", lambda: True)
+
+    replacement = ToolSpec(
+        name="weather",
+        endpoints=[
+            EndpointSpec(
+                name="current",
+                parameters=[ParameterSpec(name="city", required=True)],
+                output_fields=[
+                    FieldSpec(name="city"),
+                    FieldSpec(name="temperature"),
+                    FieldSpec(name="humidity"),
+                ],
+                read_only=True,
+            )
+        ],
+    )
+
+    router.add_tool(replacement, replace=True)
+
+    assert router.executor.binding_status_for_contract(
+        "weather",
+        replacement.fingerprint,
+    ) == "unbound"
+    assert router.unavailable_access_paths() == ()
+    assert router.health_snapshots() == ()
+
+
+def test_add_tool_identical_replace_preserves_runtime_state() -> None:
+    router = make_router()
+    current = router.registry.get("weather")
+    router.register_health_probe("weather", "current", lambda: True)
+
+    router.add_tool(current.model_copy(deep=True), replace=True)
+
+    assert router.executor.binding_status_for_contract(
+        "weather",
+        current.fingerprint,
+    ) == "ready"
+    assert len(router.health_snapshots()) == 1
+
 def test_input_output_and_config_schemas_are_introspectable() -> None:
     router = make_router()
 
@@ -208,6 +253,51 @@ async def test_astream_events_can_opt_into_payloads() -> None:
     assert tool_start.data["arguments"] == {"city": "Seoul"}
     assert tool_end.data["result"]["data"]["temperature"] == 20
 
+
+
+@pytest.mark.asyncio
+async def test_event_stream_success_matches_ainvoke_result_payload() -> None:
+    invoke_router = make_router()
+    event_router = make_router()
+
+    expected = await invoke_router.ainvoke(request())
+    events = [
+        event
+        async for event in event_router.astream_events(
+            request(),
+            config=RunConfig(include_payloads=True),
+        )
+    ]
+
+    terminal_results = [
+        event.data["result"]
+        for event in events
+        if event.event == "tool.end"
+    ]
+    assert terminal_results == [result.model_dump(mode="json") for result in expected]
+    assert events[-1].event == "run.end"
+
+
+@pytest.mark.asyncio
+async def test_event_stream_failure_matches_ainvoke_exception_type() -> None:
+    async def failing(endpoint: str, arguments: dict) -> dict:
+        raise RuntimeError("same failure")
+
+    invoke_router = make_router()
+    event_router = make_router()
+    invoke_router.executor.bind("weather", failing)
+    event_router.executor.bind("weather", failing)
+
+    with pytest.raises(ExecutionError) as invoke_error:
+        await invoke_router.ainvoke(request())
+
+    seen = []
+    with pytest.raises(type(invoke_error.value)):
+        async for event in event_router.astream_events(request()):
+            seen.append(event)
+
+    assert seen[-1].event == "run.error"
+    assert seen[-1].data["error_type"] == type(invoke_error.value).__name__
 
 @pytest.mark.asyncio
 async def test_read_only_retry_can_recover() -> None:

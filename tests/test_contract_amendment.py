@@ -343,7 +343,11 @@ def test_restamp_points_an_existing_binding_at_the_current_fingerprint():
     tool = router.registry.get(key)
     endpoint = tool.endpoints[0]
     amended_endpoint = endpoint.model_copy(update={"description": "annotated"})
-    router.add_tool(tool.model_copy(update={"endpoints": [amended_endpoint]}), replace=True)
+    amended = tool.model_copy(update={"endpoints": [amended_endpoint]})
+    # restamp_binding is a lower-level primitive used after a trusted caller has
+    # already validated and registered an amendment. Direct public replacement
+    # now intentionally purges bindings instead.
+    router.registry.register(amended, replace=True)
     current_fingerprint = router.registry.get(key).fingerprint
 
     assert not router.executor.is_binding_ready_for_contract(key, current_fingerprint)
