@@ -68,3 +68,20 @@
 .md-typeset h2 {
   margin-top: 2.2em;
 }
+
+
+/*
+ * Keep long examples inside the article column on narrow screens. Material
+ * normally supplies this behavior, but make it an explicit project contract
+ * so custom branding cannot turn a long command/schema example into a
+ * page-level horizontal overflow.
+ */
+.md-typeset pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.md-typeset pre > code {
+  display: block;
+  min-width: 0;
+}
