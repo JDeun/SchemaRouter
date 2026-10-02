@@ -340,6 +340,7 @@ class _CandidateIndex:
         self._parameter_refs: dict[str, set[_EndpointRef]] = {}
         self._tool_refs: dict[str, set[_EndpointRef]] = {}
         self._endpoint_refs: dict[str, set[_EndpointRef]] = {}
+        self._declared_semantics: set[str] = set()
         self._tool_fingerprints_by_identity = {
             id(tool): tool.fingerprint
             for tool in tools
@@ -369,6 +370,10 @@ class _CandidateIndex:
                     self._add(self._token_refs, token, ref)
 
                 for field in endpoint.output_fields:
+                    if not field.identifier:
+                        self._declared_semantics.add(
+                            _normalize(field.semantic_id or field.name)
+                        )
                     names = [
                         field.name,
                         field.semantic_id or "",
@@ -406,6 +411,12 @@ class _CandidateIndex:
         """Return a fingerprint cached for this exact version-frozen ToolSpec object."""
 
         return self._tool_fingerprints_by_identity.get(id(tool))
+
+    @property
+    def declared_semantics(self) -> frozenset[str]:
+        """Normalized non-identifier field semantics in this registry snapshot."""
+
+        return frozenset(self._declared_semantics)
 
     def endpoint_pairs(
         self,
@@ -807,13 +818,16 @@ class SchemaPlanner:
             if self._evidence_request_active(requirement)
         }
         if active_field_evidence:
-            declared_semantics = {
-                _normalize(field.semantic_id or field.name)
-                for tool in self.registry.tools()
-                for endpoint in tool.endpoints
-                for field in endpoint.output_fields
-                if not field.identifier
-            }
+            if self.candidate_index:
+                declared_semantics = self._index().declared_semantics
+            else:
+                declared_semantics = {
+                    _normalize(field.semantic_id or field.name)
+                    for tool in self.registry.tools()
+                    for endpoint in tool.endpoints
+                    for field in endpoint.output_fields
+                    if not field.identifier
+                }
             unknown = sorted(
                 semantic_id
                 for semantic_id in active_field_evidence
