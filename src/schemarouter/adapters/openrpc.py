@@ -26,6 +26,8 @@ from ..source_identity import structured_source_identity_digest_for
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 from .openapi import same_origin
 
+_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
+
 _MAX_DISCOVERY_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 10 * 1024 * 1024
 _NESTED_FIELD_MAX_DEPTH = 8
@@ -523,7 +525,7 @@ class OpenRPCRemoteInvoker:
                     raise NonRetryableInvocationError(
                         "JSON-RPC transport redirects are not allowed"
                     )
-                if response.status_code in {408, 425, 429} or response.status_code >= 500:
+                if response.status_code in _TRANSIENT_HTTP_STATUS_CODES:
                     raise InvocationUnavailableError(
                         f"JSON-RPC transport temporarily unavailable: HTTP {response.status_code}"
                     )

@@ -1,0 +1,17 @@
+[
+  {"source":"Direct ToolSpec","entrypoint":"add_tool","test_file":"tests/test_runtime_interface.py","stages":["register","bind","retrieve","plan","execute","project","inspect"]},
+  {"source":"Python","entrypoint":"add_callable","test_file":"tests/test_python_adapter.py","stages":["register","bind","retrieve","plan","execute","project","inspect"]},
+  {"source":"ToolSpec + SDK/client","entrypoint":"add_bound_tool","test_file":"tests/test_runtime_interface.py","stages":["register","bind","retrieve","plan","execute","project","inspect"]},
+  {"source":"OpenAPI","entrypoint":"add_url","kind":"openapi","test_file":"tests/test_adapters.py","stages":["register","bind","retrieve","plan","execute","project","refresh","rebind","inspect"]},
+  {"source":"MCP Streamable HTTP","entrypoint":"add_url","kind":"mcp","test_file":"tests/test_mcp_transport.py","stages":["register","bind","retrieve","plan","execute","project","refresh","rebind","inspect"]},
+  {"source":"MCP stdio","entrypoint":"add_mcp_stdio","test_file":"tests/test_mcp_integration.py","stages":["register","bind","retrieve","plan","execute","project","refresh","rebind","inspect"]},
+  {"source":"MCP custom transport","entrypoint":"add_mcp_client_factory","test_file":"tests/test_mcp_bound_refresh.py","stages":["register","bind","retrieve","plan","execute","project","refresh","rebind","inspect"]},
+  {"source":"OPTIMADE","entrypoint":"add_url","kind":"optimade","test_file":"tests/test_optimade_adapter.py","stages":["register","bind","retrieve","plan","execute","project","refresh","rebind","inspect"]},
+  {"source":"GraphQL","entrypoint":"add_url","kind":"graphql","test_file":"tests/test_graphql_adapter.py","stages":["register","bind","retrieve","plan","execute","project","refresh","rebind","inspect"]},
+  {"source":"OData","entrypoint":"add_url","kind":"odata","test_file":"tests/test_odata_adapter.py","stages":["register","bind","retrieve","plan","execute","project","refresh","rebind","inspect"]},
+  {"source":"OpenRPC","entrypoint":"add_url","kind":"openrpc","test_file":"tests/test_openrpc_adapter.py","stages":["register","bind","retrieve","plan","execute","project","refresh","rebind","inspect"]},
+  {"source":"LangChain tool","entrypoint":"add_langchain_tool","test_file":"tests/test_inbound_agent_tool_imports.py","stages":["register","bind","retrieve","plan","execute","project","inspect"]},
+  {"source":"LlamaIndex tool","entrypoint":"add_llamaindex_tool","test_file":"tests/test_inbound_agent_tool_imports.py","stages":["register","bind","retrieve","plan","execute","project","inspect"]},
+  {"source":"REST/JSON","entrypoint":"add_http_tool","test_file":"tests/test_http_json_adapter.py","stages":["register","bind","retrieve","plan","execute","project","inspect"]},
+  {"source":"Custom protocol","entrypoint":"register_adapter","test_file":"tests/test_adapter_registry.py","stages":["register","inspect"]}
+]

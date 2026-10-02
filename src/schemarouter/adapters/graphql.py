@@ -16,6 +16,8 @@ from ..errors import (
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 
+_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
+
 _MAX_INTROSPECTION_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 10 * 1024 * 1024
 _MAX_TYPE_DEPTH = 8
@@ -736,7 +738,7 @@ class GraphQLRemoteInvoker:
                 raise InvocationUnavailableError("GraphQL transport failed") from exc
             except httpx.HTTPStatusError as exc:
                 status = exc.response.status_code
-                if status in {408, 425, 429} or status >= 500:
+                if status in _TRANSIENT_HTTP_STATUS_CODES:
                     raise InvocationUnavailableError(
                         f"GraphQL transport temporarily unavailable: HTTP {status}"
                     ) from exc

@@ -31,14 +31,34 @@ class ModelQueryAnalyzer:
     untrusted and projected onto the current registry before it reaches the planner.
     """
 
-    def __init__(self, model: ModelCallable) -> None:
+    def __init__(
+        self,
+        model: ModelCallable,
+        *,
+        max_catalog_endpoints: int = 128,
+    ) -> None:
+        if (
+            not isinstance(max_catalog_endpoints, int)
+            or isinstance(max_catalog_endpoints, bool)
+            or max_catalog_endpoints < 1
+        ):
+            raise ValueError("max_catalog_endpoints must be an integer >= 1")
         self.model = model
+        self.max_catalog_endpoints = max_catalog_endpoints
 
     async def analyze(
         self,
         request: PlanRequest,
         registry: ToolRegistry,
     ) -> QueryIntent:
+        endpoint_count = sum(len(tool.endpoints) for tool in registry.tools())
+        if endpoint_count > self.max_catalog_endpoints:
+            raise ModelAnalysisError(
+                "model analyzer catalog exceeds max_catalog_endpoints "
+                f"({endpoint_count} > {self.max_catalog_endpoints}); use bounded capability "
+                "retrieval/decision backends or raise the explicit analyzer budget"
+            )
+
         payload = {
             "task": "Map the user request onto the provided tool schema.",
             "rules": [

@@ -32,6 +32,8 @@ from ..schema_http import (
 from ..source_identity import structured_source_identity_digest_for
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
 
+_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
+
 _MAX_METADATA_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 16 * 1024 * 1024
 _EDM_NS = "http://docs.oasis-open.org/odata/ns/edm"
@@ -542,7 +544,7 @@ class ODataRemoteInvoker:
                 raise InvocationUnavailableError("OData transport failed") from exc
             except httpx.HTTPStatusError as exc:
                 status = exc.response.status_code
-                if status in {408, 425, 429} or status >= 500:
+                if status in _TRANSIENT_HTTP_STATUS_CODES:
                     raise InvocationUnavailableError(
                         f"OData transport temporarily unavailable: HTTP {status}"
                     ) from exc

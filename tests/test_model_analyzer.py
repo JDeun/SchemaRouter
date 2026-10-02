@@ -292,3 +292,55 @@ async def test_model_analyzer_preserves_caller_field_evidence_without_model_auth
     assert plan.calls[0].fields == ["user_id", "display_name"]
     assert plan.calls[0].field_evidence["display_name"].source_type == "directory"
     assert "field_evidence" not in captured
+
+
+@pytest.mark.asyncio
+async def test_model_analyzer_rejects_unbounded_catalog_before_model_call() -> None:
+    called = False
+
+    def model(payload: dict) -> dict:
+        nonlocal called
+        called = True
+        return {}
+
+    analyzer = ModelQueryAnalyzer(model, max_catalog_endpoints=2)
+    router = SchemaRouter(analyzer=analyzer)
+    for index in range(3):
+        router.add_tool(
+            ToolSpec(
+                name=f"tool_{index}",
+                endpoints=[EndpointSpec(name="read", read_only=True)],
+            )
+        )
+
+    with pytest.raises(ModelAnalysisError, match="max_catalog_endpoints"):
+        await router.aplan("read something")
+    assert called is False
+
+
+@pytest.mark.asyncio
+async def test_model_analyzer_catalog_budget_is_explicitly_configurable() -> None:
+    captured = {}
+
+    def model(payload: dict) -> dict:
+        captured.update(payload)
+        return {
+            "preferred_tools": [],
+            "preferred_endpoints": [],
+            "arguments": {},
+            "fields": [],
+            "concepts": [],
+            "evidence": {},
+        }
+
+    router = SchemaRouter(analyzer=ModelQueryAnalyzer(model, max_catalog_endpoints=3))
+    for index in range(3):
+        router.add_tool(
+            ToolSpec(
+                name=f"tool_{index}",
+                endpoints=[EndpointSpec(name="read", read_only=True)],
+            )
+        )
+
+    await router.aplan("read something")
+    assert len(captured["schema_catalog"]) == 3
