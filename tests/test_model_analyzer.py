@@ -294,7 +294,8 @@ async def test_model_analyzer_preserves_caller_field_evidence_without_model_auth
     assert "field_evidence" not in captured
 
 
-def test_model_analyzer_rejects_unbounded_catalog_before_model_call() -> None:
+@pytest.mark.asyncio
+async def test_model_analyzer_rejects_unbounded_catalog_before_model_call() -> None:
     called = False
 
     def model(payload: dict) -> dict:
@@ -313,11 +314,12 @@ def test_model_analyzer_rejects_unbounded_catalog_before_model_call() -> None:
         )
 
     with pytest.raises(ModelAnalysisError, match="max_catalog_endpoints"):
-        router.plan("read something")
+        await router.aplan("read something")
     assert called is False
 
 
-def test_model_analyzer_catalog_budget_is_explicitly_configurable() -> None:
+@pytest.mark.asyncio
+async def test_model_analyzer_catalog_budget_is_explicitly_configurable() -> None:
     captured = {}
 
     def model(payload: dict) -> dict:
@@ -340,5 +342,5 @@ def test_model_analyzer_catalog_budget_is_explicitly_configurable() -> None:
             )
         )
 
-    router.plan("read something")
+    await router.aplan("read something")
     assert len(captured["schema_catalog"]) == 3
