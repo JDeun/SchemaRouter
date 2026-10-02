@@ -1,4 +1,4 @@
-import json
+from json import loads
 from pathlib import Path
 
 from schemarouter import SchemaRouter
@@ -19,7 +19,7 @@ REQUIRED_EXECUTION_STAGES = {
 
 
 def _matrix() -> list[dict]:
-    return json.loads(MATRIX_PATH.read_text(encoding="utf-8"))
+    return loads(MATRIX_PATH.read_text(encoding="utf-8"))
 
 
 def test_documented_ingress_surfaces_have_machine_checked_product_paths() -> None:
