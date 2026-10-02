@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
-
 import json
 import re
 import xml.etree.ElementTree as ET
@@ -33,6 +31,8 @@ from ..schema_http import (
 )
 from ..source_identity import structured_source_identity_digest_for
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
+
+_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
 
 _MAX_METADATA_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 16 * 1024 * 1024
