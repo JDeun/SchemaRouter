@@ -3,8 +3,8 @@
 SchemaRouter uses the **brace + routing hub** identity.
 
 <div class="brand-lockup">
-  <img class="brand-lockup--light" src="../assets/brand/schemarouter-lockup-light.svg" alt="SchemaRouter">
-  <img class="brand-lockup--dark" src="../assets/brand/schemarouter-lockup-dark.svg" alt="SchemaRouter">
+  <img class="brand-lockup--light" src="../../assets/brand/schemarouter-lockup-light.svg" alt="SchemaRouter">
+  <img class="brand-lockup--dark" src="../../assets/brand/schemarouter-lockup-dark.svg" alt="SchemaRouter">
 </div>
 
 ## Mark
@@ -29,11 +29,11 @@ The teal center is the routing decision. Graphite/neutral geometry keeps the vis
 
 ## Asset set
 
-- [Light mark](../assets/brand/schemarouter-mark-light.svg)
-- [Dark mark](../assets/brand/schemarouter-mark-dark.svg)
-- [Light lockup](../assets/brand/schemarouter-lockup-light.svg)
-- [Dark lockup](../assets/brand/schemarouter-lockup-dark.svg)
-- [Social preview SVG](../assets/brand/schemarouter-social-preview.svg)
+- [Light mark](../../assets/brand/schemarouter-mark-light.svg)
+- [Dark mark](../../assets/brand/schemarouter-mark-dark.svg)
+- [Light lockup](../../assets/brand/schemarouter-lockup-light.svg)
+- [Dark lockup](../../assets/brand/schemarouter-lockup-dark.svg)
+- [Social preview SVG](../../assets/brand/schemarouter-social-preview.svg)
 
 Use the **mark** for favicon, avatar, compact navigation, and square surfaces.
 
