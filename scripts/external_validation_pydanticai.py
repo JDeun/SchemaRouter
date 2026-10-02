@@ -175,6 +175,8 @@ CATALOG: tuple[dict[str, Any], ...] = (
     },
 )
 
+FROZEN_CATALOG_SIZES: tuple[int, ...] = (len(CATALOG), 50, 100, 250)
+
 BASE_CASES: tuple[tuple[str, str | None], ...] = (
     ("current weather temperature in Seoul", "weather_lookup"),
     ("track parcel shipment ZX-1", "package_track"),
@@ -540,15 +542,46 @@ def evaluate(catalog_size: int = len(CATALOG)) -> dict[str, Any]:
     return result
 
 
+def evaluate_matrix(
+    catalog_sizes: Sequence[int] = FROZEN_CATALOG_SIZES,
+) -> dict[str, Any]:
+    sizes = tuple(int(size) for size in catalog_sizes)
+    if not sizes:
+        raise ValueError("catalog_sizes must not be empty")
+    if any(size < len(CATALOG) for size in sizes):
+        raise ValueError(f"catalog sizes must be >= {len(CATALOG)}")
+
+    return {
+        "schema_version": 1,
+        "integration": "pydanticai-tool-search-scaling",
+        "catalog_sizes": list(sizes),
+        "minimum_faithful_catalog_size": len(CATALOG),
+        "note": (
+            "The frozen real catalog has 12 tools, so the originally discussed 10-tool "
+            "point is represented by the faithful 12-tool baseline instead of dropping "
+            "registered tools or supported cases."
+        ),
+        "runs": [evaluate(size) for size in sizes],
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--json-out", type=Path)
     parser.add_argument("--catalog-size", type=int, default=len(CATALOG))
+    parser.add_argument(
+        "--matrix",
+        action="store_true",
+        help="run the frozen 12/50/100/250 scaling matrix",
+    )
     args = parser.parse_args()
 
-    if args.catalog_size < len(CATALOG):
-        parser.error(f"--catalog-size must be >= {len(CATALOG)}")
-    result = evaluate(args.catalog_size)
+    if args.matrix:
+        result = evaluate_matrix()
+    else:
+        if args.catalog_size < len(CATALOG):
+            parser.error(f"--catalog-size must be >= {len(CATALOG)}")
+        result = evaluate(args.catalog_size)
     rendered = json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True)
     print(rendered)
 

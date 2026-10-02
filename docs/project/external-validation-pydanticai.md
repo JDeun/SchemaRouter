@@ -40,6 +40,10 @@ pinned PydanticAI release, and runs:
 ```bash
 python scripts/external_validation_pydanticai.py \
   --json-out artifacts/external-validation-pydanticai.json
+
+python scripts/external_validation_pydanticai.py \
+  --matrix \
+  --json-out artifacts/external-validation-pydanticai-matrix.json
 ```
 
 The script refuses to run as valid downstream evidence if `schemarouter` resolves from the
@@ -81,6 +85,24 @@ The JSON evidence records:
 
 No byte count is labeled as a token count.
 
+## Frozen scaling matrix
+
+The reproducible matrix is **12 / 50 / 100 / 250 tools**. The original planning note
+mentioned a 10-tool point, but the frozen real catalog contains 12 tools and the supported
+case set depends on that complete catalog. The benchmark therefore uses 12 as the smallest
+faithful point rather than deleting real tools or changing the cases after the fact.
+
+| Catalog size | Composition |
+| ---: | --- |
+| 12 | Complete frozen real catalog |
+| 50 | 12 real tools + deterministic synthetic distractors |
+| 100 | 12 real tools + deterministic synthetic distractors |
+| 250 | 12 real tools + deterministic synthetic distractors |
+
+The matrix command emits every run into one JSON document so required-tool recall,
+unsupported rejection, revealed serialized schema bytes, shortlist size, and routing
+latency can be compared without changing the query set or retrieval policy.
+
 ## Fidelity limits
 
 The mirror intentionally copies only the information needed for SchemaRouter retrieval: tool name,
@@ -96,3 +118,28 @@ This is **E0 maintainer-owned evidence** under the
 that SchemaRouter replaces or outperforms native PydanticAI ToolSearch.
 
 See also the [external case-study template](case-study-template.md).
+
+
+## Frozen matrix result
+
+Canonical workflow run: `37002468981` at source
+`98b7b804002c99751fc7233938fbcf21fca14f7d`.
+
+Artifact: `external-validation-pydanticai-matrix`  
+Digest: `sha256:0f449bba15d993a516887c7e12d705c0f5f5f0d9fe69fb662ee20a0d84d6a820`
+
+| Tools | Required-tool recall | Unsupported rejection | Simple baseline unsupported rejection | Mean revealed schema bytes | Full serialized schema bytes | Mean routing latency |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 12 | 100% | 100% | 0% | 262.2 | 3,130 | 1.565 ms |
+| 50 | 100% | 100% | 0% | 262.2 | 12,972 | 3.954 ms |
+| 100 | 100% | 100% | 0% | 262.2 | 25,922 | 6.762 ms |
+| 250 | 100% | 100% | 0% | 262.2 | 64,922 | 16.400 ms |
+
+The simple name/description baseline retained the required tool on all four supported
+cases at every catalog size, but it disclosed tools for the single frozen unsupported
+case at every size. SchemaRouter retained the required tool and rejected that unsupported
+case at every size. Routing latency increased with catalog size; this result is retained
+rather than hidden behind a composite score.
+
+These are deterministic retrieval-layer results over five frozen cases. They do not
+measure final model answers or independently validate SchemaRouter adoption.

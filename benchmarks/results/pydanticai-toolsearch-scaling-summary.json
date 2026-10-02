@@ -1,0 +1,62 @@
+{
+  "artifact_digest": "sha256:0f449bba15d993a516887c7e12d705c0f5f5f0d9fe69fb662ee20a0d84d6a820",
+  "artifact_name": "external-validation-pydanticai-matrix",
+  "canonical_workflow_run": 37002468981,
+  "head_sha": "98b7b804002c99751fc7233938fbcf21fca14f7d",
+  "integration": "pydanticai-tool-search-scaling",
+  "pydantic_ai_version": "2.51.0",
+  "runs": [
+    {
+      "catalog_size": 12,
+      "full_serialized_schema_bytes": 3130,
+      "input_schema_exact_matches": 12,
+      "mean_revealed_schema_bytes": 262.2,
+      "mean_routing_latency_ms": 1.564804,
+      "required_tool_recall": 1.0,
+      "retrieval_task_success_rate": 1.0,
+      "simple_baseline_required_tool_recall": 1.0,
+      "simple_baseline_unsupported_rejection": 0.0,
+      "unsupported_rejection": 1.0
+    },
+    {
+      "catalog_size": 50,
+      "full_serialized_schema_bytes": 12972,
+      "input_schema_exact_matches": 50,
+      "mean_revealed_schema_bytes": 262.2,
+      "mean_routing_latency_ms": 3.95397,
+      "required_tool_recall": 1.0,
+      "retrieval_task_success_rate": 1.0,
+      "simple_baseline_required_tool_recall": 1.0,
+      "simple_baseline_unsupported_rejection": 0.0,
+      "unsupported_rejection": 1.0
+    },
+    {
+      "catalog_size": 100,
+      "full_serialized_schema_bytes": 25922,
+      "input_schema_exact_matches": 100,
+      "mean_revealed_schema_bytes": 262.2,
+      "mean_routing_latency_ms": 6.762053,
+      "required_tool_recall": 1.0,
+      "retrieval_task_success_rate": 1.0,
+      "simple_baseline_required_tool_recall": 1.0,
+      "simple_baseline_unsupported_rejection": 0.0,
+      "unsupported_rejection": 1.0
+    },
+    {
+      "catalog_size": 250,
+      "full_serialized_schema_bytes": 64922,
+      "input_schema_exact_matches": 250,
+      "mean_revealed_schema_bytes": 262.2,
+      "mean_routing_latency_ms": 16.400244,
+      "required_tool_recall": 1.0,
+      "retrieval_task_success_rate": 1.0,
+      "simple_baseline_required_tool_recall": 1.0,
+      "simple_baseline_unsupported_rejection": 0.0,
+      "unsupported_rejection": 1.0
+    }
+  ],
+  "schema_version": 1,
+  "schemarouter_version": "0.15.0.dev0",
+  "supported_cases": 4,
+  "unsupported_cases": 1
+}
