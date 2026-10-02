@@ -4,8 +4,20 @@
   "translation_root": "docs_ko",
   "translations": [
     {
+      "path": "adapter-authoring.md",
+      "source_blob": "5cd569971e0722b633951814876e851fafb790b2"
+    },
+    {
+      "path": "architecture.md",
+      "source_blob": "275bd9bfb75d55c5300b0867fcef09aa0475fce8"
+    },
+    {
       "path": "changelog.md",
       "source_blob": "c82c6d7391f7780e4b54d22897796d7f56ffdac5"
+    },
+    {
+      "path": "compatibility.md",
+      "source_blob": "f3d42dd4a208eee849590a8f54e4040a78d8e0eb"
     },
     {
       "path": "concepts/adapters.md",
@@ -16,12 +28,32 @@
       "source_blob": "d85caca43c29755fcdd752e70f12dfb5fd266408"
     },
     {
+      "path": "concepts/decision-backends.md",
+      "source_blob": "02e33c77d141113df65abc1e33bf0a9ae780f801"
+    },
+    {
+      "path": "concepts/design-principles.md",
+      "source_blob": "9fe6b02814c59de7d030d102a6fe333ac8b5d575"
+    },
+    {
       "path": "concepts/execution.md",
       "source_blob": "70d79f3ca4bf1cb28ac1c845ab1a432121932aa2"
     },
     {
       "path": "concepts/field-first-execution.md",
       "source_blob": "ed612ae41668e6ae76d5981fd932f78ac65b8e56"
+    },
+    {
+      "path": "concepts/planning.md",
+      "source_blob": "2636189c3d24e430c8fc43063f027328960a5762"
+    },
+    {
+      "path": "concepts/protocol-ingestion-decisions.md",
+      "source_blob": "ac984acc00827d3af8b529b7b53af5d88950f512"
+    },
+    {
+      "path": "concepts/registry.md",
+      "source_blob": "6b3ee8779f47606078027d3a2e7b1d5895cee67b"
     },
     {
       "path": "concepts/schema-router.md",
@@ -34,6 +66,10 @@
     {
       "path": "contributing.md",
       "source_blob": "ea38c9bff4bfe38a798e001e890b9b8f6ac8a146"
+    },
+    {
+      "path": "framework-maturity.md",
+      "source_blob": "a2d3dd6fd35bff6598fa1bf7435830d744f2bb41"
     },
     {
       "path": "getting-started/examples.md",
@@ -80,8 +116,16 @@
       "source_blob": "da49405aea26d8b4e8116236ffe20c7933cea525"
     },
     {
+      "path": "guides/decision-benchmark.md",
+      "source_blob": "bd1fe26cee4c3ca90944bc701d065d66f93404a4"
+    },
+    {
       "path": "guides/execution-hooks.md",
       "source_blob": "4525163137ff863865ab88ed9b3bb8e8a3d87fbe"
+    },
+    {
+      "path": "guides/execution-policy.md",
+      "source_blob": "beba2dea1e45a3729e1bc51a10f54d0e0ee65aba"
     },
     {
       "path": "guides/field-projection.md",
@@ -116,6 +160,10 @@
       "source_blob": "3a16b6252074911ddb692e6d2b73eb64bb16ee0d"
     },
     {
+      "path": "guides/multi-provider-evidence.md",
+      "source_blob": "db32bf2b89bd0cee8aaf75437ac0227e70f4e877"
+    },
+    {
       "path": "guides/odata.md",
       "source_blob": "f44bf77e4e6d54211c239f2c4e85d6868f08da33"
     },
@@ -136,6 +184,14 @@
       "source_blob": "b95d32b102fe33e9294f17d2c334879f96078388"
     },
     {
+      "path": "guides/protocol-plugin-recipes.md",
+      "source_blob": "ae3ea4070320c1c37c05f17ce2475aa10f058499"
+    },
+    {
+      "path": "guides/provider-fallback.md",
+      "source_blob": "769286c2e594afb5cc9a3b3935d83585bd0fa96a"
+    },
+    {
       "path": "guides/python-tools.md",
       "source_blob": "ae00ccbd3ced7cf0513cebbfaa6bd79e59ad9f0e"
     },
@@ -150,6 +206,14 @@
     {
       "path": "guides/runtime.md",
       "source_blob": "8fc523615b85d0030ec5c9189d013711207a22b7"
+    },
+    {
+      "path": "guides/schema-drift.md",
+      "source_blob": "709fa5b2e108a4bc2cfff783b1312594312df73f"
+    },
+    {
+      "path": "guides/universal-ingestion.md",
+      "source_blob": "737753d2e66b57c9215f8cde7a27bc1bfa317712"
     },
     {
       "path": "index.md",
@@ -216,8 +280,28 @@
       "source_blob": "779256b7afee98aac989ecd3297c79017eb14d5b"
     },
     {
+      "path": "project/external-adoption.md",
+      "source_blob": "86b7ea47f77c9d6610ea23c88d57840c86fba918"
+    },
+    {
+      "path": "project/external-validation-mcp-agent.md",
+      "source_blob": "f421459c8ce02cb372a1dce822b381975d30893d"
+    },
+    {
+      "path": "project/external-validation-openai-agents.md",
+      "source_blob": "ba8222257116a39dad6d15cea638e15e1743ca95"
+    },
+    {
+      "path": "project/external-validation-pydanticai.md",
+      "source_blob": "646b068b6c30401ca19bcfa58fce1fd502bd9b5b"
+    },
+    {
       "path": "project/launch-log.md",
       "source_blob": "0c6f59ecf06dbab836957187e822e402f7eb15e8"
+    },
+    {
+      "path": "project/launch-playbook.md",
+      "source_blob": "2b6e6d3cc93a260b62d1accc37bb5e639775d4f4"
     },
     {
       "path": "project/roadmap.md",
@@ -256,8 +340,140 @@
       "source_blob": "60dbef11ae8cd8a3d746224d31f2671ac40d67de"
     },
     {
+      "path": "release-checklist.md",
+      "source_blob": "1180e4106644217a90c8634b2f499e01ce4b533c"
+    },
+    {
+      "path": "releases/0.10.0.md",
+      "source_blob": "af7c386fe4f70b6f7573c5dc957a5a3ecc9d928f"
+    },
+    {
+      "path": "releases/0.11.0.md",
+      "source_blob": "f6576239b93c802c5f48e42f06828ffc480481e0"
+    },
+    {
+      "path": "releases/0.12.0.md",
+      "source_blob": "2b1f22affe73ea0962697a03f172d1b7669d11ae"
+    },
+    {
+      "path": "releases/0.13.0.md",
+      "source_blob": "94beeed4c5eb3c2ca788d36699eb8c0040f97804"
+    },
+    {
       "path": "releases/0.14.0.md",
       "source_blob": "474a2b2be67309a5220fb9014bfbeda9ad5ea894"
+    },
+    {
+      "path": "releases/0.2.0a1.md",
+      "source_blob": "1cffd1e8d2c9f5d64310feff50042e70f1a6fbe4"
+    },
+    {
+      "path": "releases/0.3.0.md",
+      "source_blob": "f862f7f7ba2fd0ac3ea55ecfc9821a03bc58640b"
+    },
+    {
+      "path": "releases/0.3.0a1.md",
+      "source_blob": "282690883c29bbca91daef758b3c22857486fecc"
+    },
+    {
+      "path": "releases/0.4.0.md",
+      "source_blob": "31ad37c6c8ff832062092d10aa1582eb90771896"
+    },
+    {
+      "path": "releases/0.5.0.md",
+      "source_blob": "1d08b793fd48a1e4c0f882cb24004fffcd5a3595"
+    },
+    {
+      "path": "releases/0.6.0.md",
+      "source_blob": "e126cbefbaa65fe6708bb95929d41d861c370334"
+    },
+    {
+      "path": "releases/0.7.0.md",
+      "source_blob": "ad50d25b91c88635fd0000237134313ea8a506a8"
+    },
+    {
+      "path": "releases/0.8.0.md",
+      "source_blob": "a73da5c27a183a7a4711f08e2d3aa0e4b6b1c8fa"
+    },
+    {
+      "path": "releases/0.9.0.md",
+      "source_blob": "5753c10a90c807618dd434f4916e01ab0732ce13"
+    },
+    {
+      "path": "research/0.14-paper-evidence-checkpoint.md",
+      "source_blob": "08c22e5d28f3fd831ad89ac041180168461ad805"
+    },
+    {
+      "path": "research/adaptive-shortlist-depth.md",
+      "source_blob": "3cd62d23eb18409f4cec46995c301c3a952427c6"
+    },
+    {
+      "path": "research/agent-utility-b1-result.md",
+      "source_blob": "072af371170bc265baf5afff3793605a8aa439ab"
+    },
+    {
+      "path": "research/corrective-reretrieval.md",
+      "source_blob": "92bd4c19d2b72519111c297394505ff365958c7f"
+    },
+    {
+      "path": "research/design-and-experiment-history.md",
+      "source_blob": "37c24c4109568c8107a1259cdf58eda75f66d100"
+    },
+    {
+      "path": "research/experiment-index.md",
+      "source_blob": "90d7634d7cd024d302b9349de893796f1f7761a5"
+    },
+    {
+      "path": "research/field-projection-answer-quality.md",
+      "source_blob": "d51da188c660890c508115cb376741813f94d762"
+    },
+    {
+      "path": "research/final-answer-quality.md",
+      "source_blob": "a5bf04fe8cd645b9c4ce2e8fbf77eda990f44fd0"
+    },
+    {
+      "path": "research/governance.md",
+      "source_blob": "2e96519aefec562bef293cb724bfa0e051be38c4"
+    },
+    {
+      "path": "research/intent-manual-dev-result.md",
+      "source_blob": "0c7c1a8331d751256be567e033d51c6f6779d508"
+    },
+    {
+      "path": "research/large-heldout-agent-utility.md",
+      "source_blob": "4784627f0972783c45e29ef49aed0d6174176bfd"
+    },
+    {
+      "path": "research/operation-routing-freeze-protocol.md",
+      "source_blob": "a6a66039db4bf4ec250b3f21fed4956d3dfe15e0"
+    },
+    {
+      "path": "research/operation-routing-v4-terminal-report.md",
+      "source_blob": "729c05164a133d53d2b38341bd97f00c303577b0"
+    },
+    {
+      "path": "research/paper-evidence-package.md",
+      "source_blob": "eefd68d687e7879f5369b53984b602bb81f9af3a"
+    },
+    {
+      "path": "research/prior-art-roadmap.md",
+      "source_blob": "e0c1b8628c3a2dd4e9b554ce633891038d37baf7"
+    },
+    {
+      "path": "research/routing-status.md",
+      "source_blob": "c2229dc9ca8b52d1ccb9b4bc44bbcc71a9d4f4ae"
+    },
+    {
+      "path": "research/successor-screen.md",
+      "source_blob": "80e7597e85ccd2550892f1b04f5c9e4984b03932"
+    },
+    {
+      "path": "research/typed-capability-retrieval-ablation.md",
+      "source_blob": "6fdd48f06546ad6aeda224cb8b59e77a80e02808"
+    },
+    {
+      "path": "security/threat-model.md",
+      "source_blob": "a7ca91ef2d09b92337c575523cf64520c3f7f07d"
     },
     {
       "path": "stable-core.md",
