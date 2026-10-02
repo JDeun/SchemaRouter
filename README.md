@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<p align="center"><strong>Your agent has too many tools, and each one returns too much. Put a typed boundary in between.</strong></p>
+<p align="center"><strong>When tools speak different schemas, put a typed capability boundary in between.</strong></p>
 
 <p align="center">
   <a href="README.md">English</a> ·
@@ -31,11 +31,19 @@
 SchemaRouter is a **typed capability retrieval and schema-aware execution layer for LLM/RAG agents**
 across MCP, OpenAPI, Python, and framework tools.
 
-Agents get harder to steer as their tool catalog grows, and tool responses often contain far more
-than the request needs. SchemaRouter works out **which declared data fields are needed**, exposes a
-bounded set of registered tools that can supply them, and keeps only declared output fields before
-the result reaches the model. Typed contracts can carry units, qualifiers, provenance, and
-validation rules so one value cannot silently stand in for another.
+Tool routing gets harder when a catalog mixes providers and protocols with overlapping operations,
+different field semantics, units, qualifiers, and policy constraints. SchemaRouter works out
+**which declared data fields are needed**, exposes a bounded set of registered capabilities that
+can supply them, and keeps only declared output fields before the result reaches the model. Typed
+contracts can carry units, qualifiers, provenance, and validation rules so one value cannot
+silently stand in for another.
+
+The measured break-even matrix shows that **catalog size alone is not the deciding factor**. A
+strong schema-aware lexical baseline was sufficient on the low/medium-ambiguity synthetic fixtures,
+while SchemaRouter preserved 100% required-tool recall and unsupported rejection on the
+high-ambiguity fixtures where that baseline's recall fell to about 58–67%. The result is a
+positioning boundary, not a production-utility claim: SchemaRouter is most useful when capabilities
+are heterogeneous or difficult to distinguish by names and descriptions alone.
 
 `pip install schemarouter`
 
