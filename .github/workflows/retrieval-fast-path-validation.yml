@@ -4,8 +4,12 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
+      - "src/schemarouter/__init__.py"
+      - "src/schemarouter/models.py"
       - "src/schemarouter/planner.py"
+      - "src/schemarouter/runtime.py"
       - "tests/test_candidate_index.py"
+      - "tests/test_capability_retrieval.py"
       - "scripts/benchmark_retrieval_hot_path.py"
       - ".github/workflows/retrieval-fast-path-validation.yml"
 
