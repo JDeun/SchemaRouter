@@ -61,9 +61,8 @@ def main() -> None:
         for error in check_html(path):
             failures.append(f"{path}: {error}")
     if failures:
-        message = "rendered documentation structure check failed:\\n- " + "\\n- ".join(\n            failures\n        )
-        raise SystemExit(message)
-    print(f"rendered documentation structure OK: {len(html_files)} HTML files")
+        prefix = "rendered documentation structure check failed:"
+        message = prefix + "\\n- " + "\\n- ".join(failures)
 
 
 if __name__ == "__main__":
