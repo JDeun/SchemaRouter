@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from external_validation_gearlynx import CASES, build_router, load_catalog
+
 from schemarouter import (
     EndpointSpec,
     EvidenceRequirements,
