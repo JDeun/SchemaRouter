@@ -519,7 +519,24 @@ class SchemaRouter:
         return router
 
     def add_tool(self, tool: ToolSpec, *, replace: bool = False) -> str:
-        return self.registry.register(tool, replace=replace)
+        if not replace:
+            return self.registry.register(tool)
+
+        try:
+            current = self.registry.get(tool.key)
+        except KeyError:
+            return self.registry.register(tool)
+
+        key = self.registry.register(tool, replace=True)
+        if current.fingerprint != tool.fingerprint:
+            # A direct ToolSpec replacement has not validated that the old trusted
+            # transport/probes remain valid for the new contract. Fail closed rather
+            # than silently carrying process-local runtime state across the boundary.
+            self.executor.purge_tool_runtime_state(key)
+            self.health_monitor.unregister_tool(key)
+            self.schema_watcher.unregister(key)
+            self.loader.forget_schema_http_validators(key)
+        return key
 
     async def aremove_tool(self, tool_key: str) -> ToolSpec:
         """Atomically remove one capability and all router-owned runtime state."""
