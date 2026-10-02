@@ -1,0 +1,39 @@
+name: Retrieval Fast Path Validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/schemarouter/planner.py"
+      - "tests/test_candidate_index.py"
+      - "scripts/benchmark_retrieval_hot_path.py"
+      - ".github/workflows/retrieval-fast-path-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: python -m pip install .
+
+      - name: Run retrieval hot-path benchmark
+        run: |
+          python scripts/benchmark_retrieval_hot_path.py \
+            --iterations 50 \
+            --json-out artifacts/retrieval-fast-path.json
+
+      - name: Upload benchmark
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: retrieval-fast-path
+          path: artifacts/retrieval-fast-path.json
+          if-no-files-found: error
