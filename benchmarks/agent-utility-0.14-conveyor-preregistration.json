@@ -45,7 +45,7 @@
         "corpora for #431, #432, #424 and #506",
         "optional_condition_policy",
         "idempotency identities for existing stages",
-        "the terminal evidence digest definition",
+        "terminal evidence digest definition",
         "the completion semantics of #500"
       ],
       "why_independent": "#15 consumes no canonical B2/downstream artifact and can be executed whenever the required external provider/runtime is available. Blocking #432 or #424 on hosted credentials or hardware would mix infrastructure availability with the frozen scientific chain.",
@@ -120,29 +120,65 @@
     "semantic_changes_during_retry_allowed": false
   },
   "corpora": {
+    "424": {
+      "semantic_tasks": 144,
+      "catalogs": [
+        100,
+        250
+      ],
+      "conditions": [
+        "FULL",
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE",
+        "ORACLE"
+      ],
+      "heldout_queries_are_additional_forbidden_surface": true
+    },
     "431": {
       "semantic_tasks": 180,
-      "catalogs": [100, 250, 500],
+      "catalogs": [
+        100,
+        250,
+        500
+      ],
       "conditions": 5,
       "content_generated_only_after_b2_success": true
     },
     "432": {
       "semantic_tasks": 780,
-      "retrieval_catalogs": [100, 250, 500, 1000],
-      "downstream_catalogs": [100, 250, 500],
-      "required_conditions": ["FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE"],
+      "retrieval_catalogs": [
+        100,
+        250,
+        500,
+        1000
+      ],
+      "downstream_catalogs": [
+        100,
+        250,
+        500
+      ],
+      "required_conditions": [
+        "FULL",
+        "SR-5",
+        "SR-10",
+        "SR-PROGRESSIVE",
+        "ORACLE"
+      ],
       "content_generated_only_after_parallel_terminal_gates": true
-    },
-    "424": {
-      "semantic_tasks": 144,
-      "catalogs": [100, 250],
-      "conditions": ["FULL", "SR-5", "SR-10", "SR-PROGRESSIVE", "ORACLE"],
-      "heldout_queries_are_additional_forbidden_surface": true
     },
     "506": {
       "semantic_tasks": 144,
-      "catalogs": [100, 250],
-      "conditions": ["RAW-FULL", "PROJECTED", "PROJECTED+CONTRACT", "ORACLE-MINIMAL"],
+      "catalogs": [
+        100,
+        250
+      ],
+      "conditions": [
+        "RAW-FULL",
+        "PROJECTED",
+        "PROJECTED+CONTRACT",
+        "ORACLE-MINIMAL"
+      ],
       "candidate_exposure_is_fixed_across_conditions": "SR-5",
       "varies_observation_presentation_only": true,
       "content_is_independent_of_b2_outcomes": true
