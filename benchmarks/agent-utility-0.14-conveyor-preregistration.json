@@ -13,7 +13,8 @@
     "APPENDED:#506_PROJECTION_CONFIRMATION"
   ],
   "independent_stages": [
-    "#506_PROJECTION_DEV"
+    "#506_PROJECTION_DEV",
+    "#15_LIVE_DECISION_EVIDENCE"
   ],
   "amendments": [
     {
@@ -32,6 +33,24 @@
       "why_appended_not_inserted": "This DAG was preregistered before downstream corpus generation and is already in flight. Inserting a stage would move an existing stage's inputs or ordering; appending after terminal evidence cannot.",
       "why_dev_screen_is_independent": "The development screen consumes no upstream artifact. Queuing it behind the frozen chain would delay development evidence for no scientific reason, and advancing it before the B2 gate keeps every early return from starving it.",
       "evidence_class_separation": "The development screen may inform design and may never be reported as confirmation."
+    },
+    {
+      "date": "2026-10-02",
+      "issue": 15,
+      "change": "Registered the live decision-routing benchmark track as an independent non-blocking research DAG node.",
+      "reason": "#15 requires reproducible live-provider/runtime evidence whose credentials, network availability, model revisions, pricing, accelerator placement and hosted runtime availability are external variables. It should remain visible in the research DAG without becoming a prerequisite for the already-frozen agent-utility chain.",
+      "explicitly_unchanged": [
+        "every existing stage's inputs, ordering and gates",
+        "the frozen downstream implementation SHA",
+        "corpora for #431, #432, #424 and #506",
+        "optional_condition_policy",
+        "idempotency identities for existing stages",
+        "the terminal evidence digest definition",
+        "the completion semantics of #500"
+      ],
+      "why_independent": "#15 consumes no canonical B2/downstream artifact and can be executed whenever the required external provider/runtime is available. Blocking #432 or #424 on hosted credentials or hardware would mix infrastructure availability with the frozen scientific chain.",
+      "automatic_dispatch": false,
+      "completion_rule": "The node is complete only when issue #15 records reproducible live evidence for the required provider paths with dated runtime/model/cost/token/hardware metadata. Local compatibility or deterministic-only runs do not complete the node."
     }
   ],
   "launch_policy": {
@@ -40,7 +59,40 @@
     "hourly_controller_may_recover_missing_k3": true,
     "controller_must_not_race_native_k3_trigger": true,
     "heldout_waits_for_both_parallel_stages": true,
-    "final_answer_waits_for_successful_heldout_workflow": true
+    "final_answer_waits_for_successful_heldout_workflow": true,
+    "issue_15_live_decision_evidence_is_independent": true,
+    "issue_15_must_not_block_frozen_agent_utility_chain": true,
+    "issue_15_automatic_dispatch": false
+  },
+  "external_evidence_nodes": {
+    "15": {
+      "label": "LIVE_DECISION_EVIDENCE",
+      "tracking_issue": 15,
+      "blocking": false,
+      "automatic_dispatch": false,
+      "harness": "scripts/benchmark_decision_routing.py",
+      "required_paths": [
+        "KeywordAnalyzer deterministic baseline",
+        "at least one real ModelQueryAnalyzer provider",
+        "Jev / TypeSafe System One through JevDecisionBackend"
+      ],
+      "required_metadata": [
+        "exact model/provider/runtime identity",
+        "source and corpus revision",
+        "routing accuracy and abstention",
+        "invalid/failed routing rate",
+        "latency distribution",
+        "reported input/output tokens",
+        "dated provider pricing and derived cost when applicable",
+        "hardware/device/runtime placement for local paths"
+      ],
+      "completion_source": "public reproducible evidence recorded in issue #15",
+      "non_completion_examples": [
+        "deterministic-only CI evidence",
+        "wire/API compatibility without a live measurement",
+        "a local/open model result without the required hosted/provider paths"
+      ]
+    }
   },
   "optional_condition_policy": {
     "STRUCT-FIXED-3": "Include in #432 iff the preregistered structural K3 downstream primary gate is true.",
