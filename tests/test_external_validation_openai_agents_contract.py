@@ -8,12 +8,11 @@ pytest.importorskip("agents")
 
 from mcp.types import Tool as MCPTool
 
+from schemarouter import SchemaRouter
 from scripts.external_validation_openai_agents import (
     SchemaRouterDynamicMCPFilter,
-    SearchContext,
     _register_mcp_retrieval_mirror,
 )
-from schemarouter import SchemaRouter
 
 
 def _tool(name: str, description: str) -> MCPTool:
