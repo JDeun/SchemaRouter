@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import math
 import re
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Set
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import Any, Protocol
@@ -183,7 +183,7 @@ def _tool_identifier_forms(tool: ToolSpec) -> set[str]:
 
 
 def _tool_identifier_match(
-    query_tokens: set[str],
+    query_tokens: Set[str],
     tool: ToolSpec,
 ) -> bool:
     query_forms = {
@@ -238,7 +238,7 @@ def _operation_tokens(endpoint: EndpointSpec) -> set[str]:
 
 
 def _operation_family_match(
-    query_tokens: set[str],
+    query_tokens: Set[str],
     endpoint: EndpointSpec,
 ) -> bool:
     query_ascii = {
@@ -313,6 +313,14 @@ class _FieldSemantic:
 
 
 @dataclass(frozen=True)
+class _ScoringContext:
+    query_tokens: frozenset[str]
+    concept_norms: frozenset[str]
+    preferred_tools: frozenset[str]
+    preferred_endpoints: frozenset[str]
+
+
+@dataclass(frozen=True)
 class _Candidate:
     tool: ToolSpec
     endpoint: EndpointSpec
@@ -340,6 +348,7 @@ class _CandidateIndex:
         self._parameter_refs: dict[str, set[_EndpointRef]] = {}
         self._tool_refs: dict[str, set[_EndpointRef]] = {}
         self._endpoint_refs: dict[str, set[_EndpointRef]] = {}
+        self._declared_semantics: set[str] = set()
         self._tool_fingerprints_by_identity = {
             id(tool): tool.fingerprint
             for tool in tools
@@ -369,6 +378,10 @@ class _CandidateIndex:
                     self._add(self._token_refs, token, ref)
 
                 for field in endpoint.output_fields:
+                    if not field.identifier:
+                        self._declared_semantics.add(
+                            _normalize(field.semantic_id or field.name)
+                        )
                     names = [
                         field.name,
                         field.semantic_id or "",
@@ -389,6 +402,8 @@ class _CandidateIndex:
                     for alias in parameter.aliases:
                         self._add(self._parameter_refs, alias, ref)
 
+        self._frozen_declared_semantics = frozenset(self._declared_semantics)
+
     @staticmethod
     def _add(
         index: dict[str, set[_EndpointRef]],
@@ -406,6 +421,12 @@ class _CandidateIndex:
         """Return a fingerprint cached for this exact version-frozen ToolSpec object."""
 
         return self._tool_fingerprints_by_identity.get(id(tool))
+
+    @property
+    def declared_semantics(self) -> frozenset[str]:
+        """Normalized non-identifier field semantics in this registry snapshot."""
+
+        return self._frozen_declared_semantics
 
     def endpoint_pairs(
         self,
@@ -807,13 +828,16 @@ class SchemaPlanner:
             if self._evidence_request_active(requirement)
         }
         if active_field_evidence:
-            declared_semantics = {
-                _normalize(field.semantic_id or field.name)
-                for tool in self.registry.tools()
-                for endpoint in tool.endpoints
-                for field in endpoint.output_fields
-                if not field.identifier
-            }
+            if self.candidate_index:
+                declared_semantics = self._index().declared_semantics
+            else:
+                declared_semantics = {
+                    _normalize(field.semantic_id or field.name)
+                    for tool in self.registry.tools()
+                    for endpoint in tool.endpoints
+                    for field in endpoint.output_fields
+                    if not field.identifier
+                }
             unknown = sorted(
                 semantic_id
                 for semantic_id in active_field_evidence
@@ -897,8 +921,15 @@ class SchemaPlanner:
                 if is_available(tool, endpoint)
             )
 
+        scoring_context = self._scoring_context(request.query, intent)
         candidates = [
-            self._score_endpoint(tool, endpoint, request.query, intent)
+            self._score_endpoint(
+                tool,
+                endpoint,
+                request.query,
+                intent,
+                _context=scoring_context,
+            )
             for tool, endpoint in endpoint_pairs
         ]
         candidates = [candidate for candidate in candidates if candidate.score > 0]
@@ -1048,9 +1079,16 @@ class SchemaPlanner:
             if is_available(tool, endpoint)
         )
 
+        scoring_context = self._scoring_context(request.query, intent)
         if index is None or self.structural_retrieval:
             return [
-                self._score_endpoint(tool, endpoint, request.query, intent)
+                self._score_endpoint(
+                    tool,
+                    endpoint,
+                    request.query,
+                    intent,
+                    _context=scoring_context,
+                )
                 for tool, endpoint in available_pairs
             ]
 
@@ -1060,7 +1098,13 @@ class SchemaPlanner:
         }
         return [
             (
-                self._score_endpoint(tool, endpoint, request.query, intent)
+                self._score_endpoint(
+                    tool,
+                    endpoint,
+                    request.query,
+                    intent,
+                    _context=scoring_context,
+                )
                 if (tool.key, endpoint.name) in positive_refs
                 else _Candidate(tool, endpoint, 0.0, ())
             )
@@ -3389,17 +3433,33 @@ class SchemaPlanner:
             ignored_arguments=list(ignored_arguments),
         )
 
+    @staticmethod
+    def _scoring_context(query: str, intent: QueryIntent) -> _ScoringContext:
+        return _ScoringContext(
+            query_tokens=frozenset(_tokens(query)),
+            concept_norms=frozenset(
+                _normalize(concept)
+                for concept in intent.concepts
+                if concept
+            ),
+            preferred_tools=frozenset(intent.preferred_tools),
+            preferred_endpoints=frozenset(intent.preferred_endpoints),
+        )
+
     def _score_endpoint(
         self,
         tool: ToolSpec,
         endpoint: EndpointSpec,
         query: str,
         intent: QueryIntent,
+        *,
+        _context: _ScoringContext | None = None,
     ) -> _Candidate:
-        query_tokens = _tokens(query)
-        concept_norms = {_normalize(concept) for concept in intent.concepts if concept}
-        preferred_tools = set(intent.preferred_tools)
-        preferred_endpoints = set(intent.preferred_endpoints)
+        context = _context or self._scoring_context(query, intent)
+        query_tokens = context.query_tokens
+        concept_norms = context.concept_norms
+        preferred_tools = context.preferred_tools
+        preferred_endpoints = context.preferred_endpoints
 
         score = 0.0
         components: list[ScoreComponent] = []

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from schemarouter import (
     EndpointSpec,
+    EvidenceRequirements,
     FieldSpec,
     InMemoryRegistry,
     ParameterSpec,
@@ -300,3 +301,71 @@ def test_candidate_index_preserves_zero_score_retrieval_tiebreaks() -> None:
         "a_read_only.read",
         "z_destructive.run",
     ]
+
+
+
+def test_field_evidence_validation_reuses_candidate_index_snapshot() -> None:
+    registry = CountingRegistry()
+    registry.register(
+        ToolSpec(
+            name="materials",
+            endpoints=[
+                EndpointSpec(
+                    name="lookup",
+                    output_fields=[
+                        FieldSpec(
+                            name="band_gap",
+                            semantic_id="materials.band_gap",
+                            json_schema={"type": "number"},
+                            unit="eV",
+                        )
+                    ],
+                    read_only=True,
+                )
+            ],
+        )
+    )
+    planner = SchemaPlanner(registry, candidate_index=True)
+    request = PlanRequest(
+        query="band gap",
+        concepts=["band_gap"],
+        field_evidence={
+            "materials.band_gap": EvidenceRequirements(units=True),
+        },
+    )
+
+    planner.retrieve(request, k=1)
+    planner.retrieve(request, k=1)
+
+    assert registry.tools_calls == 1
+
+    registry.register(
+        ToolSpec(
+            name="thermo",
+            endpoints=[
+                EndpointSpec(
+                    name="lookup",
+                    output_fields=[
+                        FieldSpec(
+                            name="temperature",
+                            semantic_id="thermo.temperature",
+                            json_schema={"type": "number"},
+                            unit="K",
+                        )
+                    ],
+                    read_only=True,
+                )
+            ],
+        )
+    )
+    updated = PlanRequest(
+        query="temperature",
+        concepts=["temperature"],
+        field_evidence={
+            "thermo.temperature": EvidenceRequirements(units=True),
+        },
+    )
+
+    planner.retrieve(updated, k=1)
+
+    assert registry.tools_calls == 2
