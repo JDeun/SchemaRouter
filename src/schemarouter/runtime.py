@@ -220,13 +220,7 @@ class SchemaRouter:
             self.registry,
             analyzer=analyzer,
             structural_retrieval=structural_retrieval,
-            availability_predicate=(
-                lambda tool, endpoint: self.executor.is_access_available_for_contract(
-                    tool.key,
-                    endpoint.name,
-                    tool.fingerprint,
-                )
-            ),
+            availability_predicate=self._is_snapshot_access_available,
         )
         self.health_monitor = AccessHealthMonitor(self.executor)
         self.loader = URLSchemaLoader(
@@ -239,6 +233,13 @@ class SchemaRouter:
             self.registry,
             self.arefresh_schema,
             self.loader.adapters,
+        )
+
+    def _is_snapshot_access_available(self, tool: ToolSpec, endpoint: Any) -> bool:
+        return self.executor.is_access_available_for_contract(
+            tool.key,
+            endpoint.name,
+            self.planner._snapshot_tool_fingerprint(tool),
         )
 
     async def __aenter__(self) -> SchemaRouter:
