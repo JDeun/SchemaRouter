@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
-
 import json
 import re
 from typing import Any
@@ -17,6 +15,8 @@ from ..errors import (
 )
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, ToolCall, ToolSpec
 from .base import AdapterContext, AdapterLoadResult, DiscoveryProfile, RefreshProfile
+
+_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
 
 _MAX_INTROSPECTION_BYTES = 5 * 1024 * 1024
 _MAX_RESPONSE_BYTES = 10 * 1024 * 1024
