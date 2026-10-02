@@ -175,7 +175,7 @@ CATALOG: tuple[dict[str, Any], ...] = (
     },
 )
 
-CASES: tuple[tuple[str, str | None], ...] = (
+BASE_CASES: tuple[tuple[str, str | None], ...] = (
     ("current weather temperature in Seoul", "weather_lookup"),
     ("track parcel shipment ZX-1", "package_track"),
     ("research paper abstract about retrieval augmented generation", "paper_search"),
@@ -184,16 +184,14 @@ CASES: tuple[tuple[str, str | None], ...] = (
 )
 
 
-def _tool_definitions() -> list[ToolDefinition]:
-    return [
-        ToolDefinition(
+def _tool_definitions(catalog_size: int = len(CATALOG)) -> list[ToolDefinition]:
+    base = list(CATALOG)\n    while len(base) < catalog_size:\n        index = len(base)\n        base.append({\n            "name": f"distractor_{index:03d}",\n            "description": f"Synthetic unrelated capability number {index} for catalog scaling.",\n            "parameters": {"type": "object", "properties": {"value": {"type": "string"}}, "required": ["value"], "additionalProperties": False},\n            "fields": ((f"distractor_{index:03d}", f"synthetic.distractor_{index:03d}"),),\n        })\n    return [\n        ToolDefinition(
             name=entry["name"],
             description=entry["description"],
             parameters_json_schema=deepcopy(entry["parameters"]),
             defer_loading=True,
         )
-        for entry in CATALOG
-    ]
+        for entry in base[:catalog_size]\n    ]
 
 
 def _field_hints() -> dict[str, tuple[tuple[str, str], ...]]:
@@ -362,10 +360,10 @@ def _assert_installed_wheel() -> None:
     assert "site-packages" in package_file.parts, package_file
 
 
-def evaluate() -> dict[str, Any]:
+def _simple_baseline(query: str, tools: Sequence[ToolDefinition], *, max_results: int = 3) -> list[str]:\n    tokens = set(re.findall(r"[a-z0-9]+", query.casefold()))\n    scored: list[tuple[int, str]] = []\n    for tool in tools:\n        haystack = f"{tool.name} {tool.description or ''}".casefold()\n        score = sum(1 for token in tokens if token in haystack)\n        if score:\n            scored.append((score, tool.name))\n    scored.sort(key=lambda item: (-item[0], item[1]))\n    return [name for _, name in scored[:max_results]]\n\n\ndef evaluate(catalog_size: int = len(CATALOG)) -> dict[str, Any]:
     _assert_installed_wheel()
 
-    tools = _tool_definitions()
+    tools = _tool_definitions(catalog_size)
     router = SchemaRouter()
     _register_retrieval_mirror(router, tools)
     strategy = SchemaRouterToolSearchStrategy(router, max_results=3)
@@ -382,7 +380,7 @@ def evaluate() -> dict[str, Any]:
     unsupported_rejections = 0
 
     by_name = {tool.name: tool for tool in tools}
-    for query, required_tool in CASES:
+    baseline_supported_hits = 0\n    baseline_unsupported_rejections = 0\n    for query, required_tool in BASE_CASES:
         started = time.perf_counter()
         selected, candidate_evidence = strategy.search_with_evidence(query, tools)
         elapsed_ms = (time.perf_counter() - started) * 1000.0
@@ -397,12 +395,12 @@ def evaluate() -> dict[str, Any]:
             success = required_tool in selected
             supported_hits += int(success)
 
-        selected_defs = [by_name[name] for name in selected]
+        baseline_selected = _simple_baseline(query, tools, max_results=3)\n        if required_tool is None:\n            baseline_unsupported_rejections += int(not baseline_selected)\n        else:\n            baseline_supported_hits += int(required_tool in baseline_selected)\n\n        selected_defs = [by_name[name] for name in selected]
         rows.append(
             {
                 "query": query,
                 "required_tool": required_tool,
-                "selected_tools": selected,
+                "selected_tools": selected,\n                "simple_baseline_selected_tools": baseline_selected,
                 "candidate_evidence": candidate_evidence,
                 "retrieval_task_success": success,
                 "revealed_schema_bytes": _serialized_tool_bytes(selected_defs),
@@ -455,7 +453,7 @@ def evaluate() -> dict[str, Any]:
             "mean_routing_latency_ms": round(statistics.mean(latencies_ms), 6),
             "max_routing_latency_ms": round(max(latencies_ms), 6),
             "input_schema_exact_matches": exact_schema_matches,
-            "input_schema_total": len(tools),
+            "input_schema_total": len(tools),\n            "simple_baseline_required_tool_recall": baseline_supported_hits / supported_total if supported_total else 1.0,\n            "simple_baseline_unsupported_rejection": baseline_unsupported_rejections / unsupported_total if unsupported_total else 1.0,
         },
         "known_fidelity_limits": [
             (
@@ -494,10 +492,10 @@ def evaluate() -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--json-out", type=Path)
+    parser.add_argument("--json-out", type=Path)\n    parser.add_argument("--catalog-size", type=int, default=len(CATALOG))
     args = parser.parse_args()
 
-    result = evaluate()
+    if args.catalog_size < len(CATALOG):\n        parser.error(f"--catalog-size must be >= {len(CATALOG)}")\n    result = evaluate(args.catalog_size)
     rendered = json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True)
     print(rendered)
 
