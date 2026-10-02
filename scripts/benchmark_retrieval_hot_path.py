@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from scripts.external_validation_gearlynx import CASES, build_router, load_catalog
+from external_validation_gearlynx import CASES, build_router, load_catalog
 
 
 def _percentile(values: list[float], fraction: float) -> float:
