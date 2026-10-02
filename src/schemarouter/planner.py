@@ -932,18 +932,39 @@ class SchemaPlanner:
             return True
 
         if self.candidate_index:
-            endpoint_pairs = self._index().all_endpoint_pairs()
+            index = self._index()
+            endpoint_pairs = index.all_endpoint_pairs()
         else:
+            index = None
             endpoint_pairs = tuple(
                 (tool, endpoint)
                 for tool in self.registry.tools()
                 for endpoint in tool.endpoints
             )
 
-        return [
-            self._score_endpoint(tool, endpoint, request.query, intent)
+        available_pairs = tuple(
+            (tool, endpoint)
             for tool, endpoint in endpoint_pairs
             if is_available(tool, endpoint)
+        )
+
+        if index is None or self.structural_retrieval:
+            return [
+                self._score_endpoint(tool, endpoint, request.query, intent)
+                for tool, endpoint in available_pairs
+            ]
+
+        positive_refs = {
+            (tool.key, endpoint.name)
+            for tool, endpoint in index.endpoint_pairs(request, intent)
+        }
+        return [
+            (
+                self._score_endpoint(tool, endpoint, request.query, intent)
+                if (tool.key, endpoint.name) in positive_refs
+                else _Candidate(tool, endpoint, 0.0, ())
+            )
+            for tool, endpoint in available_pairs
         ]
 
     def _semantic_recall_request(
