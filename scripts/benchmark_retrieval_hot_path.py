@@ -26,6 +26,7 @@ def _percentile(values: list[float], fraction: float) -> float:
 def _run_condition(
     *,
     candidate_index: bool,
+    lightweight: bool,
     iterations: int,
 ) -> dict[str, Any]:
     fixture = load_catalog()
@@ -34,7 +35,10 @@ def _run_condition(
 
     # Warm model/schema caches. The indexed path also builds its immutable version snapshot here.
     for query, _ in CASES:
-        router.retrieve(query, k=3)
+        if lightweight:
+            router.retrieve_routes(query, k=3)
+        else:
+            router.retrieve(query, k=3)
 
     samples: list[float] = []
     per_query: list[dict[str, Any]] = []
@@ -42,7 +46,10 @@ def _run_condition(
         query_samples: list[float] = []
         for _ in range(iterations):
             started = time.perf_counter_ns()
-            router.retrieve(query, k=3)
+            if lightweight:
+                router.retrieve_routes(query, k=3)
+            else:
+                router.retrieve(query, k=3)
             elapsed_ms = (time.perf_counter_ns() - started) / 1_000_000
             samples.append(elapsed_ms)
             query_samples.append(elapsed_ms)
@@ -56,6 +63,7 @@ def _run_condition(
 
     return {
         "candidate_index": candidate_index,
+        "lightweight": lightweight,
         "sample_count": len(samples),
         "median_ms": statistics.median(samples),
         "p95_ms": _percentile(samples, 0.95),
@@ -74,39 +82,100 @@ def evaluate(iterations: int = 50) -> dict[str, Any]:
     exhaustive.planner.candidate_index = False
 
     mismatches: list[str] = []
+    lightweight_mismatches: list[str] = []
     for query, _ in CASES:
-        indexed_result = indexed.retrieve(query, k=3).model_dump(mode="json")
-        exhaustive_result = exhaustive.retrieve(query, k=3).model_dump(mode="json")
-        if indexed_result != exhaustive_result:
+        indexed_result = indexed.retrieve(query, k=3)
+        exhaustive_result = exhaustive.retrieve(query, k=3)
+        if indexed_result.model_dump(mode="json") != exhaustive_result.model_dump(mode="json"):
             mismatches.append(query)
+
+        route_result = indexed.retrieve_routes(query, k=3)
+        route_signature = [
+            (
+                item.route_id,
+                item.score,
+                tuple(item.matched_fields),
+                tuple(
+                    (component.kind, component.value, component.matched)
+                    for component in item.score_components
+                ),
+                item.selection_source,
+            )
+            for item in route_result.candidates
+        ]
+        full_signature = [
+            (
+                item.route_id,
+                item.score,
+                tuple(item.matched_fields),
+                tuple(
+                    (component.kind, component.value, component.matched)
+                    for component in item.score_components
+                ),
+                item.selection_source,
+            )
+            for item in indexed_result.candidates
+        ]
+        if route_signature != full_signature:
+            lightweight_mismatches.append(query)
 
     if mismatches:
         raise AssertionError(
             "indexed retrieval changed public retrieval semantics for: "
             + ", ".join(mismatches)
         )
+    if lightweight_mismatches:
+        raise AssertionError(
+            "lightweight retrieval changed ranking/evidence semantics for: "
+            + ", ".join(lightweight_mismatches)
+        )
 
-    optimized = _run_condition(candidate_index=True, iterations=iterations)
-    legacy = _run_condition(candidate_index=False, iterations=iterations)
-    speedup = (
-        legacy["median_ms"] / optimized["median_ms"]
-        if optimized["median_ms"] > 0
-        else None
+    optimized_typed = _run_condition(
+        candidate_index=True,
+        lightweight=False,
+        iterations=iterations,
+    )
+    optimized_routes = _run_condition(
+        candidate_index=True,
+        lightweight=True,
+        iterations=iterations,
+    )
+    legacy_typed = _run_condition(
+        candidate_index=False,
+        lightweight=False,
+        iterations=iterations,
+    )
+    legacy_routes = _run_condition(
+        candidate_index=False,
+        lightweight=True,
+        iterations=iterations,
     )
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "benchmark": "retrieval-hot-path-gearlynx-e1",
         "fixture_tool_count": len(fixture["tools"]),
         "case_count": len(CASES),
         "iterations_per_case": iterations,
         "semantic_mismatches": mismatches,
-        "optimized": optimized,
-        "legacy_exhaustive_snapshot_copy": legacy,
-        "median_speedup": speedup,
+        "lightweight_semantic_mismatches": lightweight_mismatches,
+        "optimized_typed": optimized_typed,
+        "optimized_route_refs": optimized_routes,
+        "legacy_typed_snapshot_copy": legacy_typed,
+        "legacy_route_refs_snapshot_copy": legacy_routes,
+        "typed_median_speedup": (
+            legacy_typed["median_ms"] / optimized_typed["median_ms"]
+        ),
+        "route_ref_vs_legacy_typed_median_speedup": (
+            legacy_typed["median_ms"] / optimized_routes["median_ms"]
+        ),
+        "route_ref_vs_optimized_typed_median_speedup": (
+            optimized_typed["median_ms"] / optimized_routes["median_ms"]
+        ),
         "note": (
-            "candidate_index=False reproduces the pre-#691 retrieval path that deep-copies "
-            "the full registry snapshot on every retrieval. Results are host-local timing "
-            "evidence and must not be compared across machines as absolute latency."
+            "candidate_index=False reproduces the pre-#691 per-request registry snapshot "
+            "copy. retrieve_routes() measures candidate selection without typed schema "
+            "materialization. Timings are host-local and absolute values must not be "
+            "compared across machines."
         ),
     }
 
