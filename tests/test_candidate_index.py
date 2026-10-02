@@ -220,3 +220,27 @@ def test_candidate_index_empty_lookup_matches_exhaustive_no_candidate_plan() -> 
 
     assert indexed.model_dump() == exhaustive.model_dump()
     assert indexed.calls == []
+
+
+def test_retrieval_reuses_versioned_catalog_snapshot() -> None:
+    registry = CountingRegistry()
+    registry.update_many(
+        [
+            make_tool(0, keyword="first"),
+            make_tool(1, keyword="second"),
+        ]
+    )
+    planner = SchemaPlanner(registry, candidate_index=True)
+
+    first = planner.retrieve("first", k=2)
+    second = planner.retrieve("second", k=2)
+
+    assert first.total_ranked == 2
+    assert second.total_ranked == 2
+    assert registry.tools_calls == 1
+
+    registry.register(make_tool(2, keyword="third"))
+    third = planner.retrieve("third", k=3)
+
+    assert third.total_ranked == 3
+    assert registry.tools_calls == 2
