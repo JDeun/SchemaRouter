@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<p align="center"><strong>에이전트에 붙은 도구는 너무 많고, 도구마다 필요한 것보다 훨씬 많이 돌려줍니다. 그 사이에 타입 경계를 두십시오.</strong></p>
+<p align="center"><strong>서로 다른 스키마를 쓰는 도구들 사이에 타입 기반 capability 경계를 둡니다.</strong></p>
 
 <p align="center">
   <a href="README.md">English</a> ·
@@ -31,11 +31,19 @@
 SchemaRouter는 MCP, OpenAPI, Python, 프레임워크 도구를 하나의 **타입 기반 검색·실행 경계**로
 묶어 주는 LLM/RAG용 라이브러리입니다.
 
-도구가 많아질수록 모든 schema를 모델에 한꺼번에 넘기는 방식은 비효율적이고 통제하기 어렵습니다.
-SchemaRouter는 질문에 필요한 **데이터 필드**를 먼저 찾고, 그 값을 제공할 수 있는 등록된
-capability만 후보로 좁힙니다. 호출 전에는 인자·정책·fingerprint를 확인하고, 응답을 받은 뒤에는
-등록된 schema와 field contract를 다시 검사합니다. 단위, 측정 조건, 출처도 field contract에
-명시할 수 있습니다.
+서로 다른 provider와 protocol의 도구가 섞이고, 비슷한 operation 사이에서 field semantics,
+단위, qualifier, policy 조건까지 구별해야 할수록 routing은 어려워집니다. SchemaRouter는 질문에
+필요한 **데이터 필드**를 먼저 찾고, 그 값을 제공할 수 있는 등록된 capability만 후보로 좁힙니다.
+호출 전에는 인자·정책·fingerprint를 확인하고, 응답을 받은 뒤에는 등록된 schema와 field
+contract를 다시 검사합니다. 단위, 측정 조건, 출처도 field contract에 명시할 수 있습니다.
+
+측정한 break-even matrix에서는 **도구 개수 자체가 결정적인 변수가 아니었습니다**. low/medium
+ambiguity의 합성 fixture에서는 강한 schema-aware lexical baseline만으로도 충분했지만, high
+ambiguity에서는 그 baseline의 required-tool recall이 약 58–67%로 떨어지는 동안 SchemaRouter는
+required-tool recall과 unsupported rejection을 모두 100%로 유지했습니다. 이는 production
+utility를 증명한다는 뜻이 아니라 제품의 적용 경계를 보여 주는 결과입니다. 즉 SchemaRouter는
+단순히 도구가 많을 때보다 **서로 다른 스키마와 의미를 가진 capability가 섞여 있거나 이름과
+설명만으로 구별하기 어려울 때** 더 유용합니다.
 
 `pip install schemarouter`
 
