@@ -394,6 +394,8 @@ class _CandidateIndex:
                     for alias in parameter.aliases:
                         self._add(self._parameter_refs, alias, ref)
 
+        self._frozen_declared_semantics = frozenset(self._declared_semantics)
+
     @staticmethod
     def _add(
         index: dict[str, set[_EndpointRef]],
@@ -416,7 +418,7 @@ class _CandidateIndex:
     def declared_semantics(self) -> frozenset[str]:
         """Normalized non-identifier field semantics in this registry snapshot."""
 
-        return frozenset(self._declared_semantics)
+        return self._frozen_declared_semantics
 
     def endpoint_pairs(
         self,
