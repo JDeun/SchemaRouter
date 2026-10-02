@@ -3,8 +3,8 @@
 SchemaRouter는 **brace + routing hub** 정체성을 사용합니다.
 
 <div class="brand-lockup">
-  <img class="brand-lockup--light" src="../assets/brand/schemarouter-lockup-light.svg" alt="SchemaRouter">
-  <img class="brand-lockup--dark" src="../assets/brand/schemarouter-lockup-dark.svg" alt="SchemaRouter">
+  <img class="brand-lockup--light" src="/SchemaRouter/assets/brand/schemarouter-lockup-light.svg" alt="SchemaRouter">
+  <img class="brand-lockup--dark" src="/SchemaRouter/assets/brand/schemarouter-lockup-dark.svg" alt="SchemaRouter">
 </div>
 
 ## Mark
