@@ -3528,13 +3528,27 @@ class SchemaPlanner:
             # Nested source paths are planner-visible by their full dotted identity for exact
             # requests, but parent-path tokens must not make every descendant look relevant.
             # Lexical/substring matching therefore uses semantic/leaf aliases for nested fields.
-            lexical_names = names
+            semantic_leaf = (
+                field.semantic_id.rsplit(".", 1)[-1]
+                if field.semantic_id
+                else ""
+            )
+            projection_leaf = (
+                field.projection_path[-1]
+                if field.projection_path
+                else ""
+            )
+            lexical_names = [
+                field.name,
+                semantic_leaf,
+                *field.aliases,
+                projection_leaf,
+            ]
             if len(field.projection_path) > 1:
-                leaf = field.projection_path[-1]
                 lexical_names = [
-                    field.semantic_id or "",
+                    semantic_leaf,
                     *field.aliases,
-                    leaf,
+                    projection_leaf,
                 ]
 
             exact = bool(norms & concept_norms)
