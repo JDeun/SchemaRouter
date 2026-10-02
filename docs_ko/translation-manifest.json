@@ -4,8 +4,44 @@
   "translation_root": "docs_ko",
   "translations": [
     {
-      "path": "index.md",
-      "source_blob": "d11423fc4175fe84ca8073f08d7a81081daa61ab"
+      "path": "changelog.md",
+      "source_blob": "c82c6d7391f7780e4b54d22897796d7f56ffdac5"
+    },
+    {
+      "path": "concepts/adapters.md",
+      "source_blob": "fd829025a5c7f70c571a61ac4904ab032267ef6b"
+    },
+    {
+      "path": "concepts/capability-catalog.md",
+      "source_blob": "d85caca43c29755fcdd752e70f12dfb5fd266408"
+    },
+    {
+      "path": "concepts/execution.md",
+      "source_blob": "70d79f3ca4bf1cb28ac1c845ab1a432121932aa2"
+    },
+    {
+      "path": "concepts/field-first-execution.md",
+      "source_blob": "ed612ae41668e6ae76d5981fd932f78ac65b8e56"
+    },
+    {
+      "path": "concepts/schema-router.md",
+      "source_blob": "d798d4b5342ddc7c6e1603fa9373568b3bb02f7d"
+    },
+    {
+      "path": "concepts/tool-endpoint.md",
+      "source_blob": "958a27c6fad5410a33a9646d38e4fcc1381f7f1a"
+    },
+    {
+      "path": "contributing.md",
+      "source_blob": "ea38c9bff4bfe38a798e001e890b9b8f6ac8a146"
+    },
+    {
+      "path": "getting-started/examples.md",
+      "source_blob": "7a942bda525e77bb875ec280eda5afb57bf6e142"
+    },
+    {
+      "path": "getting-started/ingestion-paths.md",
+      "source_blob": "6287b80cdb60de264bd4070625b0f6118d0932b4"
     },
     {
       "path": "getting-started/installation.md",
@@ -16,40 +52,148 @@
       "source_blob": "376d174b205e0682202f0f237d00cb03299d04d8"
     },
     {
-      "path": "getting-started/examples.md",
-      "source_blob": "7a942bda525e77bb875ec280eda5afb57bf6e142"
+      "path": "getting-started/runtime-lifecycle.md",
+      "source_blob": "5e1e5e548a438067d4bcf729cc40c8051f7a26e8"
     },
     {
-      "path": "concepts/schema-router.md",
-      "source_blob": "d798d4b5342ddc7c6e1603fa9373568b3bb02f7d"
+      "path": "getting-started/schema-explorer.md",
+      "source_blob": "bc416dcf03345a5eca32ec0ce07150281041bf48"
     },
     {
-      "path": "concepts/capability-catalog.md",
-      "source_blob": "d85caca43c29755fcdd752e70f12dfb5fd266408"
+      "path": "getting-started/startup-rebinding.md",
+      "source_blob": "1e1d179274b513626258cd80e3591fbe0fd25dbb"
     },
     {
-      "path": "concepts/field-first-execution.md",
-      "source_blob": "ed612ae41668e6ae76d5981fd932f78ac65b8e56"
+      "path": "getting-started/storage-migrations.md",
+      "source_blob": "ec2bea7428f9266795a6d12ec04dcbe70a0ca8fa"
     },
     {
-      "path": "guides/openapi.md",
-      "source_blob": "15186ffa7e1a532d95297e2d3af4a487ae6407fe"
+      "path": "guides/adapter-plugins.md",
+      "source_blob": "419f48e71d82a22a10b879b535f5123250904818"
     },
     {
-      "path": "guides/mcp.md",
-      "source_blob": "99f219725e3f865dc93532e2bde4d3b460a24440"
+      "path": "guides/candidate-indexing.md",
+      "source_blob": "3ed905d10b68702c8d5dff53b8a4d33fc3fcfdce"
     },
     {
-      "path": "guides/python-tools.md",
-      "source_blob": "ae00ccbd3ced7cf0513cebbfaa6bd79e59ad9f0e"
+      "path": "guides/consumer-acceptance.md",
+      "source_blob": "da49405aea26d8b4e8116236ffe20c7933cea525"
+    },
+    {
+      "path": "guides/execution-hooks.md",
+      "source_blob": "4525163137ff863865ab88ed9b3bb8e8a3d87fbe"
+    },
+    {
+      "path": "guides/field-projection.md",
+      "source_blob": "0e873c2dd6132f6cd7ee8bdf24f22413ae0f8ce3"
+    },
+    {
+      "path": "guides/graphql.md",
+      "source_blob": "ff1995b17558248727f92d8e884babba4e3029c9"
+    },
+    {
+      "path": "guides/html-documentation.md",
+      "source_blob": "7e348cb2080e494ac16a82f811436fac99f5c700"
+    },
+    {
+      "path": "guides/http-json.md",
+      "source_blob": "9632b1db816f0b6ac0310dc3e9e7ebe6316c7c36"
     },
     {
       "path": "guides/inspection.md",
       "source_blob": "573bee5ed0a75cc532255e96bb9ca0e9c0af64ab"
     },
     {
+      "path": "guides/live-compatibility-matrix.md",
+      "source_blob": "1f75231e74d8db1189502b8ed527b44c4698b81b"
+    },
+    {
+      "path": "guides/mcp.md",
+      "source_blob": "99f219725e3f865dc93532e2bde4d3b460a24440"
+    },
+    {
+      "path": "guides/model-analyzer.md",
+      "source_blob": "3a16b6252074911ddb692e6d2b73eb64bb16ee0d"
+    },
+    {
+      "path": "guides/odata.md",
+      "source_blob": "f44bf77e4e6d54211c239f2c4e85d6868f08da33"
+    },
+    {
+      "path": "guides/openapi-compatibility.md",
+      "source_blob": "4cd65ac161c92d74ce122be98d9e390f1133873c"
+    },
+    {
+      "path": "guides/openapi.md",
+      "source_blob": "15186ffa7e1a532d95297e2d3af4a487ae6407fe"
+    },
+    {
+      "path": "guides/openrpc.md",
+      "source_blob": "0b55e7e4dcfa8286201dfc4fb379fd2d4b44fdca"
+    },
+    {
+      "path": "guides/optimade.md",
+      "source_blob": "b95d32b102fe33e9294f17d2c334879f96078388"
+    },
+    {
+      "path": "guides/python-tools.md",
+      "source_blob": "ae00ccbd3ced7cf0513cebbfaa6bd79e59ad9f0e"
+    },
+    {
+      "path": "guides/retry.md",
+      "source_blob": "f44729659779cfce9bc50bb1a82f5bdb3578a655"
+    },
+    {
+      "path": "guides/run-traces.md",
+      "source_blob": "323eb48feded1bb63d9813e772f2f17c95c66861"
+    },
+    {
+      "path": "guides/runtime.md",
+      "source_blob": "8fc523615b85d0030ec5c9189d013711207a22b7"
+    },
+    {
+      "path": "index.md",
+      "source_blob": "d11423fc4175fe84ca8073f08d7a81081daa61ab"
+    },
+    {
+      "path": "integrations/opentelemetry.md",
+      "source_blob": "bf66c62729f5a9c40a7f8612939064b1f7917aa4"
+    },
+    {
+      "path": "license.md",
+      "source_blob": "82db252c92a8be242a2eb4d087e854a68433a458"
+    },
+    {
       "path": "project/trust-and-evidence.md",
       "source_blob": "45c3d6f41e40adf1a488ca29bdc970c22ebabced"
+    },
+    {
+      "path": "recipes/many-tools.md",
+      "source_blob": "f98821bd60080d28bfb3eddf25862b3d03c5f18a"
+    },
+    {
+      "path": "recipes/mcp-agent.md",
+      "source_blob": "61a14b760573ec136a0d1d55dd595d35b5d08d08"
+    },
+    {
+      "path": "recipes/openapi-agent.md",
+      "source_blob": "ba590adcb7eec9ad0ee276235a054258f8108dff"
+    },
+    {
+      "path": "reference/api.md",
+      "source_blob": "e5742229b91fb5c74f22ab2020cdb20c9a15b8dc"
+    },
+    {
+      "path": "reference/models.md",
+      "source_blob": "a33279cc0adc08c78b7f5be7a68b7fefa4688d06"
+    },
+    {
+      "path": "reference/planning.md",
+      "source_blob": "a597a73baf17eba12fdef645f427fd53c6a80121"
+    },
+    {
+      "path": "reference/runtime.md",
+      "source_blob": "60dbef11ae8cd8a3d746224d31f2671ac40d67de"
     },
     {
       "path": "releases/0.14.0.md",
