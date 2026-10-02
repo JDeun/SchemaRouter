@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+_TRANSIENT_HTTP_STATUS_CODES = {408, 425, 429, 500, 502, 503, 504}
+
 import json
 import re
 import uuid
@@ -523,7 +525,7 @@ class OpenRPCRemoteInvoker:
                     raise NonRetryableInvocationError(
                         "JSON-RPC transport redirects are not allowed"
                     )
-                if response.status_code in {408, 425, 429} or response.status_code >= 500:
+                if response.status_code in _TRANSIENT_HTTP_STATUS_CODES:
                     raise InvocationUnavailableError(
                         f"JSON-RPC transport temporarily unavailable: HTTP {response.status_code}"
                     )
