@@ -370,6 +370,8 @@ jobs:
         run: mkdocs build --strict -f mkdocs.ko.yml
         env:
           NO_MKDOCS_2_WARNING: "1"
+      - name: Verify rendered Markdown/code-block structure
+        run: python scripts/check_rendered_docs.py site
       - name: Verify bilingual Pages layout
         run: |
           python - <<'PY'
