@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import math
 import re
-from collections.abc import Awaitable, Callable
+from collections.abc import AbstractSet, Awaitable, Callable
 from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import Any, Protocol
@@ -183,7 +183,7 @@ def _tool_identifier_forms(tool: ToolSpec) -> set[str]:
 
 
 def _tool_identifier_match(
-    query_tokens: set[str],
+    query_tokens: AbstractSet[str],
     tool: ToolSpec,
 ) -> bool:
     query_forms = {
@@ -238,7 +238,7 @@ def _operation_tokens(endpoint: EndpointSpec) -> set[str]:
 
 
 def _operation_family_match(
-    query_tokens: set[str],
+    query_tokens: AbstractSet[str],
     endpoint: EndpointSpec,
 ) -> bool:
     query_ascii = {
