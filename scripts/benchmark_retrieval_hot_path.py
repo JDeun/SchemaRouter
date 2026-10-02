@@ -72,6 +72,51 @@ def _run_condition(
     }
 
 
+def _measure_fingerprint_overhead(iterations: int) -> dict[str, float]:
+    fixture = load_catalog()
+    router = build_router(fixture["tools"])
+    pairs = router.planner._index().all_endpoint_pairs()
+    availability = router.planner.availability_predicate
+    if availability is None:
+        raise AssertionError("Gearlynx router must expose the normal availability predicate")
+
+    fingerprint_samples: list[float] = []
+    availability_samples: list[float] = []
+    cached_availability_samples: list[float] = []
+    fingerprints = {tool.key: tool.fingerprint for tool, _ in pairs}
+
+    for _ in range(iterations):
+        started = time.perf_counter_ns()
+        for tool, _ in pairs:
+            tool.fingerprint
+        fingerprint_samples.append((time.perf_counter_ns() - started) / 1_000_000)
+
+        started = time.perf_counter_ns()
+        for tool, endpoint in pairs:
+            availability(tool, endpoint)
+        availability_samples.append((time.perf_counter_ns() - started) / 1_000_000)
+
+        started = time.perf_counter_ns()
+        for tool, endpoint in pairs:
+            router.executor.is_access_available_for_contract(
+                tool.key,
+                endpoint.name,
+                fingerprints[tool.key],
+            )
+        cached_availability_samples.append(
+            (time.perf_counter_ns() - started) / 1_000_000
+        )
+
+    return {
+        "endpoint_count": float(len(pairs)),
+        "fingerprint_batch_median_ms": statistics.median(fingerprint_samples),
+        "availability_batch_median_ms": statistics.median(availability_samples),
+        "cached_availability_batch_median_ms": statistics.median(
+            cached_availability_samples
+        ),
+    }
+
+
 def evaluate(iterations: int = 50) -> dict[str, Any]:
     if iterations < 1:
         raise ValueError("iterations must be >= 1")
@@ -158,6 +203,7 @@ def evaluate(iterations: int = 50) -> dict[str, Any]:
         "iterations_per_case": iterations,
         "semantic_mismatches": mismatches,
         "lightweight_semantic_mismatches": lightweight_mismatches,
+        "fingerprint_overhead": _measure_fingerprint_overhead(iterations),
         "optimized_typed": optimized_typed,
         "optimized_route_refs": optimized_routes,
         "legacy_typed_snapshot_copy": legacy_typed,
