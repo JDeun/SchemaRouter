@@ -52,7 +52,15 @@ from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
 from .ingestion import SourceKind, SourceProbeResult, URLSchemaLoader
 from .inspection import RouterInspection, inspect_router
-from .models import CapabilityRetrieval, ExecutionPlan, PlanRequest, ToolCall, ToolResult, ToolSpec
+from .models import (
+    CapabilityRetrieval,
+    CapabilityRouteRetrieval,
+    ExecutionPlan,
+    PlanRequest,
+    ToolCall,
+    ToolResult,
+    ToolSpec,
+)
 from .planner import QueryAnalyzer, SchemaPlanner
 from .policy import ApprovalCallback, ExecutionPolicy
 from .proposals import DocumentationModelCallable, SchemaProposal, inspect_documentation_url
@@ -2361,6 +2369,26 @@ class SchemaRouter:
 
         return await self.planner.aplan(request)
 
+    def retrieve_routes(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRouteRetrieval:
+        """Return lightweight Top-K route references without schema materialization."""
+
+        return self.planner.retrieve_routes(request, k=k)
+
+    async def aretrieve_routes(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRouteRetrieval:
+        """Async counterpart to :meth:`retrieve_routes`."""
+
+        return await self.planner.aretrieve_routes(request, k=k)
+
     def retrieve(
         self,
         request: PlanRequest | str,
@@ -3261,6 +3289,22 @@ class ConfiguredSchemaRouter:
     def __init__(self, router: SchemaRouter, config: RunConfig) -> None:
         self.router = router
         self.config = config
+
+    def retrieve_routes(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRouteRetrieval:
+        return self.router.retrieve_routes(request, k=k)
+
+    async def aretrieve_routes(
+        self,
+        request: PlanRequest | str,
+        *,
+        k: int = 5,
+    ) -> CapabilityRouteRetrieval:
+        return await self.router.aretrieve_routes(request, k=k)
 
     def retrieve(
         self,
