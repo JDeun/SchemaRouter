@@ -8,7 +8,7 @@ from .capability_contracts import (\n    CapabilityFieldContract,\n    Capabilit
 from .models import StrictModel
 
 ExecutionStatus = Literal["success", "failure", "partial", "unknown"]
-EligibilityStatus = Literal["eligible", "missing_required_state", "incompatible_state", "precondition_failed"]
+EligibilityStatus = Literal[\n    "eligible",\n    "missing_required_state",\n    "incompatible_state",\n    "precondition_failed",\n]
 
 
 class ObservedStateField(StrictModel):
