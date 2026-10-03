@@ -736,10 +736,11 @@ class SchemaRouter:
             tables=tables,
             max_default_rows=max_default_rows,
         )
+        existing_keys = set(self.registry.keys())
         duplicate_keys = sorted(
             binding.tool.key
             for binding in bindings
-            if binding.tool.key in set(self.registry.keys())
+            if binding.tool.key in existing_keys
         )
         if duplicate_keys:
             raise RegistrationError(
