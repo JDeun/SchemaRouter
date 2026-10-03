@@ -35,40 +35,6 @@ async def _execute_apis_guru(
     return endpoint.name, "object", endpoint.auth_required, results[0].data["numAPIs"]
 
 
-async def _execute_anilist(
-    router: SchemaRouter,
-    tool_key: str,
-) -> tuple[str, str, bool, object]:
-    tool = router.registry.get(tool_key)
-    endpoint = tool.endpoint("Media")
-    available_fields = {field.name for field in endpoint.output_fields}
-    fields = [
-        field
-        for field in ("id", "title.romaji", "title.english", "format")
-        if field in available_fields
-    ]
-    assert {"id", "title.romaji"} <= set(fields)
-    call = ToolCall(
-        tool=tool.key,
-        endpoint=endpoint.name,
-        arguments={"id": 1},
-        fields=fields,
-        schema_fingerprint=endpoint.fingerprint,
-        tool_fingerprint=tool.fingerprint,
-    )
-    plan = ExecutionPlan(
-        query="AniList media identity",
-        registry_version=router.registry.version,
-        calls=[call],
-    )
-    results = await router.execute(plan)
-    assert len(results) == 1
-    assert isinstance(results[0].data, dict)
-    assert results[0].data.get("id") == 1
-    assert isinstance(results[0].data.get("title.romaji"), str)
-    return endpoint.name, "object", endpoint.auth_required, fields
-
-
 async def _execute_odata_reference(
     router: SchemaRouter,
     tool_key: str,
@@ -107,7 +73,6 @@ async def _execute_odata_reference(
 
 _EXECUTORS = {
     "apis-guru": _execute_apis_guru,
-    "anilist": _execute_anilist,
     "odata-v4-reference": _execute_odata_reference,
 }
 
