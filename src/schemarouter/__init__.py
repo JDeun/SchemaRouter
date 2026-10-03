@@ -83,12 +83,6 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
-from .capability_drift import (
-    CapabilityDriftChange,
-    CapabilityGraphDrift,
-    capability_contract_fingerprint,
-    compare_capability_graph_snapshot,
-)
 from .capability_decision_trace import (
     CapabilityDecisionCandidate,
     CapabilityDecisionCandidateInput,
@@ -102,6 +96,12 @@ from .capability_decision_trace import (
     CapabilityRetrievalDisposition,
     build_capability_decision_trace,
     render_capability_decision_trace,
+)
+from .capability_drift import (
+    CapabilityDriftChange,
+    CapabilityGraphDrift,
+    capability_contract_fingerprint,
+    compare_capability_graph_snapshot,
 )
 from .capability_eligibility import (
     CapabilityEligibilityExplanation,
