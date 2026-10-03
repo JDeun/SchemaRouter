@@ -23,15 +23,17 @@ result = await router.add_provider("materials-project")
 ```
 
 SchemaRouter가 알려진 access method를 해석하고 현재 환경에서 안전하게 사용할 수 있는 method만
-등록합니다. 초기 실제 acceptance provider는 Materials Project, Crossref, Tavily입니다.
-Credential이나 optional SDK가 없으면 추측하거나 설치하지 않고 상태로 보고합니다.
+등록합니다. 내장 acceptance provider는 Materials Project, Crossref, Tavily, APIs.guru,
+OData.org V4 reference service입니다. Credential이나 optional SDK가 없으면 추측하거나 설치하지
+않고 상태로 보고합니다.
 
 [Provider 중심 등록 자세히 보기 →](../guides/provider-first-registration.md)
 
-## 3. 실제 OpenAPI capability 탐색 및 실행
+## 3. 실제 provider capability 해석 및 실행
 
-아래 예제는 APIs.guru가 공개한 OpenAPI 문서를 그대로 읽습니다. 예제용으로 꾸며 낸 스키마나
-고정된 응답값이 아니라, 외부 서비스가 실제로 공개한 계약과 데이터를 사용합니다.
+아래 예제는 내장 `apis-guru` provider profile에서 시작합니다. SchemaRouter가 provider identity를
+compatibility smoke와 같은 공개 OpenAPI source로 해석한 뒤 기존 OpenAPI adapter에 전달합니다.
+예제용으로 꾸며 낸 스키마나 고정 응답이 아니라 외부 provider의 실제 계약과 데이터를 사용합니다.
 
 --8<-- "examples/live_openapi_quickstart.py"
 
@@ -44,6 +46,7 @@ python examples/live_openapi_quickstart.py
 성공 출력은 대략 다음 형태입니다.
 
 ```text
+provider: apis-guru
 source: https://api.apis.guru/v2/openapi.yaml
 discovered: apis.guru:getMetrics (... endpoints on this tool)
 selected: apis.guru:getMetrics
@@ -52,15 +55,16 @@ current numAPIs: <current positive integer>
 
 이 예제로 다음 네 단계를 확인할 수 있습니다.
 
-1. `from_url(..., kind="openapi")`가 외부 machine-readable contract를 읽습니다.
-2. SchemaRouter가 typed tool/endpoint와 stable fingerprint를 등록합니다.
+1. `add_provider("apis-guru")`가 caller가 protocol URL을 몰라도 provider profile을 해석합니다.
+2. profile의 OpenAPI method가 기존 OpenAPI adapter를 거쳐 typed tool/endpoint와 stable fingerprint로 등록됩니다.
 3. planner가 등록된 catalog 안에서 bounded capability를 선택합니다.
 4. executor가 호출과 raw response를 검증한 뒤 `ToolResult`를 반환합니다.
 
 ## 4. 왜 live provider를 필수 CI로 쓰지 않나
 
 공개 서비스에는 rate limit, schema 변경, 장애가 생길 수 있습니다. 그래서 필수 CI에서는
-`tests/test_live_quickstart.py`의 고정 OpenAPI fixture로 같은 동작을 검증합니다.
+`tests/test_live_quickstart.py`의 고정 OpenAPI fixture를 process-local provider profile로 등록해
+같은 provider-first 경로를 검증합니다.
 
 로컬 callable 예제도 별도로 유지합니다.
 
@@ -108,7 +112,7 @@ async for event in router.astream_events(request):
 | 이미 가지고 있는 것 | 설치 | 권장 시작점 |
 | --- | --- | --- |
 | Provider 이름 | core | `await router.add_provider("materials-project")` 및 [Provider 중심 등록](../guides/provider-first-registration.md) |
-| OpenAPI URL | `pip install schemarouter` | 이 페이지의 live OpenAPI quickstart |
+| OpenAPI URL | `pip install schemarouter` | lower-level `SchemaRouter.from_url(..., kind="openapi")` |
 | typed Python function | core | [Python tools](../guides/python-tools.md) |
 | MCP server | `schemarouter[mcp]` | [MCP](../guides/mcp.md) |
 | LangChain tools | `schemarouter[langchain]` | `examples/langchain_quickstart.py` |
