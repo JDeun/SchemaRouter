@@ -259,6 +259,7 @@ OData.org V4 reference service를 포함합니다. Credential과 optional depend
 | Provider identity | 서비스/provider는 알지만 protocol 구성을 모를 때 | `await router.add_provider("materials-project")` |
 | SQLite DB | 로컬/embedded RDB의 schema를 자동 파악할 때 | `router.add_sqlite_database(connection, ...)` |
 | SQLAlchemy Engine | RDB/warehouse connection을 caller가 소유할 때 | `router.add_sqlalchemy_database(engine, ...)` |
+| Vector store | collection/index discovery + bounded similarity search | `router.add_vector_store(backend, embed_query, ...)` |
 | 직접 ToolSpec | 애플리케이션이 이미 정규 계약을 갖고 있을 때 | `router.add_tool(...)` |
 | Python | capability가 로컬에 있고 타입이 붙어 있을 때 | `router.add_callable(...)` |
 | ToolSpec + SDK/client | transport는 신뢰하지만 안전한 자동 introspection이 어려울 때 | `router.add_bound_tool(...)` |
