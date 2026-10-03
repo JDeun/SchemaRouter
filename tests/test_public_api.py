@@ -158,6 +158,8 @@ def test_public_framework_exports_are_intentional_and_stable() -> None:
         "SQLiteRegistry",
         "SQLiteRunTraceStore",
         "SchemaValidationError",
+        "StateAwareCapabilityCandidate",
+        "StateAwareCapabilityRetrieval",
         "StateEligibility",
         "StateEligibilityReason",
         "StorageFormatError",
