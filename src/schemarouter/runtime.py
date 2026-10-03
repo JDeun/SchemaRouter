@@ -37,8 +37,8 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
-from .capability_decision_trace import CapabilityDecisionTrace
 from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
+from .capability_decision_trace import CapabilityDecisionTrace
 from .errors import (
     BindingDriftError,
     ContractAmendmentError,
