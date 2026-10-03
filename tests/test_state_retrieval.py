@@ -1,4 +1,4 @@
-from schemarouter.capability_contracts import CapabilityFieldContract
+from schemarouter.capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from schemarouter.execution_state import ObservedStateField, TypedExecutionState
 from schemarouter.models import CapabilityCandidate, CapabilityRetrieval
 from schemarouter.state_retrieval import filter_retrieval_by_state
@@ -110,3 +110,30 @@ def test_state_filter_is_data_only_and_has_no_execution_surface() -> None:
     assert not hasattr(result, "rollback")
     assert not hasattr(result, "retry")
     assert not hasattr(result, "compensate")
+
+
+def test_state_filter_applies_explicit_preconditions() -> None:
+    state = TypedExecutionState(
+        observed_fields=[
+            ObservedStateField(
+                contract=CapabilityFieldContract(semantic_id="auth.scope"),
+                stable_identifier="materials.read",
+            )
+        ]
+    )
+    result = filter_retrieval_by_state(
+        _retrieval(),
+        state,
+        preconditions_by_route={
+            "needs-id": [CapabilityPrecondition(
+                semantic_id="auth.scope",
+                operator="contains",
+                value="materials.write",
+            )]
+        },
+    )
+
+    assert [item.candidate.route_id for item in result.candidates] == [
+        "stateless",
+        "needs-token",
+    ]
