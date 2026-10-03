@@ -21,7 +21,7 @@
     },
     {
       "path": "compatibility.md",
-      "source_blob": "f3d42dd4a208eee849590a8f54e4040a78d8e0eb"
+      "source_blob": "4d2e279720b5fcd38aa8bb6ef5e284c093c4bcc8"
     },
     {
       "path": "concepts/adapters.md",
@@ -29,7 +29,7 @@
     },
     {
       "path": "concepts/capability-catalog.md",
-      "source_blob": "d85caca43c29755fcdd752e70f12dfb5fd266408"
+      "source_blob": "266139f38718c3212bdaec199c889a93649ee9fe"
     },
     {
       "path": "concepts/decision-backends.md",
@@ -37,7 +37,7 @@
     },
     {
       "path": "concepts/design-principles.md",
-      "source_blob": "9fe6b02814c59de7d030d102a6fe333ac8b5d575"
+      "source_blob": "ee4174cb6f1f0788c19d6a83c0abd70e05a8670d"
     },
     {
       "path": "concepts/execution.md",
@@ -49,7 +49,7 @@
     },
     {
       "path": "concepts/planning.md",
-      "source_blob": "2636189c3d24e430c8fc43063f027328960a5762"
+      "source_blob": "0cdd06d08876c8f0f5565700a5468e7a829e5bdb"
     },
     {
       "path": "concepts/protocol-ingestion-decisions.md",
@@ -77,7 +77,7 @@
     },
     {
       "path": "getting-started/examples.md",
-      "source_blob": "7a942bda525e77bb875ec280eda5afb57bf6e142"
+      "source_blob": "59da54e5c25afe5acc2cb0d357e2b1a4eea087af"
     },
     {
       "path": "getting-started/ingestion-paths.md",
@@ -193,7 +193,7 @@
     },
     {
       "path": "guides/live-compatibility-matrix.md",
-      "source_blob": "1f75231e74d8db1189502b8ed527b44c4698b81b"
+      "source_blob": "0a80b435d4587f3527b7e603ded1f4fe8e57b2b5"
     },
     {
       "path": "guides/mcp.md",
@@ -265,7 +265,7 @@
     },
     {
       "path": "guides/universal-ingestion.md",
-      "source_blob": "737753d2e66b57c9215f8cde7a27bc1bfa317712"
+      "source_blob": "ac0ae907e8bee5b393993a1da071e3613f78b68f"
     },
     {
       "path": "index.md",
