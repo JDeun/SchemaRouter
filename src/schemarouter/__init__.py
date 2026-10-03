@@ -39,6 +39,23 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
+from .capability_artifact import (
+    CAPABILITY_ARTIFACT_FORMAT_VERSION,
+    ArtifactSourceKind,
+    CapabilityArtifactEdge,
+    CapabilityArtifactSource,
+    CapabilityGraphArtifact,
+    build_capability_artifact,
+    load_capability_artifact,
+    serialize_capability_artifact,
+)
+from .capability_constraints import (
+    CapabilityOperationalMetadata,
+    HostCapabilityConstraints,
+    OperationalConstraintReason,
+    OperationalConstraintResult,
+    evaluate_operational_constraints,
+)
 from .capability_contracts import (
     CapabilityCompatibility,
     CapabilityComposition,
@@ -56,13 +73,6 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
-from .capability_constraints import (
-    CapabilityOperationalMetadata,
-    HostCapabilityConstraints,
-    OperationalConstraintReason,
-    OperationalConstraintResult,
-    evaluate_operational_constraints,
-)
 from .capability_drift import (
     CapabilityDriftChange,
     CapabilityGraphDrift,
@@ -79,6 +89,13 @@ from .capability_fallback import (
     eligible_fallback_ids,
     evaluate_fallback_eligibility,
 )
+from .capability_graph import (
+    CapabilityDependencyEdge,
+    CapabilityDependencyGraph,
+    build_capability_dependency_graph,
+    dependency_cycles,
+    satisfiable_capability_ids,
+)
 from .capability_lineage import (
     CapabilityLineage,
     CapabilityLineageHop,
@@ -89,13 +106,6 @@ from .capability_negotiation import (
     CapabilityNegotiationRequest,
     CapabilityNegotiationResult,
     negotiate_capabilities,
-)
-from .capability_graph import (
-    CapabilityDependencyEdge,
-    CapabilityDependencyGraph,
-    build_capability_dependency_graph,
-    dependency_cycles,
-    satisfiable_capability_ids,
 )
 from .contract_validation import (
     CapabilityContractValidation,
@@ -542,5 +552,13 @@ __all__ = [
     "record_run_events",
     "render_dashboard",
     "replay_run_events",
-    "write_dashboard",
+    "write_dashboard",    "CAPABILITY_ARTIFACT_FORMAT_VERSION",
+    "ArtifactSourceKind",
+    "CapabilityArtifactEdge",
+    "CapabilityArtifactSource",
+    "CapabilityGraphArtifact",
+    "serialize_capability_artifact",
+    "build_capability_artifact",
+    "load_capability_artifact",
+
 ]
