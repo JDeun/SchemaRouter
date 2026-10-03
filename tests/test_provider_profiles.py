@@ -6,6 +6,7 @@ from types import SimpleNamespace
 import httpx
 import pytest
 
+import schemarouter.provider_profiles as provider_profiles
 from schemarouter import (
     PlanRequest,
     ProviderAccessMethod,
@@ -257,3 +258,66 @@ def test_provider_resolution_rejects_unknown_method() -> None:
 
     with pytest.raises(KeyError, match="unknown access method"):
         router.resolve_provider("materials-project", methods={"not-a-method"})
+
+
+class _FakeProviderEntryPoint:
+    def __init__(self, name: str, loaded: list[str]) -> None:
+        self.name = name
+        self.value = f"package_{name}:profiles"
+        self.dist = SimpleNamespace(
+            metadata={"Name": f"dist-{name}"},
+            version="1.0",
+        )
+        self._loaded = loaded
+
+    def load(self) -> object:
+        self._loaded.append(self.name)
+        return ProviderProfile(
+            provider_id=f"plugin-{self.name}",
+            display_name=f"Plugin {self.name}",
+        )
+
+
+class _FakeProviderEntryPoints(tuple[object, ...]):
+    def select(self, *, group: str) -> tuple[object, ...]:
+        if group == provider_profiles.PROVIDER_PROFILE_ENTRY_POINT_GROUP:
+            return tuple(self)
+        return ()
+
+
+def test_provider_plugin_discovery_does_not_import_code(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    loaded: list[str] = []
+    entries = _FakeProviderEntryPoints(
+        [_FakeProviderEntryPoint("demo", loaded)]
+    )
+    monkeypatch.setattr(provider_profiles.metadata, "entry_points", lambda: entries)
+
+    found = provider_profiles.discover_provider_profile_plugins()
+
+    assert [item.name for item in found] == ["demo"]
+    assert found[0].distribution == "dist-demo"
+    assert loaded == []
+
+
+def test_provider_plugin_loading_requires_explicit_allowlist(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    loaded: list[str] = []
+    entries = _FakeProviderEntryPoints(
+        [_FakeProviderEntryPoint("demo", loaded)]
+    )
+    monkeypatch.setattr(provider_profiles.metadata, "entry_points", lambda: entries)
+    router = SchemaRouter()
+
+    with pytest.raises(ValueError, match="non-empty explicit allowlist"):
+        router.load_provider_profile_plugins(allowlist=[])
+
+    assert loaded == []
+
+    assert router.load_provider_profile_plugins(allowlist={"demo"}) == (
+        "plugin-demo",
+    )
+    assert router.resolve_provider("plugin-demo").provider_id == "plugin-demo"
+    assert loaded == ["demo"]
