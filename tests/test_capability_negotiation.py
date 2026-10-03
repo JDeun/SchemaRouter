@@ -2,6 +2,7 @@ from schemarouter.capability_contracts import (
     CapabilityContract,
     CapabilityFieldContract,
     CompatibilityContext,
+    SemanticEquivalence,
     UnitConversion,
 )
 from schemarouter.capability_negotiation import (
@@ -79,7 +80,9 @@ def test_scientific_semantic_equivalence_fixture() -> None:
         produces=[_field("electronic_gap", unit="eV")],
     )
     context = CompatibilityContext(
-        semantic_equivalences=[{"band_gap", "electronic_gap"}],
+        semantic_equivalences=[
+            SemanticEquivalence(canonical_id="band_gap", aliases={"electronic_gap"})
+        ],
     )
 
     result = negotiate_capabilities(request, [capability], context=context)
