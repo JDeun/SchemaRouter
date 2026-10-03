@@ -35,6 +35,9 @@ from .models import (
     ToolSpec,
 )
 from .registry import ToolRegistry
+from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
+from .execution_state import TypedExecutionState
+from .state_retrieval import StateAwareCapabilityRetrieval, filter_retrieval_by_state
 from .validation import (
     canonical_field_value_schema,
     effective_input_schema,
@@ -687,7 +690,10 @@ class SchemaPlanner:
         request: PlanRequest | str,
         *,
         k: int = 5,
-    ) -> CapabilityRetrieval:
+        execution_state: TypedExecutionState | None = None,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
         """Return Top-K registered capabilities without planning or execution."""
 
         k = self._validate_retrieval_k(k)
@@ -700,14 +706,25 @@ class SchemaPlanner:
                 "the configured analyzer is asynchronous; use "
                 "await planner.aretrieve(...)"
             )
-        return self._retrieve_from_intent(request, intent, k=k)
+        retrieval = self._retrieve_from_intent(request, intent, k=k)
+        if execution_state is None:
+            return retrieval
+        return filter_retrieval_by_state(
+            retrieval,
+            execution_state,
+            requirements_by_route=state_requirements,
+            preconditions_by_route=state_preconditions,
+        )
 
     async def aretrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
-    ) -> CapabilityRetrieval:
+        execution_state: TypedExecutionState | None = None,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
 
         k = self._validate_retrieval_k(k)
@@ -715,7 +732,15 @@ class SchemaPlanner:
         intent = self.analyzer.analyze(request, self.registry)
         if inspect.isawaitable(intent):
             intent = await intent
-        return self._retrieve_from_intent(request, intent, k=k)
+        retrieval = self._retrieve_from_intent(request, intent, k=k)
+        if execution_state is None:
+            return retrieval
+        return filter_retrieval_by_state(
+            retrieval,
+            execution_state,
+            requirements_by_route=state_requirements,
+            preconditions_by_route=state_preconditions,
+        )
 
     def retrieve_with_additional_availability(
         self,
