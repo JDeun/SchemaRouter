@@ -43,15 +43,6 @@ from .python import (
     schema_tool,
     tool_from_callable,
 )
-from .vector_store import (
-    VectorCollectionBinding,
-    VectorCollectionInvoker,
-    VectorCollectionSpec,
-    VectorMetadataField,
-    VectorQueryEmbedder,
-    VectorStoreBackend,
-    introspect_vector_backend,
-)
 from .sqlalchemy_database import (
     SQLAlchemyTableBinding,
     SQLAlchemyTableInvoker,
@@ -61,6 +52,15 @@ from .sqlite_database import (
     SQLiteTableBinding,
     SQLiteTableInvoker,
     introspect_sqlite_database,
+)
+from .vector_store import (
+    VectorCollectionBinding,
+    VectorCollectionInvoker,
+    VectorCollectionSpec,
+    VectorMetadataField,
+    VectorQueryEmbedder,
+    VectorStoreBackend,
+    introspect_vector_backend,
 )
 
 __all__ = [
