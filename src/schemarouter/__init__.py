@@ -22,15 +22,15 @@ from .adapters.plugins import (
     load_adapter_plugins,
 )
 from .adapters.python import schema_tool, tool_from_callable
-from .adapters.sqlite_database import (
-    SQLiteTableBinding,
-    SQLiteTableInvoker,
-    introspect_sqlite_database,
-)
 from .adapters.sqlalchemy_database import (
     SQLAlchemyTableBinding,
     SQLAlchemyTableInvoker,
     introspect_sqlalchemy_engine,
+)
+from .adapters.sqlite_database import (
+    SQLiteTableBinding,
+    SQLiteTableInvoker,
+    introspect_sqlite_database,
 )
 from .aggregation import (
     AggregatedField,
