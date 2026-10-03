@@ -10,6 +10,7 @@ import httpx
 from compatibility_report import new_report, write_report
 
 from schemarouter import PlanRequest, SchemaRouter
+from schemarouter.adapters.optimade import _base_info_attributes, _bounded_get
 
 PROVIDER_ID = "materials-project"
 EXPECTED_OPTIMADE_URL = "https://optimade.materialsproject.org"
@@ -72,6 +73,15 @@ async def run_smoke() -> dict[str, object]:
                 attributes = data.get("attributes") if isinstance(data, dict) else None
                 raw_shape = {
                     "status_code": response.status_code,
+                    "final_url": str(response.url),
+                    "redirects": [
+                        {
+                            "status": item.status_code,
+                            "url": str(item.url),
+                            "location": item.headers.get("location"),
+                        }
+                        for item in response.history
+                    ],
                     "data_type": data.get("type") if isinstance(data, dict) else None,
                     "data_id": data.get("id") if isinstance(data, dict) else None,
                     "attribute_keys": (
@@ -92,9 +102,26 @@ async def run_smoke() -> dict[str, object]:
                         if isinstance(attributes, dict)
                         else None
                     ),
+                    "normal_parser_recognized": _base_info_attributes(document) is not None,
                 }
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=False) as client:
+                bounded = await _bounded_get(
+                    client,
+                    f"{EXPECTED_OPTIMADE_URL}/v1/info",
+                    headers=None,
+                    max_bytes=2 * 1024 * 1024,
+                )
+                bounded_document = bounded.json()
+                raw_shape["bounded_status_code"] = bounded.status_code
+                raw_shape["bounded_final_url"] = str(bounded.url)
+                raw_shape["bounded_parser_recognized"] = (
+                    _base_info_attributes(bounded_document) is not None
+                )
         except Exception as exc:  # noqa: BLE001
-            raw_shape = {"diagnostic_error": type(exc).__name__}
+            raw_shape = {
+                **(raw_shape or {}),
+                "diagnostic_error": f"{type(exc).__name__}: {exc}",
+            }
         raise RuntimeError(
             "Materials Project provider registration did not yield one live tool: "
             + json.dumps(safe_diagnostics, sort_keys=True)
