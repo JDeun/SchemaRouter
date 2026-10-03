@@ -192,6 +192,40 @@ def render_dashboard(
                 "No health probes registered.</td></tr>"
             )
 
+        decision_trace_rows = "".join(
+            "<tr>"
+            + f"<td><code>{escape(trace.trace_id[:12])}</code></td>"
+            + f"<td>{escape(trace.snapshot_id[:12] if trace.snapshot_id else '—')}</td>"
+            + f"<td>{escape(_text(trace.registry_version))}</td>"
+            + f"<td>{trace.candidate_count}</td>"
+            + "<td>"
+            + escape(
+                ", ".join(
+                    f"{candidate.capability_id}:{candidate.final_disposition}"
+                    for candidate in trace.candidates
+                )
+                or "—"
+            )
+            + "</td>"
+            + "<td>"
+            + escape(
+                ", ".join(
+                    f"{candidate.capability_id}=[{','.join(candidate.reason_codes)}]"
+                    for candidate in trace.candidates
+                    if candidate.reason_codes
+                )
+                or "—"
+            )
+            + "</td>"
+            + "</tr>"
+            for trace in live.decision_traces
+        )
+        if not decision_trace_rows:
+            decision_trace_rows = (
+                '<tr><td colspan="6" class="muted">'
+                "No decision traces supplied for this inspection.</td></tr>"
+            )
+
         schema_watch_rows = "".join(
             (
                 '<tr class="attention-row">'
@@ -257,6 +291,17 @@ def render_dashboard(
 <div><strong>Schema watcher</strong><br>{escape(schema_watcher)}</div>
 <div><strong>Execution policy</strong><br><code>{escape(policy)}</code></div>
 <div><strong>Decision policy</strong><br><code>{escape(decision)}</code></div>
+</div>
+
+<h3>Capability decision traces</h3>
+<div class="table-wrap">
+<table>
+<thead><tr>
+<th>Trace</th><th>Snapshot</th><th>Registry</th><th>Candidates</th>
+<th>Dispositions</th><th>Reason codes</th>
+</tr></thead>
+<tbody>{decision_trace_rows}</tbody>
+</table>
 </div>
 
 <h3>Health probes</h3>
