@@ -1,17 +1,62 @@
 from __future__ import annotations
 
+from itertools import permutations
+
 import pytest
 
 from schemarouter import (
     CapabilityContract,
+    CapabilityDependencyEdge,
+    CapabilityDependencyGraph,
     CapabilityFieldContract,
+    CompatibilityContext,
+    SemanticEquivalence,
     build_capability_dependency_graph,
+    compare_capability_composition,
     dependency_cycles,
+    dependency_strongly_connected_components,
+    update_capability_dependency_graph,
 )
 
 
 def field(semantic_id: str) -> CapabilityFieldContract:
-    return CapabilityFieldContract(semantic_id=semantic_id, json_schema={"type": "string"})
+    return CapabilityFieldContract(
+        semantic_id=semantic_id,
+        json_schema={"type": "string"},
+    )
+
+
+def _reference_graph(
+    capabilities: list[CapabilityContract],
+    *,
+    context: CompatibilityContext | None = None,
+) -> CapabilityDependencyGraph:
+    ids = [capability.capability_id for capability in capabilities]
+    if len(ids) != len(set(ids)):
+        raise ValueError("capability_id values must be unique")
+
+    edges: list[CapabilityDependencyEdge] = []
+    for producer in capabilities:
+        for consumer in capabilities:
+            if producer.capability_id == consumer.capability_id or not consumer.requires:
+                continue
+            compatibility = compare_capability_composition(
+                producer,
+                consumer,
+                context=context,
+            )
+            if compatibility.satisfies:
+                edges.append(
+                    CapabilityDependencyEdge(
+                        producer_id=producer.capability_id,
+                        consumer_id=consumer.capability_id,
+                        compatibility=compatibility,
+                    )
+                )
+    return CapabilityDependencyGraph(
+        capability_ids=tuple(sorted(ids)),
+        edges=sorted(edges, key=lambda edge: (edge.producer_id, edge.consumer_id)),
+    )
 
 
 def test_dependency_graph_links_only_satisfied_contracts() -> None:
@@ -53,6 +98,166 @@ def test_dependency_graph_rejects_duplicate_capability_ids() -> None:
         build_capability_dependency_graph([duplicate, duplicate])
 
 
+def test_indexed_graph_matches_reference_all_pairs() -> None:
+    capabilities = [
+        CapabilityContract(
+            capability_id="material_search",
+            produces=[
+                field("resource.material_id"),
+                field("resource.formula"),
+            ],
+        ),
+        CapabilityContract(
+            capability_id="structure_lookup",
+            requires=[field("resource.material_id")],
+            produces=[field("resource.structure_id")],
+        ),
+        CapabilityContract(
+            capability_id="paper_lookup",
+            requires=[field("resource.material_id")],
+            produces=[field("document.abstract")],
+        ),
+        CapabilityContract(
+            capability_id="structure_postprocess",
+            requires=[
+                field("resource.structure_id"),
+                field("resource.material_id"),
+            ],
+        ),
+        CapabilityContract(
+            capability_id="weather",
+            requires=[field("geo.location")],
+        ),
+    ]
+
+    indexed = build_capability_dependency_graph(capabilities)
+    reference = _reference_graph(capabilities)
+
+    assert indexed == reference
+
+
+def test_graph_output_is_input_permutation_invariant() -> None:
+    capabilities = [
+        CapabilityContract(
+            capability_id="a",
+            produces=[field("state.a")],
+            requires=[field("state.c")],
+        ),
+        CapabilityContract(
+            capability_id="b",
+            produces=[field("state.b")],
+            requires=[field("state.a")],
+        ),
+        CapabilityContract(
+            capability_id="c",
+            produces=[field("state.c")],
+            requires=[field("state.b")],
+        ),
+    ]
+    expected = build_capability_dependency_graph(capabilities)
+
+    for ordering in permutations(capabilities):
+        assert build_capability_dependency_graph(list(ordering)) == expected
+
+
+def test_index_expands_declared_semantic_equivalence_without_false_negative() -> None:
+    producer = CapabilityContract(
+        capability_id="producer",
+        produces=[field("material.identifier")],
+    )
+    consumer = CapabilityContract(
+        capability_id="consumer",
+        requires=[field("resource.material_id")],
+    )
+    context = CompatibilityContext(
+        semantic_equivalences=[
+            SemanticEquivalence(
+                canonical_id="resource.material_id",
+                aliases={"material.identifier", "mp.material_id"},
+            )
+        ]
+    )
+
+    indexed = build_capability_dependency_graph(
+        [producer, consumer],
+        context=context,
+    )
+    reference = _reference_graph(
+        [producer, consumer],
+        context=context,
+    )
+
+    assert indexed == reference
+    assert indexed.successors("producer") == ("consumer",)
+
+
+def test_incremental_update_matches_full_rebuild_for_add_remove_and_change() -> None:
+    old = [
+        CapabilityContract(
+            capability_id="producer",
+            produces=[field("state.a")],
+        ),
+        CapabilityContract(
+            capability_id="consumer",
+            requires=[field("state.a")],
+        ),
+        CapabilityContract(
+            capability_id="removed",
+            produces=[field("state.removed")],
+        ),
+    ]
+    graph = build_capability_dependency_graph(old)
+    new = [
+        CapabilityContract(
+            capability_id="producer",
+            produces=[field("state.b")],
+        ),
+        CapabilityContract(
+            capability_id="consumer",
+            requires=[field("state.b")],
+        ),
+        CapabilityContract(
+            capability_id="added",
+            requires=[field("state.b")],
+        ),
+    ]
+
+    incremental = update_capability_dependency_graph(graph, old, new)
+    rebuilt = build_capability_dependency_graph(new)
+
+    assert incremental == rebuilt
+
+
+def test_incremental_update_returns_deterministic_copy_when_nothing_changed() -> None:
+    capabilities = [
+        CapabilityContract(
+            capability_id="producer",
+            produces=[field("state.a")],
+        ),
+        CapabilityContract(
+            capability_id="consumer",
+            requires=[field("state.a")],
+        ),
+    ]
+    graph = build_capability_dependency_graph(capabilities)
+
+    updated = update_capability_dependency_graph(
+        graph,
+        capabilities,
+        list(reversed(capabilities)),
+    )
+
+    assert updated == graph
+
+
+def test_incremental_update_rejects_mismatched_previous_graph() -> None:
+    previous = [CapabilityContract(capability_id="a")]
+    graph = CapabilityDependencyGraph(capability_ids=("b",))
+
+    with pytest.raises(ValueError, match="previous capability IDs"):
+        update_capability_dependency_graph(graph, previous, previous)
+
+
 def test_cycle_detection_reports_contract_cycle_without_executing_it() -> None:
     first = CapabilityContract(
         capability_id="first",
@@ -66,3 +271,40 @@ def test_cycle_detection_reports_contract_cycle_without_executing_it() -> None:
     )
     graph = build_capability_dependency_graph([first, second])
     assert dependency_cycles(graph) == [("first", "second")]
+
+
+def test_scc_cycle_analysis_is_bounded_on_dense_component() -> None:
+    ids = tuple(f"n{index:02d}" for index in range(8))
+    edges = [
+        CapabilityDependencyEdge(
+            producer_id=producer,
+            consumer_id=consumer,
+            compatibility=compare_capability_composition(
+                CapabilityContract(
+                    capability_id=producer,
+                    produces=[field("shared")],
+                ),
+                CapabilityContract(
+                    capability_id=consumer,
+                    requires=[field("shared")],
+                ),
+            ),
+        )
+        for producer in ids
+        for consumer in ids
+        if producer != consumer
+    ]
+    graph = CapabilityDependencyGraph(capability_ids=ids, edges=edges)
+
+    components = dependency_strongly_connected_components(graph)
+    cycles = dependency_cycles(graph, max_witnesses=2)
+
+    assert components == (ids,)
+    assert len(cycles) == 1
+    assert set(cycles[0]).issubset(set(ids))
+
+
+@pytest.mark.parametrize("value", [0, -1, True, False])
+def test_cycle_witness_limit_requires_positive_integer(value: object) -> None:
+    with pytest.raises(ValueError, match="max_witnesses"):
+        dependency_cycles(CapabilityDependencyGraph(), max_witnesses=value)  # type: ignore[arg-type]
