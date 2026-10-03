@@ -1,4 +1,4 @@
-"""Five-minute live quickstart using the public APIs.guru OpenAPI contract."""
+"""Five-minute live quickstart using provider-first APIs.guru registration."""
 
 from __future__ import annotations
 
@@ -6,8 +6,15 @@ import asyncio
 
 import httpx
 
-from schemarouter import PlanRequest, SchemaRouter, ToolResult
+from schemarouter import (
+    PlanRequest,
+    ProviderAccessMethod,
+    ProviderProfile,
+    SchemaRouter,
+    ToolResult,
+)
 
+DEFAULT_PROVIDER = "apis-guru"
 DEFAULT_SOURCE = "https://api.apis.guru/v2/openapi.yaml"
 METRICS_ENDPOINT = "getMetrics"
 
@@ -17,22 +24,41 @@ async def run_quickstart(
     *,
     http_client: httpx.AsyncClient | None = None,
 ) -> ToolResult:
-    """Discover, select, execute, and validate one real provider capability."""
+    """Resolve a provider, register its adapter path, and execute one live capability."""
 
-    router = await SchemaRouter.from_url(
-        source,
-        kind="openapi",
-        http_client=http_client,
-    )
-    async with router:
-        tool = next(
-            candidate
-            for candidate in router.registry.tools()
-            if any(
-                endpoint.name == METRICS_ENDPOINT
-                for endpoint in candidate.endpoints
+    router = SchemaRouter(http_client=http_client)
+    provider_id = DEFAULT_PROVIDER
+
+    if source != DEFAULT_SOURCE:
+        provider_id = "quickstart-openapi"
+        router.register_provider_profile(
+            ProviderProfile(
+                provider_id=provider_id,
+                display_name="Quickstart OpenAPI fixture",
+                methods=(
+                    ProviderAccessMethod(
+                        method_id="openapi",
+                        kind="openapi",
+                        access_mode="openapi",
+                        url=source,
+                    ),
+                ),
             )
         )
+
+    async with router:
+        registration = await router.add_provider(provider_id)
+        if len(registration.registered_tool_keys) != 1:
+            raise RuntimeError(
+                f"expected one registered tool for {provider_id}, "
+                f"got {registration.registered_tool_keys!r}"
+            )
+
+        tool = router.registry.get(registration.registered_tool_keys[0])
+        if not any(endpoint.name == METRICS_ENDPOINT for endpoint in tool.endpoints):
+            raise RuntimeError("provider registration did not expose APIs.guru metrics")
+
+        print(f"provider: {provider_id}")
         print(f"source: {source}")
         print(
             "discovered: "
