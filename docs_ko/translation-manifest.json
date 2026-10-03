@@ -252,6 +252,10 @@
       "source_blob": "ae00ccbd3ced7cf0513cebbfaa6bd79e59ad9f0e"
     },
     {
+      "path": "guides/record-store-onboarding.md",
+      "source_blob": "64e5e4c13801ca55f75432a5e11001e052385a61"
+    },
+    {
       "path": "guides/retry.md",
       "source_blob": "f44729659779cfce9bc50bb1a82f5bdb3578a655"
     },
