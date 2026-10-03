@@ -182,6 +182,8 @@ jobs:
             --json-out artifacts/openrpc-compatibility.json
           run_smoke scripts/live_reference_mcp_smoke.py \
             --json-out artifacts/mcp-compatibility.json
+          run_smoke scripts/live_reference_graphql_smoke.py \
+            --json-out artifacts/graphql-reference-compatibility.json
           run_smoke scripts/live_provider_first_protocol_smoke.py \
             --provider apis-guru \
             --json-out artifacts/provider-apis-guru-compatibility.json
