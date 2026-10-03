@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import datetime
-from dataclasses import asdict
 from collections.abc import Sequence
+from dataclasses import asdict
 from typing import Any
 
 from pydantic import Field
