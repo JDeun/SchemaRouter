@@ -15,6 +15,7 @@ from schemarouter import (
     PrincipalContext,
     RunConfig,
     SchemaRouter,
+    SchemaValidationError,
     ToolCall,
 )
 
@@ -193,7 +194,7 @@ async def test_graph_unknown_relationship_is_rejected_before_backend_call() -> N
         remote=False,
     )
 
-    with pytest.raises(RuntimeError, match="unknown relationship"):
+    with pytest.raises(SchemaValidationError):
         await router.execute(
             _plan(
                 router,
