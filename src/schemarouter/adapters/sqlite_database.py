@@ -216,7 +216,6 @@ def introspect_sqlite_database(
 
         fields: list[FieldSpec] = []
         properties: dict[str, Any] = {}
-        required: list[str] = []
         primary_keys: list[tuple[int, str]] = []
         for _, column, declared_type, not_null, _, primary_key in info:
             schema = _sqlite_column_schema(
@@ -234,8 +233,6 @@ def introspect_sqlite_database(
                 )
             )
             properties[column] = schema
-            if not_null or primary_key:
-                required.append(column)
             if primary_key:
                 primary_keys.append((primary_key, column))
 
@@ -244,9 +241,6 @@ def introspect_sqlite_database(
             "properties": properties,
             "additionalProperties": False,
         }
-        if required:
-            row_schema["required"] = required
-
         filter_columns = tuple(
             column for _, column in sorted(primary_keys)
         )
