@@ -39,6 +39,12 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
+from .capability_graph import (
+    CapabilityDependencyEdge,
+    CapabilityDependencyGraph,
+    build_capability_dependency_graph,
+    dependency_cycles,
+)
 from .capability_contracts import (
     CapabilityCompatibility,
     CapabilityComposition,
@@ -274,6 +280,8 @@ __all__ = [
     "CallableDecisionBackend",
     "CapabilityCandidate",
     "CapabilityCompatibility",
+    "CapabilityDependencyEdge",
+    "CapabilityDependencyGraph",
     "CapabilityComposition",
     "CapabilityContract",
     "CapabilityFieldContract",
@@ -418,6 +426,7 @@ __all__ = [
     "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
+    "build_capability_dependency_graph",
     "compare_capability_composition",
     "compare_capability_fields",
     "evaluate_state_eligibility",
@@ -429,6 +438,7 @@ __all__ = [
     "write_schema_explorer",
     "inspect_sqlite_storage",
     "migrate_sqlite_storage",
+    "dependency_cycles",
     "discover_adapter_plugins",
     "inspect_registry",
     "inspect_router",
