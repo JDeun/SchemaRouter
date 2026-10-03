@@ -52,6 +52,12 @@ from .capability_contracts import (
     compare_capability_composition,
     compare_capability_fields,
 )
+from .capability_graph import (
+    CapabilityDependencyEdge,
+    CapabilityDependencyGraph,
+    build_capability_dependency_graph,
+    dependency_cycles,
+)
 from .dashboard import render_dashboard, write_dashboard
 from .decision_plugins import (
     DECISION_BACKEND_ENTRY_POINT_GROUP,
@@ -274,6 +280,8 @@ __all__ = [
     "CallableDecisionBackend",
     "CapabilityCandidate",
     "CapabilityCompatibility",
+    "CapabilityDependencyEdge",
+    "CapabilityDependencyGraph",
     "CapabilityComposition",
     "CapabilityContract",
     "CapabilityFieldContract",
@@ -418,6 +426,7 @@ __all__ = [
     "analyze_openapi_compatibility",
     "choose_async",
     "choose_sync",
+    "build_capability_dependency_graph",
     "compare_capability_composition",
     "compare_capability_fields",
     "evaluate_state_eligibility",
@@ -429,6 +438,7 @@ __all__ = [
     "write_schema_explorer",
     "inspect_sqlite_storage",
     "migrate_sqlite_storage",
+    "dependency_cycles",
     "discover_adapter_plugins",
     "inspect_registry",
     "inspect_router",
