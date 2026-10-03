@@ -347,7 +347,7 @@ def _project_endpoint_fields(
             if field in visible
         }
 
-    return endpoint.model_copy(
+    projected = endpoint.model_copy(
         update={
             "parameters": parameters,
             "output_fields": [
@@ -363,6 +363,7 @@ def _project_endpoint_fields(
         },
         deep=True,
     )
+    return EndpointSpec.model_validate(projected.model_dump(mode="python"))
 
 
 class PrincipalScopedRegistry:
@@ -424,9 +425,11 @@ class PrincipalScopedRegistry:
             if not projected_endpoints:
                 continue
 
-            projected_tool = original_tool.model_copy(
-                update={"endpoints": projected_endpoints},
-                deep=True,
+            projected_tool = ToolSpec.model_validate(
+                original_tool.model_copy(
+                    update={"endpoints": projected_endpoints},
+                    deep=True,
+                ).model_dump(mode="python")
             )
             self._tools[projected_tool.key] = projected_tool
             self._original_tool_fingerprints[
