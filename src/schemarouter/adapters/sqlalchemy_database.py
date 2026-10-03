@@ -8,6 +8,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
+from ..data_scope import _current_data_scope_decision
 from ..errors import RegistrationError
 from ..models import (
     EndpointSpec,
@@ -123,6 +124,15 @@ class SQLAlchemyTableInvoker:
                 statement = statement.where(
                     self._table.c[column] == call.arguments[column]
                 )
+
+        decision = _current_data_scope_decision(call.tool, call.endpoint)
+        if decision is not None:
+            for predicate in decision.trusted_predicates:
+                column = self._table.c[predicate.field]
+                if predicate.operator == "eq":
+                    statement = statement.where(column == predicate.value)
+                else:
+                    statement = statement.where(column.in_(tuple(predicate.value)))
 
         limit = int(call.arguments.get("limit", self._default_limit))
         offset = int(call.arguments.get("offset", 0))
