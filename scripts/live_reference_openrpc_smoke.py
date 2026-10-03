@@ -9,7 +9,14 @@ from time import perf_counter
 
 from compatibility_report import new_report, write_report
 
-from schemarouter import (\n    ExecutionPlan,\n    ExecutionPolicy,\n    ProviderAccessMethod,\n    ProviderProfile,\n    SchemaRouter,\n    ToolCall,\n)
+from schemarouter import (
+    ExecutionPlan,
+    ExecutionPolicy,
+    ProviderAccessMethod,
+    ProviderProfile,
+    SchemaRouter,
+    ToolCall,
+)
 
 
 class _Handler(BaseHTTPRequestHandler):
