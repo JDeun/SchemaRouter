@@ -67,7 +67,7 @@ async def run_smoke() -> dict[str, object]:
         raw_shape = None
         try:
             async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
-                response = await client.get(f"{EXPECTED_OPTIMADE_URL}/v1/info")
+                response = await client.get(f"{EXPECTED_OPTIMADE_URL}/info")
                 document = response.json()
                 data = document.get("data") if isinstance(document, dict) else None
                 attributes = data.get("attributes") if isinstance(data, dict) else None
@@ -107,7 +107,7 @@ async def run_smoke() -> dict[str, object]:
             async with httpx.AsyncClient(timeout=30.0, follow_redirects=False) as client:
                 bounded = await _bounded_get(
                     client,
-                    f"{EXPECTED_OPTIMADE_URL}/v1/info",
+                    f"{EXPECTED_OPTIMADE_URL}/info",
                     headers=None,
                     max_bytes=2 * 1024 * 1024,
                 )
