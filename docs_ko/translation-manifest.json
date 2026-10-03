@@ -120,6 +120,10 @@
       "source_blob": "da49405aea26d8b4e8116236ffe20c7933cea525"
     },
     {
+      "path": "guides/contract-aware-fallback.md",
+      "source_blob": "b15bf6ba51c20519ba89b770ea99619175d2b82a"
+    },
+    {
       "path": "guides/decision-benchmark.md",
       "source_blob": "bd1fe26cee4c3ca90944bc701d065d66f93404a4"
     },
