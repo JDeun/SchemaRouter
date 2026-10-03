@@ -181,6 +181,77 @@ def test_attribute_backed_predicate_requires_present_verified_claim() -> None:
         predicate.resolve(principal)
 
 
+def test_subject_and_attribute_predicates_resolve_without_model_arguments() -> None:
+    principal = PrincipalContext(
+        subject="user-123",
+        attributes={"tenant_id": "tenant-7"},
+    )
+    subject = TrustedDataPredicate(field="owner_id", source="subject")
+    tenant = TrustedDataPredicate(
+        field="tenant_id",
+        source="attribute",
+        attribute="tenant_id",
+    )
+
+    assert subject.resolve(principal) == "user-123"
+    assert tenant.resolve(principal) == "tenant-7"
+
+
+def test_field_globs_can_hide_sensitive_columns_without_listing_every_safe_field() -> None:
+    tool = _tool()
+    endpoint = tool.endpoint("select")
+    principal = PrincipalContext(
+        subject="auditor",
+        roles=("auditor",),
+    )
+    policy = DataScopePolicy(
+        rules=(
+            DataScopeRule(
+                name="auditor",
+                operation="company.employees.*",
+                roles_any=("auditor",),
+                allow_fields=("*",),
+                deny_fields=("salary",),
+            ),
+        )
+    )
+
+    assert policy.visible_fields(principal, tool, endpoint) == (
+        "id",
+        "name",
+        "department",
+    )
+
+
+def test_rule_can_match_provider_and_access_mode() -> None:
+    tool = _tool()
+    endpoint = tool.endpoint("select")
+    principal = PrincipalContext(subject="alice", roles=("employee",))
+    policy = DataScopePolicy(
+        rules=(
+            DataScopeRule(
+                name="wrong-provider",
+                operation="*",
+                provider="other",
+                roles_any=("employee",),
+                allow_fields=("*",),
+            ),
+            DataScopeRule(
+                name="sqlite-company",
+                operation="*",
+                provider="company",
+                access_mode="sqlite",
+                roles_any=("employee",),
+                allow_fields=("id",),
+            ),
+        )
+    )
+
+    decision = policy.evaluate(principal, tool, endpoint)
+    assert decision.rule_name == "sqlite-company"
+    assert decision.visible_fields == ("id",)
+
+
 def test_multi_value_claim_predicate_requires_in_operator() -> None:
     with pytest.raises(ValueError, match="requires operator='in'"):
         TrustedDataPredicate(
