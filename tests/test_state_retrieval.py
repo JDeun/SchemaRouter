@@ -116,8 +116,8 @@ def test_state_filter_applies_explicit_preconditions() -> None:
     state = TypedExecutionState(
         observed_fields=[
             ObservedStateField(
-                contract=CapabilityFieldContract(semantic_id="auth.scope"),
-                stable_identifier="materials.read",
+                contract=CapabilityFieldContract(semantic_id="resource.status"),
+                stable_identifier="ready",
             )
         ]
     )
@@ -128,7 +128,7 @@ def test_state_filter_applies_explicit_preconditions() -> None:
             "needs-id": [CapabilityPrecondition(
                 semantic_id="auth.scope",
                 operator="contains",
-                value="materials.write",
+                value="committed",
             )]
         },
     )
