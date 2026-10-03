@@ -22,15 +22,6 @@ from .adapters.plugins import (
     load_adapter_plugins,
 )
 from .adapters.python import schema_tool, tool_from_callable
-from .adapters.vector_store import (
-    VectorCollectionBinding,
-    VectorCollectionInvoker,
-    VectorCollectionSpec,
-    VectorMetadataField,
-    VectorQueryEmbedder,
-    VectorStoreBackend,
-    introspect_vector_backend,
-)
 from .adapters.sqlalchemy_database import (
     SQLAlchemyTableBinding,
     SQLAlchemyTableInvoker,
@@ -40,6 +31,15 @@ from .adapters.sqlite_database import (
     SQLiteTableBinding,
     SQLiteTableInvoker,
     introspect_sqlite_database,
+)
+from .adapters.vector_store import (
+    VectorCollectionBinding,
+    VectorCollectionInvoker,
+    VectorCollectionSpec,
+    VectorMetadataField,
+    VectorQueryEmbedder,
+    VectorStoreBackend,
+    introspect_vector_backend,
 )
 from .aggregation import (
     AggregatedField,
