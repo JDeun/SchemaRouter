@@ -507,7 +507,7 @@ def built_in_provider_profile_registry() -> ProviderProfileRegistry:
                     method_id="optimade",
                     kind="optimade",
                     access_mode="optimade",
-                    url="https://optimade.materialsproject.org",
+                    url="https://optimade.materialsproject.org/v1",
                     description=(
                         "Public OPTIMADE endpoint for interoperable materials structure data."
                     ),
