@@ -8,6 +8,7 @@ from typing import Any, Literal, Protocol
 
 from pydantic import Field, model_validator
 
+from ..data_scope import _current_data_scope_decision
 from ..errors import RegistrationError, SchemaValidationError
 from ..models import EndpointSpec, FieldSpec, ParameterSpec, StrictModel, ToolCall, ToolSpec
 
@@ -158,17 +159,40 @@ class RecordSourceInvoker:
                 "record-store query requested unknown fields: " + ", ".join(unknown)
             )
 
-        raw_results = await _await_if_needed(
-            self._backend.query(
-                source=self._source.name,
-                text_query=text_query if isinstance(text_query, str) else None,
-                filters=filters,
-                start_time=start_time if isinstance(start_time, str) else None,
-                end_time=end_time if isinstance(end_time, str) else None,
-                limit=limit,
-                include_fields=selected_fields,
-            )
+        decision = _current_data_scope_decision(call.tool, call.endpoint)
+        trusted_predicates = (
+            decision.trusted_predicates if decision is not None else ()
         )
+        if trusted_predicates:
+            scoped_query = getattr(self._backend, "query_scoped", None)
+            if not callable(scoped_query):
+                raise RuntimeError(
+                    "record-store backend does not support trusted data predicates"
+                )
+            raw_results = await _await_if_needed(
+                scoped_query(
+                    source=self._source.name,
+                    text_query=text_query if isinstance(text_query, str) else None,
+                    filters=filters,
+                    start_time=start_time if isinstance(start_time, str) else None,
+                    end_time=end_time if isinstance(end_time, str) else None,
+                    limit=limit,
+                    include_fields=selected_fields,
+                    trusted_predicates=trusted_predicates,
+                )
+            )
+        else:
+            raw_results = await _await_if_needed(
+                self._backend.query(
+                    source=self._source.name,
+                    text_query=text_query if isinstance(text_query, str) else None,
+                    filters=filters,
+                    start_time=start_time if isinstance(start_time, str) else None,
+                    end_time=end_time if isinstance(end_time, str) else None,
+                    limit=limit,
+                    include_fields=selected_fields,
+                )
+            )
         if not isinstance(raw_results, list):
             raise SchemaValidationError("record-store backend query must return a list")
 
