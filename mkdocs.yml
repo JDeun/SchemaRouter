@@ -159,6 +159,7 @@ nav:
       - Provider-aware fallback: guides/provider-fallback.md
       - Multi-provider evidence: guides/multi-provider-evidence.md
       - Schema drift analysis: guides/schema-drift.md
+      - Capability graph drift: guides/capability-graph-drift.md
       - Retry policy: guides/retry.md
       - Trusted execution hooks: guides/execution-hooks.md
       - Persistent run traces: guides/run-traces.md
