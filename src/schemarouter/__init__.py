@@ -267,6 +267,7 @@ from .policy import (
     PolicyEffect,
     PolicyRule,
 )
+from .proposals import SchemaProposal
 from .provider_profiles import (
     PROVIDER_PROFILE_ENTRY_POINT_GROUP,
     ProviderAccessMethod,
@@ -281,7 +282,6 @@ from .provider_profiles import (
     discover_provider_profile_plugins,
     load_provider_profile_plugins,
 )
-from .proposals import SchemaProposal
 from .registry import InMemoryRegistry, MutableToolRegistry, SQLiteRegistry, ToolRegistry
 from .runs import ExecutionBudget, ExecutionMode, RetryPolicy, RunConfig, RunEvent
 from .runtime import ConfiguredSchemaRouter, SchemaRouter
