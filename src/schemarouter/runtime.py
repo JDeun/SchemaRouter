@@ -1331,6 +1331,8 @@ class SchemaRouter:
         """
 
         resolution = self.resolve_provider(provider, methods=methods)
+        profile = self.provider_profiles.get(provider)
+        profile_methods = {item.method_id: item for item in profile.methods}
         headers_by_method = trusted_headers_by_method or {}
         registrations: list[ProviderMethodRegistration] = []
         registered_keys: list[str] = []
@@ -1382,16 +1384,33 @@ class SchemaRouter:
                 )
                 continue
 
+            profile_method = profile_methods[method.method_id]
             try:
-                tool = await self.add_url(
-                    method.url,
-                    kind=method.kind,
-                    provider=resolution.provider_id,
-                    access_mode=method.access_mode,
-                    trusted_headers=trusted_headers or None,
-                    replace=replace,
-                    timeout=timeout,
-                )
+                if method.kind == "http_json":
+                    if profile_method.tool is None:
+                        raise RegistrationError(
+                            "http_json provider method has no trusted ToolSpec"
+                        )
+                    tool_key = self.add_http_tool(
+                        profile_method.tool,
+                        base_url=method.url,
+                        provider=resolution.provider_id,
+                        access_mode=method.access_mode,
+                        trusted_headers=trusted_headers or None,
+                        timeout=timeout,
+                        replace=replace,
+                    )
+                    tool = self.registry.get(tool_key)
+                else:
+                    tool = await self.add_url(
+                        method.url,
+                        kind=method.kind,
+                        provider=resolution.provider_id,
+                        access_mode=method.access_mode,
+                        trusted_headers=trusted_headers or None,
+                        replace=replace,
+                        timeout=timeout,
+                    )
             except Exception as exc:  # noqa: BLE001
                 registrations.append(
                     ProviderMethodRegistration(
