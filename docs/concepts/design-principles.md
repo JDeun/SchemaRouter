@@ -40,6 +40,10 @@ SchemaRouter separates:
 Equivalent access paths may be fallback alternatives without being treated as different semantic
 answers.
 
+Provider-first registration does not collapse this distinction. A `ProviderProfile` only saves the
+user from manually enumerating known protocols/SDKs; every registered method still keeps its own
+`access_mode`, schema identity, health, and policy state.
+
 ## 3. Fields are contracts, not just response keys
 
 A logical field can carry more than a name:
@@ -143,9 +147,11 @@ that affected routing:
 - deterministic score components;
 - health/binding state;
 - fallback transitions;
-- schema fingerprints and field contracts.
+- schema fingerprints and field contracts;
+- unified decision-trace reason codes over host-visible candidates.
 
-They should not expose or depend on private model chain-of-thought.
+They should not expose or depend on private model chain-of-thought. Decision traces also must not
+reveal hidden capabilities, rank scores, credentials, private headers, or request/result payloads.
 
 ## Design test
 
