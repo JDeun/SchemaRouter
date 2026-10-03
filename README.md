@@ -73,8 +73,10 @@ evidence is still tracked in #15.
 
 ## Quickstart
 
-This first example uses the public, no-auth APIs.guru OpenAPI document, so the returned number is
-provider-owned live data rather than a hard-coded demo value.
+This first example starts from the public provider name `apis-guru`. SchemaRouter resolves
+its built-in provider profile to the underlying OpenAPI adapter, so the user does not need to know
+the schema URL first. The returned number is provider-owned live data rather than a hard-coded demo
+value.
 
 ```python
 import asyncio
@@ -83,16 +85,11 @@ from schemarouter import PlanRequest, SchemaRouter
 
 
 async def main():
-    router = await SchemaRouter.from_url(
-        "https://api.apis.guru/v2/openapi.yaml",
-        kind="openapi",
-    )
+    router = SchemaRouter()
     async with router:
-        tool = next(
-            tool
-            for tool in router.registry.tools()
-            if any(endpoint.name == "getMetrics" for endpoint in tool.endpoints)
-        )
+        registration = await router.add_provider("apis-guru")
+        tool = router.registry.get(registration.registered_tool_keys[0])
+
         plan = router.plan(
             PlanRequest(
                 query="API directory metrics total number of APIs",
@@ -107,12 +104,11 @@ async def main():
 asyncio.run(main())
 ```
 
-The flow is the product in miniature: **external schema → typed registered capabilities → bounded
-selection → validated execution → typed result**. The final integer changes as APIs.guru changes.
+The flow is the product in miniature: **provider identity → resolved adapter/schema → typed registered capabilities → bounded selection → validated execution → typed result**. The final integer changes as APIs.guru changes.
 
 For network-independent CI/package acceptance, the repository keeps
 [`examples/quickstart.py`](examples/quickstart.py) as a deterministic local smoke. The complete
-live version above is [`examples/live_openapi_quickstart.py`](examples/live_openapi_quickstart.py).
+live provider-first version above is [`examples/live_openapi_quickstart.py`](examples/live_openapi_quickstart.py).
 
 [Browse the runnable example and demo gallery →](examples/README.md)
 
@@ -248,7 +244,7 @@ result = await router.add_provider("materials-project")
 
 SchemaRouter resolves known access methods for that provider and registers only the methods that are
 safe and usable in the current process. The built-in acceptance set covers Materials Project,
-Crossref, and Tavily. Credentials and optional dependencies are reported explicitly rather than
+Crossref, Tavily, APIs.guru, and the OData.org V4 reference service. Credentials and optional dependencies are reported explicitly rather than
 guessed, installed, or persisted.
 
 [Provider-first registration →](docs/guides/provider-first-registration.md)
@@ -287,7 +283,7 @@ Framework bridges are available for LangChain, LangGraph, and LlamaIndex. OpenTe
 Third-party bounded decision backends can be published through the
 `schemarouter.decision_backends` entry-point group.
 
-## What works in 0.14.0
+## What works in 0.15.0
 
 The released package provides a working beta implementation of the core architecture:
 
@@ -307,12 +303,12 @@ The released package provides a working beta implementation of the core architec
   surfaces.
 
 So **the architecture works today** for declared capabilities and supported routing cases.
-0.14.0 also ships source probing, startup rebinding, storage migrations, explicit schema-drift review, unified shutdown, the Capability Explorer, and the 0.13 field/schema lifecycle surface.
+0.15.0 includes the 0.14 operational surface—source probing, startup rebinding, storage migrations, explicit schema-drift review, unified shutdown, and the Capability Explorer—plus provider-first onboarding, state-aware corrective retrieval, incremental capability graphs/snapshots, versioned artifacts, and unified decision traces.
 
 
 ## Current research direction: compact capability retrieval for agents
 
-The stable-core execution boundary established in 0.12.0 remains unchanged in 0.14.0. The active research question has shifted from
+The stable-core execution boundary established in 0.12.0 remains unchanged in 0.15.0. The active research question has shifted from
 making SchemaRouter itself the final open-set classifier to evaluating it as a **typed capability
 retrieval substrate** for a downstream LLM agent.
 
@@ -340,7 +336,7 @@ gate, so K3 is not carried into the held-out benchmark. Execution-state-aware co
 (#424) are downstream confirmation stages.
 
 The earlier 0.11–0.13 open-set classifier/veto experiments are still valuable negative evidence. No
-experimental learned router or structural retrieval profile is promoted as an unconditional production default in 0.14.0.
+experimental learned router or structural retrieval profile is promoted as an unconditional production default in 0.15.0.
 
 See:
 
@@ -348,6 +344,7 @@ See:
 - [Prior-art roadmap](https://jdeun.github.io/SchemaRouter/research/prior-art-roadmap/)
 - [Complete experiment index](https://jdeun.github.io/SchemaRouter/research/experiment-index/)
 - [0.14 paper-evidence checkpoint](https://jdeun.github.io/SchemaRouter/research/0.14-paper-evidence-checkpoint/)
+- [0.15.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.15.0/)
 - [0.14.0 release notes](https://jdeun.github.io/SchemaRouter/releases/0.14.0/)
 - [Changelog](CHANGELOG.md)
 
