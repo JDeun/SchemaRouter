@@ -97,11 +97,13 @@ class SQLAlchemyTableInvoker:
         table: Any,
         columns: tuple[str, ...],
         filter_columns: tuple[str, ...],
+        default_limit: int,
     ) -> None:
         self._engine = engine
         self._table = table
         self._columns = columns
         self._filter_columns = filter_columns
+        self._default_limit = default_limit
 
     def invoke_call(self, call: ToolCall) -> list[dict[str, Any]]:
         if call.endpoint != _SELECT_ENDPOINT:
@@ -122,7 +124,7 @@ class SQLAlchemyTableInvoker:
                     self._table.c[column] == call.arguments[column]
                 )
 
-        limit = int(call.arguments.get("limit", 100))
+        limit = int(call.arguments.get("limit", self._default_limit))
         offset = int(call.arguments.get("offset", 0))
         if limit < 1 or limit > _MAX_LIMIT:
             raise RuntimeError(f"database limit must be between 1 and {_MAX_LIMIT}")
@@ -357,6 +359,7 @@ def introspect_sqlalchemy_engine(
                     table=reflected,
                     columns=tuple(field.name for field in fields),
                     filter_columns=tuple(name for name in pk_columns if name in properties),
+                    default_limit=max_default_rows,
                 ),
             )
         )
