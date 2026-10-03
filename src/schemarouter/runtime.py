@@ -2847,20 +2847,37 @@ class SchemaRouter:
             tool.fingerprint,
         )
 
-    def plan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
-        """Plan only across routes that are currently executable by this router instance."""
+    def plan_executable(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext | None = None,
+    ) -> ExecutionPlan:
+        """Plan only across routes that are authorized and currently executable."""
 
-        return self.planner.plan_with_additional_availability(
-            request,
+        predicate = self._combined_availability_predicate(
+            principal,
             self._binding_ready,
         )
+        assert predicate is not None
+        return self.planner.plan_with_additional_availability(request, predicate)
 
-    async def aplan_executable(self, request: PlanRequest | str) -> ExecutionPlan:
+    async def aplan_executable(
+        self,
+        request: PlanRequest | str,
+        *,
+        principal: PrincipalContext | None = None,
+    ) -> ExecutionPlan:
         """Async counterpart to :meth:`plan_executable`."""
 
+        predicate = self._combined_availability_predicate(
+            principal,
+            self._binding_ready,
+        )
+        assert predicate is not None
         return await self.planner.aplan_with_additional_availability(
             request,
-            self._binding_ready,
+            predicate,
         )
 
     def retrieve_executable(
@@ -2868,12 +2885,18 @@ class SchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
+        principal: PrincipalContext | None = None,
     ) -> CapabilityRetrieval:
-        """Return Top-K capabilities with a currently ready local binding."""
+        """Return Top-K authorized capabilities with a ready local binding."""
 
+        predicate = self._combined_availability_predicate(
+            principal,
+            self._binding_ready,
+        )
+        assert predicate is not None
         return self.planner.retrieve_with_additional_availability(
             request,
-            self._binding_ready,
+            predicate,
             k=k,
             executable_only=True,
         )
@@ -2883,12 +2906,18 @@ class SchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
+        principal: PrincipalContext | None = None,
     ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve_executable`."""
 
+        predicate = self._combined_availability_predicate(
+            principal,
+            self._binding_ready,
+        )
+        assert predicate is not None
         return await self.planner.aretrieve_with_additional_availability(
             request,
-            self._binding_ready,
+            predicate,
             k=k,
             executable_only=True,
         )
@@ -2898,6 +2927,7 @@ class SchemaRouter:
         plan: ExecutionPlan,
         run_config: RunConfig,
     ) -> list[ToolResult]:
+        self._validate_plan_authorization(plan, run_config.principal)
         if run_config.execution_mode == "parallel_read_only":
             return await self.executor.execute_parallel_read_only(
                 plan,
@@ -2927,7 +2957,10 @@ class SchemaRouter:
         config: RunConfig | dict[str, Any] | None = None,
     ) -> list[ToolResult]:
         run_config = _coerce_config(config)
-        plan = await self.aplan_executable(request)
+        plan = await self.aplan_executable(
+            request,
+            principal=run_config.principal,
+        )
         return await self._execute_plan(plan, run_config)
 
     def invoke(
