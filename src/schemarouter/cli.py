@@ -8,6 +8,10 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+from .capability_decision_trace import (
+    CapabilityDecisionTrace,
+    render_capability_decision_trace,
+)
 from .capability_artifact import (
     migrate_capability_artifact,
     serialize_capability_artifact,
@@ -259,6 +263,49 @@ def _render_source_probe_failure(report: SourceProbeFailureReport) -> str:
     return "\n".join(lines)
 
 
+def _render_decision_trace(document: dict[str, object]) -> str:
+    lines = [
+        f"Capability decision trace {document['trace_id']}",
+        f"snapshot: {document.get('snapshot_id') or '-'}",
+        (
+            "registry_version: "
+            + (
+                str(document.get("registry_version"))
+                if document.get("registry_version") is not None
+                else "-"
+            )
+        ),
+    ]
+    candidates = document.get("candidates")
+    if not isinstance(candidates, list) or not candidates:
+        lines.append("candidates: none")
+        return "\n".join(lines)
+    lines.append("candidates:")
+    for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
+        reason_items = candidate.get("reasons")
+        reason_codes = []
+        if isinstance(reason_items, list):
+            reason_codes = [
+                str(item.get("code"))
+                for item in reason_items
+                if isinstance(item, dict) and item.get("code")
+            ]
+        lines.append(
+            "  - "
+            + str(candidate.get("capability_id"))
+            + ": "
+            + str(candidate.get("final_disposition"))
+            + (
+                " [" + ", ".join(reason_codes) + "]"
+                if reason_codes
+                else ""
+            )
+        )
+    return "\n".join(lines)
+
+
 def _render_storage_inspection(snapshot: StorageInspection) -> str:
     lines = [f"SQLite storage: {snapshot.path}"]
     if not snapshot.components:
@@ -415,6 +462,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Inspect persisted registries and run traces without executing tools.",
     )
     inspect_subparsers = inspect_parser.add_subparsers(dest="surface", required=True)
+
+    decision_trace = inspect_subparsers.add_parser(
+        "decision-trace",
+        help="Inspect a serialized privacy-safe capability decision trace.",
+    )
+    decision_trace.add_argument("document", type=Path)
+    decision_trace.add_argument(
+        "--detailed",
+        action="store_true",
+        help="Include structured component results in addition to compact reasons.",
+    )
+    _add_json_flag(decision_trace)
 
     registry = inspect_subparsers.add_parser(
         "registry",
@@ -775,6 +834,17 @@ def _run(args: argparse.Namespace) -> str:
 
     if args.command != "inspect":
         raise ValueError(f"unsupported command: {args.command}")
+
+    if args.surface == "decision-trace":
+        source = _existing_document(args.document)
+        trace = CapabilityDecisionTrace.model_validate_json(
+            source.read_text(encoding="utf-8")
+        )
+        document = render_capability_decision_trace(
+            trace,
+            detailed=args.detailed,
+        )
+        return _json_dump(document) if args.json else _render_decision_trace(document)
 
     if args.surface == "registry":
         with SQLiteRegistry(_existing_db(args.db)) as registry:
