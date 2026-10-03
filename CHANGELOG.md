@@ -9,6 +9,10 @@ The project is pre-1.0 and follows the compatibility rules in
 
 ### Added
 
+- added a provider-neutral vector-store capability contract with collection discovery, trusted
+  host embedding, dimension validation, bounded similarity search, field projection, and
+  principal-aware collection non-disclosure while keeping vendor clients and credentials outside
+  model-visible contracts;
 - added schema-introspected read-only database onboarding through dependency-free SQLite connections
   and caller-owned SQLAlchemy Engines, compiling tables/views/columns into typed capabilities while
   keeping credentials and live connection state outside model-visible contracts; added the optional
