@@ -42,7 +42,6 @@ Credential requirement는 선언 정보일 뿐입니다. 실제 secret 값은 pr
 - **Crossref** — 공개 declarative HTTP/JSON REST.
 - **Tavily** — 인증이 필요한 declarative HTTP/JSON search와 optional Python SDK.
 - **APIs.guru** — 공개 OpenAPI discovery와 read-only metrics 실행.
-- **AniList** — 공개 GraphQL introspection과 인증 없는 read-only media query 실행.
 - **OData.org V4 reference service** — 공개 OData metadata discovery와 read-only query 실행.
 
 인증이 필요한 method는 process-local trusted header로 전달합니다.
