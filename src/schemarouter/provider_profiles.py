@@ -369,6 +369,129 @@ def load_provider_profile_plugins(
     return tuple(registered)
 
 
+def _crossref_tool() -> ToolSpec:
+    return ToolSpec(
+        name="crossref",
+        description="Crossref scholarly metadata API",
+        provider="crossref",
+        access_mode="http_json",
+        endpoints=[
+            EndpointSpec(
+                name="search_works",
+                description="Search Crossref works metadata.",
+                method="GET",
+                path="/works",
+                read_only=True,
+                destructive=False,
+                parameters=[
+                    ParameterSpec(
+                        name="query",
+                        location="query",
+                        json_schema={"type": "string"},
+                    ),
+                    ParameterSpec(
+                        name="rows",
+                        location="query",
+                        json_schema={"type": "integer", "minimum": 1, "maximum": 100},
+                    ),
+                ],
+                output_schema={"type": "object"},
+                output_fields=[
+                    FieldSpec(name="message", json_schema={"type": "object"}),
+                ],
+            ),
+            EndpointSpec(
+                name="get_work",
+                description="Get one Crossref work by DOI.",
+                method="GET",
+                path="/works/{doi}",
+                read_only=True,
+                destructive=False,
+                parameters=[
+                    ParameterSpec(
+                        name="doi",
+                        required=True,
+                        location="path",
+                        json_schema={"type": "string"},
+                    ),
+                ],
+                output_schema={"type": "object"},
+                output_fields=[
+                    FieldSpec(name="message", json_schema={"type": "object"}),
+                ],
+            ),
+        ],
+    )
+
+
+def _tavily_tool() -> ToolSpec:
+    return ToolSpec(
+        name="tavily_search",
+        description="Tavily web search API",
+        provider="tavily",
+        access_mode="http_json",
+        endpoints=[
+            EndpointSpec(
+                name="search",
+                description="Search the web with Tavily.",
+                method="POST",
+                path="/search",
+                read_only=True,
+                destructive=False,
+                parameters=[
+                    ParameterSpec(
+                        name="query",
+                        required=True,
+                        location="body",
+                        json_schema={"type": "string"},
+                    ),
+                    ParameterSpec(
+                        name="max_results",
+                        location="body",
+                        json_schema={"type": "integer", "minimum": 1, "maximum": 20},
+                    ),
+                    ParameterSpec(
+                        name="search_depth",
+                        location="body",
+                        json_schema={
+                            "type": "string",
+                            "enum": ["basic", "advanced"],
+                        },
+                    ),
+                ],
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "query": {"type": "string"},
+                        "max_results": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 20,
+                        },
+                        "search_depth": {
+                            "type": "string",
+                            "enum": ["basic", "advanced"],
+                        },
+                    },
+                    "required": ["query"],
+                    "additionalProperties": False,
+                },
+                output_schema={"type": "object"},
+                output_fields=[
+                    FieldSpec(
+                        name="results",
+                        json_schema={
+                            "type": "array",
+                            "items": {"type": "object"},
+                        },
+                    ),
+                    FieldSpec(name="response_time", json_schema={}),
+                ],
+            )
+        ],
+    )
+
+
 def built_in_provider_profile_registry() -> ProviderProfileRegistry:
     registry = ProviderProfileRegistry()
     registry.register(
