@@ -8,10 +8,12 @@ from copy import deepcopy
 from dataclasses import dataclass, replace
 from typing import Any, Protocol
 
+from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from .decision_policy import DecisionPolicy
 from .decisions import DecisionBackend, DecisionOption, DecisionRequest, choose_async, choose_sync
 from .errors import PlanningError
 from .evidence import available_evidence, field_evidence_status, global_evidence_status
+from .execution_state import TypedExecutionState
 from .models import (
     CandidateSelectionSource,
     CapabilityCandidate,
@@ -35,8 +37,6 @@ from .models import (
     ToolSpec,
 )
 from .registry import ToolRegistry
-from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
-from .execution_state import TypedExecutionState
 from .state_retrieval import StateAwareCapabilityRetrieval, filter_retrieval_by_state
 from .validation import (
     canonical_field_value_schema,
