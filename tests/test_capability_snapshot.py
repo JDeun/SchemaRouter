@@ -3,6 +3,7 @@ import pytest
 from schemarouter.capability_contracts import CapabilityContract, CapabilityFieldContract
 from schemarouter.capability_graph import build_capability_dependency_graph
 from schemarouter.capability_snapshot import (
+    CapabilityGraphSnapshot,
     compare_capability_snapshots,
     create_capability_graph_snapshot,
     require_capability_snapshot,
