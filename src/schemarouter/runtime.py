@@ -73,6 +73,8 @@ from .provider_profiles import (
     ProviderRegistrationResult,
     ProviderResolution,
     built_in_provider_profile_registry,
+)
+from .provider_profiles import (
     load_provider_profile_plugins as _load_provider_profile_plugins,
 )
 from .registry import (
