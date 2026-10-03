@@ -133,9 +133,14 @@ class VectorCollectionInvoker:
             raise RuntimeError(f"vector top_k must be between 1 and {_MAX_TOP_K}")
 
         raw_vector = await _await_if_needed(self._embed_query(query))
-        if isinstance(raw_vector, (str, bytes)) or not isinstance(raw_vector, Sequence):
-            raise SchemaValidationError("vector embedder must return a numeric sequence")
-        vector = [float(value) for value in raw_vector]
+        if isinstance(raw_vector, (str, bytes)):
+            raise SchemaValidationError("vector embedder must return a numeric iterable")
+        try:
+            vector = [float(value) for value in raw_vector]
+        except (TypeError, ValueError) as exc:
+            raise SchemaValidationError(
+                "vector embedder must return a numeric iterable"
+            ) from exc
         if len(vector) != self._collection.dimension:
             raise SchemaValidationError(
                 "vector embedder dimension does not match collection contract: "
