@@ -70,7 +70,10 @@ class CompatibilityContext(StrictModel):
     def semantics_equivalent(self, left: str, right: str) -> bool:
         if left == right:
             return True
-        return any(item.contains(left) and item.contains(right) for item in self.semantic_equivalences)
+        return any(
+            item.contains(left) and item.contains(right)
+            for item in self.semantic_equivalences
+        )
 
     def unit_convertible(self, dimension: str, from_unit: str, to_unit: str) -> bool:
         if from_unit == to_unit:
@@ -264,7 +267,10 @@ def compare_capability_composition(
                 status="incompatible",
                 reasons=[CompatibilityReason(
                     code="missing_requirement",
-                    detail=f"producer does not satisfy required semantic field {required.semantic_id!r}",
+                    detail=(
+                        "producer does not satisfy required semantic field "
+                        f"{required.semantic_id!r}"
+                    ),
                 )],
             )
         results[required.semantic_id] = result
