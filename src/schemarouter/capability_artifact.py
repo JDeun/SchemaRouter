@@ -11,7 +11,6 @@ from .capability_contracts import (
     compare_capability_composition,
 )
 from .capability_graph import (
-    CapabilityDependencyEdge,
     CapabilityDependencyGraph,
     build_capability_dependency_graph,
 )
