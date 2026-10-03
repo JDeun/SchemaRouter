@@ -8,6 +8,7 @@ from .adapters.base import (
     SourceAdapter,
 )
 from .adapters.graph_store import (
+    GraphDirection,
     GraphModel,
     GraphNodeTypeSpec,
     GraphPropertySpec,
@@ -541,6 +542,7 @@ __all__ = [
     "TrustedBindingConfig",
     "KeywordAnalyzer",
     "MCPBoundClientFactory",
+    "GraphDirection",
     "GraphModel",
     "GraphNodeTypeSpec",
     "GraphPropertySpec",
