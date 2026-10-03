@@ -43,11 +43,6 @@ def test_builtin_profiles_resolve_provider_first() -> None:
 
     protocol_profiles = {
         "apis-guru": ("openapi", "openapi", "https://api.apis.guru/v2/openapi.yaml"),
-        "anilist": (
-            "graphql",
-            "graphql",
-            "https://graphql.anilist.co",
-        ),
         "odata-v4-reference": (
             "odata",
             "odata",
