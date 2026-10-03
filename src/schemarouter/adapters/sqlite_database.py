@@ -86,11 +86,13 @@ class SQLiteTableInvoker:
         table: str,
         columns: tuple[str, ...],
         filter_columns: tuple[str, ...],
+        default_limit: int,
     ) -> None:
         self._connection = connection
         self._table = table
         self._columns = columns
         self._filter_columns = filter_columns
+        self._default_limit = default_limit
 
     def invoke_call(self, call: ToolCall) -> list[dict[str, Any]]:
         if call.endpoint != _SELECT_ENDPOINT:
@@ -111,7 +113,7 @@ class SQLiteTableInvoker:
             where_parts.append(f"{_quote_identifier(column)} = ?")
             values.append(call.arguments[column])
 
-        limit = int(call.arguments.get("limit", 100))
+        limit = int(call.arguments.get("limit", self._default_limit))
         offset = int(call.arguments.get("offset", 0))
         if limit < 1 or limit > _MAX_LIMIT:
             raise RuntimeError(f"SQLite limit must be between 1 and {_MAX_LIMIT}")
@@ -346,6 +348,7 @@ def introspect_sqlite_database(
                     table=table,
                     columns=tuple(field.name for field in fields),
                     filter_columns=filter_columns,
+                    default_limit=max_default_rows,
                 ),
             )
         )
