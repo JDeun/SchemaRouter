@@ -13,6 +13,35 @@ result = await router.add_provider("materials-project")
 
 The built-in profile resolves the provider into its known access methods and only registers methods that are safe and usable in the current process. Missing credentials or optional dependencies are reported rather than guessed or installed.
 
+## Unknown or ambiguous provider names
+
+Known profiles still resolve locally and deterministically. Unknown names do **not** trigger implicit network discovery or execution authority.
+
+Use `discover_provider()` to obtain an inspectable proposal first:
+
+```python
+proposal = router.discover_provider("google")
+
+for candidate in proposal.candidates:
+    print(candidate.candidate_id, candidate.display_name, candidate.registrable)
+```
+
+A broad organization name such as `google` is intentionally treated as ambiguous. The built-in service-family hint currently proposes concrete services such as Google Drive, Calendar, Maps, Gemini, and BigQuery rather than guessing one.
+
+Hosts may attach a trusted discovery backend backed by an internal service catalog, documentation search, or another reviewed source:
+
+```python
+proposal = router.discover_provider("catalog", backend=my_discovery_backend)
+candidate = proposal.candidates[0]
+
+router.approve_provider_candidate(
+    candidate,
+    expected_digest=candidate.approval_digest,
+)
+```
+
+The backend can propose a `ProviderProfile`, but the proposal is inert. Registration requires an explicit approval call with the exact profile digest, and normal adapter/binding/credential rules still apply afterward. Discovery therefore follows **discover → inspect → approve → register**, never **search → execute**.
+
 ## Inspect before registering
 
 Provider resolution is local and does not make network calls:
