@@ -1,3 +1,4 @@
+# Issue #709 regression coverage.
 from schemarouter.capability_fallback import eligible_fallback_ids, evaluate_fallback_eligibility
 from schemarouter.contract_validation import CapabilityContractValidation
 from schemarouter.execution_state import StateEligibility
