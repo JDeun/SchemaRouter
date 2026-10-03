@@ -37,6 +37,7 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
+from .capability_decision_trace import CapabilityDecisionTrace
 from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from .errors import (
     BindingDriftError,
@@ -313,9 +314,17 @@ class SchemaRouter:
     def config_schema(self) -> dict[str, Any]:
         return RunConfig.model_json_schema()
 
-    def inspect(self) -> RouterInspection:
+    def inspect(
+        self,
+        *,
+        decision_traces: Sequence[CapabilityDecisionTrace] = (),
+    ) -> RouterInspection:
         """Return a privacy-safe live operational snapshot."""
-        return inspect_router(self)
+
+        return inspect_router(
+            self,
+            decision_traces=decision_traces,
+        )
 
     def mark_access_unavailable(
         self,
