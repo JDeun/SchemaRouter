@@ -560,7 +560,7 @@ jobs:
           elif [[ "$VERIFY_KIND" == "lightweight-extras" ]]; then
             package="schemarouter[mcp,jev,otel]==$RELEASE_VERSION"
           elif [[ "$VERIFY_KIND" == "integration-extras" ]]; then
-            package="schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel]==$RELEASE_VERSION"
+            package="schemarouter[mcp,langchain,langgraph,llamaindex,jev,otel,database]==$RELEASE_VERSION"
           fi
 
           installed=false
