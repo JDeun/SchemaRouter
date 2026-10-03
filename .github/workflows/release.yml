@@ -594,6 +594,7 @@ jobs:
           elif [[ "$VERIFY_KIND" == "integration-extras" ]]; then
             artifact_kind="wheel"
             framework_args+=(--framework-integrations --lightweight-extras)
+            framework_args+=(--database-integration)
           fi
 
           cd /tmp
