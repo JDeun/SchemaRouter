@@ -458,6 +458,21 @@ performs raw-output validation and final local projection.
     `ServerProjectionSpec`; final local projection remains enforced after raw validation.
 41. Availability fallback may change provider/access path but must not broaden the logical field
     need that the plan was compiled to answer.
+42. Provider-first registration may resolve known access methods but cannot auto-install SDKs,
+    persist credentials, or grant execution authority.
+43. State-conditioned corrective re-retrieval operates only over the same host-visible/available
+    capability surface and preserves the stable stateless retrieval facade.
+44. Capability-graph indexing and incremental rebuilds are search/update optimizations only; the
+    canonical compatibility comparator remains authoritative, and compatibility-context changes
+    require a full rebuild.
+45. Capability snapshot publication is atomic: readers observe a complete predecessor or complete
+    successor, never a partially rebuilt graph. Runtime health is not part of immutable snapshot
+    identity.
+46. Capability artifact/snapshot migrations are explicit, versioned, and fail closed on corrupt or
+    unknown future formats; migrations cannot reconstruct secrets, invokers, or execution authority.
+47. Decision traces may aggregate only host-visible structured results and must not reveal hidden
+    inventory, rank scores, payloads, credentials, or chain-of-thought, nor may they alter policy or
+    execution decisions.
 
 ## Current extension backlog
 
