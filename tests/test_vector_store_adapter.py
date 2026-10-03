@@ -125,6 +125,17 @@ def _plan(
     )
 
 
+def test_vector_collection_rejects_reserved_metadata_names() -> None:
+    with pytest.raises(ValueError, match="reserved names"):
+        VectorCollectionSpec(
+            name="bad",
+            dimension=3,
+            metadata_fields=(
+                VectorMetadataField(name="score"),
+            ),
+        )
+
+
 def test_vector_store_introspection_compiles_collection_contracts() -> None:
     backend = FakeVectorBackend()
     router = SchemaRouter()
