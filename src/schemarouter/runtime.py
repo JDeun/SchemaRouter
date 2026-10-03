@@ -2398,35 +2398,55 @@ class SchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
-        execution_state: TypedExecutionState | None = None,
-        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
-        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
+    ) -> CapabilityRetrieval:
         """Return Top-K typed registered capabilities without executing them."""
 
-        return self.planner.retrieve(
-            request,
-            k=k,
-            execution_state=execution_state,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-        )
+        return self.planner.retrieve(request, k=k)
 
     async def aretrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
-        execution_state: TypedExecutionState | None = None,
-        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
-        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
+    ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
 
-        return await self.planner.aretrieve(
+        return await self.planner.aretrieve(request, k=k)
+
+    def retrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateAwareCapabilityRetrieval:
+        """Retrieve registered capabilities under explicit observable typed state."""
+
+        return self.planner.retrieve_state_aware(
             request,
-            k=k,
             execution_state=execution_state,
+            k=k,
+            state_requirements=state_requirements,
+            state_preconditions=state_preconditions,
+        )
+
+    async def aretrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateAwareCapabilityRetrieval:
+        """Async counterpart to :meth:`retrieve_state_aware`."""
+
+        return await self.planner.aretrieve_state_aware(
+            request,
+            execution_state=execution_state,
+            k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
         )
@@ -3333,31 +3353,47 @@ class ConfiguredSchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
-        execution_state: TypedExecutionState | None = None,
-        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
-        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
-        return self.router.retrieve(
-            request,
-            k=k,
-            execution_state=execution_state,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-        )
+    ) -> CapabilityRetrieval:
+        return self.router.retrieve(request, k=k)
 
     async def aretrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
-        execution_state: TypedExecutionState | None = None,
+    ) -> CapabilityRetrieval:
+        return await self.router.aretrieve(request, k=k)
+
+    def retrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
         state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
         state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
-        return await self.router.aretrieve(
+    ) -> StateAwareCapabilityRetrieval:
+        return self.router.retrieve_state_aware(
             request,
-            k=k,
             execution_state=execution_state,
+            k=k,
+            state_requirements=state_requirements,
+            state_preconditions=state_preconditions,
+        )
+
+    async def aretrieve_state_aware(
+        self,
+        request: PlanRequest | str,
+        *,
+        execution_state: TypedExecutionState,
+        k: int = 5,
+        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
+        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
+    ) -> StateAwareCapabilityRetrieval:
+        return await self.router.aretrieve_state_aware(
+            request,
+            execution_state=execution_state,
+            k=k,
             state_requirements=state_requirements,
             state_preconditions=state_preconditions,
         )
