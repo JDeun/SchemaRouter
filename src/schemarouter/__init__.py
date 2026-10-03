@@ -52,11 +52,15 @@ from .capability_contracts import (
     CapabilityCompatibility,
     CapabilityComposition,
     CapabilityContract,
+    CapabilityEffects,
     CapabilityFieldContract,
+    CapabilityPrecondition,
     CompatibilityContext,
     CompatibilityReason,
     CompatibilityStatus,
+    EffectKind,
     SemanticEquivalence,
+    TriState,
     UnitConversion,
     compare_capability_composition,
     compare_capability_fields,
@@ -131,6 +135,7 @@ from .execution_state import (
     StateEligibility,
     StateEligibilityReason,
     TypedExecutionState,
+    evaluate_preconditions,
     evaluate_state_eligibility,
 )
 from .executor import RegistryExecutor
@@ -231,6 +236,11 @@ from .schema_diff import (
     compare_endpoint_specs,
     compare_tool_specs,
 )
+from .state_retrieval import (
+    StateAwareCapabilityCandidate,
+    StateAwareCapabilityRetrieval,
+    filter_retrieval_by_state,
+)
 from .storage import (
     CURRENT_REGISTRY_DOCUMENT_VERSION,
     CURRENT_STORAGE_FORMAT_VERSION,
@@ -254,6 +264,14 @@ from .traces import (
 )
 
 __all__ = [
+    "CapabilityEffects",
+    "CapabilityPrecondition",
+    "EffectKind",
+    "TriState",
+    "evaluate_preconditions",
+    "StateAwareCapabilityCandidate",
+    "StateAwareCapabilityRetrieval",
+    "filter_retrieval_by_state",
     "__version__",
     "ADAPTER_ENTRY_POINT_GROUP",
     "AggregatedField",
