@@ -12,19 +12,12 @@ from schemarouter import (
 def _assert_retrieval_signature(owner: type, name: str) -> None:
     signature = inspect.signature(getattr(owner, name))
     parameters = list(signature.parameters.values())
-    expected = ["self", "request", "k"]
-    if name in {"retrieve", "aretrieve"}:
-        expected += ["execution_state", "state_requirements", "state_preconditions"]
 
-    assert [parameter.name for parameter in parameters] == expected
+    assert [parameter.name for parameter in parameters] == ["self", "request", "k"]
     assert parameters[0].kind is inspect.Parameter.POSITIONAL_OR_KEYWORD
     assert parameters[1].kind is inspect.Parameter.POSITIONAL_OR_KEYWORD
-    assert all(
-        parameter.kind is inspect.Parameter.KEYWORD_ONLY
-        for parameter in parameters[2:]
-    )
+    assert parameters[2].kind is inspect.Parameter.KEYWORD_ONLY
     assert parameters[2].default == 5
-    assert all(parameter.default is None for parameter in parameters[3:])
 
 
 def test_stable_retrieval_facade_signatures_are_aligned() -> None:

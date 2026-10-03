@@ -37,7 +37,6 @@ from .binding_reconciliation import (
     BindingResolver,
     TrustedBindingConfig,
 )
-from .capability_contracts import CapabilityFieldContract, CapabilityPrecondition
 from .errors import (
     BindingDriftError,
     ContractAmendmentError,
@@ -48,7 +47,6 @@ from .errors import (
     SchemaNotModifiedError,
     SchemaSourceError,
 )
-from .execution_state import TypedExecutionState
 from .executor import BoundEndpointInvoker, ExecutionBudgetTracker, RegistryExecutor
 from .health import AccessHealthMonitor, HealthProbe, HealthProbeSnapshot
 from .hooks import ExecutionHooks
@@ -85,7 +83,6 @@ from .source_identity import (
     structured_source_identity,
     structured_source_identity_digest_for,
 )
-from .state_retrieval import StateAwareCapabilityRetrieval
 from .traces import RunTraceStore
 
 _T = TypeVar("_T")
@@ -2398,38 +2395,20 @@ class SchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
-        execution_state: TypedExecutionState | None = None,
-        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
-        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
+    ) -> CapabilityRetrieval:
         """Return Top-K typed registered capabilities without executing them."""
 
-        return self.planner.retrieve(
-            request,
-            k=k,
-            execution_state=execution_state,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-        )
+        return self.planner.retrieve(request, k=k)
 
     async def aretrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
-        execution_state: TypedExecutionState | None = None,
-        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
-        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
+    ) -> CapabilityRetrieval:
         """Async counterpart to :meth:`retrieve`."""
 
-        return await self.planner.aretrieve(
-            request,
-            k=k,
-            execution_state=execution_state,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-        )
+        return await self.planner.aretrieve(request, k=k)
 
     def _binding_ready(self, tool: ToolSpec, endpoint: Any) -> bool:
         del endpoint
@@ -3333,34 +3312,16 @@ class ConfiguredSchemaRouter:
         request: PlanRequest | str,
         *,
         k: int = 5,
-        execution_state: TypedExecutionState | None = None,
-        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
-        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
-        return self.router.retrieve(
-            request,
-            k=k,
-            execution_state=execution_state,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-        )
+    ) -> CapabilityRetrieval:
+        return self.router.retrieve(request, k=k)
 
     async def aretrieve(
         self,
         request: PlanRequest | str,
         *,
         k: int = 5,
-        execution_state: TypedExecutionState | None = None,
-        state_requirements: dict[str, list[CapabilityFieldContract]] | None = None,
-        state_preconditions: dict[str, list[CapabilityPrecondition]] | None = None,
-    ) -> CapabilityRetrieval | StateAwareCapabilityRetrieval:
-        return await self.router.aretrieve(
-            request,
-            k=k,
-            execution_state=execution_state,
-            state_requirements=state_requirements,
-            state_preconditions=state_preconditions,
-        )
+    ) -> CapabilityRetrieval:
+        return await self.router.aretrieve(request, k=k)
 
     def retrieve_executable(
         self,

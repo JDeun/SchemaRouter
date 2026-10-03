@@ -8,8 +8,6 @@ from pydantic import Field, model_validator
 from .models import FieldSpec, StrictModel
 
 CompatibilityStatus = Literal["exact", "compatible", "convertible", "incompatible", "unknown"]
-EffectKind = Literal["read", "write", "external_side_effect"]
-TriState = Literal["true", "false", "unknown"]
 
 
 class CapabilityFieldContract(StrictModel):
@@ -112,30 +110,10 @@ class CapabilityCompatibility(StrictModel):
         return self.status in {"exact", "compatible", "convertible"}
 
 
-class CapabilityEffects(StrictModel):
-    kind: EffectKind = "read"
-    idempotent: TriState = "unknown"
-    compensatable: TriState = "unknown"
-
-
-class CapabilityPrecondition(StrictModel):
-    semantic_id: str
-    operator: Literal["exists", "equals", "contains"] = "exists"
-    value: str | None = None
-
-    @model_validator(mode="after")
-    def validate_precondition(self) -> CapabilityPrecondition:
-        if self.operator != "exists" and self.value is None:
-            raise ValueError("equals/contains preconditions require a declared value")
-        return self
-
-
 class CapabilityContract(StrictModel):
     capability_id: str
     requires: list[CapabilityFieldContract] = Field(default_factory=list)
     produces: list[CapabilityFieldContract] = Field(default_factory=list)
-    effects: CapabilityEffects | None = None
-    preconditions: list[CapabilityPrecondition] = Field(default_factory=list)
 
 
 class CapabilityComposition(StrictModel):

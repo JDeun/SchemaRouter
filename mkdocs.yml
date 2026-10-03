@@ -157,9 +157,9 @@ nav:
       - Batch, streaming, and events: guides/runtime.md
       - Execution policy: guides/execution-policy.md
       - Provider-aware fallback: guides/provider-fallback.md
-      - State-aware retrieval: guides/state-aware-retrieval.md
       - Multi-provider evidence: guides/multi-provider-evidence.md
       - Schema drift analysis: guides/schema-drift.md
+      - Portable capability artifacts: guides/capability-artifacts.md
       - Retry policy: guides/retry.md
       - Trusted execution hooks: guides/execution-hooks.md
       - Persistent run traces: guides/run-traces.md

@@ -4,20 +4,11 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
-from .capability_contracts import (
-    CapabilityFieldContract,
-    CapabilityPrecondition,
-    compare_capability_fields,
-)
+from .capability_contracts import CapabilityFieldContract, compare_capability_fields
 from .models import StrictModel
 
 ExecutionStatus = Literal["success", "failure", "partial", "unknown"]
-EligibilityStatus = Literal[
-    "eligible",
-    "missing_required_state",
-    "incompatible_state",
-    "precondition_failed",
-]
+EligibilityStatus = Literal["eligible", "missing_required_state", "incompatible_state"]
 
 
 class ObservedStateField(StrictModel):
@@ -45,7 +36,7 @@ class TypedExecutionState(StrictModel):
 
 
 class StateEligibilityReason(StrictModel):
-    code: Literal["missing_required_state", "incompatible_state", "precondition_failed"]
+    code: Literal["missing_required_state", "incompatible_state"]
     semantic_id: str
     detail: str
 
@@ -93,57 +84,6 @@ def evaluate_state_eligibility(
 
     if any(reason.code == "incompatible_state" for reason in reasons):
         return StateEligibility(status="incompatible_state", reasons=reasons)
-    if reasons:
-        return StateEligibility(status="missing_required_state", reasons=reasons)
-    return StateEligibility(status="eligible")
-
-
-def evaluate_preconditions(
-    preconditions: list[CapabilityPrecondition],
-    state: TypedExecutionState,
-) -> StateEligibility:
-    """Evaluate only declared typed preconditions; never infer authorization."""
-
-    reasons: list[StateEligibilityReason] = []
-    observed = {
-        item.contract.semantic_id: item
-        for item in state.observed_fields
-    }
-    for condition in preconditions:
-        item = observed.get(condition.semantic_id)
-        if item is None:
-            reasons.append(StateEligibilityReason(
-                code="missing_required_state",
-                semantic_id=condition.semantic_id,
-                detail="precondition semantic state has not been observed",
-            ))
-            continue
-        if condition.operator == "exists":
-            continue
-        # TypedExecutionState intentionally carries contract metadata and stable identifiers,
-        # not arbitrary runtime payloads. Value predicates therefore fail closed unless the
-        # host exposes the comparison target as a stable identifier.
-        value = item.stable_identifier
-        if value is None:
-            reasons.append(StateEligibilityReason(
-                code="precondition_failed",
-                semantic_id=condition.semantic_id,
-                detail="precondition value is not available in typed observable state",
-            ))
-            continue
-        matches = (
-            value == condition.value
-            if condition.operator == "equals"
-            else condition.value is not None and condition.value in value
-        )
-        if not matches:
-            reasons.append(StateEligibilityReason(
-                code="precondition_failed",
-                semantic_id=condition.semantic_id,
-                detail="declared precondition is not satisfied",
-            ))
-    if any(reason.code == "precondition_failed" for reason in reasons):
-        return StateEligibility(status="precondition_failed", reasons=reasons)
     if reasons:
         return StateEligibility(status="missing_required_state", reasons=reasons)
     return StateEligibility(status="eligible")
